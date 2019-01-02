@@ -17,9 +17,16 @@
 package org.apache.carbondata.core.reader;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.format.FileHeader;
 
+import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
+
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -31,8 +38,15 @@ public class CarbonHeaderReader {
   //Fact file path
   private String filePath;
 
+  private Configuration configuration;
+
   public CarbonHeaderReader(String filePath) {
     this.filePath = filePath;
+  }
+
+  public CarbonHeaderReader(String filePath, Configuration configuration) {
+    this.filePath = filePath;
+    this.configuration = configuration;
   }
 
   /**
@@ -57,12 +71,26 @@ public class CarbonHeaderReader {
    * @throws IOException
    */
   private ThriftReader openThriftReader(String filePath) {
-
+    Configuration conf = configuration != null ? configuration : FileFactory.getConfiguration();
     return new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new FileHeader();
       }
-    });
+    }, conf);
   }
 
+  /**
+   * Read and return the schema in the header
+   */
+  public List<ColumnSchema> readSchema() throws IOException {
+    FileHeader fileHeader = readHeader();
+    List<ColumnSchema> columnSchemaList = new ArrayList<>();
+    List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
+    for (org.apache.carbondata.format.ColumnSchema table_column : table_columns) {
+      ColumnSchema col = thriftColumnSchemaToWrapperColumnSchema(table_column);
+      col.setColumnReferenceId(col.getColumnUniqueId());
+      columnSchemaList.add(col);
+    }
+    return columnSchemaList;
+  }
 }

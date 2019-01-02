@@ -21,28 +21,36 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
+import org.apache.log4j.Logger;
 
 public class HDFSCarbonFile extends AbstractDFSCarbonFile {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(HDFSCarbonFile.class.getName());
 
   public HDFSCarbonFile(String filePath) {
     super(filePath);
   }
 
+  public HDFSCarbonFile(String filePath, Configuration hadoopConf) {
+    super(filePath, hadoopConf);
+  }
+
   public HDFSCarbonFile(Path path) {
     super(path);
+  }
+
+  public HDFSCarbonFile(Path path, Configuration hadoopConf) {
+    super(path, hadoopConf);
   }
 
   public HDFSCarbonFile(FileStatus fileStatus) {
@@ -53,7 +61,8 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
    * @param listStatus
    * @return
    */
-  private CarbonFile[] getFiles(FileStatus[] listStatus) {
+  @Override
+  protected CarbonFile[] getFiles(FileStatus[] listStatus) {
     if (listStatus == null) {
       return new CarbonFile[0];
     }
@@ -62,23 +71,6 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
       files[i] = new HDFSCarbonFile(listStatus[i]);
     }
     return files;
-  }
-
-  @Override
-  public CarbonFile[] listFiles() {
-    FileStatus[] listStatus = null;
-    try {
-      if (null != fileStatus && fileStatus.isDirectory()) {
-        Path path = fileStatus.getPath();
-        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
-      } else {
-        return new CarbonFile[0];
-      }
-    } catch (IOException e) {
-      LOGGER.error("Exception occured: " + e.getMessage());
-      return new CarbonFile[0];
-    }
-    return getFiles(listStatus);
   }
 
   @Override
@@ -103,20 +95,20 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
   @Override
   public CarbonFile getParentFile() {
     Path parent = fileStatus.getPath().getParent();
-    return null == parent ? null : new HDFSCarbonFile(parent);
+    return null == parent ? null : new HDFSCarbonFile(parent, hadoopConf);
   }
 
   @Override
-  public boolean renameForce(String changetoName) {
+  public boolean renameForce(String changeToName) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(hadoopConf);
       if (fs instanceof DistributedFileSystem) {
-        ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changetoName),
+        ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changeToName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
       } else {
-        return false;
+        return fs.rename(fileStatus.getPath(), new Path(changeToName));
       }
     } catch (IOException e) {
       LOGGER.error("Exception occured: " + e.getMessage());

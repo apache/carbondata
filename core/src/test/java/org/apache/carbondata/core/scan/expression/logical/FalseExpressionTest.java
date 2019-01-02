@@ -17,11 +17,12 @@
 
 package org.apache.carbondata.core.scan.expression.logical;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 
 import org.junit.Before;
@@ -33,7 +34,7 @@ public class FalseExpressionTest {
   private FalseExpression falseExpression;
 
   @Before public void setUp() {
-    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataType.BOOLEAN);
+    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
     falseExpression = new FalseExpression(columnExpression);
   }
 
@@ -41,6 +42,17 @@ public class FalseExpressionTest {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { true });
     ExpressionResult actualValue = falseExpression.evaluate(rowImpl);
-    assertEquals(new ExpressionResult(DataType.BOOLEAN, false), actualValue);
+    assertEquals(new ExpressionResult(DataTypes.BOOLEAN, false), actualValue);
+  }
+
+  @Test public void testGetString() {
+    String actualValue = falseExpression.getString();
+    String expectedValue = "False(ColumnExpression(IMEI)";
+    assertEquals(expectedValue, actualValue);
+  }
+
+  @Test public void testFilterExpressionType() {
+    ExpressionType actualValue = falseExpression.getFilterExpressionType();
+    assertEquals(ExpressionType.FALSE, actualValue);
   }
 }

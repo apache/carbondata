@@ -45,4 +45,11 @@ public interface Cacheable {
    * @return
    */
   long getMemorySize();
+
+  /**
+   * Method to be used for invalidating the cacheable object. API to be invoked at the time of
+   * removing the cacheable object from memory. Example at the of removing the cachebale object
+   * from LRU cache
+   */
+  void invalidate();
 }

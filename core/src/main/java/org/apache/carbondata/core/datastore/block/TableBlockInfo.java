@@ -16,18 +16,25 @@
  */
 package org.apache.carbondata.core.datastore.block;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil;
+
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 /**
  * class will be used to pass the block detail detail will be passed form driver
@@ -58,11 +65,22 @@ public class TableBlockInfo implements Distributable, Serializable {
   /**
    * id of the segment this will be used to sort the blocks
    */
-  private String segmentId;
+  private Segment segment;
+
+  /**
+   * id of the Blocklet.
+   */
+  private String blockletId;
 
   private String[] locations;
 
   private ColumnarFormatVersion version;
+
+  /**
+   * flag to determine whether the data block is from old store (version 1.1)
+   * or current store
+   */
+  private boolean isDataBlockFromOldStore;
   /**
    * The class holds the blockletsinfo
    */
@@ -72,7 +90,7 @@ public class TableBlockInfo implements Distributable, Serializable {
    * map of block location and storage id
    */
   private Map<String, String> blockStorageIdMap =
-          new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+      new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   /**
    * delete delta files path for this block
@@ -81,11 +99,29 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   private BlockletDetailInfo detailInfo;
 
-  public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
-      long blockLength, ColumnarFormatVersion version, String[] deletedDeltaFilePath) {
+  private String dataMapWriterPath;
+
+  /**
+   * comparator to sort by block size in descending order.
+   * Since each line is not exactly the same, the size of a InputSplit may differs,
+   * so we allow some deviation for these splits.
+   */
+  public static final Comparator<Distributable> DATA_SIZE_DESC_COMPARATOR =
+      new Comparator<Distributable>() {
+        @Override public int compare(Distributable o1, Distributable o2) {
+          long diff =
+              ((TableBlockInfo) o1).getBlockLength() - ((TableBlockInfo) o2).getBlockLength();
+          return diff < 0 ? 1 : (diff == 0 ? 0 : -1);
+        }
+      };
+
+  public TableBlockInfo(String filePath, long blockOffset, String segmentId,
+      String[] locations, long blockLength, ColumnarFormatVersion version,
+      String[] deletedDeltaFilePath) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
+    this.blockletId = "0";
     this.blockOffset = blockOffset;
-    this.segmentId = segmentId;
+    this.segment = Segment.toSegment(segmentId);
     this.locations = locations;
     this.blockLength = blockLength;
     this.version = version;
@@ -109,8 +145,27 @@ public class TableBlockInfo implements Distributable, Serializable {
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
       long blockLength, BlockletInfos blockletInfos, ColumnarFormatVersion version,
       String[] deletedDeltaFilePath) {
-    this(filePath, blockOffset, segmentId, locations, blockLength, version, deletedDeltaFilePath);
+    this(filePath, blockOffset, segmentId, locations, blockLength, version,
+        deletedDeltaFilePath);
     this.blockletInfos = blockletInfos;
+  }
+
+  /**
+   * constructor to initialize the TableBlockInfo with blockletIds
+   *
+   * @param filePath
+   * @param blockOffset
+   * @param segmentId
+   * @param locations
+   * @param blockLength
+   * @param blockletInfos
+   */
+  public TableBlockInfo(String filePath, String blockletId, long blockOffset, String segmentId,
+      String[] locations, long blockLength, BlockletInfos blockletInfos,
+      ColumnarFormatVersion version, String[] deletedDeltaFilePath) {
+    this(filePath, blockOffset, segmentId, locations, blockLength, blockletInfos, version,
+        deletedDeltaFilePath);
+    this.blockletId = blockletId;
   }
 
   /**
@@ -125,12 +180,34 @@ public class TableBlockInfo implements Distributable, Serializable {
    * @param version
    * @param blockStorageIdMap
    */
-  public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
-      long blockLength, BlockletInfos blockletInfos, ColumnarFormatVersion version,
-      Map<String, String> blockStorageIdMap, String[] deletedDeltaFilePath) {
-    this(filePath, blockOffset, segmentId, locations, blockLength, blockletInfos, version,
-        deletedDeltaFilePath);
+  public TableBlockInfo(String filePath, String blockletId, long blockOffset, String segmentId,
+      String[] locations, long blockLength, BlockletInfos blockletInfos,
+      ColumnarFormatVersion version, Map<String, String> blockStorageIdMap,
+      String[] deletedDeltaFilePath) {
+    this(filePath, blockletId, blockOffset, segmentId, locations, blockLength, blockletInfos,
+        version, deletedDeltaFilePath);
     this.blockStorageIdMap = blockStorageIdMap;
+  }
+
+  /**
+   * Create copy of TableBlockInfo object
+   */
+  public TableBlockInfo copy() {
+    TableBlockInfo info = new TableBlockInfo();
+    info.filePath = filePath;
+    info.blockOffset = blockOffset;
+    info.blockLength = blockLength;
+    info.segment = segment;
+    info.blockletId = blockletId;
+    info.locations = locations;
+    info.version = version;
+    info.isDataBlockFromOldStore = isDataBlockFromOldStore;
+    info.blockletInfos = blockletInfos;
+    info.blockStorageIdMap = blockStorageIdMap;
+    info.deletedDeltaFilePath = deletedDeltaFilePath;
+    info.detailInfo = detailInfo.copy();
+    info.dataMapWriterPath = dataMapWriterPath;
+    return info;
   }
 
   /**
@@ -155,13 +232,30 @@ public class TableBlockInfo implements Distributable, Serializable {
    * @return the segmentId
    */
   public String getSegmentId() {
-    return segmentId;
+    if (segment == null) {
+      return null;
+    } else {
+      return segment.getSegmentNo();
+    }
+  }
+
+  public Segment getSegment() {
+    return segment;
   }
 
   /**
    * @return the blockLength
    */
   public long getBlockLength() {
+    if (blockLength == 0) {
+      Path path = new Path(filePath);
+      try {
+        FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+        blockLength = fs.listStatus(path)[0].getLen();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
     return blockLength;
   }
 
@@ -181,7 +275,7 @@ public class TableBlockInfo implements Distributable, Serializable {
       return false;
     }
     TableBlockInfo other = (TableBlockInfo) obj;
-    if (!segmentId.equals(other.segmentId)) {
+    if (!segment.equals(other.segment)) {
       return false;
     }
     if (blockOffset != other.blockOffset) {
@@ -217,8 +311,8 @@ public class TableBlockInfo implements Distributable, Serializable {
     // get the segment id
     // converr seg ID to double.
 
-    double seg1 = Double.parseDouble(segmentId);
-    double seg2 = Double.parseDouble(((TableBlockInfo) other).segmentId);
+    double seg1 = Double.parseDouble(segment.getSegmentNo());
+    double seg2 = Double.parseDouble(((TableBlockInfo) other).segment.getSegmentNo());
     if (seg1 - seg2 < 0) {
       return -1;
     }
@@ -275,7 +369,7 @@ public class TableBlockInfo implements Distributable, Serializable {
     int result = filePath.hashCode();
     result = 31 * result + (int) (blockOffset ^ (blockOffset >>> 32));
     result = 31 * result + (int) (blockLength ^ (blockLength >>> 32));
-    result = 31 * result + segmentId.hashCode();
+    result = 31 * result + segment.hashCode();
     result = 31 * result + blockletInfos.getStartBlockletNumber();
     return result;
   }
@@ -342,5 +436,42 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setDetailInfo(BlockletDetailInfo detailInfo) {
     this.detailInfo = detailInfo;
+  }
+
+  public String getBlockletId() {
+    return blockletId;
+  }
+
+  public void setBlockletId(String blockletId) {
+    this.blockletId = blockletId;
+  }
+
+  public boolean isDataBlockFromOldStore() {
+    return isDataBlockFromOldStore;
+  }
+
+  public void setDataBlockFromOldStore(boolean dataBlockFromOldStore) {
+    isDataBlockFromOldStore = dataBlockFromOldStore;
+  }
+
+  public String getDataMapWriterPath() {
+    return dataMapWriterPath;
+  }
+
+  public void setDataMapWriterPath(String dataMapWriterPath) {
+    this.dataMapWriterPath = dataMapWriterPath;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("TableBlockInfo{");
+    sb.append("filePath='").append(filePath).append('\'');
+    sb.append(", blockOffset=").append(blockOffset);
+    sb.append(", blockLength=").append(blockLength);
+    sb.append(", segment='").append(segment.toString()).append('\'');
+    sb.append(", blockletId='").append(blockletId).append('\'');
+    sb.append(", locations=").append(Arrays.toString(locations));
+    sb.append('}');
+    return sb.toString();
   }
 }

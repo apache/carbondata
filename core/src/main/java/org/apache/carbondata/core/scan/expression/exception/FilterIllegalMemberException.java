@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.expression.exception;
 
-import java.util.Locale;
 
 /**
  * FilterIllegalMemberException class representing exception which can cause while evaluating
@@ -49,37 +48,9 @@ public class FilterIllegalMemberException extends Exception {
   /**
    * Constructor
    *
-   * @param msg       The error message for this exception.
-   */
-  public FilterIllegalMemberException(String msg, Throwable t) {
-    super(msg, t);
-    this.msg = msg;
-  }
-
-  /**
-   * Constructor
-   *
    */
   public FilterIllegalMemberException(Throwable t) {
     super(t);
-  }
-
-  /**
-   * This method is used to get the localized message.
-   *
-   * @param locale - A Locale object represents a specific geographical,
-   *               political, or cultural region.
-   * @return - Localized error message.
-   */
-  public String getLocalizedMessage(Locale locale) {
-    return "";
-  }
-
-  /**
-   * getLocalizedMessage
-   */
-  @Override public String getLocalizedMessage() {
-    return super.getLocalizedMessage();
   }
 
   /**

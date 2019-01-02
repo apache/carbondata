@@ -46,9 +46,10 @@ object CarbonHiveMetadataUtil {
       sparkSession.sessionState.catalog.dropTable(tabelIdentifier, true, false)
     } catch {
       case e: Exception =>
-        LOGGER.audit(
+        LOGGER.error(
           s"Error While deleting the table $databaseName.$tableName during drop carbon table" +
           e.getMessage)
+        throw e
     }
   }
 

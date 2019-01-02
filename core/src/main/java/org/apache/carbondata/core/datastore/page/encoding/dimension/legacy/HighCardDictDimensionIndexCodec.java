@@ -21,20 +21,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.format.Encoding;
 
-public class HighCardDictDimensionIndexCodec  extends IndexStorageCodec {
+public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
+  /**
+   * whether this column is varchar data type(long string)
+   */
+  private boolean isVarcharType;
 
   public HighCardDictDimensionIndexCodec(boolean isSort, boolean isInvertedIndex,
-      Compressor compressor) {
-    super(isSort, isInvertedIndex, compressor);
+      boolean isVarcharType) {
+    super(isSort, isInvertedIndex);
+    this.isVarcharType = isVarcharType;
   }
 
   @Override
@@ -48,14 +54,18 @@ public class HighCardDictDimensionIndexCodec  extends IndexStorageCodec {
 
       @Override
       protected void encodeIndexStorage(ColumnPage input) {
-        IndexStorage indexStorage;
+        BlockIndexerStorage<byte[][]> indexStorage;
         byte[][] data = input.getByteArrayPage();
+        boolean isDictionary = input.isLocalDictGeneratedPage();
         if (isInvertedIndex) {
-          indexStorage = new BlockIndexerStorageForShort(data, false, true, isSort);
+          indexStorage = new BlockIndexerStorageForShort(data, isDictionary, !isDictionary, isSort);
         } else {
-          indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, true);
+          indexStorage =
+              new BlockIndexerStorageForNoInvertedIndexForShort(data, isDictionary);
         }
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
+        Compressor compressor = CompressorFactory.getInstance().getCompressor(
+            input.getColumnCompressorName());
         super.compressedDataPage = compressor.compressByte(flattened);
         super.indexStorage = indexStorage;
       }
@@ -63,13 +73,16 @@ public class HighCardDictDimensionIndexCodec  extends IndexStorageCodec {
       @Override
       protected List<Encoding> getEncodingList() {
         List<Encoding> encodings = new ArrayList<>();
-        if (indexStorage.getRowIdPageLengthInBytes() > 0) {
+        if (isVarcharType) {
+          encodings.add(Encoding.DIRECT_COMPRESS_VARCHAR);
+        } else if (indexStorage.getRowIdPageLengthInBytes() > 0) {
           encodings.add(Encoding.INVERTED_INDEX);
+        }
+        if (indexStorage.getDataRlePageLengthInBytes() > 0) {
+          encodings.add(Encoding.RLE);
         }
         return encodings;
       }
-
     };
   }
-
 }

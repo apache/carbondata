@@ -20,21 +20,19 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp
-    .TimeStampGranularityConstants.TIME_GRAN_DAY;
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp
-    .TimeStampGranularityConstants.TIME_GRAN_HOUR;
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp
-    .TimeStampGranularityConstants.TIME_GRAN_MIN;
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp
-    .TimeStampGranularityConstants.TIME_GRAN_SEC;
+import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_DAY;
+import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_HOUR;
+import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_MIN;
+import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_SEC;
+
+import org.apache.log4j.Logger;
 
 /**
  * The class provides the method to generate dictionary key and getting the actual value from
@@ -59,7 +57,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   /**
    * Logger instance
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(TimeStampDirectDictionaryGenerator.class.getName());
 
   /*
@@ -89,7 +87,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     }
     long cutOffTimeStampLocal;
     if (null == cutOffTimeStampString) {
-      cutOffTimeStampLocal = -1;
+      cutOffTimeStampLocal = 0;
     } else {
       try {
         SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
@@ -102,7 +100,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
         LOGGER.warn("Cannot convert" + cutOffTimeStampString
             + " to Time/Long type value. Value considered for cutOffTimeStamp is -1." + e
             .getMessage());
-        cutOffTimeStampLocal = -1;
+        cutOffTimeStampLocal = 0;
       }
     }
     granularityFactor = granularityFactorLocal;
@@ -129,7 +127,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   @Override public int generateDirectSurrogateKey(String memberStr) {
     if (null == memberStr || memberStr.trim().isEmpty() || memberStr
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     }
     return getDirectSurrogateForMember(memberStr);
   }
@@ -147,7 +145,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     } else {
       if (null == memberStr || memberStr.trim().isEmpty() || memberStr
           .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-        return 1;
+        return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
       }
       return getDirectSurrogateForMember(memberStr);
     }
@@ -171,7 +169,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     }
     //adding +2 to reserve the first cuttOffDiff value for null or empty date
     if (null == dateToStr) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(dateToStr.getTime());
     }
@@ -184,15 +182,10 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
    * @return member value/actual value Date
    */
   @Override public Object getValueFromSurrogate(int key) {
-    if (key == 1) {
+    if (key == CarbonCommonConstants.DIRECT_DICT_VALUE_NULL) {
       return null;
     }
-    long timeStamp = 0;
-    if (cutOffTimeStamp >= 0) {
-      timeStamp = ((key - 2) * granularityFactor + cutOffTimeStamp);
-    } else {
-      timeStamp = (key - 2) * granularityFactor;
-    }
+    long timeStamp = ((key - 2) * granularityFactor + cutOffTimeStamp);
     return timeStamp * 1000L;
   }
 
@@ -208,20 +201,19 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
       }
     }
     if (timeValue == -1) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(timeValue);
     }
   }
 
-  private int generateKey(long timeValue) {
-    if (cutOffTimeStamp >= 0) {
-      int keyValue = (int) ((timeValue - cutOffTimeStamp) / granularityFactor);
-      return keyValue < 0 ? 1 : keyValue + 2;
-    } else {
-      int keyValue = (int) (timeValue / granularityFactor);
-      return keyValue < 0 ? 1 : keyValue + 2;
+  public int generateKey(long timeValue) {
+    long time = (timeValue - cutOffTimeStamp) / granularityFactor;
+    int keyValue = -1;
+    if (time >= (long) Integer.MIN_VALUE && time <= (long) Integer.MAX_VALUE) {
+      keyValue = (int) time;
     }
+    return keyValue < 0 ? CarbonCommonConstants.DIRECT_DICT_VALUE_NULL : keyValue + 2;
   }
 
   public void initialize() {
@@ -232,7 +224,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   }
 
   @Override public DataType getReturnType() {
-    return DataType.LONG;
+    return DataTypes.LONG;
   }
 
 }

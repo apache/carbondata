@@ -16,17 +16,22 @@
  */
 package org.apache.carbondata.core.indexstore.row;
 
-import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
+import java.io.Serializable;
+
+import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 
 /**
  * It is just a normal row to store data. Implementation classes could be safe and unsafe.
  * TODO move this class a global row and use across loading after DataType is changed class
  */
-public abstract class DataMapRow {
+public abstract class DataMapRow implements Serializable {
 
-  protected DataMapSchema[] schemas;
+  /**
+   * This is made transient as it is temporary and should not be serialized
+   */
+  protected transient CarbonRowSchema[] schemas;
 
-  public DataMapRow(DataMapSchema[] schemas) {
+  public DataMapRow(CarbonRowSchema[] schemas) {
     this.schemas = schemas;
   }
 
@@ -64,6 +69,10 @@ public abstract class DataMapRow {
 
   public abstract int getLengthInBytes(int ordinal);
 
+  public abstract void setBoolean(boolean value, int ordinal);
+
+  public abstract boolean getBoolean(int ordinal);
+
   public int getTotalSizeInBytes() {
     int len = 0;
     for (int i = 0; i < schemas.length; i++) {
@@ -76,9 +85,16 @@ public abstract class DataMapRow {
     switch (schemas[ordinal].getSchemaType()) {
       case FIXED:
         return schemas[ordinal].getLength();
-      case VARIABLE:
+      case VARIABLE_SHORT:
         return getLengthInBytes(ordinal) + 2;
+      case VARIABLE_INT:
+        return getLengthInBytes(ordinal) + 4;
       case STRUCT:
+        DataMapRow row = getRow(ordinal);
+        CarbonRowSchema[] childSchemas =
+            ((CarbonRowSchema.StructCarbonRowSchema) schemas[ordinal]).getChildSchemas();
+        // set the child schema. Because schema is transient it can be null
+        row.setSchemas(childSchemas);
         return getRow(ordinal).getTotalSizeInBytes();
       default:
         throw new UnsupportedOperationException("wrong type");
@@ -87,5 +103,20 @@ public abstract class DataMapRow {
 
   public int getColumnCount() {
     return schemas.length;
+  }
+
+  /**
+   * default implementation
+   *
+   * @return
+   */
+  public DataMapRow convertToSafeRow() {
+    return this;
+  }
+
+  public void setSchemas(CarbonRowSchema[] schemas) {
+    if (null == this.schemas) {
+      this.schemas = schemas;
+    }
   }
 }

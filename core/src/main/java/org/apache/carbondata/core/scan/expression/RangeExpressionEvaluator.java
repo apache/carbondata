@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -43,12 +42,13 @@ import static org.apache.carbondata.core.scan.filter.intf.ExpressionType.GREATER
 import static org.apache.carbondata.core.scan.filter.intf.ExpressionType.LESSTHAN;
 import static org.apache.carbondata.core.scan.filter.intf.ExpressionType.LESSTHAN_EQUALTO;
 
+import org.apache.log4j.Logger;
+
 public class RangeExpressionEvaluator {
-  private static final LogService LOG =
+  private static final Logger LOG =
       LogServiceFactory.getLogService(RangeExpressionEvaluator.class.getName());
   private Expression expr;
   private Expression srcNode;
-  private Expression srcParentNode;
   private Expression tarNode;
   private Expression tarParentNode;
 
@@ -64,15 +64,15 @@ public class RangeExpressionEvaluator {
     this.expr = expr;
   }
 
-  public Expression getSrcNode() {
+  private Expression getSrcNode() {
     return srcNode;
   }
 
-  public void setTarNode(Expression expr) {
+  private void setTarNode(Expression expr) {
     this.tarNode = expr;
   }
 
-  public void setTarParentNode(Expression expr) {
+  private void setTarParentNode(Expression expr) {
     this.tarParentNode = expr;
   }
 
@@ -237,12 +237,10 @@ public class RangeExpressionEvaluator {
   private void addFilterExpressionMap(Map<String, List<FilterModificationNode>> filterExpressionMap,
       Expression currentNode, Expression parentNode) {
     String colName = getColumnName(currentNode);
-    DataType dataType = getLiteralDataType(currentNode);
-    Object literalVal = getLiteralValue(currentNode);
     ExpressionType expType = getExpressionType(currentNode);
 
     FilterModificationNode filterExpression =
-        new FilterModificationNode(currentNode, parentNode, expType, dataType, literalVal, colName);
+        new FilterModificationNode(currentNode, parentNode, expType);
 
     if (null == filterExpressionMap.get(colName)) {
       filterExpressionMap.put(colName, new ArrayList<FilterModificationNode>());
@@ -258,13 +256,9 @@ public class RangeExpressionEvaluator {
    * @return
    */
   private boolean isLessThanGreaterThanExp(Expression expr) {
-    if ((expr instanceof LessThanEqualToExpression) || (expr instanceof LessThanExpression)
+    return (expr instanceof LessThanEqualToExpression) || (expr instanceof LessThanExpression)
         || (expr instanceof GreaterThanEqualToExpression)
-        || (expr instanceof GreaterThanExpression)) {
-      return true;
-    } else {
-      return false;
-    }
+        || (expr instanceof GreaterThanExpression);
   }
 
   /**
@@ -276,15 +270,8 @@ public class RangeExpressionEvaluator {
   private boolean eligibleForRangeExpConv(Expression expChild) {
     for (Expression exp : expChild.getChildren()) {
       if (exp instanceof ColumnExpression) {
-        if (((ColumnExpression) exp).isDimension() == false) {
-          return false;
-        }
-        if ((((ColumnExpression) exp).getDimension().getDataType() == DataType.ARRAY) || (
-            ((ColumnExpression) exp).getDimension().getDataType() == DataType.STRUCT)) {
-          return false;
-        } else {
-          return true;
-        }
+        return ((ColumnExpression) exp).isDimension() &&
+            ! (((ColumnExpression) exp).getDimension().getDataType().isComplexType());
       }
     }
     return false;
@@ -383,13 +370,9 @@ public class RangeExpressionEvaluator {
    * @return
    */
   private boolean matchExpType(ExpressionType src, ExpressionType tar) {
-    if ((((src == LESSTHAN) || (src == LESSTHAN_EQUALTO)) && ((tar == GREATERTHAN) || (tar
+    return (((src == LESSTHAN) || (src == LESSTHAN_EQUALTO)) && ((tar == GREATERTHAN) || (tar
         == GREATERTHAN_EQUALTO))) || (((src == GREATERTHAN) || (src == GREATERTHAN_EQUALTO)) && (
-        (tar == LESSTHAN) || (tar == LESSTHAN_EQUALTO)))) {
-      return true;
-    } else {
-      return false;
-    }
+        (tar == LESSTHAN) || (tar == LESSTHAN_EQUALTO)));
   }
 
   /**

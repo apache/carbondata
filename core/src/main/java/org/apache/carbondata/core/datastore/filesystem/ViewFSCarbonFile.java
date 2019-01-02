@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
@@ -28,12 +27,13 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.viewfs.ViewFileSystem;
+import org.apache.log4j.Logger;
 
 public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(ViewFSCarbonFile.class.getName());
 
   public ViewFSCarbonFile(String filePath) {
@@ -52,7 +52,8 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
    * @param listStatus
    * @return
    */
-  private CarbonFile[] getFiles(FileStatus[] listStatus) {
+  @Override
+  protected CarbonFile[] getFiles(FileStatus[] listStatus) {
     if (listStatus == null) {
       return new CarbonFile[0];
     }
@@ -61,23 +62,6 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
       files[i] = new ViewFSCarbonFile(listStatus[i]);
     }
     return files;
-  }
-
-  @Override
-  public CarbonFile[] listFiles() {
-    FileStatus[] listStatus = null;
-    try {
-      if (null != fileStatus && fileStatus.isDirectory()) {
-        Path path = fileStatus.getPath();
-        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
-      } else {
-        return new CarbonFile[0];
-      }
-    } catch (IOException ex) {
-      LOGGER.error("Exception occured" + ex.getMessage());
-      return new CarbonFile[0];
-    }
-    return getFiles(listStatus);
   }
 
   @Override
@@ -105,13 +89,13 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
   }
 
   @Override
-  public boolean renameForce(String changetoName) {
+  public boolean renameForce(String changeToName) {
     FileSystem fs;
     try {
       fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
       if (fs instanceof ViewFileSystem) {
-        fs.delete(new Path(changetoName), true);
-        fs.rename(fileStatus.getPath(), new Path(changetoName));
+        fs.delete(new Path(changeToName), true);
+        fs.rename(fileStatus.getPath(), new Path(changeToName));
         return true;
       } else {
         return false;

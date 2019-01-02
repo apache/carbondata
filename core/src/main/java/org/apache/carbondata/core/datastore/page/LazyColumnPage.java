@@ -17,7 +17,12 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 
 /**
  * This is a decorator of column page, it performs decoding lazily (when caller calls getXXX
@@ -32,8 +37,7 @@ public class LazyColumnPage extends ColumnPage {
   private ColumnPageValueConverter converter;
 
   private LazyColumnPage(ColumnPage columnPage, ColumnPageValueConverter converter) {
-    super(columnPage.getDataType(), columnPage.getPageSize(), columnPage.scale,
-        columnPage.precision);
+    super(columnPage.getColumnPageEncoderMeta(), columnPage.getPageSize());
     this.columnPage = columnPage;
     this.converter = converter;
   }
@@ -49,52 +53,67 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public long getLong(int rowId) {
-    switch (columnPage.getDataType()) {
-      case BYTE:
-        return converter.decodeLong(columnPage.getByte(rowId));
-      case SHORT:
-        return converter.decodeLong(columnPage.getShort(rowId));
-      case SHORT_INT:
-        return converter.decodeLong(columnPage.getShortInt(rowId));
-      case INT:
-        return converter.decodeLong(columnPage.getInt(rowId));
-      case LONG:
-        return columnPage.getLong(rowId);
-      default:
-        throw new RuntimeException("internal error: " + this.toString());
+    DataType dataType = columnPage.getDataType();
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      return converter.decodeLong(columnPage.getByte(rowId));
+    } else if (dataType == DataTypes.SHORT) {
+      return converter.decodeLong(columnPage.getShort(rowId));
+    } else if (dataType == DataTypes.SHORT_INT) {
+      return converter.decodeLong(columnPage.getShortInt(rowId));
+    } else if (dataType == DataTypes.INT) {
+      return converter.decodeLong(columnPage.getInt(rowId));
+    } else if (dataType == DataTypes.LONG) {
+      return columnPage.getLong(rowId);
+    } else {
+      throw new RuntimeException("internal error: " + this.toString());
     }
   }
 
   @Override
   public double getDouble(int rowId) {
-    switch (columnPage.getDataType()) {
-      case BYTE:
-        return converter.decodeDouble(columnPage.getByte(rowId));
-      case SHORT:
-        return converter.decodeDouble(columnPage.getShort(rowId));
-      case SHORT_INT:
-        return converter.decodeDouble(columnPage.getShortInt(rowId));
-      case INT:
-        return converter.decodeDouble(columnPage.getInt(rowId));
-      case LONG:
-        return converter.decodeDouble(columnPage.getLong(rowId));
-      case FLOAT:
-        return converter.decodeDouble(columnPage.getFloat(rowId));
-      case DOUBLE:
-        return columnPage.getDouble(rowId);
-      default:
-        throw new RuntimeException("internal error: " + this.toString());
+    DataType dataType = columnPage.getDataType();
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      return converter.decodeDouble(columnPage.getByte(rowId));
+    } else if (dataType == DataTypes.SHORT) {
+      return converter.decodeDouble(columnPage.getShort(rowId));
+    } else if (dataType == DataTypes.SHORT_INT) {
+      return converter.decodeDouble(columnPage.getShortInt(rowId));
+    } else if (dataType == DataTypes.INT) {
+      return converter.decodeDouble(columnPage.getInt(rowId));
+    } else if (dataType == DataTypes.LONG) {
+      return converter.decodeDouble(columnPage.getLong(rowId));
+    } else if (dataType == DataTypes.FLOAT) {
+      return converter.decodeDouble(columnPage.getFloat(rowId));
+    } else if (dataType == DataTypes.DOUBLE) {
+      return columnPage.getDouble(rowId);
+    } else {
+      throw new RuntimeException("internal error: " + this.toString());
     }
   }
 
   @Override
   public float getFloat(int rowId) {
-    throw new UnsupportedOperationException("internal error");
+    return (float) getDouble(rowId);
   }
 
   @Override
   public BigDecimal getDecimal(int rowId) {
-    return columnPage.getDecimal(rowId);
+    DecimalConverterFactory.DecimalConverter decimalConverter =
+        ((DecimalColumnPage) columnPage).getDecimalConverter();
+    DataType dataType = columnPage.getDataType();
+    if (dataType == DataTypes.BYTE) {
+      return decimalConverter.getDecimal(converter.decodeLong(columnPage.getByte(rowId)));
+    } else if (dataType == DataTypes.SHORT) {
+      return decimalConverter.getDecimal(converter.decodeLong(columnPage.getShort(rowId)));
+    } else if (dataType == DataTypes.SHORT_INT) {
+      return decimalConverter.getDecimal(converter.decodeLong(columnPage.getShortInt(rowId)));
+    } else if (dataType == DataTypes.INT) {
+      return decimalConverter.getDecimal(converter.decodeLong(columnPage.getInt(rowId)));
+    } else if (dataType == DataTypes.LONG || DataTypes.isDecimal(dataType)) {
+      return columnPage.getDecimal(rowId);
+    } else {
+      throw new RuntimeException("internal error: " + this.toString());
+    }
   }
 
   @Override
@@ -153,7 +172,17 @@ public class LazyColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] getFlattenedBytePage() {
+  public byte[] getLVFlattenedBytePage() throws IOException {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte[] getComplexChildrenLVFlattenedBytePage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte[] getComplexParentFlattenedBytePage() throws IOException {
     throw new UnsupportedOperationException("internal error");
   }
 
@@ -233,6 +262,11 @@ public class LazyColumnPage extends ColumnPage {
   }
 
   @Override
+  public void putFloat(int rowId, float value) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
   public void putBytes(int rowId, byte[] bytes) {
     throw new UnsupportedOperationException("internal error");
   }
@@ -249,7 +283,7 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public byte getByte(int rowId) {
-    throw new UnsupportedOperationException("internal error");
+    return columnPage.getByte(rowId);
   }
 
   @Override

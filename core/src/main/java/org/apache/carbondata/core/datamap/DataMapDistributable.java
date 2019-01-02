@@ -19,25 +19,26 @@ package org.apache.carbondata.core.datamap;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datastore.block.Distributable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 
 /**
  * Distributable class for datamap.
  */
+@InterfaceAudience.Internal
 public abstract class DataMapDistributable extends InputSplit
     implements Distributable, Serializable {
 
   private String tablePath;
 
-  private String segmentId;
-
-  private String dataMapName;
+  private Segment segment;
 
   private String[] locations;
 
-  private String dataMapFactoryClass;
+  private DataMapSchema dataMapSchema;
 
   public String getTablePath() {
     return tablePath;
@@ -47,28 +48,20 @@ public abstract class DataMapDistributable extends InputSplit
     this.tablePath = tablePath;
   }
 
-  public String getSegmentId() {
-    return segmentId;
+  public Segment getSegment() {
+    return segment;
   }
 
-  public void setSegmentId(String segmentId) {
-    this.segmentId = segmentId;
+  public void setSegment(Segment segment) {
+    this.segment = segment;
   }
 
-  public String getDataMapName() {
-    return dataMapName;
+  public DataMapSchema getDataMapSchema() {
+    return dataMapSchema;
   }
 
-  public void setDataMapName(String dataMapName) {
-    this.dataMapName = dataMapName;
-  }
-
-  public String getDataMapFactoryClass() {
-    return dataMapFactoryClass;
-  }
-
-  public void setDataMapFactoryClass(String dataMapFactoryClass) {
-    this.dataMapFactoryClass = dataMapFactoryClass;
+  public void setDataMapSchema(DataMapSchema dataMapSchema) {
+    this.dataMapSchema = dataMapSchema;
   }
 
   public void setLocations(String[] locations) {

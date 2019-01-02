@@ -28,7 +28,7 @@ package org.apache.carbondata.spark
 import org.apache.spark.sql.execution.command.ExecutionErrors
 
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 
 
 trait Value[V] extends Serializable {
@@ -76,13 +76,13 @@ class updateResultImpl
 }
 
 trait DeleteDelataResult[K, V] extends Serializable {
-  def getKey(key: String, value: (SegmentUpdateDetails, ExecutionErrors)): (K, V)
+  def getKey(key: SegmentStatus, value: (SegmentUpdateDetails, ExecutionErrors)): (K, V)
 }
 
 class DeleteDelataResultImpl
-  extends DeleteDelataResult[String, (SegmentUpdateDetails, ExecutionErrors)] {
-  override def getKey(key: String,
-      value: (SegmentUpdateDetails, ExecutionErrors)): (String, (SegmentUpdateDetails,
+  extends DeleteDelataResult[SegmentStatus, (SegmentUpdateDetails, ExecutionErrors)] {
+  override def getKey(key: SegmentStatus,
+      value: (SegmentUpdateDetails, ExecutionErrors)): (SegmentStatus, (SegmentUpdateDetails,
     ExecutionErrors)) = {
     (key, value)
   }
@@ -107,11 +107,20 @@ class MergeResultImpl extends MergeResult[String, Boolean] {
   override def getKey(key: String, value: Boolean): (String, Boolean) = (key, value)
 }
 
-trait SplitResult[K, V] extends Serializable {
+trait HandoffResult[K, V] extends Serializable {
+  def getKey(key: String, value: Boolean): (K, V)
+
+}
+
+class HandoffResultImpl extends HandoffResult[String, Boolean] {
+  override def getKey(key: String, value: Boolean): (String, Boolean) = (key, value)
+}
+
+trait AlterPartitionResult[K, V] extends Serializable {
   def getKey(key: String, value: Boolean): (K, V)
 }
 
-class SplitResultImpl extends SplitResult[String, Boolean] {
+class AlterPartitionResultImpl extends AlterPartitionResult[String, Boolean] {
   override def getKey(key: String, value: Boolean): (String, Boolean) = (key, value)
 }
 
@@ -129,4 +138,17 @@ trait RestructureResult[K, V] extends Serializable {
 
 class RestructureResultImpl extends RestructureResult[Int, Boolean] {
   override def getKey(key: Int, value: Boolean): (Int, Boolean) = (key, value)
+}
+
+trait RefreshResult[K, V] extends Serializable {
+  /**
+   * Previously index datamap refresh is per segment, for CARBONDATA-2685 it will refresh
+   * all segments in a batch. The structure is taskNo -> (segmentNo, status)
+   */
+  def getKey(key: String, value: (String, Boolean)): (K, V)
+}
+
+class RefreshResultImpl extends RefreshResult[String, (String, Boolean)] {
+  override def getKey(key: String,
+      value: (String, Boolean)): (String, (String, Boolean)) = (key, value)
 }

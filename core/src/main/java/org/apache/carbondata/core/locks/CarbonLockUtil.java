@@ -17,16 +17,25 @@
 
 package org.apache.carbondata.core.locks;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 /**
  * This class contains all carbon lock utilities
  */
 public class CarbonLockUtil {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonLockUtil.class.getName());
 
   /**
@@ -40,24 +49,24 @@ public class CarbonLockUtil {
         LOGGER.info("Metadata lock has been successfully released");
       } else if (locktype.equals(LockUsage.TABLE_STATUS_LOCK)) {
         LOGGER.info("Table status lock has been successfully released");
-      }
-      else if (locktype.equals(LockUsage.CLEAN_FILES_LOCK)) {
+      } else if (locktype.equals(LockUsage.CLEAN_FILES_LOCK)) {
         LOGGER.info("Clean files lock has been successfully released");
-      }
-      else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
+      } else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
         LOGGER.info("Delete segments lock has been successfully released");
+      } else if (locktype.equals(LockUsage.DATAMAP_STATUS_LOCK)) {
+        LOGGER.info("DataMap status lock has been successfully released");
       }
     } else {
       if (locktype.equals(LockUsage.METADATA_LOCK)) {
         LOGGER.error("Not able to release the metadata lock");
       } else if (locktype.equals(LockUsage.TABLE_STATUS_LOCK)) {
         LOGGER.error("Not able to release the table status lock");
-      }
-      else if (locktype.equals(LockUsage.CLEAN_FILES_LOCK)) {
+      } else if (locktype.equals(LockUsage.CLEAN_FILES_LOCK)) {
         LOGGER.info("Not able to release the clean files lock");
-      }
-      else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
+      } else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
         LOGGER.info("Not able to release the delete segments lock");
+      } else if (locktype.equals(LockUsage.DATAMAP_STATUS_LOCK)) {
+        LOGGER.info("Not able to release the datamap status lock");
       }
     }
   }
@@ -66,19 +75,77 @@ public class CarbonLockUtil {
    * Given a lock type this method will return a new lock object if not acquired by any other
    * operation
    *
-   * @param identifier
+   * @param absoluteTableIdentifier
    * @param lockType
    * @return
    */
-  public static ICarbonLock getLockObject(CarbonTableIdentifier identifier, String lockType) {
-    ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(identifier, lockType);
-    LOGGER.info("Trying to acquire lock: " + carbonLock);
+  public static ICarbonLock getLockObject(AbsoluteTableIdentifier absoluteTableIdentifier,
+      String lockType, String errorMsg) {
+    ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier, lockType);
+    LOGGER.info("Trying to acquire lock: " + lockType + "for table: " +
+        absoluteTableIdentifier.toString());
     if (carbonLock.lockWithRetries()) {
-      LOGGER.info("Successfully acquired the lock " + carbonLock);
+      LOGGER.info("Successfully acquired the lock " + lockType + "for table: " +
+          absoluteTableIdentifier.toString());
     } else {
-      throw new RuntimeException("Table is locked for updation. Please try after some time");
+      LOGGER.error(errorMsg);
+      throw new RuntimeException(errorMsg);
     }
     return carbonLock;
   }
 
+  /**
+   * Get and lock with default error message
+   */
+  public static ICarbonLock getLockObject(AbsoluteTableIdentifier identifier, String lockType) {
+    return getLockObject(identifier,
+        lockType,
+        "Acquire table lock failed after retry, please try after some time");
+  }
+
+  /**
+   * Get the value for the property. If NumberFormatException is thrown then return default value.
+   */
+  public static int getLockProperty(String property, int defaultValue) {
+    try {
+      return Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(property));
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Currently the segment lock files are not deleted immediately when unlock,
+   * so it needs to delete expired lock files before delete loads.
+   */
+  public static void deleteExpiredSegmentLockFiles(CarbonTable carbonTable) {
+    final long currTime = System.currentTimeMillis();
+    final long segmentLockFilesPreserveTime =
+        CarbonProperties.getInstance().getSegmentLockFilesPreserveHours();
+    AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
+    String lockFilesDir = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.LOCK_PATH, CarbonCommonConstants.LOCK_PATH_DEFAULT);
+    if (StringUtils.isEmpty(lockFilesDir)) {
+      lockFilesDir = CarbonTablePath.getLockFilesDirPath(absoluteTableIdentifier.getTablePath());
+    } else {
+      lockFilesDir = CarbonTablePath.getLockFilesDirPath(
+          CarbonLockFactory.getLockpath(carbonTable.getTableInfo().getFactTable().getTableId()));
+    }
+    CarbonFile[] files = FileFactory.getCarbonFile(lockFilesDir)
+        .listFiles(new CarbonFileFilter() {
+
+            @Override public boolean accept(CarbonFile pathName) {
+              if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
+                return (currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreserveTime;
+              }
+              return false;
+            }
+        }
+    );
+
+    for (CarbonFile file : files) {
+      file.delete();
+    }
+  }
 }

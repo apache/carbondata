@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -56,7 +56,7 @@ public class CarbonTableTest extends TestCase {
   }
 
   @Test public void testFactTableNameReturnsProperFactTableName() {
-    assertEquals("carbonTestTable", carbonTable.getFactTableName());
+    assertEquals("carbonTestTable", carbonTable.getTableName());
   }
 
   @Test public void testTableUniqueNameIsProper() {
@@ -64,16 +64,15 @@ public class CarbonTableTest extends TestCase {
   }
 
   @Test public void testDimensionPresentInTableIsProper() {
-    CarbonDimension dimension = new CarbonDimension(getColumnarDimensionColumn(), 0, -1, -1,-1);
+    CarbonDimension dimension = new CarbonDimension(getColumnarDimensionColumn(), 0, -1, -1);
     assertTrue(carbonTable.getDimensionByName("carbonTestTable", "IMEI").equals(dimension));
   }
 
-  private ColumnSchema getColumnarDimensionColumn() {
+  static ColumnSchema getColumnarDimensionColumn() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -83,32 +82,32 @@ public class CarbonTableTest extends TestCase {
     return dimColumn;
   }
 
-  private ColumnSchema getColumnarMeasureColumn() {
+  static ColumnSchema getColumnarMeasureColumn() {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     return dimColumn;
   }
 
-  private TableSchema getTableSchema() {
+  static TableSchema getTableSchema(String tableName) {
     TableSchema tableSchema = new TableSchema();
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     columnSchemaList.add(getColumnarDimensionColumn());
     columnSchemaList.add(getColumnarMeasureColumn());
     tableSchema.setListOfColumns(columnSchemaList);
     tableSchema.setTableId(UUID.randomUUID().toString());
-    tableSchema.setTableName("carbonTestTable");
+    tableSchema.setTableName(tableName);
     return tableSchema;
   }
 
-  private TableInfo getTableInfo(long timeStamp) {
+  static private TableInfo getTableInfo(long timeStamp) {
     TableInfo info = new TableInfo();
     info.setDatabaseName("carbonTestDatabase");
     info.setLastUpdatedTime(timeStamp);
     info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
-    info.setFactTable(getTableSchema());
-    info.setStorePath("testore");
+    info.setFactTable(getTableSchema("carbonTestTable"));
+    info.setTablePath("testore");
     return info;
   }
 

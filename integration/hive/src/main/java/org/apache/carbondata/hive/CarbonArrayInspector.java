@@ -120,8 +120,7 @@ class CarbonArrayInspector implements SettableListObjectInspector {
       }
 
       final Writable[] array = ((ArrayWritable) subObj).get();
-      final List<Writable> list = Arrays.asList(array);
-      return list;
+      return Arrays.asList(array);
     }
 
     throw new UnsupportedOperationException("Cannot inspect " + data.getClass().getCanonicalName());

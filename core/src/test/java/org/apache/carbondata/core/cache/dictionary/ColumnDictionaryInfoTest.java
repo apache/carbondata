@@ -22,8 +22,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import mockit.Mock;
@@ -41,7 +41,7 @@ public class ColumnDictionaryInfoTest {
   private ColumnDictionaryInfo columnDictionaryInfo;
 
   @Test public void testGetIncrementalSurrogateKeyFromDictionary() {
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     List<String> evaluateResultList = Arrays.asList("china", "france");
     List<byte[]> byteValuesOfFilterMembers = convertListElementsIntoByteArray(evaluateResultList);
@@ -79,7 +79,7 @@ public class ColumnDictionaryInfoTest {
   }
 
   @Test public void testGetIncrementalSurrogateKeyFromDictionaryWithZeroSurrogate() {
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     List<String> evaluateResultList = Arrays.asList("china", "france");
     List<byte[]> byteValuesOfFilterMembers = convertListElementsIntoByteArray(evaluateResultList);
@@ -107,7 +107,7 @@ public class ColumnDictionaryInfoTest {
   }
 
   @Test public void testGetIncrementalSurrogateKeyFromDictionaryWithNullValue() {
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     List<String> evaluateResultList = Arrays.asList("@NU#LL$!");
     List<byte[]> byteValuesOfFilterMembers = convertListElementsIntoByteArray(evaluateResultList);
@@ -134,7 +134,7 @@ public class ColumnDictionaryInfoTest {
   }
 
   @Test public void testGetIncrementalSurrogateKeyFromDictionaryWithTypeException() {
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.INT);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.INT);
 
     List<String> evaluateResultList = Arrays.asList("china", "france");
     List<byte[]> byteValuesOfFilterMembers = convertListElementsIntoByteArray(evaluateResultList);
@@ -173,7 +173,7 @@ public class ColumnDictionaryInfoTest {
   }
 
   @Test public void testGetIncrementalSurrogateKeyFromDictionaryWithDoubleType() {
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.DOUBLE);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.DOUBLE);
 
     List<String> evaluateResultList = Arrays.asList("15999");
     List<byte[]> byteValuesOfFilterMembers = convertListElementsIntoByteArray(evaluateResultList);
@@ -208,7 +208,7 @@ public class ColumnDictionaryInfoTest {
   }
 
   @Test public void testGetIncrementalSurrogateKeyFromDictionaryWithIntType() {
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.INT);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.INT);
 
     List<String> evaluateResultList = Arrays.asList("998");
     List<byte[]> byteValuesOfFilterMembers = convertListElementsIntoByteArray(evaluateResultList);
@@ -243,7 +243,7 @@ public class ColumnDictionaryInfoTest {
   }
 
   @Test public void testGetIncrementalSurrogateKeyFromDictionaryWithDecimalType() {
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.DECIMAL);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.createDefaultDecimalType());
 
     List<String> evaluateResultList = Arrays.asList("150011.550");
     List<byte[]> byteValuesOfFilterMembers = convertListElementsIntoByteArray(evaluateResultList);
@@ -280,7 +280,7 @@ public class ColumnDictionaryInfoTest {
   }
 
   @Test public void testGetIncrementalSurrogateKeyFromDictionaryWithLongType() {
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.LONG);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.LONG);
 
     List<String> evaluateResultList = Arrays.asList("1500115505555");
     List<byte[]> byteValuesOfFilterMembers = convertListElementsIntoByteArray(evaluateResultList);
@@ -324,7 +324,7 @@ public class ColumnDictionaryInfoTest {
       }
     };
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.dictionaryChunks = new CopyOnWriteArrayList<>();
 
@@ -347,7 +347,7 @@ public class ColumnDictionaryInfoTest {
       }
     };
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.dictionaryChunks = new CopyOnWriteArrayList<>();
 
@@ -375,7 +375,7 @@ public class ColumnDictionaryInfoTest {
       }
     };
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.dictionaryChunks = new CopyOnWriteArrayList<>();
 
@@ -402,7 +402,7 @@ public class ColumnDictionaryInfoTest {
       }
     };
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.dictionaryChunks = new CopyOnWriteArrayList<>();
 
@@ -423,7 +423,7 @@ public class ColumnDictionaryInfoTest {
 
   @Test public void testGtSortedIndexWithMinimumSurrogateKey() {
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(1, 2, 3));
 
@@ -435,7 +435,7 @@ public class ColumnDictionaryInfoTest {
 
   @Test public void testGtSortedIndexWithMaximumSurrogateKey() {
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(1, 2, 3));
 
@@ -447,7 +447,7 @@ public class ColumnDictionaryInfoTest {
 
   @Test public void testGtSortedIndexWithSurrogateKey() {
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(1, 2, 3));
 
@@ -459,7 +459,7 @@ public class ColumnDictionaryInfoTest {
 
   @Test public void testGetSizeOfLastDictionaryChunkWithDictionaryChunkZero() {
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     final int result = columnDictionaryInfo.getSizeOfLastDictionaryChunk();
 
@@ -469,7 +469,7 @@ public class ColumnDictionaryInfoTest {
 
   @Test public void testGetSizeOfLastDictionaryChunk() {
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.dictionaryChunks = new CopyOnWriteArrayList<>();
 
@@ -485,7 +485,7 @@ public class ColumnDictionaryInfoTest {
 
   @Test public void testGetDictionaryValueFromSortedIndexWithMinimumSurrogateKey() {
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(1, 2, 3));
 
@@ -496,7 +496,7 @@ public class ColumnDictionaryInfoTest {
 
   @Test public void testGetDictionaryValueFromSortedIndexWithMaximumSurrogateKey() {
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(1, 2, 3));
 
@@ -507,7 +507,7 @@ public class ColumnDictionaryInfoTest {
 
   @Test public void testGetDictionaryValueFromSortedIndex() {
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(0, 1, 2, 3));
 
@@ -521,7 +521,7 @@ public class ColumnDictionaryInfoTest {
   @Test
   public void testGetSurrogateKey() {
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
 
     byte[] value = convertListElementsIntoByteArray(Arrays.asList("china")).get(0);
 
@@ -553,7 +553,7 @@ public class ColumnDictionaryInfoTest {
   @Test
   public void testGetSurrogateKeyWithIntType() {
 
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.INT);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.INT);
 
     byte[] value = convertListElementsIntoByteArray(Arrays.asList("998")).get(0);
 

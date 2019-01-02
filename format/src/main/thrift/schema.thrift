@@ -32,8 +32,13 @@ enum DataType {
 	DECIMAL = 5,
 	TIMESTAMP = 6,
 	DATE = 7,
+	BOOLEAN = 8,
 	ARRAY = 20,
 	STRUCT = 21,
+	VARCHAR = 22,
+	MAP = 23,
+	FLOAT = 24,
+	BYTE = 25
 }
 
 /**
@@ -52,7 +57,10 @@ enum Encoding{
 	ADAPTIVE_DELTA_INTEGRAL = 8; // Identifies that a column is encoded using AdaptiveDeltaIntegralCodec
 	RLE_INTEGRAL = 9;     // Identifies that a column is encoded using RLECodec
 	DIRECT_STRING = 10;   // Stores string value and string length separately in page data
-  ADAPTIVE_FLOATING = 11; // Identifies that a column is encoded using AdaptiveFloatingCodec
+	ADAPTIVE_FLOATING = 11; // Identifies that a column is encoded using AdaptiveFloatingCodec
+	BOOL_BYTE = 12;   // Identifies that a column is encoded using BooleanPageCodec
+	ADAPTIVE_DELTA_FLOATING = 13; // Identifies that a column is encoded using AdaptiveDeltaFloatingCodec
+	DIRECT_COMPRESS_VARCHAR = 14;  // Identifies that a columm is encoded using DirectCompressCodec, it is used for long string columns
 }
 
 enum PartitionType{
@@ -60,6 +68,7 @@ enum PartitionType{
   RANGE_INTERVAL = 1;
   LIST = 2;
   HASH = 3;
+  NATIVE_HIVE = 4; // Uses the standard partition features of spark/hive
 }
 
 /**
@@ -113,6 +122,12 @@ struct ColumnSchema{
 	 * It will have column order which user has provided
 	 */	
 	16: optional i32 schemaOrdinal
+
+  /**
+  *  to maintain the column relation with parent table.
+  *  will be usefull in case of pre-aggregate
+  **/
+	17: optional list<ParentColumnTableRelation> parentColumnTableRelations;
 }
 
 /**
@@ -163,9 +178,39 @@ struct TableSchema{
   4: optional map<string,string> tableProperties; // Table properties configured by the user
   5: optional BucketingInfo bucketingInfo; // Bucketing information
   6: optional PartitionInfo partitionInfo; // Partition information
+  7: optional list<string> long_string_columns // long string columns in the table
+}
+
+struct RelationIdentifier {
+   1: optional string databaseName;
+   2: required string tableName;
+   3: required string tableId;
+}
+
+struct ParentColumnTableRelation {
+   1: required RelationIdentifier relationIdentifier;
+   2: required string columnId;
+   3: required string columnName
+}
+
+struct DataMapSchema  {
+    // DataMap name
+    1: required string dataMapName;
+    // class name
+    2: required string className;
+    // to maintain properties which are mentioned in DMPROPERTIES of DDL and also it
+    // stores properties of select query, query type like groupby, join in
+    // case of preaggregate/timeseries
+    3: optional map<string, string> properties;
+    // relation identifier of a table which stores data of datamaps like preaggregate/timeseries.
+    4: optional RelationIdentifier childTableIdentifier;
+    // in case of preaggregate/timeseries datamap it will be used to maintain the child schema
+    // which will be usefull in case of query and data load
+    5: optional TableSchema childTableSchema;
 }
 
 struct TableInfo{
 	1: required TableSchema fact_table;
 	2: required list<TableSchema> aggregate_table_list;
+	3: optional list<DataMapSchema> dataMapSchemas; // childSchema information
 }

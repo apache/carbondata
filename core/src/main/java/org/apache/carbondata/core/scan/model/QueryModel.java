@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.model;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,25 +45,17 @@ import org.apache.carbondata.core.util.DataTypeConverter;
  * about the query, This will be sent from driver to executor '
  * This will be refereed to executing the query.
  */
-public class QueryModel implements Serializable {
+public class QueryModel {
 
-  /**
-   * serialization version
-   */
-  private static final long serialVersionUID = -4674677234007089052L;
   /**
    * this will hold the information about the dictionary dimension
    * which to
    */
-  public transient Map<String, Dictionary> columnToDictionaryMapping;
+  private transient Map<String, Dictionary> columnToDictionaryMapping;
   /**
-   * list of dimension selected for in query
+   * list of projection columns in query
    */
-  private List<QueryDimension> queryDimension;
-  /**
-   * list of measure selected in query
-   */
-  private List<QueryMeasure> queryMeasures;
+  private QueryProjection projection;
   /**
    * query id
    */
@@ -75,13 +66,14 @@ public class QueryModel implements Serializable {
   private FilterResolverIntf filterExpressionResolverTree;
 
   /**
+   * filter expression tree
+   */
+  private Expression filterExpression;
+
+  /**
    * table block information in which query will be executed
    */
   private List<TableBlockInfo> tableBlockInfos;
-  /**
-   * absolute table identifier
-   */
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
   /**
    * To handle most of the computation in query engines like spark and hive, carbon should give
    * raw detailed records to it.
@@ -109,65 +101,73 @@ public class QueryModel implements Serializable {
   private Map<String, UpdateVO> invalidSegmentBlockIdMap =
       new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-  public QueryModel() {
+  private boolean[] isFilterDimensions;
+  private boolean[] isFilterMeasures;
+
+  /**
+   * Read the data from carbondata file page by page instead of whole blocklet.
+   */
+  private boolean readPageByPage;
+
+  /**
+   * whether it require to output the row id
+   */
+  private boolean requiredRowId;
+
+  /**
+   * whether it is FG with search mode
+   */
+  private boolean isFG;
+
+  // whether to clear/free unsafe memory or not
+  private boolean freeUnsafeMemory = true;
+
+  private boolean preFetchData = true;
+
+  /**
+   * It fills the vector directly from decoded column page with out any staging and conversions.
+   * Execution engine can set this filed to true in case of vector flow. Note that execution engine
+   * should make sure that batch size vector should be greater than or equal to column page size.
+   * In this flow only pages will be pruned and decode the page and fill the complete page data to
+   * vector, so it is execution engine responsibility to filter the rows at row level.
+   */
+  private boolean isDirectVectorFill;
+
+  private QueryModel(CarbonTable carbonTable) {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
-    queryDimension = new ArrayList<QueryDimension>();
-    queryMeasures = new ArrayList<QueryMeasure>();
     invalidSegmentIds = new ArrayList<>();
+    this.table = carbonTable;
+    this.queryId = String.valueOf(System.nanoTime());
   }
 
-  public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
-      CarbonQueryPlan queryPlan, CarbonTable carbonTable, DataTypeConverter converter) {
-    QueryModel queryModel = new QueryModel();
-    String factTableName = carbonTable.getFactTableName();
-    queryModel.setAbsoluteTableIdentifier(absoluteTableIdentifier);
-
-    fillQueryModel(queryPlan, carbonTable, queryModel, factTableName);
-
-    queryModel.setForcedDetailRawQuery(queryPlan.isRawDetailQuery());
-    queryModel.setQueryId(queryPlan.getQueryId());
-    queryModel.setConverter(converter);
-    return queryModel;
+  public static QueryModel newInstance(CarbonTable carbonTable) {
+    return new QueryModel(carbonTable);
   }
 
-  private static void fillQueryModel(CarbonQueryPlan queryPlan, CarbonTable carbonTable,
-      QueryModel queryModel, String factTableName) {
-    queryModel.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
-    queryModel.setQueryDimension(queryPlan.getDimensions());
-    queryModel.setQueryMeasures(queryPlan.getMeasures());
-    if (null != queryPlan.getFilterExpression()) {
-      processFilterExpression(queryPlan.getFilterExpression(),
-          carbonTable.getDimensionByTableName(factTableName),
-          carbonTable.getMeasureByTableName(factTableName));
-    }
-    //TODO need to remove this code, and executor will load the table
-    // from file metadata
-    queryModel.setTable(carbonTable);
-  }
-
-  public static void processFilterExpression(Expression filterExpression,
-      List<CarbonDimension> dimensions, List<CarbonMeasure> measures) {
+  public static void processFilterExpression(FilterProcessVO processVO, Expression filterExpression,
+      final boolean[] isFilterDimensions, final boolean[] isFilterMeasures) {
     if (null != filterExpression) {
       if (null != filterExpression.getChildren() && filterExpression.getChildren().size() == 0) {
         if (filterExpression instanceof ConditionalExpression) {
           List<ColumnExpression> listOfCol =
               ((ConditionalExpression) filterExpression).getColumnList();
           for (ColumnExpression expression : listOfCol) {
-            setDimAndMsrColumnNode(dimensions, measures, expression);
+            setDimAndMsrColumnNode(processVO, expression, isFilterDimensions, isFilterMeasures);
           }
         }
       }
       for (Expression expression : filterExpression.getChildren()) {
         if (expression instanceof ColumnExpression) {
-          setDimAndMsrColumnNode(dimensions, measures, (ColumnExpression) expression);
+          setDimAndMsrColumnNode(processVO, (ColumnExpression) expression, isFilterDimensions,
+              isFilterMeasures);
         } else if (expression instanceof UnknownExpression) {
           UnknownExpression exp = ((UnknownExpression) expression);
           List<ColumnExpression> listOfColExpression = exp.getAllColumnList();
           for (ColumnExpression col : listOfColExpression) {
-            setDimAndMsrColumnNode(dimensions, measures, col);
+            setDimAndMsrColumnNode(processVO, col, isFilterDimensions, isFilterMeasures);
           }
         } else {
-          processFilterExpression(expression, dimensions, measures);
+          processFilterExpression(processVO, expression, isFilterDimensions, isFilterMeasures);
         }
       }
     }
@@ -183,26 +183,39 @@ public class QueryModel implements Serializable {
     return null;
   }
 
-  private static void setDimAndMsrColumnNode(List<CarbonDimension> dimensions,
-      List<CarbonMeasure> measures, ColumnExpression col) {
+  private static void setDimAndMsrColumnNode(FilterProcessVO processVO, ColumnExpression col,
+      boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
     CarbonDimension dim;
     CarbonMeasure msr;
     String columnName;
     columnName = col.getColumnName();
-    dim = CarbonUtil.findDimension(dimensions, columnName);
-    msr = getCarbonMetadataMeasure(columnName, measures);
-    col.setDimension(false);
-    col.setMeasure(false);
+    col.reset();
+    dim = CarbonUtil
+        .findDimension(processVO.getCarbonDimensions(), columnName);
+    msr = getCarbonMetadataMeasure(columnName, processVO.getCarbonMeasures());
 
     if (null != dim) {
       // Dimension Column
       col.setCarbonColumn(dim);
       col.setDimension(dim);
       col.setDimension(true);
-    } else {
+      if (null != isFilterDimensions) {
+        isFilterDimensions[dim.getOrdinal()] = true;
+      }
+    } else if (msr != null) {
       col.setCarbonColumn(msr);
       col.setMeasure(msr);
       col.setMeasure(true);
+      if (null != isFilterMeasures) {
+        isFilterMeasures[msr.getOrdinal()] = true;
+      }
+    } else {
+      // check if this is an implicit dimension
+      dim = CarbonUtil
+          .findDimension(processVO.getImplicitDimensions(), columnName);
+      col.setCarbonColumn(dim);
+      col.setDimension(dim);
+      col.setDimension(true);
     }
   }
 
@@ -211,42 +224,26 @@ public class QueryModel implements Serializable {
    */
   public CarbonColumn[] getProjectionColumns() {
     CarbonColumn[] carbonColumns =
-        new CarbonColumn[getQueryDimension().size() + getQueryMeasures().size()];
-    for (QueryDimension dimension : getQueryDimension()) {
-      carbonColumns[dimension.getQueryOrder()] = dimension.getDimension();
+        new CarbonColumn[getProjectionDimensions().size() + getProjectionMeasures().size()];
+    for (ProjectionDimension dimension : getProjectionDimensions()) {
+      carbonColumns[dimension.getOrdinal()] = dimension.getDimension();
     }
-    for (QueryMeasure msr : getQueryMeasures()) {
-      carbonColumns[msr.getQueryOrder()] = msr.getMeasure();
+    for (ProjectionMeasure msr : getProjectionMeasures()) {
+      carbonColumns[msr.getOrdinal()] = msr.getMeasure();
     }
     return carbonColumns;
   }
 
-  /**
-   * @return the queryDimension
-   */
-  public List<QueryDimension> getQueryDimension() {
-    return queryDimension;
+  public void setProjection(QueryProjection projection) {
+    this.projection = projection;
   }
 
-  /**
-   * @param queryDimension the queryDimension to set
-   */
-  public void setQueryDimension(List<QueryDimension> queryDimension) {
-    this.queryDimension = queryDimension;
+  public List<ProjectionDimension> getProjectionDimensions() {
+    return projection.getDimensions();
   }
 
-  /**
-   * @return the queryMeasures
-   */
-  public List<QueryMeasure> getQueryMeasures() {
-    return queryMeasures;
-  }
-
-  /**
-   * @param queryMeasures the queryMeasures to set
-   */
-  public void setQueryMeasures(List<QueryMeasure> queryMeasures) {
-    this.queryMeasures = queryMeasures;
+  public List<ProjectionMeasure> getProjectionMeasures() {
+    return projection.getMeasures();
   }
 
   /**
@@ -256,9 +253,6 @@ public class QueryModel implements Serializable {
     return queryId;
   }
 
-  /**
-   * @param queryId the queryId to set
-   */
   public void setQueryId(String queryId) {
     this.queryId = queryId;
   }
@@ -288,18 +282,19 @@ public class QueryModel implements Serializable {
     this.filterExpressionResolverTree = filterExpressionResolverTree;
   }
 
+  public Expression getFilterExpression() {
+    return filterExpression;
+  }
+
+  public void setFilterExpression(Expression filterExpression) {
+    this.filterExpression = filterExpression;
+  }
+
   /**
    * @return the absoluteTableIdentifier
    */
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
-    return absoluteTableIdentifier;
-  }
-
-  /**
-   * @param absoluteTableIdentifier the absoluteTableIdentifier to set
-   */
-  public void setAbsoluteTableIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier) {
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
+    return table.getAbsoluteTableIdentifier();
   }
 
   /**
@@ -307,13 +302,6 @@ public class QueryModel implements Serializable {
    */
   public CarbonTable getTable() {
     return table;
-  }
-
-  /**
-   * @param table the table to set
-   */
-  public void setTable(CarbonTable table) {
-    this.table = table;
   }
 
   public boolean isForcedDetailRawQuery() {
@@ -377,5 +365,105 @@ public class QueryModel implements Serializable {
 
   public void setConverter(DataTypeConverter converter) {
     this.converter = converter;
+  }
+
+  public boolean[] getIsFilterDimensions() {
+    return isFilterDimensions;
+  }
+
+  public void setIsFilterDimensions(boolean[] isFilterDimensions) {
+    this.isFilterDimensions = isFilterDimensions;
+  }
+
+  public boolean[] getIsFilterMeasures() {
+    return isFilterMeasures;
+  }
+
+  public void setIsFilterMeasures(boolean[] isFilterMeasures) {
+    this.isFilterMeasures = isFilterMeasures;
+  }
+
+  public boolean isReadPageByPage() {
+    return readPageByPage;
+  }
+
+  public void setReadPageByPage(boolean readPageByPage) {
+    this.readPageByPage = readPageByPage;
+  }
+
+  public boolean isRequiredRowId() {
+    return requiredRowId;
+  }
+
+  public void setRequiredRowId(boolean requiredRowId) {
+    this.requiredRowId = requiredRowId;
+  }
+
+  public boolean isFG() {
+    return isFG;
+  }
+
+  public void setFG(boolean FG) {
+    isFG = FG;
+  }
+
+  public boolean isPreFetchData() {
+    return preFetchData;
+  }
+
+  public void setPreFetchData(boolean preFetchData) {
+    this.preFetchData = preFetchData;
+  }
+
+  public boolean isDirectVectorFill() {
+    return isDirectVectorFill;
+  }
+
+  public void setDirectVectorFill(boolean directVectorFill) {
+    isDirectVectorFill = directVectorFill;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("scan on table %s.%s, %d projection columns with filter (%s)",
+        table.getDatabaseName(), table.getTableName(),
+        projection.getDimensions().size() + projection.getMeasures().size(),
+        filterExpressionResolverTree.getFilterExpression().toString());
+  }
+
+  public boolean isFreeUnsafeMemory() {
+    return freeUnsafeMemory;
+  }
+
+  public void setFreeUnsafeMemory(boolean freeUnsafeMemory) {
+    this.freeUnsafeMemory = freeUnsafeMemory;
+  }
+
+  public static class FilterProcessVO {
+
+    private List<CarbonDimension> carbonDimensions;
+
+    private List<CarbonMeasure> carbonMeasures;
+
+    private List<CarbonDimension> implicitDimensions;
+
+    public FilterProcessVO(List<CarbonDimension> carbonDimensions,
+        List<CarbonMeasure> carbonMeasures, List<CarbonDimension> implicitDimensions) {
+      this.carbonDimensions = carbonDimensions;
+      this.carbonMeasures = carbonMeasures;
+      this.implicitDimensions = implicitDimensions;
+    }
+
+    public List<CarbonDimension> getCarbonDimensions() {
+      return carbonDimensions;
+    }
+
+    public List<CarbonMeasure> getCarbonMeasures() {
+      return carbonMeasures;
+    }
+
+    public List<CarbonDimension> getImplicitDimensions() {
+      return implicitDimensions;
+    }
   }
 }

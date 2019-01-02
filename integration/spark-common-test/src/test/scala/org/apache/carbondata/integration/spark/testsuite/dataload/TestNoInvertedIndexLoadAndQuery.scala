@@ -17,11 +17,15 @@
 
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
-import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.encoder.Encoding
 
 /**
  * Test Class for no inverted index load and query
@@ -49,6 +53,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS index2")
     sql("DROP TABLE IF EXISTS hiveNoInvertedIndexTable")
     sql("DROP TABLE IF EXISTS carbonNoInvertedIndexTable")
+    sql("DROP TABLE IF EXISTS testNull")
   }
 
   test("no inverted index load and point query") {
@@ -278,13 +283,89 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
         """
            describe formatted indexFormat
         """),
-      true,"NOINVERTEDINDEX")
+      true,"Inverted Index Columns")
+
+    sql(
+      """
+           describe formatted indexFormat
+        """).show(100, false)
+  }
+
+  test("filter query on dictionary and no inverted index column where all values are null"){
+    sql("""create table testNull (c1 string,c2 int,c3 string,c5 string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='C2','NO_INVERTED_INDEX'='C2')""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table testNull OPTIONS('delimiter'=';','fileheader'='c1,c2,c3,c5')""")
+    sql("""select c2 from testNull where c2 is null""").show()
+    checkAnswer(sql("""select c2 from testNull where c2 is null"""), Seq(Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
+  }
+
+  test("inverted index with Dictionary_INCLUDE and INVERTED_INDEX") {
+    sql("drop table if exists index1")
+    sql(
+      """
+           CREATE TABLE IF NOT EXISTS index1
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('DICTIONARY_INCLUDE'='id','INVERTED_INDEX'='city,name', 'SORT_COLUMNS'='city,name')
+      """)
+    sql(
+      s"""
+           LOAD DATA LOCAL INPATH '$testData1' into table index1
+           """)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "index1")
+    assert(carbonTable.getColumnByName("index1", "city").getColumnSchema.getEncodingList
+      .contains(Encoding.INVERTED_INDEX))
+    assert(carbonTable.getColumnByName("index1", "name").getColumnSchema.getEncodingList
+      .contains(Encoding.INVERTED_INDEX))
+    assert(!carbonTable.getColumnByName("index1", "id").getColumnSchema.getEncodingList
+      .contains(Encoding.INVERTED_INDEX))
+    checkAnswer(
+      sql(
+        """
+           SELECT * FROM index1 WHERE city = "Bangalore"
+        """),
+      Seq(Row(19.0, "Emily", "Bangalore")))
+  }
+
+  test("inverted index with measure column in INVERTED_INDEX") {
+    sql("drop table if exists index1")
+    sql(
+      """
+           CREATE TABLE IF NOT EXISTS index1
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('INVERTED_INDEX'='city,name,id','SORT_COLUMNS'='city,name,id')
+      """)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "index1")
+    assert(carbonTable.getColumnByName("index1", "city").getColumnSchema.getEncodingList
+      .contains(Encoding.INVERTED_INDEX))
+    assert(carbonTable.getColumnByName("index1", "name").getColumnSchema.getEncodingList
+      .contains(Encoding.INVERTED_INDEX))
+    assert(carbonTable.getColumnByName("index1", "id").getColumnSchema.getEncodingList
+      .contains(Encoding.INVERTED_INDEX))
+  }
+
+  test("test same column configured in inverted and no inverted index"){
+    sql("drop table if exists index1")
+    val exception = intercept[MalformedCarbonCommandException] {
+      sql(
+        """
+           CREATE TABLE IF NOT EXISTS index1
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('NO_INVERTED_INDEX'='city','INVERTED_INDEX'='city','SORT_COLUMNS'='city')
+      """)
+    }
+    assert(exception.getMessage
+      .contains(
+        "Column ambiguity as duplicate column(s):city is present in INVERTED_INDEX and " +
+        "NO_INVERTED_INDEX. Duplicate columns are not allowed."))
   }
 
   override def afterAll {
     sql("drop table if exists index1")
     sql("drop table if exists index2")
     sql("drop table if exists indexFormat")
+    sql("drop table if exists testNull")
     clean
   }
 

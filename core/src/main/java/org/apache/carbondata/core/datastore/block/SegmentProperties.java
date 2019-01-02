@@ -27,12 +27,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthVariableSplitGenerator;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -93,10 +93,9 @@ public class SegmentProperties {
   private int[] complexDimColumnCardinality;
 
   /**
-   * mapping of dimension column to block in a file this will be used for
-   * reading the blocks from file
+   * mapping of dimension ordinal in schema to column chunk index in the data file
    */
-  private Map<Integer, Integer> dimensionOrdinalToBlockMapping;
+  private Map<Integer, Integer> dimensionOrdinalToChunkMapping;
 
   /**
    * a block can have multiple columns. This will have block index as key
@@ -105,10 +104,9 @@ public class SegmentProperties {
   private Map<Integer, Set<Integer>> blockTodimensionOrdinalMapping;
 
   /**
-   * mapping of measure column to block to in file this will be used while
-   * reading the block in a file
+   * mapping of measure ordinal in schema to column chunk index in the data file
    */
-  private Map<Integer, Integer> measuresOrdinalToBlockMapping;
+  private Map<Integer, Integer> measuresOrdinalToChunkMapping;
 
   /**
    * size of the each dimension column value in a block this can be used when
@@ -127,19 +125,6 @@ public class SegmentProperties {
   private int[] eachComplexDimColumnValueSize;
 
   /**
-   * below mapping will have mapping of the column group to dimensions ordinal
-   * for example if 3 dimension present in the columngroupid 0 and its ordinal in
-   * 2,3,4 then map will contain 0,{2,3,4}
-   */
-  private Map<Integer, KeyGenerator> columnGroupAndItsKeygenartor;
-
-  /**
-   * column group key generator dimension index will not be same as dimension ordinal
-   * This will have mapping with ordinal and keygenerator or mdkey index
-   */
-  private Map<Integer, Map<Integer, Integer>> columnGroupOrdinalToMdkeymapping;
-
-  /**
    * this will be used to split the fixed length key
    * this will all the information about how key was created
    * and how to split the key based on group
@@ -154,11 +139,6 @@ public class SegmentProperties {
    */
   private int numberOfNoDictionaryDimension;
 
-  /**
-   * column group model
-   */
-  private ColumnGroupModel colGroupModel;
-
   private int numberOfSortColumns = 0;
 
   private int numberOfNoDictSortColumns = 0;
@@ -171,53 +151,15 @@ public class SegmentProperties {
         new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     measures = new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     fillDimensionAndMeasureDetails(columnsInTable, columnCardinality);
-    dimensionOrdinalToBlockMapping =
+    dimensionOrdinalToChunkMapping =
         new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     blockTodimensionOrdinalMapping =
         new HashMap<Integer, Set<Integer>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    measuresOrdinalToBlockMapping =
+    measuresOrdinalToChunkMapping =
         new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    intialiseColGroups();
     fillOrdinalToBlockMappingForDimension();
-    fillOrdinalToBlockIndexMappingForMeasureColumns();
-    fillColumnGroupAndItsCardinality(columnCardinality);
+    fillOrdinalToChunkIndexMappingForMeasureColumns();
     fillKeyGeneratorDetails();
-  }
-
-  /**
-   * it fills column groups
-   * e.g {{1},{2,3,4},{5},{6},{7,8,9}}
-   *
-   */
-  private void intialiseColGroups() {
-    List<List<Integer>> colGrpList = new ArrayList<List<Integer>>();
-    List<Integer> group = new ArrayList<Integer>();
-    for (int i = 0; i < dimensions.size(); i++) {
-      CarbonDimension dimension = dimensions.get(i);
-      if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
-        continue;
-      }
-      group.add(dimension.getOrdinal());
-      if (i < dimensions.size() - 1) {
-        int currGroupOrdinal = dimension.columnGroupId();
-        int nextGroupOrdinal = dimensions.get(i + 1).columnGroupId();
-        if (!(currGroupOrdinal == nextGroupOrdinal && currGroupOrdinal != -1)) {
-          colGrpList.add(group);
-          group = new ArrayList<Integer>();
-        }
-      } else {
-        colGrpList.add(group);
-      }
-
-    }
-    int[][] colGroups = new int[colGrpList.size()][];
-    for (int i = 0; i < colGroups.length; i++) {
-      colGroups[i] = new int[colGrpList.get(i).size()];
-      for (int j = 0; j < colGroups[i].length; j++) {
-        colGroups[i][j] = colGrpList.get(i).get(j);
-      }
-    }
-    this.colGroupModel = CarbonUtil.getColGroupModel(colGroups);
   }
 
   /**
@@ -228,23 +170,17 @@ public class SegmentProperties {
     int blockOrdinal = -1;
     CarbonDimension dimension = null;
     int index = 0;
-    int prvcolumnGroupId = -1;
     while (index < dimensions.size()) {
       dimension = dimensions.get(index);
-      // if column id is same as previous one then block index will be
-      // same
-      if (dimension.isColumnar() || dimension.columnGroupId() != prvcolumnGroupId) {
-        blockOrdinal++;
-      }
-      dimensionOrdinalToBlockMapping.put(dimension.getOrdinal(), blockOrdinal);
-      prvcolumnGroupId = dimension.columnGroupId();
+      blockOrdinal++;
+      dimensionOrdinalToChunkMapping.put(dimension.getOrdinal(), blockOrdinal);
       index++;
     }
     index = 0;
     // complex dimension will be stored at last
     while (index < complexDimensions.size()) {
       dimension = complexDimensions.get(index);
-      dimensionOrdinalToBlockMapping.put(dimension.getOrdinal(), ++blockOrdinal);
+      dimensionOrdinalToChunkMapping.put(dimension.getOrdinal(), ++blockOrdinal);
       blockOrdinal = fillComplexDimensionChildBlockIndex(blockOrdinal, dimension);
       index++;
     }
@@ -255,7 +191,7 @@ public class SegmentProperties {
    *
    */
   private void fillBlockToDimensionOrdinalMapping() {
-    Set<Entry<Integer, Integer>> blocks = dimensionOrdinalToBlockMapping.entrySet();
+    Set<Entry<Integer, Integer>> blocks = dimensionOrdinalToChunkMapping.entrySet();
     Iterator<Entry<Integer, Integer>> blockItr = blocks.iterator();
     while (blockItr.hasNext()) {
       Entry<Integer, Integer> block = blockItr.next();
@@ -279,7 +215,7 @@ public class SegmentProperties {
    */
   private int fillComplexDimensionChildBlockIndex(int blockOrdinal, CarbonDimension dimension) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
-      dimensionOrdinalToBlockMapping
+      dimensionOrdinalToChunkMapping
           .put(dimension.getListOfChildDimensions().get(i).getOrdinal(), ++blockOrdinal);
       if (dimension.getListOfChildDimensions().get(i).getNumberOfChild() > 0) {
         blockOrdinal = fillComplexDimensionChildBlockIndex(blockOrdinal,
@@ -294,11 +230,11 @@ public class SegmentProperties {
    * of measure ordinal to its block index mapping in
    * file
    */
-  private void fillOrdinalToBlockIndexMappingForMeasureColumns() {
+  private void fillOrdinalToChunkIndexMappingForMeasureColumns() {
     int blockOrdinal = 0;
     int index = 0;
     while (index < measures.size()) {
-      measuresOrdinalToBlockMapping.put(measures.get(index).getOrdinal(), blockOrdinal);
+      measuresOrdinalToChunkMapping.put(measures.get(index).getOrdinal(), blockOrdinal);
       blockOrdinal++;
       index++;
     }
@@ -314,7 +250,7 @@ public class SegmentProperties {
       int[] columnCardinality) {
     ColumnSchema columnSchema = null;
     // ordinal will be required to read the data from file block
-    int dimensonOrdinal = 0;
+    int dimensionOrdinal = 0;
     int measureOrdinal = -1;
     // table ordinal is actually a schema ordinal this is required as
     // cardinality array
@@ -334,9 +270,6 @@ public class SegmentProperties {
     // to store the position of dimension in surrogate key array which is
     // participating in mdkey
     int keyOrdinal = 0;
-    int previousColumnGroup = -1;
-    // to store the ordinal of the column group ordinal
-    int columnGroupOrdinal = 0;
     int counter = 0;
     int complexTypeOrdinal = -1;
     while (counter < columnsInTable.size()) {
@@ -351,54 +284,34 @@ public class SegmentProperties {
           if (columnSchema.isSortColumn()) {
             this.numberOfSortColumns++;
           }
-          if (columnSchema.isColumnar()) {
-            // if it is a columnar dimension participated in mdkey then added
-            // key ordinal and dimension ordinal
-            carbonDimension =
-                new CarbonDimension(columnSchema, dimensonOrdinal++, keyOrdinal++, -1, -1);
-          } else {
-            // if not columnnar then it is a column group dimension
-
-            // below code to handle first dimension of the column group
-            // in this case ordinal of the column group will be 0
-            if (previousColumnGroup != columnSchema.getColumnGroupId()) {
-              columnGroupOrdinal = 0;
-              carbonDimension = new CarbonDimension(columnSchema, dimensonOrdinal++, keyOrdinal++,
-                  columnGroupOrdinal++, -1);
-            }
-            // if previous dimension  column group id is same as current then
-            // then its belongs to same row group
-            else {
-              carbonDimension = new CarbonDimension(columnSchema, dimensonOrdinal++, keyOrdinal++,
-                  columnGroupOrdinal++, -1);
-            }
-            previousColumnGroup = columnSchema.getColumnGroupId();
-          }
+          // if it is a columnar dimension participated in mdkey then added
+          // key ordinal and dimension ordinal
+          carbonDimension =
+              new CarbonDimension(columnSchema, dimensionOrdinal++, keyOrdinal++, -1);
         }
         // as complex type will be stored at last so once complex type started all the dimension
         // will be added to complex type
-        else if (isComplexDimensionStarted || CarbonUtil.hasDataType(columnSchema.getDataType(),
-            new DataType[] { DataType.ARRAY, DataType.STRUCT })) {
+        else if (isComplexDimensionStarted || columnSchema.getDataType().isComplexType()) {
           cardinalityIndexForComplexDimensionColumn.add(tableOrdinal);
           carbonDimension =
-              new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, ++complexTypeOrdinal);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, ++complexTypeOrdinal);
           carbonDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           complexDimensions.add(carbonDimension);
           isComplexDimensionStarted = true;
-          int previouseOrdinal = dimensonOrdinal;
-          dimensonOrdinal =
-              readAllComplexTypeChildren(dimensonOrdinal, columnSchema.getNumberOfChild(),
+          int previousOrdinal = dimensionOrdinal;
+          dimensionOrdinal =
+              readAllComplexTypeChildren(dimensionOrdinal, columnSchema.getNumberOfChild(),
                   columnsInTable, carbonDimension, complexTypeOrdinal);
-          int numberOfChildrenDimensionAdded = dimensonOrdinal - previouseOrdinal;
+          int numberOfChildrenDimensionAdded = dimensionOrdinal - previousOrdinal;
           for (int i = 0; i < numberOfChildrenDimensionAdded; i++) {
             cardinalityIndexForComplexDimensionColumn.add(++tableOrdinal);
           }
-          counter = dimensonOrdinal;
+          counter = dimensionOrdinal;
           complexTypeOrdinal = assignComplexOrdinal(carbonDimension, complexTypeOrdinal);
           continue;
         } else {
           // for no dictionary dimension
-          carbonDimension = new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, -1);
+          carbonDimension = new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1);
           numberOfNoDictionaryDimension++;
           if (columnSchema.isSortColumn()) {
             this.numberOfSortColumns++;
@@ -411,7 +324,7 @@ public class SegmentProperties {
       }
       counter++;
     }
-    lastDimensionColOrdinal = dimensonOrdinal;
+    lastDimensionColOrdinal = dimensionOrdinal;
     dimColumnsCardinality = new int[cardinalityIndexForNormalDimensionColumn.size()];
     complexDimColumnCardinality = new int[cardinalityIndexForComplexDimensionColumn.size()];
     int index = 0;
@@ -446,8 +359,7 @@ public class SegmentProperties {
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1,
-                  complexDimensionOrdinal++);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, complexDimensionOrdinal++);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
           dimensionOrdinal =
@@ -455,8 +367,7 @@ public class SegmentProperties {
                   listOfColumns, complexDimension, complexDimensionOrdinal);
         } else {
           parentDimension.getListOfChildDimensions().add(
-              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1,
-                  complexDimensionOrdinal++));
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, complexDimensionOrdinal++));
         }
       }
     }
@@ -495,7 +406,6 @@ public class SegmentProperties {
         new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<Boolean> isDictionaryColumn =
         new ArrayList<Boolean>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    int prvcolumnGroupId = -1;
     int counter = 0;
     while (counter < dimensions.size()) {
       CarbonDimension carbonDimension = dimensions.get(counter);
@@ -505,23 +415,8 @@ public class SegmentProperties {
         counter++;
         continue;
       }
-      // columnar column is stored individually
-      // so add one
-      if (carbonDimension.isColumnar()) {
-        dimensionPartitionList.add(1);
-        isDictionaryColumn.add(true);
-      }
-      // if in a group then need to add how many columns a selected in
-      // group
-      if (!carbonDimension.isColumnar() && carbonDimension.columnGroupId() == prvcolumnGroupId) {
-        // incrementing the previous value of the list as it is in same column group
-        dimensionPartitionList.set(dimensionPartitionList.size() - 1,
-            dimensionPartitionList.get(dimensionPartitionList.size() - 1) + 1);
-      } else if (!carbonDimension.isColumnar()) {
-        dimensionPartitionList.add(1);
-        isDictionaryColumn.add(true);
-      }
-      prvcolumnGroupId = carbonDimension.columnGroupId();
+      dimensionPartitionList.add(1);
+      isDictionaryColumn.add(true);
       counter++;
     }
     // get the partitioner
@@ -542,7 +437,7 @@ public class SegmentProperties {
     this.fixedLengthKeySplitter =
         new MultiDimKeyVarLengthVariableSplitGenerator(bitLength, dimensionPartitions);
     // get the size of each value in file block
-    int[] dictionayDimColumnValueSize = fixedLengthKeySplitter.getBlockKeySize();
+    int[] dictionaryDimColumnValueSize = fixedLengthKeySplitter.getBlockKeySize();
     int index = -1;
     this.eachDimColumnValueSize = new int[isDictionaryColumn.size()];
     for (int i = 0; i < eachDimColumnValueSize.length; i++) {
@@ -550,91 +445,24 @@ public class SegmentProperties {
         eachDimColumnValueSize[i] = -1;
         continue;
       }
-      eachDimColumnValueSize[i] = dictionayDimColumnValueSize[++index];
+      eachDimColumnValueSize[i] = dictionaryDimColumnValueSize[++index];
     }
     if (complexDimensions.size() > 0) {
-      int[] complexDimesionParition = new int[complexDimColumnCardinality.length];
+      int[] complexDimensionPartition = new int[complexDimColumnCardinality.length];
       // as complex dimension will be stored in column format add one
-      Arrays.fill(complexDimesionParition, 1);
+      Arrays.fill(complexDimensionPartition, 1);
       bitLength =
-          CarbonUtil.getDimensionBitLength(complexDimColumnCardinality, complexDimesionParition);
+          CarbonUtil.getDimensionBitLength(complexDimColumnCardinality, complexDimensionPartition);
       for (int i = 0; i < bitLength.length; i++) {
         if (complexDimColumnCardinality[i] == 0) {
           bitLength[i] = 64;
         }
       }
       ColumnarSplitter keySplitter =
-          new MultiDimKeyVarLengthVariableSplitGenerator(bitLength, complexDimesionParition);
+          new MultiDimKeyVarLengthVariableSplitGenerator(bitLength, complexDimensionPartition);
       eachComplexDimColumnValueSize = keySplitter.getBlockKeySize();
     } else {
       eachComplexDimColumnValueSize = new int[0];
-    }
-  }
-
-  /**
-   * Below method will be used to create a mapping of column group and its column cardinality this
-   * mapping will have column group id to cardinality of the dimension present in
-   * the column group.This mapping will be used during query execution, to create
-   * a mask key for the column group dimension which will be used in aggregation
-   * and filter query as column group dimension will be stored at the bit level
-   */
-  private void fillColumnGroupAndItsCardinality(int[] cardinality) {
-    // mapping of the column group and its ordinal
-    Map<Integer, List<Integer>> columnGroupAndOrdinalMapping =
-        new HashMap<Integer, List<Integer>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    // to store a column group
-    List<Integer> currentColumnGroup = null;
-    // current index
-    int index = 0;
-    // previous column group to check all the column of column id has bee selected
-    int prvColumnGroupId = -1;
-    while (index < dimensions.size()) {
-      // if dimension group id is not zero and it is same as the previous
-      // column id
-      // then we need to add ordinal of that column as it belongs to same
-      // column group
-      if (!dimensions.get(index).isColumnar()
-          && dimensions.get(index).columnGroupId() == prvColumnGroupId
-          && null != currentColumnGroup) {
-        currentColumnGroup.add(index);
-      }
-      // if column is not a columnar then new column group has come
-      // so we need to create a list of new column id group and add the
-      // ordinal
-      else if (!dimensions.get(index).isColumnar()) {
-        currentColumnGroup = new ArrayList<Integer>();
-        columnGroupAndOrdinalMapping.put(dimensions.get(index).columnGroupId(), currentColumnGroup);
-        currentColumnGroup.add(index);
-      }
-      // update the column id every time,this is required to group the
-      // columns
-      // of the same column group
-      prvColumnGroupId = dimensions.get(index).columnGroupId();
-      index++;
-    }
-    // Initializing the map
-    this.columnGroupAndItsKeygenartor =
-        new HashMap<Integer, KeyGenerator>(columnGroupAndOrdinalMapping.size());
-    this.columnGroupOrdinalToMdkeymapping = new HashMap<>(columnGroupAndOrdinalMapping.size());
-    int[] columnGroupCardinality = null;
-    index = 0;
-    Iterator<Entry<Integer, List<Integer>>> iterator =
-        columnGroupAndOrdinalMapping.entrySet().iterator();
-    while (iterator.hasNext()) {
-      Entry<Integer, List<Integer>> next = iterator.next();
-      List<Integer> currentGroupOrdinal = next.getValue();
-      Map<Integer, Integer> colGrpOrdinalMdkeyMapping = new HashMap<>(currentGroupOrdinal.size());
-      // create the cardinality array
-      columnGroupCardinality = new int[currentGroupOrdinal.size()];
-      for (int i = 0; i < columnGroupCardinality.length; i++) {
-        // fill the cardinality
-        columnGroupCardinality[i] = cardinality[currentGroupOrdinal.get(i)];
-        colGrpOrdinalMdkeyMapping.put(currentGroupOrdinal.get(i), i);
-      }
-      this.columnGroupAndItsKeygenartor.put(next.getKey(), new MultiDimKeyVarLengthGenerator(
-          CarbonUtil.getDimensionBitLength(columnGroupCardinality,
-              new int[] { columnGroupCardinality.length })));
-      this.columnGroupOrdinalToMdkeymapping.put(next.getKey(), colGrpOrdinalMdkeyMapping);
     }
   }
 
@@ -650,8 +478,8 @@ public class SegmentProperties {
   public int[] getDimensionColumnsValueSize() {
     int[] dimensionValueSize =
         new int[eachDimColumnValueSize.length + eachComplexDimColumnValueSize.length];
-    System
-        .arraycopy(eachDimColumnValueSize, 0, dimensionValueSize, 0, eachDimColumnValueSize.length);
+    System.arraycopy(
+        eachDimColumnValueSize, 0, dimensionValueSize, 0, eachDimColumnValueSize.length);
     System.arraycopy(eachComplexDimColumnValueSize, 0, dimensionValueSize,
         eachDimColumnValueSize.length, eachComplexDimColumnValueSize.length);
     return dimensionValueSize;
@@ -668,7 +496,7 @@ public class SegmentProperties {
     int k = eachDimColumnValueSize.length + eachComplexDimColumnValueSize.length;
     for (int i = 0; i < measures.size(); i++) {
       DataType dataType = measures.get(i).getDataType();
-      if (dataType.equals(DataType.DECIMAL)) {
+      if (DataTypes.isDecimal(dataType)) {
         dimensionValueSize[k++] = -1;
       } else {
         dimensionValueSize[k++] = 8;
@@ -731,17 +559,17 @@ public class SegmentProperties {
   }
 
   /**
-   * @return the dimensionOrdinalToBlockMapping
+   * @return the dimensionOrdinalToChunkMapping
    */
-  public Map<Integer, Integer> getDimensionOrdinalToBlockMapping() {
-    return dimensionOrdinalToBlockMapping;
+  public Map<Integer, Integer> getDimensionOrdinalToChunkMapping() {
+    return dimensionOrdinalToChunkMapping;
   }
 
   /**
-   * @return the measuresOrdinalToBlockMapping
+   * @return the measuresOrdinalToChunkMapping
    */
-  public Map<Integer, Integer> getMeasuresOrdinalToBlockMapping() {
-    return measuresOrdinalToBlockMapping;
+  public Map<Integer, Integer> getMeasuresOrdinalToChunkMapping() {
+    return measuresOrdinalToChunkMapping;
   }
 
   /**
@@ -766,52 +594,10 @@ public class SegmentProperties {
   }
 
   /**
-   * @return the columnGroupAndItsKeygenartor
-   */
-  public Map<Integer, KeyGenerator> getColumnGroupAndItsKeygenartor() {
-    return columnGroupAndItsKeygenartor;
-  }
-
-  /**
    * @return the numberOfNoDictionaryDimension
    */
   public int getNumberOfNoDictionaryDimension() {
     return numberOfNoDictionaryDimension;
-  }
-
-  /**
-   * @return
-   */
-  public int[][] getColumnGroups() {
-    return colGroupModel.getColumnGroup();
-  }
-
-  /**
-   * @return colGroupModel
-   */
-  public ColumnGroupModel getColumnGroupModel() {
-    return this.colGroupModel;
-  }
-
-  /**
-   * get mdkey ordinal for given dimension ordinal of given column group
-   *
-   * @param colGrpId
-   * @param ordinal
-   * @return mdkeyordinal
-   */
-  public int getColumnGroupMdKeyOrdinal(int colGrpId, int ordinal) {
-    return columnGroupOrdinalToMdkeymapping.get(colGrpId).get(ordinal);
-  }
-
-  /**
-   * It returns no of column availble in given column group
-   *
-   * @param colGrpId
-   * @return no of column in given column group
-   */
-  public int getNoOfColumnsInColumnGroup(int colGrpId) {
-    return columnGroupOrdinalToMdkeymapping.get(colGrpId).size();
   }
 
   /**

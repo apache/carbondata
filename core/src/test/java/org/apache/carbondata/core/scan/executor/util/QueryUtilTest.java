@@ -23,12 +23,13 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesTestUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.scan.model.QueryDimension;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
 
 import junit.framework.TestCase;
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -44,9 +45,8 @@ public class QueryUtilTest extends TestCase {
 
   @Test public void testGetMaskedByteRangeGivingProperMaksedByteRange() {
 
-    QueryDimension dimension =
-        new QueryDimension(segmentProperties.getDimensions().get(0).getColName());
-    dimension.setDimension(segmentProperties.getDimensions().get(0));
+    ProjectionDimension dimension =
+        new ProjectionDimension(segmentProperties.getDimensions().get(0));
     int[] maskedByteRange = QueryUtil
         .getMaskedByteRange(Arrays.asList(dimension), segmentProperties.getDimensionKeyGenerator());
     int[] expectedMaskedByteRange = { 0 };
@@ -56,11 +56,10 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetMaskedByteRangeGivingProperMaksedByteRangeOnlyForDictionaryKey() {
-    List<QueryDimension> dimensions = new ArrayList<QueryDimension>();
+    List<ProjectionDimension> dimensions = new ArrayList<ProjectionDimension>();
     for (int i = 0; i < 2; i++) {
-      QueryDimension dimension =
-          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
-      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      ProjectionDimension dimension =
+          new ProjectionDimension(segmentProperties.getDimensions().get(i));
       dimensions.add(dimension);
     }
     int[] maskedByteRange =
@@ -83,11 +82,10 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetMaxKeyBasedOnDimensions() {
-    List<QueryDimension> dimensions = new ArrayList<QueryDimension>();
+    List<ProjectionDimension> dimensions = new ArrayList<ProjectionDimension>();
     for (int i = 0; i < 2; i++) {
-      QueryDimension dimension =
-          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
-      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      ProjectionDimension dimension =
+          new ProjectionDimension(segmentProperties.getDimensions().get(i));
       dimensions.add(dimension);
     }
     byte[] maxKeyBasedOnDimensions = null;
@@ -114,10 +112,8 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetMaksedByte() {
-    QueryDimension dimension =
-        new QueryDimension(segmentProperties.getDimensions().get(0).getColName());
-    dimension.setDimension(segmentProperties.getDimensions().get(0));
-    dimension.setDimension(segmentProperties.getDimensions().get(0));
+    ProjectionDimension dimension =
+        new ProjectionDimension(segmentProperties.getDimensions().get(0));
     int[] maskedByteRange = QueryUtil
         .getMaskedByteRange(Arrays.asList(dimension), segmentProperties.getDimensionKeyGenerator());
     int[] maskedByte = QueryUtil
@@ -135,50 +131,14 @@ public class QueryUtilTest extends TestCase {
     int[] dummyArray = { 1, 2, 3, 4, 5 };
     int searchInput = 6;
     boolean result = QueryUtil.searchInArray(dummyArray, searchInput);
-    assert (!result);
+    Assert.assertTrue(!result);
   }
 
   @Test public void testSearchInArrayWithSearchInputPresentInArray() {
     int[] dummyArray = { 1, 2, 3, 4, 5 };
     int searchInput = 1;
     boolean result = QueryUtil.searchInArray(dummyArray, searchInput);
-    assert (result);
-  }
-
-  @Test public void testGetColumnGroupIdWhenOrdinalValueNotPresentInArrayIndex() {
-    int ordinal = 0;
-    new MockUp<SegmentProperties>() {
-      @Mock public int[][] getColumnGroups() {
-        return new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
-      }
-    };
-    int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
-    int expectedValue = 4; //expectedValue will always be arrayLength - 1
-    assertEquals(expectedValue, actualValue);
-  }
-
-  @Test public void testGetColumnGroupIdWhenOrdinalValuePresentInArrayIndex() {
-    int ordinal = 1;
-    new MockUp<SegmentProperties>() {
-      @Mock public int[][] getColumnGroups() {
-        return new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
-      }
-    };
-    int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
-    int expectedValue = 0;
-    assertEquals(expectedValue, actualValue);
-  }
-
-  @Test public void testGetColumnGroupIdWhenColumnGroupsIndexValueLengthLessThanOne() {
-    int ordinal = 1;
-    new MockUp<SegmentProperties>() {
-      @Mock public int[][] getColumnGroups() {
-        return new int[][] { { 1 } };
-      }
-    };
-    int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
-    int expectedValue = -1;
-    assertEquals(expectedValue, actualValue);
+    Assert.assertTrue(result);
   }
 
   @Test public void testGetMaskedKey() {
@@ -202,31 +162,20 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetSortDimensionIndexes() {
-    List<QueryDimension> sortedDimensions = new ArrayList<QueryDimension>();
+    List<ProjectionDimension> sortedDimensions = new ArrayList<ProjectionDimension>();
     for (int i = 0; i < 2; i++) {
-      QueryDimension dimension =
-          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
-      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      ProjectionDimension dimension =
+          new ProjectionDimension(segmentProperties.getDimensions().get(i));
       sortedDimensions.add(dimension);
     }
-    List<QueryDimension> queryDimensions = new ArrayList<QueryDimension>();
+    List<ProjectionDimension> queryDimensions = new ArrayList<ProjectionDimension>();
     for (int i = 0; i < 2; i++) {
-      QueryDimension dimension =
-          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
-      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      ProjectionDimension dimension =
+          new ProjectionDimension(segmentProperties.getDimensions().get(i));
       queryDimensions.add(dimension);
     }
     byte[] actualValue = QueryUtil.getSortDimensionIndexes(sortedDimensions, queryDimensions);
     byte[] expectedValue = { 0, 0 };
-    assertArrayEquals(expectedValue, actualValue);
-  }
-
-  @Test public void testGetActualTypeIndex() {
-    List<String> dummyList = new ArrayList<>();
-    dummyList.add("test1");
-    dummyList.add("test2");
-    int[] actualValue = QueryUtil.getActualTypeIndex(dummyList);
-    int[] expectedValue = { 0, 1 };
     assertArrayEquals(expectedValue, actualValue);
   }
 

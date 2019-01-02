@@ -108,4 +108,10 @@ public interface Dictionary {
    * This method will release the objects and set default value for primitive types
    */
   void clear();
+
+  /**
+   * This method return the access count associated with the dictionary.
+   * @return
+   */
+  int getAccessCount();
 }

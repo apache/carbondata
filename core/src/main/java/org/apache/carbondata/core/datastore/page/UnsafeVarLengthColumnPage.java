@@ -19,61 +19,24 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
-// This extension uses unsafe memory to store page data, for variable length data type (string,
-// decimal)
+/**
+ * This extension uses unsafe memory to store page data, for variable length data type (string)
+ */
 public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
-
-  // memory allocated by Unsafe
-  private MemoryBlock memoryBlock;
-
-  // base address of memoryBlock
-  private Object baseAddress;
-
-  // base offset of memoryBlock
-  private long baseOffset;
-
-  // size of the allocated memory, in bytes
-  private int capacity;
-
-  // default size for each row, grows as needed
-  private static final int DEFAULT_ROW_SIZE = 8;
-
-  private static final double FACTOR = 1.25;
-
-  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   /**
    * create a page
-   * @param dataType data type
-   * @param pageSize number of row
    */
-  UnsafeVarLengthColumnPage(DataType dataType, int pageSize, int scale, int precision)
+  UnsafeVarLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize)
       throws MemoryException {
-    super(dataType, pageSize, scale, precision);
+    super(columnPageEncoderMeta, pageSize);
     capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
     memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
-    baseAddress = memoryBlock.getBaseObject();
-    baseOffset = memoryBlock.getBaseOffset();
-  }
-
-  /**
-   * create a page with initial capacity
-   * @param dataType data type
-   * @param pageSize number of row
-   * @param capacity initial capacity of the page, in bytes
-   */
-  UnsafeVarLengthColumnPage(DataType dataType, int pageSize, int capacity,
-      int scale, int precision) throws MemoryException {
-    super(dataType, pageSize, scale, precision);
-    this.capacity = capacity;
-    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long)(capacity));
     baseAddress = memoryBlock.getBaseObject();
     baseOffset = memoryBlock.getBaseOffset();
   }
@@ -85,23 +48,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
-    }
-  }
-
-  /**
-   * reallocate memory if capacity length than current size + request size
-   */
-  private void ensureMemory(int requestSize) throws MemoryException {
-    if (totalLength + requestSize > capacity) {
-      int newSize = 2 * capacity;
-      MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
-      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
-          newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);
-      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
-      memoryBlock = newBlock;
-      baseAddress = newBlock.getBaseObject();
-      baseOffset = newBlock.getBaseOffset();
-      capacity = newSize;
+      super.freeMemory();
     }
   }
 
@@ -118,7 +65,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
       throw new RuntimeException(e);
     }
     CarbonUnsafe.getUnsafe().copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset,
-        baseAddress, baseOffset + rowOffset[rowId], length);
+        baseAddress, baseOffset + rowOffset.getInt(rowId), length);
   }
 
   @Override
@@ -132,35 +79,31 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override public void putDecimal(int rowId, BigDecimal decimal) {
-    putBytes(rowId, decimalConverter.convert(decimal));
+
   }
 
   @Override
   public BigDecimal getDecimal(int rowId) {
-    int length = rowOffset[rowId + 1] - rowOffset[rowId];
-    byte[] bytes = new byte[length];
-    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
-        bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
-
-    return decimalConverter.getDecimal(bytes);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
   public byte[] getBytes(int rowId) {
-    int length = rowOffset[rowId + 1] - rowOffset[rowId];
+    int length = rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId);
     byte[] bytes = new byte[length];
-    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId),
         bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
     return bytes;
   }
 
   @Override
   public byte[][] getByteArrayPage() {
-    byte[][] bytes = new byte[pageSize][];
-    for (int rowId = 0; rowId < pageSize; rowId++) {
-      int length = rowOffset[rowId + 1] - rowOffset[rowId];
+    byte[][] bytes = new byte[rowOffset.getActualRowCount() - 1][];
+    for (int rowId = 0; rowId < rowOffset.getActualRowCount() - 1; rowId++) {
+      int length = rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId);
       byte[] rowData = new byte[length];
-      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId),
           rowData, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
       bytes[rowId] = rowData;
     }
@@ -169,7 +112,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
-    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId),
         dest, CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, length);
   }
 

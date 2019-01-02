@@ -17,12 +17,15 @@
 
 package org.apache.carbondata.core.reader;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -33,10 +36,6 @@ import org.apache.thrift.transport.TIOStreamTransport;
  * A simple class for reading Thrift objects (of a single type) from a fileName.
  */
 public class ThriftReader {
-  /**
-   * buffer size
-   */
-  private static final int bufferSize = 2048;
   /**
    * File containing the objects.
    */
@@ -54,11 +53,19 @@ public class ThriftReader {
    */
   private TProtocol binaryIn;
 
+  private Configuration configuration;
+
   /**
    * Constructor.
    */
   public ThriftReader(String fileName, TBaseCreator creator) {
     this.fileName = fileName;
+    this.creator = creator;
+  }
+
+  public ThriftReader(String fileName, TBaseCreator creator, Configuration configuration) {
+    this.fileName = fileName;
+    this.configuration = configuration;
     this.creator = creator;
   }
 
@@ -70,11 +77,28 @@ public class ThriftReader {
   }
 
   /**
+   * Constructor.
+   */
+  public ThriftReader(String fileName, Configuration configuration) {
+    this.fileName = fileName;
+    this.configuration = configuration;
+  }
+
+  /**
+   * Constructor.
+   */
+  public ThriftReader(byte[] fileData) {
+    dataInputStream = new DataInputStream(new ByteArrayInputStream(fileData));
+    binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
+  }
+
+  /**
    * Opens the fileName for reading.
    */
   public void open() throws IOException {
+    Configuration conf = configuration != null ? configuration : FileFactory.getConfiguration();
     FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-    dataInputStream = FileFactory.getDataInputStream(fileName, fileType, bufferSize);
+    dataInputStream = FileFactory.getDataInputStream(fileName, fileType, conf);
     binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
   }
 
@@ -82,7 +106,9 @@ public class ThriftReader {
    * This method will set the position of stream from where data has to be read
    */
   public void setReadOffset(long bytesToSkip) throws IOException {
-    if (dataInputStream.skip(bytesToSkip) != bytesToSkip) {
+    if (dataInputStream instanceof FSDataInputStream) {
+      ((FSDataInputStream)dataInputStream).seek(bytesToSkip);
+    } else if (dataInputStream.skip(bytesToSkip) != bytesToSkip) {
       throw new IOException("It doesn't set the offset properly");
     }
   }
@@ -91,10 +117,7 @@ public class ThriftReader {
    * Checks if another objects is available by attempting to read another byte from the stream.
    */
   public boolean hasNext() throws IOException {
-    dataInputStream.mark(1);
-    int val = dataInputStream.read();
-    dataInputStream.reset();
-    return val != -1;
+    return dataInputStream.available() > 0;
   }
 
   /**

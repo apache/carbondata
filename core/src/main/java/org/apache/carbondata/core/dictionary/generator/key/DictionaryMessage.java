@@ -52,10 +52,36 @@ public class DictionaryMessage {
    */
   private DictionaryMessageType type;
 
-  public void readData(ByteBuf byteBuf) {
+  public void readSkipLength(ByteBuf byteBuf) {
+
+    byte[] tableBytes = new byte[byteBuf.readInt()];
+    byteBuf.readBytes(tableBytes);
+    tableUniqueId = new String(tableBytes, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+
+    byte[] colBytes = new byte[byteBuf.readInt()];
+    byteBuf.readBytes(colBytes);
+    columnName = new String(colBytes, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+
+    byte typeByte = byteBuf.readByte();
+    type = getKeyType(typeByte);
+
+    byte dataType = byteBuf.readByte();
+    if (dataType == 0) {
+      dictionaryValue = byteBuf.readInt();
+    } else {
+      byte[] dataBytes = new byte[byteBuf.readInt()];
+      byteBuf.readBytes(dataBytes);
+      data = new String(dataBytes, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+    }
+  }
+
+  public void readFullLength(ByteBuf byteBuf) {
+
+    byteBuf.readShort();
     byte[] tableIdBytes = new byte[byteBuf.readInt()];
     byteBuf.readBytes(tableIdBytes);
-    tableUniqueId = new String(tableIdBytes);
+    tableUniqueId =
+        new String(tableIdBytes, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
 
     byte[] colBytes = new byte[byteBuf.readInt()];
     byteBuf.readBytes(colBytes);
@@ -79,7 +105,8 @@ public class DictionaryMessage {
     // Just reserve the bytes to add length of header at last.
     byteBuf.writeShort(Short.MAX_VALUE);
 
-    byte[] tableIdBytes = tableUniqueId.getBytes();
+    byte[] tableIdBytes =
+        tableUniqueId.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     byteBuf.writeInt(tableIdBytes.length);
     byteBuf.writeBytes(tableIdBytes);
 
@@ -104,6 +131,7 @@ public class DictionaryMessage {
     // packets before proceeding to process the message.Based on the length it waits.
     byteBuf.setShort(startIndex, endIndex - startIndex - 2);
   }
+
 
   private DictionaryMessageType getKeyType(byte type) {
     switch (type) {
@@ -154,10 +182,5 @@ public class DictionaryMessage {
 
   public void setTableUniqueId(String tableUniqueId) {
     this.tableUniqueId = tableUniqueId;
-  }
-
-  @Override public String toString() {
-    return "DictionaryKey{ columnName='" + columnName + '\'' + ", data='" + data + '\''
-        + ", dictionaryValue=" + dictionaryValue + ", type=" + type + '}';
   }
 }

@@ -23,8 +23,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.util.NonDictionaryUtil;
 
 public class TablePageKey {
@@ -50,36 +48,31 @@ public class TablePageKey {
   // endkey for no dictionary columns after packing into one column
   private byte[] packedNoDictEndKey;
 
-  private KeyGenerator mdkGenerator;
   private SegmentProperties segmentProperties;
   private boolean hasNoDictionary;
 
-  public TablePageKey(int pageSize, KeyGenerator mdkGenerator, SegmentProperties segmentProperties,
-      boolean hasNoDictionary) {
+  public TablePageKey(int pageSize, SegmentProperties segmentProperties,
+                      boolean hasNoDictionary) {
     this.pageSize = pageSize;
-    this.mdkGenerator = mdkGenerator;
     this.segmentProperties = segmentProperties;
     this.hasNoDictionary = hasNoDictionary;
   }
 
   /** update all keys based on the input row */
-  public void update(int rowId, CarbonRow row, byte[] mdk) throws KeyGenException {
+  public void update(int rowId, CarbonRow row, byte[] mdk) {
     if (hasNoDictionary) {
-      currentNoDictionaryKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      Object[] noDictAndComplexDimension = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      currentNoDictionaryKey = new byte[noDictAndComplexDimension.length][0];
     }
     if (rowId == 0) {
-      startKey = WriteStepRowUtil.getMdk(row, mdkGenerator);
+      startKey = mdk;
       noDictStartKey = currentNoDictionaryKey;
     }
     noDictEndKey = currentNoDictionaryKey;
     if (rowId == pageSize - 1) {
-      endKey = WriteStepRowUtil.getMdk(row, mdkGenerator);
+      endKey = mdk;
       finalizeKeys();
     }
-  }
-
-  public Object getKey() {
-    return this;
   }
 
   /** update all keys if SORT_COLUMNS option is used when creating table */
@@ -135,24 +128,12 @@ public class TablePageKey {
     }
   }
 
-  public byte[] getStartKey() {
-    return startKey;
-  }
-
-  public byte[] getEndKey() {
-    return endKey;
-  }
-
   public byte[] getNoDictStartKey() {
     return packedNoDictStartKey;
   }
 
   public byte[] getNoDictEndKey() {
     return packedNoDictEndKey;
-  }
-
-  public int getPageSize() {
-    return pageSize;
   }
 
   public byte[] serializeStartKey() {

@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.core.metadata.encoder;
 
+import java.util.List;
+
 /**
  * Encoding type supported in carbon
  */
@@ -27,11 +29,15 @@ public enum Encoding {
   BIT_PACKED,
   DIRECT_DICTIONARY,
   IMPLICIT,
-
   DIRECT_COMPRESS,
   ADAPTIVE_INTEGRAL,
   ADAPTIVE_DELTA_INTEGRAL,
-  RLE_INTEGRAL;
+  RLE_INTEGRAL,
+  DIRECT_STRING,
+  ADAPTIVE_FLOATING,
+  BOOL_BYTE,
+  ADAPTIVE_DELTA_FLOATING,
+  DIRECT_COMPRESS_VARCHAR;
 
   public static Encoding valueOf(int ordinal) {
     if (ordinal == DICTIONARY.ordinal()) {
@@ -56,8 +62,46 @@ public enum Encoding {
       return ADAPTIVE_DELTA_INTEGRAL;
     } else if (ordinal == RLE_INTEGRAL.ordinal()) {
       return RLE_INTEGRAL;
+    } else if (ordinal == DIRECT_STRING.ordinal()) {
+      return DIRECT_STRING;
+    } else if (ordinal == ADAPTIVE_FLOATING.ordinal()) {
+      return ADAPTIVE_FLOATING;
+    } else if (ordinal == BOOL_BYTE.ordinal()) {
+      return BOOL_BYTE;
+    } else if (ordinal == ADAPTIVE_DELTA_FLOATING.ordinal()) {
+      return ADAPTIVE_DELTA_FLOATING;
+    } else if (ordinal == DIRECT_COMPRESS_VARCHAR.ordinal()) {
+      return DIRECT_COMPRESS_VARCHAR;
     } else {
       throw new RuntimeException("create Encoding with invalid ordinal: " + ordinal);
+    }
+  }
+
+  /**
+   * Method to validate for supported encoding types that can be read using the current version
+   *
+   * @param encodings
+   */
+  public static void validateEncodingTypes(List<org.apache.carbondata.format.Encoding> encodings) {
+    if (null != encodings && !encodings.isEmpty()) {
+      for (org.apache.carbondata.format.Encoding encoder : encodings) {
+        // if case is handle unsupported encoding type. An encoding not supported for read will
+        // be added as null by thrift during deserialization
+        // if given encoding name is not supported exception will be thrown
+        if (null == encoder) {
+          throw new UnsupportedOperationException(
+              "There is mismatch between the encodings in data file and the encodings supported"
+                  + " for read in the current version");
+        } else {
+          try {
+            Encoding.valueOf(encoder.name());
+          } catch (IllegalArgumentException ex) {
+            throw new UnsupportedOperationException(
+                "There is mismatch between the encodings in data file and the encodings supported"
+                    + " for read in the current version. Encoding: " + encoder.name());
+          }
+        }
+      }
     }
   }
 }

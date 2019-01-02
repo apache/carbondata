@@ -17,18 +17,26 @@
 package org.apache.spark.sql
 
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 
+import scala.collection.JavaConverters._
+
+import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
-import org.apache.spark.sql.hive.CarbonSessionState
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.execution.QueryExecution
+import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.apache.spark.sql.internal.{SessionState, SharedState}
-import org.apache.spark.util.Utils
+import org.apache.spark.sql.profiler.{Profiler, SQLStart}
+import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
+import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
+import org.apache.carbondata.streaming.CarbonStreamingQueryListener
 
 /**
  * Session implementation for {org.apache.spark.sql.SparkSession}
@@ -36,38 +44,125 @@ import org.apache.carbondata.spark.util.CommonUtil
  * User needs to use {CarbonSession.getOrCreateCarbon} to create Carbon session.
  */
 class CarbonSession(@transient val sc: SparkContext,
-    @transient private val existingSharedState: Option[SharedState]) extends SparkSession(sc) {
+    @transient private val existingSharedState: Option[SharedState],
+    @transient private val useHiveMetaStore: Boolean = true
+) extends SparkSession(sc) { self =>
 
   def this(sc: SparkContext) {
     this(sc, None)
   }
 
   @transient
-  override private[sql] lazy val sessionState: SessionState = new CarbonSessionState(this)
+  override lazy val sessionState: SessionState = {
+    CarbonReflectionUtils.getSessionState(sparkContext, this, useHiveMetaStore)
+      .asInstanceOf[SessionState]
+  }
 
   /**
    * State shared across sessions, including the `SparkContext`, cached data, listener,
    * and a catalog that interacts with external systems.
    */
   @transient
- override private[sql] lazy val sharedState: SharedState = {
-    existingSharedState.getOrElse(new SharedState(sparkContext))
+  override lazy val sharedState: SharedState = {
+    existingSharedState match {
+      case Some(_) =>
+        val ss = existingSharedState.get
+        if (ss == null) {
+          new SharedState(sparkContext)
+        } else {
+          ss
+        }
+      case None =>
+        new SharedState(sparkContext)
+    }
   }
 
   override def newSession(): SparkSession = {
-    new CarbonSession(sparkContext, Some(sharedState))
+    new CarbonSession(sparkContext, Some(sharedState), useHiveMetaStore)
   }
 
+  /**
+   * Run search mode if enabled, otherwise run SparkSQL
+   */
+  override def sql(sqlText: String): DataFrame = {
+    withProfiler(
+      sqlText,
+      (qe, sse) => {
+          new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
+      }
+    )
+  }
+
+  /**
+   * Return true if the specified sql statement will hit the datamap
+   * This API is for test purpose only
+   */
+  @InterfaceAudience.Developer(Array("DataMap"))
+  def isDataMapHit(sqlStatement: String, dataMapName: String): Boolean = {
+    // explain command will output the dataMap information only if enable.query.statistics = true
+    val message = sql(s"EXPLAIN $sqlStatement").collect()
+    message(0).getString(0).contains(dataMapName)
+  }
+
+  /**
+   * Run SparkSQL directly
+   */
+  def sparkSql(sqlText: String): DataFrame = {
+    withProfiler(
+      sqlText,
+      (qe, sse) => new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
+    )
+  }
+
+  private def withProfiler(
+      sqlText: String,
+      generateDF: (QueryExecution, SQLStart) => DataFrame): DataFrame = {
+    val sse = SQLStart(sqlText, CarbonSession.statementId.getAndIncrement())
+    CarbonSession.threadStatementId.set(sse.statementId)
+    sse.startTime = System.currentTimeMillis()
+
+    try {
+      val logicalPlan = sessionState.sqlParser.parsePlan(sqlText)
+      sse.parseEnd = System.currentTimeMillis()
+
+      val qe = sessionState.executePlan(logicalPlan)
+      qe.assertAnalyzed()
+      sse.isCommand = qe.analyzed match {
+        case c: Command => true
+        case u @ Union(children) if children.forall(_.isInstanceOf[Command]) => true
+        case _ => false
+      }
+      sse.analyzerEnd = System.currentTimeMillis()
+      generateDF(qe, sse)
+    } finally {
+      Profiler.invokeIfEnable {
+        if (sse.isCommand) {
+          sse.endTime = System.currentTimeMillis()
+          Profiler.send(sse)
+        } else {
+          Profiler.addStatementMessage(sse.statementId, sse)
+        }
+      }
+    }
+  }
 }
 
 object CarbonSession {
 
+  private val statementId = new AtomicLong(0)
+
+  private var enableInMemCatlog: Boolean = false
+
+  private[sql] val threadStatementId = new ThreadLocal[Long]()
+
   implicit class CarbonBuilder(builder: Builder) {
 
+    def enableInMemoryCatalog(): Builder = {
+      enableInMemCatlog = true
+      builder
+    }
     def getOrCreateCarbonSession(): SparkSession = {
-      getOrCreateCarbonSession(
-        null,
-        new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
+      getOrCreateCarbonSession(null, null)
     }
 
     def getOrCreateCarbonSession(storePath: String): SparkSession = {
@@ -78,22 +173,28 @@ object CarbonSession {
 
     def getOrCreateCarbonSession(storePath: String,
         metaStorePath: String): SparkSession = synchronized {
-      builder.enableHiveSupport()
+      if (!enableInMemCatlog) {
+        builder.enableHiveSupport()
+      }
       val options =
         getValue("options", builder).asInstanceOf[scala.collection.mutable.HashMap[String, String]]
       val userSuppliedContext: Option[SparkContext] =
         getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
-      val hadoopConf = new Configuration()
-      val configFile = Utils.getContextOrSparkClassLoader.getResource("hive-site.xml")
-      if (configFile != null) {
-        hadoopConf.addResource(configFile)
-      }
-      if (options.get(CarbonCommonConstants.HIVE_CONNECTION_URL).isEmpty &&
-          hadoopConf.get(CarbonCommonConstants.HIVE_CONNECTION_URL) == null) {
-        val metaStorePathAbsolute = new File(metaStorePath).getCanonicalPath
-        val hiveMetaStoreDB = metaStorePathAbsolute + "/metastore_db"
-        options ++= Map[String, String]((CarbonCommonConstants.HIVE_CONNECTION_URL,
-          s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"))
+      CarbonReflectionUtils.updateCarbonSerdeInfo()
+
+      if (StringUtils.isNotBlank(metaStorePath)) {
+        val hadoopConf = new Configuration()
+        val configFile = Utils.getContextOrSparkClassLoader.getResource("hive-site.xml")
+        if (configFile != null) {
+          hadoopConf.addResource(configFile)
+        }
+        if (options.get(CarbonCommonConstants.HIVE_CONNECTION_URL).isEmpty &&
+            hadoopConf.get(CarbonCommonConstants.HIVE_CONNECTION_URL) == null) {
+          val metaStorePathAbsolute = new File(metaStorePath).getCanonicalPath
+          val hiveMetaStoreDB = metaStorePathAbsolute + "/metastore_db"
+          options ++= Map[String, String]((CarbonCommonConstants.HIVE_CONNECTION_URL,
+            s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"))
+        }
       }
 
       // Get the session from current thread's active session.
@@ -146,31 +247,28 @@ object CarbonSession {
           }
           sc
         }
+
+        session = new CarbonSession(sparkContext, None, !enableInMemCatlog)
         val carbonProperties = CarbonProperties.getInstance()
-        if (storePath != null) {
+        if (StringUtils.isNotBlank(storePath)) {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
           // In case if it is in carbon.properties for backward compatible
         } else if (carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION,
-            sparkContext.conf.get("spark.sql.warehouse.dir"))
+            session.sessionState.conf.warehousePath)
         }
-        session = new CarbonSession(sparkContext)
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
-        CommonUtil.cleanInProgressSegments(
-          carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION), sparkContext)
+        // Setup monitor end point and register CarbonMonitorListener
+        Profiler.initialize(sparkContext)
         // Register a successfully instantiated context to the singleton. This should be at the
         // end of the class definition so that the singleton is updated only if there is no
         // exception in the construction of the instance.
-        sparkContext.addSparkListener(new SparkListener {
-          override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
-            SparkSession.setDefaultSession(null)
-            SparkSession.sqlListener.set(null)
-          }
-        })
+        CarbonToSparkAdapter.addSparkListener(sparkContext)
+        session.streams.addListener(new CarbonStreamingQueryListener(session))
       }
 
-      return session
+      session
     }
 
     /**
@@ -185,6 +283,59 @@ object CarbonSession {
       }.get.asTerm
       instanceMirror.reflectField(m).get
     }
+  }
+
+  def threadSet(key: String, value: String): Unit = {
+    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (currentThreadSessionInfo == null) {
+      currentThreadSessionInfo = new CarbonSessionInfo()
+    }
+    else {
+      currentThreadSessionInfo = currentThreadSessionInfo.clone()
+    }
+    val threadParams = currentThreadSessionInfo.getThreadParams
+    CarbonSetCommand.validateAndSetValue(threadParams, key, value)
+    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
+  }
+
+
+  def threadSet(key: String, value: Object): Unit = {
+    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (currentThreadSessionInfo == null) {
+      currentThreadSessionInfo = new CarbonSessionInfo()
+    }
+    else {
+      currentThreadSessionInfo = currentThreadSessionInfo.clone()
+    }
+    currentThreadSessionInfo.getThreadParams.setExtraInfo(key, value)
+    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
+  }
+
+  def threadUnset(key: String): Unit = {
+    val currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (currentThreadSessionInfo != null) {
+      val currentThreadSessionInfoClone = currentThreadSessionInfo.clone()
+      val threadParams = currentThreadSessionInfoClone.getThreadParams
+      CarbonSetCommand.unsetValue(threadParams, key)
+      threadParams.removeExtraInfo(key)
+      ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfoClone)
+    }
+  }
+
+  def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
+    val carbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.clone()
+    val currentThreadSessionInfoOrig = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (currentThreadSessionInfoOrig != null) {
+      val currentThreadSessionInfo = currentThreadSessionInfoOrig.clone()
+      // copy all the thread parameters to apply to session parameters
+      currentThreadSessionInfo.getThreadParams.getAll.asScala
+        .foreach(entry => carbonSessionInfo.getSessionParams.addProperty(entry._1, entry._2))
+      carbonSessionInfo.setThreadParams(currentThreadSessionInfo.getThreadParams)
+    }
+    // preserve thread parameters across call
+    ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+    ThreadLocalSessionInfo
+      .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
   }
 
 }

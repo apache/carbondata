@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.scan.expression.logical;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
@@ -50,19 +50,26 @@ public class FalseExpression  extends BinaryConditionalExpression {
    * @throws FilterUnsupportedException
    * @throws FilterIllegalMemberException
    */
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    return new ExpressionResult(DataType.BOOLEAN,false);
+    return new ExpressionResult(DataTypes.BOOLEAN,false);
   }
 
   /**
    * This method will return the expression types
    * @return
    */
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.FALSE;
   }
   @Override public String getString() {
-    return null;
+    return "False(" + (null == left ? null : left.getString());
+  }
+
+  @Override
+  public String getStatement() {
+    return "false";
   }
 }

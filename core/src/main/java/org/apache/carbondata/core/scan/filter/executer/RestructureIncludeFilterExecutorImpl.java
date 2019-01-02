@@ -19,10 +19,12 @@ package org.apache.carbondata.core.scan.filter.executer;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorImpl {
@@ -31,7 +33,7 @@ public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorIm
    * flag to check whether filter values contain the default value applied on the dimension column
    * which does not exist in the current block
    */
-  protected boolean isDefaultValuePresentInFilterValues;
+  private boolean isDefaultValuePresentInFilterValues;
 
   public RestructureIncludeFilterExecutorImpl(DimColumnResolvedFilterInfo dimColumnEvaluatorInfo,
       MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo, boolean isMeasure) {
@@ -44,20 +46,29 @@ public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorIm
     }
   }
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
-    int numberOfRows = blockChunkHolder.getDataBlock().nodeSize();
-    return FilterUtil
-        .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().numberOfPages(),
-            numberOfRows, isDefaultValuePresentInFilterValues);
+  @Override
+  public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
+      boolean useBitsetPipeLine) throws IOException {
+    int numberOfRows = rawBlockletColumnChunks.getDataBlock().numRows();
+    return FilterUtil.createBitSetGroupWithDefaultValue(
+        rawBlockletColumnChunks.getDataBlock().numberOfPages(),
+        numberOfRows, isDefaultValuePresentInFilterValues);
   }
 
-  public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal) {
+  @Override
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+      throws FilterUnsupportedException {
+    throw new FilterUnsupportedException("Unsupported RestructureIncludeFilterExecutorImpl on row");
+  }
+
+  public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal, boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     bitSet.set(0, isDefaultValuePresentInFilterValues);
     return bitSet;
   }
 
-  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+  @Override
+  public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) {
 
   }
 

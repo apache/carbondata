@@ -20,12 +20,13 @@ package org.apache.carbondata.core.locks;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -36,7 +37,7 @@ import org.apache.zookeeper.ZooKeeper;
  */
 public class ZooKeeperLocking extends AbstractCarbonLock {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(ZooKeeperLocking.class.getName());
 
   /**
@@ -68,8 +69,9 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
 
   private String lockTypeFolder;
 
-  public ZooKeeperLocking(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
+  public ZooKeeperLocking(AbsoluteTableIdentifier absoluteTableIdentifier, String lockFile) {
+    this(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName()
+        + CarbonCommonConstants.FILE_SEPARATOR + absoluteTableIdentifier.getCarbonTableIdentifier()
         .getTableName(), lockFile);
   }
 
@@ -87,12 +89,12 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
    */
   public ZooKeeperLocking(String lockLocation, String lockFile) {
     this.lockName = lockFile;
-    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation;
+    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonTablePath.getLockFilesDirPath(lockLocation);
 
     initialize();
 
-    this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation
-        + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
+    this.lockTypeFolder = tableIdFolder + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
     try {
       createBaseNode();
       // if exists returns null then path doesnt exist. so creating.
@@ -104,7 +106,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         zk.create(this.lockTypeFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
       }
     } catch (KeeperException | InterruptedException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
     initRetry();
   }
@@ -126,20 +128,11 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
    * @throws InterruptedException
    */
   private void createRecursivly(String path) throws KeeperException, InterruptedException {
-    try {
-      if (zk.exists(path, true) == null && path.length() > 0) {
-        String temp = path.substring(0, path.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
-        createRecursivly(temp);
-        zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-      } else {
-        return;
-      }
-    } catch (KeeperException e) {
-      throw e;
-    } catch (InterruptedException e) {
-      throw e;
+    if (zk.exists(path, true) == null && path.length() > 0) {
+      String temp = path.substring(0, path.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
+      createRecursivly(temp);
+      zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
     }
-
   }
   /**
    * Handling of the locking mechanism using zoo keeper.
@@ -174,7 +167,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         return false;
       }
     } catch (KeeperException | InterruptedException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       return false;
     }
   }
@@ -190,7 +183,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         lockPath = null;
       }
     } catch (KeeperException | InterruptedException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       return false;
     }
     return true;

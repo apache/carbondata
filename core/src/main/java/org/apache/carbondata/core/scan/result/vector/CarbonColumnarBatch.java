@@ -56,7 +56,9 @@ public class CarbonColumnarBatch {
     actualSize = 0;
     rowCounter = 0;
     rowsFiltered = 0;
-    Arrays.fill(filteredRows, false);
+    if (filteredRows != null) {
+      Arrays.fill(filteredRows, false);
+    }
     for (int i = 0; i < columnVectors.length; i++) {
       columnVectors[i].reset();
     }
@@ -85,9 +87,5 @@ public class CarbonColumnarBatch {
         columnVectors[i].setFilteredRowsExist(true);
       }
     }
-  }
-
-  public int getRowsFilteredCount() {
-    return rowsFiltered;
   }
 }

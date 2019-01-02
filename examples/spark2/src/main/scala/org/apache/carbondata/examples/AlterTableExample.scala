@@ -17,48 +17,31 @@
 
 package org.apache.carbondata.examples
 
-import java.io.File
-
 import org.apache.spark.sql.SparkSession
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.util.ExampleUtils
+
 
 /**
  * For alter table relative syntax, you can refer to DDL operation
- * document (ddl-operation-on-carbondata.md)
+ * document (data-management-on-carbondata.md)
  */
 object AlterTableExample {
 
   def main(args: Array[String]): Unit = {
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val spark = ExampleUtils.createCarbonSession("AlterTableExample")
+    exampleBody(spark)
+    spark.close()
+  }
 
-    val storeLocation = s"$rootPath/examples/spark2/target/store"
-    val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-
-    import org.apache.spark.sql.CarbonSession._
-
-    val spark = SparkSession
-      .builder()
-      .master("local")
-      .appName("AlterTableExample")
-      .config("spark.sql.warehouse.dir", warehouse)
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
-
-    spark.sparkContext.setLogLevel("WARN")
-
-    spark.sql("DROP TABLE IF EXISTS carbon_table")
-    spark.sql("DROP TABLE IF EXISTS new_carbon_table")
+  def exampleBody(spark : SparkSession): Unit = {
+    spark.sql("DROP TABLE IF EXISTS alter_table")
+    spark.sql("DROP TABLE IF EXISTS new_alter_table")
 
     spark.sql(
       s"""
-         | CREATE TABLE carbon_table(
+         | CREATE TABLE alter_table(
          | shortField SHORT,
          | intField INT,
          | bigintField LONG,
@@ -76,28 +59,25 @@ object AlterTableExample {
        """.stripMargin)
 
     // Alter table change data type
-    spark.sql("DESCRIBE FORMATTED carbon_table").show()
-    spark.sql("ALTER TABLE carbon_table CHANGE intField intField BIGINT").show()
+    spark.sql("DESCRIBE FORMATTED alter_table").show()
+    spark.sql("ALTER TABLE alter_table CHANGE intField intField BIGINT").show()
 
     // Alter table add columns
-    spark.sql("DESCRIBE FORMATTED carbon_table").show()
-    spark.sql("ALTER TABLE carbon_table ADD COLUMNS (newField STRING) " +
+    spark.sql("DESCRIBE FORMATTED alter_table").show()
+    spark.sql("ALTER TABLE alter_table ADD COLUMNS (newField STRING) " +
               "TBLPROPERTIES ('DEFAULT.VALUE.newField'='def')").show()
 
     // Alter table drop columns
-    spark.sql("DESCRIBE FORMATTED carbon_table").show()
-    spark.sql("ALTER TABLE carbon_table DROP COLUMNS (newField)").show()
-    spark.sql("DESCRIBE FORMATTED carbon_table").show()
+    spark.sql("DESCRIBE FORMATTED alter_table").show()
+    spark.sql("ALTER TABLE alter_table DROP COLUMNS (newField)").show()
+    spark.sql("DESCRIBE FORMATTED alter_table").show()
 
     // Alter table rename table name
     spark.sql("SHOW TABLES").show()
-    spark.sql("ALTER TABLE carbon_table RENAME TO new_carbon_table").show()
+    spark.sql("ALTER TABLE alter_table RENAME TO new_alter_table").show()
     spark.sql("SHOW TABLES").show()
 
-    spark.sql("DROP TABLE IF EXISTS carbon_table")
-    spark.sql("DROP TABLE IF EXISTS new_carbon_table")
-
-    spark.stop()
-
+    spark.sql("DROP TABLE IF EXISTS alter_table")
+    spark.sql("DROP TABLE IF EXISTS new_alter_table")
   }
 }

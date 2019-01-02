@@ -58,10 +58,19 @@ public final class CarbonMetadata {
   }
 
   /**
+   * removed the table information
+   *
+   * @param databaseName
+   * @param tableName
+   */
+  public void removeTable(String databaseName, String tableName) {
+    removeTable(CarbonTable.buildUniqueName(databaseName, tableName));
+  }
+
+  /**
    * Below method will be used to set the carbon table
-   * This method will be used in executor side as driver will always have
-   * updated table so from driver during query execution and data loading
-   * we just need to add the table
+   * Note: Use this method only in driver as clean up in Executor is not handled
+   *       if this table is added to executor
    *
    * @param carbonTable
    */
@@ -76,8 +85,8 @@ public final class CarbonMetadata {
    */
   public void loadTableMetadata(TableInfo tableInfo) {
     CarbonTable carbonTable = tableInfoMap.get(convertToLowerCase(tableInfo.getTableUniqueName()));
-    if (null == carbonTable || carbonTable.getTableLastUpdatedTime() < tableInfo
-        .getLastUpdatedTime()) {
+    if (null == carbonTable ||
+        carbonTable.getTableLastUpdatedTime() < tableInfo.getLastUpdatedTime()) {
       carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
       tableInfoMap.put(convertToLowerCase(tableInfo.getTableUniqueName()), carbonTable);
     }
@@ -91,6 +100,17 @@ public final class CarbonMetadata {
    */
   public CarbonTable getCarbonTable(String tableUniqueName) {
     return tableInfoMap.get(convertToLowerCase(tableUniqueName));
+  }
+
+  /**
+   * Below method to get the loaded carbon table
+   *
+   * @param databaseName
+   * @param tableName
+   * @return
+   */
+  public CarbonTable getCarbonTable(String databaseName, String tableName) {
+    return getCarbonTable(CarbonTable.buildUniqueName(databaseName, tableName));
   }
 
   /**
@@ -120,9 +140,9 @@ public final class CarbonMetadata {
   public CarbonDimension getCarbonDimensionBasedOnColIdentifier(CarbonTable carbonTable,
       String columnIdentifier) {
     List<CarbonDimension> listOfCarbonDims =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     for (CarbonDimension dimension : listOfCarbonDims) {
-      if (dimension.getColumnId().equals(columnIdentifier)) {
+      if (dimension.getColumnId().equalsIgnoreCase(columnIdentifier)) {
         return dimension;
       }
       if (dimension.getNumberOfChild() > 0) {
@@ -147,7 +167,8 @@ public final class CarbonMetadata {
   private CarbonDimension getCarbonChildDimsBasedOnColIdentifier(String columnIdentifier,
       CarbonDimension dimension) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
-      if (dimension.getListOfChildDimensions().get(i).getColumnId().equals(columnIdentifier)) {
+      if (dimension.getListOfChildDimensions().get(i).getColumnId()
+          .equalsIgnoreCase(columnIdentifier)) {
         return dimension.getListOfChildDimensions().get(i);
       } else if (dimension.getListOfChildDimensions().get(i).getNumberOfChild() > 0) {
         CarbonDimension childDim = getCarbonChildDimsBasedOnColIdentifier(columnIdentifier,

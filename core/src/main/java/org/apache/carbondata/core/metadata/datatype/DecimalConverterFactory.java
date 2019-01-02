@@ -18,10 +18,12 @@ package org.apache.carbondata.core.metadata.datatype;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
@@ -53,96 +55,169 @@ public final class DecimalConverterFactory {
     return data;
   }
 
-  public interface DecimalConverter {
+  public enum DecimalConverterType {
+    DECIMAL_LV(-1), DECIMAL_INT(4), DECIMAL_LONG(8), DECIMAL_UNSCALED(-1);
 
-    byte[] convert(BigDecimal decimal);
+    private int sizeInBytes;
 
-    BigDecimal getDecimal(byte[] bytes);
+    DecimalConverterType(int sizeInBytes) {
+      this.sizeInBytes = sizeInBytes;
+    }
 
-    void writeToColumnVector(byte[] bytes, CarbonColumnVector vector, int rowId);
-
-    int getSize();
+    public int getSizeInBytes() {
+      return sizeInBytes;
+    }
 
   }
 
-  public class DecimalIntConverter implements DecimalConverter {
+  public interface DecimalConverter {
 
-    private ByteBuffer buffer = ByteBuffer.allocate(4);
+    Object convert(BigDecimal decimal);
 
-    private int scale;
+    BigDecimal getDecimal(Object valueToBeConverted);
 
-    public DecimalIntConverter(int precision, int scale) {
+    void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info, BitSet nullBitset,
+        DataType pageType);
+
+    int getSize();
+
+    DecimalConverterType getDecimalConverterType();
+
+  }
+
+  public static class DecimalIntConverter implements DecimalConverter {
+
+    protected int scale;
+
+    DecimalIntConverter(int scale) {
       this.scale = scale;
     }
 
-    @Override public byte[] convert(BigDecimal decimal) {
+    @Override public Object convert(BigDecimal decimal) {
       long longValue = decimal.unscaledValue().longValue();
-      buffer.putInt(0, (int) longValue);
-      return buffer.array().clone();
+      return (int) longValue;
     }
 
-    @Override public BigDecimal getDecimal(byte[] bytes) {
-      long unscaled = getUnscaledLong(bytes);
-      return BigDecimal.valueOf(unscaled, scale);
+    @Override public BigDecimal getDecimal(Object valueToBeConverted) {
+      return BigDecimal.valueOf((Long) valueToBeConverted, scale);
     }
 
-    @Override public void writeToColumnVector(byte[] bytes, CarbonColumnVector vector, int rowId) {
-      long unscaled = getUnscaledLong(bytes);
-      vector.putInt(rowId, (int) unscaled);
+    @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
+        BitSet nullBitset, DataType pageType) {
+      // TODO we need to find way to directly set to vector with out conversion. This way is very
+      // inefficient.
+      CarbonColumnVector vector = info.vector;
+      int precision = info.measure.getMeasure().getPrecision();
+      int newMeasureScale = info.measure.getMeasure().getScale();
+      if (!(valuesToBeConverted instanceof byte[])) {
+        throw new UnsupportedOperationException("This object type " + valuesToBeConverted.getClass()
+            + " is not supported in this method");
+      }
+      byte[] data = (byte[]) valuesToBeConverted;
+      if (pageType == DataTypes.BYTE) {
+        for (int i = 0; i < size; i++) {
+          if (nullBitset.get(i)) {
+            vector.putNull(i);
+          } else {
+            BigDecimal value = BigDecimal.valueOf(data[i], scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
+          }
+        }
+      } else if (pageType == DataTypes.SHORT) {
+        for (int i = 0; i < size; i++) {
+          if (nullBitset.get(i)) {
+            vector.putNull(i);
+          } else {
+            BigDecimal value = BigDecimal
+                .valueOf(ByteUtil.toShortLittleEndian(data, i * DataTypes.SHORT.getSizeInBytes()),
+                    scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
+          }
+        }
+      } else if (pageType == DataTypes.SHORT_INT) {
+        for (int i = 0; i < size; i++) {
+          if (nullBitset.get(i)) {
+            vector.putNull(i);
+          } else {
+            BigDecimal value = BigDecimal
+                .valueOf(ByteUtil.valueOf3Bytes(data, i * DataTypes.SHORT_INT.getSizeInBytes()),
+                    scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
+          }
+        }
+      } else if (pageType == DataTypes.INT) {
+        for (int i = 0; i < size; i++) {
+          if (nullBitset.get(i)) {
+            vector.putNull(i);
+          } else {
+            BigDecimal value = BigDecimal
+                .valueOf(ByteUtil.toIntLittleEndian(data, i * DataTypes.INT.getSizeInBytes()),
+                    scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
+          }
+        }
+      } else if (pageType == DataTypes.LONG) {
+        for (int i = 0; i < size; i++) {
+          if (nullBitset.get(i)) {
+            vector.putNull(i);
+          } else {
+            BigDecimal value = BigDecimal
+                .valueOf(ByteUtil.toLongLittleEndian(data, i * DataTypes.LONG.getSizeInBytes()),
+                    scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
+          }
+        }
+      }
     }
 
     @Override public int getSize() {
       return 4;
     }
+
+    @Override public DecimalConverterType getDecimalConverterType() {
+      return DecimalConverterType.DECIMAL_INT;
+    }
   }
 
-  private long getUnscaledLong(byte[] bytes) {
-    long unscaled = 0L;
-    int i = 0;
+  public static class DecimalLongConverter extends DecimalIntConverter {
 
-    while (i < bytes.length) {
-      unscaled = (unscaled << 8) | (bytes[i] & 0xff);
-      i += 1;
+    DecimalLongConverter(int scale) {
+      super(scale);
     }
 
-    int bits = 8 * bytes.length;
-    unscaled = (unscaled << (64 - bits)) >> (64 - bits);
-    return unscaled;
-  }
-
-  public class DecimalLongConverter implements DecimalConverter {
-
-    private ByteBuffer buffer = ByteBuffer.allocate(8);
-
-    private int scale;
-
-    public DecimalLongConverter(int precision, int scale) {
-      this.scale = scale;
+    @Override public Object convert(BigDecimal decimal) {
+      return decimal.unscaledValue().longValue();
     }
 
-    @Override public byte[] convert(BigDecimal decimal) {
-      long longValue = decimal.unscaledValue().longValue();
-      buffer.putLong(0, longValue);
-      return buffer.array().clone();
-    }
-
-    @Override public BigDecimal getDecimal(byte[] bytes) {
-      long unscaled = getUnscaledLong(bytes);
-      return BigDecimal.valueOf(unscaled, scale);
-    }
-
-    @Override public void writeToColumnVector(byte[] bytes, CarbonColumnVector vector, int rowId) {
-      long unscaled = getUnscaledLong(bytes);
-      vector.putLong(rowId, unscaled);
+    @Override public BigDecimal getDecimal(Object valueToBeConverted) {
+      return BigDecimal.valueOf((Long) valueToBeConverted, scale);
     }
 
     @Override public int getSize() {
       return 8;
     }
+
+    @Override public DecimalConverterType getDecimalConverterType() {
+      return DecimalConverterType.DECIMAL_LONG;
+    }
   }
 
   public class DecimalUnscaledConverter implements DecimalConverter {
-
 
     private int scale;
 
@@ -150,12 +225,12 @@ public final class DecimalConverterFactory {
 
     private byte[] decimalBuffer = new byte[minBytesForPrecision[38]];
 
-    public DecimalUnscaledConverter(int precision, int scale) {
+    DecimalUnscaledConverter(int precision, int scale) {
       this.scale = scale;
       this.numBytes = minBytesForPrecision[precision];
     }
 
-    @Override public byte[] convert(BigDecimal decimal) {
+    @Override public Object convert(BigDecimal decimal) {
       byte[] bytes = decimal.unscaledValue().toByteArray();
       byte[] fixedLengthBytes = null;
       if (bytes.length == numBytes) {
@@ -181,17 +256,42 @@ public final class DecimalConverterFactory {
       return value;
     }
 
-    @Override public BigDecimal getDecimal(byte[] bytes) {
-      BigInteger bigInteger = new BigInteger(bytes);
+    @Override public BigDecimal getDecimal(Object valueToBeConverted) {
+      BigInteger bigInteger = new BigInteger((byte[]) valueToBeConverted);
       return new BigDecimal(bigInteger, scale);
     }
 
-    @Override public void writeToColumnVector(byte[] bytes, CarbonColumnVector vector, int rowId) {
-      vector.putBytes(rowId, bytes);
+    @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
+        BitSet nullBitset, DataType pageType) {
+      CarbonColumnVector vector = info.vector;
+      int precision = info.measure.getMeasure().getPrecision();
+      int newMeasureScale = info.measure.getMeasure().getScale();
+      if (scale < newMeasureScale) {
+        scale = newMeasureScale;
+      }
+      if (valuesToBeConverted instanceof byte[][]) {
+        byte[][] data = (byte[][]) valuesToBeConverted;
+        for (int i = 0; i < size; i++) {
+          if (nullBitset.get(i)) {
+            vector.putNull(i);
+          } else {
+            BigInteger bigInteger = new BigInteger(data[i]);
+            BigDecimal value = new BigDecimal(bigInteger, scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
+          }
+        }
+      }
     }
 
     @Override public int getSize() {
       return numBytes;
+    }
+
+    @Override public DecimalConverterType getDecimalConverterType() {
+      return DecimalConverterType.DECIMAL_UNSCALED;
     }
   }
 
@@ -199,20 +299,41 @@ public final class DecimalConverterFactory {
 
     public static LVBytesDecimalConverter INSTANCE = new LVBytesDecimalConverter();
 
-    @Override public byte[] convert(BigDecimal decimal) {
+    @Override public Object convert(BigDecimal decimal) {
       return DataTypeUtil.bigDecimalToByte(decimal);
     }
 
-    @Override public BigDecimal getDecimal(byte[] bytes) {
-      return DataTypeUtil.byteToBigDecimal(bytes);
+    @Override public BigDecimal getDecimal(Object valueToBeConverted) {
+      return DataTypeUtil.byteToBigDecimal((byte[]) valueToBeConverted);
     }
 
-    @Override public void writeToColumnVector(byte[] bytes, CarbonColumnVector vector, int rowId) {
-      throw new UnsupportedOperationException("Unsupported in vector reading for legacy format");
+    @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
+        BitSet nullBitset, DataType pageType) {
+      CarbonColumnVector vector = info.vector;
+      int precision = info.measure.getMeasure().getPrecision();
+      int newMeasureScale = info.measure.getMeasure().getScale();
+      if (valuesToBeConverted instanceof byte[][]) {
+        byte[][] data = (byte[][]) valuesToBeConverted;
+        for (int i = 0; i < size; i++) {
+          if (nullBitset.get(i)) {
+            vector.putNull(i);
+          } else {
+            BigDecimal value = DataTypeUtil.byteToBigDecimal(data[i]);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
+          }
+        }
+      }
     }
 
     @Override public int getSize() {
       return -1;
+    }
+
+    @Override public DecimalConverterType getDecimalConverterType() {
+      return DecimalConverterType.DECIMAL_LV;
     }
   }
 
@@ -220,9 +341,9 @@ public final class DecimalConverterFactory {
     if (precision < 0) {
       return new LVBytesDecimalConverter();
     } else if (precision <= 9) {
-      return new DecimalIntConverter(precision, scale);
+      return new DecimalIntConverter(scale);
     } else if (precision <= 18) {
-      return new DecimalLongConverter(precision, scale);
+      return new DecimalLongConverter(scale);
     } else {
       return new DecimalUnscaledConverter(precision, scale);
     }

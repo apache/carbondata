@@ -23,9 +23,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
@@ -33,6 +36,8 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -64,19 +69,15 @@ public class RLECodec implements ColumnPageCodec {
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
     assert meta instanceof RLEEncoderMeta;
     RLEEncoderMeta codecMeta = (RLEEncoderMeta) meta;
-    return new RLEDecoder(codecMeta.getDataType(), codecMeta.getPageSize());
+    return new RLEDecoder(meta.getColumnSpec(), codecMeta.getPageSize(), meta.getCompressorName());
   }
 
   // This codec supports integral type only
   private void validateDataType(DataType dataType) {
-    switch (dataType) {
-      case BYTE:
-      case SHORT:
-      case INT:
-      case LONG:
-        break;
-      default:
-        throw new UnsupportedOperationException(dataType + " is not supported for RLE");
+    if (! (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE ||
+        dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
+        dataType == DataTypes.LONG)) {
+      throw new UnsupportedOperationException(dataType + " is not supported for RLE");
     }
   }
 
@@ -116,34 +117,29 @@ public class RLECodec implements ColumnPageCodec {
     protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
       validateDataType(input.getDataType());
       this.dataType = input.getDataType();
-      switch (dataType) {
-        case BYTE:
-          byte[] bytePage = input.getBytePage();
-          for (int i = 0; i < bytePage.length; i++) {
-            putValue(bytePage[i]);
-          }
-          break;
-        case SHORT:
-          short[] shortPage = input.getShortPage();
-          for (int i = 0; i < shortPage.length; i++) {
-            putValue(shortPage[i]);
-          }
-          break;
-        case INT:
-          int[] intPage = input.getIntPage();
-          for (int i = 0; i < intPage.length; i++) {
-            putValue(intPage[i]);
-          }
-          break;
-        case LONG:
-          long[] longPage = input.getLongPage();
-          for (int i = 0; i < longPage.length; i++) {
-            putValue(longPage[i]);
-          }
-          break;
-        default:
-          throw new UnsupportedOperationException(input.getDataType() +
-              " does not support RLE encoding");
+      if (dataType == DataTypes.BYTE) {
+        byte[] bytePage = input.getBytePage();
+        for (int i = 0; i < bytePage.length; i++) {
+          putValue(bytePage[i]);
+        }
+      } else if (dataType == DataTypes.SHORT) {
+        short[] shortPage = input.getShortPage();
+        for (int i = 0; i < shortPage.length; i++) {
+          putValue(shortPage[i]);
+        }
+      } else if (dataType == DataTypes.INT) {
+        int[] intPage = input.getIntPage();
+        for (int i = 0; i < intPage.length; i++) {
+          putValue(intPage[i]);
+        }
+      } else if (dataType == DataTypes.LONG) {
+        long[] longPage = input.getLongPage();
+        for (int i = 0; i < longPage.length; i++) {
+          putValue(longPage[i]);
+        }
+      } else {
+        throw new UnsupportedOperationException(input.getDataType() +
+            " does not support RLE encoding");
       }
       return collectResult();
     }
@@ -157,8 +153,11 @@ public class RLECodec implements ColumnPageCodec {
 
     @Override
     protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-      return new RLEEncoderMeta(
-          inputPage.getDataType(), inputPage.getPageSize(), inputPage.getStatistics());
+      return new RLEEncoderMeta(inputPage.getColumnSpec(),
+          inputPage.getDataType(),
+          inputPage.getPageSize(),
+          inputPage.getStatistics(),
+          inputPage.getColumnCompressorName());
     }
 
     private void putValue(Object value) throws IOException {
@@ -199,21 +198,16 @@ public class RLECodec implements ColumnPageCodec {
     }
 
     private void writeRunValue(Object value) throws IOException {
-      switch (dataType) {
-        case BYTE:
-          stream.writeByte((byte) value);
-          break;
-        case SHORT:
-          stream.writeShort((short) value);
-          break;
-        case INT:
-          stream.writeInt((int) value);
-          break;
-        case LONG:
-          stream.writeLong((long) value);
-          break;
-        default:
-          throw new RuntimeException("internal error");
+      if (dataType == DataTypes.BYTE) {
+        stream.writeByte((byte) value);
+      } else if (dataType == DataTypes.SHORT) {
+        stream.writeShort((short) value);
+      } else if (dataType == DataTypes.INT) {
+        stream.writeInt((int) value);
+      } else if (dataType == DataTypes.LONG) {
+        stream.writeLong((long) value);
+      } else {
+        throw new RuntimeException("internal error");
       }
     }
 
@@ -291,38 +285,47 @@ public class RLECodec implements ColumnPageCodec {
   // TODO: add a on-the-fly decoder for filter query with high selectivity
   private class RLEDecoder implements ColumnPageDecoder {
 
-    // src data type
-    private DataType dataType;
+    private TableSpec.ColumnSpec columnSpec;
     private int pageSize;
+    private String compressorName;
 
-    private RLEDecoder(DataType dataType, int pageSize) {
-      validateDataType(dataType);
-      this.dataType = dataType;
+    private RLEDecoder(TableSpec.ColumnSpec columnSpec, int pageSize, String compressorName) {
+      validateDataType(columnSpec.getSchemaDataType());
+      this.columnSpec = columnSpec;
       this.pageSize = pageSize;
+      this.compressorName = compressorName;
     }
 
-    @Override
-    public ColumnPage decode(byte[] input, int offset, int length)
+    @Override public ColumnPage decode(byte[] input, int offset, int length)
         throws MemoryException, IOException {
+      DataType dataType = columnSpec.getSchemaDataType();
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
-      ColumnPage resultPage = ColumnPage.newPage(dataType, pageSize);
-      switch (dataType) {
-        case BYTE:
-          decodeBytePage(in, resultPage);
-          break;
-        case SHORT:
-          decodeShortPage(in, resultPage);
-          break;
-        case INT:
-          decodeIntPage(in, resultPage);
-          break;
-        case LONG:
-          decodeLongPage(in, resultPage);
-          break;
-        default:
-          throw new RuntimeException("unsupported datatype:" + dataType);
+      ColumnPage resultPage = ColumnPage.newPage(
+          new ColumnPageEncoderMeta(columnSpec, dataType, compressorName), pageSize);
+      if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+        decodeBytePage(in, resultPage);
+      } else if (dataType == DataTypes.SHORT) {
+        decodeShortPage(in, resultPage);
+      } else if (dataType == DataTypes.INT) {
+        decodeIntPage(in, resultPage);
+      } else if (dataType == DataTypes.LONG) {
+        decodeLongPage(in, resultPage);
+      } else {
+        throw new RuntimeException("unsupported datatype:" + dataType);
       }
       return resultPage;
+    }
+
+    @Override public void decodeAndFillVector(byte[] input, int offset, int length,
+        ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
+        ReusableDataBuffer reusableDataBuffer)
+        throws MemoryException, IOException {
+      throw new UnsupportedOperationException("Not supposed to be called here");
+    }
+
+    @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+        throws MemoryException, IOException {
+      return decode(input, offset, length);
     }
 
     private void decodeBytePage(DataInputStream in, ColumnPage decodedPage)

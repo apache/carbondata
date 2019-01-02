@@ -17,19 +17,19 @@
 
 package org.apache.carbondata.core.locks;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class handles the file locking in the local file system.
@@ -37,14 +37,9 @@ import org.apache.carbondata.core.util.CarbonProperties;
  */
 public class LocalFileLock extends AbstractCarbonLock {
   /**
-   * location is the location of the lock file.
+   * lockFileDir is the directory of the lock file.
    */
-  private String location;
-
-  /**
-   * fileOutputStream of the local lock file
-   */
-  private FileOutputStream fileOutputStream;
+  private String lockFileDir;
 
   /**
    * channel is the FileChannel of the lock file.
@@ -57,42 +52,18 @@ public class LocalFileLock extends AbstractCarbonLock {
   private FileLock fileLock;
 
   /**
-   * lock file
-   */
-  private String lockFile;
-
-  public static final String tmpPath;
-
-  private  String lockFilePath;
-
-  /**
    * LOGGER for  logging the messages.
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(LocalFileLock.class.getName());
-
-  static {
-    tmpPath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
-        System.getProperty("java.io.tmpdir"));
-  }
 
   /**
    * @param lockFileLocation
    * @param lockFile
    */
   public LocalFileLock(String lockFileLocation, String lockFile) {
-    this.location = tmpPath + CarbonCommonConstants.FILE_SEPARATOR + lockFileLocation;
-    this.lockFile = lockFile;
-    initRetry();
-  }
-
-  /**
-   * @param tableIdentifier
-   * @param lockFile
-   */
-  public LocalFileLock(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
-        .getTableName(), lockFile);
+    this.lockFileDir = CarbonTablePath.getLockFilesDirPath(lockFileLocation);
+    this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFile);
     initRetry();
   }
 
@@ -103,17 +74,15 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
-      if (!FileFactory.isFileExist(location, FileFactory.getFileType(tmpPath))) {
-        FileFactory.mkdirs(location, FileFactory.getFileType(tmpPath));
+      if (!FileFactory.isFileExist(lockFileDir)) {
+        FileFactory.mkdirs(lockFileDir, FileFactory.getFileType(lockFileDir));
       }
-      lockFilePath = location + CarbonCommonConstants.FILE_SEPARATOR +
-          lockFile;
-      if (!FileFactory.isFileExist(lockFilePath, FileFactory.getFileType(location))) {
-        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(location));
+      if (!FileFactory.isFileExist(lockFilePath)) {
+        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(lockFilePath));
       }
 
-      fileOutputStream = new FileOutputStream(lockFilePath);
-      channel = fileOutputStream.getChannel();
+      channel = FileChannel.open(Paths.get(lockFilePath), StandardOpenOption.WRITE,
+          StandardOpenOption.APPEND);
       try {
         fileLock = channel.tryLock();
       } catch (OverlappingFileLockException e) {
@@ -125,10 +94,9 @@ public class LocalFileLock extends AbstractCarbonLock {
         return false;
       }
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.info(e.getMessage());
       return false;
     }
-
   }
 
   /**
@@ -137,33 +105,17 @@ public class LocalFileLock extends AbstractCarbonLock {
    * @return
    */
   @Override public boolean unlock() {
-    boolean status;
+    boolean status = false;
     try {
       if (null != fileLock) {
         fileLock.release();
+        status = true;
       }
-      status = true;
     } catch (IOException e) {
       status = false;
     } finally {
-      if (null != fileOutputStream) {
-        try {
-          fileOutputStream.close();
-          // deleting the lock file after releasing the lock.
-          CarbonFile lockFile = FileFactory
-                  .getCarbonFile(lockFilePath, FileFactory.getFileType(lockFilePath));
-          if (!lockFile.exists() || lockFile.delete()) {
-            LOGGER.info("Successfully deleted the lock file " + lockFilePath);
-          } else {
-            LOGGER.error("Not able to delete the lock file " + lockFilePath);
-            status = false;
-          }
-        } catch (IOException e) {
-          LOGGER.error(e.getMessage());
-        }
-      }
+      CarbonUtil.closeStreams(channel);
     }
     return status;
   }
-
 }

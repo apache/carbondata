@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.scan.expression.logical;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -37,8 +37,8 @@ public class OrExpressionTest {
   private OrExpression orExpression;
 
   @Before public void setUp() {
-    ColumnExpression leftExpression = new ColumnExpression("IMEI", DataType.BOOLEAN);
-    ColumnExpression rightExpression = new ColumnExpression("IMEI", DataType.BOOLEAN);
+    ColumnExpression leftExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
+    ColumnExpression rightExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
     orExpression = new OrExpression(leftExpression, rightExpression);
   }
 
@@ -51,7 +51,75 @@ public class OrExpressionTest {
   @Test public void testEvaluate() throws FilterIllegalMemberException, FilterUnsupportedException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { false });
-    final ExpressionResult expressionResult = new ExpressionResult(DataType.BOOLEAN, "test");
+    final ExpressionResult expressionResult = new ExpressionResult(DataTypes.BOOLEAN, "test");
+    new MockUp<ColumnExpression>() {
+      @Mock public ExpressionResult evaluate(RowIntf value) {
+        return expressionResult;
+      }
+    };
+
+    assertTrue(orExpression.evaluate(rowImpl) instanceof ExpressionResult);
+  }
+
+  @Test public void testEvaluate1() throws FilterIllegalMemberException,
+  FilterUnsupportedException {
+    RowImpl rowImpl = new RowImpl();
+    rowImpl.setValues(new Boolean[] { false });
+    final ExpressionResult expressionResult = new ExpressionResult(DataTypes.BOOLEAN, "true");
+    new MockUp<ColumnExpression>() {
+      @Mock public ExpressionResult evaluate(RowIntf value) {
+        return expressionResult;
+      }
+    };
+
+    assertTrue(orExpression.evaluate(rowImpl) instanceof ExpressionResult);
+  }
+
+  @Test public void testEvaluate2() throws FilterIllegalMemberException,
+      FilterUnsupportedException {
+    RowImpl rowImpl = new RowImpl();
+    rowImpl.setValues(new Boolean[] { false });
+    final ExpressionResult expressionResultRight = new ExpressionResult(DataTypes.BOOLEAN, "false");
+    final ExpressionResult expressionResultLeft = new ExpressionResult(DataTypes.BOOLEAN, "true");
+    new MockUp<ColumnExpression>() {
+      boolean isLeft = true;
+      @Mock public ExpressionResult evaluate(RowIntf value) {
+        if (isLeft) {
+          isLeft = false;
+          return expressionResultLeft;
+        }
+        return expressionResultRight;
+      }
+    };
+
+    assertTrue(orExpression.evaluate(rowImpl) instanceof ExpressionResult);
+  }
+
+  @Test public void testEvaluate3() throws FilterIllegalMemberException,
+      FilterUnsupportedException {
+    RowImpl rowImpl = new RowImpl();
+    rowImpl.setValues(new Boolean[] { false });
+    final ExpressionResult expressionResultRight = new ExpressionResult(DataTypes.BOOLEAN, "false");
+    final ExpressionResult expressionResultLeft = new ExpressionResult(DataTypes.BOOLEAN, "false");
+    new MockUp<ColumnExpression>() {
+      boolean isLeft = true;
+      @Mock public ExpressionResult evaluate(RowIntf value) {
+        if (isLeft) {
+          isLeft = false;
+          return expressionResultLeft;
+        }
+        return expressionResultRight;
+      }
+    };
+
+    assertTrue(orExpression.evaluate(rowImpl) instanceof ExpressionResult);
+  }
+
+  @Test public void testEvaluate4()
+      throws FilterIllegalMemberException, FilterUnsupportedException {
+    RowImpl rowImpl = new RowImpl();
+    rowImpl.setValues(new Boolean[] { false });
+    final ExpressionResult expressionResult = new ExpressionResult(DataTypes.BOOLEAN, "false");
     new MockUp<ColumnExpression>() {
       @Mock public ExpressionResult evaluate(RowIntf value) {
         return expressionResult;
@@ -65,7 +133,7 @@ public class OrExpressionTest {
       throws FilterUnsupportedException, FilterIllegalMemberException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { true });
-    final ExpressionResult expressionResult = new ExpressionResult(DataType.STRING, "test");
+    final ExpressionResult expressionResult = new ExpressionResult(DataTypes.STRING, "test");
     new MockUp<ColumnExpression>() {
       @Mock public ExpressionResult evaluate(RowIntf value)
           throws FilterUnsupportedException, FilterIllegalMemberException {

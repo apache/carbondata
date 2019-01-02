@@ -19,33 +19,34 @@ package org.apache.carbondata.spark.rdd
 
 import java.io.IOException
 
-import org.apache.spark.sql.execution.command.SplitPartitionCallableModel
+import org.apache.spark.sql.execution.command.{AlterPartitionModel, SplitPartitionCallableModel}
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.spark.{PartitionFactory, SplitResultImpl}
+import org.apache.carbondata.spark.{AlterPartitionResultImpl, PartitionFactory}
 
 object PartitionSplitter {
 
   val logger = LogServiceFactory.getLogService(PartitionSplitter.getClass.getName)
 
   def triggerPartitionSplit(splitPartitionCallableModel: SplitPartitionCallableModel): Unit = {
-     val sc = splitPartitionCallableModel.sqlContext.sparkContext
+
+     val alterPartitionModel = new AlterPartitionModel(splitPartitionCallableModel.carbonLoadModel,
+       splitPartitionCallableModel.segmentId,
+       splitPartitionCallableModel.oldPartitionIds,
+       splitPartitionCallableModel.sqlContext
+     )
      val partitionId = splitPartitionCallableModel.partitionId
-     val storePath = splitPartitionCallableModel.storePath
-     val segmentId = splitPartitionCallableModel.segmentId
-     val oldPartitionIdList = splitPartitionCallableModel.oldPartitionIdList
      val carbonLoadModel = splitPartitionCallableModel.carbonLoadModel
      val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-     val identifier = carbonTable.getAbsoluteTableIdentifier
-     val carbonTableIdentifier = identifier.getCarbonTableIdentifier
-     val tableName = carbonTable.getFactTableName
+     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
+     val tableName = carbonTable.getTableName
      val databaseName = carbonTable.getDatabaseName
      val bucketInfo = carbonTable.getBucketingInfo(tableName)
      var finalSplitStatus = false
      val bucketNumber = bucketInfo match {
        case null => 1
-       case _ => bucketInfo.getNumberOfBuckets
+       case _ => bucketInfo.getNumOfRanges
      }
      val partitionInfo = carbonTable.getPartitionInfo(tableName)
      val partitioner = PartitionFactory.getPartitioner(partitionInfo)
@@ -53,25 +54,17 @@ object PartitionSplitter {
      for (i <- 0 until bucketNumber) {
        val bucketId = i
        val rdd = new CarbonScanPartitionRDD(
-         sc,
+         alterPartitionModel,
+         absoluteTableIdentifier,
          Seq(partitionId),
-         storePath,
-         segmentId,
-         bucketId,
-         oldPartitionIdList,
-         carbonTableIdentifier,
-         carbonLoadModel
+         bucketId
        ).partitionBy(partitioner).map(_._2)
 
-       val splitStatus = new AlterTableSplitPartitionRDD(sc,
-         new SplitResultImpl(),
+       val splitStatus = new AlterTableLoadPartitionRDD(alterPartitionModel,
+         new AlterPartitionResultImpl(),
          Seq(partitionId),
-         segmentId,
          bucketId,
-         carbonLoadModel,
-         identifier,
-         storePath,
-         oldPartitionIdList,
+         absoluteTableIdentifier,
          rdd).collect()
 
        if (splitStatus.length == 0) {
@@ -80,8 +73,6 @@ object PartitionSplitter {
          finalSplitStatus = splitStatus.forall(_._2)
        }
        if (!finalSplitStatus) {
-         logger.audit(s"Add/Split Partition request failed for table " +
-                      s"${ databaseName }.${ tableName }")
          logger.error(s"Add/Split Partition request failed for table " +
                       s"${ databaseName }.${ tableName }")
        }
@@ -89,14 +80,12 @@ object PartitionSplitter {
      if (finalSplitStatus) {
        try {
          PartitionUtils.
-           deleteOriginalCarbonFile(identifier, segmentId, Seq(partitionId).toList,
-             oldPartitionIdList, storePath, databaseName, tableName, partitionInfo, carbonLoadModel)
+           deleteOriginalCarbonFile(alterPartitionModel, absoluteTableIdentifier,
+             Seq(partitionId).toList, databaseName, tableName, partitionInfo)
        } catch {
-         case e: IOException => sys.error(s"Exception while delete original carbon files " +
-         e.getMessage)
+         case e: IOException =>
+           throw new IOException("Exception while delete original carbon files ", e)
        }
-       logger.audit(s"Add/Split Partition request completed for table " +
-                    s"${ databaseName }.${ tableName }")
        logger.info(s"Add/Split Partition request completed for table " +
                    s"${ databaseName }.${ tableName }")
      }

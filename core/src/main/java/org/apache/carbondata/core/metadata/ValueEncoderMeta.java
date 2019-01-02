@@ -19,17 +19,12 @@ package org.apache.carbondata.core.metadata;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-
 /**
  * DO NOT MODIFY THIS CLASS AND PACKAGE NAME, BECAUSE
  * IT IS SERIALIZE TO STORE
  * It holds Value compression metadata for one data column
  */
 public class ValueEncoderMeta implements Serializable {
-
-  private static final long serialVersionUID = -0L;
 
   /**
    * maxValue
@@ -83,20 +78,7 @@ public class ValueEncoderMeta implements Serializable {
     this.decimal = decimal;
   }
 
-  public DataType getType() {
-    switch (type) {
-      case CarbonCommonConstants.BIG_INT_MEASURE:
-        return DataType.LONG;
-      case CarbonCommonConstants.DOUBLE_MEASURE:
-        return DataType.DOUBLE;
-      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
-        return DataType.DECIMAL;
-      default:
-        throw new RuntimeException("Unexpected type: " + type);
-    }
-  }
-
-  public char getTypeInChar() {
+  public char getType() {
     return type;
   }
 

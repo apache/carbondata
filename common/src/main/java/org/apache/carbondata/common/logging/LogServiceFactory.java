@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.common.logging;
 
-import org.apache.carbondata.common.logging.impl.StandardLogService;
+import org.apache.log4j.Logger;
 
 /**
  * Log Service factory
@@ -33,12 +33,7 @@ public final class LogServiceFactory {
    * @param className provides class name
    * @return LogService
    */
-  public static LogService getLogService(final String className) {
-    return new StandardLogService(className);
+  public static Logger getLogService(final String className) {
+    return Logger.getLogger(className);
   }
-
-  public static LogService getLogService() {
-    return new StandardLogService();
-  }
-
 }

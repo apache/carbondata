@@ -31,7 +31,7 @@ class SparkCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS src_orc")
   }
 
-  test("CARBONDATA-734: Support the syntax of 'STORED BY PARQUET/ORC'") {
+  test("CARBONDATA-734: Support the syntax of 'STORED AS PARQUET/ORC'") {
     sql("CREATE TABLE src_pqt(key INT, value STRING) STORED AS PARQUET")
     sql("CREATE TABLE src_orc(key INT, value STRING) STORED AS ORC")
   }

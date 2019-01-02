@@ -24,19 +24,20 @@ import org.apache.spark.sql.Row
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.DataLoadExecutor
-import org.apache.carbondata.spark.load.CarbonLoaderUtil
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo
+import org.apache.carbondata.processing.loading.{DataLoadExecutor, TableProcessingOperations}
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Data load in case of update command .
  */
 object UpdateDataLoad {
 
-  def DataLoadForUpdate(segId: String,
-      index: Int,
+  def DataLoadForUpdate(
+      segId: String,
+      index: Long,
       iter: Iterator[Row],
       carbonLoadModel: CarbonLoadModel,
       loadMetadataDetails: LoadMetadataDetails): Unit = {
@@ -51,11 +52,16 @@ object UpdateDataLoad {
         index,
         null,
         loadMetadataDetails)
-      // Intialize to set carbon properties
+      // Initialize to set carbon properties
       loader.initialize()
 
-      loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
-      new DataLoadExecutor().execute(carbonLoadModel,
+      loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
+      val executor = new DataLoadExecutor
+      TaskContext.get().addTaskCompletionListener { context =>
+        executor.close()
+        CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      }
+      executor.execute(carbonLoadModel,
         loader.storeLocation,
         recordReaders.toArray)
 
@@ -64,7 +70,7 @@ object UpdateDataLoad {
         LOGGER.error(e)
         throw e
     } finally {
-      CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(carbonLoadModel, false, false)
+      TableProcessingOperations.deleteLocalDataLoadFolderLocation(carbonLoadModel, false, false)
     }
   }
 

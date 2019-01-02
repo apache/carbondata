@@ -19,10 +19,15 @@ package org.apache.carbondata.core.mutate;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class stores the block details of delete delta file
@@ -31,26 +36,18 @@ public class DeleteDeltaBlockDetails implements Serializable {
 
   private static final long serialVersionUID = 1206104914918495724L;
 
-  private List<DeleteDeltaBlockletDetails> blockletDetails;
+  private Map<String, DeleteDeltaBlockletDetails> blockletDetailsMap;
   private String blockName;
 
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DeleteDeltaBlockDetails.class.getName());
 
   public DeleteDeltaBlockDetails(String blockName) {
     this.blockName = blockName;
-    blockletDetails = new ArrayList<DeleteDeltaBlockletDetails>();
-  }
-
-  public String getBlockName() {
-    return blockName;
-  }
-
-  public void setBlockName(String blockName) {
-    this.blockName = blockName;
+    blockletDetailsMap = new TreeMap<>();
   }
 
   @Override public boolean equals(Object obj) {
@@ -68,15 +65,28 @@ public class DeleteDeltaBlockDetails implements Serializable {
   }
 
   public List<DeleteDeltaBlockletDetails> getBlockletDetails() {
-    return blockletDetails;
+    List<DeleteDeltaBlockletDetails> deleteDeltaBlockletDetailsList = new ArrayList<>();
+    if (null != blockletDetailsMap) {
+      Set<Map.Entry<String, DeleteDeltaBlockletDetails>> entries = blockletDetailsMap.entrySet();
+      if (null != entries && !entries.isEmpty()) {
+        Iterator<Map.Entry<String, DeleteDeltaBlockletDetails>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+          deleteDeltaBlockletDetailsList.add(iterator.next().getValue());
+        }
+      }
+    }
+    return deleteDeltaBlockletDetailsList;
   }
 
   public boolean addBlockletDetails(DeleteDeltaBlockletDetails blocklet) {
-    int index = blockletDetails.indexOf(blocklet);
-    if (blockletDetails.isEmpty() || index == -1) {
-      return blockletDetails.add(blocklet);
+    DeleteDeltaBlockletDetails deleteDeltaBlockletDetails =
+        blockletDetailsMap.get(blocklet.getBlockletKey());
+    if (null == deleteDeltaBlockletDetails) {
+      blockletDetailsMap.put(blocklet.getBlockletKey(), blocklet);
+      return true;
     } else {
-      return blockletDetails.get(index).addDeletedRows(blocklet.getDeletedRows());
+      deleteDeltaBlockletDetails.addDeletedRows(blocklet.getDeletedRows());
+      return true;
     }
   }
 

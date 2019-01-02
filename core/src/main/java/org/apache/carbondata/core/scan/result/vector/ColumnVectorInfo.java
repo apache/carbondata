@@ -16,22 +16,28 @@
  */
 package org.apache.carbondata.core.scan.result.vector;
 
+import java.util.BitSet;
+
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
-import org.apache.carbondata.core.scan.model.QueryDimension;
-import org.apache.carbondata.core.scan.model.QueryMeasure;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
+import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 
 public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public int offset;
   public int size;
   public CarbonColumnVector vector;
   public int vectorOffset;
-  public QueryDimension dimension;
-  public QueryMeasure measure;
+  public ProjectionDimension dimension;
+  public ProjectionMeasure measure;
   public int ordinal;
   public DirectDictionaryGenerator directDictionaryGenerator;
   public MeasureDataVectorProcessor.MeasureVectorFiller measureVectorFiller;
   public GenericQueryType genericQueryType;
+  public int[] invertedIndex;
+  public BitSet deletedRows;
+  public DecimalConverterFactory.DecimalConverter decimalConverter;
 
   @Override public int compareTo(ColumnVectorInfo o) {
     return ordinal - o.ordinal;

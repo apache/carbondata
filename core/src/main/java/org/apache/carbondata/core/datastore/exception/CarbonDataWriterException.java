@@ -44,6 +44,15 @@ public class CarbonDataWriterException extends RuntimeException {
   /**
    * Constructor
    *
+   * @param t exception.
+   */
+  public CarbonDataWriterException(Throwable t) {
+    super(t);
+  }
+
+  /**
+   * Constructor
+   *
    * @param msg The error message for this exception.
    */
   public CarbonDataWriterException(String msg, Throwable t) {

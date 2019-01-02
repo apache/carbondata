@@ -18,128 +18,162 @@
 package org.apache.carbondata.hadoop.util;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
+import org.apache.carbondata.core.datamap.DataMapJob;
+import org.apache.carbondata.core.datamap.DataMapUtil;
+import org.apache.carbondata.core.exception.InvalidConfigurationException;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
-import org.apache.carbondata.core.scan.filter.TableProvider;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizerBasic;
-import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
-import org.apache.carbondata.core.scan.model.QueryDimension;
-import org.apache.carbondata.core.scan.model.QueryMeasure;
-import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
+import org.apache.carbondata.hadoop.CarbonProjection;
+import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-
+import org.apache.log4j.Logger;
 
 /**
  * Utility class
  */
 public class CarbonInputFormatUtil {
 
-  public static CarbonQueryPlan createQueryPlan(CarbonTable carbonTable, String columnString) {
-    String[] columns = null;
-    if (columnString != null) {
-      columns = columnString.split(",");
-    }
-    String factTableName = carbonTable.getFactTableName();
-    CarbonQueryPlan plan = new CarbonQueryPlan(carbonTable.getDatabaseName(), factTableName);
-    // fill dimensions
-    // If columns are null, set all dimensions and measures
-    int i = 0;
-    if (columns != null) {
-      for (String column : columns) {
-        CarbonDimension dimensionByName = carbonTable.getDimensionByName(factTableName, column);
-        if (dimensionByName != null) {
-          addQueryDimension(plan, i, dimensionByName);
-          i++;
-        } else {
-          CarbonMeasure measure = carbonTable.getMeasureByName(factTableName, column);
-          if (measure == null) {
-            throw new RuntimeException(column + " column not found in the table " + factTableName);
-          }
-          addQueryMeasure(plan, i, measure);
-          i++;
-        }
-      }
-    }
-
-    plan.setQueryId(System.nanoTime() + "");
-    return plan;
-  }
+  /**
+   * Attribute for Carbon LOGGER.
+   */
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(CarbonProperties.class.getName());
 
   public static <V> CarbonTableInputFormat<V> createCarbonInputFormat(
       AbsoluteTableIdentifier identifier,
       Job job) throws IOException {
     CarbonTableInputFormat<V> carbonInputFormat = new CarbonTableInputFormat<>();
+    CarbonTableInputFormat.setDatabaseName(
+        job.getConfiguration(), identifier.getCarbonTableIdentifier().getDatabaseName());
+    CarbonTableInputFormat.setTableName(
+        job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
+    setDataMapJobIfConfigured(job.getConfiguration());
     return carbonInputFormat;
   }
 
   public static <V> CarbonTableInputFormat<V> createCarbonTableInputFormat(
       AbsoluteTableIdentifier identifier, List<String> partitionId, Job job) throws IOException {
     CarbonTableInputFormat<V> carbonTableInputFormat = new CarbonTableInputFormat<>();
-    carbonTableInputFormat.setPartitionIdList(job.getConfiguration(), partitionId);
+    CarbonTableInputFormat.setPartitionIdList(
+        job.getConfiguration(), partitionId);
+    CarbonTableInputFormat.setDatabaseName(
+        job.getConfiguration(), identifier.getCarbonTableIdentifier().getDatabaseName());
+    CarbonTableInputFormat.setTableName(
+        job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
+    setDataMapJobIfConfigured(job.getConfiguration());
     return carbonTableInputFormat;
   }
 
-  private static void addQueryMeasure(CarbonQueryPlan plan, int order, CarbonMeasure measure) {
-    QueryMeasure queryMeasure = new QueryMeasure(measure.getColName());
-    queryMeasure.setQueryOrder(order);
-    queryMeasure.setMeasure(measure);
-    plan.addMeasure(queryMeasure);
-  }
-
-  private static void addQueryDimension(CarbonQueryPlan plan, int order,
-      CarbonDimension dimension) {
-    QueryDimension queryDimension = new QueryDimension(dimension.getColName());
-    queryDimension.setQueryOrder(order);
-    queryDimension.setDimension(dimension);
-    plan.addDimension(queryDimension);
-  }
-
-  public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable) {
-    List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
-    List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
-    QueryModel.processFilterExpression(filterExpression, dimensions, measures);
-
-    if (null != filterExpression) {
-      // Optimize Filter Expression and fit RANGE filters is conditions apply.
-      FilterOptimizer rangeFilterOptimizer =
-          new RangeFilterOptmizer(new FilterOptimizerBasic(), filterExpression);
-      rangeFilterOptimizer.optimizeFilter();
+  public static <V> CarbonTableInputFormat<V> createCarbonTableInputFormat(
+      Job job,
+      CarbonTable carbonTable,
+      String[] projectionColumns,
+      Expression filterExpression,
+      List<PartitionSpec> partitionNames,
+      DataMapJob dataMapJob) throws IOException, InvalidConfigurationException {
+    Configuration conf = job.getConfiguration();
+    CarbonInputFormat.setTableInfo(conf, carbonTable.getTableInfo());
+    CarbonInputFormat.setDatabaseName(conf, carbonTable.getTableInfo().getDatabaseName());
+    CarbonInputFormat.setTableName(conf, carbonTable.getTableInfo().getFactTable().getTableName());
+    if (partitionNames != null) {
+      CarbonInputFormat.setPartitionsToPrune(conf, partitionNames);
     }
+    CarbonInputFormat
+        .setTransactionalTable(conf, carbonTable.getTableInfo().isTransactionalTable());
+    CarbonProjection columnProjection = new CarbonProjection(projectionColumns);
+    return createInputFormat(conf, carbonTable.getAbsoluteTableIdentifier(),
+        filterExpression, columnProjection, dataMapJob);
+  }
+
+  private static <V> CarbonTableInputFormat<V> createInputFormat(
+      Configuration conf,
+      AbsoluteTableIdentifier identifier,
+      Expression filterExpression,
+      CarbonProjection columnProjection,
+      DataMapJob dataMapJob) throws InvalidConfigurationException, IOException {
+    CarbonTableInputFormat<V> format = new CarbonTableInputFormat<>();
+    CarbonInputFormat.setTablePath(
+        conf,
+        identifier.appendWithLocalPrefix(identifier.getTablePath()));
+    CarbonInputFormat.setQuerySegment(conf, identifier);
+    CarbonInputFormat.setFilterPredicates(conf, filterExpression);
+    CarbonInputFormat.setColumnProjection(conf, columnProjection);
+    if (dataMapJob != null) {
+      DataMapUtil.setDataMapJob(conf, dataMapJob);
+    } else {
+      setDataMapJobIfConfigured(conf);
+    }
+    // when validate segments is disabled in thread local update it to CarbonTableInputFormat
+    CarbonSessionInfo carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
+    if (carbonSessionInfo != null) {
+      String tableUniqueKey = identifier.getDatabaseName() + "." + identifier.getTableName();
+      String validateInputSegmentsKey = CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+          tableUniqueKey;
+      CarbonInputFormat.setValidateSegmentsToAccess(
+          conf,
+          Boolean.valueOf(carbonSessionInfo.getThreadParams().getProperty(
+              validateInputSegmentsKey, "true")));
+      String queryOnPreAggStreamingKey = CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING +
+          tableUniqueKey;
+      boolean queryOnPreAggStreaming = Boolean.valueOf(carbonSessionInfo.getThreadParams()
+          .getProperty(queryOnPreAggStreamingKey, "false"));
+      String inputSegmentsKey = CarbonCommonConstants.CARBON_INPUT_SEGMENTS + tableUniqueKey;
+      CarbonInputFormat.setValidateSegmentsToAccess(conf,
+          Boolean.valueOf(carbonSessionInfo.getThreadParams()
+              .getProperty(validateInputSegmentsKey, "true")));
+      CarbonInputFormat.setQuerySegment(
+          conf,
+          carbonSessionInfo.getThreadParams().getProperty(
+              inputSegmentsKey,
+              CarbonProperties.getInstance().getProperty(inputSegmentsKey, "*")));
+      if (queryOnPreAggStreaming) {
+        CarbonInputFormat.setAccessStreamingSegments(conf, true);
+        carbonSessionInfo.getThreadParams().removeProperty(queryOnPreAggStreamingKey);
+        carbonSessionInfo.getThreadParams().removeProperty(inputSegmentsKey);
+        carbonSessionInfo.getThreadParams().removeProperty(validateInputSegmentsKey);
+      }
+    }
+    return format;
   }
 
   /**
-   * Resolve the filter expression.
+   * This method set DataMapJob if configured
    *
-   * @param filterExpression
-   * @param absoluteTableIdentifier
-   * @return
+   * @param conf
+   * @throws IOException
    */
-  public static FilterResolverIntf resolveFilter(Expression filterExpression,
-      AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider) {
-    try {
-      FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
-      //get resolved filter
-      return filterExpressionProcessor
-          .getFilterResolver(filterExpression, absoluteTableIdentifier, tableProvider);
-    } catch (Exception e) {
-      throw new RuntimeException("Error while resolving filter expression", e);
-    }
+  public static void setDataMapJobIfConfigured(Configuration conf) throws IOException {
+    String className = "org.apache.carbondata.spark.rdd.SparkDataMapJob";
+    DataMapUtil.setDataMapJob(conf, DataMapUtil.createDataMapJob(className));
   }
+
+  public static String createJobTrackerID(java.util.Date date) {
+    return new SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(date);
+  }
+
+  public static JobID getJobId(java.util.Date date, int batch) {
+    String jobtrackerID = createJobTrackerID(date);
+    return new JobID(jobtrackerID, batch);
+  }
+
 }

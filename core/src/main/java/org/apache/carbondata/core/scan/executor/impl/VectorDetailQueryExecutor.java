@@ -18,6 +18,7 @@ package org.apache.carbondata.core.scan.executor.impl;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -25,14 +26,21 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.VectorDetailQueryResultIterator;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Below class will be used to execute the detail query and returns columnar vectors.
  */
 public class VectorDetailQueryExecutor extends AbstractQueryExecutor<Object> {
 
+  public VectorDetailQueryExecutor(Configuration configuration) {
+    super(configuration);
+  }
+
   @Override
   public CarbonIterator<Object> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
+    this.setExecutorService(Executors.newCachedThreadPool());
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     this.queryIterator = new VectorDetailQueryResultIterator(
         blockExecutionInfoList,

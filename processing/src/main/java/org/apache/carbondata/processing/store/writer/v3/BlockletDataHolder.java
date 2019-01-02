@@ -16,33 +16,41 @@
  */
 package org.apache.carbondata.processing.store.writer.v3;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.ExecutorService;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.TablePage;
 
 public class BlockletDataHolder {
-  private List<EncodedTablePage> encodedTablePage;
-  private List<TablePage> rawTablePages;
+
+  /**
+   * current data size
+   */
   private long currentSize;
 
-  public BlockletDataHolder() {
-    this.encodedTablePage = new ArrayList<>();
-    this.rawTablePages = new ArrayList<>();
+  private EncodedBlocklet encodedBlocklet;
+
+  public BlockletDataHolder(ExecutorService fallbackpool, CarbonFactDataHandlerModel model) {
+    encodedBlocklet = new EncodedBlocklet(fallbackpool, Boolean.parseBoolean(
+        CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
+                CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT)),
+        model.getColumnLocalDictGenMap());
   }
 
   public void clear() {
-    encodedTablePage.clear();
-    rawTablePages.clear();
     currentSize = 0;
+    encodedBlocklet.clear();
   }
 
   public void addPage(TablePage rawTablePage) {
     EncodedTablePage encodedTablePage = rawTablePage.getEncodedTablePage();
-    this.encodedTablePage.add(encodedTablePage);
-    this.rawTablePages.add(rawTablePage);
     currentSize += encodedTablePage.getEncodedSize();
+    encodedBlocklet.addEncodedTablePage(encodedTablePage);
   }
 
   public long getSize() {
@@ -51,22 +59,14 @@ public class BlockletDataHolder {
   }
 
   public int getNumberOfPagesAdded() {
-    return encodedTablePage.size();
+    return encodedBlocklet.getNumberOfPages();
   }
 
   public int getTotalRows() {
-    int rows = 0;
-    for (EncodedTablePage nh : encodedTablePage) {
-      rows += nh.getPageSize();
-    }
-    return rows;
+    return encodedBlocklet.getBlockletSize();
   }
 
-  public List<EncodedTablePage> getEncodedTablePages() {
-    return encodedTablePage;
-  }
-
-  public List<TablePage> getRawTablePages() {
-    return rawTablePages;
+  public EncodedBlocklet getEncodedBlocklet() {
+    return encodedBlocklet;
   }
 }

@@ -23,7 +23,7 @@ import org.apache.carbondata.core.datastore.DataRefNode;
 /**
  * Below class will be used to iterate over data block
  */
-public class BlockletIterator extends CarbonIterator<DataRefNode> {
+class BlockletIterator extends CarbonIterator<DataRefNode> {
   /**
    * data store block
    */
@@ -47,17 +47,18 @@ public class BlockletIterator extends CarbonIterator<DataRefNode> {
    * Constructor
    *
    * @param datablock                 first data block
-   * @param totalNumberOfBlocksToScan total number of blocks to be scanned
+   * @param totalNumberOfBlockletToScan total number of blocklets to be scanned
    */
-  public BlockletIterator(DataRefNode datablock, long totalNumberOfBlocksToScan) {
+  BlockletIterator(DataRefNode datablock, long totalNumberOfBlockletToScan) {
     this.datablock = datablock;
-    this.totalNumberOfBlocksToScan = totalNumberOfBlocksToScan;
+    this.totalNumberOfBlocksToScan = totalNumberOfBlockletToScan;
   }
 
   /**
    * is all the blocks assigned to this iterator has been processed
    */
-  @Override public boolean hasNext() {
+  @Override
+  public boolean hasNext() {
     return hasNext;
   }
 
@@ -67,7 +68,8 @@ public class BlockletIterator extends CarbonIterator<DataRefNode> {
    * @return next data block
    *
    */
-  @Override public DataRefNode next() {
+  @Override
+  public DataRefNode next() {
     // get the current blocks
     DataRefNode datablockTemp = datablock;
     // store the next data block

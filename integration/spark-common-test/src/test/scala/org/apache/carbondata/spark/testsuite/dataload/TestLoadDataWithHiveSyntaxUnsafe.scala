@@ -33,7 +33,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
 
   override def beforeAll {
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
       "true"
     )
     sql("drop table if exists escapechar1")
@@ -576,7 +576,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
            (ID decimal(5,5), date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            array<decimal(4,2)>)
-           STORED BY 'org.apache.carbondata.format'
+           STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='complex')
       """
     )
 
@@ -598,7 +598,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
            (ID decimal(5,5), date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            struct<a:decimal(4,2)>)
-           STORED BY 'org.apache.carbondata.format'
+           STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='complex')
       """
     )
 
@@ -621,7 +621,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
            (ID decimal, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            array<struct<a:decimal(4,2),str:string>>)
-           STORED BY 'org.apache.carbondata.format'
+           STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='complex')
       """
     )
     sql(
@@ -724,8 +724,8 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists decimal_varlength")
     sql("drop table if exists decimal_varlength_hive")
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT
     )
   }
 }

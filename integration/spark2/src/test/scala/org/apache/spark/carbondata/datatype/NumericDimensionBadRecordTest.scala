@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.badrecordloger
 
-import java.io.File
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.hive.HiveContext
@@ -43,11 +41,7 @@ class NumericDimensionBadRecordTest extends Spark2QueryTest with BeforeAndAfterA
       sql("drop table IF EXISTS floatDataType")
       sql("drop table IF EXISTS bigDecimalDataType")
       sql("drop table IF EXISTS stringDataType")
-      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-          new File("./target/test/badRecords")
-            .getCanonicalPath)
-      CarbonProperties.getInstance()
+       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       var csvFilePath = ""
 

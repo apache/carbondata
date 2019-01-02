@@ -17,11 +17,15 @@
 
 package org.apache.carbondata.core.datastore.filesystem;
 
-import mockit.Mock;
-import mockit.MockUp;
-import org.apache.carbondata.common.logging.LogService;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
+import mockit.Mock;
+import mockit.MockUp;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -30,14 +34,10 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.web.WebHdfsFileSystem;
 import org.apache.hadoop.util.Progressable;
+import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 
 public class HDFSCarbonFileTest {
 
-    private static final LogService LOGGER =
+    private static final Logger LOGGER =
             LogServiceFactory.getLogService(HDFSCarbonFileTest.class.getName());
     private static HDFSCarbonFile hdfsCarbonFile;
     private static FileStatus fileStatus = null;
@@ -58,7 +58,7 @@ public class HDFSCarbonFileTest {
     @BeforeClass
     static public void setUp() throws IOException {
         Configuration config = new Configuration();
-//adding local hadoop configuration
+        // adding local hadoop configuration
         config.addResource(new Path("core-site.xml"));
         config.addResource(new Path("hdfs-site.xml"));
         fileName = "Test.carbondata"; //this path is HDFS path
@@ -75,6 +75,7 @@ public class HDFSCarbonFileTest {
             BufferedWriter br = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
             br.write("Hello World");
             br.close();
+            os.close();
             fs.close();
 
             fileStatus = new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName));
@@ -369,7 +370,13 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        assertEquals(hdfsCarbonFile.renameForce(fileName), false);
+        new MockUp<WebHdfsFileSystem>(){
+            @Mock
+            public boolean rename(final Path src, final Path dst) throws IOException {
+                return true;
+            }
+        };
+        assertEquals(hdfsCarbonFile.renameForce(fileName), true);
     }
 
     @Test

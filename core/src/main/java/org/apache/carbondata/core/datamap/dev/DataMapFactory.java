@@ -17,63 +17,170 @@
 package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
-import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.events.ChangeEvent;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.features.TableOperation;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.events.Event;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
 /**
- * Interface for datamap factory, it is responsible for creating the datamap.
+ * Interface for datamap of index type, it is responsible for creating the datamap.
  */
-public interface DataMapFactory {
+public abstract class DataMapFactory<T extends DataMap> {
+
+  private CarbonTable carbonTable;
+  private DataMapSchema dataMapSchema;
+
+  public DataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+    this.carbonTable = carbonTable;
+    this.dataMapSchema = dataMapSchema;
+  }
+
+  public CarbonTable getCarbonTable() {
+    return carbonTable;
+  }
+
+  public void setCarbonTable(CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
+  }
+
+  public DataMapSchema getDataMapSchema() {
+    return dataMapSchema;
+  }
 
   /**
-   * Initialization of Datamap factory with the identifier and datamap name
+   * Create a new write for this datamap, to write new data into the specified segment and shard
    */
-  void init(AbsoluteTableIdentifier identifier, String dataMapName);
+  public abstract DataMapWriter createWriter(Segment segment, String shardName,
+      SegmentProperties segmentProperties) throws IOException;
+  /**
+   * Create a new DataMapBuilder for this datamap, to rebuild the specified
+   * segment and shard data in the main table.
+   * TODO: refactor to unify with DataMapWriter
+   */
+  public abstract DataMapBuilder createBuilder(Segment segment, String shardName,
+      SegmentProperties segmentProperties) throws IOException;
 
   /**
-   * Return a new write for this datamap
+   * Get the datamap for all segments
    */
-  DataMapWriter createWriter(String segmentId);
+  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments)
+      throws IOException {
+    Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
+    for (Segment segment : segments) {
+      dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment));
+    }
+    return dataMaps;
+  }
 
   /**
    * Get the datamap for segmentid
    */
-  List<DataMap> getDataMaps(String segmentId) throws IOException;
+  public abstract List<T> getDataMaps(Segment segment) throws IOException;
 
   /**
-   * Get datamap for distributable object.
+   * Get datamaps for distributable object.
    */
-  DataMap getDataMap(DataMapDistributable distributable);
+  public abstract List<T> getDataMaps(DataMapDistributable distributable)
+      throws IOException;
 
   /**
    * Get all distributable objects of a segmentid
    * @return
    */
-  List<DataMapDistributable> toDistributable(String segmentId);
+  public abstract List<DataMapDistributable> toDistributable(Segment segment);
 
   /**
    *
    * @param event
    */
-  void fireEvent(ChangeEvent event);
+  public abstract void fireEvent(Event event);
 
   /**
    * Clears datamap of the segment
    */
-  void clear(String segmentId);
+  public abstract void clear(Segment segment);
 
   /**
    * Clear all datamaps from memory
    */
-  void clear();
+  public abstract void clear();
 
   /**
    * Return metadata of this datamap
    */
-  DataMapMeta getMeta();
+  public abstract DataMapMeta getMeta();
+
+  /**
+   *  Type of datamap whether it is FG or CG
+   */
+  public abstract DataMapLevel getDataMapLevel();
+
+  /**
+   * delete datamap data in the specified segment
+   */
+  public abstract void deleteDatamapData(Segment segment) throws IOException;
+
+  /**
+   * delete datamap data if any
+   */
+  public abstract void deleteDatamapData();
+
+  /**
+   * This function should return true is the input operation enum will make the datamap become stale
+   */
+  public abstract boolean willBecomeStale(TableOperation operation);
+
+  /**
+   * Validate INDEX_COLUMNS property and return a array containing index column name
+   * Following will be validated
+   * 1. require INDEX_COLUMNS property
+   * 2. INDEX_COLUMNS can't contains illegal argument(empty, blank)
+   * 3. INDEX_COLUMNS can't contains duplicate same columns
+   * 4. INDEX_COLUMNS should be exists in table columns
+   */
+  public void validate() throws MalformedDataMapCommandException {
+    List<CarbonColumn> indexColumns = carbonTable.getIndexedColumns(dataMapSchema);
+    Set<String> unique = new HashSet<>();
+    for (CarbonColumn indexColumn : indexColumns) {
+      unique.add(indexColumn.getColName());
+    }
+    if (unique.size() != indexColumns.size()) {
+      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " has duplicate column");
+    }
+  }
+
+  /**
+   * whether to block operation on corresponding table or column.
+   * For example, bloomfilter datamap will block changing datatype for bloomindex column.
+   * By default it will not block any operation.
+   *
+   * @param operation table operation
+   * @param targets objects which the operation impact on
+   * @return true the operation will be blocked;false the operation will not be blocked
+   */
+  public boolean isOperationBlocked(TableOperation operation, Object... targets) {
+    return false;
+  }
+
+  /**
+   * whether this datamap support rebuild
+   */
+  public boolean supportRebuild() {
+    return false;
+  }
 }

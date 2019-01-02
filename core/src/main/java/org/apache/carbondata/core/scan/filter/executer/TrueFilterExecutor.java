@@ -21,7 +21,8 @@ import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.scan.filter.intf.RowIntf;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 public class TrueFilterExecutor implements FilterExecuter {
@@ -32,16 +33,30 @@ public class TrueFilterExecutor implements FilterExecuter {
    * @return
    * @throws FilterUnsupportedException
    */
-  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
-      throws FilterUnsupportedException, IOException {
-    int numberOfPages = blockChunkHolder.getDataBlock().numberOfPages();
+  public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
+      boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException {
+    int numberOfPages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
     BitSetGroup group = new BitSetGroup(numberOfPages);
     for (int i = 0; i < numberOfPages; i++) {
       BitSet set = new BitSet();
-      set.flip(0, blockChunkHolder.getDataBlock().nodeSize());
+      set.flip(0, rawBlockletColumnChunks.getDataBlock().getPageRowCount(i));
       group.setBitSet(set, i);
     }
     return group;
+  }
+
+  @Override
+  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    int numberOfPages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
+    BitSet set = new BitSet(numberOfPages);
+    set.set(0, numberOfPages);
+    return set;
+  }
+
+  @Override
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
+    return true;
   }
 
   /**
@@ -52,7 +67,8 @@ public class TrueFilterExecutor implements FilterExecuter {
    * @param blockMinValue
    * @return BitSet
    */
-  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     bitSet.flip(0, 1);
     return bitSet;
@@ -61,9 +77,9 @@ public class TrueFilterExecutor implements FilterExecuter {
   /**
    * It just reads necessary block for filter executor, it does not uncompress the data.
    *
-   * @param blockChunkHolder
+   * @param rawBlockletColumnChunks
    */
-  public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+  public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) {
     // do nothing
   }
 }

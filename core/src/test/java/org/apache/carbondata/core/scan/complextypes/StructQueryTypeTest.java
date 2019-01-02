@@ -47,12 +47,12 @@ public class StructQueryTypeTest {
     structQueryType.addChildren(arrayQueryType);
     List children = new ArrayList();
     children.add(arrayQueryType);
-    assertNotNull(structQueryType.getDataBasedOnDataTypeFromSurrogates(surrogateData));
+    assertNotNull(structQueryType.getDataBasedOnDataType(surrogateData));
   }
 
   @Test public void testGetColsCount() {
     structQueryType.setName("testName");
-    structQueryType.setParentname("testName");
+    structQueryType.setParentName("testName");
     structQueryType.addChildren(arrayQueryType);
     new MockUp<ArrayQueryType>() {
       @Mock int getColsCount() {
@@ -64,9 +64,4 @@ public class StructQueryTypeTest {
     assertEquals(expectedValue, actualValue);
   }
 
-  @Test public void testGetSchemaType() {
-    List children = new ArrayList();
-    children.add(null);
-    assertNotNull(structQueryType.getSchemaType());
-  }
 }

@@ -17,15 +17,16 @@
 
 package org.apache.carbondata.core.memory;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+
+import org.apache.log4j.Logger;
 
 /**
  * Holds the pointers for rows.
  */
 public class IntPointerBuffer {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(IntPointerBuffer.class.getName());
 
   private int length;
@@ -36,9 +37,9 @@ public class IntPointerBuffer {
 
   private MemoryBlock pointerMemoryBlock;
 
-  private long taskId;
+  private String taskId;
 
-  public IntPointerBuffer(long taskId) {
+  public IntPointerBuffer(String taskId) {
     // TODO can be configurable, it is initial size and it can grow automatically.
     this.length = 100000;
     pointerBlock = new int[length];

@@ -26,6 +26,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.common.constants.LoggerAction
+
 /**
   * Test Class for detailed query on timestamp datatypes
   *
@@ -33,10 +35,14 @@ import org.apache.spark.sql.test.util.QueryTest
   */
 class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
+  val bad_records_action = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
 
   override def beforeAll {
     try {
       CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
       sql("drop table if exists directDictionaryTable ")
       sql(
         "CREATE TABLE if not exists directDictionaryTable (empno int,doj date, " +
@@ -122,6 +128,17 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
     )
   }
 
+  test("select doj from directDictionaryTable with greater than filter with cast") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > date('2016-03-14')"),
+      Seq(Row(Date.valueOf("2016-04-14")))
+    )
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > cast('2016-03-14' as date)"),
+      Seq(Row(Date.valueOf("2016-04-14")))
+    )
+  }
+
   test("select count(doj) from directDictionaryTable") {
     checkAnswer(
       sql("select count(doj) from directDictionaryTable"),
@@ -134,6 +151,9 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      bad_records_action)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 }

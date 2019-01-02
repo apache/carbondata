@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReader;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -56,14 +58,14 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    * Method to read the blocks data based on block indexes
    *
    * @param fileReader   file reader to read the blocks
-   * @param blockIndexes blocks to be read
+   * @param columnIndexRange blocks to be read
    * @return measure data chunks
    */
-  @Override public MeasureRawColumnChunk[] readRawMeasureChunks(FileHolder fileReader,
-      int[][] blockIndexes) throws IOException {
+  @Override public MeasureRawColumnChunk[] readRawMeasureChunks(FileReader fileReader,
+      int[][] columnIndexRange) throws IOException {
     MeasureRawColumnChunk[] datChunk = new MeasureRawColumnChunk[measureColumnChunks.size()];
-    for (int i = 0; i < blockIndexes.length; i++) {
-      for (int j = blockIndexes[i][0]; j <= blockIndexes[i][1]; j++) {
+    for (int i = 0; i < columnIndexRange.length; i++) {
+      for (int j = columnIndexRange[i][0]; j <= columnIndexRange[i][1]; j++) {
         datChunk[j] = readRawMeasureChunk(fileReader, j);
       }
     }
@@ -74,15 +76,15 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    * Method to read the blocks data based on block index
    *
    * @param fileReader file reader to read the blocks
-   * @param blockIndex block to be read
+   * @param columnIndex column to be read
    * @return measure data chunk
    */
-  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
+  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileReader fileReader, int columnIndex)
       throws IOException {
-    DataChunk dataChunk = measureColumnChunks.get(blockIndex);
+    DataChunk dataChunk = measureColumnChunks.get(columnIndex);
     ByteBuffer buffer = fileReader
         .readByteBuffer(filePath, dataChunk.getDataPageOffset(), dataChunk.getDataPageLength());
-    MeasureRawColumnChunk rawColumnChunk = new MeasureRawColumnChunk(blockIndex, buffer, 0,
+    MeasureRawColumnChunk rawColumnChunk = new MeasureRawColumnChunk(columnIndex, buffer, 0,
         dataChunk.getDataPageLength(), this);
     rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(1);
@@ -91,14 +93,15 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
   }
 
   @Override
-  public ColumnPage convertToColumnPage(MeasureRawColumnChunk measureRawColumnChunk,
-      int pageNumber) throws IOException, MemoryException {
-    int blockIndex = measureRawColumnChunk.getBlockletId();
+  public ColumnPage decodeColumnPage(MeasureRawColumnChunk measureRawColumnChunk, int pageNumber,
+      ReusableDataBuffer reusableDataBuffer) throws IOException, MemoryException {
+    int blockIndex = measureRawColumnChunk.getColumnIndex();
     DataChunk dataChunk = measureColumnChunks.get(blockIndex);
     ValueEncoderMeta meta = dataChunk.getValueEncoderMeta().get(0);
-    ColumnPageDecoder codec = strategy.createDecoderLegacy(meta);
+    ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta,
+        CompressorFactory.NativeSupportedCompressor.SNAPPY.getName());
     ColumnPage decodedPage = codec.decode(measureRawColumnChunk.getRawData().array(),
-        measureRawColumnChunk.getOffSet(), dataChunk.getDataPageLength());
+        (int) measureRawColumnChunk.getOffSet(), dataChunk.getDataPageLength());
     decodedPage.setNullBits(dataChunk.getNullValueIndexForColumn());
 
     return decodedPage;

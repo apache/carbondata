@@ -46,10 +46,10 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
   public MultiDimKeyVarLengthEquiSplitGenerator(int[] lens, byte dimensionsToSplit) {
     super(lens);
     this.dimensionsToSplit = dimensionsToSplit;
-    intialize();
+    initialize();
   }
 
-  private void intialize() {
+  private void initialize() {
     byte s = 0;
     List<Set<Integer>> splitList =
         new ArrayList<Set<Integer>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
@@ -71,10 +71,7 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
     List<Integer>[] splits = new List[splitList.size()];
     int i = 0;
     for (Set<Integer> splitLocal : splitList) {
-      List<Integer> range = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-      for (Integer index : splitLocal) {
-        range.add(index);
-      }
+      List<Integer> range = new ArrayList<Integer>(splitLocal);
       splits[i++] = range;
     }
     for (int j = 1; j < splits.length; j++) {

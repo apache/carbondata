@@ -32,7 +32,7 @@ class OffheapQuery1TestCase extends QueryTest with BeforeAndAfterAll {
          
 
 //To check select query with limit
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_001", Include) {
+test("OffHeapQuery-001-TC_001", Include) {
    sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdataquery1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -43,21 +43,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_001", I
        
 
 //To check select query with limit as string
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_002", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_002", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 limit """"").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check select query with no input given at limit
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_003", Include) {
+test("OffHeapQuery-001-TC_003", Include) {
   
   sql(s"""select * from uniqdataquery1 limit""").collect
   
@@ -66,7 +60,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_003", I
        
 
 //To check select count  query  with where and group by clause
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_004", Include) {
+test("OffHeapQuery-001-TC_004", Include) {
   
   sql(s"""select count(*) from uniqdataquery1 where cust_name="CUST_NAME_00000" group by cust_name""").collect
   
@@ -75,7 +69,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_004", I
        
 
 //To check select count  query   and group by  cust_name using like operator
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_005", Include) {
+test("OffHeapQuery-001-TC_005", Include) {
   
   sql(s"""select count(*) from uniqdataquery1 where cust_name like "cust_name_0%" group by cust_name""").collect
   
@@ -84,7 +78,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_005", I
        
 
 //To check select count  query   and group by  name using IN operator with empty values
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_006", Include) {
+test("OffHeapQuery-001-TC_006", Include) {
   
   sql(s"""select count(*) from uniqdataquery1 where cust_name IN("","") group by cust_name""").collect
   
@@ -93,7 +87,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_006", I
        
 
 //To check select count  query   and group by  name using IN operator with specific  values
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_007", Include) {
+test("OffHeapQuery-001-TC_007", Include) {
   
   sql(s"""select count(*) from uniqdataquery1 where cust_name IN(1,2,3) group by cust_name""").collect
   
@@ -102,7 +96,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_007", I
        
 
 //To check select distinct query 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_008", Include) {
+test("OffHeapQuery-001-TC_008", Include) {
   
   sql(s"""select distinct cust_name from uniqdataquery1 group by cust_name""").collect
   
@@ -111,63 +105,39 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_008", I
        
 
 //To check where clause with OR and no operand
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_009", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_009", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id > 1 OR """).collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check OR clause with LHS and RHS having no arguments
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_010", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_010", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where OR """).collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check OR clause with LHS having no arguments
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_011", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_011", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where OR cust_id > "1"""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check incorrect query 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_013", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_013", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id > 0 OR name  """).collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check select query with rhs false
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_014", Include) {
+test("OffHeapQuery-001-TC_014", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id > 9005 OR false""").collect
   
@@ -176,7 +146,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_014", I
        
 
 //To check count on multiple arguments 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_015", Include) {
+test("OffHeapQuery-001-TC_015", Include) {
   
   sql(s"""select count(cust_id,cust_name) from uniqdataquery1 where cust_id > 10544""").collect
   
@@ -185,7 +155,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_015", I
        
 
 //To check count with no argument 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_016", Include) {
+test("OffHeapQuery-001-TC_016", Include) {
   
   sql(s"""select count() from uniqdataquery1 where cust_id > 10544""").collect
   
@@ -194,7 +164,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_016", I
        
 
 //To check count with * as an argument 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_017", Include) {
+test("OffHeapQuery-001-TC_017", Include) {
   
   sql(s"""select count(*) from uniqdataquery1 where cust_id>10544""").collect
   
@@ -203,7 +173,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_017", I
        
 
 //To check select count query execution with entire column
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_018", Include) {
+test("OffHeapQuery-001-TC_018", Include) {
   
   sql(s"""select count(*) from uniqdataquery1""").collect
   
@@ -212,7 +182,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_018", I
        
 
 //To check select distinct query execution 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_019", Include) {
+test("OffHeapQuery-001-TC_019", Include) {
   
   sql(s"""select distinct * from uniqdataquery1""").collect
   
@@ -221,7 +191,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_019", I
        
 
 //To check select multiple column query execution 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_020", Include) {
+test("OffHeapQuery-001-TC_020", Include) {
   
   sql(s"""select cust_name,cust_id,count(cust_name) from uniqdataquery1 group by cust_name,cust_id""").collect
   
@@ -230,21 +200,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_020", I
        
 
 //To check select count and distinct query execution 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_021", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_021", Include) {
+  intercept[Exception] {
     sql(s"""select count(cust_id),distinct(cust_name) from uniqdataquery1""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check sum query execution 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_022", Include) {
+test("OffHeapQuery-001-TC_022", Include) {
   
   sql(s"""select sum(cust_id) as sum,cust_name from uniqdataquery1 group by cust_name""").collect
   
@@ -253,7 +217,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_022", I
        
 
 //To check sum of names query execution 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_023", Include) {
+test("OffHeapQuery-001-TC_023", Include) {
   
   sql(s"""select sum(cust_name) from uniqdataquery1""").collect
   
@@ -262,7 +226,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_023", I
        
 
 //To check select distinct and groupby query execution 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_024", Include) {
+test("OffHeapQuery-001-TC_024", Include) {
   
   sql(s"""select distinct(cust_name,cust_id) from uniqdataquery1 group by cust_name,cust_id""").collect
   
@@ -271,7 +235,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_024", I
        
 
 //To check select with where clause on cust_name query execution 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_025", Include) {
+test("OffHeapQuery-001-TC_025", Include) {
   
   sql(s"""select cust_id from uniqdataquery1 where cust_name="cust_name_00000"""").collect
   
@@ -280,21 +244,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_025", I
        
 
 //To check query execution with IN operator without paranthesis
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_027", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_027", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id IN 9000,9005""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check query execution with IN operator with paranthesis
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_028", Include) {
+test("OffHeapQuery-001-TC_028", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id IN (9000,9005)""").collect
   
@@ -303,21 +261,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_028", I
        
 
 //To check query execution with IN operator with out specifying any field.
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_029", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_029", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where IN(1,2)""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check OR with correct syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_030", Include) {
+test("OffHeapQuery-001-TC_030", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id>9005 or cust_id=9005""").collect
   
@@ -326,7 +278,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_030", I
        
 
 //To check OR with boolean expression
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_031", Include) {
+test("OffHeapQuery-001-TC_031", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id>9005 or false""").collect
   
@@ -335,7 +287,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_031", I
        
 
 //To check AND with correct syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_032", Include) {
+test("OffHeapQuery-001-TC_032", Include) {
   
   sql(s"""select * from uniqdataquery1 where true AND true""").collect
   
@@ -344,7 +296,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_032", I
        
 
 //To check AND with using booleans
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_033", Include) {
+test("OffHeapQuery-001-TC_033", Include) {
   
   sql(s"""select * from uniqdataquery1 where true AND false""").collect
   
@@ -353,21 +305,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_033", I
        
 
 //To check AND with using booleans in invalid syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_034", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_034", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where AND true""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check AND Passing two conditions on same input
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_035", Include) {
+test("OffHeapQuery-001-TC_035", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id=6 and cust_id>5""").collect
   
@@ -376,7 +322,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_035", I
        
 
 //To check AND changing case
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_036", Include) {
+test("OffHeapQuery-001-TC_036", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id=6 aND cust_id>5""").collect
   
@@ -385,21 +331,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_036", I
        
 
 //To check AND using 0 and 1 treated as boolean values
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_037", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_037", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where true aNd 0""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check AND on two columns
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_038", Include) {
+test("OffHeapQuery-001-TC_038", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id=9000 and cust_name='cust_name_00000'""").collect
   
@@ -408,7 +348,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_038", I
        
 
 //To check '='operator with correct syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_039", Include) {
+test("OffHeapQuery-001-TC_039", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id=9000 and cust_name='cust_name_00000' and ACTIVE_EMUI_VERSION='ACTIVE_EMUI_VERSION_00000'""").collect
   
@@ -417,35 +357,23 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_039", I
        
 
 //To check '='operator without Passing any value
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_040", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_040", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id=""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check '='operator without Passing columnname and value.
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_041", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_041", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where =""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check '!='operator with correct syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_042", Include) {
+test("OffHeapQuery-001-TC_042", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id!=9000""").collect
   
@@ -454,21 +382,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_042", I
        
 
 //To check '!='operator by keeping space between them
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_043", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_043", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id !   = 9001""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check '!='operator by Passing boolean value whereas column expects an integer 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_044", Include) {
+test("OffHeapQuery-001-TC_044", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id != true""").collect
   
@@ -477,35 +399,23 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_044", I
        
 
 //To check '!='operator without providing any value
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_045", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_045", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id != """).collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check '!='operator without providing any column name
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_046", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_046", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where  != false""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check 'NOT' with valid syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_047", Include) {
+test("OffHeapQuery-001-TC_047", Include) {
   
   sql(s"""select * from uniqdataquery1 where NOT(cust_id=9000)""").collect
   
@@ -514,7 +424,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_047", I
        
 
 //To check 'NOT' using boolean values
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_048", Include) {
+test("OffHeapQuery-001-TC_048", Include) {
   
   sql(s"""select * from uniqdataquery1 where NOT(false)""").collect
   
@@ -523,7 +433,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_048", I
        
 
 //To check 'NOT' applying it on a value
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_049", Include) {
+test("OffHeapQuery-001-TC_049", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id = 'NOT(false)'""").collect
   
@@ -532,7 +442,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_049", I
        
 
 //To check 'NOT' with between operator
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_050", Include) {
+test("OffHeapQuery-001-TC_050", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id NOT BETWEEN 9000 and 9005""").collect
   
@@ -541,49 +451,31 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_050", I
        
 
 //To check 'NOT' operator in nested way
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_051", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_051", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id NOT (NOT(true))""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check 'NOT' operator with parenthesis.
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_052", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_052", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id NOT ()""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check 'NOT' operator without condition.
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_053", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_053", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id NOT""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check 'NOT' operator checking case sensitivity.
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_054", Include) {
+test("OffHeapQuery-001-TC_054", Include) {
   
   sql(s"""select * from uniqdataquery1 where nOt(false)""").collect
   
@@ -592,35 +484,23 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_054", I
        
 
 //To check '>' operator without specifying column
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_055", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_055", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where > 20""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check '>' operator without specifying value
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_056", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_056", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id > """).collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check '>' operator with correct syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_057", Include) {
+test("OffHeapQuery-001-TC_057", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id >9005""").collect
   
@@ -629,7 +509,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_057", I
        
 
 //To check '>' operator for Integer value
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_058", Include) {
+test("OffHeapQuery-001-TC_058", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id > 9010""").collect
   
@@ -638,7 +518,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_058", I
        
 
 //To check '>' operator for String value
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_059", Include) {
+test("OffHeapQuery-001-TC_059", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_name > 'cust_name_00000'""").collect
   
@@ -647,21 +527,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_059", I
        
 
 //To check '<' operator without specifying column
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_060", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_060", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where < 5""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check '<' operator with correct syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_061", Include) {
+test("OffHeapQuery-001-TC_061", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id < 9005""").collect
   
@@ -670,7 +544,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_061", I
        
 
 //To check '<' operator for String value
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_062", Include) {
+test("OffHeapQuery-001-TC_062", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_name < "cust_name_00001"""").collect
   
@@ -679,35 +553,23 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_062", I
        
 
 //To check '<=' operator without specifying column
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_063", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_063", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where  <= 2""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check '<=' operator without providing value
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_064", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_064", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where  cust_id <= """).collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check '<=' operator with correct syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_065", Include) {
+test("OffHeapQuery-001-TC_065", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id <=9002""").collect
   
@@ -716,35 +578,23 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_065", I
        
 
 //To check '<=' operator adding space between'<' and  '='
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_066", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_066", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id < =  9002""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check 'BETWEEN' operator without providing range
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_067", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_067", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where age between""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check  'BETWEEN' operator with correct syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_068", Include) {
+test("OffHeapQuery-001-TC_068", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id between 9002 and 9030""").collect
   
@@ -753,7 +603,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_068", I
        
 
 //To check  'BETWEEN' operator providing two same values
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_069", Include) {
+test("OffHeapQuery-001-TC_069", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_name beTWeen 'CU%' and 'CU%'""").collect
   
@@ -762,7 +612,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_069", I
        
 
 //To check  'NOT BETWEEN' operator for integer
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_070", Include) {
+test("OffHeapQuery-001-TC_070", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id NOT between 9024 and 9030""").collect
   
@@ -771,7 +621,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_070", I
        
 
 //To check  'NOT BETWEEN' operator for string
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_071", Include) {
+test("OffHeapQuery-001-TC_071", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_name NOT beTWeen 'cust_name_00000' and 'cust_name_00001'""").collect
   
@@ -780,7 +630,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_071", I
        
 
 //To check  'IS NULL' for case sensitiveness.
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_072", Include) {
+test("OffHeapQuery-001-TC_072", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id Is NulL""").collect
   
@@ -789,7 +639,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_072", I
        
 
 //To check  'IS NULL' for null field
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_073", Include) {
+test("OffHeapQuery-001-TC_073", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_name Is NulL""").collect
   
@@ -798,35 +648,23 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_073", I
        
 
 //To check  'IS NULL' without providing column
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_074", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_074", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where Is NulL""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check  'IS NOT NULL' without providing column
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_075", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_075", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where IS NOT NULL""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check ''IS NOT NULL' operator with correct syntax
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_076", Include) {
+test("OffHeapQuery-001-TC_076", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id IS NOT NULL""").collect
   
@@ -835,7 +673,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_076", I
        
 
 //To check  'Like' operator for integer
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_077", Include) {
+test("OffHeapQuery-001-TC_077", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id Like '9%'""").collect
   
@@ -844,7 +682,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_077", I
        
 
 //To check Limit clause with where condition
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_078", Include) {
+test("OffHeapQuery-001-TC_078", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id>10987 limit 15""").collect
   
@@ -853,35 +691,23 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_078", I
        
 
 //To check Limit clause with where condition and no argument
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_079", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_079", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id=10987 limit""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check Limit clause with where condition and decimal argument
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_080", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_080", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id=10987 limit 0.0""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check where clause with distinct and group by
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_081", Include) {
+test("OffHeapQuery-001-TC_081", Include) {
   
   sql(s"""select distinct cust_name from uniqdataquery1 where cust_name IN("CUST_NAME_01999") group by cust_name""").collect
   
@@ -890,7 +716,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_081", I
        
 
 //To check subqueries
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_082", Include) {
+test("OffHeapQuery-001-TC_082", Include) {
   
   sql(s"""select * from (select cust_id from uniqdataquery1 where cust_id IN (10987,10988)) uniqdataquery1 where cust_id IN (10987, 10988)""").collect
   
@@ -899,7 +725,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_082", I
        
 
 //To count with where clause
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_083", Include) {
+test("OffHeapQuery-001-TC_083", Include) {
   
   sql(s"""select count(cust_id) from uniqdataquery1 where cust_id > 10874""").collect
   
@@ -908,7 +734,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_083", I
        
 
 //To check Join query
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_084", Include) {
+test("OffHeapQuery-001-TC_084", Include) {
   dropTable("uniqdataquery11")
    sql(s"""CREATE TABLE uniqdataquery11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdataquery11 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -917,7 +743,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_084", I
        
 
 //To check Left join with where clause
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_085", Include) {
+test("OffHeapQuery-001-TC_085", Include) {
   
   sql(s"""select uniqdataquery1.CUST_ID from uniqdataquery1 LEFT join uniqdataquery11 where uniqdataquery1.CUST_ID > 10000""").collect
   
@@ -926,21 +752,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_085", I
        
 
 //To check Full join 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_086", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_086", Include) {
+  intercept[Exception] {
     sql(s"""select uniqdataquery1.CUST_ID from uniqdataquery1 FULL JOIN uniqdataquery11 where CUST_ID""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check Broadcast join 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_087", Include) {
+test("OffHeapQuery-001-TC_087", Include) {
   
   sql(s"""select broadcast.cust_id from uniqdataquery1 broadcast join uniqdataquery11 where broadcast.cust_id > 10900""").collect
   
@@ -949,7 +769,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_087", I
        
 
 //To avg function
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_088", Include) {
+test("OffHeapQuery-001-TC_088", Include) {
   
   sql(s"""select avg(cust_name) from uniqdataquery1 where cust_id > 10544 group by cust_name""").collect
   
@@ -958,7 +778,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_088", I
        
 
 //To check subquery with aggrgate function avg 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_089", Include) {
+test("OffHeapQuery-001-TC_089", Include) {
   
   sql(s"""select cust_id,avg(cust_id) from uniqdataquery1 where cust_id IN (select cust_id from uniqdataquery1 where cust_id > 0) group by cust_id""").collect
   
@@ -967,7 +787,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_089", I
        
 
 //To check HAVING on Measure 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_090", Include) {
+test("OffHeapQuery-001-TC_090", Include) {
   
   sql(s"""select cust_id from uniqdataquery1 where cust_id > 10543 group by cust_id having cust_id = 10546""").collect
   
@@ -976,7 +796,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_090", I
        
 
 //To check HAVING on dimension
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_091", Include) {
+test("OffHeapQuery-001-TC_091", Include) {
   
   sql(s"""select cust_name from uniqdataquery1 where cust_id > 10544 group by cust_name having cust_name like 'C%'""").collect
   
@@ -985,7 +805,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_091", I
        
 
 //To check HAVING on multiple columns
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_092", Include) {
+test("OffHeapQuery-001-TC_092", Include) {
   
   sql(s"""select cust_id,cust_name from uniqdataquery1 where cust_id > 10544 group by cust_id,cust_name having cust_id = 10545 AND cust_name like 'C%'""").collect
   
@@ -994,7 +814,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_092", I
        
 
 //To check HAVING with empty condition  
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_094", Include) {
+test("OffHeapQuery-001-TC_094", Include) {
   
   sql(s"""select cust_name from uniqdataquery1 where cust_id > 10544 group by cust_name having """"").collect
   
@@ -1003,7 +823,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_094", I
        
 
 //To check SORT on measure 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_095", Include) {
+test("OffHeapQuery-001-TC_095", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id > 10544 sort by cust_id asc""").collect
   
@@ -1012,7 +832,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_095", I
        
 
 //To check SORT on dimemsion  
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_096", Include) {
+test("OffHeapQuery-001-TC_096", Include) {
   
   sql(s"""select * from uniqdataquery1 where cust_id > 10544 sort by cust_name desc""").collect
   
@@ -1021,21 +841,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_096", I
        
 
 //To check SORT using 'AND' on multiple column 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_097", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_097", Include) {
+  intercept[Exception] {
     sql(s"""select * from uniqdataquery1 where cust_id > 10544 sort by cust_name desc and cust_id asc""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check Select average names and group by name query execution
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_098", Include) {
+test("OffHeapQuery-001-TC_098", Include) {
   
   sql(s"""select avg(cust_name) from uniqdataquery1 group by cust_name""").collect
   
@@ -1044,7 +858,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_098", I
        
 
 //To check Select average id and group by id query execution
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_099", Include) {
+test("OffHeapQuery-001-TC_099", Include) {
   
   sql(s"""select avg(cust_id) from uniqdataquery1 group by cust_id""").collect
   
@@ -1053,21 +867,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_099", I
        
 
 //To check average aggregate function with no arguments
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_100", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_100", Include) {
+  intercept[Exception] {
     sql(s"""select cust_id,avg() from uniqdataquery1 group by cust_id""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check average aggregate function with empty string
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_101", Include) {
+test("OffHeapQuery-001-TC_101", Include) {
   
   sql(s"""select cust_id,avg("") from uniqdataquery1 group by cust_id""").collect
   
@@ -1076,21 +884,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_101", I
        
 
 //To check nested  average aggregate function
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_102", Include) {
-  try {
-  
+test("OffHeapQuery-001-TC_102", Include) {
+  intercept[Exception] {
     sql(s"""select cust_id,avg(count(cust_id)) from uniqdataquery1 group by cust_id""").collect
-    
-    assert(false)
-  } catch {
-    case _ => assert(true)
   }
-  
 }
        
 
 //To check Multilevel query
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_103", Include) {
+test("OffHeapQuery-001-TC_103", Include) {
   
   sql(s"""select cust_id,avg(cust_id) from uniqdataquery1 where cust_id IN (select cust_id from uniqdataquery1) group by cust_id""").collect
   
@@ -1099,7 +901,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_103", I
        
 
 //To check Using first() with group by clause
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_104", Include) {
+test("OffHeapQuery-001-TC_104", Include) {
   
   sql(s"""select first(cust_id) from uniqdataquery1 group by cust_id""").collect
   
@@ -1108,7 +910,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_104", I
        
 
 //To check max with groupby clause query execution
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_105", Include) {
+test("OffHeapQuery-001-TC_105", Include) {
   
   sql(s"""select max(cust_name) from uniqdataquery1 group by(cust_name)""").collect
   
@@ -1117,7 +919,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_105", I
        
 
 //To check max with groupby clause query with id execution
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_106", Include) {
+test("OffHeapQuery-001-TC_106", Include) {
   
   sql(s"""select max(cust_name) from uniqdataquery1 group by(cust_name),cust_id""").collect
   
@@ -1126,7 +928,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_106", I
        
 
 //To check  multiple aggregate functions 
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_107", Include) {
+test("OffHeapQuery-001-TC_107", Include) {
   
   sql(s"""select max(cust_name),sum(cust_name),count(cust_id) from uniqdataquery1 group by(cust_name),cust_id""").collect
   
@@ -1135,7 +937,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_107", I
        
 
 //To check max with empty string as argument
-test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", Include) {
+test("OffHeapQuery-001-TC_108", Include) {
   
   sql(s"""select max("") from uniqdataquery1 group by(cust_name)""").collect
 
@@ -1144,7 +946,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", I
 
 
   //To check  select count of names with group by clause
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_109", Include) {
+  test("OffHeapQuery-001-TC_109", Include) {
 
     sql(s"""select count(cust_name) from uniqdataquery1 group by cust_name""").collect
 
@@ -1153,7 +955,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", I
 
 
   //To check Order by ASC
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_110", Include) {
+  test("OffHeapQuery-001-TC_110", Include) {
 
     sql(s"""select * from uniqdataquery1 order by cust_id ASC""").collect
 
@@ -1162,7 +964,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", I
 
 
   //To check Order by DESC
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_111", Include) {
+  test("OffHeapQuery-001-TC_111", Include) {
 
     sql(s"""select * from uniqdataquery1 order by cust_id DESC""").collect
 
@@ -1171,21 +973,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", I
 
 
   //To check Order by without column name
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_112", Include) {
-    try {
-
+  test("OffHeapQuery-001-TC_112", Include) {
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery1 order by ASC""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check cast Int to String
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_113", Include) {
+  test("OffHeapQuery-001-TC_113", Include) {
 
     sql(s"""select cast(bigint_column1 as STRING) from uniqdataquery1""").collect
 
@@ -1194,7 +990,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", I
 
 
   //To check cast string to int
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_114", Include) {
+  test("OffHeapQuery-001-TC_114", Include) {
 
     sql(s"""select cast(cust_name as INT) from uniqdataquery1""").collect
 
@@ -1203,7 +999,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", I
 
 
   //To check cast int to decimal
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_115", Include) {
+  test("OffHeapQuery-001-TC_115", Include) {
 
     sql(s"""select cast(bigint_column1 as DECIMAL(10,4)) from uniqdataquery1""").collect
 
@@ -1212,7 +1008,7 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", I
 
 
   //To check Using window with order by
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_116", Include) {
+  test("OffHeapQuery-001-TC_116", Include) {
 
     sql(s"""select cust_name, sum(bigint_column1) OVER w from uniqdataquery1 WINDOW w AS (PARTITION BY bigint_column2 ORDER BY cust_id)""").collect
 
@@ -1221,21 +1017,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", I
 
 
   //To check Using window without partition
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_117", Include) {
-    try {
-
+  test("OffHeapQuery-001-TC_117", Include) {
+    intercept[Exception] {
       sql(s"""select cust_name, sum(bigint_column1) OVER w from uniqdataquery1 WINDOW w""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check Using ROLLUP with group by
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_118", Include) {
+  test("OffHeapQuery-001-TC_118", Include) {
 
     sql(s"""select cust_name from uniqdataquery1 group by cust_name with ROLLUP""").collect
 
@@ -1244,21 +1034,15 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", I
 
 
   //To check Using ROLLUP without group by clause
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_119", Include) {
-    try {
-
+  test("OffHeapQuery-001-TC_119", Include) {
+    intercept[Exception] {
       sql(s"""select cust_name from uniqdataquery1 with ROLLUP""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table uniqdataquery1""").collect
   }
 
   val prop = CarbonProperties.getInstance()
   val p1 = prop.getProperty("enable.unsafe.in.query.processing", CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
-  val p2 = prop.getProperty("use.offheap.in.query.processing", CarbonCommonConstants.USE_OFFHEAP_IN_QUERY_PROCSSING_DEFAULT)
 
   override protected def beforeAll() {
     // Adding new properties
@@ -1269,7 +1053,6 @@ test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_108", I
   override def afterAll: Unit = {
     //Reverting to old
     prop.addProperty("enable.unsafe.in.query.processing", p1)
-    prop.addProperty("use.offheap.in.query.processing", p2)
   }
        
 }

@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.detailquery
 
-import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -588,7 +587,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname <= '107'"))
   }
 
-
   override def afterAll {
     sql("drop table if exists filtertestTable")
     sql("drop table if exists NO_DICTIONARY_HIVE_1")
@@ -599,5 +597,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_CARBON_6")
     sql("drop table if exists DICTIONARY_CARBON_6")
     sql("drop table if exists NO_DICTIONARY_CARBON_7")
+    sql("drop table if exists NO_DICTIONARY_HIVE_8")
   }
 }

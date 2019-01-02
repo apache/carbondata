@@ -24,9 +24,11 @@ import scala.collection.{immutable, mutable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
-import org.apache.spark.sql.execution.command.LoadTable
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
@@ -38,7 +40,7 @@ object TableLoader {
   def extractOptions(propertiesFile: String): immutable.Map[String, String] = {
     val props = new Properties
     val path = new Path(propertiesFile)
-    val fs = path.getFileSystem(new Configuration())
+    val fs = path.getFileSystem(FileFactory.getConfiguration)
     props.load(fs.open(path))
     val elments = props.entrySet().iterator()
     val map = new mutable.HashMap[String, String]()
@@ -61,7 +63,7 @@ object TableLoader {
 
   def loadTable(spark: SparkSession, dbName: Option[String], tableName: String, inputPaths: String,
       options: scala.collection.immutable.Map[String, String]): Unit = {
-    LoadTable(dbName, tableName, inputPaths, Nil, options, false).run(spark)
+    CarbonLoadDataCommand(dbName, tableName, inputPaths, Nil, options, false).run(spark)
   }
 
   def main(args: Array[String]): Unit = {
@@ -80,8 +82,8 @@ object TableLoader {
 
     val spark = TableAPIUtil.spark(storePath, s"TableLoader: $dbName.$tableName")
 
-    CarbonEnv.getInstance(spark).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(spark).storePath)
+    CarbonEnv.getInstance(spark).carbonMetaStore.
+      checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     loadTable(spark, Option(dbName), tableName, inputPaths, map)
   }
 

@@ -25,23 +25,24 @@ import scala.collection.JavaConverters._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{InputSplit, Job, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{Partition, SparkContext, TaskContext, TaskKilledException}
+import org.apache.spark.{Partition, TaskContext, TaskKilledException}
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.util.SparkSQLUtil
 
-import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.indexstore.Blocklet
+import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DistributableDataMapFormat}
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
-import org.apache.carbondata.hadoop.api.{DataMapJob, DistributableDataMapFormat}
 
 /**
  * Spark job to execute datamap job and prune all the datamaps distributable
  */
-class SparkDataMapJob extends DataMapJob {
+class SparkDataMapJob extends AbstractDataMapJob {
 
   override def execute(dataMapFormat: DistributableDataMapFormat,
-      resolverIntf: FilterResolverIntf): util.List[Blocklet] = {
-    new DataMapPruneRDD(SparkContext.getOrCreate(), dataMapFormat, resolverIntf).collect().toList
-      .asJava
+      filter: FilterResolverIntf): util.List[ExtendedBlocklet] = {
+    new DataMapPruneRDD(SparkSQLUtil.getSparkSession, dataMapFormat, filter).collect()
+      .toList.asJava
   }
 }
 
@@ -53,14 +54,14 @@ class DataMapRDDPartition(rddId: Int, idx: Int, val inputSplit: InputSplit) exte
 
 /**
  * RDD to prune the datamaps across spark cluster
- * @param sc
+ * @param ss
  * @param dataMapFormat
- * @param resolverIntf
  */
-class DataMapPruneRDD(sc: SparkContext,
+class DataMapPruneRDD(
+    @transient private val ss: SparkSession,
     dataMapFormat: DistributableDataMapFormat,
     resolverIntf: FilterResolverIntf)
-  extends CarbonRDD[(Blocklet)](sc, Nil) {
+  extends CarbonRDD[(ExtendedBlocklet)](ss, Nil) {
 
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
@@ -68,16 +69,16 @@ class DataMapPruneRDD(sc: SparkContext,
   }
 
   override def internalCompute(split: Partition,
-      context: TaskContext): Iterator[Blocklet] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+      context: TaskContext): Iterator[ExtendedBlocklet] = {
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
-    val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
+    val attemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration, attemptId)
     val inputSplit = split.asInstanceOf[DataMapRDDPartition].inputSplit
-    DistributableDataMapFormat.setFilterExp(attemptContext.getConfiguration, resolverIntf)
     val reader = dataMapFormat.createRecordReader(inputSplit, attemptContext)
     reader.initialize(inputSplit, attemptContext)
-    val iter = new Iterator[Blocklet] {
+    context.addTaskCompletionListener(_ => {
+      reader.close()
+    })
+    val iter = new Iterator[ExtendedBlocklet] {
 
       private var havePair = false
       private var finished = false
@@ -93,7 +94,7 @@ class DataMapPruneRDD(sc: SparkContext,
         !finished
       }
 
-      override def next(): Blocklet = {
+      override def next(): ExtendedBlocklet = {
         if (!hasNext) {
           throw new java.util.NoSuchElementException("End of stream")
         }
@@ -105,8 +106,8 @@ class DataMapPruneRDD(sc: SparkContext,
     iter
   }
 
-  override protected def getPartitions: Array[Partition] = {
-    val job = Job.getInstance(new Configuration())
+  override protected def internalGetPartitions: Array[Partition] = {
+    val job = Job.getInstance(FileFactory.getConfiguration)
     val splits = dataMapFormat.getSplits(job)
     splits.asScala.zipWithIndex.map(f => new DataMapRDDPartition(id, f._2, f._1)).toArray
   }

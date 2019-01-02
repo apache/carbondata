@@ -18,11 +18,13 @@ package org.apache.carbondata.core.indexstore;
 
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.UnsafeDataMapRow;
-import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
+import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.memory.MemoryType;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import static org.apache.carbondata.core.memory.CarbonUnsafe.BYTE_ARRAY_OFFSET;
 import static org.apache.carbondata.core.memory.CarbonUnsafe.getUnsafe;
@@ -30,30 +32,26 @@ import static org.apache.carbondata.core.memory.CarbonUnsafe.getUnsafe;
 /**
  * Store the data map row @{@link DataMapRow} data to unsafe.
  */
-public class UnsafeMemoryDMStore {
+public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
-  private MemoryBlock memoryBlock;
+  private static final long serialVersionUID = -5344592407101055335L;
 
-  private static int capacity = 8 * 1024 * 1024;
+  private transient MemoryBlock memoryBlock;
+
+  private static int capacity = 8 * 1024;
 
   private int allocatedSize;
 
   private int runningLength;
 
-  private boolean isMemoryFreed;
-
-  private DataMapSchema[] schema;
-
   private int[] pointers;
 
   private int rowCount;
 
-  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
-
-  public UnsafeMemoryDMStore(DataMapSchema[] schema) throws MemoryException {
-    this.schema = schema;
+  public UnsafeMemoryDMStore() throws MemoryException {
     this.allocatedSize = capacity;
-    this.memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, allocatedSize);
+    this.memoryBlock =
+        UnsafeMemoryManager.allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, allocatedSize);
     this.pointers = new int[1000];
   }
 
@@ -65,13 +63,7 @@ public class UnsafeMemoryDMStore {
    */
   private void ensureSize(int rowSize) throws MemoryException {
     if (runningLength + rowSize >= allocatedSize) {
-      MemoryBlock allocate =
-          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, allocatedSize + capacity);
-      getUnsafe().copyMemory(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset(),
-          allocate.getBaseObject(), allocate.getBaseOffset(), runningLength);
-      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
-      allocatedSize = allocatedSize + capacity;
-      memoryBlock = allocate;
+      increaseMemory(runningLength + rowSize);
     }
     if (this.pointers.length <= rowCount + 1) {
       int[] newPointer = new int[pointers.length + 1000];
@@ -80,13 +72,23 @@ public class UnsafeMemoryDMStore {
     }
   }
 
+  private void increaseMemory(int requiredMemory) throws MemoryException {
+    MemoryBlock newMemoryBlock = UnsafeMemoryManager
+        .allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, allocatedSize + requiredMemory);
+    getUnsafe().copyMemory(this.memoryBlock.getBaseObject(), this.memoryBlock.getBaseOffset(),
+        newMemoryBlock.getBaseObject(), newMemoryBlock.getBaseOffset(), runningLength);
+    UnsafeMemoryManager.INSTANCE.freeMemory(taskId, this.memoryBlock);
+    allocatedSize = allocatedSize + requiredMemory;
+    this.memoryBlock = newMemoryBlock;
+  }
+
   /**
    * Add the index row to unsafe.
    *
    * @param indexRow
    * @return
    */
-  public void addIndexRowToUnsafe(DataMapRow indexRow) throws MemoryException {
+  public void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow) throws MemoryException {
     // First calculate the required memory to keep the row in unsafe
     int rowSize = indexRow.getTotalSizeInBytes();
     // Check whether allocated memory is sufficient or not.
@@ -99,68 +101,76 @@ public class UnsafeMemoryDMStore {
     pointers[rowCount++] = pointer;
   }
 
-  private void addToUnsafe(DataMapSchema schema, DataMapRow row, int index) {
+  private void addToUnsafe(CarbonRowSchema schema, DataMapRow row, int index) {
     switch (schema.getSchemaType()) {
       case FIXED:
-        switch (schema.getDataType()) {
-          case BYTE:
-            getUnsafe()
-                .putByte(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getByte(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case SHORT:
-            getUnsafe()
-                .putShort(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getShort(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case INT:
-            getUnsafe()
-                .putInt(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getInt(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case LONG:
-            getUnsafe()
-                .putLong(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getLong(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case FLOAT:
-            getUnsafe()
-                .putFloat(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getFloat(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case DOUBLE:
-            getUnsafe()
-                .putDouble(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getDouble(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case BYTE_ARRAY:
-            byte[] data = row.getByteArray(index);
-            getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
-                memoryBlock.getBaseOffset() + runningLength, data.length);
-            runningLength += row.getSizeInBytes(index);
-            break;
-          default:
-            throw new UnsupportedOperationException(
-                "unsupported data type for unsafe storage: " + schema.getDataType());
+        DataType dataType = schema.getDataType();
+        if (dataType == DataTypes.BYTE) {
+          getUnsafe()
+              .putByte(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getByte(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.BOOLEAN) {
+          getUnsafe()
+              .putBoolean(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getBoolean(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.SHORT) {
+          getUnsafe()
+              .putShort(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getShort(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.INT) {
+          getUnsafe()
+              .putInt(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getInt(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.LONG) {
+          getUnsafe()
+              .putLong(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getLong(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.FLOAT) {
+          getUnsafe()
+              .putFloat(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getFloat(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.DOUBLE) {
+          getUnsafe()
+              .putDouble(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getDouble(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.BYTE_ARRAY) {
+          byte[] data = row.getByteArray(index);
+          getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
+              memoryBlock.getBaseOffset() + runningLength, data.length);
+          runningLength += row.getSizeInBytes(index);
+        } else {
+          throw new UnsupportedOperationException(
+              "unsupported data type for unsafe storage: " + schema.getDataType());
         }
         break;
-      case VARIABLE:
+      case VARIABLE_SHORT:
         byte[] data = row.getByteArray(index);
-        getUnsafe().putShort(memoryBlock.getBaseOffset() + runningLength, (short) data.length);
+        getUnsafe().putShort(memoryBlock.getBaseObject(),
+            memoryBlock.getBaseOffset() + runningLength, (short) data.length);
         runningLength += 2;
         getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
             memoryBlock.getBaseOffset() + runningLength, data.length);
         runningLength += data.length;
         break;
+      case VARIABLE_INT:
+        byte[] data2 = row.getByteArray(index);
+        getUnsafe().putInt(memoryBlock.getBaseObject(),
+            memoryBlock.getBaseOffset() + runningLength, data2.length);
+        runningLength += 4;
+        getUnsafe().copyMemory(data2, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
+            memoryBlock.getBaseOffset() + runningLength, data2.length);
+        runningLength += data2.length;
+        break;
       case STRUCT:
-        DataMapSchema[] childSchemas =
-            ((DataMapSchema.StructDataMapSchema) schema).getChildSchemas();
+        CarbonRowSchema[] childSchemas =
+            ((CarbonRowSchema.StructCarbonRowSchema) schema).getChildSchemas();
         DataMapRow struct = row.getRow(index);
         for (int i = 0; i < childSchemas.length; i++) {
           addToUnsafe(childSchemas[i], struct, i);
@@ -172,7 +182,7 @@ public class UnsafeMemoryDMStore {
     }
   }
 
-  public DataMapRow getUnsafeRow(int index) {
+  public DataMapRow getDataMapRow(CarbonRowSchema[] schema, int index) {
     assert (index < rowCount);
     return new UnsafeDataMapRow(schema, memoryBlock, pointers[index]);
   }
@@ -180,7 +190,7 @@ public class UnsafeMemoryDMStore {
   public void finishWriting() throws MemoryException {
     if (runningLength < allocatedSize) {
       MemoryBlock allocate =
-          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, runningLength);
+          UnsafeMemoryManager.allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, runningLength);
       getUnsafe().copyMemory(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset(),
           allocate.getBaseObject(), allocate.getBaseOffset(), runningLength);
       UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
@@ -203,10 +213,6 @@ public class UnsafeMemoryDMStore {
 
   public int getMemoryUsed() {
     return runningLength;
-  }
-
-  public DataMapSchema[] getSchema() {
-    return schema;
   }
 
   public int getRowCount() {

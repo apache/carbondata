@@ -16,30 +16,33 @@
  */
 package org.apache.carbondata.processing.merger;
 
+import java.io.IOException;
 import java.util.AbstractQueue;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.processing.merger.exeception.SliceMergerException;
-import org.apache.carbondata.processing.model.CarbonLoadModel;
+import org.apache.carbondata.processing.exception.SliceMergerException;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+
+import org.apache.log4j.Logger;
 
 /**
  * This is the Merger class responsible for the merging of the segments.
@@ -48,28 +51,45 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
   private CarbonFactHandler dataHandler;
   private SegmentProperties segprop;
+  private CarbonLoadModel loadModel;
+  private PartitionSpec partitionSpec;
+
+  CarbonColumn[] noDicAndComplexColumns;
   /**
    * record holder heap
    */
   private AbstractQueue<RawResultIterator> recordHolderHeap;
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(RowResultMergerProcessor.class.getName());
 
   public RowResultMergerProcessor(String databaseName,
       String tableName, SegmentProperties segProp, String[] tempStoreLocation,
-      CarbonLoadModel loadModel, CompactionType compactionType) {
+      CarbonLoadModel loadModel, CompactionType compactionType, PartitionSpec partitionSpec)
+      throws IOException {
     this.segprop = segProp;
+    this.partitionSpec = partitionSpec;
+    this.loadModel = loadModel;
     CarbonDataProcessorUtil.createLocations(tempStoreLocation);
 
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-            .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    String carbonStoreLocation;
+    if (partitionSpec != null) {
+      carbonStoreLocation =
+          partitionSpec.getLocation().toString() + CarbonCommonConstants.FILE_SEPARATOR + loadModel
+              .getFactTimeStamp() + ".tmp";
+    } else {
+      carbonStoreLocation = CarbonDataProcessorUtil
+          .createCarbonStoreLocation(loadModel.getCarbonDataLoadSchema().getCarbonTable(),
+              loadModel.getSegmentId());
+    }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
-        .getCarbonFactDataHandlerModel(loadModel, carbonTable, segProp, tableName,
-            tempStoreLocation);
-    setDataFileAttributesInModel(loadModel, compactionType, carbonTable,
-        carbonFactDataHandlerModel);
+        .getCarbonFactDataHandlerModel(loadModel,
+            loadModel.getCarbonDataLoadSchema().getCarbonTable(), segProp, tableName,
+            tempStoreLocation, carbonStoreLocation);
+    setDataFileAttributesInModel(loadModel, compactionType, carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setCompactionFlow(true);
+    carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
+    this.noDicAndComplexColumns = carbonFactDataHandlerModel.getNoDictAndComplexColumns();
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
   }
 
@@ -83,7 +103,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * Merge function
    *
    */
-  public boolean execute(List<RawResultIterator> resultIteratorList) {
+  public boolean execute(List<RawResultIterator> resultIteratorList) throws Exception {
     initRecordHolderHeap(resultIteratorList);
     boolean mergeStatus = false;
     int index = 0;
@@ -102,6 +122,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         Object[] convertedRow = iterator.next();
         if (null == convertedRow) {
           index--;
+          iterator.close();
           continue;
         }
         if (!isDataPresent) {
@@ -114,6 +135,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         // index
         if (!iterator.hasNext()) {
           index--;
+          iterator.close();
           continue;
         }
         // add record to heap
@@ -122,20 +144,23 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       // if record holder is not empty then iterator the slice holder from
       // heap
       iterator = this.recordHolderHeap.poll();
-      while (true) {
-        Object[] convertedRow = iterator.next();
-        if (null == convertedRow) {
-          break;
-        }
-        // do it only once
-        if (!isDataPresent) {
-          dataHandler.initialise();
-          isDataPresent = true;
-        }
-        addRow(convertedRow);
-        // check if leaf contains no record
-        if (!iterator.hasNext()) {
-          break;
+      if (null != iterator) {
+        while (true) {
+          Object[] convertedRow = iterator.next();
+          if (null == convertedRow) {
+            iterator.close();
+            break;
+          }
+          // do it only once
+          if (!isDataPresent) {
+            dataHandler.initialise();
+            isDataPresent = true;
+          }
+          addRow(convertedRow);
+          // check if leaf contains no record
+          if (!iterator.hasNext()) {
+            break;
+          }
         }
       }
       if (isDataPresent)
@@ -144,21 +169,34 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       }
       mergeStatus = true;
     } catch (Exception e) {
-      LOGGER.error(e, e.getMessage());
-      LOGGER.error("Exception in compaction merger " + e.getMessage());
       mergeStatus = false;
+      LOGGER.error(e.getLocalizedMessage(), e);
+      throw e;
     } finally {
       try {
         if (isDataPresent) {
           this.dataHandler.closeHandler();
         }
-      } catch (CarbonDataWriterException e) {
-        LOGGER.error("Exception while closing the handler in compaction merger " + e.getMessage());
+        if (partitionSpec != null) {
+          SegmentFileStore.writeSegmentFile(loadModel.getTablePath(), loadModel.getTaskNo(),
+              partitionSpec.getLocation().toString(), loadModel.getFactTimeStamp() + "",
+              partitionSpec.getPartitions());
+        }
+      } catch (CarbonDataWriterException | IOException e) {
         mergeStatus = false;
+        throw e;
       }
     }
 
     return mergeStatus;
+  }
+
+  @Override
+  public void close() {
+    // close data handler
+    if (null != dataHandler) {
+      dataHandler.closeHandler();
+    }
   }
 
   /**
@@ -167,7 +205,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * @throws SliceMergerException
    */
   private void addRow(Object[] carbonTuple) throws SliceMergerException {
-    CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segprop);
+    CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segprop, noDicAndComplexColumns);
     try {
       this.dataHandler.addDataToStore(row);
     } catch (CarbonDataWriterException e) {

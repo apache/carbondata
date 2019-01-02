@@ -17,32 +17,39 @@
 
 package org.apache.carbondata.core.util;
 
-import mockit.Mock;
-import mockit.MockUp;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.datastore.impl.FileReaderImpl;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
-import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.impl.FileHolderImpl;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.reader.ThriftReader;
-import org.apache.carbondata.format.*;
+import org.apache.carbondata.format.BlockIndex;
+import org.apache.carbondata.format.BlockletBTreeIndex;
+import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.ColumnSchema;
+import org.apache.carbondata.format.DataType;
+import org.apache.carbondata.format.Encoding;
+import org.apache.carbondata.format.FileFooter;
+import org.apache.carbondata.format.IndexHeader;
 
+import mockit.Mock;
+import mockit.MockUp;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
-import java.io.*;
-import java.util.*;
-
-import static junit.framework.TestCase.*;
+import static junit.framework.TestCase.assertEquals;
 
 public class DataFileFooterConverterTest {
 
@@ -137,7 +144,7 @@ public class DataFileFooterConverterTest {
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
       public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
-          int bufferSize) {
+          int bufferSize, Configuration configuration) {
         return dataInputStream;
       }
     };
@@ -223,13 +230,13 @@ public class DataFileFooterConverterTest {
       }
 
       @SuppressWarnings("unused") @Mock
-      public FileHolder getFileHolder(FileFactory.FileType fileType) {
-        return new FileHolderImpl();
+      public FileReader getFileHolder(FileFactory.FileType fileType) {
+        return new FileReaderImpl();
       }
 
     };
 
-    new MockUp<FileHolderImpl>() {
+    new MockUp<FileReaderImpl>() {
       @SuppressWarnings("unused") @Mock public long readLong(String filePath, long offset) {
         return 1;
       }
@@ -243,7 +250,6 @@ public class DataFileFooterConverterTest {
     SegmentInfo segmentInfo = new SegmentInfo();
     int[] arr = { 1, 2, 3 };
     segmentInfo.setColumnCardinality(arr);
-    segmentInfo.setNumberOfColumns(segmentInfo1.getNum_cols());
     dataFileFooter.setNumberOfRows(3);
     dataFileFooter.setSegmentInfo(segmentInfo);
     TableBlockInfo info = new TableBlockInfo("/file.carbondata", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);

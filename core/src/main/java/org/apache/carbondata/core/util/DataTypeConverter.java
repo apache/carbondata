@@ -17,11 +17,23 @@
 
 package org.apache.carbondata.core.util;
 
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+
 public interface DataTypeConverter {
 
-  Object convertToDecimal(Object data);
-  Object convertFromByteToUTF8String(Object data);
+  Object convertFromStringToDecimal(Object data);
+  Object convertFromBigDecimalToDecimal(Object data);
+  Object convertFromDecimalToBigDecimal(Object data);
+
+  Object convertFromByteToUTF8String(byte[] data);
+  byte[] convertFromByteToUTF8Bytes(byte[] data);
   byte[] convertFromStringToByte(Object data);
   Object convertFromStringToUTF8String(Object Data);
 
+  Object wrapWithGenericArrayData(Object data);
+  Object wrapWithGenericRow(Object[] fields);
+  Object wrapWithArrayBasedMapData(Object[] keyArray, Object[] valueArray);
+  Object[] unwrapGenericRowToObject(Object data);
+
+  Object[] convertCarbonSchemaToSparkSchema(CarbonColumn[] carbonColumns);
 }

@@ -18,16 +18,16 @@ package org.apache.carbondata.core.keygenerator.directdictionary.timestamp;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+
+import org.apache.log4j.Logger;
 
 /**
  * The class provides the method to generate dictionary key and getting the actual value from
@@ -35,34 +35,45 @@ import org.apache.carbondata.core.util.CarbonProperties;
  */
 public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator {
 
-  private static final int cutOffDate = Integer.MAX_VALUE >> 1;
+  public static final int cutOffDate = Integer.MAX_VALUE >> 1;
   private static final long SECONDS_PER_DAY = 60 * 60 * 24L;
-  private static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
+  public static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
 
   private ThreadLocal<SimpleDateFormat> simpleDateFormatLocal = new ThreadLocal<>();
 
-  //Java TimeZone has no mention of thread safety. Use thread local instance to be safe.
-  private ThreadLocal<TimeZone> threadLocalLocalTimeZone = new ThreadLocal() {
-    @Override protected TimeZone initialValue() {
-      return Calendar.getInstance().getTimeZone();
-    }
-  };
   private String dateFormat;
 
   /**
+   * min value supported for date type column
+   */
+  private static final long MIN_VALUE;
+  /**
+   * MAx value supported for date type column
+   */
+  private static final long MAX_VALUE;
+  /**
    * Logger instance
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DateDirectDictionaryGenerator.class.getName());
 
+  static {
+    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+    df.setTimeZone(TimeZone.getTimeZone("GMT"));
+    long minValue = 0;
+    long maxValue = 0;
+    try {
+      minValue = df.parse("0001-01-01").getTime();
+      maxValue = df.parse("9999-12-31").getTime();
+    } catch (ParseException e) {
+      // the Exception will not occur as constant value is being parsed
+    }
+    MIN_VALUE = minValue;
+    MAX_VALUE = maxValue;
+  }
   public DateDirectDictionaryGenerator(String dateFormat) {
     this.dateFormat = dateFormat;
     initialize();
-  }
-
-  public DateDirectDictionaryGenerator() {
-    this(CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
   }
 
   /**
@@ -75,7 +86,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   @Override public int generateDirectSurrogateKey(String memberStr) {
     if (null == memberStr || memberStr.trim().isEmpty() || memberStr
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     }
     return getDirectSurrogateForMember(memberStr);
   }
@@ -93,7 +104,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     } else {
       if (null == memberStr || memberStr.trim().isEmpty() || memberStr
           .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-        return 1;
+        return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
       }
       return getDirectSurrogateForMember(memberStr);
     }
@@ -117,7 +128,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     }
     //adding +2 to reserve the first cuttOffDiff value for null or empty date
     if (null == dateToStr) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(dateToStr.getTime());
     }
@@ -130,7 +141,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
    * @return member value/actual value Date
    */
   @Override public Object getValueFromSurrogate(int key) {
-    if (key == 1) {
+    if (key == CarbonCommonConstants.DIRECT_DICT_VALUE_NULL) {
       return null;
     }
     return key - cutOffDate;
@@ -147,25 +158,31 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
       }
     }
     if (timeValue == -1) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(timeValue);
     }
   }
 
-  private int generateKey(long timeValue) {
-    long milli = timeValue + threadLocalLocalTimeZone.get().getOffset(timeValue);
-    return (int) Math.floor((double) milli / MILLIS_PER_DAY) + cutOffDate;
+  public int generateKey(long timeValue) {
+    if (timeValue < MIN_VALUE || timeValue > MAX_VALUE) {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Value for date type column is not in valid range. Value considered as null.");
+      }
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
+    }
+    return (int) Math.floor((double) timeValue / MILLIS_PER_DAY) + cutOffDate;
   }
 
   public void initialize() {
     if (simpleDateFormatLocal.get() == null) {
       simpleDateFormatLocal.set(new SimpleDateFormat(dateFormat));
       simpleDateFormatLocal.get().setLenient(false);
+      simpleDateFormatLocal.get().setTimeZone(TimeZone.getTimeZone("GMT"));
     }
   }
 
   @Override public DataType getReturnType() {
-    return DataType.INT;
+    return DataTypes.INT;
   }
 }

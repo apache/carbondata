@@ -29,9 +29,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
-import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
+import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -39,16 +39,18 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.scan.model.QueryDimension;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
 
 import mockit.Mock;
 import mockit.MockUp;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -98,16 +100,6 @@ public class CarbonUtilTest {
     int[] expectedResult = { 4, 5, 1, 3 };
     for (int i = 0; i < cardinality.length; i++) {
       assertEquals(actualResult[i], expectedResult[i]);
-    }
-  }
-
-  @Test public void testToGetColGroupModel() {
-    int[][] cardinality = { { 10, 20, 30 }, { 20, 30 }, {} };
-    ColumnGroupModel actualResult = CarbonUtil.getColGroupModel(cardinality);
-    assertEquals(actualResult.getNoOfColumnStore(), 3);
-    int[] expectedResult = { 3, 2, 0 };
-    for (int i = 0; i < actualResult.getColumnSplit().length; i++) {
-      assertEquals(actualResult.getColumnSplit()[i], expectedResult[i]);
     }
   }
 
@@ -203,16 +195,6 @@ public class CarbonUtilTest {
     assertTrue(!testDir.exists());
   }
 
-  @Test public void testToGetBadLogPath() throws InterruptedException {
-    new MockUp<CarbonProperties>() {
-      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
-        return "../unibi-solutions/system/carbon/badRecords";
-      }
-    };
-    String badLogStoreLocation = CarbonUtil.getBadLogPath("badLogPath");
-    assertEquals(badLogStoreLocation.replace("\\", "/"), "../unibi-solutions/system/carbon/badRecords/badLogPath");
-  }
-
   @Test public void testToDeleteFoldersAndFilesForCarbonFileSilently()
       throws IOException, InterruptedException {
     LocalCarbonFile testDir = new LocalCarbonFile("../core/src/test/resources/testDir");
@@ -264,8 +246,8 @@ public class CarbonUtilTest {
   @Test public void testToGetNextLesserValue() {
     byte[] dataChunks = { 5, 6, 7, 8, 9 };
     byte[] compareValues = { 7 };
-    FixedLengthDimensionDataChunk fixedLengthDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, null, null, 5, 1);
+    FixedLengthDimensionColumnPage fixedLengthDataChunk =
+        new FixedLengthDimensionColumnPage(dataChunks, null, null, 5, 1, dataChunks.length);
     int result = CarbonUtil.nextLesserValueToTarget(2, fixedLengthDataChunk, compareValues);
     assertEquals(result, 1);
   }
@@ -273,8 +255,8 @@ public class CarbonUtilTest {
   @Test public void testToGetNextLesserValueToTarget() {
     byte[] dataChunks = { 7, 7, 7, 8, 9 };
     byte[] compareValues = { 7 };
-    FixedLengthDimensionDataChunk fixedLengthDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, null, null, 5, 1);
+    FixedLengthDimensionColumnPage fixedLengthDataChunk =
+        new FixedLengthDimensionColumnPage(dataChunks, null, null, 5, 1, dataChunks.length);
     int result = CarbonUtil.nextLesserValueToTarget(2, fixedLengthDataChunk, compareValues);
     assertEquals(result, -1);
   }
@@ -282,8 +264,8 @@ public class CarbonUtilTest {
   @Test public void testToGetnextGreaterValue() {
     byte[] dataChunks = { 5, 6, 7, 8, 9 };
     byte[] compareValues = { 7 };
-    FixedLengthDimensionDataChunk fixedLengthDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, null, null, 5, 1);
+    FixedLengthDimensionColumnPage fixedLengthDataChunk =
+        new FixedLengthDimensionColumnPage(dataChunks, null, null, 5, 1, dataChunks.length);
     int result = CarbonUtil.nextGreaterValueToTarget(2, fixedLengthDataChunk, compareValues, 5);
     assertEquals(result, 3);
   }
@@ -299,17 +281,10 @@ public class CarbonUtilTest {
   @Test public void testToGetnextGreaterValueToTarget() {
     byte[] dataChunks = { 5, 6, 7, 7, 7 };
     byte[] compareValues = { 7 };
-    FixedLengthDimensionDataChunk fixedLengthDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, null, null, 5, 1);
+    FixedLengthDimensionColumnPage fixedLengthDataChunk =
+        new FixedLengthDimensionColumnPage(dataChunks, null, null, 5, 1, dataChunks.length);
     int result = CarbonUtil.nextGreaterValueToTarget(2, fixedLengthDataChunk, compareValues, 5);
     assertEquals(result, 5);
-  }
-
-
-  @Test public void testToGetCardinalityFromLevelMetadataFileForInvalidPath()
-      throws IOException, InterruptedException {
-    int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile("");
-    assertEquals(cardinality, null);
   }
 
   @Test public void testToUnescapeChar() {
@@ -507,34 +482,34 @@ public class CarbonUtilTest {
   }
 
   @Test public void testForHasDataTypes() {
-    DataType[] dataTypes = { DataType.DECIMAL, DataType.BOOLEAN, DataType.INT };
-    assertTrue(CarbonUtil.hasDataType(DataType.BOOLEAN, dataTypes));
-    assertTrue(!CarbonUtil.hasDataType(DataType.DATE, dataTypes));
+    DataType[] dataTypes = {DataTypes.createDefaultDecimalType(), DataTypes.BOOLEAN, DataTypes.INT };
+    assertTrue(CarbonUtil.hasDataType(DataTypes.BOOLEAN, dataTypes));
+    assertTrue(!CarbonUtil.hasDataType(DataTypes.DATE, dataTypes));
   }
 
   @Test public void testForHasComplexDataTypes() {
-    assertTrue(CarbonUtil.hasComplexDataType(DataType.ARRAY));
-    assertTrue(!CarbonUtil.hasComplexDataType(DataType.DATE));
+    assertTrue(DataTypes.createDefaultArrayType().isComplexType());
+    assertTrue(!DataTypes.DATE.isComplexType());
   }
 
   @Test public void testToGetDictionaryEncodingArray() {
-    QueryDimension column1 = new QueryDimension("Column1");
-    QueryDimension column2 = new QueryDimension("Column2");
     ColumnSchema column1Schema = new ColumnSchema();
     ColumnSchema column2Schema = new ColumnSchema();
     column1Schema.setColumnName("Column1");
     List<Encoding> encoding = new ArrayList<>();
     encoding.add(Encoding.DICTIONARY);
     column1Schema.setEncodingList(encoding);
-    column1.setDimension(new CarbonDimension(column1Schema, 1, 1, 1, 1));
+    ProjectionDimension
+        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1));
 
     column2Schema.setColumnName("Column2");
     List<Encoding> encoding2 = new ArrayList<>();
     encoding2.add(Encoding.DELTA);
     column2Schema.setEncodingList(encoding2);
-    column2.setDimension(new CarbonDimension(column2Schema, 1, 1, 1, 1));
+    ProjectionDimension
+        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1));
 
-    QueryDimension[] queryDimensions = { column1, column2 };
+    ProjectionDimension[] queryDimensions = { column1, column2 };
 
     boolean[] dictionaryEncoding = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
     boolean[] expectedDictionaryEncoding = { true, false };
@@ -544,23 +519,23 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToGetDirectDictionaryEncodingArray() {
-    QueryDimension column1 = new QueryDimension("Column1");
-    QueryDimension column2 = new QueryDimension("Column2");
     ColumnSchema column1Schema = new ColumnSchema();
     ColumnSchema column2Schema = new ColumnSchema();
     column1Schema.setColumnName("Column1");
     List<Encoding> encoding = new ArrayList<>();
     encoding.add(Encoding.DIRECT_DICTIONARY);
     column1Schema.setEncodingList(encoding);
-    column1.setDimension(new CarbonDimension(column1Schema, 1, 1, 1, 1));
+    ProjectionDimension
+        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1));
 
     column2Schema.setColumnName("Column2");
     List<Encoding> encoding2 = new ArrayList<>();
     encoding2.add(Encoding.DELTA);
     column2Schema.setEncodingList(encoding2);
-    column2.setDimension(new CarbonDimension(column2Schema, 1, 1, 1, 1));
+    ProjectionDimension
+        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1));
 
-    QueryDimension[] queryDimensions = { column1, column2 };
+    ProjectionDimension[] queryDimensions = { column1, column2 };
 
     boolean[] dictionaryEncoding = CarbonUtil.getDirectDictionaryEncodingArray(queryDimensions);
     boolean[] expectedDictionaryEncoding = { true, false };
@@ -570,19 +545,19 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToGetComplexDataTypeArray() {
-    QueryDimension column1 = new QueryDimension("Column1");
-    QueryDimension column2 = new QueryDimension("Column2");
     ColumnSchema column1Schema = new ColumnSchema();
     ColumnSchema column2Schema = new ColumnSchema();
     column1Schema.setColumnName("Column1");
-    column1Schema.setDataType(DataType.DATE);
-    column1.setDimension(new CarbonDimension(column1Schema, 1, 1, 1, 1));
+    column1Schema.setDataType(DataTypes.DATE);
+    ProjectionDimension
+        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1));
 
     column2Schema.setColumnName("Column2");
-    column2Schema.setDataType(DataType.ARRAY);
-    column2.setDimension(new CarbonDimension(column2Schema, 1, 1, 1, 1));
+    column2Schema.setDataType(DataTypes.createDefaultArrayType());
+    ProjectionDimension
+        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1));
 
-    QueryDimension[] queryDimensions = { column1, column2 };
+    ProjectionDimension[] queryDimensions = { column1, column2 };
 
     boolean[] dictionaryEncoding = CarbonUtil.getComplexDataTypeArray(queryDimensions);
     boolean[] expectedDictionaryEncoding = { false, true };
@@ -591,7 +566,7 @@ public class CarbonUtilTest {
     }
   }
 
-  @Test public void testToReadMetadatFile() throws IOException {
+  @Test public void testToReadMetadataFile() throws IOException {
     new MockUp<DataFileFooterConverter>() {
       @SuppressWarnings("unused") @Mock
       public DataFileFooter readDataFileFooter(TableBlockInfo info) {
@@ -603,15 +578,15 @@ public class CarbonUtilTest {
     TableBlockInfo info =
         new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
 
-    assertEquals(CarbonUtil.readMetadatFile(info).getVersionId().number(), 1);
+    assertEquals(CarbonUtil.readMetadataFile(info).getVersionId().number(), 1);
   }
 
   @Test(expected = IOException.class)
-  public void testToReadMetadatFileWithException()
+  public void testToReadMetadataFileWithException()
       throws Exception {
     TableBlockInfo info =
         new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
-    CarbonUtil.readMetadatFile(info);
+    CarbonUtil.readMetadataFile(info);
   }
 
   @Test public void testToFindDimension() {
@@ -620,10 +595,10 @@ public class CarbonUtilTest {
     column1Schema.setColumnName("Column1");
     column2Schema.setColumnName("Column2");
     List<CarbonDimension> carbonDimension = new ArrayList<>();
-    carbonDimension.add(new CarbonDimension(column1Schema, 1, 1, 1, 1));
-    carbonDimension.add(new CarbonDimension(column2Schema, 2, 1, 2, 1));
+    carbonDimension.add(new CarbonDimension(column1Schema, 1, 1, 1));
+    carbonDimension.add(new CarbonDimension(column2Schema, 2, 1, 1));
     assertEquals(CarbonUtil.findDimension(carbonDimension, "Column1"),
-        new CarbonDimension(column1Schema, 1, 1, 1, 1));
+        new CarbonDimension(column1Schema, 1, 1, 1));
   }
 
   @Test public void testToGetFormattedCardinality() {
@@ -652,8 +627,8 @@ public class CarbonUtilTest {
     column1Schema.setColumnName("Column1");
     column2Schema.setColumnName("Column2");
     List<CarbonDimension> carbonDimension = new ArrayList<>();
-    carbonDimension.add(new CarbonDimension(column1Schema, 1, 1, 1, 1));
-    carbonDimension.add(new CarbonDimension(column2Schema, 2, 2, 2, 1));
+    carbonDimension.add(new CarbonDimension(column1Schema, 1, 1, 1));
+    carbonDimension.add(new CarbonDimension(column2Schema, 2, 2, 1));
 
     List<CarbonMeasure> carbonMeasure = new ArrayList<>();
     carbonMeasure.add(new CarbonMeasure(column1Schema, 1));
@@ -708,16 +683,16 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToGetSegmentString() {
-    List<String> list = new ArrayList<>();
-    list.add("1");
-    list.add("2");
-    String segments = CarbonUtil.getSegmentString(list);
+    List<Segment> list = new ArrayList<>();
+    list.add(new Segment("1", null, null));
+    list.add(new Segment("2", null, null));
+    String segments = CarbonUtil.convertToString(list);
     assertEquals(segments, "1,2");
   }
 
   @Test public void testToGetSegmentStringWithEmptySegmentList() {
-    List<String> list = new ArrayList<>();
-    String segments = CarbonUtil.getSegmentString(list);
+    List<Segment> list = new ArrayList<>();
+    String segments = CarbonUtil.convertToString(list);
     assertEquals(segments, "");
   }
 
@@ -779,17 +754,14 @@ public class CarbonUtilTest {
     ColumnSchema column2Schema = new ColumnSchema();
     ColumnSchema column3Schema = new ColumnSchema();
     column1Schema.setColumnName("Column1");
-    column1Schema.setColumnar(true);
     column1Schema.setEncodingList(Arrays.asList(Encoding.DELTA, Encoding.DICTIONARY));
     column2Schema.setColumnName("Column2");
-    column2Schema.setColumnar(false);
     column2Schema.setEncodingList(Arrays.asList(Encoding.DELTA, Encoding.DICTIONARY));
     column3Schema.setColumnName("Column3");
-    column3Schema.setColumnar(true);
     column3Schema.setEncodingList(Arrays.asList(Encoding.DELTA, Encoding.INVERTED_INDEX));
-    CarbonDimension carbonDimension = new CarbonDimension(column1Schema, 1, 1, 1, 1);
-    CarbonDimension carbonDimension2 = new CarbonDimension(column2Schema, 2, 2, 2, 2);
-    CarbonDimension carbonDimension3 = new CarbonDimension(column3Schema, 3, 3, 3, 3);
+    CarbonDimension carbonDimension = new CarbonDimension(column1Schema, 1, 1, 1);
+    CarbonDimension carbonDimension2 = new CarbonDimension(column2Schema, 2, 2, 2);
+    CarbonDimension carbonDimension3 = new CarbonDimension(column3Schema, 3, 3, 3);
     List<CarbonDimension> carbonDimensions =
         Arrays.asList(carbonDimension, carbonDimension2, carbonDimension3);
     boolean[] result = CarbonUtil.identifyDimensionType(carbonDimensions);
@@ -799,8 +771,8 @@ public class CarbonUtilTest {
   @Test public void testToGetFirstIndexUsingBinarySearchWithCompareTo1() {
     byte[] dataChunks = { 10, 20, 30, 40, 50, 60 };
     byte[] compareValue = { 5 };
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, null, null, 6, 1);
+    FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk =
+        new FixedLengthDimensionColumnPage(dataChunks, null, null, 6, 1, dataChunks.length);
     int result = CarbonUtil
         .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, false);
     assertEquals(-2, result);
@@ -809,8 +781,8 @@ public class CarbonUtilTest {
   @Test public void testToGetFirstIndexUsingBinarySearchWithCompareToLessThan0() {
     byte[] dataChunks = { 10, 20, 30, 40, 50, 60 };
     byte[] compareValue = { 30 };
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, null, null, 6, 1);
+    FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk =
+        new FixedLengthDimensionColumnPage(dataChunks, null, null, 6, 1, dataChunks.length);
     int result = CarbonUtil
         .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, false);
     assertEquals(2, result);
@@ -819,8 +791,8 @@ public class CarbonUtilTest {
   @Test public void testToGetFirstIndexUsingBinarySearchWithCompareTo0() {
     byte[] dataChunks = { 10, 10, 10, 40, 50, 60 };
     byte[] compareValue = { 10 };
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, null, null, 6, 1);
+    FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk =
+        new FixedLengthDimensionColumnPage(dataChunks, null, null, 6, 1, dataChunks.length);
     int result = CarbonUtil
         .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, false);
     assertEquals(0, result);
@@ -829,25 +801,25 @@ public class CarbonUtilTest {
   @Test public void testToGetFirstIndexUsingBinarySearchWithMatchUpLimitTrue() {
     byte[] dataChunks = { 10, 10, 10, 40, 50, 60 };
     byte[] compareValue = { 10 };
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, null, null, 6, 1);
+    FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk =
+        new FixedLengthDimensionColumnPage(dataChunks, null, null, 6, 1, dataChunks.length);
     int result = CarbonUtil
         .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, true);
     assertEquals(2, result);
   }
-  
+
   @Test
   public void testBinaryRangeSearch() {
 
     byte[] dataChunk = new byte[10];
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
+    FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk;
     byte[] keyWord = new byte[1];
     int[] range;
 
     dataChunk = "abbcccddddeffgggh".getBytes();
     byte[][] dataArr = new byte[dataChunk.length / keyWord.length][keyWord.length];
-    fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-        dataChunk.length / keyWord.length, keyWord.length);
+    fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
+        dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
 
     for (int ii = 0; ii < dataChunk.length / keyWord.length; ii++) {
       dataArr[ii] = fixedLengthDimensionDataChunk.getChunkData(ii);
@@ -878,8 +850,8 @@ public class CarbonUtilTest {
     assertRangeIndex(dataArr, dataChunk, fixedLengthDimensionDataChunk, keyWord, expectRangeIndex);
 
     dataChunk = "ab".getBytes();
-    fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-        dataChunk.length / keyWord.length, keyWord.length);
+    fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
+        dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
 
     keyWord[0] = Byte.valueOf("97");
     range = CarbonUtil.getRangeIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 0, dataChunk.length - 1, keyWord);
@@ -892,8 +864,8 @@ public class CarbonUtilTest {
     assertEquals(1, range[1]);
 
     dataChunk = "aabb".getBytes();
-    fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-        dataChunk.length / keyWord.length, keyWord.length);
+    fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
+        dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
 
     keyWord[0] = Byte.valueOf("97");
     range = CarbonUtil.getRangeIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 0, dataChunk.length - 1, keyWord);
@@ -906,8 +878,8 @@ public class CarbonUtilTest {
     assertEquals(3, range[1]);
 
     dataChunk = "a".getBytes();
-    fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-        dataChunk.length / keyWord.length, keyWord.length);
+    fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
+        dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
 
     keyWord[0] = Byte.valueOf("97");
     range = CarbonUtil.getRangeIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 0, dataChunk.length - 1, keyWord);
@@ -915,8 +887,8 @@ public class CarbonUtilTest {
     assertEquals(0, range[1]);
 
     dataChunk = "aa".getBytes();
-    fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-        dataChunk.length / keyWord.length, keyWord.length);
+    fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
+        dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
 
     keyWord[0] = Byte.valueOf("97");
     range = CarbonUtil.getRangeIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 0, dataChunk.length - 1, keyWord);
@@ -924,8 +896,8 @@ public class CarbonUtilTest {
     assertEquals(1, range[1]);
 
     dataChunk = "aabbbbbbbbbbcc".getBytes();
-    fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-        dataChunk.length / keyWord.length, keyWord.length);
+    fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
+        dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
     keyWord[0] = Byte.valueOf("98");
     range = CarbonUtil.getRangeIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 0, dataChunk.length - 1, keyWord);
     assertEquals(2, range[0]);
@@ -937,15 +909,15 @@ public class CarbonUtilTest {
   public void IndexUsingBinarySearchLengthTwo() {
 
     byte[] dataChunk = new byte[10];
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
+    FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk;
 
     byte[] keyWord = new byte[2];
 
     dataChunk = "aabbbbbbbbbbcc".getBytes();
     byte[][] dataArr = new byte[dataChunk.length / keyWord.length][keyWord.length];
 
-    fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-        dataChunk.length / keyWord.length, keyWord.length);
+    fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
+        dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
 
     for (int ii = 0; ii < dataChunk.length / keyWord.length; ii++) {
       dataArr[ii] = fixedLengthDimensionDataChunk.getChunkData(ii);
@@ -979,15 +951,15 @@ public class CarbonUtilTest {
   public void IndexUsingBinarySearchLengthThree() {
 
     byte[] dataChunk = new byte[10];
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
+    FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk;
 
     byte[] keyWord = new byte[3];
 
     dataChunk = "aaabbbbbbbbbccc".getBytes();
     byte[][] dataArr = new byte[dataChunk.length / keyWord.length][keyWord.length];
 
-    fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-        dataChunk.length / keyWord.length, keyWord.length);
+    fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
+        dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
 
     for (int ii = 0; ii < dataChunk.length / keyWord.length; ii++) {
       dataArr[ii] = fixedLengthDimensionDataChunk.getChunkData(ii);
@@ -1007,36 +979,82 @@ public class CarbonUtilTest {
   public void testSplitSchemaStringToMapWithLessThanSplitLen() {
     String schema = generateString(399);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 2);
+    Assert.assertTrue(map.size() == 2);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
   }
 
   @Test
   public void testSplitSchemaStringToMapWithEqualThanSplitLen() {
     String schema = generateString(4000);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 2);
+    Assert.assertTrue(map.size() == 2);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
   }
 
   @Test
   public void testSplitSchemaStringToMapWithMoreThanSplitLen() {
     String schema = generateString(7999);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 3);
+    Assert.assertTrue(map.size() == 3);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
   }
 
   @Test
   public void testSplitSchemaStringToMapWithMultiplesOfSplitLen() {
     String schema = generateString(12000);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 4);
+    Assert.assertTrue(map.size() == 4);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
+  }
+
+  @Test
+  public void testUpdateMinMaxValues() {
+    // create dimension and measure column schema
+    ColumnSchema dimensionColumnSchema = createColumnSchema(DataTypes.STRING, true);
+    ColumnSchema measureColumnSchema = createColumnSchema(DataTypes.DOUBLE, false);
+    List<ColumnSchema> columnSchemas = new ArrayList<>(2);
+    columnSchemas.add(dimensionColumnSchema);
+    columnSchemas.add(measureColumnSchema);
+    // create data file footer object
+    DataFileFooter fileFooter = new DataFileFooter();
+    fileFooter.setColumnInTable(columnSchemas);
+    // initialise the expected values
+    int expectedMaxValue = 5;
+    int expectedMinValue = 2;
+    double expectedMeasureMaxValue = 28.74;
+    double expectedMeasureMinValue = -21.46;
+    // initialise the minValues
+    byte[][] minValues = new byte[2][];
+    minValues[0] = new byte[] { 2 };
+    ByteBuffer buffer = ByteBuffer.allocate(8);
+    minValues[1] = (byte[]) buffer.putDouble(28.74).flip().array();
+    buffer = ByteBuffer.allocate(8);
+    // initialise the maxValues
+    byte[][] maxValues = new byte[2][];
+    maxValues[0] = new byte[] { 5 };
+    maxValues[1] = (byte[]) buffer.putDouble(-21.46).flip().array();
+    byte[][] updateMaxValues =
+        CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
+    byte[][] updateMinValues =
+        CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, true);
+    // compare max values
+    assert (expectedMaxValue == ByteBuffer.wrap(updateMaxValues[0]).get());
+    assert (expectedMeasureMaxValue == ByteBuffer.wrap(updateMaxValues[1]).getDouble());
+
+    // compare min values
+    assert (expectedMinValue == ByteBuffer.wrap(updateMinValues[0]).get());
+    assert (expectedMeasureMinValue == ByteBuffer.wrap(updateMinValues[1]).getDouble());
+  }
+
+  private ColumnSchema createColumnSchema(DataType dataType, boolean isDimensionColumn) {
+    ColumnSchema columnSchema = new ColumnSchema();
+    columnSchema.setDataType(dataType);
+    columnSchema.setDimensionColumn(isDimensionColumn);
+    return columnSchema;
   }
 
   private String generateString(int length) {
@@ -1048,15 +1066,15 @@ public class CarbonUtilTest {
   }
 
   private void assertRangeIndex(byte[][] dataArr, byte[] dataChunk,
-      FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk, byte[] keyWord, int[] expectRangeIndex) {
+      FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk, byte[] keyWord, int[] expectRangeIndex) {
     int[] range;
     range = CarbonUtil.getRangeIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 0,
         (dataChunk.length - 1) / keyWord.length, keyWord);
     assertEquals(expectRangeIndex[0], range[0]);
     assertEquals(expectRangeIndex[1], range[1]);
 
-    int index = CarbonUtil.binarySearch(dataArr, 0, dataChunk.length / keyWord.length - 1, keyWord);
-    assertTrue(expectRangeIndex[0] <= index && index <= range[1]);
+//    int index = CarbonUtil.binarySearch(dataArr, 0, dataChunk.length / keyWord.length - 1, keyWord);
+//    assertTrue(expectRangeIndex[0] <= index && index <= range[1]);
   }
 
  	

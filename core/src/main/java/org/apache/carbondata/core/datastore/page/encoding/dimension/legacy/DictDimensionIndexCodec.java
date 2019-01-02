@@ -21,10 +21,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -32,8 +33,8 @@ import org.apache.carbondata.format.Encoding;
 
 public class DictDimensionIndexCodec extends IndexStorageCodec {
 
-  public DictDimensionIndexCodec(boolean isSort, boolean isInvertedIndex, Compressor compressor) {
-    super(isSort, isInvertedIndex, compressor);
+  public DictDimensionIndexCodec(boolean isSort, boolean isInvertedIndex) {
+    super(isSort, isInvertedIndex);
   }
 
   @Override
@@ -46,7 +47,7 @@ public class DictDimensionIndexCodec extends IndexStorageCodec {
     return new IndexStorageEncoder() {
       @Override
       void encodeIndexStorage(ColumnPage inputPage) {
-        IndexStorage indexStorage;
+        BlockIndexerStorage<byte[][]> indexStorage;
         byte[][] data = inputPage.getByteArrayPage();
         if (isInvertedIndex) {
           indexStorage = new BlockIndexerStorageForShort(data, true, false, isSort);
@@ -54,6 +55,8 @@ public class DictDimensionIndexCodec extends IndexStorageCodec {
           indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
         }
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
+        Compressor compressor = CompressorFactory.getInstance().getCompressor(
+            inputPage.getColumnCompressorName());
         super.compressedDataPage = compressor.compressByte(flattened);
         super.indexStorage = indexStorage;
       }

@@ -24,6 +24,10 @@
     <Source name="~.*\.scala" />
   </Match>
 
+  <Match>
+    <Source name="~.*Test\.java" />
+  </Match>
+
   <!-- This method creates stream but the caller methods are responsible for closing the stream -->
   <Match>
     <Class name="org.apache.carbondata.core.datastore.impl.FileFactory"/>
@@ -31,7 +35,7 @@
     <Bug pattern="OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE"/>
   </Match>
   <Match>
-    <Class name="org.apache.carbondata.core.datastore.impl.FileHolderImpl"/>
+    <Class name="org.apache.carbondata.core.datastore.impl.FileReaderImpl"/>
     <Method name="getDataInputStream"/>
     <Bug pattern="OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE"/>
   </Match>

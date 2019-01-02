@@ -17,14 +17,13 @@
 
 package org.apache.spark.sql
 
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.compress.GzipCodec
-import org.apache.spark.sql.execution.command.LoadTable
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.util.CarbonException
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonType}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonType}
 import org.apache.carbondata.spark.CarbonOption
 
 class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
@@ -44,99 +43,21 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
 
   private def writeToCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     val options = new CarbonOption(parameters)
-    if (options.tempCSV) {
-      loadTempCSV(options)
-    } else {
-      loadDataFrame(options)
-    }
+    loadDataFrame(options)
   }
-
-  /**
-   * Firstly, saving DataFrame to CSV files
-   * Secondly, load CSV files
-   * @param options
-   */
-  private def loadTempCSV(options: CarbonOption): Unit = {
-    // temporary solution: write to csv file, then load the csv into carbon
-    val storePath = CarbonEnv.getInstance(sqlContext.sparkSession).storePath
-    val tempCSVFolder = new StringBuilder(storePath).append(CarbonCommonConstants.FILE_SEPARATOR)
-      .append("tempCSV")
-      .append(CarbonCommonConstants.UNDERSCORE).append(options.dbName)
-      .append(CarbonCommonConstants.UNDERSCORE).append(options.tableName)
-      .append(CarbonCommonConstants.UNDERSCORE).append(System.nanoTime()).toString
-    writeToTempCSVFile(tempCSVFolder, options)
-
-    val tempCSVPath = new Path(tempCSVFolder)
-    val fs = tempCSVPath.getFileSystem(dataFrame.sqlContext.sparkContext.hadoopConfiguration)
-
-    def countSize(): Double = {
-      var size: Double = 0
-      val itor = fs.listFiles(tempCSVPath, true)
-      while (itor.hasNext) {
-        val f = itor.next()
-        if (f.getPath.getName.startsWith("part-")) {
-          size += f.getLen
-        }
-      }
-      size
-    }
-
-    LOGGER.info(s"temporary CSV file size: ${countSize / 1024 / 1024} MB")
-
-    try {
-      sqlContext.sql(makeLoadString(tempCSVFolder, options))
-    } finally {
-      fs.delete(tempCSVPath, true)
-    }
-  }
-
-  private def writeToTempCSVFile(tempCSVFolder: String, options: CarbonOption): Unit = {
-    val strRDD = dataFrame.rdd.mapPartitions { case iter =>
-      new Iterator[String] {
-        override def hasNext = iter.hasNext
-
-        def convertToCSVString(seq: Seq[Any]): String = {
-          val build = new java.lang.StringBuilder()
-          if (seq.head != null) {
-            build.append(seq.head.toString)
-          }
-          val itemIter = seq.tail.iterator
-          while (itemIter.hasNext) {
-            build.append(CarbonCommonConstants.COMMA)
-            val value = itemIter.next()
-            if (value != null) {
-              build.append(value.toString)
-            }
-          }
-          build.toString
-        }
-
-        override def next: String = {
-          convertToCSVString(iter.next.toSeq)
-        }
-      }
-    }
-
-    if (options.compress) {
-      strRDD.saveAsTextFile(tempCSVFolder, classOf[GzipCodec])
-    } else {
-      strRDD.saveAsTextFile(tempCSVFolder)
-    }
-  }
-
   /**
    * Loading DataFrame directly without saving DataFrame to CSV files.
    * @param options
    */
   private def loadDataFrame(options: CarbonOption): Unit = {
     val header = dataFrame.columns.mkString(",")
-    LoadTable(
-      Some(options.dbName),
+    CarbonLoadDataCommand(
+      Some(CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)),
       options.tableName,
       null,
       Seq(),
       Map("fileheader" -> header) ++ options.toMap,
-      isOverwriteTable = false,
+      isOverwriteTable = options.overwriteEnabled,
       null,
       Some(dataFrame)).run(sqlContext.sparkSession)
   }
@@ -147,39 +68,68 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       case IntegerType => CarbonType.INT.getName
       case ShortType => CarbonType.SHORT.getName
       case LongType => CarbonType.LONG.getName
-      case FloatType => CarbonType.DOUBLE.getName
+      case FloatType => CarbonType.FLOAT.getName
       case DoubleType => CarbonType.DOUBLE.getName
       case TimestampType => CarbonType.TIMESTAMP.getName
       case DateType => CarbonType.DATE.getName
-      case decimal: DecimalType => s"${CarbonType.DECIMAL.getName} (${decimal.precision}" +
-                                   s", ${decimal.scale})"
-      case other => sys.error(s"unsupported type: $other")
+      case decimal: DecimalType => s"decimal(${decimal.precision}, ${decimal.scale})"
+      case BooleanType => CarbonType.BOOLEAN.getName
+      case other => CarbonException.analysisException(s"unsupported type: $other")
     }
   }
 
   private def makeCreateTableString(schema: StructType, options: CarbonOption): String = {
-    val carbonSchema = schema.map { field =>
-      s"${ field.name } ${ convertToCarbonType(field.dataType) }"
-    }
     val property = Map(
+      "SORT_COLUMNS" -> options.sortColumns,
+      "SORT_SCOPE" -> options.sortScope,
       "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
       "DICTIONARY_EXCLUDE" -> options.dictionaryExclude,
-      "TABLE_BLOCKSIZE" -> options.tableBlockSize
-    ).filter(_._2.isDefined).map(p => s"'${p._1}' = '${p._2.get}'").mkString(",")
-    s"""
-       | CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
-       | (${ carbonSchema.mkString(", ") })
-       | STORED BY 'carbondata'
-       | ${ if (property.nonEmpty) "TBLPROPERTIES (" + property + ")" else "" }
-     """.stripMargin
-  }
+      "LONG_STRING_COLUMNS" -> options.longStringColumns,
+      "TABLE_BLOCKSIZE" -> options.tableBlockSize,
+      "TABLE_BLOCKLET_SIZE" -> options.tableBlockletSize,
+      "STREAMING" -> Option(options.isStreaming.toString)
+    ).filter(_._2.isDefined)
+      .map(property => s"'${property._1}' = '${property._2.get}'").mkString(",")
 
-  private def makeLoadString(csvFolder: String, options: CarbonOption): String = {
+    val partition: Seq[String] = if (options.partitionColumns.isDefined) {
+      if (options.partitionColumns.get.toSet.size != options.partitionColumns.get.length) {
+        throw new MalformedCarbonCommandException(s"repeated partition column")
+      }
+      options.partitionColumns.get.map { column =>
+        val field = schema.fields.find(_.name.equalsIgnoreCase(column))
+        if (field.isEmpty) {
+          throw new MalformedCarbonCommandException(s"invalid partition column: $column")
+        }
+        s"$column ${field.get.dataType.typeName}"
+      }
+    } else {
+      Seq()
+    }
+
+    val schemaWithoutPartition = if (options.partitionColumns.isDefined) {
+      val partitionCols = options.partitionColumns.get
+      val fields = schema.filterNot {
+        field => partitionCols.exists(_.equalsIgnoreCase(field.name))
+      }
+      StructType(fields)
+    } else {
+      schema
+    }
+
+    val carbonSchema = schemaWithoutPartition.map { field =>
+      s"${ field.name } ${ convertToCarbonType(field.dataType) }"
+    }
+
+    val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
+
     s"""
-       | LOAD DATA INPATH '$csvFolder'
-       | INTO TABLE ${options.dbName}.${options.tableName}
-       | OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}',
-       | 'SINGLE_PASS' = '${options.singlePass}')
+       | CREATE TABLE IF NOT EXISTS $dbName.${options.tableName}
+       | (${ carbonSchema.mkString(", ") })
+       | ${ if (partition.nonEmpty) s"PARTITIONED BY (${partition.mkString(", ")})" else ""}
+       | STORED BY 'carbondata'
+       | ${ if (options.tablePath.nonEmpty) s"LOCATION '${options.tablePath.get}'" else ""}
+       |  ${ if (property.nonEmpty) "TBLPROPERTIES (" + property + ")" else "" }
+       |
      """.stripMargin
   }
 

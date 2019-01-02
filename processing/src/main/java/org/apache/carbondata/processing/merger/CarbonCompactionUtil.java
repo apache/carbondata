@@ -18,12 +18,10 @@ package org.apache.carbondata.processing.merger;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -40,13 +38,14 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.log4j.Logger;
 
 /**
  * Utility Class for the Compaction Flow.
  */
 public class CarbonCompactionUtil {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonCompactionUtil.class.getName());
 
   /**
@@ -119,7 +118,16 @@ public class CarbonCompactionUtil {
       DataFileFooter dataFileMatadata = null;
       // check if segId is already present in map
       List<DataFileFooter> metadataList = segmentBlockInfoMapping.get(segId);
-      dataFileMatadata = CarbonUtil.readMetadatFile(blockInfo);
+      // check to decide whether to read file footer of carbondata file forcefully. This will help
+      // in getting the schema last updated time based on which compaction flow is decided that
+      // whether it will go to restructure compaction flow or normal compaction flow.
+      // This decision will impact the compaction performance so it needs to be decided carefully
+      if (null != blockInfo.getDetailInfo()
+          && blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp() == 0L) {
+        dataFileMatadata = CarbonUtil.readMetadataFile(blockInfo, true);
+      } else {
+        dataFileMatadata = CarbonUtil.readMetadataFile(blockInfo);
+      }
       if (null == metadataList) {
         // if it is not present
         eachSegmentBlocks.add(dataFileMatadata);
@@ -171,17 +179,17 @@ public class CarbonCompactionUtil {
     try {
       if (FileFactory.isFileExist(minorCompactionStatusFile,
           FileFactory.getFileType(minorCompactionStatusFile))) {
-        return CompactionType.MINOR_COMPACTION;
+        return CompactionType.MINOR;
       }
       if (FileFactory.isFileExist(majorCompactionStatusFile,
           FileFactory.getFileType(majorCompactionStatusFile))) {
-        return CompactionType.MAJOR_COMPACTION;
+        return CompactionType.MAJOR;
       }
 
     } catch (IOException e) {
       LOGGER.error("Exception in determining the compaction request file " + e.getMessage());
     }
-    return CompactionType.MINOR_COMPACTION;
+    return CompactionType.MINOR;
   }
 
   /**
@@ -193,7 +201,7 @@ public class CarbonCompactionUtil {
   public static boolean deleteCompactionRequiredFile(String metaFolderPath,
       CompactionType compactionType) {
     String compactionRequiredFile;
-    if (compactionType.equals(CompactionType.MINOR_COMPACTION)) {
+    if (compactionType.equals(CompactionType.MINOR)) {
       compactionRequiredFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonCommonConstants.minorCompactionRequiredFile;
     } else {
@@ -229,7 +237,7 @@ public class CarbonCompactionUtil {
   public static boolean createCompactionRequiredFile(String metaFolderPath,
       CompactionType compactionType) {
     String statusFile;
-    if (compactionType.equals(CompactionType.MINOR_COMPACTION)) {
+    if (CompactionType.MINOR == compactionType) {
       statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonCommonConstants.minorCompactionRequiredFile;
     } else {
@@ -263,7 +271,7 @@ public class CarbonCompactionUtil {
   public static CarbonTable getNextTableToCompact(CarbonTable[] carbonTables,
       List<CarbonTableIdentifier> skipList) {
     for (CarbonTable ctable : carbonTables) {
-      String metadataPath = ctable.getMetaDataFilepath();
+      String metadataPath = ctable.getMetadataPath();
       // check for the compaction required file and at the same time exclude the tables which are
       // present in the skip list.
       if (CarbonCompactionUtil.isCompactionRequiredForTable(metadataPath) && !skipList
@@ -308,7 +316,7 @@ public class CarbonCompactionUtil {
   public static int[] updateColumnSchemaAndGetCardinality(Map<String, Integer> columnCardinalityMap,
       CarbonTable carbonTable, List<ColumnSchema> updatedColumnSchemaList) {
     List<CarbonDimension> masterDimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<Integer> updatedCardinalityList = new ArrayList<>(columnCardinalityMap.size());
     for (CarbonDimension dimension : masterDimensions) {
       Integer value = columnCardinalityMap.get(dimension.getColumnId());
@@ -318,15 +326,48 @@ public class CarbonCompactionUtil {
         updatedCardinalityList.add(value);
       }
       updatedColumnSchemaList.add(dimension.getColumnSchema());
+
+      if (dimension.getNumberOfChild() > 0) {
+        fillColumnSchemaListForComplexDims(dimension.getListOfChildDimensions(),
+            updatedColumnSchemaList, updatedCardinalityList, columnCardinalityMap);
+      }
     }
     // add measures to the column schema list
     List<CarbonMeasure> masterSchemaMeasures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
     for (CarbonMeasure measure : masterSchemaMeasures) {
       updatedColumnSchemaList.add(measure.getColumnSchema());
     }
     return ArrayUtils
         .toPrimitive(updatedCardinalityList.toArray(new Integer[updatedCardinalityList.size()]));
+  }
+
+  /**
+   * This method is to get the chile dimensions of the complex dimension and
+   * update the cardinality for all complex dimensions
+   *
+   * @param carbonDimensionsList
+   * @param updatedColumnSchemaList
+   * @param updatedCardinalityList
+   * @param columnCardinalityMap
+   */
+  private static void fillColumnSchemaListForComplexDims(List<CarbonDimension> carbonDimensionsList,
+      List<ColumnSchema> updatedColumnSchemaList, List<Integer> updatedCardinalityList,
+      Map<String, Integer> columnCardinalityMap) {
+    for (CarbonDimension carbonDimension : carbonDimensionsList) {
+      Integer value = columnCardinalityMap.get(carbonDimension.getColumnId());
+      if (null == value) {
+        updatedCardinalityList.add(getDimensionDefaultCardinality(carbonDimension));
+      } else {
+        updatedCardinalityList.add(value);
+      }
+      updatedColumnSchemaList.add(carbonDimension.getColumnSchema());
+      List<CarbonDimension> childDims = carbonDimension.getListOfChildDimensions();
+      if (null != childDims && childDims.size() > 0) {
+        fillColumnSchemaListForComplexDims(childDims, updatedColumnSchemaList,
+            updatedCardinalityList, columnCardinalityMap);
+      }
+    }
   }
 
   /**
@@ -371,37 +412,6 @@ public class CarbonCompactionUtil {
         if (tableLastUpdatedTime > dataFileFooter.getSchemaUpdatedTimeStamp()) {
           restructuredBlockExists = true;
           break;
-        }
-      }
-      if (restructuredBlockExists) {
-        break;
-      }
-    }
-    return restructuredBlockExists;
-  }
-
-  /**
-   * This method will check for any restructured block in the blocks selected for compaction
-   *
-   * @param segmentMapping
-   * @param tableLastUpdatedTime
-   * @return
-   */
-  public static boolean checkIfAnyRestructuredBlockExists(Map<String, TaskBlockInfo> segmentMapping,
-      long tableLastUpdatedTime) {
-    boolean restructuredBlockExists = false;
-    for (Map.Entry<String, TaskBlockInfo> taskMap : segmentMapping.entrySet()) {
-      String segmentId = taskMap.getKey();
-      TaskBlockInfo taskBlockInfo = taskMap.getValue();
-      Collection<List<TableBlockInfo>> infoList = taskBlockInfo.getAllTableBlockInfoList();
-      for (List<TableBlockInfo> listMetadata : infoList) {
-        for (TableBlockInfo blockInfo : listMetadata) {
-          // if schema modified timestamp is greater than footer stored schema timestamp,
-          // it indicates it is a restructured block
-          if (tableLastUpdatedTime > blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp()) {
-            restructuredBlockExists = true;
-            break;
-          }
         }
       }
       if (restructuredBlockExists) {

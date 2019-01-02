@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -37,7 +38,8 @@ public class InExpression extends BinaryConditionalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult leftRsult = left.evaluate(value);
 
@@ -52,32 +54,26 @@ public class InExpression extends BinaryConditionalExpression {
         } else {
           val = expressionResVal;
         }
-        switch (val.getDataType()) {
-          case STRING:
-            val = new ExpressionResult(val.getDataType(), expressionResVal.getString());
-            break;
-          case SHORT:
-            val = new ExpressionResult(val.getDataType(), expressionResVal.getShort());
-            break;
-          case INT:
-            val = new ExpressionResult(val.getDataType(), expressionResVal.getInt());
-            break;
-          case DOUBLE:
-            val = new ExpressionResult(val.getDataType(), expressionResVal.getDouble());
-            break;
-          case LONG:
-            val = new ExpressionResult(val.getDataType(), expressionResVal.getLong());
-            break;
-          case DATE:
-          case TIMESTAMP:
-            val = new ExpressionResult(val.getDataType(), expressionResVal.getTime());
-            break;
-          case DECIMAL:
-            val = new ExpressionResult(val.getDataType(), expressionResVal.getDecimal());
-            break;
-          default:
-            throw new FilterUnsupportedException(
-                "DataType: " + val.getDataType() + " not supported for the filter expression");
+        DataType dataType = val.getDataType();
+        if (dataType == DataTypes.BOOLEAN) {
+          val = new ExpressionResult(val.getDataType(), expressionResVal.getBoolean());
+        } else if (dataType == DataTypes.STRING) {
+          val = new ExpressionResult(val.getDataType(), expressionResVal.getString());
+        } else if (dataType == DataTypes.SHORT) {
+          val = new ExpressionResult(val.getDataType(), expressionResVal.getShort());
+        } else if (dataType == DataTypes.INT) {
+          val = new ExpressionResult(val.getDataType(), expressionResVal.getInt());
+        } else if (dataType == DataTypes.DOUBLE) {
+          val = new ExpressionResult(val.getDataType(), expressionResVal.getDouble());
+        } else if (dataType == DataTypes.LONG) {
+          val = new ExpressionResult(val.getDataType(), expressionResVal.getLong());
+        } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+          val = new ExpressionResult(val.getDataType(), expressionResVal.getTime());
+        } else if (DataTypes.isDecimal(dataType)) {
+          val = new ExpressionResult(val.getDataType(), expressionResVal.getDecimal());
+        } else {
+          throw new FilterUnsupportedException(
+              "DataType: " + val.getDataType() + " not supported for the filter expression");
         }
         setOfExprResult.add(val);
       }
@@ -91,19 +87,25 @@ public class InExpression extends BinaryConditionalExpression {
     // for a check on the right result.
     // Example: (null==null) -> Left null return false, (1==null) would automatically be false.
     if (leftRsult.isNull()) {
-      leftRsult.set(DataType.BOOLEAN, false);
+      leftRsult.set(DataTypes.BOOLEAN, false);
     } else {
-      leftRsult.set(DataType.BOOLEAN, setOfExprResult.contains(leftRsult));
+      leftRsult.set(DataTypes.BOOLEAN, setOfExprResult.contains(leftRsult));
     }
     return leftRsult;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.IN;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "IN(" + left.getString() + ',' + right.getString() + ')';
   }
 
+  @Override
+  public String getStatement() {
+    return left.getStatement() + " in " + right.getStatement();
+  }
 }

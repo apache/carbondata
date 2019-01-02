@@ -19,43 +19,52 @@ package org.apache.carbondata.core.scan.complextypes;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 
 public class ComplexQueryType {
   protected String name;
 
-  protected String parentname;
+  protected String parentName;
 
   protected int blockIndex;
 
-  public ComplexQueryType(String name, String parentname, int blockIndex) {
+  public ComplexQueryType(String name, String parentName, int blockIndex) {
     this.name = name;
-    this.parentname = parentname;
+    this.parentName = parentName;
     this.blockIndex = blockIndex;
   }
 
   /**
-   * Method will copy the block chunk holder data to the passed
-   * byte[], this method is also used by child
-   *
-   * @param rowNumber
-   * @param input
+   * Method will copy the block chunk holder data and return the cloned value.
+   * This method is also used by child.
    */
-  protected void copyBlockDataChunk(DimensionRawColumnChunk[] rawColumnChunks,
-      int rowNumber, int pageNumber, byte[] input) {
+  protected byte[] copyBlockDataChunk(DimensionRawColumnChunk[] rawColumnChunks,
+      DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber) {
     byte[] data =
-        rawColumnChunks[blockIndex].convertToDimColDataChunk(pageNumber).getChunkData(rowNumber);
-    System.arraycopy(data, 0, input, 0, data.length);
+        getDecodedDimensionPage(dimensionColumnPages, rawColumnChunks[blockIndex], pageNumber)
+            .getChunkData(rowNumber);
+    byte[] output = new byte[data.length];
+    System.arraycopy(data, 0, output, 0, output.length);
+    return output;
   }
 
   /*
    * This method will read the block data chunk from the respective block
    */
-  protected void readBlockDataChunk(BlocksChunkHolder blockChunkHolder) throws IOException {
-    if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
-      blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
-          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
+  protected void readBlockDataChunk(RawBlockletColumnChunks blockChunkHolder) throws IOException {
+    if (null == blockChunkHolder.getDimensionRawColumnChunks()[blockIndex]) {
+      blockChunkHolder.getDimensionRawColumnChunks()[blockIndex] = blockChunkHolder.getDataBlock()
+          .readDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
     }
+  }
+
+  private DimensionColumnPage getDecodedDimensionPage(DimensionColumnPage[][] dimensionColumnPages,
+      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) {
+    if (dimensionColumnPages == null || null == dimensionColumnPages[blockIndex]) {
+      return dimensionRawColumnChunk.decodeColumnPage(pageNumber);
+    }
+    return dimensionColumnPages[blockIndex][pageNumber];
   }
 }

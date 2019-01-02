@@ -21,14 +21,14 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 
 public class FixedLengthDimensionDataChunkTest {
 
-  static FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
+  static FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk;
   static byte[] data;
 
   @BeforeClass public static void setup() {
@@ -38,15 +38,13 @@ public class FixedLengthDimensionDataChunkTest {
 
     int invertedIndexReverse[] = { 1, 0, 5, 7, 8 };
     fixedLengthDimensionDataChunk =
-        new FixedLengthDimensionDataChunk(data, invertedIndex, invertedIndexReverse, 5, 4);
+        new FixedLengthDimensionColumnPage(data, invertedIndex, invertedIndexReverse, 5, 4,
+            data.length);
   }
 
   @Test public void fillChunkDataTest() {
-    KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
     int[] maskByteRanges = { 1, 2, 4, 6, 5 };
-    keyStructureInfo.setMaskByteRanges(maskByteRanges);
-    keyStructureInfo.setMaxKey("1234567".getBytes());
-    int res = fixedLengthDimensionDataChunk.fillChunkData(data, 0, 0, keyStructureInfo);
+    int res = fixedLengthDimensionDataChunk.fillRawData(0, 0, data);
     int expectedResult = 4 ;
     assertEquals(res, expectedResult);
   }
@@ -54,13 +52,12 @@ public class FixedLengthDimensionDataChunkTest {
   @Test public void getChunkDataTest() {
     byte expected[] = { 121, 32, 115, 116 };
     byte res[] = fixedLengthDimensionDataChunk.getChunkData(0);
-    assert (Arrays.equals(res, expected));
+    Assert.assertTrue(Arrays.equals(res, expected));
   }
 
   @Test public void fillConvertedChunkDataTest() {
     int[] row = { 1, 2, 4, 6 };
-    KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
-    int res = fixedLengthDimensionDataChunk.fillConvertedChunkData(1, 0, row, keyStructureInfo);
+    int res = fixedLengthDimensionDataChunk.fillSurrogateKey(1, 0, row);
     int expectedResult = 1;
     assertEquals(res, expectedResult);
   }

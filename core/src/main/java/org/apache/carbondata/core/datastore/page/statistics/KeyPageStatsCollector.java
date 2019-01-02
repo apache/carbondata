@@ -66,6 +66,10 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
 
   }
 
+  @Override public void update(float value) {
+
+  }
+
   @Override
   public void update(BigDecimal value) {
 
@@ -73,16 +77,17 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
 
   @Override
   public void update(byte[] value) {
-    if (min == null && max == null) {
+    if (null == min) {
       min = value;
+    }
+    if (null == max) {
       max = value;
-    } else {
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(min, value) > 0) {
-        min = value;
-      }
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(max, value) < 0) {
-        max = value;
-      }
+    }
+    if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(min, value) > 0) {
+      min = value;
+    }
+    if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(max, value) < 0) {
+      max = value;
     }
   }
 
@@ -106,13 +111,10 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
         return dataType;
       }
 
-      @Override public int getScale() {
-        return 0;
+      @Override public boolean writeMinMax() {
+        return true;
       }
 
-      @Override public int getPrecision() {
-        return 0;
-      }
     };
   }
 }

@@ -20,24 +20,25 @@ package org.apache.carbondata.core.scan.complextypes;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
-
-import org.apache.spark.sql.catalyst.util.*;
-import org.apache.spark.sql.types.*;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class ArrayQueryType extends ComplexQueryType implements GenericQueryType {
 
   private GenericQueryType children;
 
-  public ArrayQueryType(String name, String parentname, int blockIndex) {
-    super(name, parentname, blockIndex);
+  public ArrayQueryType(String name, String parentName, int blockIndex) {
+    super(name, parentName, blockIndex);
   }
 
   @Override public void addChildren(GenericQueryType children) {
-    if (this.getName().equals(children.getParentname())) {
+    if (this.getName().equals(children.getParentName())) {
       this.children = children;
     } else {
       this.children.addChildren(children);
@@ -52,28 +53,27 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     this.name = name;
   }
 
-  @Override public String getParentname() {
-    return parentname;
+  @Override public String getParentName() {
+    return parentName;
   }
 
-  @Override public void setParentname(String parentname) {
-    this.parentname = parentname;
+  @Override public void setParentName(String parentName) {
+    this.parentName = parentName;
 
   }
 
   public void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
-      int rowNumber, int pageNumber, DataOutputStream dataOutputStream) throws IOException {
-    byte[] input = new byte[8];
-    copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber, input);
+      DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
+      DataOutputStream dataOutputStream) throws IOException {
+    byte[] input = copyBlockDataChunk(rawColumnChunks, dimensionColumnPages, rowNumber, pageNumber);
     ByteBuffer byteArray = ByteBuffer.wrap(input);
     int dataLength = byteArray.getInt();
     dataOutputStream.writeInt(dataLength);
     if (dataLength > 0) {
-      int columnIndex = byteArray.getInt();
+      int dataOffset = byteArray.getInt();
       for (int i = 0; i < dataLength; i++) {
-        children
-            .parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks, columnIndex++, pageNumber,
-                dataOutputStream);
+        children.parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks, dimensionColumnPages,
+            dataOffset++, pageNumber, dataOutputStream);
       }
     }
   }
@@ -82,26 +82,40 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     return children.getColsCount() + 1;
   }
 
-  @Override public DataType getSchemaType() {
-    return new ArrayType(null, true);
-  }
-
-  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder)
+  @Override public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
       throws IOException {
     readBlockDataChunk(blockChunkHolder);
     children.fillRequiredBlockData(blockChunkHolder);
   }
 
-  @Override public Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData) {
-    int dataLength = surrogateData.getInt();
+  @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+    Object[] data = fillData(dataBuffer);
+    if (data == null) {
+      return null;
+    }
+    return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
+  }
+
+  protected Object[] fillData(ByteBuffer dataBuffer) {
+    int dataLength = dataBuffer.getInt();
     if (dataLength == -1) {
       return null;
     }
     Object[] data = new Object[dataLength];
     for (int i = 0; i < dataLength; i++) {
-      data[i] = children.getDataBasedOnDataTypeFromSurrogates(surrogateData);
+      data[i] = children.getDataBasedOnDataType(dataBuffer);
     }
-    return new GenericArrayData(data);
+    return data;
+  }
+
+  @Override public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
+      CarbonDimension child) {
+    throw new UnsupportedOperationException("Operation Unsupported for ArrayType");
+  }
+
+  @Override public Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
+      CarbonDimension presentColumn) {
+    throw new UnsupportedOperationException("Operation Unsupported for ArrayType");
   }
 
 }

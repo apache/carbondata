@@ -17,10 +17,13 @@
 
 package org.apache.carbondata.core.util;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -36,11 +39,15 @@ import org.apache.carbondata.core.scan.expression.logical.RangeExpression;
 import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.scan.filter.executer.RangeValueFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizerBasic;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 import mockit.Deencapsulation;
+import mockit.Mock;
 import mockit.MockUp;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -48,7 +55,15 @@ import org.junit.Test;
 
 /* Test Cases for Range Filter */
 public class RangeFilterProcessorTest {
+
+  public static DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo =
+      new DimColumnResolvedFilterInfo();
+
   @BeforeClass public static void setUp() throws Exception {
+    ColumnSchema columnSchema = new ColumnSchema();
+    columnSchema.setDataType(DataTypes.STRING);
+    CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0);
+    dimColumnResolvedFilterInfo.setDimension(carbonDimension);
   }
 
   public boolean checkBothTrees(Expression a, Expression b) {
@@ -74,7 +89,7 @@ public class RangeFilterProcessorTest {
 
     Expression inputFilter;
     boolean result = false;
-    ColumnExpression cola = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression cola = new ColumnExpression("a", DataTypes.STRING);
     cola.setDimension(true);
 
     ColumnSchema empColumnSchema = new ColumnSchema();
@@ -82,27 +97,27 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setColumnUniqueId("empNameCol");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
-    empColumnSchema.setDataType(DataType.STRING);
-    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
+    empColumnSchema.setDataType(DataTypes.STRING);
+    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0);
     cola.setDimension(empDimension);
 
     Expression greaterThan =
-        new GreaterThanEqualToExpression(cola, new LiteralExpression("11", DataType.STRING));
+        new GreaterThanEqualToExpression(cola, new LiteralExpression("11", DataTypes.STRING));
 
-    ColumnExpression colb = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression colb = new ColumnExpression("a", DataTypes.STRING);
     colb.setDimension(true);
     colb.setDimension(empDimension);
     Expression lessThan =
-        new LessThanEqualToExpression(colb, new LiteralExpression("20", DataType.STRING));
+        new LessThanEqualToExpression(colb, new LiteralExpression("20", DataTypes.STRING));
     inputFilter = new AndExpression(greaterThan, lessThan);
 
     Expression output = new AndExpression(new RangeExpression(
-        new GreaterThanEqualToExpression(new ColumnExpression("a", DataType.STRING),
-            new LiteralExpression("11", DataType.STRING)),
-        new LessThanEqualToExpression(new ColumnExpression("a", DataType.STRING),
-            new LiteralExpression("20", DataType.STRING))), new TrueExpression(null));
+        new GreaterThanEqualToExpression(new ColumnExpression("a", DataTypes.STRING),
+            new LiteralExpression("11", DataTypes.STRING)),
+        new LessThanEqualToExpression(new ColumnExpression("a", DataTypes.STRING),
+            new LiteralExpression("20", DataTypes.STRING))), new TrueExpression(null));
     FilterOptimizer rangeFilterOptimizer =
-        new RangeFilterOptmizer(new FilterOptimizerBasic(), inputFilter);
+        new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
     result = checkBothTrees(inputFilter, output);
     Assert.assertTrue(result);
@@ -115,7 +130,7 @@ public class RangeFilterProcessorTest {
 
     Expression inputFilter;
     boolean result = false;
-    ColumnExpression cola = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression cola = new ColumnExpression("a", DataTypes.STRING);
     cola.setDimension(true);
 
     ColumnSchema empColumnSchema = new ColumnSchema();
@@ -123,27 +138,27 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setColumnUniqueId("empNameCol");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
-    empColumnSchema.setDataType(DataType.STRING);
-    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
+    empColumnSchema.setDataType(DataTypes.STRING);
+    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0);
     cola.setDimension(empDimension);
 
     Expression greaterThan =
-        new GreaterThanEqualToExpression(cola, new LiteralExpression("20", DataType.STRING));
+        new GreaterThanEqualToExpression(cola, new LiteralExpression("20", DataTypes.STRING));
 
-    ColumnExpression colb = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression colb = new ColumnExpression("a", DataTypes.STRING);
     colb.setDimension(true);
     colb.setDimension(empDimension);
     Expression lessThan =
-        new LessThanEqualToExpression(colb, new LiteralExpression("05", DataType.STRING));
+        new LessThanEqualToExpression(colb, new LiteralExpression("05", DataTypes.STRING));
     inputFilter = new AndExpression(greaterThan, lessThan);
 
     Expression output = new AndExpression(
-        new GreaterThanEqualToExpression(new ColumnExpression("a", DataType.STRING),
-            new LiteralExpression("20", DataType.STRING)),
-        new LessThanEqualToExpression(new ColumnExpression("a", DataType.STRING),
-            new LiteralExpression("05", DataType.STRING)));
+        new GreaterThanEqualToExpression(new ColumnExpression("a", DataTypes.STRING),
+            new LiteralExpression("20", DataTypes.STRING)),
+        new LessThanEqualToExpression(new ColumnExpression("a", DataTypes.STRING),
+            new LiteralExpression("05", DataTypes.STRING)));
     FilterOptimizer rangeFilterOptimizer =
-        new RangeFilterOptmizer(new FilterOptimizerBasic(), inputFilter);
+        new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
     result = checkBothTrees(inputFilter, output);
     // no change
@@ -162,33 +177,33 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setColumnUniqueId("a");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
-    empColumnSchema.setDataType(DataType.STRING);
-    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
+    empColumnSchema.setDataType(DataTypes.STRING);
+    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0);
 
-    ColumnExpression cola1 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression cola1 = new ColumnExpression("a", DataTypes.STRING);
     cola1.setDimension(true);
     cola1.setDimension(empDimension);
 
-    ColumnExpression cola2 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression cola2 = new ColumnExpression("a", DataTypes.STRING);
     cola2.setDimension(true);
     cola2.setDimension(empDimension);
 
-    ColumnExpression cola3 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression cola3 = new ColumnExpression("a", DataTypes.STRING);
     cola3.setDimension(true);
     cola3.setDimension(empDimension);
 
-    ColumnExpression cola4 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression cola4 = new ColumnExpression("a", DataTypes.STRING);
     cola4.setDimension(true);
     cola4.setDimension(empDimension);
 
     Expression lessThan1 =
-        new LessThanEqualToExpression(cola1, new LiteralExpression("15", DataType.STRING));
+        new LessThanEqualToExpression(cola1, new LiteralExpression("15", DataTypes.STRING));
     Expression lessThan2 =
-        new LessThanEqualToExpression(cola2, new LiteralExpression("20", DataType.STRING));
+        new LessThanEqualToExpression(cola2, new LiteralExpression("20", DataTypes.STRING));
     Expression greaterThan1 =
-        new GreaterThanExpression(cola3, new LiteralExpression("12", DataType.STRING));
+        new GreaterThanExpression(cola3, new LiteralExpression("12", DataTypes.STRING));
     Expression greaterThan2 =
-        new GreaterThanEqualToExpression(cola4, new LiteralExpression("11", DataType.STRING));
+        new GreaterThanEqualToExpression(cola4, new LiteralExpression("11", DataTypes.STRING));
 
     Expression And1 = new AndExpression(new NotEqualsExpression(null, null), greaterThan2);
     Expression And2 = new AndExpression(And1, greaterThan1);
@@ -197,19 +212,19 @@ public class RangeFilterProcessorTest {
 
     // Build The output
 
-    ColumnExpression colb1 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression colb1 = new ColumnExpression("a", DataTypes.STRING);
     cola1.setDimension(true);
     cola1.setDimension(empDimension);
 
-    ColumnExpression colb2 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression colb2 = new ColumnExpression("a", DataTypes.STRING);
     cola2.setDimension(true);
     cola2.setDimension(empDimension);
 
     Expression greaterThanb1 =
-        new GreaterThanExpression(cola3, new LiteralExpression("12", DataType.STRING));
+        new GreaterThanExpression(cola3, new LiteralExpression("12", DataTypes.STRING));
 
     Expression lessThanb1 =
-        new LessThanEqualToExpression(cola1, new LiteralExpression("15", DataType.STRING));
+        new LessThanEqualToExpression(cola1, new LiteralExpression("15", DataTypes.STRING));
 
     Expression Andb1 =
         new AndExpression(new NotEqualsExpression(null, null), new TrueExpression(null));
@@ -218,7 +233,7 @@ public class RangeFilterProcessorTest {
     Expression Andb3 = new AndExpression(Andb2, new TrueExpression(null));
 
     FilterOptimizer rangeFilterOptimizer =
-        new RangeFilterOptmizer(new FilterOptimizerBasic(), inputFilter);
+        new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
     result = checkBothTrees(inputFilter, new AndExpression(Andb3, new TrueExpression(null)));
     // no change
@@ -237,33 +252,33 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setColumnUniqueId("a");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
-    empColumnSchema.setDataType(DataType.STRING);
-    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
+    empColumnSchema.setDataType(DataTypes.STRING);
+    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0);
 
-    ColumnExpression cola1 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression cola1 = new ColumnExpression("a", DataTypes.STRING);
     cola1.setDimension(true);
     cola1.setDimension(empDimension);
 
-    ColumnExpression cola2 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression cola2 = new ColumnExpression("a", DataTypes.STRING);
     cola2.setDimension(true);
     cola2.setDimension(empDimension);
 
-    ColumnExpression cola3 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression cola3 = new ColumnExpression("a", DataTypes.STRING);
     cola3.setDimension(true);
     cola3.setDimension(empDimension);
 
-    ColumnExpression cola4 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression cola4 = new ColumnExpression("a", DataTypes.STRING);
     cola4.setDimension(true);
     cola4.setDimension(empDimension);
 
     Expression lessThan1 =
-        new LessThanEqualToExpression(cola1, new LiteralExpression("15", DataType.STRING));
+        new LessThanEqualToExpression(cola1, new LiteralExpression("15", DataTypes.STRING));
     Expression lessThan2 =
-        new LessThanEqualToExpression(cola2, new LiteralExpression("20", DataType.STRING));
+        new LessThanEqualToExpression(cola2, new LiteralExpression("20", DataTypes.STRING));
     Expression greaterThan1 =
-        new GreaterThanExpression(cola3, new LiteralExpression("12", DataType.STRING));
+        new GreaterThanExpression(cola3, new LiteralExpression("12", DataTypes.STRING));
     Expression greaterThan2 =
-        new GreaterThanEqualToExpression(cola4, new LiteralExpression("11", DataType.STRING));
+        new GreaterThanEqualToExpression(cola4, new LiteralExpression("11", DataTypes.STRING));
 
     Expression Or1 = new OrExpression(new NotEqualsExpression(null, null), greaterThan2);
     Expression Or2 = new OrExpression(Or1, greaterThan1);
@@ -272,37 +287,37 @@ public class RangeFilterProcessorTest {
 
     // Build The output
 
-    ColumnExpression colb1 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression colb1 = new ColumnExpression("a", DataTypes.STRING);
     cola1.setDimension(true);
     cola1.setDimension(empDimension);
 
-    ColumnExpression colb2 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression colb2 = new ColumnExpression("a", DataTypes.STRING);
     cola2.setDimension(true);
     cola2.setDimension(empDimension);
 
-    ColumnExpression colb3 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression colb3 = new ColumnExpression("a", DataTypes.STRING);
     cola3.setDimension(true);
     cola3.setDimension(empDimension);
 
-    ColumnExpression colb4 = new ColumnExpression("a", DataType.STRING);
+    ColumnExpression colb4 = new ColumnExpression("a", DataTypes.STRING);
     cola4.setDimension(true);
     cola4.setDimension(empDimension);
 
     Expression lessThanb1 =
-        new LessThanEqualToExpression(colb1, new LiteralExpression("15", DataType.STRING));
+        new LessThanEqualToExpression(colb1, new LiteralExpression("15", DataTypes.STRING));
     Expression lessThanb2 =
-        new LessThanEqualToExpression(colb2, new LiteralExpression("20", DataType.STRING));
+        new LessThanEqualToExpression(colb2, new LiteralExpression("20", DataTypes.STRING));
     Expression greaterThanb1 =
-        new GreaterThanExpression(colb3, new LiteralExpression("12", DataType.STRING));
+        new GreaterThanExpression(colb3, new LiteralExpression("12", DataTypes.STRING));
     Expression greaterThanb2 =
-        new GreaterThanEqualToExpression(colb4, new LiteralExpression("11", DataType.STRING));
+        new GreaterThanEqualToExpression(colb4, new LiteralExpression("11", DataTypes.STRING));
 
     Expression Orb1 = new OrExpression(new NotEqualsExpression(null, null), greaterThanb2);
     Expression Orb2 = new OrExpression(Orb1, greaterThanb1);
     Expression Orb3 = new OrExpression(Orb2, lessThanb2);
 
     FilterOptimizer rangeFilterOptimizer =
-        new RangeFilterOptmizer(new FilterOptimizerBasic(), inputFilter);
+        new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
     result = checkBothTrees(inputFilter, new OrExpression(Orb3, lessThanb1));
     // no change
@@ -321,7 +336,9 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertFalse(result);
   }
 
@@ -337,7 +354,8 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertFalse(result);
   }
 
@@ -353,7 +371,8 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertTrue(result);
   }
 
@@ -370,8 +389,9 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
 
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     rangeCovered = Deencapsulation.getField(range, "isRangeFullyCoverBlock");
     Assert.assertTrue(result);
     Assert.assertTrue(rangeCovered);
@@ -390,8 +410,9 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
 
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     startBlockMinIsDefaultStart = Deencapsulation.getField(range, "startBlockMinIsDefaultStart");
     Assert.assertTrue(result);
     Assert.assertTrue(startBlockMinIsDefaultStart);
@@ -410,8 +431,9 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
 
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     endBlockMaxisDefaultEnd = Deencapsulation.getField(range, "endBlockMaxisDefaultEnd");
     Assert.assertTrue(result);
     Assert.assertTrue(endBlockMaxisDefaultEnd);

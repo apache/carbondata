@@ -17,15 +17,16 @@
 
 package org.apache.spark.carbondata.bucketing
 
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.common.util.Spark2QueryTest
-import org.apache.spark.sql.execution.exchange.ShuffleExchange
+import org.apache.spark.sql.execution.exchange.Exchange
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -44,6 +45,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t8")
     sql("DROP TABLE IF EXISTS t9")
     sql("DROP TABLE IF EXISTS t10")
+    sql("DROP TABLE IF EXISTS t11")
   }
 
   test("test create table with buckets") {
@@ -51,7 +53,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t4")
-    val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t4")
+    val table = CarbonEnv.getCarbonTable(Option("default"), "t4")(sqlContext.sparkSession)
     if (table != null && table.getBucketingInfo("t4") != null) {
       assert(true)
     } else {
@@ -66,7 +68,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t10")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
-    val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t10")
+    val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "t10")
     if (table != null && table.getBucketingInfo("t10") != null) {
       assert(true)
     } else {
@@ -91,6 +93,29 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("must unable to create table if number of buckets is 0") {
+    try{
+      sql(
+        """
+          |CREATE TABLE t11
+          |(ID Int,
+          | date Timestamp,
+          | country String,
+          | name String,
+          | phonetype String,
+          | serialname String,
+          | salary Int)
+          | STORED BY 'CARBONDATA'
+          | TBLPROPERTIES('bucketnumber'='0', 'bucketcolumns'='name')
+        """.stripMargin
+      )
+      assert(false)
+    }
+    catch {
+      case malformedCarbonCommandException: MalformedCarbonCommandException => assert(true)
+    }
+  }
+
   test("test create table with no bucket join of carbon tables") {
     sql("CREATE TABLE t5 (ID Int, date Timestamp, country String, name String, phonetype String," +
         "serialname String, salary Int) STORED BY 'carbondata'")
@@ -103,7 +128,11 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: Exchange if (s.getClass.getName.equals
+      ("org.apache.spark.sql.execution.exchange.ShuffleExchange") ||
+        s.getClass.getName.equals
+        ("org.apache.spark.sql.execution.exchange.ShuffleExchangeExec"))
+      => shuffleExists = true
     }
     assert(shuffleExists, "shuffle should exist on non bucket tables")
   }
@@ -121,7 +150,11 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: Exchange if (s.getClass.getName.equals
+      ("org.apache.spark.sql.execution.exchange.ShuffleExchange") ||
+        s.getClass.getName.equals
+        ("org.apache.spark.sql.execution.exchange.ShuffleExchangeExec"))
+      => shuffleExists = true
     }
     assert(!shuffleExists, "shuffle should not exist on bucket tables")
   }
@@ -146,9 +179,14 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: Exchange if (s.getClass.getName.equals
+      ("org.apache.spark.sql.execution.exchange.ShuffleExchange") ||
+        s.getClass.getName.equals
+        ("org.apache.spark.sql.execution.exchange.ShuffleExchangeExec"))
+      => shuffleExists = true
     }
     assert(!shuffleExists, "shuffle should not exist on bucket tables")
+    sql("DROP TABLE bucketed_parquet_table")
   }
 
   test("test create table with bucket join of carbon table and non bucket parquet table") {
@@ -170,9 +208,14 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: Exchange if (s.getClass.getName.equals
+      ("org.apache.spark.sql.execution.exchange.ShuffleExchange") ||
+        s.getClass.getName.equals
+        ("org.apache.spark.sql.execution.exchange.ShuffleExchangeExec"))
+      => shuffleExists = true
     }
     assert(shuffleExists, "shuffle should exist on non bucket tables")
+    sql("DROP TABLE parquet_table")
   }
 
   test("test scalar subquery with equal") {
@@ -197,6 +240,8 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t8")
     sql("DROP TABLE IF EXISTS t9")
     sql("DROP TABLE IF EXISTS t10")
+    sql("DROP TABLE IF EXISTS bucketed_parquet_table")
+    sql("DROP TABLE IF EXISTS parquet_table")
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
   }
 }

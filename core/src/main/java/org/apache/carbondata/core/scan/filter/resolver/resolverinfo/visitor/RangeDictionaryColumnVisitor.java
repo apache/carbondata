@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
@@ -47,18 +46,19 @@ public class RangeDictionaryColumnVisitor extends DictionaryColumnVisitor
     if (visitableObj instanceof DimColumnResolvedFilterInfo) {
       DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
       ColumnFilterInfo resolvedFilterObject = null;
-      List<String> evaluateResultListFinal;
       resolvedFilterObject = FilterUtil
           .getFilterListForAllValues(metadata.getTableIdentifier(), metadata.getExpression(),
-              metadata.getColumnExpression(), metadata.isIncludeFilter(),
-              metadata.getTableProvider());
+              metadata.getColumnExpression(), metadata.isIncludeFilter(), true);
 
       if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
         // Adding default surrogate key of null member inorder to not display the same while
         // displaying the report as per hive compatibility.
-        resolvedFilterObject.getFilterList()
-            .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
-        Collections.sort(resolvedFilterObject.getFilterList());
+        if (!resolvedFilterObject.getExcludeFilterList()
+            .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+          resolvedFilterObject.getExcludeFilterList()
+              .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+          Collections.sort(resolvedFilterObject.getFilterList());
+        }
       }
       resolveDimension.setFilterValues(resolvedFilterObject);
     }

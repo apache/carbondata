@@ -17,6 +17,11 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.util.BitSet;
+
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+
 // Transformation type that can be applied to ColumnPage
 public interface ColumnPageValueConverter {
   void encode(int rowId, byte value);
@@ -35,4 +40,6 @@ public interface ColumnPageValueConverter {
   double decodeDouble(long value);
   double decodeDouble(float value);
   double decodeDouble(double value);
+  void decodeAndFillVector(byte[] pageData, ColumnVectorInfo vectorInfo, BitSet nullBits,
+      DataType pageDataType, int pageSize);
 }

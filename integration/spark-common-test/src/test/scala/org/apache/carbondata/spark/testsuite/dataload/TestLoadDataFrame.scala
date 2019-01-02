@@ -17,17 +17,21 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import java.io.File
 import java.math.BigDecimal
 
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.types.{DecimalType, DoubleType, StringType, StructField, StructType}
-import org.apache.spark.sql.{DataFrame, Row, SaveMode}
+import org.apache.spark.sql.types._
+import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.scalatest.BeforeAndAfterAll
 
 class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
   var df: DataFrame = _
   var dataFrame: DataFrame = _
   var df2: DataFrame = _
+  var df3: DataFrame = _
+  var booldf:DataFrame = _
 
 
   def buildTestData() = {
@@ -49,6 +53,19 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     df2 = sqlContext.sparkContext.parallelize(1 to 1000)
       .map(x => ("key_" + x, "str_" + x, x, x * 2, x * 3))
       .toDF("c1", "c2", "c3", "c4", "c5")
+
+    df3 = sqlContext.sparkContext.parallelize(1 to 3)
+      .map(x => (x.toString + "te,s\nt", x))
+      .toDF("c1", "c2")
+
+    val boolrdd = sqlContext.sparkContext.parallelize(
+      Row("anubhav",true) ::
+        Row("prince",false) :: Nil)
+
+    val boolSchema = StructType(
+      StructField("name", StringType, nullable = false) ::
+        StructField("isCarbonEmployee",BooleanType,nullable = false)::Nil)
+    booldf = sqlContext.createDataFrame(boolrdd,boolSchema)
   }
 
   def dropTable() = {
@@ -61,6 +78,14 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon7")
     sql("DROP TABLE IF EXISTS carbon8")
     sql("DROP TABLE IF EXISTS carbon9")
+    sql("DROP TABLE IF EXISTS carbon10")
+    sql("DROP TABLE IF EXISTS carbon11")
+    sql("DROP TABLE IF EXISTS carbon12")
+    sql("DROP TABLE IF EXISTS df_write_sort_column_not_specified")
+    sql("DROP TABLE IF EXISTS df_write_specify_sort_column")
+    sql("DROP TABLE IF EXISTS df_write_empty_sort_column")
+    sql("DROP TABLE IF EXISTS carbon_table_df")
+    sql("DROP TABLE IF EXISTS carbon_table_df1")
   }
 
 
@@ -70,7 +95,18 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     buildTestData
   }
 
-
+  test("test the boolean data type"){
+    booldf.write
+      .format("carbondata")
+      .option("tableName", "carbon0")
+      .option("tempCSV", "true")
+      .option("compress", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("SELECT * FROM CARBON0"),
+      Seq(Row("anubhav", true), Row("prince", false)))
+  }
 
   test("test load dataframe with saving compressed csv files") {
     // save dataframe to carbon file
@@ -84,6 +120,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select count(*) from carbon1 where c3 > 500"), Row(31500)
     )
+    sql(s"describe formatted carbon1").show(true)
   }
 
   test("test load dataframe with saving csv uncompressed files") {
@@ -197,6 +234,162 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select count(*) from carbon9 where c3 > 500"), Row(500)
     )
+  }
+
+  test("test datasource table with specified table path") {
+    val path = "./source"
+    df2.write
+      .format("carbondata")
+      .option("tableName", "carbon10")
+      .option("tablePath", path)
+      .mode(SaveMode.Overwrite)
+      .save()
+    assert(new File(path).exists())
+    checkAnswer(
+      sql("select count(*) from carbon10 where c3 > 500"), Row(500)
+    )
+    sql("drop table carbon10")
+    assert(!new File(path).exists())
+    assert(intercept[AnalysisException](
+      sql("select count(*) from carbon10 where c3 > 500"))
+      .message
+      .contains("not found"))
+  }
+  test("test streaming Table") {
+    dataFrame.write
+      .format("carbondata")
+      .option("tableName", "carbon11")
+      .option("tempCSV", "true")
+      .option("single_pass", "false")
+      .option("compress", "false")
+      .option("streaming", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("SELECT decimal FROM carbon11"),Seq(Row(BigDecimal.valueOf(10000.00)),Row(BigDecimal.valueOf(1234.44))))
+    val descResult =sql("desc formatted carbon11")
+    val isStreaming: String = descResult.collect().find(row=>row(0).asInstanceOf[String].trim.equalsIgnoreCase("streaming")).get.get(1).asInstanceOf[String]
+    assert(isStreaming.contains("sink"))
+  }
+
+  test("test datasource table with specified char") {
+
+    df3.write
+      .format("carbondata")
+      .option("tableName", "carbon12")
+      .option("tempCSV", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("select count(*) from carbon12"), Row(3)
+    )
+  }
+  private def getSortColumnValue(tableName: String): Array[String] = {
+    val desc = sql(s"desc formatted $tableName")
+    val sortColumnRow = desc.collect.find(r =>
+      r(0).asInstanceOf[String].trim.equalsIgnoreCase("Sort Columns")
+    )
+    assert(sortColumnRow.isDefined)
+    sortColumnRow.get.get(1).asInstanceOf[String].split(",")
+      .map(_.trim.toLowerCase).filter(_.length > 0)
+  }
+
+  private def getDefaultWriter(tableName: String): DataFrameWriter[Row] = {
+    df2.write
+      .format("carbondata")
+      .option("tableName", tableName)
+      .option("tempCSV", "false")
+      .option("single_pass", "false")
+      .option("table_blocksize", "256")
+      .option("compress", "false")
+      .mode(SaveMode.Overwrite)
+  }
+
+  // now by default all the dimensions are not selected for sorting in no_sort
+  ignore("test load dataframe with sort_columns not specified," +
+       " by default all string columns will be sort_columns") {
+    // all string column will be sort_columns by default
+    getDefaultWriter("df_write_sort_column_not_specified").save()
+    checkAnswer(
+      sql("select count(*) from df_write_sort_column_not_specified where c3 > 500"), Row(500)
+    )
+
+    val sortColumnValue = getSortColumnValue("df_write_sort_column_not_specified")
+    assert(sortColumnValue.sameElements(Array("c1", "c2")))
+  }
+
+  test("test load dataframe with sort_columns specified") {
+    // only specify c1 as sort_columns
+    getDefaultWriter("df_write_specify_sort_column").option("sort_columns", "c1").save()
+    checkAnswer(
+      sql("select count(*) from df_write_specify_sort_column where c3 > 500"), Row(500)
+    )
+
+    val sortColumnValue = getSortColumnValue("df_write_specify_sort_column")
+    assert(sortColumnValue.sameElements(Array("c1")))
+  }
+
+  test("test load dataframe with sort_columns specified empty") {
+    // specify empty sort_column
+    getDefaultWriter("df_write_empty_sort_column").option("sort_columns", "").save()
+    checkAnswer(
+      sql("select count(*) from df_write_empty_sort_column where c3 > 500"), Row(500)
+    )
+
+    val sortColumnValue = getSortColumnValue("df_write_empty_sort_column")
+    assert(sortColumnValue.isEmpty)
+  }
+
+  test("test load dataframe while giving already created table") {
+
+    sql(s"create table carbon_table_df(c1 string, c2 string, c3 int) stored by 'carbondata'")
+    // save dataframe to carbon file
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon_table_df")
+      .option("tempCSV", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon_table_df")
+      .option("tempCSV", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("select count(*) from carbon_table_df where c3 > 500"), Row(31500)
+    )
+  }
+
+  test("test load dataframe while giving already created table with delete segment") {
+
+    sql(s"create table carbon_table_df1(c1 string, c2 string, c3 int) stored by 'carbondata'")
+    val table = CarbonEnv.getCarbonTable(TableIdentifier("carbon_table_df1"))(sqlContext.sparkSession)
+    // save dataframe to carbon file
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon_table_df1")
+      .option("tempCSV", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    assert(CarbonEnv.getCarbonTable(TableIdentifier("carbon_table_df1"))(sqlContext.sparkSession)
+      .getTableInfo.getFactTable.equals(table.getTableInfo.getFactTable))
+
+    sql("delete from table carbon_table_df1 where segment.id in (0)")
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon_table_df1")
+      .option("tempCSV", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+    assert(CarbonEnv.getCarbonTable(TableIdentifier("carbon_table_df1"))(sqlContext.sparkSession)
+      .getTableInfo.getFactTable.equals(table.getTableInfo.getFactTable))
+    checkAnswer(
+      sql("select count(*) from carbon_table_df1 where c3 > 500"), Row(31500)
+    )
+
   }
 
   override def afterAll {

@@ -27,13 +27,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class implements methods to create dictionary cache which will hold
@@ -46,7 +47,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
   /**
    * Attribute for Carbon LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(ReverseDictionaryCache.class.getName());
 
   private static final long sizeOfEmptyDictChunks =
@@ -64,11 +65,10 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
 
 
   /**
-   * @param carbonStorePath
    * @param carbonLRUCache
    */
-  public ReverseDictionaryCache(String carbonStorePath, CarbonLRUCache carbonLRUCache) {
-    super(carbonStorePath, carbonLRUCache);
+  public ReverseDictionaryCache(CarbonLRUCache carbonLRUCache) {
+    super(carbonLRUCache);
   }
 
   /**
@@ -103,7 +103,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
         new ArrayList<Dictionary>(dictionaryColumnUniqueIdentifiers.size());
     List<Future<Dictionary>> taskSubmitList =
         new ArrayList<>(dictionaryColumnUniqueIdentifiers.size());
-    ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
+    ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
         @Override public Dictionary call() throws IOException {

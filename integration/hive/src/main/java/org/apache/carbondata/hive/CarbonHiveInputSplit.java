@@ -29,6 +29,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -67,6 +68,8 @@ public class CarbonHiveInputSplit extends FileSplit
       new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   private List<UpdateVO> invalidTimestampsList;
+
+  private BlockletDetailInfo detailInfo;
 
   public CarbonHiveInputSplit() {
     segmentId = null;
@@ -124,9 +127,12 @@ public class CarbonHiveInputSplit extends FileSplit
       BlockletInfos blockletInfos =
           new BlockletInfos(split.getNumberOfBlocklets(), 0, split.getNumberOfBlocklets());
       try {
-        tableBlockInfoList.add(
-            new TableBlockInfo(split.getPath().toString(), split.getStart(), split.getSegmentId(),
-                split.getLocations(), split.getLength(), blockletInfos, split.getVersion(), null));
+        TableBlockInfo blockInfo = new TableBlockInfo(split.getPath().toString(), split.getStart(),
+                split.getSegmentId(), split.getLocations(), split.getLength(), blockletInfos,
+                split.getVersion(), null);
+        blockInfo.setDetailInfo(split.getDetailInfo());
+        blockInfo.setBlockOffset(split.getDetailInfo().getBlockFooterOffset());
+        tableBlockInfoList.add(blockInfo);
       } catch (IOException e) {
         throw new RuntimeException("fail to get location of split: " + split, e);
       }
@@ -138,9 +144,13 @@ public class CarbonHiveInputSplit extends FileSplit
     BlockletInfos blockletInfos =
         new BlockletInfos(inputSplit.getNumberOfBlocklets(), 0, inputSplit.getNumberOfBlocklets());
     try {
-      return new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
+      TableBlockInfo blockInfo =
+              new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
           inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),
           blockletInfos, inputSplit.getVersion(), null);
+      blockInfo.setDetailInfo(inputSplit.getDetailInfo());
+      blockInfo.setBlockOffset(inputSplit.getDetailInfo().getBlockFooterOffset());
+      return blockInfo;
     } catch (IOException e) {
       throw new RuntimeException("fail to get location of split: " + inputSplit, e);
     }
@@ -160,6 +170,11 @@ public class CarbonHiveInputSplit extends FileSplit
     for (int i = 0; i < numInvalidSegment; i++) {
       invalidSegments.add(in.readUTF());
     }
+    boolean detailInfoExists = in.readBoolean();
+    if (detailInfoExists) {
+      detailInfo = new BlockletDetailInfo();
+      detailInfo.readFields(in);
+    }
     this.numberOfBlocklets = in.readInt();
   }
 
@@ -171,6 +186,10 @@ public class CarbonHiveInputSplit extends FileSplit
     out.writeInt(invalidSegments.size());
     for (String invalidSegment : invalidSegments) {
       out.writeUTF(invalidSegment);
+    }
+    out.writeBoolean(detailInfo != null);
+    if (detailInfo != null) {
+      detailInfo.write(out);
     }
     out.writeInt(numberOfBlocklets);
   }
@@ -303,5 +322,13 @@ public class CarbonHiveInputSplit extends FileSplit
    */
   public Map<String, String> getBlockStorageIdMap() {
     return blockStorageIdMap;
+  }
+
+  public BlockletDetailInfo getDetailInfo() {
+    return detailInfo;
+  }
+
+  public void setDetailInfo(BlockletDetailInfo detailInfo) {
+    this.detailInfo = detailInfo;
   }
 }

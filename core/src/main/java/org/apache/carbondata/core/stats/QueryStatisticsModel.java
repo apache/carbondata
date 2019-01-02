@@ -20,10 +20,19 @@ package org.apache.carbondata.core.stats;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
+
 public class QueryStatisticsModel {
+
   private QueryStatisticsRecorder recorder;
+
   private Map<String, QueryStatistic> statisticsTypeAndObjMap =
       new HashMap<String, QueryStatistic>();
+
+  private boolean isEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+          CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT));
 
   public QueryStatisticsRecorder getRecorder() {
     return recorder;
@@ -37,7 +46,7 @@ public class QueryStatisticsModel {
     return statisticsTypeAndObjMap;
   }
 
-  public void setStatisticsTypeAndObjMap(Map<String, QueryStatistic> statisticsTypeAndObjMap) {
-    this.statisticsTypeAndObjMap = statisticsTypeAndObjMap;
+  public boolean isEnabled() {
+    return isEnabled;
   }
 }

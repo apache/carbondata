@@ -16,78 +16,86 @@
  */
 package org.apache.carbondata.core.datastore.columnar;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
  * Below class will be used to for no inverted index
  */
-public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStorage<short[]> {
+public class BlockIndexerStorageForNoInvertedIndexForShort extends BlockIndexerStorage<byte[][]> {
 
   /**
    * column data
    */
   private byte[][] dataPage;
 
-  /**
-   * total number of rows
-   */
-  private int totalSize;
+  private short[] dataRlePage;
 
-  private byte[] min;
-  private byte[] max;
-
-  public BlockIndexerStorageForNoInvertedIndexForShort(byte[][] dataPage,
-      boolean isNoDictonary) {
+  public BlockIndexerStorageForNoInvertedIndexForShort(byte[][] dataPage, boolean applyRLE) {
     this.dataPage = dataPage;
-    min = this.dataPage[0];
-    max = this.dataPage[0];
-    totalSize += this.dataPage[0].length;
-    int minCompare = 0;
-    int maxCompare = 0;
-    if (!isNoDictonary) {
-      for (int i = 1; i < this.dataPage.length; i++) {
-        totalSize += this.dataPage[i].length;
-        minCompare = ByteUtil.compare(min, this.dataPage[i]);
-        maxCompare = ByteUtil.compare(max, this.dataPage[i]);
-        if (minCompare > 0) {
-          min = this.dataPage[i];
-        }
-        if (maxCompare < 0) {
-          max = this.dataPage[i];
-        }
+    if (applyRLE) {
+      List<byte[]> actualDataList = new ArrayList<>();
+      for (int i = 0; i < dataPage.length; i++) {
+        actualDataList.add(dataPage[i]);
       }
-    } else {
-      for (int i = 1; i < this.dataPage.length; i++) {
-        totalSize += this.dataPage[i].length;
-        minCompare = ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(min, 2, min.length - 2, this.dataPage[i], 2, this.dataPage[i].length - 2);
-        maxCompare = ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(max, 2, max.length - 2, this.dataPage[i], 2, this.dataPage[i].length - 2);
-        if (minCompare > 0) {
-          min = this.dataPage[i];
-        }
-        if (maxCompare < 0) {
-          max = this.dataPage[i];
-        }
-      }
+      rleEncodeOnData(actualDataList);
     }
   }
 
+  private void rleEncodeOnData(List<byte[]> actualDataList) {
+    byte[] prvKey = actualDataList.get(0);
+    List<byte[]> list = new ArrayList<>(actualDataList.size() / 2);
+    list.add(actualDataList.get(0));
+    short counter = 1;
+    short start = 0;
+    List<Short> map = new ArrayList<>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    for (int i = 1; i < actualDataList.size(); i++) {
+      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, actualDataList.get(i)) != 0) {
+        prvKey = actualDataList.get(i);
+        list.add(actualDataList.get(i));
+        map.add(start);
+        map.add(counter);
+        start += counter;
+        counter = 1;
+        continue;
+      }
+      counter++;
+    }
+    map.add(start);
+    map.add(counter);
+    // if rle is index size is more than 70% then rle wont give any benefit
+    // so better to avoid rle index and write data as it is
+    boolean useRle = (((list.size() + map.size()) * 100) / actualDataList.size()) < 70;
+    if (useRle) {
+      this.dataPage = convertToDataPage(list);
+      dataRlePage = convertToArray(map);
+    } else {
+      this.dataPage = convertToDataPage(actualDataList);
+      dataRlePage = new short[0];
+    }
+  }
+
+  private byte[][] convertToDataPage(List<byte[]> list) {
+    byte[][] shortArray = new byte[list.size()][];
+    for (int i = 0; i < shortArray.length; i++) {
+      shortArray[i] = list.get(i);
+    }
+    return shortArray;
+  }
+
   public short[] getDataRlePage() {
-    return new short[0];
+    return dataRlePage;
   }
 
-  @Override
   public int getDataRlePageLengthInBytes() {
-    return 0;
-  }
-
-  @Override public int getTotalSize() {
-    return totalSize;
-  }
-
-  @Override public boolean isAlreadySorted() {
-    return true;
+    if (dataRlePage != null) {
+      return dataRlePage.length * 2;
+    } else {
+      return 0;
+    }
   }
 
   /**
@@ -99,7 +107,6 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
     return new short[0];
   }
 
-  @Override
   public int getRowIdPageLengthInBytes() {
     return 0;
   }
@@ -113,7 +120,6 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
     return new short[0];
   }
 
-  @Override
   public int getRowIdRlePageLengthInBytes() {
     return 0;
   }
@@ -125,11 +131,4 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
     return dataPage;
   }
 
-  @Override public byte[] getMin() {
-    return min;
-  }
-
-  @Override public byte[] getMax() {
-    return max;
-  }
 }

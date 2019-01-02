@@ -75,4 +75,8 @@ class CarbonInputMetrics extends InitInputMetrics{
       }
     }
   }
+
+  override def updateByValue(value: Object): Unit = {
+
+  }
 }

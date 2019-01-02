@@ -19,19 +19,26 @@ package org.apache.carbondata.spark.testsuite.dataload
 
 import java.io.File
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.common.constants.LoggerAction
 
 /**
   * Test Class for data loading with hive syntax and old syntax
   *
   */
 class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAfterAll {
+  val bad_records_action = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
 
   override def beforeAll {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
     sql("drop table if exists escapechar1")
     sql("drop table if exists escapechar2")
     sql("drop table if exists escapechar3")
@@ -358,6 +365,22 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("drop table if exists complexcarbontable")
   }
 
+  test("test Complex Data type - Array and Struct of timestamp with dictionary include") {
+    sql("DROP TABLE IF EXISTS array_timestamp")
+    sql(
+      "create table array_timestamp (date1 array<timestamp>,date2 struct<date:timestamp> ) stored" +
+      " by 'carbondata' tblproperties" +
+      "('dictionary_include'='date1,date2')")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    sql("insert into array_timestamp values('2015/01/01\0012016/01/01','2017/01/01')")
+    checkExistence(sql("select * from array_timestamp "),
+      true, "2015-01-01 00:00:00.0, 2016-01-01 00:00:00.0")
+    checkExistence(sql("select * from array_timestamp "),
+      true, "2017-01-01 00:00:00.0")
+    sql("DROP TABLE IF EXISTS array_timestamp")
+  }
+
   test("array<string> and string datatype for same column is not working properly") {
     sql("drop table if exists complexcarbontable")
     sql("create table complexcarbontable(deviceInformationId int, MAC array<string>, channelsId string, "+
@@ -559,7 +582,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
            (ID decimal(5,5), date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            array<decimal(4,2)>)
-           STORED BY 'org.apache.carbondata.format'
+           STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='complex')
       """
     )
 
@@ -581,7 +604,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
            (ID decimal(5,5), date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            struct<a:decimal(4,2)>)
-           STORED BY 'org.apache.carbondata.format'
+           STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='complex')
       """
     )
 
@@ -604,7 +627,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
            (ID decimal, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            array<struct<a:decimal(4,2),str:string>>)
-           STORED BY 'org.apache.carbondata.format'
+           STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='complex')
       """
     )
     sql(
@@ -678,7 +701,48 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql(
       s"load data local inpath '$resourcesPath/double.csv' into table double_test options" +
       "('FILEHEADER'='empno,salary')")
-    checkAnswer(sql("select salary from double_test limit 1"),Row(7.756787654567891E23))
+    checkAnswer(sql("select salary from double_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
+  }
+
+  test("test table with specified table path") {
+    val path = "./source"
+    sql("drop table if exists table_path_test")
+    sql(
+      "CREATE table table_path_test (empno string, salary double) STORED BY 'carbondata' " +
+      s"LOCATION '$path'"
+    )
+    sql(
+      s"load data local inpath '$resourcesPath/double.csv' into table table_path_test options" +
+      "('FILEHEADER'='empno,salary')")
+    assert(new File(path).exists())
+    checkAnswer(sql("select salary from table_path_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
+    sql("drop table table_path_test")
+    assert(! new File(path).exists())
+    assert(intercept[AnalysisException](
+      sql("select salary from table_path_test limit 1"))
+      .message
+      .contains("not found"))
+  }
+
+  test("test table with specified database and table path") {
+    val path = "./source"
+    sql("drop database if exists test cascade")
+    sql("create database if not exists test")
+    sql("CREATE table test.table_path_test (empno string, salary double) " +
+        "STORED BY 'carbondata'" +
+        s"LOCATION '$path'")
+    sql(
+      s"load data local inpath '$resourcesPath/double.csv' into table test.table_path_test options" +
+      "('FILEHEADER'='empno,salary')")
+    assert(new File(path).exists())
+    checkAnswer(sql("select salary from test.table_path_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
+    sql("drop table test.table_path_test")
+    assert(! new File(path).exists())
+    assert(intercept[AnalysisException](
+      sql("select salary from test.table_path_test limit 1"))
+      .message
+      .contains("not found"))
+    sql("drop database if exists test cascade")
   }
 
   override def afterAll {
@@ -708,5 +772,9 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("drop table if exists carbontable1")
     sql("drop table if exists hivetable1")
     sql("drop table if exists comment_test")
-  }
+    sql("drop table if exists double_test")
+
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      bad_records_action)  }
 }

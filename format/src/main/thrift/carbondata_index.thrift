@@ -31,6 +31,7 @@ struct IndexHeader{
   2: required list<schema.ColumnSchema> table_columns;	// Description of columns in this file
   3: required carbondata.SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)
   4: optional i32 bucket_id; // Bucket number in which file contains
+  5: optional i64 schema_time_stamp; // Timestamp to compare column schema against master schema
 }
 
 /**
@@ -42,4 +43,5 @@ struct BlockIndex{
   3: required i64 offset; // Offset of the footer
   4: required carbondata.BlockletIndex block_index;	// Blocklet index
   5: optional carbondata.BlockletInfo3 blocklet_info;
+  6: optional i64 file_size // Record the valid size for appendable carbon file
 }

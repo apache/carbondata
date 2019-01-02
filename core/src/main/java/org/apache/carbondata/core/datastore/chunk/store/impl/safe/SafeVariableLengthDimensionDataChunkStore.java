@@ -18,23 +18,24 @@
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
 import org.apache.carbondata.core.util.ByteUtil;
-
-import org.apache.spark.sql.types.BooleanType;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.IntegerType;
-import org.apache.spark.sql.types.LongType;
-import org.apache.spark.sql.types.ShortType;
-import org.apache.spark.sql.types.StringType;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
- * memory Memory occupied can be on heap or offheap using unsafe interface
+ * memory. Memory occupied can be on heap or offheap using unsafe interface
  */
-public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimensionDataChunkStore {
+public abstract class SafeVariableLengthDimensionDataChunkStore
+    extends SafeAbsractDimensionDataChunkStore {
 
   /**
    * total number of rows
@@ -47,10 +48,14 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
    */
   private int[] dataOffsets;
 
-  public SafeVariableLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows) {
+  private int dataLength;
+
+  public SafeVariableLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows,
+      int dataLength) {
     super(isInvertedIndex);
     this.numberOfRows = numberOfRows;
     this.dataOffsets = new int[numberOfRows];
+    this.dataLength = dataLength;
   }
 
   /**
@@ -60,10 +65,12 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
    * @param invertedIndexReverse inverted index reverse to be stored
    * @param data                 data to be stored
    */
-  @Override public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
+  @Override
+  public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
       byte[] data) {
     // first put the data, inverted index and reverse inverted index to memory
     super.putArray(invertedIndex, invertedIndexReverse, data);
+    this.dataOffsets = new int[numberOfRows];
     // As data is of variable length and data format is
     // <length in short><data><length in short><data>
     // we need to store offset of each data so data can be accessed directly
@@ -79,21 +86,42 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     // as first position will be start from 2 byte as data is stored first in the memory block
     // we need to skip first two bytes this is because first two bytes will be length of the data
     // which we have to skip
-    dataOffsets[0] = CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+    dataOffsets[0] = getLengthSize();
     // creating a byte buffer which will wrap the length of the row
     ByteBuffer buffer = ByteBuffer.wrap(data);
     for (int i = 1; i < numberOfRows; i++) {
       buffer.position(startOffset);
       // so current row position will be
       // previous row length + 2 bytes used for storing previous row data
-      startOffset += buffer.getShort() + CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+      startOffset += getLengthFromBuffer(buffer) + getLengthSize();
       // as same byte buffer is used to avoid creating many byte buffer for each row
       // we need to clear the byte buffer
-      dataOffsets[i] = startOffset + CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+      dataOffsets[i] = startOffset + getLengthSize();
     }
   }
 
-  @Override public byte[] getRow(int rowId) {
+  @Override
+  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo) {
+    CarbonColumnVector vector = vectorInfo.vector;
+    vector.setDictionary(null);
+    DataType dt = vector.getType();
+    AbstractNonDictionaryVectorFiller vectorFiller = NonDictionaryVectorFillerFactory
+        .getVectorFiller(getLengthSize(), dt, numberOfRows, dataLength);
+    vector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector, invertedIndex, new BitSet(), vectorInfo.deletedRows,
+            false, false);
+    vectorFiller.fillVector(data, vector);
+    if (vector instanceof ConvertableVector) {
+      ((ConvertableVector) vector).convert();
+    }
+  }
+
+  protected abstract int getLengthSize();
+  protected abstract int getLengthFromBuffer(ByteBuffer buffer);
+
+  @Override
+  public byte[] getRow(int rowId) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplictSorted) {
       rowId = invertedIndexReverse[rowId];
@@ -105,21 +133,22 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     // else subtract the current row offset with complete data
     // length get the offset of set of data
     int currentDataOffset = dataOffsets[rowId];
-    short length = 0;
+    int length = 0;
     // calculating the length of data
     if (rowId < numberOfRows - 1) {
-      length = (short) (dataOffsets[rowId + 1] - (currentDataOffset
-          + CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
+      length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
-      length = (short) (this.data.length - currentDataOffset);
+      length = this.dataLength - currentDataOffset;
     }
     byte[] currentRowData = new byte[length];
     System.arraycopy(data, currentDataOffset, currentRowData, 0, length);
     return currentRowData;
   }
 
-  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+  @Override
+  public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+    vector.setDictionary(null);
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplictSorted) {
       rowId = invertedIndexReverse[rowId];
@@ -131,35 +160,43 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     // else subtract the current row offset with complete data
     // length get the offset of set of data
     int currentDataOffset = dataOffsets[rowId];
-    short length = 0;
+    int length = 0;
     // calculating the length of data
     if (rowId < numberOfRows - 1) {
-      length = (short) (dataOffsets[rowId + 1] - (currentDataOffset
-          + CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
+      length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
-      length = (short) (this.data.length - currentDataOffset);
+      length = this.dataLength - currentDataOffset;
     }
-    if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-        CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentDataOffset, length)) {
+    DataType dt = vector.getType();
+
+    if (((!(dt == DataTypes.STRING) && !(dt == DataTypes.VARCHAR)) && length == 0)
+        || ByteUtil.UnsafeComparer.INSTANCE
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentDataOffset,
+            length)) {
       vector.putNull(vectorRow);
     } else {
-      DataType dt = vector.getType();
-      if (dt instanceof StringType) {
-        vector.putBytes(vectorRow, currentDataOffset, length, data);
-      } else if (dt instanceof BooleanType) {
+      if (dt == DataTypes.STRING || dt == DataTypes.VARCHAR) {
+        vector.putByteArray(vectorRow, currentDataOffset, length, data);
+      } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(data[currentDataOffset]));
-      } else if (dt instanceof ShortType) {
-        vector.putShort(vectorRow, ByteUtil.toShort(data, currentDataOffset, length));
-      } else if (dt instanceof IntegerType) {
-        vector.putInt(vectorRow, ByteUtil.toInt(data, currentDataOffset, length));
-      } else if (dt instanceof LongType) {
-        vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length));
+      } else if (dt == DataTypes.SHORT) {
+        vector.putShort(vectorRow, ByteUtil.toXorShort(data, currentDataOffset, length));
+      } else if (dt == DataTypes.INT) {
+        vector.putInt(vectorRow, ByteUtil.toXorInt(data, currentDataOffset, length));
+      } else if (dt == DataTypes.LONG) {
+        vector.putLong(vectorRow,
+            DataTypeUtil.getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(),
+                currentDataOffset, length));
+      } else if (dt  == DataTypes.TIMESTAMP) {
+        vector.putLong(vectorRow, ByteUtil.toXorLong(data, currentDataOffset, length) * 1000L);
       }
     }
   }
 
-  @Override public int compareTo(int index, byte[] compareValue) {
+  @Override
+  public int compareTo(int rowId, byte[] compareValue) {
     // now to get the row from memory block we need to do following thing
     // 1. first get the current offset
     // 2. if it's not a last row- get the next row offset
@@ -168,17 +205,22 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     // length
 
     // get the offset of set of data
-    int currentDataOffset = dataOffsets[index];
-    short length = 0;
+    int currentDataOffset = dataOffsets[rowId];
+    int length = 0;
     // calculating the length of data
-    if (index < numberOfRows - 1) {
-      length = (short) (dataOffsets[index + 1] - (currentDataOffset
-          + CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
+    if (rowId < numberOfRows - 1) {
+      length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
-      length = (short) (this.data.length - currentDataOffset);
+      length = this.dataLength - currentDataOffset;
     }
     return ByteUtil.UnsafeComparer.INSTANCE
         .compareTo(data, currentDataOffset, length, compareValue, 0, compareValue.length);
+  }
+
+  @Override
+  public void freeMemory() {
+    super.freeMemory();
+    dataOffsets = null;
   }
 }

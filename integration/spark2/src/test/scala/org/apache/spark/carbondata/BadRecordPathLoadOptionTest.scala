@@ -17,16 +17,14 @@
 
 package org.apache.spark.carbondata
 
-import java.io.File
-
-import org.apache.spark.sql.common.util.Spark2QueryTest
-import org.apache.spark.sql.hive.HiveContext
-import org.scalatest.BeforeAndAfterAll
-
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.common.util.Spark2QueryTest
+import org.apache.spark.sql.hive.HiveContext
+import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for detailed query on timestamp datatypes
@@ -35,23 +33,18 @@ import org.apache.carbondata.core.util.CarbonProperties
  */
 class BadRecordPathLoadOptionTest extends Spark2QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
-  var badRecordPath: String = null
+
   override def beforeAll {
-    try {
-       badRecordPath = new File("./target/test/badRecords")
-        .getCanonicalPath.replaceAll("\\\\","/")
-      sql("drop table IF EXISTS salestest")
-    }
+    sql("drop table IF EXISTS salestest")
   }
 
   test("data load log file and csv file written at the configured location") {
     sql(
-      """CREATE TABLE IF NOT EXISTS salestest(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+      s"""CREATE TABLE IF NOT EXISTS salestest(ID BigInt, date Timestamp, country String,
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata' TBLPROPERTIES('BAD_RECORD_PATH'='$warehouse')""")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
-    sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH}=${badRecordPath}")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE salestest OPTIONS" +
         "('bad_records_logger_enable'='true','bad_records_action'='redirect', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"')")
@@ -66,7 +59,9 @@ class BadRecordPathLoadOptionTest extends Spark2QueryTest with BeforeAndAfterAll
   }
 
   def isFilesWrittenAtBadStoreLocation: Boolean = {
-    val badStorePath = badRecordPath + "/default/salestest/0/0"
+    val badStorePath =
+      CarbonEnv.getCarbonTable(Some("default"), "salestest")(sqlContext.sparkSession).getTableInfo
+        .getFactTable.getTableProperties.get("bad_record_path") + "/0/0"
     val carbonFile: CarbonFile = FileFactory
       .getCarbonFile(badStorePath, FileFactory.getFileType(badStorePath))
     var exists: Boolean = carbonFile.exists()

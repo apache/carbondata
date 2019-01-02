@@ -17,17 +17,12 @@
 
 package org.apache.carbondata.processing.store.writer;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -37,21 +32,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonMergerUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
@@ -59,30 +52,28 @@ import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
-import org.apache.carbondata.processing.store.file.FileData;
+import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.hadoop.io.IOUtils;
+import org.apache.log4j.Logger;
 
-public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<T> {
+public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(AbstractFactDataWriter.class.getName());
 
   /**
-   * dfs.bytes-per-checksum
-   * HDFS checksum length, block size for a file should be exactly divisible
-   * by this value
+   * file channel to write
    */
-  private static final int HDFS_CHECKSUM_LENGTH = 512;
+  protected WritableByteChannel fileChannel;
+  protected long currentOffsetInFile;
   /**
-   * file channel
+   * The path of CarbonData file to write in hdfs/s3
    */
-  protected FileChannel fileChannel;
+  private String carbonDataFileStorePath;
   /**
    * The temp path of carbonData file used on executor
    */
-  protected String carbonDataFileTempPath;
+  private String carbonDataFileTempPath;
 
   /**
    * The name of carbonData file (blockId)
@@ -108,7 +99,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   protected List<org.apache.carbondata.format.ColumnSchema> thriftColumnSchemaList;
   protected NumberCompressor numberCompressor;
-  protected CarbonDataWriterVo dataWriterVo;
+  protected CarbonFactDataHandlerModel model;
   protected List<List<Long>> dataChunksOffsets;
   protected List<List<Short>> dataChunksLength;
   /**
@@ -136,7 +127,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   private long currentFileSize;
 
-  protected FileOutputStream fileOutputStream;
+  protected DataOutputStream fileOutputStream;
 
   protected List<BlockIndexInfo> blockIndexInfoList;
 
@@ -154,15 +145,21 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * listener to write data map
    */
   protected DataMapWriterListener listener;
+  /**
+   * Whether directly write fact data to store path
+   */
+  private boolean enableDirectlyWriteDataToStorePath = false;
 
-  public AbstractFactDataWriter(CarbonDataWriterVo dataWriterVo) {
-    this.dataWriterVo = dataWriterVo;
+  protected ExecutorService fallbackExecutorService;
+
+  public AbstractFactDataWriter(CarbonFactDataHandlerModel model) {
+    this.model = model;
     blockIndexInfoList = new ArrayList<>();
     // get max file size;
     CarbonProperties propInstance = CarbonProperties.getInstance();
     // if blocksize=2048, then 2048*1024*1024 will beyond the range of Int
     this.fileSizeInBytes =
-        (long) dataWriterVo.getTableBlocksize() * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+        (long) this.model.getBlockSizeInMB() * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
             * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
 
     // size reserved in one file for writing block meta data. It will be in percentage
@@ -171,30 +168,30 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
             CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
     this.blockSizeThreshold =
         fileSizeInBytes - (fileSizeInBytes * spaceReservedForBlockMetaSize) / 100;
-    LOGGER.info("Total file size: " + fileSizeInBytes + " and dataBlock Size: " +
-        blockSizeThreshold);
+    LOGGER
+        .info("Total file size: " + fileSizeInBytes + " and dataBlock Size: " + blockSizeThreshold);
 
-    this.executorService = Executors.newFixedThreadPool(1);
+    // whether to directly write fact data to HDFS
+    String directlyWriteData2Hdfs = propInstance
+        .getProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH,
+            CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT);
+    this.enableDirectlyWriteDataToStorePath = "TRUE".equalsIgnoreCase(directlyWriteData2Hdfs);
+
+    if (enableDirectlyWriteDataToStorePath) {
+      LOGGER.info("Carbondata will directly write fact data to store path.");
+    } else {
+      LOGGER.info("Carbondata will write temporary fact data to local disk.");
+    }
+
+    this.executorService = Executors.newFixedThreadPool(1,
+        new CarbonThreadFactory("CompleteHDFSBackendPool:" + this.model.getTableName()));
     executorServiceSubmitList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // in case of compaction we will pass the cardinality.
-    this.localCardinality = dataWriterVo.getColCardinality();
+    this.localCardinality = this.model.getColCardinality();
 
-    //TODO: We should delete the levelmetadata file after reading here.
-    // so only data loading flow will need to read from cardinality file.
-    if (null == this.localCardinality) {
-      this.localCardinality = CarbonMergerUtil
-          .getCardinalityFromLevelMetadata(dataWriterVo.getStoreLocation(),
-              dataWriterVo.getTableName());
-      List<Integer> cardinalityList = new ArrayList<Integer>();
-      thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
-          dataWriterVo.getWrapperColumnSchemaList());
-      localCardinality =
-          ArrayUtils.toPrimitive(cardinalityList.toArray(new Integer[cardinalityList.size()]));
-    } else { // for compaction case
-      List<Integer> cardinalityList = new ArrayList<Integer>();
-      thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
-          dataWriterVo.getWrapperColumnSchemaList());
-    }
+    List<Integer> cardinalityList = new ArrayList<Integer>();
+    thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
+        this.model.getWrapperColumnSchema());
     this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
@@ -202,36 +199,15 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.dataChunksLength = new ArrayList<>();
     blockletMetadata = new ArrayList<BlockletInfo3>();
     blockletIndex = new ArrayList<>();
-    listener = dataWriterVo.getListener();
-  }
-
-  /**
-   * This method will return max of block size and file size
-   *
-   * @param blockSize
-   * @param fileSize
-   * @return
-   */
-  private static long getMaxOfBlockAndFileSize(long blockSize, long fileSize) {
-    long maxSize = blockSize;
-    if (fileSize > blockSize) {
-      maxSize = fileSize;
+    listener = this.model.getDataMapWriterlistener();
+    if (model.getColumnLocalDictGenMap().size() > 0) {
+      int numberOfCores = 1;
+      if (model.getNumberOfCores() > 1) {
+        numberOfCores = model.getNumberOfCores() / 2;
+      }
+      fallbackExecutorService = Executors.newFixedThreadPool(numberOfCores, new CarbonThreadFactory(
+          "FallbackPool:" + model.getTableName() + ", range: " + model.getBucketId()));
     }
-    // block size should be exactly divisible by 512 which is  maintained by HDFS as bytes
-    // per checksum, dfs.bytes-per-checksum=512 must divide block size
-    long remainder = maxSize % HDFS_CHECKSUM_LENGTH;
-    if (remainder > 0) {
-      maxSize = maxSize + HDFS_CHECKSUM_LENGTH - remainder;
-    }
-    // convert to make block size more readable.
-    String readableBlockSize = ByteUtil.convertByteToReadable(blockSize);
-    String readableFileSize = ByteUtil.convertByteToReadable(fileSize);
-    String readableMaxSize = ByteUtil.convertByteToReadable(maxSize);
-    LOGGER.info(
-        "The configured block size is " + readableBlockSize + ", the actual carbon file size is "
-            + readableFileSize + ", choose the max value " + readableMaxSize
-            + " as the block size on HDFS");
-    return maxSize;
   }
 
   /**
@@ -249,17 +225,19 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       throws CarbonDataWriterException {
     if ((currentFileSize + blockletSizeToBeAdded) >= blockSizeThreshold && currentFileSize != 0) {
       // set the current file size to zero
+      String activeFile =
+          enableDirectlyWriteDataToStorePath ? carbonDataFileStorePath : carbonDataFileTempPath;
       LOGGER.info("Writing data to file as max file size reached for file: "
-          + carbonDataFileTempPath + " .Data block size: " + currentFileSize);
+          + activeFile + ". Data block size: " + currentFileSize);
       // write meta data to end of the existing file
-      writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
-      this.currentFileSize = 0;
+      writeFooterToFile();
       this.dataChunksOffsets = new ArrayList<>();
       this.dataChunksLength = new ArrayList<>();
       this.blockletMetadata = new ArrayList<>();
       this.blockletIndex = new ArrayList<>();
       commitCurrentFile(false);
       // initialize the new channel
+      this.currentFileSize = 0;
       initializeWriter();
     }
     currentFileSize += blockletSizeToBeAdded;
@@ -267,15 +245,22 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
   private void notifyDataMapBlockStart() {
     if (listener != null) {
-      listener.onBlockStart(carbonDataFileName);
+      try {
+        listener.onBlockStart(carbonDataFileName);
+      } catch (IOException e) {
+        throw new CarbonDataWriterException("Problem while writing datamap", e);
+      }
     }
   }
 
   private void notifyDataMapBlockEnd() {
     if (listener != null) {
-      listener.onBlockEnd(carbonDataFileName);
+      try {
+        listener.onBlockEnd(carbonDataFileName);
+      } catch (IOException e) {
+        throw new CarbonDataWriterException("Problem while writing datamap", e);
+      }
     }
-    blockletId = 0;
   }
 
   /**
@@ -285,14 +270,43 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   protected void commitCurrentFile(boolean copyInCurrentThread) {
     notifyDataMapBlockEnd();
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
-    // rename carbon data file from in progress status to actual
-    renameCarbonDataFile();
-    String fileName = this.carbonDataFileTempPath.substring(0,
-        this.carbonDataFileTempPath.lastIndexOf('.'));
-    if (copyInCurrentThread) {
-      copyCarbonDataFileToCarbonStorePath(fileName);
+    if (!enableDirectlyWriteDataToStorePath) {
+      try {
+        if (currentFileSize == 0) {
+          handleEmptyDataFile(carbonDataFileTempPath);
+        } else {
+          if (copyInCurrentThread) {
+            CarbonUtil.copyCarbonDataFileToCarbonStorePath(carbonDataFileTempPath,
+                model.getCarbonDataDirectoryPath(), fileSizeInBytes);
+            FileFactory.deleteFile(carbonDataFileTempPath,
+                FileFactory.getFileType(carbonDataFileTempPath));
+          } else {
+            executorServiceSubmitList
+                .add(executorService.submit(new CompleteHdfsBackendThread(carbonDataFileTempPath)));
+          }
+        }
+      } catch (IOException e) {
+        LOGGER.error(e);
+      }
     } else {
-      executorServiceSubmitList.add(executorService.submit(new CopyThread(fileName)));
+      if (currentFileSize == 0) {
+        try {
+          handleEmptyDataFile(carbonDataFileStorePath);
+        } catch (IOException e) {
+          LOGGER.error(e);
+        }
+      }
+    }
+  }
+
+  private void handleEmptyDataFile(String filePath) throws IOException {
+    FileFactory.deleteFile(filePath, FileFactory.getFileType(filePath));
+    if (blockIndexInfoList.size() > 0 && blockIndexInfoList.get(blockIndexInfoList.size() - 1)
+        .getFileName().equals(carbonDataFileName)) {
+      // no need add this entry in index file
+      blockIndexInfoList.remove(blockIndexInfoList.size() - 1);
+      // TODO: currently there is no implementation for notifyDataMapBlockEnd(),
+      // hence no impact, once implementation is done. Need to undo it in this case.
     }
   }
 
@@ -302,83 +316,45 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws CarbonDataWriterException
    */
   public void initializeWriter() throws CarbonDataWriterException {
-    // update the filename with new new sequence
-    // increment the file sequence counter
-    initFileCount();
-
-    //each time we initialize writer, we choose a local temp location randomly
-    String[] tempFileLocations = dataWriterVo.getStoreLocation();
-    String chosenTempLocation = tempFileLocations[new Random().nextInt(tempFileLocations.length)];
-    LOGGER.info("Randomly choose factdata temp location: " + chosenTempLocation);
-
     this.carbonDataFileName = CarbonTablePath
-        .getCarbonDataFileName(fileCount, dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
-            dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
-            "" + dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
-    String actualFileNameVal = carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-    FileData fileData = new FileData(actualFileNameVal, chosenTempLocation);
-    dataWriterVo.getFileManager().add(fileData);
-    this.carbonDataFileTempPath = chosenTempLocation + File.separator
-        + carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-    this.fileCount++;
+        .getCarbonDataFileName(fileCount, model.getCarbonDataFileAttributes().getTaskId(),
+            model.getBucketId(), model.getTaskExtension(),
+            "" + model.getCarbonDataFileAttributes().getFactTimeStamp(), model.getSegmentId());
+    this.carbonDataFileStorePath = model.getCarbonDataDirectoryPath() + File.separator
+        + carbonDataFileName;
     try {
+      if (enableDirectlyWriteDataToStorePath) {
+        // the block size will be twice the block_size specified by user to make sure that
+        // one carbondata file only consists exactly one HDFS block.
+        fileOutputStream = FileFactory
+            .getDataOutputStream(carbonDataFileStorePath, FileFactory.FileType.HDFS,
+                CarbonCommonConstants.BYTEBUFFER_SIZE, fileSizeInBytes * 2);
+      } else {
+        //each time we initialize writer, we choose a local temp location randomly
+        String[] tempFileLocations = model.getStoreLocation();
+        String chosenTempLocation =
+            tempFileLocations[new Random().nextInt(tempFileLocations.length)];
+        LOGGER.info("Randomly choose factdata temp location: " + chosenTempLocation);
+        carbonDataFileTempPath = chosenTempLocation + File.separator + carbonDataFileName;
+        fileOutputStream = FileFactory.getDataOutputStream(carbonDataFileTempPath,
+            FileFactory.FileType.LOCAL, CarbonCommonConstants.BYTEBUFFER_SIZE, true);
+      }
+
+      this.fileCount++;
       // open channel for new data file
-      fileOutputStream = new FileOutputStream(this.carbonDataFileTempPath, true);
-      this.fileChannel = fileOutputStream.getChannel();
-    } catch (FileNotFoundException fileNotFoundException) {
-      throw new CarbonDataWriterException("Problem while getting the FileChannel for Leaf File",
-          fileNotFoundException);
+      this.fileChannel = Channels.newChannel(fileOutputStream);
+      this.currentOffsetInFile = 0;
+    } catch (IOException ex) {
+      throw new CarbonDataWriterException(
+          "Problem while getting the channel for fact data file", ex);
     }
     notifyDataMapBlockStart();
-  }
-
-  private int initFileCount() {
-    int fileInitialCount = 0;
-    FileFilter fileFilter = new FileFilter() {
-      @Override public boolean accept(File pathVal) {
-        if (!pathVal.isDirectory() && pathVal.getName().startsWith(dataWriterVo.getTableName())
-            && pathVal.getName().contains(CarbonCommonConstants.FACT_FILE_EXT)) {
-          return true;
-        }
-        return false;
-      }
-    };
-
-    List<File> dataFileList = new ArrayList<File>();
-    for (String tempLoc : dataWriterVo.getStoreLocation()) {
-      File[] subFiles = new File(tempLoc).listFiles(fileFilter);
-      if (null != subFiles && subFiles.length > 0) {
-        dataFileList.addAll(Arrays.asList(subFiles));
-      }
-    }
-
-    File[] dataFiles = new File[dataFileList.size()];
-    dataFileList.toArray(dataFiles);
-    if (dataFiles != null && dataFiles.length > 0) {
-      // since files are in different directory, we should only compare the file name
-      // and ignore the directory
-      Arrays.sort(dataFiles, new Comparator<File>() {
-        @Override public int compare(File o1, File o2) {
-          return o1.getName().compareTo(o2.getName());
-        }
-      });
-      String dataFileName = dataFiles[dataFiles.length - 1].getName();
-      try {
-        fileInitialCount = Integer
-            .parseInt(dataFileName.substring(dataFileName.lastIndexOf('_') + 1).split("\\.")[0]);
-      } catch (NumberFormatException ex) {
-        fileInitialCount = 0;
-      }
-      fileInitialCount++;
-    }
-    return fileInitialCount;
   }
 
   /**
    * This method will write metadata at the end of file file format in thrift format
    */
-  protected abstract void writeBlockletInfoToFile(
-      FileChannel channel, String filePath) throws CarbonDataWriterException;
+  protected abstract void writeFooterToFile() throws CarbonDataWriterException;
 
   /**
    * Below method will be used to fill the vlock info details
@@ -390,7 +366,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   protected abstract void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
       long currentPosition);
 
-  protected List<org.apache.carbondata.format.ColumnSchema> getColumnSchemaListAndCardinality(
+  public static List<org.apache.carbondata.format.ColumnSchema> getColumnSchemaListAndCardinality(
       List<Integer> cardinality, int[] dictionaryColumnCardinality,
       List<ColumnSchema> wrapperColumnSchemaList) {
     List<org.apache.carbondata.format.ColumnSchema> columnSchemaList =
@@ -421,23 +397,37 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws CarbonDataWriterException data writing
    */
   protected void writeIndexFile() throws IOException, CarbonDataWriterException {
+    if (blockIndexInfoList.size() == 0) {
+      // no need to write index file, if data file is not there.
+      return;
+    }
     // get the header
     IndexHeader indexHeader = CarbonMetadataUtil
-        .getIndexHeader(localCardinality, thriftColumnSchemaList, dataWriterVo.getBucketNumber());
+        .getIndexHeader(localCardinality, thriftColumnSchemaList, model.getBucketId(),
+            model.getSchemaUpdatedTimeStamp());
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
-    // randomly choose a temp location for index file
-    String[] tempLocations = dataWriterVo.getStoreLocation();
-    String chosenTempLocation = tempLocations[new Random().nextInt(tempLocations.length)];
-    LOGGER.info("Randomly choose index file location: " + chosenTempLocation);
+    String indexFileName;
+    if (enableDirectlyWriteDataToStorePath) {
+      String rawFileName = model.getCarbonDataDirectoryPath() + CarbonCommonConstants.FILE_SEPARATOR
+          + CarbonTablePath.getCarbonIndexFileName(model.getCarbonDataFileAttributes().getTaskId(),
+          model.getBucketId(), model.getTaskExtension(),
+          "" + model.getCarbonDataFileAttributes().getFactTimeStamp(), model.getSegmentId());
+      indexFileName = FileFactory.getUpdatedFilePath(rawFileName, FileFactory.FileType.HDFS);
+    } else {
+      // randomly choose a temp location for index file
+      String[] tempLocations = model.getStoreLocation();
+      String chosenTempLocation = tempLocations[new Random().nextInt(tempLocations.length)];
+      LOGGER.info("Randomly choose index file location: " + chosenTempLocation);
+      indexFileName = chosenTempLocation + File.separator + CarbonTablePath
+          .getCarbonIndexFileName(model.getCarbonDataFileAttributes().getTaskId(),
+              model.getBucketId(), model.getTaskExtension(),
+              "" + model.getCarbonDataFileAttributes().getFactTimeStamp(), model.getSegmentId());
+    }
 
-    String fileName = chosenTempLocation + File.separator + CarbonTablePath
-        .getCarbonIndexFileName(dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
-            dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
-            "" + dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
     // open file
-    writer.openThriftWriter(fileName);
+    writer.openThriftWriter(indexFileName);
     // write the header first
     writer.writeThrift(indexHeader);
     // write the indexes
@@ -445,8 +435,12 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       writer.writeThrift(blockIndex);
     }
     writer.close();
-    // copy from temp to actual store location
-    copyCarbonDataFileToCarbonStorePath(fileName);
+    if (!enableDirectlyWriteDataToStorePath) {
+      CarbonUtil
+          .copyCarbonDataFileToCarbonStorePath(indexFileName, model.getCarbonDataDirectoryPath(),
+              fileSizeInBytes);
+      FileFactory.deleteFile(indexFileName, FileFactory.getFileType(indexFileName));
+    }
   }
 
   /**
@@ -456,99 +450,40 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws CarbonDataWriterException
    */
   protected void closeExecutorService() throws CarbonDataWriterException {
-    executorService.shutdown();
+    CarbonDataWriterException exception = null;
     try {
-      executorService.awaitTermination(2, TimeUnit.HOURS);
-    } catch (InterruptedException e) {
-      throw new CarbonDataWriterException(e.getMessage());
-    }
-    for (int i = 0; i < executorServiceSubmitList.size(); i++) {
-      try {
-        executorServiceSubmitList.get(i).get();
-      } catch (InterruptedException e) {
-        throw new CarbonDataWriterException(e.getMessage());
-      } catch (ExecutionException e) {
-        throw new CarbonDataWriterException(e.getMessage());
-      }
-    }
-  }
-
-  /**
-   * This method will rename carbon data file from in progress status to normal
-   *
-   * @throws CarbonDataWriterException
-   */
-  protected void renameCarbonDataFile() throws CarbonDataWriterException {
-    File origFile = new File(this.carbonDataFileTempPath
-        .substring(0, this.carbonDataFileTempPath.lastIndexOf('.')));
-    File curFile = new File(this.carbonDataFileTempPath);
-    if (!curFile.renameTo(origFile)) {
-      throw new CarbonDataWriterException("Problem while renaming the file");
-    }
-  }
-
-  /**
-   * This method will copy the given file to carbon store location
-   *
-   * @param localFileName local file name with full path
-   * @throws CarbonDataWriterException
-   */
-  protected void copyCarbonDataFileToCarbonStorePath(String localFileName)
-      throws CarbonDataWriterException {
-    long copyStartTime = System.currentTimeMillis();
-    LOGGER.info("Copying " + localFileName + " --> " + dataWriterVo.getCarbonDataDirectoryPath());
-    try {
-      CarbonFile localCarbonFile =
-          FileFactory.getCarbonFile(localFileName, FileFactory.getFileType(localFileName));
-      String carbonFilePath = dataWriterVo.getCarbonDataDirectoryPath() + localFileName
-          .substring(localFileName.lastIndexOf(File.separator));
-      copyLocalFileToCarbonStore(carbonFilePath, localFileName,
-          CarbonCommonConstants.BYTEBUFFER_SIZE,
-          getMaxOfBlockAndFileSize(fileSizeInBytes, localCarbonFile.getSize()));
+      listener.finish();
+      listener = null;
     } catch (IOException e) {
-      throw new CarbonDataWriterException(
-          "Problem while copying file from local store to carbon store", e);
+      exception = new CarbonDataWriterException(e);
     }
-    LOGGER.info(
-        "Total copy time (ms) to copy file " + localFileName + " is " + (System.currentTimeMillis()
-            - copyStartTime));
-  }
-
-  /**
-   * This method will read the local carbon data file and write to carbon data file in HDFS
-   *
-   * @param carbonStoreFilePath
-   * @param localFilePath
-   * @param bufferSize
-   * @param blockSize
-   * @throws IOException
-   */
-  private void copyLocalFileToCarbonStore(String carbonStoreFilePath, String localFilePath,
-      int bufferSize, long blockSize) throws IOException {
-    DataOutputStream dataOutputStream = null;
-    DataInputStream dataInputStream = null;
     try {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("HDFS file block size for file: " + carbonStoreFilePath + " is " + blockSize
-            + " (bytes");
+      executorService.shutdown();
+      executorService.awaitTermination(2, TimeUnit.HOURS);
+      for (int i = 0; i < executorServiceSubmitList.size(); i++) {
+        executorServiceSubmitList.get(i).get();
       }
-      dataOutputStream = FileFactory
-          .getDataOutputStream(carbonStoreFilePath, FileFactory.getFileType(carbonStoreFilePath),
-              bufferSize, blockSize);
-      dataInputStream = FileFactory
-          .getDataInputStream(localFilePath, FileFactory.getFileType(localFilePath), bufferSize);
-      IOUtils.copyBytes(dataInputStream, dataOutputStream, bufferSize);
-    } finally {
-      CarbonUtil.closeStream(dataInputStream);
-      CarbonUtil.closeStream(dataOutputStream);
+    } catch (InterruptedException | ExecutionException e) {
+      if (null == exception) {
+        exception = new CarbonDataWriterException(e);
+      }
+    }
+    if (null != fallbackExecutorService) {
+      fallbackExecutorService.shutdownNow();
+    }
+    if (exception != null) {
+      throw exception;
     }
   }
 
+
+
   /**
-   * This method will copy the carbon data file from local store location to
-   * carbon store location
+   * This method will complete hdfs backend storage for this file.
+   * It may copy the carbon data file from local store location to carbon store location,
+   * it may also complete the remaining replications for the existing hdfs file.
    */
-  private final class CopyThread implements Callable<Void> {
+  private final class CompleteHdfsBackendThread implements Callable<Void> {
 
     /**
      * complete path along with file name which needs to be copied to
@@ -556,7 +491,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
      */
     private String fileName;
 
-    private CopyThread(String fileName) {
+    private CompleteHdfsBackendThread(String fileName) {
       this.fileName = fileName;
     }
 
@@ -566,10 +501,12 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
      * @return computed result
      * @throws Exception if unable to compute a result
      */
-    @Override public Void call() throws Exception {
-      copyCarbonDataFileToCarbonStorePath(fileName);
+    @Override
+    public Void call() throws Exception {
+      CarbonUtil.copyCarbonDataFileToCarbonStorePath(fileName, model.getCarbonDataDirectoryPath(),
+          fileSizeInBytes);
+      FileFactory.deleteFile(fileName, FileFactory.getFileType(fileName));
       return null;
     }
-
   }
 }

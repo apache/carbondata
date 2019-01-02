@@ -17,42 +17,28 @@
 
 package org.apache.carbondata.core.util;
 
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.page.EncodedTablePage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveEncoderMeta;
-import org.apache.carbondata.core.datastore.page.key.TablePageKey;
-import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.format.BlockIndex;
-import org.apache.carbondata.format.BlockletIndex;
 import org.apache.carbondata.format.BlockletInfo;
-import org.apache.carbondata.format.BlockletInfo3;
-import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.ColumnSchema;
 import org.apache.carbondata.format.DataChunk;
-import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataType;
 import org.apache.carbondata.format.Encoding;
-import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.format.SegmentInfo;
 
-import mockit.Mock;
-import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.apache.carbondata.core.util.CarbonMetadataUtil.convertFileFooterVersion3;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.getBlockIndexInfo;
-import static org.apache.carbondata.core.util.CarbonMetadataUtil.getBlockletIndex;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.getIndexHeader;
 
 public class CarbonMetadataUtilTest {
@@ -124,7 +110,7 @@ public class CarbonMetadataUtilTest {
     meta.setDecimal(5);
     meta.setMinValue(objMinArr);
     meta.setMaxValue(objMaxArr);
-    meta.setType(AdaptiveEncoderMeta.DOUBLE_MEASURE);
+    meta.setType(org.apache.carbondata.core.metadata.datatype.DataType.DOUBLE_MEASURE_CHAR);
 
     List<Encoding> encoders = new ArrayList<>();
     encoders.add(Encoding.INVERTED_INDEX);
@@ -170,73 +156,9 @@ public class CarbonMetadataUtilTest {
     indexHeader.setSegment_info(segmentInfo);
     indexHeader.setTable_columns(columnSchemaList);
     indexHeader.setBucket_id(0);
-    IndexHeader indexheaderResult = getIndexHeader(columnCardinality, columnSchemaList, 0);
+    indexHeader.setSchema_time_stamp(0L);
+    IndexHeader indexheaderResult = getIndexHeader(columnCardinality, columnSchemaList, 0, 0L);
     assertEquals(indexHeader, indexheaderResult);
-  }
-
-  @Test public void testConvertFileFooter() throws Exception {
-    int[] cardinality = { 1, 2, 3, 4, 5 };
-
-    org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema colSchema =
-        new org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema();
-    org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema colSchema1 =
-        new org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema();
-    List<org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema>
-        columnSchemaList = new ArrayList<>();
-    columnSchemaList.add(colSchema);
-    columnSchemaList.add(colSchema1);
-
-    SegmentProperties segmentProperties = new SegmentProperties(columnSchemaList, cardinality);
-
-    final EncodedColumnPage measure = new EncodedColumnPage(new DataChunk2(), new byte[]{0,1},
-        PrimitivePageStatsCollector.newInstance(
-        org.apache.carbondata.core.metadata.datatype.DataType.BYTE, 0, 0));
-    new MockUp<EncodedTablePage>() {
-      @SuppressWarnings("unused") @Mock
-      public EncodedColumnPage getMeasure(int measureIndex) {
-        return measure;
-      }
-    };
-
-    new MockUp<TablePageKey>() {
-      @SuppressWarnings("unused") @Mock
-      public byte[] serializeStartKey() {
-        return new byte[]{1, 2};
-      }
-
-      @SuppressWarnings("unused") @Mock
-      public byte[] serializeEndKey() {
-        return new byte[]{1, 2};
-      }
-    };
-
-    TablePageKey key = new TablePageKey(3, null, segmentProperties, false);
-    EncodedTablePage encodedTablePage = EncodedTablePage.newInstance(3, new EncodedColumnPage[0], new EncodedColumnPage[0],
-        key);
-
-    List<EncodedTablePage> encodedTablePageList = new ArrayList<>();
-    encodedTablePageList.add(encodedTablePage);
-
-    BlockletInfo3 blockletInfoColumnar1 = new BlockletInfo3();
-
-    List<BlockletInfo3> blockletInfoColumnarList = new ArrayList<>();
-    blockletInfoColumnarList.add(blockletInfoColumnar1);
-
-    byte[] byteMaxArr = "1".getBytes();
-    byte[] byteMinArr = "2".getBytes();
-
-    BlockletIndex index = getBlockletIndex(encodedTablePageList, segmentProperties.getMeasures());
-    List<BlockletIndex> indexList = new ArrayList<>();
-    indexList.add(index);
-
-    BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
-    blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(byteMaxArr));
-    blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(byteMinArr));
-    FileFooter3 footer = convertFileFooterVersion3(blockletInfoColumnarList,
-        indexList,
-        cardinality, 2);
-    assertEquals(footer.getBlocklet_index_list(), indexList);
-
   }
 
   @Test public void testGetBlockIndexInfo() throws Exception {
@@ -250,10 +172,13 @@ public class CarbonMetadataUtilTest {
     List<ByteBuffer> maxList = new ArrayList<>();
     maxList.add(ByteBuffer.wrap(byteArr1));
 
+    List<Boolean> isMinMaxSet = new ArrayList<>();
+    isMinMaxSet.add(true);
+
     org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex
         blockletMinMaxIndex =
         new org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex(minList,
-            maxList);
+            maxList, isMinMaxSet);
     org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex
         blockletBTreeIndex =
         new org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex(startKey,
@@ -269,6 +194,29 @@ public class CarbonMetadataUtilTest {
     List<BlockIndex> result = getBlockIndexInfo(blockIndexInfoList);
     String expected = "file";
     assertEquals(result.get(0).file_name, expected);
+  }
+
+  @Test public void testGetBlockletIndex() throws Exception {
+
+    long left = Long.MAX_VALUE;
+    long right = 100;
+    ByteBuffer buffer = ByteBuffer.allocate(8);
+    buffer.putLong(left);
+    buffer.flip();
+    byte[] l = buffer.array().clone();
+
+    buffer.rewind();
+    buffer.putLong(right);
+    buffer.flip();
+    byte[] r = buffer.array().clone();
+
+    Method method = CarbonMetadataUtil.class
+        .getDeclaredMethod("compareMeasureData", l.getClass(), r.getClass(),
+            org.apache.carbondata.core.metadata.datatype.DataType.class);
+    method.setAccessible(true);
+    int out = (int)method.invoke(method, l, r, DataTypes.LONG);
+    assertEquals(1, out);
+
   }
 
 }

@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.filterexpr
 
+import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -51,6 +52,30 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select empno,empname from alldatatypestableFilter where regexp_replace(workgroupcategoryname, 'er', 'ment') != 'development'"),
       sql("select empno,empname from alldatatypestableFilter_hive where regexp_replace(workgroupcategoryname, 'er', 'ment') != 'development'"))
+  }
+
+  test("verify like query ends with filter push down") {
+    val df = sql("select * from alldatatypestableFilter where empname like '%nandh'").queryExecution
+      .sparkPlan
+    if (df.isInstanceOf[CarbonDataSourceScan]) {
+      assert(df.asInstanceOf[CarbonDataSourceScan].metadata
+        .get("PushedFilters").get.contains("CarbonEndsWith"))
+    } else {
+      assert(df.children.head.asInstanceOf[CarbonDataSourceScan].metadata
+        .get("PushedFilters").get.contains("CarbonEndsWith"))
+    }
+  }
+
+  test("verify like query contains with filter push down") {
+    val df = sql("select * from alldatatypestableFilter where empname like '%nand%'").queryExecution
+      .sparkPlan
+    if (df.isInstanceOf[CarbonDataSourceScan]) {
+      assert(df.asInstanceOf[CarbonDataSourceScan].metadata
+        .get("PushedFilters").get.contains("CarbonContainsWith"))
+    } else {
+      assert(df.children.head.asInstanceOf[CarbonDataSourceScan].metadata
+        .get("PushedFilters").get.contains("CarbonContainsWith"))
+    }
   }
   
   override def afterAll {

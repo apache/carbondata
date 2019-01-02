@@ -30,22 +30,22 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
    * to store key which is generated using
    * key generator
    */
-  protected byte[] dictionaryKey;
+  private byte[] dictionaryKey;
 
   /**
    * to store no dictionary column data
    */
-  protected byte[][] complexTypesKeys;
+  private byte[][] complexTypesKeys;
 
   /**
    * to store no dictionary column data
    */
-  protected byte[][] noDictionaryKeys;
+  private byte[][] noDictionaryKeys;
 
   /**
    * contains value of implicit columns in byte array format
    */
-  protected byte[] implicitColumnByteArray;
+  private byte[] implicitColumnByteArray;
 
   public ByteArrayWrapper() {
   }
@@ -81,6 +81,10 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     return this.noDictionaryKeys[index];
   }
 
+  public byte[] getComplexKeyByIndex(int index) {
+    return this.complexTypesKeys[index];
+  }
+
   /**
    * to get the no dictionary column data
    *
@@ -90,14 +94,14 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     return this.noDictionaryKeys;
   }
 
+
   /**
-   * to get the no dictionary column data
+   * to get the complex column data
    *
-   * @param index of the no dictionary key
-   * @return no dictionary key for the index
+   * @return no complex values
    */
-  public byte[] getComplexTypeByIndex(int index) {
-    return this.complexTypesKeys[index];
+  public byte[][] getComplexTypesKeys() {
+    return this.complexTypesKeys;
   }
 
   /**
@@ -201,24 +205,10 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   }
 
   /**
-   * @return the complexTypesKeys
-   */
-  public byte[][] getComplexTypesKeys() {
-    return complexTypesKeys;
-  }
-
-  /**
    * @param complexTypesKeys the complexTypesKeys to set
    */
   public void setComplexTypesKeys(byte[][] complexTypesKeys) {
     this.complexTypesKeys = complexTypesKeys;
-  }
-
-  /**
-   * @return
-   */
-  public byte[] getImplicitColumnByteArray() {
-    return implicitColumnByteArray;
   }
 
   /**
@@ -227,4 +217,5 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   public void setImplicitColumnByteArray(byte[] implicitColumnByteArray) {
     this.implicitColumnByteArray = implicitColumnByteArray;
   }
+
 }

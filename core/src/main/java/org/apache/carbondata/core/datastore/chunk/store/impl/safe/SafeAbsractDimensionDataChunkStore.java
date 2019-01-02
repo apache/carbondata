@@ -72,7 +72,9 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
    * Below method will be used to free the memory occupied by the column chunk
    */
   @Override public void freeMemory() {
-    // do nothing as GC will take care of freeing memory
+    data = null;
+    invertedIndex = null;
+    invertedIndexReverse = null;
   }
 
   /**
@@ -83,6 +85,16 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
    */
   @Override public int getInvertedIndex(int rowId) {
     return invertedIndex[rowId];
+  }
+
+  /**
+   * Below method will be used to get the inverted index reverse
+   *
+   * @param rowId row id
+   * @return inverted index based on row id passed
+   */
+  @Override public int getInvertedReverseIndex(int rowId) {
+    return invertedIndexReverse[rowId];
   }
 
   /**

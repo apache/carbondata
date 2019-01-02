@@ -22,7 +22,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
@@ -31,18 +31,14 @@ import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.SortState;
 
 public abstract class IndexStorageEncoder extends ColumnPageEncoder {
-  IndexStorage indexStorage;
+  BlockIndexerStorage indexStorage;
   byte[] compressedDataPage;
 
   abstract void encodeIndexStorage(ColumnPage inputPage);
 
   @Override
   protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
-    assert (indexStorage == null);
-    assert (compressedDataPage == null);
     encodeIndexStorage(input);
-    assert (indexStorage != null);
-    assert (compressedDataPage != null);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
     out.write(compressedDataPage);
@@ -65,7 +61,9 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
         out.writeShort(dataRle);
       }
     }
-    return stream.toByteArray();
+    byte[] result = stream.toByteArray();
+    stream.close();
+    return result;
   }
 
   @Override

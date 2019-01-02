@@ -19,8 +19,9 @@ package org.apache.carbondata.core.util;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+
+import org.apache.log4j.Logger;
 
 /**
  * A util which provide methods used to record time information druing data loading.
@@ -37,7 +38,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     return carbonLoadStatisticsImplInstance;
   }
 
-  private final LogService LOGGER =
+  private static final Logger LOGGER =
           LogServiceFactory.getLogService(CarbonLoadStatisticsImpl.class.getName());
 
   /*
@@ -83,7 +84,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   private double totalTime = 0;
 
   @Override
-  public void initPartitonInfo(String PartitionId) {
+  public void initPartitionInfo(String PartitionId) {
     parDictionaryValuesTotalTimeMap.put(PartitionId, new Long[2]);
     parCsvInputStepTimeMap.put(PartitionId, new Long[2]);
     parSortRowsStepTotalTimeMap.put(PartitionId, new Long[2]);
@@ -311,52 +312,52 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   //Print the statistics information
   private void printDicGenStatisticsInfo() {
     double loadCsvfilesToDfTime = getLoadCsvfilesToDfTime();
-    LOGGER.audit("STAGE 1 ->Load csv to DataFrame and generate" +
+    LOGGER.info("STAGE 1 ->Load csv to DataFrame and generate" +
             " block distinct values: " + loadCsvfilesToDfTime + "(s)");
     double dicShuffleAndWriteFileTotalTime = getDicShuffleAndWriteFileTotalTime();
-    LOGGER.audit("STAGE 2 ->Global dict shuffle and write dict file: " +
+    LOGGER.info("STAGE 2 ->Global dict shuffle and write dict file: " +
             + dicShuffleAndWriteFileTotalTime + "(s)");
   }
 
   private void printLruCacheLoadTimeInfo() {
-    LOGGER.audit("STAGE 3 ->LRU cache load: " + getLruCacheLoadTime() + "(s)");
+    LOGGER.info("STAGE 3 ->LRU cache load: " + getLruCacheLoadTime() + "(s)");
   }
 
   private void printDictionaryValuesGenStatisticsInfo(String partitionID) {
     double dictionaryValuesTotalTime = getDictionaryValuesTotalTime(partitionID);
-    LOGGER.audit("STAGE 4 ->Total cost of gen dictionary values, sort and write to temp files: "
+    LOGGER.info("STAGE 4 ->Total cost of gen dictionary values, sort and write to temp files: "
             + dictionaryValuesTotalTime + "(s)");
     double csvInputStepTime = getCsvInputStepTime(partitionID);
     double generatingDictionaryValuesTime = getGeneratingDictionaryValuesTime(partitionID);
-    LOGGER.audit("STAGE 4.1 ->  |_read csv file: " + csvInputStepTime + "(s)");
-    LOGGER.audit("STAGE 4.2 ->  |_transform to surrogate key: "
+    LOGGER.info("STAGE 4.1 ->  |_read csv file: " + csvInputStepTime + "(s)");
+    LOGGER.info("STAGE 4.2 ->  |_transform to surrogate key: "
             + generatingDictionaryValuesTime + "(s)");
   }
 
   private void printSortRowsStepStatisticsInfo(String partitionID) {
     double sortRowsStepTotalTime = getSortRowsStepTotalTime(partitionID);
-    LOGGER.audit("STAGE 4.3 ->  |_sort rows and write to temp file: "
+    LOGGER.info("STAGE 4.3 ->  |_sort rows and write to temp file: "
             + sortRowsStepTotalTime + "(s)");
   }
 
   private void printGenMdkStatisticsInfo(String partitionID) {
     double dictionaryValue2MdkAdd2FileTime = getDictionaryValue2MdkAdd2FileTime(partitionID);
-    LOGGER.audit("STAGE 5 ->Transform to MDK, compress and write fact files: "
+    LOGGER.info("STAGE 5 ->Transform to MDK, compress and write fact files: "
             + dictionaryValue2MdkAdd2FileTime + "(s)");
   }
 
   //Print the node blocks information
   private void printHostBlockMapInfo() {
-    LOGGER.audit("========== BLOCK_INFO ==========");
+    LOGGER.info("========== BLOCK_INFO ==========");
     if (getHostBlockMap().size() > 0) {
       for (String host: getHostBlockMap().keySet()) {
-        LOGGER.audit("BLOCK_INFO ->Node host: " + host);
-        LOGGER.audit("BLOCK_INFO ->The block count in this node: " + getHostBlockMap().get(host));
+        LOGGER.info("BLOCK_INFO ->Node host: " + host);
+        LOGGER.info("BLOCK_INFO ->The block count in this node: " + getHostBlockMap().get(host));
       }
     } else if (getPartitionBlockMap().size() > 0) {
       for (String parID: getPartitionBlockMap().keySet()) {
-        LOGGER.audit("BLOCK_INFO ->Partition ID: " + parID);
-        LOGGER.audit("BLOCK_INFO ->The block count in this partition: " +
+        LOGGER.info("BLOCK_INFO ->Partition ID: " + parID);
+        LOGGER.info("BLOCK_INFO ->The block count in this partition: " +
                 getPartitionBlockMap().get(parID));
       }
     }
@@ -364,21 +365,21 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
 
   //Print the speed information
   private void printLoadSpeedInfo(String partitionID) {
-    LOGGER.audit("===============Load_Speed_Info===============");
-    LOGGER.audit("Total Num of Records Processed: " + getTotalRecords());
-    LOGGER.audit("Total Time Cost: " + getTotalTime(partitionID) + "(s)");
-    LOGGER.audit("Total Load Speed: " + getLoadSpeed() + "records/s");
-    LOGGER.audit("Generate Dictionaries Speed: " + getGenDicSpeed() + "records/s");
-    LOGGER.audit("Read CSV Speed: " + getReadCSVSpeed(partitionID) + " records/s");
-    LOGGER.audit("Generate Surrogate Key Speed: " + getGenSurKeySpeed(partitionID) + " records/s");
-    LOGGER.audit("Sort Key/Write Temp Files Speed: " + getSortKeySpeed(partitionID) + " records/s");
-    LOGGER.audit("MDK Step Speed: " + getMDKSpeed(partitionID) + " records/s");
-    LOGGER.audit("=============================================");
+    LOGGER.info("===============Load_Speed_Info===============");
+    LOGGER.info("Total Num of Records Processed: " + getTotalRecords());
+    LOGGER.info("Total Time Cost: " + getTotalTime(partitionID) + "(s)");
+    LOGGER.info("Total Load Speed: " + getLoadSpeed() + "records/s");
+    LOGGER.info("Generate Dictionaries Speed: " + getGenDicSpeed() + "records/s");
+    LOGGER.info("Read CSV Speed: " + getReadCSVSpeed(partitionID) + " records/s");
+    LOGGER.info("Generate Surrogate Key Speed: " + getGenSurKeySpeed(partitionID) + " records/s");
+    LOGGER.info("Sort Key/Write Temp Files Speed: " + getSortKeySpeed(partitionID) + " records/s");
+    LOGGER.info("MDK Step Speed: " + getMDKSpeed(partitionID) + " records/s");
+    LOGGER.info("=============================================");
   }
 
   public void printStatisticsInfo(String partitionID) {
     try {
-      LOGGER.audit("========== TIME_STATISTICS PartitionID: " + partitionID + "==========");
+      LOGGER.info("========== TIME_STATISTICS PartitionID: " + partitionID + "==========");
       printDicGenStatisticsInfo();
       printLruCacheLoadTimeInfo();
       printDictionaryValuesGenStatisticsInfo(partitionID);
@@ -387,7 +388,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
       printHostBlockMapInfo();
       printLoadSpeedInfo(partitionID);
     } catch (Exception e) {
-      LOGGER.audit("Can't print Statistics Information");
+      LOGGER.error("Can't print Statistics Information");
     } finally {
       resetLoadStatistics();
     }

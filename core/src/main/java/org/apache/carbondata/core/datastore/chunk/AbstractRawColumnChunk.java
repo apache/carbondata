@@ -29,6 +29,8 @@ public abstract class AbstractRawColumnChunk {
 
   private byte[][] maxValues;
 
+  private boolean[] minMaxFlagArray;
+
   protected ByteBuffer rawData;
 
   private int[] offsets;
@@ -37,16 +39,16 @@ public abstract class AbstractRawColumnChunk {
 
   protected int pagesCount;
 
-  protected int blockletId;
+  protected int columnIndex;
 
-  private int offSet;
+  private long offSet;
 
   protected int length;
 
   private DataChunk3 dataChunkV3;
 
-  public AbstractRawColumnChunk(int blockletId, ByteBuffer rawData, int offSet, int length) {
-    this.blockletId = blockletId;
+  public AbstractRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length) {
+    this.columnIndex = columnIndex;
     this.rawData = rawData;
     this.offSet = offSet;
     this.length = length;
@@ -96,13 +98,15 @@ public abstract class AbstractRawColumnChunk {
     this.rowCount = rowCount;
   }
 
-  public abstract void freeMemory();
-
-  public int getBlockletId() {
-    return blockletId;
+  public void freeMemory() {
+    rawData = null;
   }
 
-  public int getOffSet() {
+  public int getColumnIndex() {
+    return columnIndex;
+  }
+
+  public long getOffSet() {
     return offSet;
   }
 
@@ -118,4 +122,11 @@ public abstract class AbstractRawColumnChunk {
     this.dataChunkV3 = dataChunkV3;
   }
 
+  public boolean[] getMinMaxFlagArray() {
+    return minMaxFlagArray;
+  }
+
+  public void setMinMaxFlagArray(boolean[] minMaxFlagArray) {
+    this.minMaxFlagArray = minMaxFlagArray;
+  }
 }

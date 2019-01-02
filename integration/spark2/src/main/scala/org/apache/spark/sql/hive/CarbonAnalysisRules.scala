@@ -17,76 +17,36 @@
 
 package org.apache.spark.sql.hive
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit
+import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
-import org.apache.spark.sql.execution.{ProjectExec, SparkSqlParser, SubqueryExec}
-import org.apache.spark.sql.execution.command.ProjectForDeleteCommand
-import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCommand
+import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, FileFormat, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
+import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-
-
-/**
- * Insert into carbon table from other source
- */
-object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
-  def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transform {
-      // Wait until children are resolved.
-      case p: LogicalPlan if !p.childrenResolved => p
-
-      case p@InsertIntoTable(relation: LogicalRelation, _, child, _, _)
-        if relation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        castChildOutput(p, relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation], child)
-    }
-  }
-
-  def castChildOutput(p: InsertIntoTable,
-      relation: CarbonDatasourceHadoopRelation,
-      child: LogicalPlan)
-  : LogicalPlan = {
-    if (relation.carbonRelation.output.size > CarbonCommonConstants
-      .DEFAULT_MAX_NUMBER_OF_COLUMNS) {
-      sys
-        .error("Maximum supported column by carbon is:" + CarbonCommonConstants
-          .DEFAULT_MAX_NUMBER_OF_COLUMNS
-        )
-    }
-    if (child.output.size >= relation.carbonRelation.output.size) {
-      val newChildOutput = child.output.zipWithIndex.map { columnWithIndex =>
-        columnWithIndex._1 match {
-          case attr: Alias =>
-            Alias(attr.child, s"col${ columnWithIndex._2 }")(attr.exprId)
-          case attr: Attribute =>
-            Alias(attr, s"col${ columnWithIndex._2 }")(NamedExpression.newExprId)
-          case attr => attr
-        }
-      }
-      val newChild: LogicalPlan = if (newChildOutput == child.output) {
-        p.child
-      } else {
-        Project(newChildOutput, child)
-      }
-      InsertIntoCarbonTable(relation, p.partition, newChild, p.overwrite, p.ifNotExists)
-    } else {
-      sys.error("Cannot insert into target table because column number are different")
-    }
-  }
-}
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.util.CarbonUtil
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
-  private val parser = new SparkSqlParser(sparkSession.sessionState.conf)
+  private lazy val parser = sparkSession.sessionState.sqlParser
 
   private def processUpdateQuery(
       table: UnresolvedRelation,
       columns: List[String],
       selectStmt: String,
+      alias: Option[String],
       filter: String): LogicalPlan = {
     var includedDestColumns = false
     var includedDestRelation = false
@@ -95,42 +55,81 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
     def prepareTargetReleation(relation: UnresolvedRelation): SubqueryAlias = {
       val tupleId = UnresolvedAlias(Alias(UnresolvedFunction("getTupleId",
         Seq.empty, isDistinct = false), "tupleId")())
-      val projList = Seq(
-        UnresolvedAlias(UnresolvedStar(Option(table.alias.toSeq))), tupleId)
-      // include tuple id and rest of the required columns in subqury
-      SubqueryAlias(table.alias.getOrElse(""),
-        Project(projList, relation), Option(table.tableIdentifier))
+
+      val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
+      val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
+      if (carbonTable != null) {
+        if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
+          throw new UnsupportedOperationException(
+            "Update operation is not supported for tables which have a pre-aggregate table. " +
+            "Drop pre-aggregate tables to continue.")
+        }
+        if (carbonTable.isChildDataMap) {
+          throw new UnsupportedOperationException(
+            "Update operation is not supported for pre-aggregate table")
+        }
+        val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+        if (!indexSchemas.isEmpty) {
+          throw new UnsupportedOperationException(
+            "Update operation is not supported for table which has index datamaps")
+        }
+      }
+      val tableRelation = if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+        relation
+      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        alias match {
+          case Some(_) =>
+            CarbonReflectionUtils.getSubqueryAlias(
+              sparkSession,
+              alias,
+              relation,
+              Some(table.tableIdentifier))
+          case _ => relation
+        }
+      } else {
+        throw new UnsupportedOperationException("Unsupported Spark version.")
+      }
+
+      CarbonReflectionUtils.getSubqueryAlias(
+        sparkSession,
+        alias,
+        Project(projList, tableRelation),
+        Some(table.tableIdentifier))
     }
+
     // get the un-analyzed logical plan
     val targetTable = prepareTargetReleation(table)
     val selectPlan = parser.parsePlan(selectStmt) transform {
       case Project(projectList, child) if !includedDestColumns =>
         includedDestColumns = true
         if (projectList.size != columns.size) {
-          sys.error("Number of source and destination columns are not matching")
+          CarbonException.analysisException(
+            "The number of columns in source table and destination table columns mismatch")
         }
-        val renamedProjectList = projectList.zip(columns).map{ case(attr, col) =>
+        val renamedProjectList = projectList.zip(columns).map { case (attr, col) =>
           attr match {
             case UnresolvedAlias(child22, _) =>
               UnresolvedAlias(Alias(child22, col + "-updatedColumn")())
-            case UnresolvedAttribute(param) =>
+            case UnresolvedAttribute(_) =>
               UnresolvedAlias(Alias(attr, col + "-updatedColumn")())
-             // UnresolvedAttribute(col + "-updatedColumn")
-//              UnresolvedAlias(Alias(child, col + "-updatedColumn")())
             case _ => attr
           }
         }
+        val tableName: Option[Seq[String]] = alias match {
+          case Some(_) => Some(alias.toSeq)
+          case _ => Some(Seq(child.asInstanceOf[UnresolvedRelation].tableIdentifier.table.toString))
+        }
         val list = Seq(
-          UnresolvedAlias(UnresolvedStar(Option(table.alias.toSeq)))) ++ renamedProjectList
+          UnresolvedAlias(UnresolvedStar(tableName))) ++ renamedProjectList
         Project(list, child)
       case Filter(cond, child) if !includedDestRelation =>
         includedDestRelation = true
         Filter(cond, Join(child, targetTable, Inner, None))
-      case r @ UnresolvedRelation(t, a) if !includedDestRelation && t != table.tableIdentifier =>
+      case r@CarbonUnresolvedRelation(t) if !includedDestRelation && t != table.tableIdentifier =>
         includedDestRelation = true
         Join(r, targetTable, Inner, None)
     }
-    val updatedSelectPlan : LogicalPlan = if (!includedDestRelation) {
+    val updatedSelectPlan: LogicalPlan = if (!includedDestRelation) {
       // special case to handle self join queries
       // Eg. update tableName  SET (column1) = (column1+1)
       selectPlan transform {
@@ -143,66 +142,160 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       selectPlan
     }
     val finalPlan = if (filter.length > 0) {
-      val alias = table.alias.getOrElse("")
       var transformed: Boolean = false
       // Create a dummy projection to include filter conditions
       var newPlan: LogicalPlan = null
       if (table.tableIdentifier.database.isDefined) {
         newPlan = parser.parsePlan("select * from  " +
            table.tableIdentifier.database.getOrElse("") + "." +
-           table.tableIdentifier.table + " " + alias + " " + filter)
+           table.tableIdentifier.table + " " + alias.getOrElse("") + " " + filter)
       }
       else {
         newPlan = parser.parsePlan("select * from  " +
-           table.tableIdentifier.table + " " + alias + " " + filter)
+           table.tableIdentifier.table + " " + alias.getOrElse("") + " " + filter)
       }
       newPlan transform {
-        case UnresolvedRelation(t, Some(a))
-          if !transformed && t == table.tableIdentifier && a == alias =>
+        case CarbonUnresolvedRelation(t)
+          if !transformed && t == table.tableIdentifier =>
           transformed = true
-          // Add the filter condition of update statement  on destination table
-          SubqueryAlias(alias, updatedSelectPlan, Option(table.tableIdentifier))
+
+          CarbonReflectionUtils.getSubqueryAlias(
+            sparkSession,
+            alias,
+            updatedSelectPlan,
+            Some(table.tableIdentifier))
       }
     } else {
       updatedSelectPlan
     }
-    val tid = CarbonTableIdentifierImplicit.toTableIdentifier(Seq(table.tableIdentifier.toString()))
-    val tidSeq = Seq(getDB.getDatabaseName(tid.database, sparkSession))
-    val destinationTable = UnresolvedRelation(table.tableIdentifier, table.alias)
+    val destinationTable = CarbonReflectionUtils.getUnresolvedRelation(table.tableIdentifier, alias)
+
     ProjectForUpdate(destinationTable, columns, Seq(finalPlan))
   }
 
-  def processDeleteRecordsQuery(selectStmt: String, table: UnresolvedRelation): LogicalPlan = {
-   val tidSeq = Seq(getDB.getDatabaseName(table.tableIdentifier.database, sparkSession),
-     table.tableIdentifier.table)
+
+  def processDeleteRecordsQuery(selectStmt: String,
+      alias: Option[String],
+      table: UnresolvedRelation): LogicalPlan = {
     var addedTupleId = false
     val parsePlan = parser.parsePlan(selectStmt)
+
     val selectPlan = parsePlan transform {
       case relation: UnresolvedRelation
         if table.tableIdentifier == relation.tableIdentifier && !addedTupleId =>
         addedTupleId = true
         val tupleId = UnresolvedAlias(Alias(UnresolvedFunction("getTupleId",
           Seq.empty, isDistinct = false), "tupleId")())
-        val alias = table.alias match {
-          case Some(alias) => Some(table.alias.toSeq)
-          case _ => None
+
+        val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
+        val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
+        if (carbonTable != null) {
+          if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
+            throw new UnsupportedOperationException(
+              "Delete operation is not supported for tables which have a pre-aggregate table. " +
+              "Drop pre-aggregate tables to continue.")
+          }
+          if (carbonTable.isChildDataMap) {
+            throw new UnsupportedOperationException(
+              "Delete operation is not supported for pre-aggregate table")
+          }
+          val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+          if (!indexSchemas.isEmpty) {
+            throw new UnsupportedOperationException(
+              "Delete operation is not supported for table which has index datamaps")
+          }
         }
-        val projList = Seq(
-          UnresolvedAlias(UnresolvedStar(alias)), tupleId)
-        // include tuple id in subqury
-        Project(projList, relation)
+        // include tuple id in subquery
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          Project(projList, relation)
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          alias match {
+            case Some(_) =>
+              val subqueryAlias = CarbonReflectionUtils.getSubqueryAlias(
+                sparkSession,
+                alias,
+                relation,
+                Some(table.tableIdentifier))
+              Project(projList, subqueryAlias)
+            case _ => Project(projList, relation)
+          }
+        } else {
+          throw new UnsupportedOperationException("Unsupported Spark version.")
+        }
     }
-    ProjectForDeleteCommand(
+    CarbonProjectForDeleteCommand(
       selectPlan,
-      tidSeq,
+      table.tableIdentifier.database,
+      table.tableIdentifier.table,
       System.currentTimeMillis().toString)
   }
 
   override def apply(logicalplan: LogicalPlan): LogicalPlan = {
 
     logicalplan transform {
-      case UpdateTable(t, cols, sel, where) => processUpdateQuery(t, cols, sel, where)
-      case DeleteRecords(statement, table) => processDeleteRecordsQuery(statement, table)
+      case UpdateTable(t, cols, sel, alias, where) => processUpdateQuery(t, cols, sel, alias, where)
+      case DeleteRecords(statement, alias, table) =>
+        processDeleteRecordsQuery(
+          statement,
+          alias,
+          table)
     }
   }
 }
+
+/**
+ * Insert into carbon table from other source
+ */
+case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[LogicalPlan] {
+  def apply(plan: LogicalPlan): LogicalPlan = {
+    plan.transform {
+      // Wait until children are resolved.
+      case p: LogicalPlan if !p.childrenResolved => p
+
+      case p@InsertIntoTable(relation: LogicalRelation, _, child, _, _)
+        if relation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        castChildOutput(p, relation, child)
+    }
+  }
+
+  def castChildOutput(p: InsertIntoTable,
+      relation: LogicalRelation,
+      child: LogicalPlan): LogicalPlan = {
+    val carbonDSRelation = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+    if (carbonDSRelation.carbonRelation.output.size > CarbonCommonConstants
+      .DEFAULT_MAX_NUMBER_OF_COLUMNS) {
+      CarbonException.analysisException(
+        s"Maximum number of columns supported: " +
+          s"${CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS}")
+    }
+    if (child.output.size >= carbonDSRelation.carbonRelation.output.size ||
+        carbonDSRelation.carbonTable.isHivePartitionTable) {
+      val newChildOutput = child.output.zipWithIndex.map { columnWithIndex =>
+        columnWithIndex._1 match {
+          case attr: Attribute =>
+            Alias(attr, s"col${ columnWithIndex._2 }")(NamedExpression.newExprId)
+          case attr => attr
+        }
+      }
+      val newChild: LogicalPlan = if (newChildOutput == child.output) {
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          CarbonReflectionUtils.getField("child", p).asInstanceOf[LogicalPlan]
+        } else if (SparkUtil.isSparkVersionEqualTo("2.2")) {
+          CarbonReflectionUtils.getField("query", p).asInstanceOf[LogicalPlan]
+        } else {
+          throw new UnsupportedOperationException(s"Spark version $SPARK_VERSION is not supported")
+        }
+      } else {
+        Project(newChildOutput, child)
+      }
+
+      val overwrite = CarbonReflectionUtils.getOverWriteOption("overwrite", p)
+
+      InsertIntoCarbonTable(carbonDSRelation, p.partition, newChild, overwrite, true)
+    } else {
+      CarbonException.analysisException(
+        "Cannot insert into target table because number of columns mismatch")
+    }
+  }
+}
+

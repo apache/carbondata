@@ -18,10 +18,12 @@ package org.apache.carbondata.core.datastore.chunk.reader;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Interface for reading the data chunk
@@ -34,20 +36,20 @@ public interface DimensionColumnChunkReader {
    * Below method will be used to read the chunk based on block indexes
    *
    * @param fileReader   file reader to read the blocks from file
-   * @param blockletIndexes blocklets to be read
+   * @param columnIndexRange blocklets to be read
    * @return dimension column chunks
    */
-  DimensionRawColumnChunk[] readRawDimensionChunks(FileHolder fileReader, int[][] blockletIndexes)
+  DimensionRawColumnChunk[] readRawDimensionChunks(FileReader fileReader, int[][] columnIndexRange)
       throws IOException;
 
   /**
    * Below method will be used to read the chunk based on block index
    *
    * @param fileReader file reader to read the blocks from file
-   * @param blockletIndex block to be read
+   * @param columnIndex column to be read
    * @return dimension column chunk
    */
-  DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader, int blockletIndex)
+  DimensionRawColumnChunk readRawDimensionChunk(FileReader fileReader, int columnIndex)
       throws IOException;
 
   /**
@@ -58,6 +60,13 @@ public interface DimensionColumnChunkReader {
    * @return
    * @throws IOException
    */
-  DimensionColumnDataChunk convertToDimensionChunk(DimensionRawColumnChunk dimensionRawColumnChunk,
-      int pageNumber) throws IOException, MemoryException;
+  DimensionColumnPage decodeColumnPage(DimensionRawColumnChunk dimensionRawColumnChunk,
+      int pageNumber, ReusableDataBuffer reusableDataBuffer) throws IOException, MemoryException;
+
+  /**
+   * Decodes the raw data chunk of given page number and fill the vector with decoded data.
+   */
+  void decodeColumnPageAndFillVector(DimensionRawColumnChunk dimensionRawColumnChunk,
+      int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
+      throws IOException, MemoryException;
 }

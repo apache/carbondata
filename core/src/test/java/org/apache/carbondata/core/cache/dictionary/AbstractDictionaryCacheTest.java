@@ -30,10 +30,10 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.carbondata.core.cache.Cache;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -46,6 +46,8 @@ public class AbstractDictionaryCacheTest {
   protected static final String PROPERTY_FILE_NAME = "carbonTest.properties";
 
   protected CarbonTableIdentifier carbonTableIdentifier;
+
+  protected AbsoluteTableIdentifier identifier;
 
   protected String databaseName;
 
@@ -85,9 +87,9 @@ public class AbstractDictionaryCacheTest {
    * prepare the dataset required for running test cases
    */
   protected void prepareDataSet() {
-    dataSet1 = Arrays.asList(new String[] { "a", "b", "c" });
-    dataSet2 = Arrays.asList(new String[] { "d", "e", "f" });
-    dataSet3 = Arrays.asList(new String[] { "b", "c", "a", "d" });
+    dataSet1 = Arrays.asList("a", "b", "c");
+    dataSet2 = Arrays.asList("d", "e", "f");
+    dataSet3 = Arrays.asList("b", "c", "a", "d");
   }
 
   /**
@@ -103,10 +105,9 @@ public class AbstractDictionaryCacheTest {
 
   protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
       String columnId) {
-	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.STRING);
-    return new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
-        DataType.STRING,
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
+	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataTypes.STRING);
+    return new DictionaryColumnUniqueIdentifier(identifier, columnIdentifier,
+        DataTypes.STRING);
   }
 
   /**
@@ -128,14 +129,11 @@ public class AbstractDictionaryCacheTest {
       throws IOException {
 	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, null);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(),
-            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
+        new DictionaryColumnUniqueIdentifier(identifier, columnIdentifier,
+            columnIdentifier.getDataType());
     CarbonDictionaryWriter carbonDictionaryWriter =
-        new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier);
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-    CarbonUtil.checkAndCreateFolder(carbonTablePath.getMetadataDirectoryPath());
+        new CarbonDictionaryWriterImpl(dictionaryColumnUniqueIdentifier);
+    CarbonUtil.checkAndCreateFolder(CarbonTablePath.getMetadataPath(identifier.getTablePath()));
     List<byte[]> valueList = convertStringListToByteArray(data);
     try {
       carbonDictionaryWriter.write(valueList);

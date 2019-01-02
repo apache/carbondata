@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -29,12 +30,22 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.format.FileFooter;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Below class will be used to convert the thrift object of data file
  * meta data to wrapper object for version 2 data file
  */
 
 public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
+
+  public DataFileFooterConverter2(Configuration configuration) {
+    super(configuration);
+  }
+
+  public DataFileFooterConverter2() {
+    super(FileFactory.getConfiguration());
+  }
 
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta
@@ -51,7 +62,7 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     List<org.apache.carbondata.format.ColumnSchema> table_columns = footer.getTable_columns();
     for (int i = 0; i < table_columns.size(); i++) {
-      columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+      columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
     }
     dataFileFooter.setColumnInTable(columnSchemaList);
 
@@ -126,13 +137,8 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
     ColumnSchema columnSchema = null;
     for (int i = 0; i < columnSchemaList.size(); i++) {
       columnSchema = columnSchemaList.get(i);
-      if (columnSchema.isDimensionColumn() && columnSchema.isColumnar()) {
+      if (columnSchema.isDimensionColumn()) {
         numberOfDimensionColumns++;
-      } else if (columnSchema.isDimensionColumn()) {
-        if (previousColumnGroupId != columnSchema.getColumnGroupId()) {
-          previousColumnGroupId = columnSchema.getColumnGroupId();
-          numberOfDimensionColumns++;
-        }
       } else {
         break;
       }
@@ -141,6 +147,6 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
   }
 
   @Override public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
-    return null;
+    return new DataFileFooterConverter(configuration).getSchema(tableBlockInfo);
   }
 }

@@ -20,7 +20,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +30,11 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.CarbonUtil;
+
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Persisting the table information
@@ -58,7 +64,10 @@ public class TableSchema implements Serializable, Writable {
   /**
    * History of schema evolution of this table
    */
-  private SchemaEvolution schemaEvalution;
+  // the old version the field name for schemaEvolution was schemaEvalution, so to de-serialization
+  // old schema provided the old field name in the alternate filed using annotation
+  @SerializedName(value = "schemaEvolution", alternate = "schemaEvalution")
+  private SchemaEvolution schemaEvolution;
 
   /**
    * contains all key value pairs for table properties set by user in craete DDL
@@ -77,6 +86,7 @@ public class TableSchema implements Serializable, Writable {
 
   public TableSchema() {
     this.listOfColumns = new ArrayList<ColumnSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    this.tableProperties = new HashMap<String, String>();
   }
 
   /**
@@ -108,17 +118,17 @@ public class TableSchema implements Serializable, Writable {
   }
 
   /**
-   * @return the schemaEvalution
+   * @return the schemaEvolution
    */
-  public SchemaEvolution getSchemaEvalution() {
-    return schemaEvalution;
+  public SchemaEvolution getSchemaEvolution() {
+    return schemaEvolution;
   }
 
   /**
-   * @param schemaEvalution the schemaEvalution to set
+   * @param schemaEvolution the schemaEvolution to set
    */
-  public void setSchemaEvalution(SchemaEvolution schemaEvalution) {
-    this.schemaEvalution = schemaEvalution;
+  public void setSchemaEvolution(SchemaEvolution schemaEvolution) {
+    this.schemaEvolution = schemaEvolution;
   }
 
   /**
@@ -210,6 +220,25 @@ public class TableSchema implements Serializable, Writable {
     for (ColumnSchema column : listOfColumns) {
       column.write(out);
     }
+
+    out.writeInt(tableProperties.size());
+    for (Map.Entry<String, String> entry : tableProperties.entrySet()) {
+      out.writeUTF(entry.getKey());
+      out.writeUTF(entry.getValue());
+    }
+
+    if (null != partitionInfo) {
+      out.writeBoolean(true);
+      partitionInfo.write(out);
+    } else {
+      out.writeBoolean(false);
+    }
+    if (null != bucketingInfo) {
+      out.writeBoolean(true);
+      bucketingInfo.write(out);
+    } else {
+      out.writeBoolean(false);
+    }
   }
 
   @Override
@@ -223,6 +252,59 @@ public class TableSchema implements Serializable, Writable {
       schema.readFields(in);
       this.listOfColumns.add(schema);
     }
+
+    int propertySize = in.readInt();
+    this.tableProperties = new HashMap<String, String>(propertySize);
+    for (int i = 0; i < propertySize; i++) {
+      String key = in.readUTF();
+      String value = in.readUTF();
+      this.tableProperties.put(key, value);
+    }
+
+    boolean partitionExists = in.readBoolean();
+    if (partitionExists) {
+      this.partitionInfo = new PartitionInfo();
+      this.partitionInfo.readFields(in);
+    }
+
+    boolean bucketingExists = in.readBoolean();
+    if (bucketingExists) {
+      this.bucketingInfo = new BucketingInfo();
+      this.bucketingInfo.readFields(in);
+    }
+  }
+
+  /**
+   * Below method will be used to build child schema object which will be stored in
+   * parent table
+   *
+   */
+  public DataMapSchema buildChildSchema(String dataMapName, String className, String databaseName,
+      String queryString, String queryType) throws UnsupportedEncodingException {
+    RelationIdentifier relationIdentifier =
+        new RelationIdentifier(databaseName, tableName, tableId);
+    Map<String, String> properties = new HashMap<>();
+    if (queryString != null) {
+      properties.put(DataMapProperty.CHILD_SELECT_QUERY,
+          CarbonUtil.encodeToString(queryString.trim().getBytes(
+              // replace = to with & as hive metastore does not allow = inside. For base 64
+              // only = is allowed as special character , so replace with &
+              CarbonCommonConstants.DEFAULT_CHARSET)).replace("=", "&"));
+      properties.put(DataMapProperty.QUERY_TYPE, queryType);
+    }
+    DataMapSchema dataMapSchema = new DataMapSchema(dataMapName, className);
+    dataMapSchema.setProperties(properties);
+
+    dataMapSchema.setChildSchema(this);
+    dataMapSchema.setRelationIdentifier(relationIdentifier);
+    return dataMapSchema;
+  }
+
+  /**
+   * Create a {@link TableSchemaBuilder} to create {@link TableSchema}
+   */
+  public static TableSchemaBuilder builder() {
+    return new TableSchemaBuilder();
   }
 
 }

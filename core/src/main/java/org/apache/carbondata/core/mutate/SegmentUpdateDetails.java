@@ -19,8 +19,10 @@ package org.apache.carbondata.core.mutate;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class stores the segment details of table update status file
@@ -30,7 +32,7 @@ public class SegmentUpdateDetails implements Serializable {
   private static final long serialVersionUID = 1206104914918491724L;
   private String segmentName;
   private String blockName;
-  private String status = "";
+  private SegmentStatus segmentStatus;
   private String deleteDeltaEndTimestamp = "";
   private String deleteDeltaStartTimestamp = "";
   private String actualBlockName;
@@ -39,7 +41,7 @@ public class SegmentUpdateDetails implements Serializable {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SegmentUpdateDetails.class.getName());
 
   public String getDeleteDeltaEndTimestamp() {
@@ -74,12 +76,12 @@ public class SegmentUpdateDetails implements Serializable {
     this.deleteDeltaStartTimestamp = deleteDeltaStartTimestamp;
   }
 
-  public void setStatus(String status) {
-    this.status = status;
+  public void setSegmentStatus(SegmentStatus segmentStatus) {
+    this.segmentStatus = segmentStatus;
   }
 
-  public String getStatus() {
-    return this.status;
+  public SegmentStatus getSegmentStatus() {
+    return this.segmentStatus;
   }
 
   @Override public int hashCode() {

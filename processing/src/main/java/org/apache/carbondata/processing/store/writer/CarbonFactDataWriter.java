@@ -22,7 +22,7 @@ import java.io.IOException;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.store.TablePage;
 
-public interface CarbonFactDataWriter<T> {
+public interface CarbonFactDataWriter {
 
   /**
    * write a encoded table page
@@ -35,7 +35,7 @@ public interface CarbonFactDataWriter<T> {
    *
    * @throws CarbonDataWriterException
    */
-  void writeFooterToFile() throws CarbonDataWriterException;
+  void writeFooter() throws CarbonDataWriterException;
 
   /**
    * Below method will be used to initialise the writer

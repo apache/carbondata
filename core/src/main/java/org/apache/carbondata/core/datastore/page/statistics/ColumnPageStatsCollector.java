@@ -26,6 +26,7 @@ public interface ColumnPageStatsCollector {
   void update(int value);
   void update(long value);
   void update(double value);
+  void update(float value);
   void update(BigDecimal value);
   void update(byte[] value);
 

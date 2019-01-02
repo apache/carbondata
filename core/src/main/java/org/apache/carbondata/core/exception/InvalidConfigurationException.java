@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.exception;
 
-import java.util.Locale;
-
 public class InvalidConfigurationException extends Exception {
 
   /**
@@ -49,33 +47,6 @@ public class InvalidConfigurationException extends Exception {
   public InvalidConfigurationException(String msg, Throwable t) {
     super(msg, t);
     this.msg = msg;
-  }
-
-  /**
-   * Constructor
-   *
-   * @param t
-   */
-  public InvalidConfigurationException(Throwable t) {
-    super(t);
-  }
-
-  /**
-   * This method is used to get the localized message.
-   *
-   * @param locale - A Locale object represents a specific geographical,
-   *               political, or cultural region.
-   * @return - Localized error message.
-   */
-  public String getLocalizedMessage(Locale locale) {
-    return "";
-  }
-
-  /**
-   * getLocalizedMessage
-   */
-  @Override public String getLocalizedMessage() {
-    return super.getLocalizedMessage();
   }
 
   /**

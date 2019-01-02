@@ -17,22 +17,24 @@
 
 package org.apache.spark.sql.common.util
 
-import java.io.{FileInputStream, ObjectInputStream, ObjectOutputStream}
-import java.math
-import java.math.RoundingMode
+import java.io.{ObjectInputStream, ObjectOutputStream}
 import java.util.{Locale, TimeZone}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import scala.collection.JavaConversions._
 
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.execution.command.LoadDataCommand
+import org.apache.spark.sql.hive.CarbonSessionCatalog
 import org.apache.spark.sql.test.{ResourceRegisterAndCopier, TestQueryExecutor}
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{CarbonSession, DataFrame, Row, SQLContext}
 import org.scalatest.Suite
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 class QueryTest extends PlanTest with Suite {
 
@@ -40,10 +42,10 @@ class QueryTest extends PlanTest with Suite {
 
   val DOLLAR = "$"
 
-  // Timezone is fixed to America/Los_Angeles for those timezone sensitive tests (timestamp_*)
-  TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"))
   // Add Locale setting
   Locale.setDefault(Locale.US)
+  CarbonProperties.getInstance()
+    .addProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP, "false")
 
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the
@@ -84,20 +86,32 @@ class QueryTest extends PlanTest with Suite {
     checkAnswer(df, expectedAnswer.collect())
   }
 
-  protected def checkAnswer(carbon: String, hive: String, uniqueIdentifier:String): Unit = {
-    val path = TestQueryExecutor.hiveresultpath + "/"+uniqueIdentifier
+  protected def checkAnswer(carbon: String, hive: String, uniqueIdentifier: String): Unit = {
+    val path = TestQueryExecutor.hiveresultpath + "/" + uniqueIdentifier
     if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-      val objinp = new ObjectInputStream(FileFactory.getDataInputStream(path, FileFactory.getFileType(path)))
+      val objinp = new ObjectInputStream(FileFactory
+        .getDataInputStream(path, FileFactory.getFileType(path)))
       val rows = objinp.readObject().asInstanceOf[Array[Row]]
       objinp.close()
-      checkAnswer(sql(carbon), rows)
+      QueryTest.checkAnswer(sql(carbon), rows) match {
+        case Some(errorMessage) => {
+          FileFactory.deleteFile(path, FileFactory.getFileType(path))
+          writeAndCheckAnswer(carbon, hive, path)
+        }
+        case None =>
+      }
     } else {
-      val rows = sql(hive).collect()
-      val obj = new ObjectOutputStream(FileFactory.getDataOutputStream(path, FileFactory.getFileType(path)))
-      obj.writeObject(rows)
-      obj.close()
-      checkAnswer(sql(carbon), rows)
+      writeAndCheckAnswer(carbon, hive, path)
     }
+  }
+
+  private def writeAndCheckAnswer(carbon: String, hive: String, path: String): Unit = {
+    val rows = sql(hive).collect()
+    val obj = new ObjectOutputStream(FileFactory.getDataOutputStream(path, FileFactory
+      .getFileType(path)))
+    obj.writeObject(rows)
+    obj.close()
+    checkAnswer(sql(carbon), rows)
   }
 
   protected def checkAnswer(carbon: String, expectedAnswer: Seq[Row], uniqueIdentifier:String): Unit = {
@@ -125,7 +139,12 @@ class QueryTest extends PlanTest with Suite {
 
   val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
 
+  sqlContext.sparkSession.experimental.extraOptimizations = Seq(new CarbonFileIndexReplaceRule)
+
   val resourcesPath = TestQueryExecutor.resourcesPath
+
+  val hiveClient = sqlContext.sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
+    .getClient();
 }
 
 object QueryTest {
@@ -159,6 +178,15 @@ object QueryTest {
         Row.fromSeq(s.toSeq.map {
           case d: java.math.BigDecimal => BigDecimal(d)
           case b: Array[Byte] => b.toSeq
+          case d : Double =>
+            if (!d.isInfinite && !d.isNaN) {
+              var bd = BigDecimal(d)
+              bd = bd.setScale(5, BigDecimal.RoundingMode.UP)
+              bd.doubleValue()
+            }
+            else {
+              d
+            }
           case o => o
         })
       }

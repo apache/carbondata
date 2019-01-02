@@ -29,11 +29,19 @@ import org.apache.carbondata.core.memory.CarbonUnsafe;
  */
 public final class ByteUtil {
 
-  public static final int SIZEOF_LONG = 8;
+  public static final int SIZEOF_BYTE = 1;
+
+  public static final int SIZEOF_SHORT = 2;
+
+  public static final int SIZEOF_SHORT_INT = 3;
 
   public static final int SIZEOF_INT = 4;
 
-  public static final int SIZEOF_SHORT = 2;
+  public static final int SIZEOF_FLOAT = 4;
+
+  public static final int SIZEOF_LONG = 8;
+
+  public static final int SIZEOF_DOUBLE = 8;
 
   public static final String UTF8_CSN = StandardCharsets.UTF_8.name();
 
@@ -187,6 +195,13 @@ public final class ByteUtil {
       return length1 - length2;
     }
 
+    /**
+     * Return negative value if {@code buffer1} less than {@code buffer2},
+     * return 0 if they are equal, otherwise return positive value.
+     * @param buffer1 value to compare
+     * @param buffer2 value to compare
+     * @return compare result
+     */
     public int compareTo(byte[] buffer1, byte[] buffer2) {
 
       // Short circuit equal case
@@ -408,7 +423,6 @@ public final class ByteUtil {
    * @return
    */
   public static byte[] toBytes(short val) {
-    val = (short)(val ^ Short.MIN_VALUE);
     byte[] b = new byte[SIZEOF_SHORT];
     b[1] = (byte) val;
     val >>= 8;
@@ -442,7 +456,7 @@ public final class ByteUtil {
       n <<= 8;
       n ^= bytes[offset + 1] & 0xFF;
     }
-    return (short)(n ^ Short.MIN_VALUE);
+    return n;
   }
 
   /**
@@ -452,7 +466,6 @@ public final class ByteUtil {
    * @return
    */
   public static byte[] toBytes(int val) {
-    val = val ^ Integer.MIN_VALUE;
     byte[] b = new byte[4];
     for (int i = 3; i > 0; i--) {
       b[i] = (byte) val;
@@ -513,12 +526,16 @@ public final class ByteUtil {
         n ^= bytes[i] & 0xFF;
       }
     }
-    return n ^ Integer.MIN_VALUE;
+    return n;
   }
 
   public static int toInt(byte[] bytes, int offset) {
-    return (((int)bytes[offset]) << 24) + (((int)bytes[offset + 1]) << 16) +
-        (((int)bytes[offset + 2]) << 8) + bytes[offset + 3];
+    return (((int)bytes[offset] & 0xff) << 24) + (((int)bytes[offset + 1] & 0xff) << 16) +
+        (((int)bytes[offset + 2] & 0xff) << 8) + ((int)bytes[offset + 3] & 0xff);
+  }
+
+  public static int toShort(byte[] bytes, int offset) {
+    return (((int)bytes[offset] & 0xff) << 8) + ((int)bytes[offset + 1] & 0xff);
   }
 
   public static void setInt(byte[] data, int offset, int value) {
@@ -528,6 +545,11 @@ public final class ByteUtil {
     data[offset + 3] = (byte) value;
   }
 
+  public static void setShort(byte[] data, int offset, int value) {
+    data[offset] = (byte) (value >> 8);
+    data[offset + 1] = (byte) value;
+  }
+
   /**
    * long => byte[]
    *
@@ -535,7 +557,6 @@ public final class ByteUtil {
    * @return
    */
   public static byte[] toBytes(long val) {
-    val = val ^ Long.MIN_VALUE;
     byte[] b = new byte[8];
     for (int i = 7; i > 0; i--) {
       b[i] = (byte) val;
@@ -543,6 +564,14 @@ public final class ByteUtil {
     }
     b[0] = (byte) val;
     return b;
+  }
+
+  public static byte[] toBytes(double val) {
+    return toBytes(Double.doubleToLongBits(val));
+  }
+
+  public static double toDouble(byte[] value, int offset, int length) {
+    return Double.longBitsToDouble(toLong(value, offset, length));
   }
 
   /**
@@ -566,7 +595,7 @@ public final class ByteUtil {
         l ^= bytes[i] & 0xFF;
       }
     }
-    return l ^ Long.MIN_VALUE;
+    return l;
   }
 
   private static IllegalArgumentException explainWrongLengthOrOffset(final byte[] bytes,
@@ -646,4 +675,86 @@ public final class ByteUtil {
     return flattenedData;
   }
 
+  /**
+   * If number type column is in sort_columns, the column will be no-dictionary column.
+   * It will compare byte arrays to sort the data.
+   * For example the binary string of int value as follows.
+   * 1  : 00000000 00000000 00000000 00000001
+   * -1 : 11111111 11111111 11111111 11111111
+   * In this case, the compare method of byte arrays will return a wrong result.(1 < -1)
+   * The root cause is that the sign bit of negative number is 1.
+   * These XOR methods will change the sign bit as follows.
+   * 1  ^ MIN_VALUE : 10000000 00000000 00000000 00000001
+   * -1 ^ MIN_VALUE : 01111111 11111111 11111111 11111111
+   * After the transform, the compare method of byte arrays will return a right result.(1 > -1)
+   */
+  public static byte[] toXorBytes(short val) {
+    val = (short) (val ^ Short.MIN_VALUE);
+    return toBytes(val);
+  }
+
+  public static byte[] toXorBytes(int val) {
+    val = val ^ Integer.MIN_VALUE;
+    return toBytes(val);
+  }
+
+  public static byte[] toXorBytes(long val) {
+    val = val ^ Long.MIN_VALUE;
+    return toBytes(val);
+  }
+
+  public static byte[] toXorBytes(double val) {
+    return toXorBytes(Double.doubleToLongBits(val));
+  }
+
+  public static byte[] toXorBytes(float val) {
+    return toXorBytes(Float.floatToIntBits(val));
+  }
+
+  /**
+   * The following methods convert byte array back to the real value.
+   */
+  public static short toXorShort(byte[] bytes, int offset, final int length) {
+    return (short) (toShort(bytes, offset, length) ^ Short.MIN_VALUE);
+  }
+
+  public static int toXorInt(byte[] bytes, int offset, final int length) {
+    return toInt(bytes, offset, length) ^ Integer.MIN_VALUE;
+  }
+
+  public static long toXorLong(byte[] bytes, int offset, final int length) {
+    return toLong(bytes, offset, length) ^ Long.MIN_VALUE;
+  }
+
+  public static double toXorDouble(byte[] value, int offset, int length) {
+    return Double.longBitsToDouble(toXorLong(value, offset, length));
+  }
+
+  public static float toXorFloat(byte[] value, int offset, int length) {
+    return Float.intBitsToFloat(toXorInt(value, offset, length));
+  }
+
+  public static int toIntLittleEndian(byte[] bytes, int offset) {
+    return (((int) bytes[offset + 3] & 0xff) << 24) + (((int) bytes[offset + 2] & 0xff) << 16) + (
+        ((int) bytes[offset + 1] & 0xff) << 8) + ((int) bytes[offset] & 0xff);
+  }
+
+  public static short toShortLittleEndian(byte[] bytes, int offset) {
+    return (short) ((((int) bytes[offset + 1] & 0xff) << 8) + ((int) bytes[offset] & 0xff));
+  }
+
+  public static double toDoubleLittleEndian(byte[] bytes, int offset) {
+    return Double.longBitsToDouble(toLongLittleEndian(bytes, offset));
+  }
+
+  public static float toFloatLittleEndian(byte[] bytes, int offset) {
+    return Float.intBitsToFloat(toIntLittleEndian(bytes, offset));
+  }
+
+  public static long toLongLittleEndian(byte[] bytes, int offset) {
+    return ((((long) bytes[offset + 7]) << 56) | (((long) bytes[offset + 6] & 0xff) << 48) | (
+        ((long) bytes[offset + 5] & 0xff) << 40) | (((long) bytes[offset + 4] & 0xff) << 32) | (
+        ((long) bytes[offset + 3] & 0xff) << 24) | (((long) bytes[offset + 2] & 0xff) << 16) | (
+        ((long) bytes[offset + 1] & 0xff) << 8) | (((long) bytes[offset] & 0xff)));
+  }
 }

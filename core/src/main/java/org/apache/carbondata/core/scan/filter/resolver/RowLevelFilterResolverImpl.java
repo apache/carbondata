@@ -25,7 +25,6 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
-import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
@@ -40,7 +39,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
 
   public RowLevelFilterResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
-    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false);
+    super(exp, isExpressionResolve, isIncludeFilter, false);
     dimColEvaluatorInfoList =
         new ArrayList<DimColumnResolvedFilterInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(
@@ -52,8 +51,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
    * Method which will resolve the filter expression by converting the filter member
    * to its assigned dictionary values.
    */
-  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier,
-      TableProvider tableProvider) {
+  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
     DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = null;
     MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo = null;
     int index = 0;

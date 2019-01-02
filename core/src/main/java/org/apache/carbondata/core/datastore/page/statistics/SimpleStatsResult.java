@@ -29,7 +29,6 @@ public interface SimpleStatsResult {
 
   DataType getDataType();
 
-  int getScale();
+  boolean writeMinMax();
 
-  int getPrecision();
 }

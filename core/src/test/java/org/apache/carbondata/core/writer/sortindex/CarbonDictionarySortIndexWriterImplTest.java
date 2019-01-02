@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriterImpl;
 
@@ -45,6 +45,7 @@ public class CarbonDictionarySortIndexWriterImplTest {
 
   private String storePath;
   private CarbonTableIdentifier carbonTableIdentifier = null;
+  private AbsoluteTableIdentifier absoluteTableIdentifier = null;
   private ColumnIdentifier columnIdentifier = null;
   private CarbonDictionaryWriter dictionaryWriter = null;
   private CarbonDictionarySortIndexWriter dictionarySortIndexWriter = null;
@@ -54,15 +55,20 @@ public class CarbonDictionarySortIndexWriterImplTest {
     storePath = "target/carbonStore";
     carbonTableIdentifier =
         new CarbonTableIdentifier("testSchema", "carbon", UUID.randomUUID().toString());
+    String tablePath =
+        storePath + "/" + carbonTableIdentifier.getDatabaseName() + "/" + carbonTableIdentifier
+            .getTableName();
+    absoluteTableIdentifier = AbsoluteTableIdentifier.from(tablePath, carbonTableIdentifier);
     columnIdentifier = new ColumnIdentifier("Name", null, null);
-    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier, columnIdentifier.getDataType(),
-        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
+    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
+            columnIdentifier.getDataType());
     dictionaryWriter =
-        new CarbonDictionaryWriterImpl(storePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier);
+        new CarbonDictionaryWriterImpl(dictionaryColumnUniqueIdentifier);
     dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath);
+        new CarbonDictionarySortIndexWriterImpl(dictionaryColumnUniqueIdentifier);
     carbonDictionarySortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath);
+        new CarbonDictionarySortIndexReaderImpl(dictionaryColumnUniqueIdentifier);
   }
 
   /**

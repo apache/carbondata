@@ -20,9 +20,12 @@ package org.apache.carbondata.core.datastore.chunk.store.impl.unsafe;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.core.memory.MemoryAllocatorFactory;
 import org.apache.carbondata.core.memory.MemoryBlock;
+import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 /**
  * Responsibility is to store dimension data in memory. storage can be on heap
@@ -60,6 +63,8 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    */
   protected boolean isMemoryOccupied;
 
+  private final String taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+
   /**
    * Constructor
    *
@@ -68,10 +73,14 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * @param numberOfRows   total number of rows
    */
   public UnsafeAbstractDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
-      int numberOfRows) {
-    // allocating the data page
-    this.dataPageMemoryBlock =
-        MemoryAllocatorFactory.INSATANCE.getMemoryAllocator().allocate(totalSize);
+      int numberOfRows, int dataLength) {
+    try {
+      // allocating the data page
+      this.dataPageMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, totalSize);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
+    this.dataLength = dataLength;
     this.isExplicitSorted = isInvertedIdex;
   }
 
@@ -85,7 +94,6 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
   @Override public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
       final byte[] data) {
     assert (!isMemoryOccupied);
-    this.dataLength = data.length;
     this.invertedIndexReverseOffset = dataLength;
     if (isExplicitSorted) {
       this.invertedIndexReverseOffset +=
@@ -108,6 +116,11 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
     }
   }
 
+  @Override public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo) {
+    throw new UnsupportedOperationException("This method not supposed to be called here");
+  }
+
   /**
    * Below method will be used to free the memory occupied by the column chunk
    */
@@ -116,7 +129,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
       return;
     }
     // free data page memory
-    MemoryAllocatorFactory.INSATANCE.getMemoryAllocator().free(dataPageMemoryBlock);
+    UnsafeMemoryManager.INSTANCE.freeMemory(taskId, dataPageMemoryBlock);
     isMemoryReleased = true;
     this.dataPageMemoryBlock = null;
     this.isMemoryOccupied = false;
@@ -131,6 +144,18 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
   @Override public int getInvertedIndex(int rowId) {
     return CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + dataLength + ((long)rowId
+            * CarbonCommonConstants.INT_SIZE_IN_BYTE));
+  }
+
+  /**
+   * Below method will be used to get the reverse inverted index
+   *
+   * @param rowId row id
+   * @return inverted index based on row id passed
+   */
+  @Override public int getInvertedReverseIndex(int rowId) {
+    return CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
+        dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
             * CarbonCommonConstants.INT_SIZE_IN_BYTE));
   }
 

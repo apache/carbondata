@@ -51,4 +51,5 @@ public abstract class Expression implements Serializable {
 
   public abstract String getString();
 
+  public abstract String getStatement();
 }

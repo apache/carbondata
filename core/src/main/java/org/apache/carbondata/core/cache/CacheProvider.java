@@ -17,22 +17,20 @@
 
 package org.apache.carbondata.core.cache;
 
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.cache.dictionary.ForwardDictionaryCache;
 import org.apache.carbondata.core.cache.dictionary.ReverseDictionaryCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.BlockIndexStore;
-import org.apache.carbondata.core.datastore.SegmentTaskIndexStore;
-import org.apache.carbondata.core.datastore.block.AbstractIndex;
-import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
 import org.apache.carbondata.core.util.CarbonProperties;
+
+import org.apache.log4j.Logger;
 
 /**
  * Cache provider class which will create a cache based on given type
@@ -62,7 +60,7 @@ public class CacheProvider {
   /**
    * instance for CacheProvider LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CacheProvider.class.getName());
 
   /**
@@ -84,21 +82,45 @@ public class CacheProvider {
    * it is not present in the map
    *
    * @param cacheType       type of cache
-   * @param carbonStorePath store path
    * @param <K>
    * @param <V>
    * @return
    */
-  public <K, V> Cache<K, V> createCache(CacheType cacheType, String carbonStorePath) {
+  public <K, V> Cache<K, V> createCache(CacheType cacheType) {
     //check if lru cache is null, if null create one
     //check if cache is null for given cache type, if null create one
     if (!dictionaryCacheAlreadyExists(cacheType)) {
       synchronized (lock) {
         if (!dictionaryCacheAlreadyExists(cacheType)) {
           if (null == carbonLRUCache) {
-            createLRULevelCacheInstance(cacheType);
+            createLRULevelCacheInstance();
           }
-          createDictionaryCacheForGivenType(cacheType, carbonStorePath);
+          createDictionaryCacheForGivenType(cacheType);
+        }
+      }
+    }
+    return cacheTypeToCacheMap.get(cacheType);
+  }
+
+  /**
+   * This method will check if a cache already exists for given cache type and store
+   * if it is not present in the map
+   */
+  public <K, V> Cache<K, V> createCache(CacheType cacheType, String cacheClassName)
+      throws Exception {
+    //check if lru cache is null, if null create one
+    //check if cache is null for given cache type, if null create one
+    if (!dictionaryCacheAlreadyExists(cacheType)) {
+      synchronized (lock) {
+        if (!dictionaryCacheAlreadyExists(cacheType)) {
+          if (null == carbonLRUCache) {
+            createLRULevelCacheInstance();
+          }
+          Class<?> clazz = Class.forName(cacheClassName);
+          Constructor<?> constructor = clazz.getConstructors()[0];
+          constructor.setAccessible(true);
+          Cache cacheObject = (Cache) constructor.newInstance(carbonLRUCache);
+          cacheTypeToCacheMap.put(cacheType, cacheObject);
         }
       }
     }
@@ -109,26 +131,17 @@ public class CacheProvider {
    * This method will create the cache for given cache type
    *
    * @param cacheType       type of cache
-   * @param carbonStorePath store path
    */
-  private void createDictionaryCacheForGivenType(CacheType cacheType, String carbonStorePath) {
+  private void createDictionaryCacheForGivenType(CacheType cacheType) {
     Cache cacheObject = null;
     if (cacheType.equals(CacheType.REVERSE_DICTIONARY)) {
       cacheObject =
-          new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
-              carbonLRUCache);
+          new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonLRUCache);
     } else if (cacheType.equals(CacheType.FORWARD_DICTIONARY)) {
       cacheObject =
-          new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
-              carbonLRUCache);
-    } else if (cacheType.equals(cacheType.EXECUTOR_BTREE)) {
-      cacheObject = new BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex>(carbonStorePath,
-          carbonLRUCache);
-    } else if (cacheType.equals(cacheType.DRIVER_BTREE)) {
-      cacheObject =
-          new SegmentTaskIndexStore(carbonStorePath, carbonLRUCache);
+          new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonLRUCache);
     } else if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
-      cacheObject = new BlockletDataMapIndexStore(carbonStorePath, carbonLRUCache);
+      cacheObject = new BlockletDataMapIndexStore(carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);
   }
@@ -136,11 +149,11 @@ public class CacheProvider {
   /**
    * This method will create the lru cache instance based on the given type
    *
-   * @param cacheType
    */
-  private void createLRULevelCacheInstance(CacheType cacheType) {
+  private void createLRULevelCacheInstance() {
     boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
+        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
+            CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
     if (isDriver) {
       carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
           CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);

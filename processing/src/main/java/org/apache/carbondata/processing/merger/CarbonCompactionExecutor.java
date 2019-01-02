@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -34,19 +33,24 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TaskBlockInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
-import org.apache.carbondata.core.scan.model.QueryDimension;
-import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.result.BatchResult;
+import org.apache.carbondata.core.scan.model.QueryModelBuilder;
+import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
+import org.apache.carbondata.core.stats.QueryStatistic;
+import org.apache.carbondata.core.stats.QueryStatisticsConstants;
+import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.DataTypeConverter;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * Executor class for executing the query on the selected segments to be merged.
@@ -54,12 +58,14 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  */
 public class CarbonCompactionExecutor {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonCompactionExecutor.class.getName());
   private final Map<String, List<DataFileFooter>> dataFileMetadataSegMapping;
   private final SegmentProperties destinationSegProperties;
   private final Map<String, TaskBlockInfo> segmentMapping;
   private List<QueryExecutor> queryExecutorList;
+  private List<QueryStatisticsRecorder> queryStatisticsRecorders =
+      new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   private CarbonTable carbonTable;
   private QueryModel queryModel;
 
@@ -68,6 +74,9 @@ public class CarbonCompactionExecutor {
    * Based on this decision will be taken whether complete data has to be sorted again
    */
   private boolean restructuredBlockExists;
+
+  // converter for UTF8String and decimal conversion
+  private DataTypeConverter dataTypeConverter;
 
   /**
    * Constructor
@@ -81,13 +90,14 @@ public class CarbonCompactionExecutor {
   public CarbonCompactionExecutor(Map<String, TaskBlockInfo> segmentMapping,
       SegmentProperties segmentProperties, CarbonTable carbonTable,
       Map<String, List<DataFileFooter>> dataFileMetadataSegMapping,
-      boolean restructuredBlockExists) {
+      boolean restructuredBlockExists, DataTypeConverter dataTypeConverter) {
     this.segmentMapping = segmentMapping;
     this.destinationSegProperties = segmentProperties;
     this.carbonTable = carbonTable;
     this.dataFileMetadataSegMapping = dataFileMetadataSegMapping;
     this.restructuredBlockExists = restructuredBlockExists;
-    queryExecutorList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    this.queryExecutorList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    this.dataTypeConverter = dataTypeConverter;
   }
 
   /**
@@ -95,11 +105,19 @@ public class CarbonCompactionExecutor {
    *
    * @return List of Carbon iterators
    */
-  public List<RawResultIterator> processTableBlocks() throws QueryExecutionException, IOException {
+  public List<RawResultIterator> processTableBlocks(Configuration configuration) throws
+      QueryExecutionException, IOException {
     List<RawResultIterator> resultList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<TableBlockInfo> list = null;
-    queryModel = prepareQueryModel(list);
+    QueryModelBuilder builder = new QueryModelBuilder(carbonTable)
+        .projectAllColumns()
+        .dataConverter(dataTypeConverter)
+        .enableForcedDetailRawQuery();
+    if (enablePageLevelReaderForCompaction()) {
+      builder.enableReadPageByPage();
+    }
+    queryModel = builder.build();
     // iterate each seg ID
     for (Map.Entry<String, TaskBlockInfo> taskMap : segmentMapping.entrySet()) {
       String segmentId = taskMap.getKey();
@@ -111,10 +129,14 @@ public class CarbonCompactionExecutor {
       for (String task : taskBlockListMapping) {
         list = taskBlockInfo.getTableBlockInfoList(task);
         Collections.sort(list);
-        LOGGER.info("for task -" + task + "-block size is -" + list.size());
+        LOGGER.info(
+            "for task -" + task + "- in segment id -" + segmentId + "- block size is -" + list
+                .size());
         queryModel.setTableBlockInfos(list);
-        resultList.add(new RawResultIterator(executeBlockList(list), sourceSegProperties,
-            destinationSegProperties));
+        resultList.add(
+            new RawResultIterator(executeBlockList(list, segmentId, task, configuration),
+                sourceSegProperties,
+                destinationSegProperties, false));
       }
     }
     return resultList;
@@ -155,10 +177,15 @@ public class CarbonCompactionExecutor {
    * @param blockList
    * @return
    */
-  private CarbonIterator<BatchResult> executeBlockList(List<TableBlockInfo> blockList)
+  private CarbonIterator<RowBatch> executeBlockList(List<TableBlockInfo> blockList,
+      String segmentId, String taskId, Configuration configuration)
       throws QueryExecutionException, IOException {
     queryModel.setTableBlockInfos(blockList);
-    QueryExecutor queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    QueryStatisticsRecorder executorRecorder = CarbonTimeStatisticsFactory
+        .createExecutorRecorder(queryModel.getQueryId() + "_" + segmentId + "_" + taskId);
+    queryStatisticsRecorders.add(executorRecorder);
+    queryModel.setStatisticsRecorder(executorRecorder);
+    QueryExecutor queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel, configuration);
     queryExecutorList.add(queryExecutor);
     return queryExecutor.execute(queryModel);
   }
@@ -167,15 +194,36 @@ public class CarbonCompactionExecutor {
    * Below method will be used
    * for cleanup
    */
-  public void finish() {
+  public void close(List<RawResultIterator> rawResultIteratorList, long queryStartTime) {
     try {
+      // close all the iterators. Iterators might not closed in case of compaction failure
+      // or if process is killed
+      if (null != rawResultIteratorList) {
+        for (RawResultIterator rawResultIterator : rawResultIteratorList) {
+          rawResultIterator.close();
+        }
+      }
       for (QueryExecutor queryExecutor : queryExecutorList) {
         queryExecutor.finish();
       }
+      logStatistics(queryStartTime);
     } catch (QueryExecutionException e) {
-      LOGGER.error(e, "Problem while finish: ");
+      LOGGER.error("Problem while close. Ignoring the exception", e);
     }
     clearDictionaryFromQueryModel();
+  }
+
+  private void logStatistics(long queryStartTime) {
+    if (!queryStatisticsRecorders.isEmpty()) {
+      QueryStatistic queryStatistic = new QueryStatistic();
+      queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
+          System.currentTimeMillis() - queryStartTime);
+      for (QueryStatisticsRecorder recorder : queryStatisticsRecorders) {
+        recorder.recordStatistics(queryStatistic);
+        // print executor query statistics for each task_id
+        recorder.logStatistics();
+      }
+    }
   }
 
   /**
@@ -194,44 +242,21 @@ public class CarbonCompactionExecutor {
   }
 
   /**
-   * Preparing of the query model.
-   *
-   * @param blockList
-   * @return
+   * Whether to enable page level reader for compaction or not.
    */
-  private QueryModel prepareQueryModel(List<TableBlockInfo> blockList) {
-    QueryModel model = new QueryModel();
-    model.setTableBlockInfos(blockList);
-    model.setForcedDetailRawQuery(true);
-    model.setFilterExpressionResolverTree(null);
-    model.setConverter(DataTypeUtil.getDataTypeConverter());
-
-    List<QueryDimension> dims = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-    List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
-    for (CarbonDimension dim : dimensions) {
-      // check if dimension is deleted
-      QueryDimension queryDimension = new QueryDimension(dim.getColName());
-      queryDimension.setDimension(dim);
-      dims.add(queryDimension);
+  private boolean enablePageLevelReaderForCompaction() {
+    String enablePageReaderProperty = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION,
+            CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT);
+    boolean enablePageReader;
+    try {
+      enablePageReader = Boolean.parseBoolean(enablePageReaderProperty);
+    } catch (Exception e) {
+      enablePageReader = Boolean.parseBoolean(
+          CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT);
     }
-    model.setQueryDimension(dims);
-
-    List<QueryMeasure> msrs = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
-    for (CarbonMeasure carbonMeasure : measures) {
-      // check if measure is deleted
-      QueryMeasure queryMeasure = new QueryMeasure(carbonMeasure.getColName());
-      queryMeasure.setMeasure(carbonMeasure);
-      msrs.add(queryMeasure);
-    }
-    model.setQueryMeasures(msrs);
-    model.setQueryId(System.nanoTime() + "");
-    model.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
-    model.setTable(carbonTable);
-    return model;
+    LOGGER.info("Page level reader is set to: " + enablePageReader);
+    return enablePageReader;
   }
 
 }

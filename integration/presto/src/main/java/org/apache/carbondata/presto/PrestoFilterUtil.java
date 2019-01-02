@@ -17,15 +17,23 @@
 
 package org.apache.carbondata.presto;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
@@ -39,24 +47,20 @@ import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 
-import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.hive.HiveColumnHandle;
+import com.facebook.presto.hive.HiveType;
+import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Range;
 import com.facebook.presto.spi.predicate.TupleDomain;
-import com.facebook.presto.spi.type.BigintType;
-import com.facebook.presto.spi.type.BooleanType;
-import com.facebook.presto.spi.type.DateType;
-import com.facebook.presto.spi.type.DecimalType;
-import com.facebook.presto.spi.type.DoubleType;
-import com.facebook.presto.spi.type.IntegerType;
-import com.facebook.presto.spi.type.SmallintType;
-import com.facebook.presto.spi.type.TimestampType;
+import com.facebook.presto.spi.type.Decimals;
 import com.facebook.presto.spi.type.Type;
-import com.facebook.presto.spi.type.VarcharType;
-import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
+import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 
+import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
 import static com.google.common.base.Preconditions.checkArgument;
+
 
 /**
  * PrestoFilterUtil create the carbonData Expression from the presto-domain
@@ -65,19 +69,110 @@ public class PrestoFilterUtil {
 
   private static Map<Integer, Expression> filterMap = new HashMap<>();
 
-  private static DataType Spi2CarbondataTypeMapper(CarbondataColumnHandle carbondataColumnHandle) {
-    Type colType = carbondataColumnHandle.getColumnType();
-    if (colType == BooleanType.BOOLEAN) return DataType.BOOLEAN;
-    else if (colType == SmallintType.SMALLINT) return DataType.SHORT;
-    else if (colType == IntegerType.INTEGER) return DataType.INT;
-    else if (colType == BigintType.BIGINT) return DataType.LONG;
-    else if (colType == DoubleType.DOUBLE) return DataType.DOUBLE;
-    else if (colType == VarcharType.VARCHAR) return DataType.STRING;
-    else if (colType == DateType.DATE) return DataType.DATE;
-    else if (colType == TimestampType.TIMESTAMP) return DataType.TIMESTAMP;
-    else if (colType == DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
-        carbondataColumnHandle.getScale())) return DataType.DECIMAL;
-    else return DataType.STRING;
+  private static final String HIVE_DEFAULT_DYNAMIC_PARTITION = "__HIVE_DEFAULT_PARTITION__";
+
+  /**
+   * @param columnHandle
+   * @return
+   */
+  private static DataType spi2CarbondataTypeMapper(HiveColumnHandle columnHandle) {
+    HiveType colType = columnHandle.getHiveType();
+    if (colType.equals(HiveType.HIVE_BOOLEAN)) {
+      return DataTypes.BOOLEAN;
+    } else if (colType.equals(HiveType.HIVE_SHORT)) {
+      return DataTypes.SHORT;
+    } else if (colType.equals(HiveType.HIVE_INT)) {
+      return DataTypes.INT;
+    } else if (colType.equals(HiveType.HIVE_LONG)) {
+      return DataTypes.LONG;
+    } else if (colType.equals(HiveType.HIVE_DOUBLE)) {
+      return DataTypes.DOUBLE;
+    } else if (colType.equals(HiveType.HIVE_STRING)) {
+      return DataTypes.STRING;
+    } else if (colType.equals(HiveType.HIVE_DATE)) {
+      return DataTypes.DATE;
+    } else if (colType.equals(HiveType.HIVE_TIMESTAMP)) {
+      return DataTypes.TIMESTAMP;
+    } else if (colType.getTypeInfo() instanceof DecimalTypeInfo) {
+      DecimalTypeInfo typeInfo = (DecimalTypeInfo) colType.getTypeInfo();
+      return DataTypes.createDecimalType(typeInfo.getPrecision(),typeInfo.getScale());
+    } else {
+      return DataTypes.STRING;
+    }
+  }
+
+  /**
+   * Return partition filters using domain constraints
+   * @param carbonTable
+   * @param originalConstraint
+   * @return
+   */
+  public static List<String> getPartitionFilters(CarbonTable carbonTable,
+      TupleDomain<HiveColumnHandle> originalConstraint) {
+    List<ColumnSchema> columnSchemas = carbonTable.getPartitionInfo().getColumnSchemaList();
+    List<String> filter = new ArrayList<>();
+    for (HiveColumnHandle columnHandle : originalConstraint.getDomains().get().keySet()) {
+      List<ColumnSchema> partitionedColumnSchema = columnSchemas.stream().filter(
+          columnSchema -> columnHandle.getName()
+              .equals(columnSchema.getColumnName())).collect(toList());
+      if (partitionedColumnSchema.size() != 0) {
+        filter.addAll(createPartitionFilters(originalConstraint, columnHandle));
+      }
+    }
+    return filter;
+  }
+
+  /** Returns list of partition key and values using domain constraints
+   * @param originalConstraint
+   * @param columnHandle
+   */
+  private static List<String> createPartitionFilters(
+      TupleDomain<HiveColumnHandle> originalConstraint, HiveColumnHandle columnHandle) {
+    List<String> filter = new ArrayList<>();
+    if (!originalConstraint.getDomains().isPresent()) {
+      return filter;
+    }
+    Domain domain = originalConstraint.getDomains().get().get(columnHandle);
+    if (domain != null && domain.isNullableSingleValue()) {
+      Object value = domain.getNullableSingleValue();
+      Type type = domain.getType();
+      if (value == null) {
+        filter.add(columnHandle.getName() + "=" + HIVE_DEFAULT_DYNAMIC_PARTITION);
+      } else if (columnHandle.getHiveType().getTypeInfo() instanceof DecimalTypeInfo) {
+        int scale = ((DecimalTypeInfo) columnHandle.getHiveType().getTypeInfo()).getScale();
+        if (value instanceof Long) {
+          //create decimal value from Long
+          BigDecimal decimalValue = new BigDecimal(new BigInteger(String.valueOf(value)), scale);
+          filter.add(columnHandle.getName() + "=" + decimalValue.toString());
+        } else if (value instanceof Slice) {
+          //create decimal value from Slice
+          BigDecimal decimalValue =
+              new BigDecimal(Decimals.decodeUnscaledValue((Slice) value), scale);
+          filter.add(columnHandle.getName() + "=" + decimalValue.toString());
+        }
+      } else if (value instanceof Slice) {
+        filter.add(columnHandle.getName() + "=" + ((Slice) value).toStringUtf8());
+      } else if (value instanceof Long && columnHandle.getHiveType()
+          .equals(HiveType.HIVE_DATE)) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(new java.sql.Date(0));
+        c.add(Calendar.DAY_OF_YEAR, ((Long) value).intValue());
+        java.sql.Date date = new java.sql.Date(c.getTime().getTime());
+        filter.add(columnHandle.getName() + "=" + date.toString());
+      } else if (value instanceof Long && columnHandle.getHiveType()
+          .equals(HiveType.HIVE_TIMESTAMP)) {
+        String timeStamp = new Timestamp((Long) value).toString();
+        filter.add(columnHandle.getName() + "=" + timeStamp
+            .substring(0, timeStamp.indexOf('.')));
+      } else if ((value instanceof Boolean) || (value instanceof Double)
+          || (value instanceof Long)) {
+        filter.add(columnHandle.getName() + "=" + value.toString());
+      } else {
+        throw new PrestoException(NOT_SUPPORTED,
+            format("Unsupported partition key type: %s", type.getDisplayName()));
+      }
+    }
+    return filter;
   }
 
   /**
@@ -86,48 +181,52 @@ public class PrestoFilterUtil {
    * @param originalConstraint presto-TupleDomain
    * @return
    */
-  static Expression parseFilterExpression(TupleDomain<ColumnHandle> originalConstraint) {
-    ImmutableList.Builder<Expression> filters = ImmutableList.builder();
+  static Expression parseFilterExpression(TupleDomain<HiveColumnHandle> originalConstraint) {
 
     Domain domain;
 
-    for (ColumnHandle c : originalConstraint.getDomains().get().keySet()) {
+    if (originalConstraint.isNone()) {
+      return null;
+    }
+
+    // final expression for the table,
+    // returned by the method after combining all the column filters (colValueExpression).
+    Expression finalFilters = null;
+
+    for (HiveColumnHandle cdch : originalConstraint.getDomains().get().keySet()) {
 
       // Build ColumnExpression for Expression(Carbondata)
-      CarbondataColumnHandle cdch = (CarbondataColumnHandle) c;
-      Type type = cdch.getColumnType();
+      HiveType type = cdch.getHiveType();
+      DataType coltype = spi2CarbondataTypeMapper(cdch);
+      Expression colExpression = new ColumnExpression(cdch.getName(), coltype);
 
-      DataType coltype = Spi2CarbondataTypeMapper(cdch);
-      Expression colExpression = new ColumnExpression(cdch.getColumnName(), coltype);
-
-      domain = originalConstraint.getDomains().get().get(c);
+      domain = originalConstraint.getDomains().get().get(cdch);
       checkArgument(domain.getType().isOrderable(), "Domain type must be orderable");
-
       List<Object> singleValues = new ArrayList<>();
-      List<Expression> disjuncts = new ArrayList<>();
+
+      // combination of multiple rangeExpression for a single column,
+      // in case of multiple range Filter on single column
+      // else this is equal to rangeExpression, combined to create finalFilters
+      Expression colValueExpression = null;
+
       for (Range range : domain.getValues().getRanges().getOrderedRanges()) {
         if (range.isSingleValue()) {
-          Object value = ConvertDataByType(range.getLow().getValue(), type);
+          Object value = convertDataByType(range.getLow().getValue(), type);
           singleValues.add(value);
         } else {
-          List<Expression> rangeConjuncts = new ArrayList<>();
+          // generated for each range of column i.e. lessThan, greaterThan,
+          // there can be multiple ranges for a single column. combined to create colValueExpression
+          Expression rangeExpression = null;
           if (!range.getLow().isLowerUnbounded()) {
-            Object value = ConvertDataByType(range.getLow().getValue(), type);
+            Object value = convertDataByType(range.getLow().getValue(), type);
             switch (range.getLow().getBound()) {
               case ABOVE:
-                if (type == TimestampType.TIMESTAMP) {
-                  //todo not now
-                } else {
-                  GreaterThanExpression greater = new GreaterThanExpression(colExpression,
-                      new LiteralExpression(value, coltype));
-                  rangeConjuncts.add(greater);
-                }
+                rangeExpression =
+                    new GreaterThanExpression(colExpression, new LiteralExpression(value, coltype));
                 break;
               case EXACTLY:
-                GreaterThanEqualToExpression greater =
-                    new GreaterThanEqualToExpression(colExpression,
-                        new LiteralExpression(value, coltype));
-                rangeConjuncts.add(greater);
+                rangeExpression = new GreaterThanEqualToExpression(colExpression,
+                    new LiteralExpression(value, coltype));
                 break;
               case BELOW:
                 throw new IllegalArgumentException("Low marker should never use BELOW bound");
@@ -135,93 +234,85 @@ public class PrestoFilterUtil {
                 throw new AssertionError("Unhandled bound: " + range.getLow().getBound());
             }
           }
+
           if (!range.getHigh().isUpperUnbounded()) {
-            Object value = ConvertDataByType(range.getHigh().getValue(), type);
+            Expression lessThanExpression;
+            Object value = convertDataByType(range.getHigh().getValue(), type);
             switch (range.getHigh().getBound()) {
               case ABOVE:
                 throw new IllegalArgumentException("High marker should never use ABOVE bound");
               case EXACTLY:
-                LessThanEqualToExpression less = new LessThanEqualToExpression(colExpression,
+                lessThanExpression = new LessThanEqualToExpression(colExpression,
                     new LiteralExpression(value, coltype));
-                rangeConjuncts.add(less);
                 break;
               case BELOW:
-                LessThanExpression less2 =
+                lessThanExpression =
                     new LessThanExpression(colExpression, new LiteralExpression(value, coltype));
-                rangeConjuncts.add(less2);
                 break;
               default:
                 throw new AssertionError("Unhandled bound: " + range.getHigh().getBound());
             }
+            rangeExpression = (rangeExpression == null ?
+                lessThanExpression :
+                new AndExpression(rangeExpression, lessThanExpression));
           }
-          disjuncts.addAll(rangeConjuncts);
+          colValueExpression = (colValueExpression == null ?
+              rangeExpression :
+              new OrExpression(colValueExpression, rangeExpression));
         }
       }
-      if (singleValues.size() == 1) {
-        Expression ex;
-        if (coltype.equals(DataType.STRING)) {
-          ex = new EqualToExpression(colExpression,
-              new LiteralExpression(singleValues.get(0), coltype));
-        } else if (coltype.equals(DataType.TIMESTAMP) || coltype.equals(DataType.DATE)) {
-          Long value = (Long) singleValues.get(0);
-          ex = new EqualToExpression(colExpression, new LiteralExpression(value, coltype));
-        } else ex = new EqualToExpression(colExpression,
-            new LiteralExpression(singleValues.get(0), coltype));
-        filters.add(ex);
-      } else if (singleValues.size() > 1) {
-        ListExpression candidates = null;
-        List<Expression> exs = singleValues.stream()
-            .map((a) -> new LiteralExpression(ConvertDataByType(a, type), coltype))
-            .collect(Collectors.toList());
-        candidates = new ListExpression(exs);
 
-        filters.add(new InExpression(colExpression, candidates));
-      } else if (disjuncts.size() > 0) {
-        if (disjuncts.size() > 1) {
-          Expression finalFilters = new OrExpression(disjuncts.get(0), disjuncts.get(1));
-          if (disjuncts.size() > 2) {
-            for (int i = 2; i < disjuncts.size(); i++) {
-              filters.add(new AndExpression(finalFilters, disjuncts.get(i)));
-            }
-          } else {
-            filters.add(finalFilters);
-          }
-        } else if (disjuncts.size() == 1) filters.add(disjuncts.get(0));
+      if (singleValues.size() == 1) {
+        colValueExpression = new EqualToExpression(colExpression,
+            new LiteralExpression(singleValues.get(0), coltype));
+      } else if (singleValues.size() > 1) {
+        List<Expression> exs =
+            singleValues.stream().map((a) -> new LiteralExpression(a, coltype)).collect(toList());
+        colValueExpression = new InExpression(colExpression, new ListExpression(exs));
+      }
+
+      if (colValueExpression != null) {
+        finalFilters = (finalFilters == null ?
+            colValueExpression :
+            new AndExpression(finalFilters, colValueExpression));
       }
     }
-
-    Expression finalFilters;
-    List<Expression> tmp = filters.build();
-    if (tmp.size() > 1) {
-      finalFilters = new AndExpression(tmp.get(0), tmp.get(1));
-      if (tmp.size() > 2) {
-        for (int i = 2; i < tmp.size(); i++) {
-          finalFilters = new OrExpression(finalFilters, tmp.get(i));
-        }
-      }
-    } else if (tmp.size() == 1) finalFilters = tmp.get(0);
-    else return null;
     return finalFilters;
   }
 
-  private static Object ConvertDataByType(Object rawdata, Type type) {
-    if (type.equals(IntegerType.INTEGER)) return Integer.valueOf(rawdata.toString());
-    // new Integer((rawdata.toString()));
-    else if (type.equals(BigintType.BIGINT)) return rawdata;
-    else if (type.equals(VarcharType.VARCHAR)) {
+  private static Object convertDataByType(Object rawdata, HiveType type) {
+    if (type.equals(HiveType.HIVE_INT) || type.equals(HiveType.HIVE_SHORT)) {
+      return Integer.valueOf(rawdata.toString());
+    } else if (type.equals(HiveType.HIVE_LONG)) {
+      return rawdata;
+    } else if (type.equals(HiveType.HIVE_STRING)) {
       if (rawdata instanceof Slice) {
         return ((Slice) rawdata).toStringUtf8();
       } else {
         return rawdata;
       }
-
-    } else if (type.equals(BooleanType.BOOLEAN)) return rawdata;
-    else if (type.equals(DateType.DATE)) {
+    } else if (type.equals(HiveType.HIVE_BOOLEAN)) {
+      return rawdata;
+    } else if (type.equals(HiveType.HIVE_DATE)) {
       Calendar c = Calendar.getInstance();
       c.setTime(new Date(0));
       c.add(Calendar.DAY_OF_YEAR, ((Long) rawdata).intValue());
       Date date = c.getTime();
       return date.getTime() * 1000;
+    }
+    else if (type.getTypeInfo() instanceof DecimalTypeInfo) {
+      if (rawdata instanceof Double) {
+        return new BigDecimal((Double) rawdata);
+      } else if (rawdata instanceof Long) {
+        return new BigDecimal(new BigInteger(String.valueOf(rawdata)),
+            ((DecimalTypeInfo) type.getTypeInfo()).getScale());
+      } else if (rawdata instanceof Slice) {
+        return new BigDecimal(Decimals.decodeUnscaledValue((Slice) rawdata),
+            ((DecimalTypeInfo) type.getTypeInfo()).getScale());
+      }
+    }
+    else if (type.equals(HiveType.HIVE_TIMESTAMP)) {
+      return (Long) rawdata * 1000;
     }
 
     return rawdata;

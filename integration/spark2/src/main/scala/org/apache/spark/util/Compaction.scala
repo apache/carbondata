@@ -17,10 +17,12 @@
 package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.execution.command.{AlterTableCompaction, AlterTableModel}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.execution.command.AlterTableModel
+import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.processing.merger.CompactionType
 
 /**
  * table compaction api
@@ -33,7 +35,7 @@ object Compaction {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
     if (compactionType.equalsIgnoreCase(CarbonCommonConstants.MAJOR) ||
         compactionType.equalsIgnoreCase(CarbonCommonConstants.MINOR)) {
-      AlterTableCompaction(AlterTableModel(Some(dbName),
+      CarbonAlterTableCompactionCommand(AlterTableModel(Some(dbName),
         tableName,
         None,
         compactionType,
@@ -41,7 +43,7 @@ object Compaction {
         "")).run(spark)
     }
     else {
-      sys.error("Compaction type is wrong. Please select minor or major.")
+      CarbonException.analysisException("Compaction type is wrong. Please select minor or major.")
     }
 
   }
@@ -56,8 +58,8 @@ object Compaction {
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val compactionType = TableAPIUtil.escape(args(2))
     val spark = TableAPIUtil.spark(storePath, s"Compaction: $dbName.$tableName")
-    CarbonEnv.getInstance(spark).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(spark).storePath)
+    CarbonEnv.getInstance(spark).carbonMetaStore.
+      checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     compaction(spark, dbName, tableName, compactionType)
   }
 }

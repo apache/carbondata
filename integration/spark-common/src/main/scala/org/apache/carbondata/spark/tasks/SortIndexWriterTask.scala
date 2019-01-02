@@ -17,7 +17,6 @@
 package org.apache.carbondata.spark.tasks
 
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
-import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
@@ -25,19 +24,15 @@ import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWri
 /**
  * This task writes sort index file
  *
- * @param carbonTableIdentifier
  * @param dictionaryColumnUniqueIdentifier
  * @param dataType
- * @param carbonStoreLocation
  * @param dictionary
  * @param distinctValues
  * @param carbonDictionarySortIndexWriter
  */
 class SortIndexWriterTask(
-    carbonTableIdentifier: CarbonTableIdentifier,
     dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier,
     dataType: DataType,
-    carbonStoreLocation: String,
     dictionary: Dictionary,
     distinctValues: java.util.List[String],
     var carbonDictionarySortIndexWriter: CarbonDictionarySortIndexWriter = null) {
@@ -51,8 +46,7 @@ class SortIndexWriterTask(
             dataType)
         carbonDictionarySortIndexWriter =
           dictService
-            .getDictionarySortIndexWriter(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
-            carbonStoreLocation)
+            .getDictionarySortIndexWriter(dictionaryColumnUniqueIdentifier)
         carbonDictionarySortIndexWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
         carbonDictionarySortIndexWriter
           .writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted)

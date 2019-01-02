@@ -20,73 +20,37 @@ package org.apache.carbondata.core.locks;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
-import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * This class is used to handle the HDFS File locking.
- * This is acheived using the concept of acquiring the data out stream using Append option.
+ * This is achieved using the concept of acquiring the data out stream using Append option.
  */
 public class HdfsFileLock extends AbstractCarbonLock {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
              LogServiceFactory.getLogService(HdfsFileLock.class.getName());
+
   /**
-   * location hdfs file location
+   * lockFileDir is the directory of the lock file.
    */
-  private String location;
+  private String lockFileDir;
 
   private DataOutputStream dataOutputStream;
-
-  private static String tmpPath;
-
-  static {
-    Configuration conf = new Configuration(true);
-    String hdfsPath = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
-    // By default, we put the hdfs lock meta file for one table inside this table's store folder.
-    // If can not get the STORE_LOCATION, then use hadoop.tmp.dir .
-    tmpPath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
-               System.getProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION));
-    if (!tmpPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) && !tmpPath
-        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) && !tmpPath
-        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
-      tmpPath = hdfsPath + tmpPath;
-    }
-  }
 
   /**
    * @param lockFileLocation
    * @param lockFile
    */
   public HdfsFileLock(String lockFileLocation, String lockFile) {
-    this.location = tmpPath + CarbonCommonConstants.FILE_SEPARATOR + lockFileLocation
-        + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
-    LOGGER.info("HDFS lock path:" + this.location);
+    this.lockFileDir = CarbonTablePath.getLockFilesDirPath(lockFileLocation);
+    this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFile);
+    LOGGER.info("HDFS lock path:" + this.lockFilePath);
     initRetry();
-  }
-
-  /**
-   * @param lockFilePath
-   */
-  public HdfsFileLock(String lockFilePath) {
-    this.location = lockFilePath;
-    initRetry();
-  }
-
-  /**
-   * @param tableIdentifier
-   * @param lockFile
-   */
-  public HdfsFileLock(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
-        .getTableName(), lockFile);
   }
 
   /* (non-Javadoc)
@@ -94,16 +58,20 @@ public class HdfsFileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
-      if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
-        FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
+      if (null != this.lockFileDir &&
+          !FileFactory.isFileExist(lockFileDir)) {
+        FileFactory.mkdirs(lockFileDir, FileFactory.getFileType(lockFileDir));
       }
-      dataOutputStream =
-          FileFactory.getDataOutputStreamUsingAppend(location, FileFactory.getFileType(location));
+      if (!FileFactory.isFileExist(lockFilePath)) {
+        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(lockFilePath));
+      }
+      dataOutputStream = FileFactory.getDataOutputStreamUsingAppend(lockFilePath,
+          FileFactory.getFileType(lockFilePath));
 
       return true;
 
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.info(e.getMessage());
       return false;
     }
   }
@@ -120,21 +88,6 @@ public class HdfsFileLock extends AbstractCarbonLock {
         status = true;
       } catch (IOException e) {
         status = false;
-      } finally {
-        CarbonFile carbonFile =
-            FileFactory.getCarbonFile(location, FileFactory.getFileType(location));
-        if (carbonFile.exists()) {
-          if (carbonFile.delete()) {
-            LOGGER.info("Deleted the lock file " + location);
-          } else {
-            LOGGER.error("Not able to delete the lock file " + location);
-            status = false;
-          }
-        } else {
-          LOGGER.error("Not able to delete the lock file because "
-              + "it is not existed in location " + location);
-          status = false;
-        }
       }
     }
     return status;

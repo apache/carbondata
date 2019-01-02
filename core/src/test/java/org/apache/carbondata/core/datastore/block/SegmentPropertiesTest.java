@@ -24,10 +24,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 import junit.framework.TestCase;
 import org.junit.BeforeClass;
@@ -84,20 +84,20 @@ public class SegmentPropertiesTest extends TestCase {
     assertTrue(true);
   }
 
-  @Test public void testBlockMetadataHasProperDimensionBlockMapping() {
+  @Test public void testBlockMetadataHasProperDimensionChunkMapping() {
     Map<Integer, Integer> dimensionOrdinalToBlockMapping = new HashMap<Integer, Integer>();
     dimensionOrdinalToBlockMapping.put(0, 0);
     dimensionOrdinalToBlockMapping.put(1, 1);
     dimensionOrdinalToBlockMapping.put(2, 2);
-    dimensionOrdinalToBlockMapping.put(3, 2);
-    dimensionOrdinalToBlockMapping.put(4, 3);
-    dimensionOrdinalToBlockMapping.put(5, 4);
-    dimensionOrdinalToBlockMapping.put(6, 4);
-    dimensionOrdinalToBlockMapping.put(7, 4);
-    dimensionOrdinalToBlockMapping.put(8, 5);
-    dimensionOrdinalToBlockMapping.put(9, 6);
+    dimensionOrdinalToBlockMapping.put(3, 3);
+    dimensionOrdinalToBlockMapping.put(4, 4);
+    dimensionOrdinalToBlockMapping.put(5, 5);
+    dimensionOrdinalToBlockMapping.put(6, 6);
+    dimensionOrdinalToBlockMapping.put(7, 7);
+    dimensionOrdinalToBlockMapping.put(8, 8);
+    dimensionOrdinalToBlockMapping.put(9, 9);
     Map<Integer, Integer> dimensionOrdinalToBlockMappingActual =
-        blockMetadataInfos.getDimensionOrdinalToBlockMapping();
+        blockMetadataInfos.getDimensionOrdinalToChunkMapping();
     assertEquals(dimensionOrdinalToBlockMapping.size(),
         dimensionOrdinalToBlockMappingActual.size());
     Iterator<Entry<Integer, Integer>> iterator =
@@ -112,12 +112,12 @@ public class SegmentPropertiesTest extends TestCase {
     assertTrue(true);
   }
 
-  @Test public void testBlockMetadataHasProperMeasureBlockMapping() {
+  @Test public void testBlockMetadataHasProperMeasureChunkMapping() {
     Map<Integer, Integer> measureOrdinalToBlockMapping = new HashMap<Integer, Integer>();
     measureOrdinalToBlockMapping.put(0, 0);
     measureOrdinalToBlockMapping.put(1, 1);
     Map<Integer, Integer> measureOrdinalToBlockMappingActual =
-        blockMetadataInfos.getMeasuresOrdinalToBlockMapping();
+        blockMetadataInfos.getMeasuresOrdinalToChunkMapping();
     assertEquals(measureOrdinalToBlockMapping.size(), measureOrdinalToBlockMappingActual.size());
     Iterator<Entry<Integer, Integer>> iterator = measureOrdinalToBlockMapping.entrySet().iterator();
     while (iterator.hasNext()) {
@@ -143,7 +143,7 @@ public class SegmentPropertiesTest extends TestCase {
   }
 
   @Test public void testEachColumnValueSizeHasProperValue() {
-    int[] size = { 1, -1, 2, -1, 3 };
+    int[] size = { 1, -1, 1, 1, -1, 1, 1, 1 };
     int[] eachDimColumnValueSize = blockMetadataInfos.getEachDimColumnValueSize();
     boolean isEqual = false;
     for (int i = 0; i < size.length; i++) {
@@ -170,10 +170,9 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getDimensionColumn1() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -185,10 +184,9 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getDimensionColumn2() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI1");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -199,42 +197,37 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getDimensionColumn3() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI2");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
     dimColumn.setEncodingList(encodeList);
-    dimColumn.setColumnGroup(0);
     dimColumn.setNumberOfChild(0);
     return dimColumn;
   }
 
   private ColumnSchema getDimensionColumn4() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI3");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
     dimColumn.setEncodingList(encodeList);
     dimColumn.setNumberOfChild(0);
-    dimColumn.setColumnGroup(0);
     return dimColumn;
   }
 
   private ColumnSchema getDimensionColumn5() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI4");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -245,58 +238,51 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getDimensionColumn9() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI9");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
     dimColumn.setEncodingList(encodeList);
-    dimColumn.setColumnGroup(1);
     dimColumn.setNumberOfChild(0);
     return dimColumn;
   }
 
   private ColumnSchema getDimensionColumn10() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI10");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
     dimColumn.setEncodingList(encodeList);
     dimColumn.setNumberOfChild(0);
-    dimColumn.setColumnGroup(1);
     return dimColumn;
   }
 
   private ColumnSchema getDimensionColumn11() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI11");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
     dimColumn.setEncodingList(encodeList);
     dimColumn.setNumberOfChild(0);
-    dimColumn.setColumnGroup(1);
     return dimColumn;
   }
 
   private ColumnSchema getDimensionColumn6() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI5");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.ARRAY);
+    dimColumn.setDataType(DataTypes.createDefaultArrayType());
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -308,10 +294,9 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getDimensionColumn7() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI6");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -325,7 +310,7 @@ public class SegmentPropertiesTest extends TestCase {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DELTA);
@@ -337,7 +322,7 @@ public class SegmentPropertiesTest extends TestCase {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT1");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DELTA);

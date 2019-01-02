@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.chunk.store;
 
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Interface responsibility is to store dimension data in memory.
@@ -33,6 +34,12 @@ public interface DimensionDataChunkStore {
    * @param data                 data to be stored
    */
   void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data);
+
+  /**
+   * Fill the vector with decoded data.
+   */
+  void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo);
 
   /**
    * Below method will be used to get the row
@@ -68,6 +75,13 @@ public interface DimensionDataChunkStore {
   int getInvertedIndex(int rowId);
 
   /**
+   * Below method will be used to get the reverse Inverted Index
+   * @param rowId
+   * @return reverse Inverted Index
+   */
+  int getInvertedReverseIndex(int rowId);
+
+  /**
    * Below method will be used to get the surrogate key of the
    * based on the row id passed
    *
@@ -95,9 +109,9 @@ public interface DimensionDataChunkStore {
   /**
    * to compare the two byte array
    *
-   * @param index        index of first byte array
+   * @param rowId        index of first byte array
    * @param compareValue value of to be compared
    * @return compare result
    */
-  int compareTo(int index, byte[] compareValue);
+  int compareTo(int rowId, byte[] compareValue);
 }

@@ -21,12 +21,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.util.CarbonUtil;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -92,8 +91,7 @@ public class ThriftWriter {
    * @throws IOException
    */
   public void open(FileWriteOperation fileWriteOperation) throws IOException {
-    FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-    atomicFileOperationsWriter = new AtomicFileOperationsImpl(fileName, fileType);
+    atomicFileOperationsWriter = AtomicFileOperationFactory.getAtomicFileOperations(fileName);
     dataOutputStream = atomicFileOperationsWriter.openForWrite(fileWriteOperation);
     binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
   }
@@ -122,16 +120,6 @@ public class ThriftWriter {
   }
 
   /**
-   * Write the offset to the file
-   *
-   * @param offset
-   * @throws IOException
-   */
-  public void writeOffset(long offset) throws IOException {
-    dataOutputStream.writeLong(offset);
-  }
-
-  /**
    * Close the file stream.
    */
   public void close() throws IOException {
@@ -149,15 +137,6 @@ public class ThriftWriter {
       atomicFileOperationsWriter.close();
       // set output stream to null as atomic writer will close the data output stream internally
       dataOutputStream = null;
-    }
-  }
-
-  /**
-   * Flush data to HDFS file
-   */
-  public void sync() throws IOException {
-    if (dataOutputStream instanceof FSDataOutputStream) {
-      ((FSDataOutputStream) dataOutputStream).hsync();
     }
   }
 }

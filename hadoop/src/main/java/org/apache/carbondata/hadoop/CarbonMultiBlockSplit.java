@@ -20,10 +20,14 @@ package org.apache.carbondata.hadoop;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.datastore.block.Distributable;
+import org.apache.carbondata.core.statusmanager.FileFormat;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -32,7 +36,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
  * This class wraps multiple blocks belong to a same node to one split.
  * So the scanning task will scan multiple blocks. This is an optimization for concurrent query.
  */
-public class CarbonMultiBlockSplit extends InputSplit implements Writable {
+public class CarbonMultiBlockSplit extends InputSplit implements Serializable, Writable {
 
   /*
    * Splits (HDFS Blocks) for task to scan.
@@ -44,15 +48,37 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
    */
   private String[] locations;
 
+  private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
+
+  private long length;
+
   public CarbonMultiBlockSplit() {
     splitList = null;
     locations = null;
+    length = 0;
   }
 
-  public CarbonMultiBlockSplit(AbsoluteTableIdentifier identifier, List<CarbonInputSplit> splitList,
-      String[] locations) throws IOException {
+  public CarbonMultiBlockSplit(List<Distributable> blocks, String hostname) {
+    this.splitList = new ArrayList<>(blocks.size());
+    for (Distributable block : blocks) {
+      this.splitList.add((CarbonInputSplit)block);
+    }
+    this.locations = new String[]{hostname};
+  }
+
+  public CarbonMultiBlockSplit(List<CarbonInputSplit> splitList,
+      String[] locations) {
     this.splitList = splitList;
     this.locations = locations;
+    calculateLength();
+  }
+
+  public CarbonMultiBlockSplit(List<CarbonInputSplit> splitList,
+      String[] locations, FileFormat fileFormat) {
+    this.splitList = splitList;
+    this.locations = locations;
+    this.fileFormat = fileFormat;
+    calculateLength();
   }
 
   /**
@@ -64,16 +90,34 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
   }
 
   @Override
-  public long getLength() throws IOException, InterruptedException {
+  public long getLength() {
+    return length;
+  }
+
+  public void setLength(long length) {
+    this.length = length;
+  }
+
+  public void calculateLength() {
     long total = 0;
-    for (InputSplit split: splitList) {
-      total += split.getLength();
+    if (splitList.size() > 0 && splitList.get(0).getDetailInfo() != null) {
+      Map<String, Long> blockSizes = new HashMap<>();
+      for (CarbonInputSplit split : splitList) {
+        blockSizes.put(split.getBlockPath(), split.getDetailInfo().getBlockSize());
+      }
+      for (Map.Entry<String, Long> entry : blockSizes.entrySet()) {
+        total += entry.getValue();
+      }
+    } else {
+      for (CarbonInputSplit split : splitList) {
+        total += split.getLength();
+      }
     }
-    return total;
+    length = total;
   }
 
   @Override
-  public String[] getLocations() throws IOException, InterruptedException {
+  public String[] getLocations() {
     return locations;
   }
 
@@ -88,6 +132,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
     for (int i = 0; i < locations.length; i++) {
       out.writeUTF(locations[i]);
     }
+    out.writeInt(fileFormat.ordinal());
   }
 
   @Override
@@ -105,6 +150,14 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
     for (int i = 0; i < len; i++) {
       locations[i] = in.readUTF();
     }
+    fileFormat = FileFormat.getByOrdinal(in.readInt());
   }
 
+  public FileFormat getFileFormat() {
+    return fileFormat;
+  }
+
+  public void setFileFormat(FileFormat fileFormat) {
+    this.fileFormat = fileFormat;
+  }
 }

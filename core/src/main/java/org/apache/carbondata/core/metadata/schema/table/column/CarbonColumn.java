@@ -45,12 +45,27 @@ public class CarbonColumn implements Serializable {
   /**
    * order in which user has created table
    */
-  protected int schemaOrdinal;
+  private int schemaOrdinal;
 
   /**
    * Column identifier
    */
   protected ColumnIdentifier columnIdentifier;
+
+  /**
+   * Date Format
+   */
+  private String dateFormat;
+
+  /**
+   * TimeStamp Format.
+   */
+  private String timestampFormat;
+
+  /**
+   * useActualData
+   */
+  private boolean useActualData;
 
   public CarbonColumn(ColumnSchema columnSchema, int ordinal, int schemaOrdinal) {
     this.columnSchema = columnSchema;
@@ -58,12 +73,6 @@ public class CarbonColumn implements Serializable {
     this.schemaOrdinal = schemaOrdinal;
     this.columnIdentifier =
      new ColumnIdentifier(getColumnId(), getColumnProperties(), getDataType());
-  }
-  /**
-   * @return columnar or row based
-   */
-  public boolean isColumnar() {
-    return columnSchema.isColumnar();
   }
 
   /**
@@ -102,13 +111,6 @@ public class CarbonColumn implements Serializable {
   }
 
   /**
-   * @return row group id if it is row based
-   */
-  public int columnGroupId() {
-    return columnSchema.getColumnGroupId();
-  }
-
-  /**
    * @return the defaultValue
    */
   public byte[] getDefaultValue() {
@@ -128,7 +130,7 @@ public class CarbonColumn implements Serializable {
    * false.
    */
   public Boolean isComplex() {
-    return columnSchema.isComplex();
+    return columnSchema.getDataType().isComplexType();
   }
 
   /**
@@ -179,5 +181,29 @@ public class CarbonColumn implements Serializable {
 
   public int getSchemaOrdinal() {
     return this.schemaOrdinal;
+  }
+
+  public String getDateFormat() {
+    return dateFormat;
+  }
+
+  public void setDateFormat(String dateFormat) {
+    this.dateFormat = dateFormat;
+  }
+
+  public String getTimestampFormat() {
+    return timestampFormat;
+  }
+
+  public void setTimestampFormat(String timestampFormat) {
+    this.timestampFormat = timestampFormat;
+  }
+
+  public boolean getUseActualData() {
+    return useActualData;
+  }
+
+  public void setUseActualData(boolean useActualData) {
+    this.useActualData = useActualData;
   }
 }

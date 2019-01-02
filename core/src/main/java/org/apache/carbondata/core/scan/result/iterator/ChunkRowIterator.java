@@ -17,8 +17,10 @@
 
 package org.apache.carbondata.core.scan.result.iterator;
 
+import java.util.List;
+
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.core.scan.result.BatchResult;
+import org.apache.carbondata.core.scan.result.RowBatch;
 
 /**
  * Iterator over row result
@@ -28,18 +30,15 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
   /**
    * iterator over chunk result
    */
-  private CarbonIterator<BatchResult> iterator;
+  private CarbonIterator<RowBatch> iterator;
 
   /**
-   * currect chunk
+   * current chunk
    */
-  private BatchResult currentchunk;
+  private RowBatch currentChunk;
 
-  public ChunkRowIterator(CarbonIterator<BatchResult> iterator) {
+  public ChunkRowIterator(CarbonIterator<RowBatch> iterator) {
     this.iterator = iterator;
-    if (iterator.hasNext()) {
-      currentchunk = iterator.next();
-    }
   }
 
   /**
@@ -50,17 +49,11 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
    * @return {@code true} if the iteration has more elements
    */
   @Override public boolean hasNext() {
-    if (null != currentchunk) {
-      if ((currentchunk.hasNext())) {
-        return true;
-      } else if (!currentchunk.hasNext()) {
-        while (iterator.hasNext()) {
-          currentchunk = iterator.next();
-          if (currentchunk != null && currentchunk.hasNext()) {
-            return true;
-          }
-        }
-      }
+    if (currentChunk != null && currentChunk.hasNext()) {
+      return true;
+    } else if (iterator != null && iterator.hasNext()) {
+      currentChunk = iterator.next();
+      return hasNext();
     }
     return false;
   }
@@ -71,7 +64,16 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
    * @return the next element in the iteration
    */
   @Override public Object[] next() {
-    return currentchunk.next();
+    return currentChunk.next();
+  }
+
+  /**
+   * read next batch
+   *
+   * @return list of batch result
+   */
+  public List<Object[]> nextBatch() {
+    return currentChunk.nextBatch();
   }
 
 }

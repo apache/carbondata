@@ -22,14 +22,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
+import org.apache.log4j.Logger;
 
 /**
  * This class is responsible for writing the delete delta file
@@ -39,7 +38,7 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonDeleteDeltaWriterImpl.class.getName());
 
   private String filePath;
@@ -59,34 +58,6 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
   }
 
   /**
-   * This method will write the deleted records data in to disk.
-   *
-   * @param value deleted records
-   * @throws IOException if an I/O error occurs
-   */
-  @Override public void write(String value) throws IOException {
-    BufferedWriter brWriter = null;
-    try {
-      FileFactory.createNewFile(filePath, fileType);
-      dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
-      brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
-          CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
-      brWriter.write(value);
-    } catch (IOException ioe) {
-      LOGGER.error("Error message: " + ioe.getLocalizedMessage());
-    } finally {
-      if (null != brWriter) {
-        brWriter.flush();
-      }
-      if (null != dataOutStream) {
-        dataOutStream.flush();
-      }
-      CarbonUtil.closeStreams(brWriter, dataOutStream);
-    }
-
-  }
-
-  /**
    * This method will write the deleted records data in the json format.
    * @param deleteDeltaBlockDetails
    * @throws IOException
@@ -98,11 +69,12 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
       Gson gsonObjectToWrite = new Gson();
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
-          CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
+          CarbonCommonConstants.DEFAULT_CHARSET));
       String deletedData = gsonObjectToWrite.toJson(deleteDeltaBlockDetails);
       brWriter.write(deletedData);
     } catch (IOException ioe) {
       LOGGER.error("Error message: " + ioe.getLocalizedMessage());
+      throw ioe;
     } finally {
       if (null != brWriter) {
         brWriter.flush();
@@ -110,7 +82,9 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       if (null != dataOutStream) {
         dataOutStream.flush();
       }
-      CarbonUtil.closeStreams(brWriter, dataOutStream);
+      if (null != brWriter) {
+        brWriter.close();
+      }
     }
 
   }

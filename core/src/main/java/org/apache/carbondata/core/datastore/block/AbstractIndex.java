@@ -38,11 +38,6 @@ public abstract class AbstractIndex implements Cacheable {
   protected DataRefNode dataRefNode;
 
   /**
-   * total number of row present in the block
-   */
-  protected long totalNumberOfRows;
-
-  /**
    * atomic integer to maintain the access count for a column access
    */
   protected AtomicInteger accessCount = new AtomicInteger();
@@ -103,6 +98,10 @@ public abstract class AbstractIndex implements Cacheable {
    */
   @Override public long getMemorySize() {
     return this.memorySize;
+  }
+
+  @Override public void invalidate() {
+
   }
 
   /**

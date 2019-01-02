@@ -17,11 +17,12 @@
 
 package org.apache.carbondata.core.locks;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class is a Lock factory class which is used to provide lock objects.
@@ -32,12 +33,16 @@ public class CarbonLockFactory {
   /**
    * Attribute for LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonLockFactory.class.getName());
   /**
    * lockTypeConfigured to check if zookeeper feature is enabled or not for carbon.
    */
   private static String lockTypeConfigured;
+
+  private static String lockPath = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.LOCK_PATH, CarbonCommonConstants.LOCK_PATH_DEFAULT)
+      .toLowerCase();
 
   static {
     CarbonLockFactory.getLockTypeConfigured();
@@ -46,24 +51,37 @@ public class CarbonLockFactory {
   /**
    * This method will determine the lock type.
    *
-   * @param tableIdentifier
+   * @param absoluteTableIdentifier
    * @param lockFile
    * @return
    */
-  public static ICarbonLock getCarbonLockObj(CarbonTableIdentifier tableIdentifier,
+  public static ICarbonLock getCarbonLockObj(AbsoluteTableIdentifier absoluteTableIdentifier,
       String lockFile) {
-    switch (lockTypeConfigured) {
-      case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
-        return new LocalFileLock(tableIdentifier, lockFile);
-
-      case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
-        return new ZooKeeperLocking(tableIdentifier, lockFile);
-
-      case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
-        return new HdfsFileLock(tableIdentifier, lockFile);
-
-      default:
-        throw new UnsupportedOperationException("Not supported the lock type");
+    String absoluteLockPath;
+    if (lockPath.isEmpty()) {
+      absoluteLockPath = absoluteTableIdentifier.getTablePath();
+    } else {
+      absoluteLockPath =
+          getLockpath(absoluteTableIdentifier.getCarbonTableIdentifier().getTableId());
+    }
+    if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
+      return new ZooKeeperLocking(absoluteLockPath, lockFile);
+    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
+            absoluteLockPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
+            absoluteLockPath.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_S3;
+      return new S3FileLock(absoluteLockPath,
+                lockFile);
+    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)
+            || absoluteLockPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS;
+      return new HdfsFileLock(absoluteLockPath, lockFile);
+    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_ALLUXIO;
+      return new AlluxioFileLock(absoluteLockPath, lockFile);
+    } else {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL;
+      return new LocalFileLock(absoluteLockPath, lockFile);
     }
   }
 
@@ -73,17 +91,24 @@ public class CarbonLockFactory {
    * @param lockFile
    * @return carbon lock
    */
-  public static ICarbonLock getCarbonLockObj(String locFileLocation, String lockFile) {
+  public static ICarbonLock getSystemLevelCarbonLockObj(String locFileLocation, String lockFile) {
+    String lockFileLocation;
+    if (lockPath.isEmpty()) {
+      lockFileLocation = locFileLocation;
+    } else {
+      lockFileLocation = getLockpath("1");
+    }
     switch (lockTypeConfigured) {
       case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
-        return new LocalFileLock(locFileLocation, lockFile);
-
+        return new LocalFileLock(lockFileLocation, lockFile);
       case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
-        return new ZooKeeperLocking(locFileLocation, lockFile);
-
+        return new ZooKeeperLocking(lockFileLocation, lockFile);
       case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
-        return new HdfsFileLock(locFileLocation, lockFile);
-
+        return new HdfsFileLock(lockFileLocation, lockFile);
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_S3:
+        return new S3FileLock(lockFileLocation, lockFile);
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_ALLUXIO:
+        return new AlluxioFileLock(lockFileLocation, lockFile);
       default:
         throw new UnsupportedOperationException("Not supported the lock type");
     }
@@ -97,6 +122,10 @@ public class CarbonLockFactory {
         .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT)
         .toUpperCase();
     LOGGER.info("Configured lock type is: " + lockTypeConfigured);
+  }
+
+  public static String getLockpath(String tableId) {
+    return lockPath + CarbonCommonConstants.FILE_SEPARATOR + tableId;
   }
 
 }

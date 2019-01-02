@@ -16,19 +16,23 @@
  */
 package org.apache.carbondata.core.scan.result.impl;
 
+import java.util.List;
+
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
-import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.stats.QueryStatisticsModel;
 
 /**
  * Result provider class in case of filter query
  * In case of filter query data will be send
  * based on filtered row index
  */
-public class FilterQueryScannedResult extends AbstractScannedResult {
+public class FilterQueryScannedResult extends BlockletScannedResult {
 
-  public FilterQueryScannedResult(BlockExecutionInfo tableBlockExecutionInfos) {
-    super(tableBlockExecutionInfos);
+  public FilterQueryScannedResult(BlockExecutionInfo tableBlockExecutionInfos,
+      QueryStatisticsModel queryStatisticsModel) {
+    super(tableBlockExecutionInfos, queryStatisticsModel);
   }
 
   /**
@@ -37,7 +41,7 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    */
   @Override public byte[] getDictionaryKeyArray() {
     ++currentRow;
-    return getDictionaryKeyArray(rowMapping[pageCounter][currentRow]);
+    return getDictionaryKeyArray(pageFilteredRowId[pageCounter][currentRow]);
   }
 
   /**
@@ -46,7 +50,11 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    */
   @Override public int[] getDictionaryKeyIntegerArray() {
     ++currentRow;
-    return getDictionaryKeyIntegerArray(rowMapping[pageCounter][currentRow]);
+    return getDictionaryKeyIntegerArray(pageFilteredRowId[pageCounter][currentRow]);
+  }
+
+  @Override public List<byte[]> getDictionaryKeyArrayBatch(int batchSize) {
+    throw new UnsupportedOperationException("Operation not supported");
   }
 
   /**
@@ -55,7 +63,11 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    * @return complex type key array
    */
   @Override public byte[][] getComplexTypeKeyArray() {
-    return getComplexTypeKeyArray(rowMapping[pageCounter][currentRow]);
+    return getComplexTypeKeyArray(pageFilteredRowId[pageCounter][currentRow]);
+  }
+
+  @Override public List<byte[][]> getComplexTypeKeyArrayBatch(int batchSize) {
+    throw new UnsupportedOperationException("Operation not supported");
   }
 
   /**
@@ -65,17 +77,11 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    * @return no dictionary key array for all the no dictionary dimension
    */
   @Override public byte[][] getNoDictionaryKeyArray() {
-    return getNoDictionaryKeyArray(rowMapping[pageCounter][currentRow]);
+    return getNoDictionaryKeyArray(pageFilteredRowId[pageCounter][currentRow]);
   }
 
-  /**
-   * Below method will be used to get the no dictionary key
-   * string array for all the no dictionary dimension selected in query
-   *
-   * @return no dictionary key array for all the no dictionary dimension
-   */
-  @Override public String[] getNoDictionaryKeyStringArray() {
-    return getNoDictionaryKeyStringArray(rowMapping[pageCounter][currentRow]);
+  @Override public List<byte[][]> getNoDictionaryKeyArrayBatch(int batchSize) {
+    throw new UnsupportedOperationException("Operation not supported");
   }
 
   /**
@@ -84,7 +90,7 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    * @return valid row id
    */
   @Override public int getCurrentRowId() {
-    return rowMapping[pageCounter][currentRow];
+    return pageFilteredRowId[pageCounter][currentRow];
   }
 
   /**
@@ -92,10 +98,11 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    */
   public void fillColumnarDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     int column = 0;
-    for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      column = dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
-          .fillConvertedChunkData(rowMapping[pageCounter], vectorInfo, column,
-              columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
+    for (int chunkIndex : this.dictionaryColumnChunkIndexes) {
+      column = dimensionColumnPages[chunkIndex][pageCounter].fillVector(
+          pageFilteredRowId[pageCounter],
+          vectorInfo,
+          column);
     }
   }
 
@@ -103,11 +110,9 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    * Fill the column data to vector
    */
   public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
-    int column = 0;
-    for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
-      column = dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
-          .fillConvertedChunkData(rowMapping[pageCounter], vectorInfo, column,
-              columnGroupKeyStructureInfo.get(noDictionaryColumnBlockIndexes[i]));
+    for (int index = 0; index < this.noDictionaryColumnChunkIndexes.length; index++) {
+      dimensionColumnPages[noDictionaryColumnChunkIndexes[index]][pageCounter]
+          .fillVector(pageFilteredRowId[pageCounter], vectorInfo, index);
     }
   }
 
@@ -116,8 +121,10 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    */
   public void fillColumnarMeasureBatch(ColumnVectorInfo[] vectorInfo, int[] measuresOrdinal) {
     for (int i = 0; i < measuresOrdinal.length; i++) {
-      vectorInfo[i].measureVectorFiller.fillMeasureVectorForFilter(rowMapping[pageCounter],
-          measureDataChunks[measuresOrdinal[i]][pageCounter], vectorInfo[i]);
+      vectorInfo[i].measureVectorFiller.fillMeasureVector(
+          pageFilteredRowId[pageCounter],
+          measureColumnPages[measuresOrdinal[i]][pageCounter],
+          vectorInfo[i]);
     }
   }
 }

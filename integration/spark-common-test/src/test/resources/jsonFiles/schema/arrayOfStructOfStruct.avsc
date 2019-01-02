@@ -1,0 +1,51 @@
+{
+                     	"name": "address",
+                     	"type": "record",
+                     	"fields": [
+                     		{
+                     			"name": "name",
+                     			"type": "string"
+                     		},
+                     		{
+                     			"name": "age",
+                     			"type": "int"
+                     		},
+                     		{
+                     			"name": "doorNum",
+                     			"type": {
+                     				"type": "array",
+                     				"items": {
+                     					"type": "record",
+                     					"name": "my_address",
+                     					"fields": [
+                     						{
+                     							"name": "street",
+                     							"type": "string"
+                     						},
+                     						{
+                     							"name": "city",
+                     							"type": "string"
+                     						},
+                     						{
+                     							"name": "FloorNum",
+                                     			"type": {
+                                     				"type": "record",
+                                     				"name": "Floor",
+                                     				"fields": [
+                                     					{
+                                     						"name": "wing",
+                                     						"type": "string"
+                                     					},
+                                     					{
+                                     						"name": "number",
+                                     						"type": "int"
+                                     					}
+                                     				]
+                                     			}
+                     						}
+                     					]
+                     				}
+                     			}
+                     		}
+                     	]
+                     }

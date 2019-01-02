@@ -170,7 +170,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
   /**
    *  assign locality partition to each host
    */
-  private def assignPartitonNodeLocality(
+  private def assignPartitionNodeLocality(
       noEmptyHosts: Seq[(String, LinkedHashSet[Int])]): Array[ArrayBuffer[Int]] = {
     val localityResult = new Array[ArrayBuffer[Int]](noEmptyHosts.length)
     for (i <- 0 until localityResult.length) {
@@ -193,6 +193,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
                 hostMapPartitionIds.get(loc) match {
                   case Some(parts) =>
                     parts.remove(partitionId)
+                  case None =>
                 }
               }
           }
@@ -284,7 +285,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
     // sort host and partitions
     tempNoEmptyHosts = sortHostAndPartitions(tempNoEmptyHosts)
     // assign locality partition to non empty hosts
-    val templocalityResult = assignPartitonNodeLocality(tempNoEmptyHosts)
+    val templocalityResult = assignPartitionNodeLocality(tempNoEmptyHosts)
     // collect non empty hosts and empty hosts
     val noEmptyHosts = mutable.Buffer[String]()
     val localityResult = mutable.Buffer[ArrayBuffer[Int]]()

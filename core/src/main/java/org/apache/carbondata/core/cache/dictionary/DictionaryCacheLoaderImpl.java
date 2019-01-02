@@ -23,8 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.reader.CarbonDictionaryReader;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
@@ -37,25 +35,14 @@ import org.apache.carbondata.core.util.CarbonUtil;
 public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
 
   /**
-   * carbon table identifier
+   * carbon dictionary column identifier
    */
-  private CarbonTableIdentifier carbonTableIdentifier;
-
   private DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
 
   /**
-   * carbon store path
+   * @param dictionaryColumnUniqueIdentifier dictionary column identifier
    */
-  private String carbonStorePath;
-
-  /**
-   * @param carbonTableIdentifier fully qualified table name
-   * @param carbonStorePath       hdfs store path
-   */
-  public DictionaryCacheLoaderImpl(CarbonTableIdentifier carbonTableIdentifier,
-      String carbonStorePath, DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    this.carbonTableIdentifier = carbonTableIdentifier;
-    this.carbonStorePath = carbonStorePath;
+  DictionaryCacheLoaderImpl(DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
   }
 
@@ -64,7 +51,6 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    *
    * @param dictionaryInfo             dictionary info object which will hold the required data
    *                                   for a given column
-   * @param columnIdentifier           column unique identifier
    * @param dictionaryChunkStartOffset start offset from where dictionary file has to
    *                                   be read
    * @param dictionaryChunkEndOffset   end offset till where dictionary file has to
@@ -73,9 +59,9 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    *                                   read in memory after dictionary loading
    * @throws IOException
    */
-  @Override public void load(DictionaryInfo dictionaryInfo, ColumnIdentifier columnIdentifier,
-      long dictionaryChunkStartOffset, long dictionaryChunkEndOffset, boolean loadSortIndex)
-      throws IOException {
+  @Override
+  public void load(DictionaryInfo dictionaryInfo, long dictionaryChunkStartOffset,
+      long dictionaryChunkEndOffset, boolean loadSortIndex) throws IOException {
     Iterator<byte[]> columnDictionaryChunkWrapper =
         load(dictionaryColumnUniqueIdentifier, dictionaryChunkStartOffset,
             dictionaryChunkEndOffset);
@@ -166,8 +152,7 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
   private CarbonDictionaryReader getDictionaryReader(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
-    return dictService.getDictionaryReader(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
-        carbonStorePath);
+    return dictService.getDictionaryReader(dictionaryColumnUniqueIdentifier);
   }
 
   /**
@@ -178,7 +163,6 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
     return dictService
-        .getDictionarySortIndexReader(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
-            carbonStorePath);
+        .getDictionarySortIndexReader(dictionaryColumnUniqueIdentifier);
   }
 }

@@ -47,7 +47,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/update01.csv' INTO TABLE iud4.update_01 OPTIONS('BAD_RECORDS_LOGGER_ENABLE' = 'FALSE', 'BAD_RECORDS_ACTION' = 'FORCE') """)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled, "true")
+      .addProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE, "true")
   }
 
 
@@ -350,15 +350,48 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     )
     sql("""drop table dest2""")
   }
+  test("test the compaction after alter command") // As per bug Carbondata-2016
+  {
+      sql(
+        "CREATE TABLE CUSTOMER1 ( C_CUSTKEY INT , C_NAME STRING , C_ADDRESS STRING , C_NATIONKEY INT , C_PHONE STRING , C_ACCTBAL DECIMAL(15,2) , C_MKTSEGMENT STRING , C_COMMENT STRING) stored by 'carbondata'")
 
+      sql(
+        "insert into customer1 values(1,'vandana','noida',1,'123456789',45987.78,'hello','comment')")
 
+      sql(
+        "insert into customer1 values(2,'vandana','noida',2,'123456789',487.78,'hello','comment')")
+
+      sql(
+        " insert into customer1 values(3,'geetika','delhi',3,'123456789',487897.78,'hello','comment')")
+
+      sql(
+        "insert into customer1 values(4,'sangeeta','delhi',3,'123456789',48789.78,'hello','comment')")
+
+      sql(
+        "alter table customer1 add columns (shortfield short) TBLPROPERTIES ('DEFAULT.VALUE.shortfield'='32767')")
+
+      sql(
+        "alter table customer1 add columns (intfield int) TBLPROPERTIES ('DEFAULT.VALUE.intfield'='2147483647')")
+
+      sql(
+        "alter table customer1 add columns (longfield bigint) TBLPROPERTIES ('DEFAULT.VALUE.longfield'='9223372036854775807')")
+
+      sql("alter table customer1 compact 'minor' ").show()
+
+    checkAnswer(sql("select shortfield from customer1"),Seq(Row(32767),Row(32767),Row(32767),Row(32767)))
+    checkAnswer(sql("select intfield from customer1"),Seq(Row(2147483647),Row(2147483647),Row(2147483647),Row(2147483647)))
+    checkAnswer(sql("select longfield from customer1"),Seq(Row(9223372036854775807L),Row(9223372036854775807L),Row(9223372036854775807L),Row(9223372036854775807L)))
+
+  }
   override def afterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
     sql("use default")
     sql("drop database if exists iud4 cascade")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , "true")
+      .addProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE , "true")
+    sql("""drop table if exists t_carbn01""")
+    sql("""drop table if exists customer1""")
   }
 
 }

@@ -17,51 +17,224 @@
 
 package org.apache.carbondata.core.datastore.chunk.store;
 
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
-import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
-public class ColumnPageWrapper implements DimensionColumnDataChunk {
+import java.util.BitSet;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.ColumnType;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
+
+
+public class ColumnPageWrapper implements DimensionColumnPage {
 
   private ColumnPage columnPage;
 
-  public ColumnPageWrapper(ColumnPage columnPage) {
+  private CarbonDictionary localDictionary;
+
+  private boolean isAdaptivePrimitivePage;
+
+  private int[] invertedIndex;
+
+  private int[] invertedReverseIndex;
+
+  private boolean isExplicitSorted;
+
+  public ColumnPageWrapper(ColumnPage columnPage, CarbonDictionary localDictionary,
+      int[] invertedIndex, int[] invertedReverseIndex, boolean isAdaptivePrimitivePage,
+      boolean isExplicitSorted) {
     this.columnPage = columnPage;
+    this.localDictionary = localDictionary;
+    this.invertedIndex = invertedIndex;
+    this.invertedReverseIndex = invertedReverseIndex;
+    this.isAdaptivePrimitivePage = isAdaptivePrimitivePage;
+    this.isExplicitSorted = isExplicitSorted;
   }
 
   @Override
-  public int fillChunkData(byte[] data, int offset, int columnIndex,
-      KeyStructureInfo restructuringInfo) {
+  public int fillRawData(int rowId, int offset, byte[] data) {
     throw new UnsupportedOperationException("internal error");
   }
 
   @Override
-  public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
-      KeyStructureInfo restructuringInfo) {
+  public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey) {
     throw new UnsupportedOperationException("internal error");
   }
 
   @Override
-  public int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
-      KeyStructureInfo restructuringInfo) {
-    throw new UnsupportedOperationException("internal error");
+  public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
+    ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
+    CarbonColumnVector vector = columnVectorInfo.vector;
+    int offset = columnVectorInfo.offset;
+    int vectorOffset = columnVectorInfo.vectorOffset;
+    int len = offset + columnVectorInfo.size;
+    for (int i = offset; i < len; i++) {
+      fillRow(i, vector, vectorOffset++);
+    }
+    return chunkIndex + 1;
   }
 
   @Override
-  public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
-      KeyStructureInfo restructuringInfo) {
-    throw new UnsupportedOperationException("internal error");
+  public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo, int chunkIndex) {
+    ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
+    CarbonColumnVector vector = columnVectorInfo.vector;
+    int offset = columnVectorInfo.offset;
+    int vectorOffset = columnVectorInfo.vectorOffset;
+    int len = offset + columnVectorInfo.size;
+    for (int i = offset; i < len; i++) {
+      fillRow(filteredRowId[i], vector, vectorOffset++);
+    }
+    return chunkIndex + 1;
   }
 
-  @Override
-  public byte[] getChunkData(int columnIndex) {
-    return columnPage.getBytes(columnIndex);
+  @Override public byte[] getChunkData(int rowId) {
+    byte[] nullBitSet = getNullBitSet(rowId, columnPage.getColumnSpec().getColumnType());
+    if (nullBitSet != null) {
+      // if this row is null, return default null represent in byte array
+      return nullBitSet;
+    } else {
+      if (isExplicitSorted()) {
+        rowId = getInvertedReverseIndex(rowId);
+      }
+      return getChunkDataInBytes(rowId);
+    }
+  }
+
+  private byte[] getChunkDataInBytes(int rowId) {
+    ColumnType columnType = columnPage.getColumnSpec().getColumnType();
+    DataType srcDataType = columnPage.getColumnSpec().getSchemaDataType();
+    DataType targetDataType = columnPage.getDataType();
+    if (null != localDictionary) {
+      return localDictionary
+          .getDictionaryValue(CarbonUtil.getSurrogateInternal(columnPage.getBytes(rowId), 0, 3));
+    } else if ((columnType == ColumnType.COMPLEX_PRIMITIVE && isAdaptiveEncoded()) || (
+        columnType == ColumnType.PLAIN_VALUE && DataTypeUtil.isPrimitiveColumn(srcDataType))) {
+      if (srcDataType == DataTypes.FLOAT) {
+        float floatData = columnPage.getFloat(rowId);
+        return ByteUtil.toXorBytes(floatData);
+      } else if (srcDataType == DataTypes.DOUBLE) {
+        double doubleData = columnPage.getDouble(rowId);
+        return ByteUtil.toXorBytes(doubleData);
+      } else if (DataTypes.isDecimal(srcDataType)) {
+        throw new RuntimeException("unsupported type: " + srcDataType);
+      } else if ((srcDataType == DataTypes.BYTE) || (srcDataType == DataTypes.BOOLEAN) || (
+          srcDataType == DataTypes.SHORT) || (srcDataType == DataTypes.SHORT_INT) || (srcDataType
+          == DataTypes.INT) || (srcDataType == DataTypes.LONG) || (srcDataType
+          == DataTypes.TIMESTAMP)) {
+        long longData = columnPage.getLong(rowId);
+        if ((srcDataType == DataTypes.BYTE)) {
+          byte out = (byte) longData;
+          return new byte[] { out };
+        } else if (srcDataType == DataTypes.BOOLEAN) {
+          byte out = (byte) longData;
+          return ByteUtil.toBytes(ByteUtil.toBoolean(out));
+        } else if (srcDataType == DataTypes.SHORT) {
+          short out = (short) longData;
+          return ByteUtil.toXorBytes(out);
+        } else if (srcDataType == DataTypes.SHORT_INT) {
+          int out = (int) longData;
+          return ByteUtil.toXorBytes(out);
+        } else if (srcDataType == DataTypes.INT) {
+          int out = (int) longData;
+          return ByteUtil.toXorBytes(out);
+        } else {
+          // timestamp and long
+          return ByteUtil.toXorBytes(longData);
+        }
+      } else if ((targetDataType == DataTypes.STRING) || (targetDataType == DataTypes.VARCHAR) || (
+          targetDataType == DataTypes.BYTE_ARRAY)) {
+        return columnPage.getBytes(rowId);
+      } else {
+        throw new RuntimeException("unsupported type: " + targetDataType);
+      }
+    } else if ((columnType == ColumnType.COMPLEX_PRIMITIVE && !isAdaptiveEncoded())) {
+      if ((srcDataType == DataTypes.BYTE) || (srcDataType == DataTypes.BOOLEAN)) {
+        byte[] out = new byte[1];
+        out[0] = (columnPage.getByte(rowId));
+        return ByteUtil.toBytes(ByteUtil.toBoolean(out));
+      } else if (srcDataType == DataTypes.BYTE_ARRAY) {
+        return columnPage.getBytes(rowId);
+      } else if (srcDataType == DataTypes.DOUBLE) {
+        return ByteUtil.toXorBytes(columnPage.getDouble(rowId));
+      } else if (srcDataType == DataTypes.FLOAT) {
+        return ByteUtil.toXorBytes(columnPage.getFloat(rowId));
+      } else if (srcDataType == targetDataType) {
+        return columnPage.getBytes(rowId);
+      } else {
+        throw new RuntimeException("unsupported type: " + targetDataType);
+      }
+    } else {
+      return columnPage.getBytes(rowId);
+    }
+  }
+
+  private byte[] getNullBitSet(int rowId, ColumnType columnType) {
+    if (columnPage.getNullBits().get(rowId) && columnType == ColumnType.COMPLEX_PRIMITIVE) {
+      // if this row is null, return default null represent in byte array
+      return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+    }
+    if (columnPage.getNullBits().get(rowId)) {
+      // if this row is null, return default null represent in byte array
+      return CarbonCommonConstants.EMPTY_BYTE_ARRAY;
+    }
+    return null;
+  }
+
+  /**
+   * Fill the data to the vector
+   *
+   * @param rowId
+   * @param vector
+   * @param vectorRow
+   */
+  private void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+    if (columnPage.getNullBits().get(rowId)) {
+      vector.putNull(vectorRow);
+    } else {
+      if (isExplicitSorted) {
+        rowId = invertedReverseIndex[rowId];
+      }
+      DataType dt = vector.getType();
+      long longData = columnPage.getLong(rowId);
+      if (dt == DataTypes.BOOLEAN) {
+        vector.putBoolean(vectorRow, ByteUtil.toBoolean((byte) longData));
+      } else if (dt == DataTypes.BYTE) {
+        vector.putByte(vectorRow, (byte) longData);
+      } else if (dt == DataTypes.SHORT) {
+        vector.putShort(vectorRow, (short) longData);
+      } else if (dt == DataTypes.INT) {
+        vector.putInt(vectorRow, (int) longData);
+      } else if (dt == DataTypes.LONG) {
+        // retrieving the data after change in data type restructure operation
+        if (vector.getBlockDataType() == DataTypes.INT) {
+          vector.putLong(vectorRow, (int) longData);
+        } else if (vector.getBlockDataType() == DataTypes.LONG) {
+          vector.putLong(vectorRow, longData);
+        }
+      } else if (dt == DataTypes.TIMESTAMP) {
+        vector.putLong(vectorRow, longData * 1000L);
+      } else {
+        throw new RuntimeException("unsupported type: " + dt);
+      }
+    }
   }
 
   @Override
   public int getInvertedIndex(int rowId) {
-    throw new UnsupportedOperationException("internal error");
+    return invertedIndex[rowId];
+  }
+
+  @Override
+  public int getInvertedReverseIndex(int rowId) {
+    return invertedReverseIndex[rowId];
   }
 
   @Override
@@ -70,23 +243,43 @@ public class ColumnPageWrapper implements DimensionColumnDataChunk {
   }
 
   @Override
-  public int getColumnValueSize() {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
   public boolean isExplicitSorted() {
-    return false;
+    return isExplicitSorted;
   }
 
   @Override
-  public int compareTo(int index, byte[] compareValue) {
-    throw new UnsupportedOperationException("internal error");
+  public int compareTo(int rowId, byte[] compareValue) {
+    // rowId is the inverted index, but the null bitset is based on actual data
+    int nullBitSetRowId = rowId;
+    if (isExplicitSorted()) {
+      nullBitSetRowId = getInvertedIndex(rowId);
+    }
+    byte[] nullBitSet = getNullBitSet(nullBitSetRowId, columnPage.getColumnSpec().getColumnType());
+    if (nullBitSet != null
+        && ByteUtil.UnsafeComparer.INSTANCE.compareTo(nullBitSet, compareValue) == 0) {
+      // check if the compare value is a null value
+      // if the compare value is null and the data is also null we can directly return 0
+      return 0;
+    } else {
+      byte[] chunkData = this.getChunkDataInBytes(rowId);
+      return ByteUtil.UnsafeComparer.INSTANCE.compareTo(chunkData, compareValue);
+    }
   }
 
   @Override
   public void freeMemory() {
+    if (null != columnPage) {
+      columnPage.freeMemory();
+      columnPage = null;
+    }
+  }
 
+  @Override public boolean isAdaptiveEncoded() {
+    return isAdaptivePrimitivePage;
+  }
+
+  @Override public BitSet getNullBits() {
+    return columnPage.getNullBits();
   }
 
 }

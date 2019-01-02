@@ -18,15 +18,28 @@
 package org.apache.carbondata.core.datastore.page.encoding;
 
 import java.io.IOException;
+import java.util.BitSet;
 
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 public interface ColumnPageDecoder {
 
   /**
    * Apply decoding algorithm on input byte array and return decoded column page
    */
-  ColumnPage decode(byte[] input, int offset, int length) throws MemoryException, IOException;
+  ColumnPage decode(byte[] input, int offset, int length)
+      throws MemoryException, IOException;
 
+  /**
+   *  Apply decoding algorithm on input byte array and fill the vector here.
+   */
+  void decodeAndFillVector(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
+      BitSet nullBits, boolean isLVEncoded, int pageSize, ReusableDataBuffer reusableDataBuffer)
+      throws MemoryException, IOException;
+
+  ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+      throws MemoryException, IOException;
 }

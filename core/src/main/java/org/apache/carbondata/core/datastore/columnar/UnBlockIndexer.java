@@ -28,6 +28,9 @@ public final class UnBlockIndexer {
   public static int[] uncompressIndex(int[] indexData, int[] indexMap) {
     int actualSize = indexData.length;
     int mapLength = indexMap.length;
+    if (indexMap.length == 0) {
+      return indexData;
+    }
     for (int i = 0; i < mapLength; i++) {
       actualSize += indexData[indexMap[i] + 1] - indexData[indexMap[i]] - 1;
     }
@@ -51,7 +54,7 @@ public final class UnBlockIndexer {
     return indexes;
   }
 
-  public static byte[] uncompressData(byte[] data, int[] index, int keyLen) {
+  public static byte[] uncompressData(byte[] data, int[] index, int keyLen, int dataLength) {
     if (index.length < 1) {
       return data;
     }
@@ -64,7 +67,7 @@ public final class UnBlockIndexer {
     }
     byte[] uncompressedData = new byte[actualSize * keyLen];
     int picIndex = 0;
-    for (int i = 0; i < data.length; i += keyLen) {
+    for (int i = 0; i < dataLength; i += keyLen) {
       numberOfCopy = index[picIndex * 2 + 1];
       picIndex++;
       for (int j = 0; j < numberOfCopy; j++) {

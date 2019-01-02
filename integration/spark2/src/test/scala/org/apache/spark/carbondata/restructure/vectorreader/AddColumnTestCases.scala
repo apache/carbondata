@@ -21,14 +21,16 @@ import java.io.{File, FileOutputStream, FileWriter}
 import java.math.{BigDecimal, RoundingMode}
 import java.sql.{Date, Timestamp}
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -129,18 +131,19 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   test("test compaction after adding new column") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("ALTER TABLE addcolumntest COMPACT 'major'")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "0Compacted")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "1Compacted")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "0.1Success")
+    sql("SHOW SEGMENTS FOR TABLE addcolumntest").show(100, false)
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "0 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "1 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "0.1 Success")
     checkAnswer(sql("SELECT charField FROM addcolumntest"), Seq(Row("abc"), Row("def")))
 
     afterAll
     beforeAll
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     sql("ALTER TABLE addcolumntest COMPACT 'major'")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "0Compacted")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "1Compacted")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "0.1Success")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "0 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "1 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE addcolumntest"), true, "0.1 Success")
     checkAnswer(sql("SELECT charField FROM addcolumntest"), Seq(Row("abc"), Row("def")))
   }
 
@@ -239,7 +242,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test to check if exception is thrown with wrong char syntax") {
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    intercept[Exception] {
+    try {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
@@ -249,6 +252,10 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql(
         "ALTER TABLE carbon_table ADD COLUMNS(newfield char) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       sql("DROP TABLE IF EXISTS carbon_table")
+      assert(true)
+    }
+    catch {
+      case _: Throwable => assert(false)
     }
   }
 
@@ -268,7 +275,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test to check if exception is thrown with wrong varchar syntax") {
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    intercept[Exception] {
+    try {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
@@ -278,6 +285,10 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql(
         "ALTER TABLE carbon_table ADD COLUMNS(newfield varchar) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       sql("DROP TABLE IF EXISTS carbon_table")
+      assert(true)
+    }
+    catch {
+      case exception:Exception => assert(false)
     }
   }
 
@@ -418,6 +429,30 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 
+  test("test to check if intField returns correct result - dictionary exclude") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "ALTER TABLE carbon_table ADD COLUMNS(newField INT) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='67890', 'DICTIONARY_EXCLUDE'='newField')")
+    checkAnswer(sql("SELECT DISTINCT(newField) FROM carbon_table"), Row(67890))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if bigintField returns correct result - dictionary exclude") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "ALTER TABLE carbon_table ADD COLUMNS(newField bigint) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='67890', 'DICTIONARY_EXCLUDE'='newField')")
+    checkAnswer(sql("SELECT DISTINCT(newField) FROM carbon_table"), Row(67890))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
   test("test to check if shortField returns correct result") {
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
@@ -529,9 +564,9 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("ALTER TABLE alter_dict DROP COLUMNS(charField)")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_dict OPTIONS('FILEHEADER'='stringField')")
     sql("ALTER TABLE alter_dict COMPACT 'major'")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_dict"), true, "0Compacted")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_dict"), true, "1Compacted")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_dict"), true, "0.1Success")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_dict"), true, "0 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_dict"), true, "1 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_dict"), true, "0.1 Success")
     sql("DROP TABLE IF EXISTS alter_dict")
   }
 
@@ -556,9 +591,9 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("ALTER TABLE alter_no_dict DROP COLUMNS(charField)")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_no_dict OPTIONS('FILEHEADER'='stringField')")
     sql("ALTER TABLE alter_no_dict COMPACT 'major'")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_no_dict"), true, "0Compacted")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_no_dict"), true, "1Compacted")
-    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_no_dict"), true, "0.1Success")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_no_dict"), true, "0 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_no_dict"), true, "1 Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE alter_no_dict"), true, "0.1 Success")
     sql("DROP TABLE IF EXISTS alter_no_dict")
   }
 
@@ -596,6 +631,79 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("no inverted index after alter command") {
+    sql("drop table if exists NO_INVERTED_CARBON")
+    sql(
+      """
+           CREATE TABLE IF NOT EXISTS NO_INVERTED_CARBON
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('NO_INVERTED_INDEX'='city')
+      """)
+
+    sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) tblproperties('NO_INVERTED_INDEX'='col2')")
+    checkExistence(sql("desc formatted NO_INVERTED_CARBON"),false,"Inverted Index Columns name, col1")
+  }
+
+  // sort_columns cannot be given for newly added column, so inverted index will not be displayed
+  // if it is not in sort_columns
+  ignore("inverted index after alter command") {
+    sql("drop table if exists NO_INVERTED_CARBON")
+    sql(
+      """
+           CREATE TABLE IF NOT EXISTS NO_INVERTED_CARBON
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('INVERTED_INDEX'='city')
+      """)
+
+    sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) tblproperties('INVERTED_INDEX'='col2')")
+    val df = sql("describe formatted NO_INVERTED_CARBON")
+    checkExistence(df, true, "Inverted Index Columns city, col2")
+  }
+
+  test("test if adding column in pre-aggregate table throws exception") {
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preagg1")
+    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
+    sql(
+      "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
+      " a,sum(b) from PreAggMain group by a")
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table preaggmain_preagg1 add columns(d string)")
+    }.getMessage.contains("Cannot add columns"))
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preagg1")
+  }
+
+  test("test rename textFileTable") {
+    sql("drop table if exists renameTextFileTable")
+    sql("drop table if exists new_renameTextFileTable")
+    sql("create table renameTextFileTable (id int,time string) row format delimited fields terminated by ',' stored as textfile ")
+    sql("alter table renameTextFileTable rename to new_renameTextFileTable")
+    checkAnswer(sql("DESC new_renameTextFileTable"),Seq(Row("id","int",null),Row("time","string",null)))
+    intercept[Exception] {
+      sql("select * from renameTextFileTable")
+    }
+    sql("drop table if exists new_renameTextFileTable")
+    sql("drop table if exists renameTextFileTable")
+  }
+
+  test("test rename [create table, rename, create same table with different schema]"){
+    sql("drop table if exists t5")
+    sql("drop table if exists t6")
+
+    sql("create table t5 (c1 string, c2 int) stored by 'carbondata'")
+    sql("insert into t5 select 'asd',1")
+    sql("alter table t5 rename to t6")
+    sql("create table t5 (c1 string, c2 int,c3 string) stored by 'carbondata'")
+    sql("insert into t5 select 'asd',1,'sdf'")
+    val t5: CarbonTable = CarbonEnv.getCarbonTable(None, "t5")(sqlContext.sparkSession)
+    assert(t5.getTablePath
+      .contains(t5.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId))
+    checkAnswer(sql("select * from t5"),Seq(Row("asd",1,"sdf")))
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("DROP TABLE IF EXISTS hivetable")
@@ -609,6 +717,9 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_dict")
     sql("DROP TABLE IF EXISTS alter_sort_columns")
     sql("DROP TABLE IF EXISTS alter_no_dict")
+    sql("drop table if exists NO_INVERTED_CARBON")
+    sql("drop table if exists new_renameTextFileTable")
+    sql("drop table if exists renameTextFileTable")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

@@ -17,10 +17,11 @@
 
 package org.apache.carbondata.spark.testsuite.partition
 
+import org.apache.spark.sql.{CarbonEnv, SQLContext}
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.util.CarbonProperties
@@ -49,11 +50,11 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='3')
       """.stripMargin)
 
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_hashTable")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "hashTable")(sqlContext.sparkSession)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("empno"))
-    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.INT)
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.INT)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 0)
     assert(partitionInfo.getPartitionType ==  PartitionType.HASH)
     assert(partitionInfo.getNumPartitions == 3)
@@ -69,18 +70,17 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (doj Timestamp)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-        |  'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59')
+        |  'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59', 'DICTIONARY_INCLUDE'='doj')
       """.stripMargin)
 
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_rangeTable")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "rangeTable")(sqlContext.sparkSession)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("doj"))
-    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.TIMESTAMP)
-    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 3)
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.TIMESTAMP)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 2)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.DICTIONARY)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.DIRECT_DICTIONARY)
-    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(2) == Encoding.INVERTED_INDEX)
     assert(partitionInfo.getPartitionType == PartitionType.RANGE)
     assert(partitionInfo.getRangeInfo.size == 2)
     assert(partitionInfo.getRangeInfo.get(0).equals("2017-06-11 00:00:02"))
@@ -99,13 +99,12 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('PARTITION_TYPE'='LIST',
         |  'LIST_INFO'='0, 1, (2, 3)')
       """.stripMargin)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_listTable")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val carbonTable =  CarbonEnv.getCarbonTable(Some("default"), "listTable")(sqlContext.sparkSession)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("workgroupcategory"))
-    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.STRING)
-    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 1)
-    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.INVERTED_INDEX)
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.STRING)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 0)
     assert(partitionInfo.getPartitionType == PartitionType.LIST)
     assert(partitionInfo.getListInfo.size == 3)
     assert(partitionInfo.getListInfo.get(0).size == 1)
@@ -144,7 +143,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql(
       """create table des(a int, b string) partitioned by (c string) stored by 'carbondata'
         |tblproperties ('partition_type'='list','list_info'='1,2')""".stripMargin)
-    checkExistence(sql("describe formatted des"), true, "Partition Columns")
+    checkExistence(sql("describe formatted des"), true, "Partition Type")
     sql("drop table if exists des")
   }
 
@@ -197,7 +196,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_int.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_int.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_small")
     val exception_test_list_small: Exception = intercept[Exception] {
@@ -208,7 +207,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_small.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_small.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_float")
     val exception_test_list_float: Exception = intercept[Exception] {
@@ -219,7 +218,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_float.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_float.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_double")
     val exception_test_list_double: Exception = intercept[Exception] {
@@ -230,7 +229,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_double.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_double.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_bigint")
     val exception_test_list_bigint: Exception = intercept[Exception] {
@@ -241,7 +240,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_bigint.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_bigint.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_date")
     val exception_test_list_date: Exception = intercept[Exception] {
@@ -252,7 +251,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_date.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_date.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_timestamp")
     val exception_test_list_timestamp: Exception = intercept[Exception] {
@@ -263,7 +262,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_timestamp.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_timestamp.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_decimal")
     val exception_test_list_decimal: Exception = intercept[Exception] {
@@ -274,7 +273,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='23.23111,2.32')
         """.stripMargin)
     }
-    assert(exception_test_list_decimal.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_decimal.getMessage.contains("Invalid Partition Values"))
   }
 
   test("test exception when values in range_info can not match partition column type") {
@@ -287,7 +286,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_int.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_int.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_smallint")
     val exception_test_range_smallint: Exception = intercept[Exception] {
@@ -298,7 +297,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_smallint.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_smallint.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_float")
     val exception_test_range_float: Exception = intercept[Exception] {
@@ -309,7 +308,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_float.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_float.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_double")
     val exception_test_range_double: Exception = intercept[Exception] {
@@ -320,7 +319,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_double.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_double.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_bigint")
     val exception_test_range_bigint: Exception = intercept[Exception] {
@@ -331,7 +330,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_bigint.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_bigint.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_date")
     val exception_test_range_date: Exception = intercept[Exception] {
@@ -342,7 +341,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_date.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_date.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_timestamp")
     val exception_test_range_timestamp: Exception = intercept[Exception] {
@@ -353,7 +352,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_timestamp.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_timestamp.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_decimal")
     val exception_test_range_decimal: Exception = intercept[Exception] {
@@ -364,7 +363,26 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_decimal.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_decimal.getMessage.contains("Invalid Partition Values"))
+  }
+
+  test("Invalid Partition Range") {
+    val exceptionMessage: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE default.rangeTableInvalid (empno int, empname String, designation String,
+          |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+          |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+          |  utilization int,salary int)
+          | PARTITIONED BY (doj Timestamp)
+          | STORED BY 'org.apache.carbondata.format'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
+          |  'RANGE_INFO'='2017-06-11 00:00:02')
+        """.stripMargin)
+    }
+
+    assert(exceptionMessage.getMessage
+      .contains("Range info must define a valid range.Please check again!"))
   }
 
   override def afterAll = {
@@ -395,6 +413,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test_range_date")
     sql("DROP TABLE IF EXISTS test_range_timestamp")
     sql("DROP TABLE IF EXISTS test_range_decimal")
+    sql("DROP TABLE IF EXISTS rangeTableInvalid")
   }
 
 }

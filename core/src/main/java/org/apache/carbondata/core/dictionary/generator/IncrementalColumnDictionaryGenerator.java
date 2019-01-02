@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -33,7 +32,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.devapi.DictionaryGenerator;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -41,13 +40,12 @@ import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.DictionaryService;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfo;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPreparator;
 
+import org.apache.log4j.Logger;
 
 /**
  * This generator does not maintain the whole cache of dictionary. It just maintains the cache only
@@ -57,7 +55,7 @@ import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPrepa
 public class IncrementalColumnDictionaryGenerator implements BiDictionary<Integer, String>,
         DictionaryGenerator<Integer, String>, DictionaryWriter {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
           LogServiceFactory.getLogService(IncrementalColumnDictionaryGenerator.class.getName());
 
   private final Object lock = new Object();
@@ -99,7 +97,9 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
   }
 
   @Override public int size() {
-    return currentDictionarySize;
+    synchronized (lock) {
+      return currentDictionarySize;
+    }
   }
 
   @Override public Integer generateKey(String value) throws DictionaryGenerationException {
@@ -116,47 +116,47 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
 
   @Override public void writeDictionaryData() throws IOException {
     // initialize params
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
-    CarbonTableIdentifier tableIdentifier = carbonTable.getCarbonTableIdentifier();
+    AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     ColumnIdentifier columnIdentifier = dimension.getColumnIdentifier();
-    String storePath = carbonTable.getStorePath();
     DictionaryService dictionaryService = CarbonCommonFactory.getDictionaryService();
     // create dictionary cache from dictionary File
     DictionaryColumnUniqueIdentifier identifier =
-            new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier,
-                    columnIdentifier.getDataType(), carbonTablePath);
-    Boolean isDictExists = CarbonUtil.isFileExistsForGivenColumn(storePath, identifier);
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
+            columnIdentifier.getDataType());
+    Boolean isDictExists = CarbonUtil.isFileExistsForGivenColumn(identifier);
     Dictionary dictionary = null;
     long t1 = System.currentTimeMillis();
     if (isDictExists) {
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache = CacheProvider.getInstance()
-              .createCache(CacheType.REVERSE_DICTIONARY, storePath);
+              .createCache(CacheType.REVERSE_DICTIONARY);
       dictionary = dictCache.get(identifier);
     }
     long dictCacheTime = System.currentTimeMillis() - t1;
     long t2 = System.currentTimeMillis();
     // write dictionary
     CarbonDictionaryWriter dictionaryWriter = null;
-    dictionaryWriter = dictionaryService
-            .getDictionaryWriter(tableIdentifier, identifier, storePath);
+    dictionaryWriter = dictionaryService.getDictionaryWriter(identifier);
     List<String> distinctValues = writeDictionary(dictionaryWriter, isDictExists);
     long dictWriteTime = System.currentTimeMillis() - t2;
     long t3 = System.currentTimeMillis();
     // write sort index
     if (distinctValues.size() > 0) {
       writeSortIndex(distinctValues, dictionary,
-              dictionaryService, tableIdentifier, columnIdentifier, storePath);
+              dictionaryService, absoluteTableIdentifier, columnIdentifier);
     }
     long sortIndexWriteTime = System.currentTimeMillis() - t3;
     // update Meta Data
     updateMetaData(dictionaryWriter);
-    LOGGER.audit("\n columnName: " + dimension.getColName() +
+    LOGGER.info("\n columnName: " + dimension.getColName() +
             "\n columnId: " + dimension.getColumnId() +
             "\n new distinct values count: " + distinctValues.size() +
             "\n create dictionary cache: " + dictCacheTime +
             "\n sort list, distinct and write: " + dictWriteTime +
             "\n write sort info: " + sortIndexWriteTime);
+
+    if (isDictExists) {
+      CarbonUtil.clearDictionaryCache(dictionary);
+    }
   }
 
   /**
@@ -208,32 +208,26 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
    * @param distinctValues
    * @param dictionary
    * @param dictionaryService
-   * @param tableIdentifier
+   * @param absoluteTableIdentifier
    * @param columnIdentifier
-   * @param storePath
    * @throws IOException
    */
   private void writeSortIndex(List<String> distinctValues,
                               Dictionary dictionary,
                               DictionaryService dictionaryService,
-                              CarbonTableIdentifier tableIdentifier,
-                              ColumnIdentifier columnIdentifier,
-                              String storePath) throws IOException {
+                              AbsoluteTableIdentifier absoluteTableIdentifier,
+                              ColumnIdentifier columnIdentifier) throws IOException {
     CarbonDictionarySortIndexWriter carbonDictionarySortIndexWriter = null;
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(storePath, tableIdentifier.getDatabaseName(),
-            tableIdentifier.getTableName());
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(), carbonTablePath);
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
+            columnIdentifier.getDataType());
     try {
       CarbonDictionarySortInfoPreparator preparator = new CarbonDictionarySortInfoPreparator();
       CarbonDictionarySortInfo dictionarySortInfo =
               preparator.getDictionarySortInfo(distinctValues, dictionary,
                       dimension.getDataType());
       carbonDictionarySortIndexWriter = dictionaryService
-          .getDictionarySortIndexWriter(tableIdentifier, dictionaryColumnUniqueIdentifier,
-              storePath);
+          .getDictionarySortIndexWriter(dictionaryColumnUniqueIdentifier);
       carbonDictionarySortIndexWriter.writeSortIndex(dictionarySortInfo.getSortIndex());
       carbonDictionarySortIndexWriter
               .writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted());

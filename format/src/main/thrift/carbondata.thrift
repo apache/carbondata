@@ -45,6 +45,7 @@ struct BlockletBTreeIndex{
 struct BlockletMinMaxIndex{
     1: required list<binary> min_values; //Min value of all columns of one blocklet Bit-Packed
     2: required list<binary> max_values; //Max value of all columns of one blocklet Bit-Packed
+    3: optional list<bool> min_max_presence; // flag to specify whether min max is written for a column or not
 }
 
 /**
@@ -65,10 +66,12 @@ enum SortState{
 }
 
 /**
- * Compressions supported by CarbonData.
+ * Compressions for column page supported by CarbonData.
  */
 enum CompressionCodec{
     SNAPPY = 0;
+    //** We will not use this CompressionCodec any longer since 1.5.0, but because it is required in some structure, we cannot get rid of it. So here I add another deprecated enum to alert the people who want to use it **//
+    DEPRECATED = 1;
 }
 
 /**
@@ -82,6 +85,8 @@ struct ChunkCompressionMeta{
     2: required i64 total_uncompressed_size;
     /** Total byte size of all compressed pages in this column chunk (including the headers) **/
     3: required i64 total_compressed_size;
+    /** compressor name for chunk, this is introduced in 1.5.0 to make compression for final store more extensible. We will first check compression_codec, if it is not set, we will use this compressor_name **/
+    4: optional string compressor_name;
 }
 
 /**
@@ -145,6 +150,7 @@ struct DataChunk3{
     1: required list<DataChunk2> data_chunk_list; // List of data chunk
     2: optional list<i32> page_offset; // Offset of each chunk
     3: optional list<i32> page_length; // Length of each chunk
+    4: optional LocalDictionaryChunk local_dictionary; // to store blocklet local dictionary values
    
  }
 /**
@@ -152,7 +158,7 @@ struct DataChunk3{
  */
 struct BlockletInfo{
     1: required i32 num_rows;	// Number of rows in this blocklet
-    2: required list<DataChunk> column_data_chunks;	// Information about all column chunks in this blocklet
+    2: optional list<DataChunk> column_data_chunks;	// Information about all column chunks in this blocklet
 }
 
 /**
@@ -199,6 +205,8 @@ struct FileFooter3{
     3: required list<BlockletIndex> blocklet_index_list;	// Blocklet index of all blocklets in this file
     4: optional list<BlockletInfo3> blocklet_info_list3;	// Information about blocklets of all columns in this file for V3 format
     5: optional dictionary.ColumnDictionaryChunk dictionary; // Blocklet local dictionary
+    6: optional bool is_sort; // True if the data is sorted in this file, it is used for compaction to decide whether to use merge sort or not
+    7: optional map<string, string> extra_info; // map used to write extra info/metadata to file footer ,like who is writing the file and in which version the file is written etc
 }
 
 /**
@@ -209,6 +217,9 @@ struct FileHeader{
 	2: required list<schema.ColumnSchema> column_schema;  // Description of columns in this file
 	3: optional bool is_footer_present; //  To check whether footer is present or not
 	4: optional i64 time_stamp; // Timestamp to compare column schema against master schema
+	5: optional bool is_splitable; // Whether file is splitable or not
+	6: optional binary sync_marker; // 16 bytes sync marker
+  7: optional string compressor_name;
 }
 
 /**
@@ -225,7 +236,18 @@ enum MutationType {
 struct BlockletHeader{
 	1: required i32 blocklet_length; // Length of blocklet data
 	2: required MutationType mutation; // Mutation type of this blocklet
-	3: required BlockletIndex blocklet_index;  // Index for the following blocklet
+	3: optional BlockletIndex blocklet_index;  // Index for the following blocklet
 	4: required BlockletInfo blocklet_info;  // Info for the following blocklet
 	5: optional dictionary.ColumnDictionaryChunk dictionary; // Blocklet local dictionary
+}
+
+struct LocalDictionaryChunk {
+  1: required LocalDictionaryChunkMeta dictionary_meta
+	2: required binary dictionary_data; // the values in dictionary order, each value is represented in binary format
+	3: required binary dictionary_values; // surrogate keys used in the blocklet
+}
+
+struct LocalDictionaryChunkMeta {
+  1: required list<schema.Encoding> encoders; // The List of encoders overriden at node level
+  2: required list<binary> encoder_meta; // Extra information required by encoders
 }

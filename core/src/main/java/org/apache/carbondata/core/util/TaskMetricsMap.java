@@ -23,17 +23,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.log4j.Logger;
 
 /**
  * This class maintains task level metrics info for all spawned child threads and parent task thread
  */
 public class TaskMetricsMap {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(TaskMetricsMap.class.getName());
 
   public static final InheritableThreadLocal<Long> threadLocal = new InheritableThreadLocal<>();
@@ -128,10 +128,6 @@ public class TaskMetricsMap {
       }
     }
     return sum;
-  }
-
-  public void clear() {
-    metricMap.clear();
   }
 
   /**

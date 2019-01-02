@@ -23,11 +23,14 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.ColumnType;
+import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
-import org.apache.carbondata.processing.newflow.complexobjects.ArrayObject;
-
+import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
+import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 
 /**
  * Array DataType stateless object used in data loading
@@ -52,7 +55,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   /**
    * parent column name
    */
-  private String parentname;
+  private String parentName;
 
   /**
    * output array index
@@ -60,20 +63,49 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   private int outputArrayIndex;
 
   /**
+   * Dictionary column
+   */
+  private boolean isDictionaryColumn;
+
+  /**
    * current data counter
    */
   private int dataCounter;
 
+  private ArrayDataType(int outputArrayIndex, int dataCounter, GenericDataType children,
+      String name) {
+    this.outputArrayIndex = outputArrayIndex;
+    this.dataCounter = dataCounter;
+    this.children = children;
+    this.name = name;
+  }
+
+
   /**
    * constructor
    * @param name
-   * @param parentname
+   * @param parentName
    * @param columnId
    */
-  public ArrayDataType(String name, String parentname, String columnId) {
+  public ArrayDataType(String name, String parentName, String columnId) {
     this.name = name;
-    this.parentname = parentname;
+    this.parentName = parentName;
     this.columnId = columnId;
+  }
+
+  /**
+   * constructor
+   * @param name
+   * @param parentName
+   * @param columnId
+   * @param isDictionaryColumn
+   */
+  public ArrayDataType(String name, String parentName, String columnId,
+      Boolean isDictionaryColumn) {
+    this.name = name;
+    this.parentName = parentName;
+    this.columnId = columnId;
+    this.isDictionaryColumn = isDictionaryColumn;
   }
 
   /*
@@ -81,7 +113,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    */
   @Override
   public void addChildren(GenericDataType children) {
-    if (this.getName().equals(children.getParentname())) {
+    if (this.getName().equals(children.getParentName())) {
       this.children = children;
     } else {
       this.children.addChildren(children);
@@ -100,7 +132,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    * return column unique id
    */
   @Override
-  public String getColumnId() {
+  public String getColumnNames() {
     return columnId;
   }
 
@@ -108,8 +140,8 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    * set parent name
    */
   @Override
-  public String getParentname() {
-    return parentname;
+  public String getParentName() {
+    return parentName;
   }
 
   /*
@@ -140,43 +172,47 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   }
 
-  @Override
-  public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream)
-      throws IOException, DictionaryGenerationException {
+  @Override public boolean getIsColumnDictionary() {
+    return isDictionaryColumn;
+  }
+
+  @Override public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream,
+      BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
     if (input == null) {
       dataOutputStream.writeInt(1);
-      children.writeByteArray(null, dataOutputStream);
+      children.writeByteArray(null, dataOutputStream, logHolder);
     } else {
       Object[] data = input.getData();
       dataOutputStream.writeInt(data.length);
       for (Object eachInput : data) {
-        children.writeByteArray(eachInput, dataOutputStream);
+        children.writeByteArray(eachInput, dataOutputStream, logHolder);
       }
     }
   }
 
   @Override
   public void fillCardinality(List<Integer> dimCardWithComplex) {
-    dimCardWithComplex.add(0);
-    children.fillCardinality(dimCardWithComplex);
+    if (this.getIsColumnDictionary()) {
+      dimCardWithComplex.add(0);
+      children.fillCardinality(dimCardWithComplex);
+    }
   }
 
-  /**
-   * parse byte array and bit pack
-   */
   @Override
-  public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-      KeyGenerator[] generator) throws IOException, KeyGenException {
+  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
+      KeyGenerator[] generator)
+      throws IOException, KeyGenException {
     int dataLength = byteArrayInput.getInt();
 
     dataOutputStream.writeInt(dataLength);
     if (children instanceof PrimitiveDataType) {
-      dataOutputStream.writeInt(generator[children.getSurrogateIndex()].getKeySizeInBytes());
+      if (children.getIsColumnDictionary()) {
+        dataOutputStream.writeInt(generator[children.getSurrogateIndex()].getKeySizeInBytes());
+      }
     }
     for (int i = 0; i < dataLength; i++) {
-      children.parseAndBitPack(byteArrayInput, dataOutputStream, generator);
+      children.parseComplexValue(byteArrayInput, dataOutputStream, generator);
     }
-
   }
 
   /*
@@ -226,7 +262,10 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     columnsArray.get(this.outputArrayIndex).add(b.array());
 
     if (children instanceof PrimitiveDataType) {
-      ((PrimitiveDataType) children).setKeySize(inputArray.getInt());
+      PrimitiveDataType child = ((PrimitiveDataType) children);
+      if (child.getIsColumnDictionary()) {
+        child.setKeySize(inputArray.getInt());
+      }
     }
     for (int i = 0; i < dataLength; i++) {
       children.getColumnarDataForComplexType(columnsArray, inputArray);
@@ -270,4 +309,17 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     children.fillCardinalityAfterDataLoad(dimCardWithComplex, maxSurrogateKeyArray);
   }
 
+  @Override
+  public GenericDataType<ArrayObject> deepCopy() {
+    return new ArrayDataType(this.outputArrayIndex, this.dataCounter, this.children.deepCopy(),
+        this.name);
+  }
+
+  @Override
+  public void getComplexColumnInfo(List<ComplexColumnInfo> columnInfoList) {
+    columnInfoList.add(
+        new ComplexColumnInfo(ColumnType.COMPLEX_ARRAY, DataTypeUtil.valueOf("array"),
+            name, false));
+    children.getComplexColumnInfo(columnInfoList);
+  }
 }

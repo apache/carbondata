@@ -19,42 +19,155 @@ package org.apache.carbondata.presto.impl;
 
 import io.airlift.configuration.Config;
 
-import javax.validation.constraints.NotNull;
-
 /**
  * Configuration read from etc/catalog/carbondata.properties
  */
 public class CarbonTableConfig {
 
   //read from config
-  private String dbPath;
-  private String tablePath;
-  private String storePath;
+  private String unsafeMemoryInMb;
+  private String enableUnsafeInQueryExecution;
+  private String enableUnsafeColumnPage;
+  private String enableUnsafeSort;
+  private String enableQueryStatistics;
+  private String batchSize;
+  private String s3A_acesssKey;
+  private String s3A_secretKey;
+  private String s3_acesssKey;
+  private String s3_secretKey;
+  private String s3N_acesssKey;
+  private String s3N_secretKey;
+  private String endPoint;
+  private String pushRowFilter;
 
-  @NotNull public String getDbPath() {
-    return dbPath;
+
+  public String getUnsafeMemoryInMb() {
+    return unsafeMemoryInMb;
   }
 
-  @Config("carbondata-store") public CarbonTableConfig setDbPath(String dbPath) {
-    this.dbPath = dbPath;
+  @Config("carbon.unsafe.working.memory.in.mb")
+  public CarbonTableConfig setUnsafeMemoryInMb(String unsafeMemoryInMb) {
+    this.unsafeMemoryInMb = unsafeMemoryInMb;
     return this;
   }
 
-  @NotNull public String getTablePath() {
-    return tablePath;
+  public String getEnableUnsafeInQueryExecution() {
+    return enableUnsafeInQueryExecution;
   }
 
-  @Config("carbondata-store") public CarbonTableConfig setTablePath(String tablePath) {
-    this.tablePath = tablePath;
+  @Config("enable.unsafe.in.query.processing")
+  public CarbonTableConfig setEnableUnsafeInQueryExecution(String enableUnsafeInQueryExecution) {
+    this.enableUnsafeInQueryExecution = enableUnsafeInQueryExecution;
     return this;
   }
 
-  @NotNull public String getStorePath() {
-    return storePath;
+  public String getEnableUnsafeColumnPage() { return enableUnsafeColumnPage; }
+
+  @Config("enable.unsafe.columnpage")
+  public CarbonTableConfig setEnableUnsafeColumnPage(String enableUnsafeColumnPage) {
+    this.enableUnsafeColumnPage = enableUnsafeColumnPage;
+    return this;
   }
 
-  @Config("carbondata-store") public CarbonTableConfig setStorePath(String storePath) {
-    this.storePath = storePath;
+  public String getEnableUnsafeSort() { return enableUnsafeSort; }
+
+  @Config("enable.unsafe.sort")
+  public CarbonTableConfig setEnableUnsafeSort(String enableUnsafeSort) {
+    this.enableUnsafeSort = enableUnsafeSort;
     return this;
+  }
+
+  public String getEnableQueryStatistics() { return enableQueryStatistics; }
+
+  @Config("enable.query.statistics")
+  public CarbonTableConfig setEnableQueryStatistics(String enableQueryStatistics) {
+    this.enableQueryStatistics = enableQueryStatistics;
+    return this;
+  }
+
+  public String getBatchSize() { return batchSize; }
+
+  @Config("query.vector.batchSize")
+  public CarbonTableConfig setBatchSize(String batchSize) {
+    this.batchSize = batchSize;
+    return this;
+  }
+
+  public String getS3A_AcesssKey() {
+    return s3A_acesssKey;
+  }
+
+  public String getS3A_SecretKey() {
+    return s3A_secretKey;
+  }
+
+  public String getS3_AcesssKey() {
+    return s3_acesssKey;
+  }
+
+  public String getS3_SecretKey() {
+    return s3_secretKey;
+  }
+
+  public String getS3N_AcesssKey() {
+    return s3N_acesssKey;
+  }
+
+  public String getS3N_SecretKey() {
+    return s3N_secretKey;
+  }
+
+  public String getS3EndPoint() {
+    return endPoint;
+  }
+
+
+  @Config("fs.s3a.access.key")
+  public CarbonTableConfig setS3A_AcesssKey(String s3A_acesssKey) {
+    this.s3A_acesssKey = s3A_acesssKey;
+    return this;
+  }
+
+  @Config("fs.s3a.secret.key")
+  public CarbonTableConfig setS3A_SecretKey(String s3A_secretKey) {
+    this.s3A_secretKey = s3A_secretKey;
+    return this;
+  }
+
+  @Config("fs.s3.awsAccessKeyId")
+  public CarbonTableConfig setS3_AcesssKey(String s3_acesssKey) {
+    this.s3_acesssKey = s3_acesssKey;
+    return this;
+  }
+
+  @Config("fs.s3.awsSecretAccessKey")
+  public CarbonTableConfig setS3_SecretKey(String s3_secretKey) {
+    this.s3_secretKey = s3_secretKey;
+    return this;
+  }
+  @Config("fs.s3n.awsAccessKeyId")
+  public CarbonTableConfig setS3N_AcesssKey(String s3N_acesssKey) {
+    this.s3N_acesssKey = s3N_acesssKey;
+    return this;
+  }
+
+  @Config("fs.s3.awsSecretAccessKey")
+  public CarbonTableConfig setS3N_SecretKey(String s3N_secretKey) {
+    this.s3N_secretKey = s3N_secretKey;
+    return this;
+  }
+  @Config("fs.s3a.endpoint")
+  public CarbonTableConfig setS3EndPoint(String endPoint) {
+    this.endPoint = endPoint;
+    return this;
+  }
+
+  public String getPushRowFilter() {
+    return pushRowFilter;
+  }
+
+  @Config("carbon.push.rowfilters.for.vector")
+  public void setPushRowFilter(String pushRowFilter) {
+    this.pushRowFilter = pushRowFilter;
   }
 }

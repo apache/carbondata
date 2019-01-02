@@ -25,50 +25,82 @@ import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory, DataMapWriter}
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
+import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
-import org.apache.carbondata.core.events.ChangeEvent
-import org.apache.carbondata.core.indexstore.schema.FilterType
+import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.events.Event
 
-class C2DataMapFactory() extends DataMapFactory {
+class C2DataMapFactory(
+    carbonTable: CarbonTable,
+    dataMapSchema: DataMapSchema) extends CoarseGrainDataMapFactory(carbonTable, dataMapSchema) {
 
-  override def init(identifier: AbsoluteTableIdentifier,
-      dataMapName: String): Unit = {}
+  var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
-  override def fireEvent(event: ChangeEvent[_]): Unit = ???
+  override def fireEvent(event: Event): Unit = ???
 
-  override def clear(segmentId: String): Unit = ???
+  override def clear(segment: Segment): Unit = {}
 
-  override def clear(): Unit = ???
+  override def clear(): Unit = {}
 
-  override def getDataMap(distributable: DataMapDistributable): DataMap = ???
+  override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = ???
 
-  override def getDataMaps(segmentId: String): util.List[DataMap] = ???
+  override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = ???
 
-  override def createWriter(segmentId: String): DataMapWriter = DataMapWriterSuite.dataMapWriterC2Mock
+  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter =
+    DataMapWriterSuite.dataMapWriterC2Mock(identifier, "testdm", segment, shardName)
 
-  override def getMeta: DataMapMeta = new DataMapMeta(List("c2").asJava, FilterType.EQUALTO)
+  override def getMeta: DataMapMeta =
+    new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema), List(ExpressionType.EQUALS).asJava)
 
   /**
    * Get all distributable objects of a segmentid
    *
    * @return
    */
-  override def toDistributable(segmentId: String): util.List[DataMapDistributable] = {
+  override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = {
+    util.Collections.emptyList()
+  }
+
+  /**
+   * delete datamap of the segment
+   */
+  override def deleteDatamapData(segment: Segment): Unit = {
+
+  }
+
+  /**
+   * delete datamap data if any
+   */
+  override def deleteDatamapData(): Unit = {
+  }
+
+  /**
+   * defines the features scopes for the datamap
+   */
+  override def willBecomeStale(operation: TableOperation): Boolean = {
+    false
+  }
+
+  override def createBuilder(segment: Segment,
+      shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
     ???
   }
 }
 
 class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
-
   def buildTestData(numRows: Int): DataFrame = {
     import sqlContext.implicits._
-    sqlContext.sparkContext.parallelize(1 to numRows)
-      .map(x => ("a", "b", x))
+    sqlContext.sparkContext.parallelize(1 to numRows, 1)
+      .map(x => ("a" + x, "b", x))
       .toDF("c1", "c2", "c3")
   }
 
@@ -82,41 +114,50 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test write datamap 2 pages") {
+    sql(s"CREATE TABLE carbon1(c1 STRING, c2 STRING, c3 INT) STORED BY 'org.apache.carbondata.format'")
     // register datamap writer
-    DataMapStoreManager.getInstance().createAndRegisterDataMap(
-      AbsoluteTableIdentifier.from(storeLocation, "default", "carbon1"),
-      classOf[C2DataMapFactory].getName,
-      "test")
-
+    sql(
+      s"""
+         | CREATE DATAMAP test1 ON TABLE carbon1
+         | USING '${classOf[C2DataMapFactory].getName}'
+         | DMPROPERTIES('index_columns'='c2')
+       """.stripMargin)
     val df = buildTestData(33000)
 
     // save dataframe to carbon file
     df.write
       .format("carbondata")
       .option("tableName", "carbon1")
+      .option("tempCSV", "false")
+      .option("sort_columns","c1")
       .mode(SaveMode.Overwrite)
       .save()
 
     assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
     assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
-    assert(DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
-      "blocklet start 0",
-      "add page data: blocklet 0, page 0",
-      "add page data: blocklet 0, page 1",
-      "blocklet end: 0"
-    ))
+    assert(
+      DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
+        "blocklet start 0",
+        "add page data: blocklet 0, page 0",
+        "add page data: blocklet 0, page 1",
+        "blocklet end: 0"
+      ))
     DataMapWriterSuite.callbackSeq = Seq()
   }
 
   test("test write datamap 2 blocklet") {
-    // register datamap writer
-    DataMapStoreManager.getInstance().createAndRegisterDataMap(
-      AbsoluteTableIdentifier.from(storeLocation, "default", "carbon2"),
-      classOf[C2DataMapFactory].getName,
-      "test")
-
+    sql(s"CREATE TABLE carbon2(c1 STRING, c2 STRING, c3 INT) STORED BY 'org.apache.carbondata.format'")
+    sql(
+      s"""
+         | CREATE DATAMAP test2 ON TABLE carbon2
+         | USING '${classOf[C2DataMapFactory].getName}'
+         | DMPROPERTIES('index_columns'='c2')
+       """.stripMargin)
     CarbonProperties.getInstance()
-      .addProperty("carbon.blockletgroup.size.in.mb", "1")
+      .addProperty("carbon.blockletgroup.size.in.mb", "16")
+    CarbonProperties.getInstance()
+      .addProperty("carbon.number.of.cores.while.loading",
+        CarbonCommonConstants.NUM_CORES_DEFAULT_VAL)
 
     val df = buildTestData(300000)
 
@@ -124,27 +165,31 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     df.write
       .format("carbondata")
       .option("tableName", "carbon2")
+      .option("tempCSV", "false")
+      .option("sort_columns","c1")
+      .option("SORT_SCOPE","GLOBAL_SORT")
       .mode(SaveMode.Overwrite)
       .save()
 
     assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
     assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
-    assert(DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
-      "blocklet start 0",
-      "add page data: blocklet 0, page 0",
-      "add page data: blocklet 0, page 1",
-      "add page data: blocklet 0, page 2",
-      "add page data: blocklet 0, page 3",
-      "add page data: blocklet 0, page 4",
-      "add page data: blocklet 0, page 5",
-      "add page data: blocklet 0, page 6",
-      "add page data: blocklet 0, page 7",
-      "blocklet end: 0",
-      "blocklet start 1",
-      "add page data: blocklet 1, page 0",
-      "add page data: blocklet 1, page 1",
-      "blocklet end: 1"
-    ))
+    // corrected test case the min "carbon.blockletgroup.size.in.mb" size could not be less than
+    // 64 MB
+    assert(
+      DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
+        "blocklet start 0",
+        "add page data: blocklet 0, page 0",
+        "add page data: blocklet 0, page 1",
+        "add page data: blocklet 0, page 2",
+        "add page data: blocklet 0, page 3",
+        "add page data: blocklet 0, page 4",
+        "add page data: blocklet 0, page 5",
+        "add page data: blocklet 0, page 6",
+        "add page data: blocklet 0, page 7",
+        "add page data: blocklet 0, page 8",
+        "add page data: blocklet 0, page 9",
+        "blocklet end: 0"
+      ))
     DataMapWriterSuite.callbackSeq = Seq()
   }
 
@@ -154,20 +199,24 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
 }
 
 object DataMapWriterSuite {
+
   var callbackSeq: Seq[String] = Seq[String]()
 
-  val dataMapWriterC2Mock = new DataMapWriter {
+  def dataMapWriterC2Mock(identifier: AbsoluteTableIdentifier, dataMapName:String, segment: Segment,
+      shardName: String) =
+    new DataMapWriter(identifier.getTablePath, dataMapName, Seq().asJava, segment, shardName) {
 
-    override def onPageAdded(
-        blockletId: Int,
-        pageId: Int,
-        pages: Array[ColumnPage]): Unit = {
-      assert(pages.length == 1)
-      assert(pages(0).getDataType == DataType.STRING)
-      val bytes: Array[Byte] = pages(0).getByteArrayPage()(0)
-      assert(bytes.sameElements(Seq(0, 1, 'b'.toByte)))
-      callbackSeq :+= s"add page data: blocklet $blockletId, page $pageId"
-    }
+      override def onPageAdded(
+          blockletId: Int,
+          pageId: Int,
+          pageSize: Int,
+          pages: Array[ColumnPage]): Unit = {
+        assert(pages.length == 1)
+        assert(pages(0).getDataType == DataTypes.STRING)
+        val bytes: Array[Byte] = pages(0).getBytes(0)
+        assert(bytes.sameElements(Seq(0, 1, 'b'.toByte)))
+        callbackSeq :+= s"add page data: blocklet $blockletId, page $pageId"
+      }
 
     override def onBlockletEnd(blockletId: Int): Unit = {
       callbackSeq :+= s"blocklet end: $blockletId"
@@ -181,9 +230,21 @@ object DataMapWriterSuite {
       callbackSeq :+= s"blocklet start $blockletId"
     }
 
+    /**
+     * Start of new block notification.
+     *
+     * @param blockId file name of the carbondata file
+     */
     override def onBlockStart(blockId: String): Unit = {
       callbackSeq :+= s"block start $blockId"
     }
 
+    /**
+     * This is called during closing of writer.So after this call no more data will be sent to this
+     * class.
+     */
+    override def finish() = {
+
+    }
   }
 }
