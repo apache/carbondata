@@ -67,7 +67,7 @@ class PrestoServer {
    * start the presto server
    *
    * @param carbonStorePath the store path of carbon
-   * @param dbName the database name , if not a default database
+   * @param dbName the database name, if not a default database
    */
   def startServer(carbonStorePath: String, dbName: String, properties: util.Map[String, String]= new util.HashMap[String, String]()): Unit = {
 

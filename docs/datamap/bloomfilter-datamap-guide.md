@@ -33,7 +33,7 @@ Creating BloomFilter DataMap
   DMPROPERTIES ('index_columns'='city, name', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')
   ```
 
-Dropping specified datamap
+Dropping Specified DataMap
   ```
   DROP DATAMAP [IF EXISTS] datamap_name
   ON TABLE main_table
@@ -45,7 +45,7 @@ Showing all DataMaps on this table
   ON TABLE main_table
   ```
 
-Disable Datamap
+Disable DataMap
 > The datamap by default is enabled. To support tuning on query, we can disable a specific datamap during query to observe whether we can gain performance enhancement from it. This is effective only for current session.
 
   ```
@@ -83,11 +83,11 @@ since `id` is in the sort_columns and it is orderd,
 query on it will be fast because CarbonData can skip all the irrelative blocklets.
 But queries on `name` may be bad since the blocklet minmax may not help,
 because in each blocklet the range of the value of `name` may be the same -- all from A* to z*.
-In this case, user can create a BloomFilter datamap on column `name`.
-Moreover, user can also create a BloomFilter datamap on the sort_columns.
+In this case, user can create a BloomFilter DataMap on column `name`.
+Moreover, user can also create a BloomFilter DataMap on the sort_columns.
 This is useful if user has too many segments and the range of the value of sort_columns are almost the same.
 
-User can create BloomFilter datamap using the Create DataMap DDL:
+User can create BloomFilter DataMap using the Create DataMap DDL:
 
   ```
   CREATE DATAMAP dm
@@ -109,40 +109,40 @@ User can create BloomFilter datamap using the Create DataMap DDL:
 ## Loading Data
 When loading data to main table, BloomFilter files will be generated for all the
 index_columns given in DMProperties which contains the blockletId and a BloomFilter for each index column.
-These index files will be written inside a folder named with datamap name
+These index files will be written inside a folder named with DataMap name
 inside each segment folders.
 
 
 ## Querying Data
 
-User can verify whether a query can leverage BloomFilter datamap by executing `EXPLAIN` command,
-which will show the transformed logical plan, and thus user can check whether the BloomFilter datamap can skip blocklets during the scan.
-If the datamap does not prune blocklets well, you can try to increase the value of property `BLOOM_SIZE` and decrease the value of property `BLOOM_FPP`.
+User can verify whether a query can leverage BloomFilter DataMap by executing `EXPLAIN` command,
+which will show the transformed logical plan, and thus user can check whether the BloomFilter DataMap can skip blocklets during the scan.
+If the DataMap does not prune blocklets well, you can try to increase the value of property `BLOOM_SIZE` and decrease the value of property `BLOOM_FPP`.
 
 ## Data Management With BloomFilter DataMap
-Data management with BloomFilter datamap has no difference with that on Lucene datamap.
+Data management with BloomFilter DataMap has no difference with that on Lucene DataMap.
 You can refer to the corresponding section in `CarbonData Lucene DataMap`.
 
 ## Useful Tips
 + BloomFilter DataMap is suggested to be created on the high cardinality columns.
  Query conditions on these columns are always simple `equal` or `in`,
  such as 'col1=XX', 'col1 in (XX, YY)'.
-+ We can create multiple BloomFilter datamaps on one table,
- but we do recommend you to create one BloomFilter datamap that contains multiple index columns,
++ We can create multiple BloomFilter DataMaps on one table,
+ but we do recommend you to create one BloomFilter DataMap that contains multiple index columns,
  because the data loading and query performance will be better.
 + `BLOOM_FPP` is only the expected number from user, the actually FPP may be worse.
- If the BloomFilter datamap does not work well,
+ If the BloomFilter DataMap does not work well,
  you can try to increase `BLOOM_SIZE` and decrease `BLOOM_FPP` at the same time.
  Notice that bigger `BLOOM_SIZE` will increase the size of index file
  and smaller `BLOOM_FPP` will increase runtime calculation while performing query.
-+ '0' skipped blocklets of BloomFilter datamap in explain output indicates that
- BloomFilter datamap does not prune better than Main datamap.
++ '0' skipped blocklets of BloomFilter DataMap in explain output indicates that
+ BloomFilter DataMap does not prune better than Main DataMap.
  (For example since the data is not ordered, a specific value may be contained in many blocklets. In this case, bloom may not work better than Main DataMap.)
  If this occurs very often, it means that current BloomFilter is useless. You can disable or drop it.
- Sometimes we cannot see any pruning result about BloomFilter datamap in the explain output,
- this indicates that the previous datamap has pruned all the blocklets and there is no need to continue pruning.
-+ In some scenarios, the BloomFilter datamap may not enhance the query performance significantly
+ Sometimes we cannot see any pruning result about BloomFilter DataMap in the explain output,
+ this indicates that the previous DataMap has pruned all the blocklets and there is no need to continue pruning.
++ In some scenarios, the BloomFilter DataMap may not enhance the query performance significantly
  but if it can reduce the number of spark task,
- there is still a chance that BloomFilter datamap can enhance the performance for concurrent query.
-+ Note that BloomFilter datamap will decrease the data loading performance and may cause slightly storage expansion (for datamap index file).
+ there is still a chance that BloomFilter DataMap can enhance the performance for concurrent query.
++ Note that BloomFilter DataMap will decrease the data loading performance and may cause slightly storage expansion (for DataMap index file).
 
