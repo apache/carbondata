@@ -765,6 +765,7 @@ bool testSortBy(JNIEnv *env, char *path, int argc, char **argv) {
         writer.outputPath(path);
         writer.withCsvInput(jsonSchema);
         writer.sortBy(1, sort);
+        writer.enableLocalDictionary(NULL);
         writer.writtenBy("CSDK");
         if (argc > 3) {
             writer.withHadoopConf("fs.s3a.access.key", argv[1]);
@@ -854,23 +855,23 @@ int main(int argc, char *argv[]) {
     } else {
         int batch = 32000;
         int printNum = 32000;
-//
-        tryCatchException(env);
-        tryCarbonRowException(env, smallFilePath);
-        testCarbonProperties(env);
-        testWriteData(env, "./data", 1, argv);
-        testWriteData(env, "./dataLoadOption", 1, argv);
-        readFromLocalWithoutProjection(env, smallFilePath);
-        readFromLocalWithProjection(env, smallFilePath);
-        testWithTableProperty(env, "./dataProperty", 1, argv);
-        testSortBy(env, "./dataSort", 1, argv);
-        readSchema(env, path, false, argv, 1);
-        readSchema(env, path, true, argv, 1);
 
-        testReadNextRow(env, path, printNum, argv, 0, true);
-        testReadNextRow(env, path, printNum, argv, 0, false);
-        testReadNextBatchRow(env, path, batch, printNum, argv, 0, true);
-        testReadNextBatchRow(env, path, batch, printNum, argv, 0, false);
+//        tryCatchException(env);
+//        tryCarbonRowException(env, smallFilePath);
+//        testCarbonProperties(env);
+//        testWriteData(env, "./data", 1, argv);
+//        testWriteData(env, "./dataLoadOption", 1, argv);
+//        readFromLocalWithoutProjection(env, smallFilePath);
+//        readFromLocalWithProjection(env, smallFilePath);
+//        testWithTableProperty(env, "./dataProperty", 1, argv);
+        testSortBy(env, "./dataSort", 1, argv);
+//        readSchema(env, path, false, argv, 1);
+//        readSchema(env, path, true, argv, 1);
+//
+//        testReadNextRow(env, path, printNum, argv, 0, true);
+//        testReadNextRow(env, path, printNum, argv, 0, false);
+//        testReadNextBatchRow(env, path, batch, printNum, argv, 0, true);
+//        testReadNextBatchRow(env, path, batch, printNum, argv, 0, false);
     }
     (jvm)->DestroyJavaVM();
 
