@@ -2011,7 +2011,8 @@ public class CarbonReaderTest extends TestCase {
   }
 
   @Test
-  public void testSdkWriteWhenArrayOfStringIsEmpty() throws IOException, InvalidLoadOptionException {
+  public void testSdkWriteWhenArrayOfStringIsEmpty()
+      throws IOException, InvalidLoadOptionException {
     String badRecordAction =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
     CarbonProperties.getInstance()
@@ -2040,6 +2041,226 @@ public class CarbonReaderTest extends TestCase {
     writer.close();
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction);
+    FileUtils.deleteDirectory(new File(path));
   }
 
+  @Test
+  public void testValidateBadRecordsActionWithImproperValue() throws IOException {
+    String path = "./testValidateBadRecordsActionValue";
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("varcharField", DataTypes.VARCHAR);
+    Schema schema = new Schema(fields);
+    Map map = new HashMap();
+    map.put("BAD_RECORDS_ACTION", "FAL");
+    try {
+      CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(schema)
+          .enableLocalDictionary(false)
+          .writtenBy("CarbonReaderTest")
+          .build();
+      Assert.fail();
+    } catch (IllegalArgumentException e) {
+      Assert.assertTrue(e.getMessage().contains("option BAD_RECORDS_ACTION can have only either " +
+          "FORCE or IGNORE or REDIRECT or FAIL. It shouldn't be FAL"));
+    } catch (Exception e) {
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testValidateBadRecordsActionWithProperValue() throws IOException {
+    String path = "./testValidateBadRecordsActionValue";
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("varcharField", DataTypes.VARCHAR);
+    Schema schema = new Schema(fields);
+    Map map = new HashMap();
+    map.put("BAD_RECORDS_ACTION", "FAIL");
+    try {
+      CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(schema)
+          .enableLocalDictionary(false)
+          .writtenBy("CarbonReaderTest")
+          .build();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testValidateBadRecordsLoggerEnableWithImproperValue() throws IOException {
+    String path = "./testValidateBadRecordsLoggerEnableValue";
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("varcharField", DataTypes.VARCHAR);
+    Schema schema = new Schema(fields);
+    Map map = new HashMap();
+    map.put("bad_records_logger_enable", "FLSE");
+    try {
+      CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(schema)
+          .enableLocalDictionary(false)
+          .writtenBy("CarbonReaderTest")
+          .build();
+      Assert.fail();
+    } catch (IllegalArgumentException e) {
+      Assert.assertTrue(e.getMessage().contains(
+          "Invalid value FLSE for key bad_records_logger_enable"));
+    } catch (Exception e) {
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testValidateBadRecordsLoggerEnableWithProperValue() throws IOException {
+    String path = "./testValidateBadRecordsLoggerEnableValue";
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("varcharField", DataTypes.VARCHAR);
+    Schema schema = new Schema(fields);
+    Map map = new HashMap();
+    map.put("bad_records_logger_enable", "FALSE");
+    try {
+      CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(schema)
+          .enableLocalDictionary(false)
+          .writtenBy("CarbonReaderTest")
+          .build();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testValidateQuoteCharWithImproperValue() throws IOException {
+    String path = "./testValidateQuoteCharWithImproperValue";
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("varcharField", DataTypes.VARCHAR);
+    Schema schema = new Schema(fields);
+    Map map = new HashMap();
+    map.put("quotechar", "##");
+    try {
+      CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(schema)
+          .enableLocalDictionary(false)
+          .writtenBy("CarbonReaderTest")
+          .build();
+      Assert.fail();
+    } catch (IllegalArgumentException e) {
+      Assert.assertTrue(e.getMessage().contains(
+          "QUOTECHAR cannot be more than one character."));
+    } catch (Exception e) {
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testValidateQuoteCharWithProperValue() throws IOException {
+    String path = "./testValidateQuoteCharWithProperValue";
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("varcharField", DataTypes.VARCHAR);
+    Schema schema = new Schema(fields);
+    Map map = new HashMap();
+    map.put("quotechar", "#");
+    try {
+      CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(schema)
+          .enableLocalDictionary(false)
+          .writtenBy("CarbonReaderTest")
+          .build();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testValidateEscapeCharWithImproperValue() throws IOException {
+    String path = "./testValidateEscapeCharWithImproperValue";
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("varcharField", DataTypes.VARCHAR);
+    Schema schema = new Schema(fields);
+    Map map = new HashMap();
+    map.put("escapechar", "##");
+    try {
+      CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(schema)
+          .enableLocalDictionary(false)
+          .writtenBy("CarbonReaderTest")
+          .build();
+      Assert.fail();
+    } catch (IllegalArgumentException e) {
+      Assert.assertTrue(e.getMessage().contains(
+          "ESCAPECHAR cannot be more than one character."));
+    } catch (Exception e) {
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testValidateEscapeCharWithProperValue() throws IOException {
+    String path = "./testValidateEscapeCharWithProperValue";
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("varcharField", DataTypes.VARCHAR);
+    Schema schema = new Schema(fields);
+    Map map = new HashMap();
+    map.put("escapechar", "#");
+    try {
+      CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(schema)
+          .enableLocalDictionary(false)
+          .writtenBy("CarbonReaderTest")
+          .build();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
 }

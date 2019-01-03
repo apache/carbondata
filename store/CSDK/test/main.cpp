@@ -526,6 +526,71 @@ void testCarbonProperties(JNIEnv *env) {
     }
 }
 
+bool testValidateBadRecordsActionWithImproperValue(JNIEnv *env, char *path) {
+    char *jsonSchema = "[{stringField:string},{shortField:short},{intField:int},{longField:long},{doubleField:double},{boolField:boolean},{dateField:date},{timeField:timestamp},{floatField:float},{arrayField:array}]";
+    try {
+        CarbonWriter writer;
+        writer.builder(env);
+        writer.outputPath(path);
+        writer.withCsvInput(jsonSchema);
+        writer.withLoadOption("BAD_RECORDS_ACTION", "FAL");
+        writer.writtenBy("CSDK");
+        writer.build();
+    } catch (jthrowable ex) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+}
+
+bool testValidateBadRecordsLoggerEnableWithImproperValue(JNIEnv *env, char *path) {
+    char *jsonSchema = "[{stringField:string},{shortField:short},{intField:int},{longField:long},{doubleField:double},{boolField:boolean},{dateField:date},{timeField:timestamp},{floatField:float},{arrayField:array}]";
+    try {
+        CarbonWriter writer;
+        writer.builder(env);
+        writer.outputPath(path);
+        writer.withCsvInput(jsonSchema);
+        writer.withLoadOption("bad_records_logger_enable", "FLSE");
+        writer.writtenBy("CSDK");
+        writer.build();
+    } catch (jthrowable ex) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+}
+
+bool testValidateQuoteCharWithImproperValue(JNIEnv *env, char *path) {
+    char *jsonSchema = "[{stringField:string},{shortField:short},{intField:int},{longField:long},{doubleField:double},{boolField:boolean},{dateField:date},{timeField:timestamp},{floatField:float},{arrayField:array}]";
+    try {
+        CarbonWriter writer;
+        writer.builder(env);
+        writer.outputPath(path);
+        writer.withCsvInput(jsonSchema);
+        writer.withLoadOption("quotechar", "##");
+        writer.writtenBy("CSDK");
+        writer.build();
+    } catch (jthrowable ex) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+}
+
+bool testValidateEscapeCharWithImproperValue(JNIEnv *env, char *path) {
+    char *jsonSchema = "[{stringField:string},{shortField:short},{intField:int},{longField:long},{doubleField:double},{boolField:boolean},{dateField:date},{timeField:timestamp},{floatField:float},{arrayField:array}]";
+    try {
+        CarbonWriter writer;
+        writer.builder(env);
+        writer.outputPath(path);
+        writer.withCsvInput(jsonSchema);
+        writer.withLoadOption("escapechar", "##");
+        writer.writtenBy("CSDK");
+        writer.build();
+    } catch (jthrowable ex) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+}
+
+
 /**
  * test write data
  * test WithLoadOption interface
@@ -545,6 +610,8 @@ bool testWriteData(JNIEnv *env, char *path, int argc, char *argv[]) {
         writer.outputPath(path);
         writer.withCsvInput(jsonSchema);
         writer.withLoadOption("complex_delimiter_level_1", "#");
+        writer.withLoadOption("BAD_RECORDS_ACTION", "FORCE");
+        writer.withLoadOption("bad_records_logger_enable", "FALSE");
         writer.writtenBy("CSDK");
         writer.taskNo(15541554.81);
         writer.withThreadSafe(1);
@@ -859,6 +926,10 @@ int main(int argc, char *argv[]) {
         tryCatchException(env);
         tryCarbonRowException(env, smallFilePath);
         testCarbonProperties(env);
+        testValidateBadRecordsActionWithImproperValue(env, "./test");
+        testValidateBadRecordsLoggerEnableWithImproperValue(env, "./test");
+        testValidateQuoteCharWithImproperValue(env, "./test");
+        testValidateEscapeCharWithImproperValue(env, "./test");
         testWriteData(env, "./data", 1, argv);
         testWriteData(env, "./dataLoadOption", 1, argv);
         readFromLocalWithoutProjection(env, smallFilePath);
