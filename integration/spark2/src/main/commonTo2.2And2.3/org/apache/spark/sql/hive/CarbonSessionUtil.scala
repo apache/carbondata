@@ -140,10 +140,20 @@ object CarbonSessionUtil {
     // updated schema should contain all the existing data columns. This alterTableDataSchema API
     // should be called after any alter with existing schema which updates the catalog table with
     // new updated schema
-    sparkSession.sessionState.catalog.externalCatalog
-      .alterTableDataSchema(tableIdentifier.database.get,
-        tableIdentifier.table,
-        StructType(colArray))
+    try {
+      CarbonReflectionUtils
+        .invokeMethod(sparkSession.sessionState.catalog.externalCatalog,
+          "alterTableDataSchema",
+          Array(tableIdentifier.database.get, tableIdentifier.table, StructType(colArray)))
+    } catch {
+      case e: NoSuchMethodException =>
+        // In case of spark 2.2.0 try with below.
+        CarbonReflectionUtils
+          .invokeMethod(sparkSession.sessionState.catalog.externalCatalog,
+            "alterTableSchema",
+            Array(tableIdentifier.database.get, tableIdentifier.table, StructType(colArray)))
+      case other => throw other
+    }
   }
 
 }
