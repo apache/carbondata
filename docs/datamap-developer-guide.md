@@ -21,7 +21,7 @@
 DataMap is a data structure that can be used to accelerate certain query of the table. Different DataMap can be implemented by developers. 
 Currently, there are two 2 types of DataMap supported:
 1. IndexDataMap: DataMap that leverages index to accelerate filter query
-2. MVDataMap: DataMap that leverages Materialized View to accelerate olap style query, like SPJG query (select, predicate, join, groupby)
+2. MVDataMap: DataMap that leverages Materialized View to accelerate OLAP style query, like SPJG query (select, predicate, join, groupby)
 
 ### DataMap Provider
 When user issues `CREATE DATAMAP dm ON TABLE main USING 'provider'`, the corresponding DataMapProvider implementation will be created and initialized. 
