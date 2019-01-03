@@ -31,9 +31,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.MapType;
@@ -46,6 +48,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
+import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -179,7 +182,8 @@ public class CarbonWriterBuilder {
    *
    * @return updated CarbonWriterBuilder
    */
-  public CarbonWriterBuilder withLoadOptions(Map<String, String> options) {
+  public CarbonWriterBuilder withLoadOptions(Map<String, String> options)
+      throws InvalidConfigurationException {
     Objects.requireNonNull(options, "Load options should not be null");
     //validate the options.
     for (String option: options.keySet()) {
@@ -198,6 +202,35 @@ public class CarbonWriterBuilder {
       }
     }
 
+    for (Map.Entry<String, String> entry : options.entrySet()) {
+      if (entry.getKey().equalsIgnoreCase("bad_records_action")) {
+        try {
+          LoggerAction.valueOf(entry.getValue().toUpperCase());
+        } catch (Exception e) {
+          throw new InvalidConfigurationException(
+              "option BAD_RECORDS_ACTION can have only either " +
+                  "FORCE or IGNORE or REDIRECT or FAIL. It shouldn't be " + entry.getValue());
+        }
+      } else if (entry.getKey().equalsIgnoreCase("bad_records_logger_enable")) {
+        boolean isValid;
+        isValid = CarbonUtil.validateBoolean(entry.getValue());
+        if (!isValid) {
+          throw new InvalidConfigurationException("Invalid value "
+              + entry.getValue() + " for key " + entry.getKey());
+        }
+      } else if (entry.getKey().equalsIgnoreCase("quotechar")) {
+        String quoteChar = entry.getValue();
+        if (quoteChar.length() > 1) {
+          throw new InvalidConfigurationException("QUOTECHAR cannot be more than one character.");
+        }
+      } else if (entry.getKey().equalsIgnoreCase("escapechar")) {
+        String escapeChar = entry.getValue();
+        if (escapeChar.length() > 1 && !CarbonLoaderUtil.isValidEscapeSequence(escapeChar)) {
+          throw new InvalidConfigurationException("ESCAPECHAR cannot be more than one character.");
+        }
+      }
+    }
+
     if (this.options == null) {
       // convert it to treeMap as keys need to be case insensitive
       this.options = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -213,7 +246,8 @@ public class CarbonWriterBuilder {
    * @param value the value of load option
    * @return updated CarbonWriterBuilder object
    */
-  public CarbonWriterBuilder withLoadOption(String key, String value) {
+  public CarbonWriterBuilder withLoadOption(String key, String value)
+      throws InvalidConfigurationException {
     Objects.requireNonNull(key, "key of load properties should not be null");
     Objects.requireNonNull(key, "value of load properties should not be null");
     Map map = new HashMap();

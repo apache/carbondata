@@ -35,6 +35,7 @@ import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
@@ -1161,6 +1162,14 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           throw new MalformedCarbonCommandException(
             "option MAXCOLUMNS can only contain integer values")
       }
+    }
+
+    if (options.exists(_._1.equalsIgnoreCase("BAD_RECORDS_LOGGER_ENABLE"))) {
+      val optionValue: String = options("bad_records_logger_enable").head._2
+      val isValid = CarbonUtil.validateBoolean(optionValue)
+      if (!isValid) throw new InvalidConfigurationException(
+        "option BAD_RECORDS_LOGGER_ENABLE can have only either TRUE or FALSE, " +
+          "It shouldn't be " + optionValue)
     }
 
     if (options.exists(_._1.equalsIgnoreCase("BAD_RECORDS_ACTION"))) {
