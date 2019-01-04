@@ -67,8 +67,10 @@ object CsvRDDHelper {
     val jobContext = new JobContextImpl(jobConf, null)
     val inputFormat = new CSVInputFormat()
     val rawSplits = inputFormat.getSplits(jobContext).toArray
+    var totalLength = 0L
     val splitFiles = rawSplits.map { split =>
       val fileSplit = split.asInstanceOf[FileSplit]
+      totalLength = totalLength + fileSplit.getLength
       PartitionedFile(
         InternalRow.empty,
         fileSplit.getPath.toString,
@@ -76,6 +78,7 @@ object CsvRDDHelper {
         fileSplit.getLength,
         fileSplit.getLocations)
     }.sortBy(_.length)(implicitly[Ordering[Long]].reverse)
+    model.setTotalSize(totalLength)
     val totalBytes = splitFiles.map(_.length + openCostInBytes).sum
     val bytesPerCore = totalBytes / defaultParallelism
 

@@ -30,6 +30,7 @@ import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -74,6 +75,10 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
   public static final String MAX_COLUMNS = "carbon.csvinputformat.max.columns";
   public static final String NUMBER_OF_COLUMNS = "carbon.csvinputformat.number.of.columns";
+  /**
+   * support only one column index
+   */
+  public static final String SELECT_COLUMN_INDEX = "carbon.csvinputformat.select.column.index";
   public static final int DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 2000;
   public static final int THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 20000;
 
@@ -215,6 +220,11 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     // setting the content length to to limit the length of displayed contents being parsed/written
     // in the exception message when an error occurs.
     parserSettings.setErrorContentLength(CarbonCommonConstants.CARBON_ERROR_CONTENT_LENGTH);
+
+    String selectColumnIndex = job.get(SELECT_COLUMN_INDEX, null);
+    if (!StringUtils.isBlank(selectColumnIndex)) {
+      parserSettings.selectIndexes(Integer.parseInt(selectColumnIndex));
+    }
     return parserSettings;
   }
 

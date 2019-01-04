@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -232,6 +233,22 @@ public class CarbonLoadModel implements Serializable {
    * compressor used to compress column page
    */
   private String columnCompressor;
+
+  /**
+   * the total size of loading data
+   */
+  private long totalSize;
+
+  /**
+   * range partition data by this column
+   */
+  private CarbonColumn rangePartitionColumn;
+
+  /**
+   * control the file size of input data for each range partition
+   * input size = max(bockletSize, (blockSize - blocketSize)) * scaleFactor
+   */
+  private int scaleFactor;
 
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;
@@ -935,5 +952,29 @@ public class CarbonLoadModel implements Serializable {
 
   public void setColumnCompressor(String columnCompressor) {
     this.columnCompressor = columnCompressor;
+  }
+
+  public CarbonColumn getRangePartitionColumn() {
+    return rangePartitionColumn;
+  }
+
+  public void setRangePartitionColumn(CarbonColumn rangePartitionColumn) {
+    this.rangePartitionColumn = rangePartitionColumn;
+  }
+
+  public long getTotalSize() {
+    return totalSize;
+  }
+
+  public void setTotalSize(long totalSize) {
+    this.totalSize = totalSize;
+  }
+
+  public void setScaleFactor(int scaleFactor) {
+    this.scaleFactor = scaleFactor;
+  }
+
+  public int getScaleFactor() {
+    return scaleFactor;
   }
 }
