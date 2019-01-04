@@ -20,7 +20,7 @@ package org.apache.carbondata.spark.load
 import java.util.Comparator
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.{DataSkewRangePartitioner, RangePartitioner, TaskContext}
+import org.apache.spark.{Accumulator, DataSkewRangePartitioner, RangePartitioner, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -144,6 +144,11 @@ object DataLoadProcessBuilderOnSpark {
     LOGGER.info("Total rows processed in step Sort Processor: " + sortStepRowCounter.value)
     LOGGER.info("Total rows processed in step Data Writer: " + writeStepRowCounter.value)
 
+    updateLoadStatus(model, partialSuccessAccum)
+  }
+
+  private def updateLoadStatus(model: CarbonLoadModel, partialSuccessAccum: Accumulator[Int]
+  ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     // Update status
     if (partialSuccessAccum.value != 0) {
       val uniqueLoadStatusId = model.getTableName + CarbonCommonConstants.UNDERSCORE +
@@ -227,21 +232,7 @@ object DataLoadProcessBuilderOnSpark {
     LOGGER.info("Total rows processed in step Data Writer: " + writeStepRowCounter.value)
 
     // Update status
-    if (partialSuccessAccum.value != 0) {
-      val uniqueLoadStatusId = model.getTableName + CarbonCommonConstants.UNDERSCORE +
-                               "Partial_Success"
-      val loadMetadataDetails = new LoadMetadataDetails()
-      loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
-      val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
-      executionErrors.failureCauses = FailureCauses.BAD_RECORDS
-      Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors)))
-    } else {
-      val uniqueLoadStatusId = model.getTableName + CarbonCommonConstants.UNDERSCORE + "Success"
-      val loadMetadataDetails = new LoadMetadataDetails()
-      loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
-      val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
-      Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors)))
-    }
+    updateLoadStatus(model, partialSuccessAccum)
   }
 
   /**
