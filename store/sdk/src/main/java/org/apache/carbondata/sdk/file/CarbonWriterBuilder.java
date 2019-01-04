@@ -35,7 +35,6 @@ import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.MapType;
@@ -183,7 +182,7 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withLoadOptions(Map<String, String> options)
-      throws InvalidConfigurationException {
+      throws IllegalArgumentException {
     Objects.requireNonNull(options, "Load options should not be null");
     //validate the options.
     for (String option: options.keySet()) {
@@ -207,7 +206,7 @@ public class CarbonWriterBuilder {
         try {
           LoggerAction.valueOf(entry.getValue().toUpperCase());
         } catch (Exception e) {
-          throw new InvalidConfigurationException(
+          throw new IllegalArgumentException(
               "option BAD_RECORDS_ACTION can have only either " +
                   "FORCE or IGNORE or REDIRECT or FAIL. It shouldn't be " + entry.getValue());
         }
@@ -215,18 +214,18 @@ public class CarbonWriterBuilder {
         boolean isValid;
         isValid = CarbonUtil.validateBoolean(entry.getValue());
         if (!isValid) {
-          throw new InvalidConfigurationException("Invalid value "
+          throw new IllegalArgumentException("Invalid value "
               + entry.getValue() + " for key " + entry.getKey());
         }
       } else if (entry.getKey().equalsIgnoreCase("quotechar")) {
         String quoteChar = entry.getValue();
         if (quoteChar.length() > 1) {
-          throw new InvalidConfigurationException("QUOTECHAR cannot be more than one character.");
+          throw new IllegalArgumentException("QUOTECHAR cannot be more than one character.");
         }
       } else if (entry.getKey().equalsIgnoreCase("escapechar")) {
         String escapeChar = entry.getValue();
         if (escapeChar.length() > 1 && !CarbonLoaderUtil.isValidEscapeSequence(escapeChar)) {
-          throw new InvalidConfigurationException("ESCAPECHAR cannot be more than one character.");
+          throw new IllegalArgumentException("ESCAPECHAR cannot be more than one character.");
         }
       }
     }
@@ -247,7 +246,7 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder object
    */
   public CarbonWriterBuilder withLoadOption(String key, String value)
-      throws InvalidConfigurationException {
+      throws IllegalArgumentException {
     Objects.requireNonNull(key, "key of load properties should not be null");
     Objects.requireNonNull(key, "value of load properties should not be null");
     Map map = new HashMap();

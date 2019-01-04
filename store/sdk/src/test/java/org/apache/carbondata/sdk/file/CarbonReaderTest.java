@@ -25,7 +25,6 @@ import java.util.*;
 import org.apache.avro.generic.GenericData;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
-import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -2014,7 +2013,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testSdkWriteWhenArrayOfStringIsEmpty()
-      throws IOException, MalformedCarbonCommandException, InvalidConfigurationException {
+      throws IOException, MalformedCarbonCommandException, IllegalArgumentException {
     String badRecordAction =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
     CarbonProperties.getInstance()
@@ -2064,7 +2063,7 @@ public class CarbonReaderTest extends TestCase {
           .writtenBy("CarbonReaderTest")
           .build();
       Assert.fail();
-    } catch (InvalidConfigurationException e) {
+    } catch (IllegalArgumentException e) {
       Assert.assertTrue(e.getMessage().contains("option BAD_RECORDS_ACTION can have only either " +
           "FORCE or IGNORE or REDIRECT or FAIL. It shouldn't be FAL"));
     } catch (Exception e) {
@@ -2091,7 +2090,7 @@ public class CarbonReaderTest extends TestCase {
           .enableLocalDictionary(false)
           .writtenBy("CarbonReaderTest")
           .build();
-    } catch (InvalidConfigurationException e) {
+    } catch (IllegalArgumentException e) {
       e.printStackTrace();
       Assert.fail();
     } catch (Exception e) {
@@ -2119,7 +2118,7 @@ public class CarbonReaderTest extends TestCase {
           .writtenBy("CarbonReaderTest")
           .build();
       Assert.fail();
-    } catch (InvalidConfigurationException e) {
+    } catch (IllegalArgumentException e) {
       Assert.assertTrue(e.getMessage().contains(
           "Invalid value FLSE for key bad_records_logger_enable"));
     } catch (Exception e) {
@@ -2146,7 +2145,7 @@ public class CarbonReaderTest extends TestCase {
           .enableLocalDictionary(false)
           .writtenBy("CarbonReaderTest")
           .build();
-    } catch (InvalidConfigurationException e) {
+    } catch (IllegalArgumentException e) {
       e.printStackTrace();
       Assert.fail();
     } catch (Exception e) {
@@ -2174,7 +2173,7 @@ public class CarbonReaderTest extends TestCase {
           .writtenBy("CarbonReaderTest")
           .build();
       Assert.fail();
-    } catch (InvalidConfigurationException e) {
+    } catch (IllegalArgumentException e) {
       Assert.assertTrue(e.getMessage().contains(
           "QUOTECHAR cannot be more than one character."));
     } catch (Exception e) {
@@ -2201,7 +2200,7 @@ public class CarbonReaderTest extends TestCase {
           .enableLocalDictionary(false)
           .writtenBy("CarbonReaderTest")
           .build();
-    } catch (InvalidConfigurationException e) {
+    } catch (IllegalArgumentException e) {
       e.printStackTrace();
       Assert.fail();
     } catch (Exception e) {
@@ -2229,7 +2228,7 @@ public class CarbonReaderTest extends TestCase {
           .writtenBy("CarbonReaderTest")
           .build();
       Assert.fail();
-    } catch (InvalidConfigurationException e) {
+    } catch (IllegalArgumentException e) {
       Assert.assertTrue(e.getMessage().contains(
           "ESCAPECHAR cannot be more than one character."));
     } catch (Exception e) {
@@ -2256,7 +2255,7 @@ public class CarbonReaderTest extends TestCase {
           .enableLocalDictionary(false)
           .writtenBy("CarbonReaderTest")
           .build();
-    } catch (InvalidConfigurationException e) {
+    } catch (IllegalArgumentException e) {
       e.printStackTrace();
       Assert.fail();
     } catch (Exception e) {
