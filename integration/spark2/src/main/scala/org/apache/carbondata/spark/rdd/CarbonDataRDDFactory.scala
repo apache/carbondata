@@ -351,6 +351,12 @@ object CarbonDataRDDFactory {
         } else {
           status = if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
             loadDataForPartitionTable(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
+          } else if (dataFrame.isEmpty && isSortTable &&
+                     carbonLoadModel.getRangePartitionColumn != null &&
+                     (sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) ||
+                      sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT))) {
+            DataLoadProcessBuilderOnSpark
+              .loadDataUsingRangeSort(sqlContext.sparkSession, carbonLoadModel, hadoopConf)
           } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
             DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
               dataFrame, carbonLoadModel, hadoopConf)

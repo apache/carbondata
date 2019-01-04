@@ -193,6 +193,9 @@ public class LoadOption {
     optionsFinal.put(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
         Maps.getOrDefault(options, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
             CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT));
+
+    optionsFinal.put("range_column", Maps.getOrDefault(options, "range_column", null));
+    optionsFinal.put("scale_factor", Maps.getOrDefault(options, "scale_factor", null));
     return optionsFinal;
   }
 
