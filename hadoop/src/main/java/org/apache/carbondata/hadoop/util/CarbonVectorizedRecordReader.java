@@ -90,6 +90,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
                 ((CarbonInputSplit) inputSplit).getDetailInfo().getBlockSize() - 8,
                 8);
         ((CarbonInputSplit) inputSplit).getDetailInfo().setBlockFooterOffset(buffer.getLong());
+        reader.finish();
       }
       splitList = new ArrayList<>(1);
       splitList.add((CarbonInputSplit) inputSplit);
