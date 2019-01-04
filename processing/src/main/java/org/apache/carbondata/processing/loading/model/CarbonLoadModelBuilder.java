@@ -300,6 +300,35 @@ public class CarbonLoadModelBuilder {
     validateAndSetLoadMinSize(carbonLoadModel);
 
     validateAndSetColumnCompressor(carbonLoadModel);
+
+    validateRangeColumn(optionsFinal, carbonLoadModel);
+  }
+
+  private void validateRangeColumn(Map<String, String> optionsFinal,
+      CarbonLoadModel carbonLoadModel) throws InvalidLoadOptionException {
+    String rangeColumn = optionsFinal.get("range_column");
+    if (rangeColumn != null) {
+      carbonLoadModel
+          .setRangePartitionColumn(table.getColumnByName(table.getTableName(), rangeColumn));
+      if (carbonLoadModel.getRangePartitionColumn() == null) {
+        throw new InvalidLoadOptionException("Invalid range_column option");
+      }
+    }
+
+    String scaleFactor = optionsFinal.get("scale_factor");
+    if (scaleFactor != null) {
+      try {
+        int scale = Integer.parseInt(scaleFactor);
+        if (scale < 1 || scale > 300) {
+          throw new InvalidLoadOptionException(
+              "Invalid scale_factor option, the range of scale_factor should be [1, 300]");
+        }
+        carbonLoadModel.setScaleFactor(scale);
+      } catch (NumberFormatException ex) {
+        throw new InvalidLoadOptionException(
+            "Invalid scale_factor option, scale_factor should be a integer");
+      }
+    }
   }
 
   private int validateMaxColumns(String[] csvHeaders, String maxColumns)
