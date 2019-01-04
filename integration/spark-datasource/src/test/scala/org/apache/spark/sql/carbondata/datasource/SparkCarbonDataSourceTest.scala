@@ -26,6 +26,7 @@ import scala.collection.mutable
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField => SparkStructField, StructType}
 import org.apache.spark.util.SparkUtil
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
@@ -77,7 +78,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists testformat")
   }
 
-  test("test add columns for table of using carbon") {
+  test("test add columns for table of using carbon with sql") {
     // TODO: should support add columns for carbon dataSource table
     // Limit from spark
     import spark.implicits._
@@ -109,6 +110,40 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
         assert(e.getMessage.contains("ALTER ADD COLUMNS does not support datasource table with type carbon."))
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test("test add columns for table of using carbon with DF") {
+    import spark.implicits._
+    import spark._
+    try {
+      val df = spark.sparkContext.parallelize(1 to 10)
+        .map(x => ("a" + x % 10, "b", x))
+        .toDF("c1", "c2", "number")
+      sql("DROP TABLE IF EXISTS carbon_table")
+      // Saves dataFrame to carbon file
+      df.write
+        .format("carbon").saveAsTable("carbon_table")
+      val customSchema = StructType(Array(
+        SparkStructField("c1", StringType),
+        SparkStructField("c2", StringType),
+        SparkStructField("number", IntegerType)))
+
+      val carbonDF = spark.read
+        .format("carbon")
+        .option("tableName", "carbon_table")
+        .schema(customSchema)
+        .load()
+
+      assert(carbonDF.schema.map(_.name) === Seq("c1", "c2", "number"))
+      val carbonDF2 = carbonDF.drop("c1")
+      assert(carbonDF2.schema.map(_.name) === Seq("c2", "number"))
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        assert(false)
+    } finally {
       sql("DROP TABLE IF EXISTS carbon_table")
     }
   }
