@@ -85,7 +85,7 @@ object CarbonScalaUtil {
       dataType: DataType,
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat): String = {
-    val defaultValue = value != null && value.equalsIgnoreCase(hivedefaultpartition)
+    val defaultValue = value != null && value.equalsIgnoreCase(hiveDefaultPartition)
     try {
       dataType match {
         case TimestampType if timeStampFormat != null =>
@@ -236,7 +236,7 @@ object CarbonScalaUtil {
     }
   }
 
-  private val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
+  private val hiveDefaultPartition = "__HIVE_DEFAULT_PARTITION__"
 
   /**
    * Update partition values as per the right date and time format
@@ -248,20 +248,20 @@ object CarbonScalaUtil {
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
       cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
-    partitionSpec.map { case (col, pvalue) =>
+    partitionSpec.map { case (col, pValue) =>
       // replace special string with empty value.
-      val value = if (pvalue == null) {
-        hivedefaultpartition
-      } else if (pvalue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+      val value = if (pValue == null) {
+        hiveDefaultPartition
+      } else if (pValue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
         ""
       } else {
-        pvalue
+        pValue
       }
       val carbonColumn = table.getColumnByName(table.getTableName, col.toLowerCase)
       val dataType =
         CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
       try {
-        if (value.equals(hivedefaultpartition)) {
+        if (value.equals(hiveDefaultPartition)) {
           (col, value)
         } else {
           val convertedString =
@@ -271,7 +271,7 @@ object CarbonScalaUtil {
               forwardDictionaryCache,
               table)
           if (convertedString == null) {
-            (col, hivedefaultpartition)
+            (col, hiveDefaultPartition)
           } else {
             (col, convertedString)
           }
@@ -518,11 +518,11 @@ object CarbonScalaUtil {
         if (dictIncludeColumns.exists(x => x.equalsIgnoreCase(distCol.trim))) {
           val commonColumn = (dictIncludeColumns ++ localDictColumns)
             .diff((dictIncludeColumns ++ localDictColumns).distinct).distinct
-          val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
+          val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
                          commonColumn.mkString(",") +
                          " specified in Dictionary include. Local Dictionary will not be " +
                          "generated for Dictionary include columns. Please check the DDL."
-          throw new MalformedCarbonCommandException(errormsg)
+          throw new MalformedCarbonCommandException(errorMsg)
         }
       }
     }
@@ -633,9 +633,9 @@ object CarbonScalaUtil {
     // check if the column specified exists in table schema
     localDictColumns.foreach { distCol =>
       if (!fields.exists(x => x.column.equalsIgnoreCase(distCol.trim))) {
-        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
+        val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
                        " does not exist in table. Please check the DDL."
-        throw new MalformedCarbonCommandException(errormsg)
+        throw new MalformedCarbonCommandException(errorMsg)
       }
     }
 
@@ -648,12 +648,12 @@ object CarbonScalaUtil {
                      !x.dataType.get.equalsIgnoreCase("STRUCT") &&
                      !x.dataType.get.equalsIgnoreCase("MAP") &&
                      !x.dataType.get.equalsIgnoreCase("ARRAY"))) {
-        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
+        val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
                        dictColm.trim +
                        " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_COLUMN" +
                        " should be no dictionary string/complex/varchar datatype column." +
                        "Please check the DDL."
-        throw new MalformedCarbonCommandException(errormsg)
+        throw new MalformedCarbonCommandException(errorMsg)
       }
     }
 
