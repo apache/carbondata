@@ -24,7 +24,6 @@ import java.util.*;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
 import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -2013,7 +2012,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testSdkWriteWhenArrayOfStringIsEmpty()
-      throws IOException, MalformedCarbonCommandException, IllegalArgumentException {
+      throws IOException, IllegalArgumentException, InvalidLoadOptionException {
     String badRecordAction =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
     CarbonProperties.getInstance()

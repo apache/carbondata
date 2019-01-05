@@ -26,7 +26,6 @@ import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.commons.io.FileUtils;
 
@@ -41,7 +40,7 @@ public class CarbonSchemaReaderTest extends TestCase {
 
   @Before
   public void setUp()
-      throws IOException, InvalidConfigurationException, InvalidLoadOptionException {
+      throws IOException, InvalidLoadOptionException {
     FileUtils.deleteDirectory(new File(path));
 
     Field[] fields = new Field[12];
