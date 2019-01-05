@@ -668,9 +668,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         tableProperties(CarbonCommonConstants.NO_INVERTED_INDEX).split(',').map(_.trim)
       noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
-          val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
+          val errorMsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
                          " does not exist in table. Please check create table statement."
-          throw new MalformedCarbonCommandException(errormsg)
+          throw new MalformedCarbonCommandException(errorMsg)
         }
       }
     }
@@ -697,9 +697,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         tableProperties(CarbonCommonConstants.INVERTED_INDEX).split(',').map(_.trim)
       invertedIdxColsProps.foreach { invertedIdxColProp =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(invertedIdxColProp))) {
-          val errormsg = "INVERTED_INDEX column: " + invertedIdxColProp +
+          val errorMsg = "INVERTED_INDEX column: " + invertedIdxColProp +
                          " does not exist in table. Please check create table statement."
-          throw new MalformedCarbonCommandException(errormsg)
+          throw new MalformedCarbonCommandException(errorMsg)
         }
       }
     }
@@ -759,15 +759,15 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
       sortKey.foreach { column =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(column))) {
-          val errormsg = "sort_columns: " + column +
+          val errorMsg = "sort_columns: " + column +
             " does not exist in table. Please check create table statement."
-          throw new MalformedCarbonCommandException(errormsg)
+          throw new MalformedCarbonCommandException(errorMsg)
         } else {
           val dataType = fields.find(x =>
             x.column.equalsIgnoreCase(column)).get.dataType.get
           if (isDataTypeSupportedForSortColumn(dataType)) {
-            val errormsg = s"sort_columns is unsupported for $dataType datatype column: " + column
-            throw new MalformedCarbonCommandException(errormsg)
+            val errorMsg = s"sort_columns is unsupported for $dataType datatype column: " + column
+            throw new MalformedCarbonCommandException(errorMsg)
           }
           if (varcharCols.exists(x => x.equalsIgnoreCase(column))) {
             throw new MalformedCarbonCommandException(
@@ -796,10 +796,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       dictExcludeCols
         .foreach { dictExcludeCol =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
-            val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
+            val errorMsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
                            " does not exist in table or unsupported for complex child column. " +
                            "Please check create table statement."
-            throw new MalformedCarbonCommandException(errormsg)
+            throw new MalformedCarbonCommandException(errorMsg)
           } else {
             val dataType = fields.find(x =>
               x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
@@ -821,10 +821,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
       dictIncludeCols.foreach { distIncludeCol =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
-          val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
+          val errorMsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
                          " does not exist in table or unsupported for complex child column. " +
                          "Please check create table statement."
-          throw new MalformedCarbonCommandException(errormsg)
+          throw new MalformedCarbonCommandException(errorMsg)
         }
         if (varcharCols.exists(x => x.equalsIgnoreCase(distIncludeCol.trim))) {
           throw new MalformedCarbonCommandException(
@@ -837,9 +837,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     // include cols should not contain exclude cols
     dictExcludeCols.foreach { dicExcludeCol =>
       if (dictIncludeCols.exists(x => x.equalsIgnoreCase(dicExcludeCol))) {
-        val errormsg = "DICTIONARY_EXCLUDE can not contain the same column: " + dicExcludeCol +
+        val errorMsg = "DICTIONARY_EXCLUDE can not contain the same column: " + dicExcludeCol +
                        " with DICTIONARY_INCLUDE. Please check create table statement."
-        throw new MalformedCarbonCommandException(errormsg)
+        throw new MalformedCarbonCommandException(errorMsg)
       }
     }
 
@@ -855,7 +855,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
                  !dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
         noDictionaryDims :+= field.column
         dimFields += field
-      } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
+      } else if (isDetectAsDimentionDataType(field.dataType.get)) {
         dimFields += field
         // consider all String cols as noDicitonaryDims by default
         if (DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) {
@@ -922,7 +922,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    *
    * @param dimensionDatatype
    */
-  def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
+  def isDetectAsDimentionDataType(dimensionDatatype: String): Boolean = {
     val dimensionType = Array("string", "array", "struct", "map", "timestamp", "date", "char")
     dimensionType.exists(x => dimensionDatatype.toLowerCase.contains(x))
   }
@@ -1138,8 +1138,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // Validate ESCAPECHAR length
     if (options.exists(_._1.equalsIgnoreCase("ESCAPECHAR"))) {
-      val escapechar: String = options.get("escapechar").get.head._2
-      if (escapechar.length > 1 && !CarbonLoaderUtil.isValidEscapeSequence(escapechar)) {
+      val escapeChar: String = options.get("escapechar").get.head._2
+      if (escapeChar.length > 1 && !CarbonLoaderUtil.isValidEscapeSequence(escapeChar)) {
         throw new MalformedCarbonCommandException("ESCAPECHAR cannot be more than one character.")
       }
     }
@@ -1192,7 +1192,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // check for duplicate options
     val duplicateOptions = options filter {
-      case (_, optionlist) => optionlist.size > 1
+      case (_, optionList) => optionList.size > 1
     }
     val duplicates = StringBuilder.newBuilder
     if (duplicateOptions.nonEmpty) {

@@ -703,9 +703,9 @@ object AlterTableUtil {
     // check if the column specified exists in table schema
     localDictColumns.foreach { distCol =>
       if (!allColumns.exists(x => x.getColumnName.equalsIgnoreCase(distCol.trim))) {
-        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
+        val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
                        " does not exist in table. Please check the DDL."
-        throw new MalformedCarbonCommandException(errormsg)
+        throw new MalformedCarbonCommandException(errorMsg)
       }
     }
 
