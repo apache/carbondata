@@ -514,7 +514,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     if (!nullColumnErr.isEmpty) {
       val errMsg = s"long_string_columns: ${
         nullColumnErr.mkString(",")
-      } does not exist in table. Please check create table statement."
+      } does not exist in table. Please check the create table statement."
       throw new MalformedCarbonCommandException(errMsg)
     }
 
@@ -529,7 +529,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     if (!dataTypeErr.isEmpty) {
       val errMsg = s"long_string_columns: ${
         dataTypeErr.mkString(",")
-      } ,its data type is not string. Please check create table statement."
+      } ,its data type is not string. Please check the create table statement."
       throw new MalformedCarbonCommandException(errMsg)
     }
   }
@@ -669,7 +669,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
           val errorMsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
-                         " does not exist in table. Please check create table statement."
+                         " does not exist in table. Please check the create table statement."
           throw new MalformedCarbonCommandException(errorMsg)
         }
       }
@@ -698,7 +698,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       invertedIdxColsProps.foreach { invertedIdxColProp =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(invertedIdxColProp))) {
           val errorMsg = "INVERTED_INDEX column: " + invertedIdxColProp +
-                         " does not exist in table. Please check create table statement."
+                         " does not exist in table. Please check the create table statement."
           throw new MalformedCarbonCommandException(errorMsg)
         }
       }
@@ -760,7 +760,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       sortKey.foreach { column =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(column))) {
           val errorMsg = "sort_columns: " + column +
-            " does not exist in table. Please check create table statement."
+            " does not exist in table. Please check the create table statement."
           throw new MalformedCarbonCommandException(errorMsg)
         } else {
           val dataType = fields.find(x =>
@@ -798,7 +798,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
             val errorMsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
                            " does not exist in table or unsupported for complex child column. " +
-                           "Please check create table statement."
+                           "Please check the create table statement."
             throw new MalformedCarbonCommandException(errorMsg)
           } else {
             val dataType = fields.find(x =>
@@ -823,7 +823,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
           val errorMsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
                          " does not exist in table or unsupported for complex child column. " +
-                         "Please check create table statement."
+                         "Please check the create table statement."
           throw new MalformedCarbonCommandException(errorMsg)
         }
         if (varcharCols.exists(x => x.equalsIgnoreCase(distIncludeCol.trim))) {
@@ -838,7 +838,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     dictExcludeCols.foreach { dicExcludeCol =>
       if (dictIncludeCols.exists(x => x.equalsIgnoreCase(dicExcludeCol))) {
         val errorMsg = "DICTIONARY_EXCLUDE can not contain the same column: " + dicExcludeCol +
-                       " with DICTIONARY_INCLUDE. Please check create table statement."
+                       " with DICTIONARY_INCLUDE. Please check the create table statement."
         throw new MalformedCarbonCommandException(errorMsg)
       }
     }
