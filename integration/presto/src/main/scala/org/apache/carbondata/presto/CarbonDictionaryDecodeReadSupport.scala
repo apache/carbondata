@@ -37,7 +37,6 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
   private var dictionaries: Array[Dictionary] = _
   private var dataTypes: Array[DataType] = _
-  private var dictionaryBlock: Array[Block] = _
 
   /**
    * This initialization is done inside executor task
@@ -50,7 +49,6 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
 
     dictionaries = new Array[Dictionary](carbonColumns.length)
     dataTypes = new Array[DataType](carbonColumns.length)
-    dictionaryBlock = new Array[Block](carbonColumns.length)
 
     carbonColumns.zipWithIndex.foreach {
       case (carbonColumn, index) => if (carbonColumn.hasEncoding(Encoding.DICTIONARY) &&
@@ -66,13 +64,7 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
         dictionaries(index) = forwardDictionaryCache
           .get(new DictionaryColumnUniqueIdentifier(carbonTable.getAbsoluteTableIdentifier,
             carbonColumn.getColumnIdentifier, dataTypes(index), dictionaryPath))
-        // in case of string data type create dictionarySliceArray same as that of presto code
-        if (dataTypes(index).equals(DataTypes.STRING)) {
-          dictionaryBlock(index) = createDictionaryBlock(dictionaries(index))
-        }
-      }
-
-      else {
+      } else {
         dataTypes(index) = carbonColumn.getDataType
       }
     }
@@ -87,7 +79,7 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
    */
   private def createDictionaryBlock(dictionaryData: Dictionary): Block = {
     val chunks: DictionaryChunksWrapper = dictionaryData.getDictionaryChunks
-    val positionCount = chunks.getSize;
+    val positionCount = chunks.getSize
 
    // In dictionary there will be only one null and the key value will be 1 by default in carbon,
    // hence the isNullVector will be populated only once with null value it has no bearing on
@@ -125,16 +117,6 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
 
   override def readRow(data: Array[AnyRef]): T = {
     throw new RuntimeException("UnSupported Method")
-  }
-
-  /**
-   * Function to get the SliceArrayBlock with dictionary Data
-   *
-   * @param columnNo
-   * @return
-   */
-  def getDictionaryBlock(columnNo: Int): Block = {
-    dictionaryBlock(columnNo)
   }
 
   def getDictionaries: Array[Dictionary] = {
