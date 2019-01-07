@@ -54,7 +54,8 @@ CarbonData can be integrated with Spark,Presto and Hive Execution Engines. The b
 ### Hive
 [Installing and Configuring CarbonData on Hive](https://github.com/apache/carbondata/blob/master/docs/hive-guide.md)
 
-
+### Alluxio
+[CarbonData supports read and write with Alluxio](https://github.com/apache/carbondata/blob/master/docs/alluxio-guide.md)
 
 ## Installing and Configuring CarbonData to run locally with Spark Shell
 
