@@ -51,7 +51,7 @@ object S3Example {
     val (accessKey, secretKey, endpoint) = CarbonSparkUtil.getKeyOnPrefix(args(2))
     val spark = SparkSession
       .builder()
-      .master(CarbonSparkUtil.getSparkMaster(args))
+      .master(getSparkMaster(args))
       .appName("S3Example")
       .config("spark.driver.host", "localhost")
       .config(accessKey, args(0))
@@ -132,5 +132,11 @@ object S3Example {
     spark.sql("Drop table if exists carbon_table")
 
     spark.stop()
+  }
+
+  def getSparkMaster(args: Array[String]): String = {
+    if (args.length == 5) args(4)
+    else if (args(3).contains("spark:") || args(3).contains("mesos:")) args(3)
+    else "local"
   }
 }

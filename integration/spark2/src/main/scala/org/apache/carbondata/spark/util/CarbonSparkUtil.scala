@@ -127,7 +127,6 @@ object CarbonSparkUtil {
       delimiter
   }
 
-
   def getKeyOnPrefix(path: String): (String, String, String) = {
     val prefix = "spark.hadoop."
     val endPoint = prefix + ENDPOINT
@@ -145,13 +144,8 @@ object CarbonSparkUtil {
   }
 
   def getS3EndPoint(args: Array[String]): String = {
-    if (args.length >= 4 && args(3).contains(".com")) args(3)
-    else ""
+     if (args.length >= 4 && args(3).contains(".com")) args(3)
+     else ""
   }
 
-  def getSparkMaster(args: Array[String]): String = {
-    if (args.length == 6) args(5)
-    else if (args(3).contains("spark:") || args(3).contains("mesos:")) args(3)
-    else "local"
-  }
 }

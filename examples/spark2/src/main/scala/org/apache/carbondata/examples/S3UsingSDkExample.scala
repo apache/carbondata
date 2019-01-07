@@ -84,7 +84,7 @@ object S3UsingSdkExample {
     val (accessKey, secretKey, endpoint) = CarbonSparkUtil.getKeyOnPrefix(args(2))
     val spark = SparkSession
       .builder()
-      .master(CarbonSparkUtil.getSparkMaster(args))
+      .master(getSparkMaster(args))
       .appName("S3UsingSDKExample")
       .config("spark.driver.host", "localhost")
       .config(accessKey, args(0))
@@ -112,5 +112,9 @@ object S3UsingSdkExample {
     spark.stop()
   }
 
+  def getSparkMaster(args: Array[String]): String = {
+     if (args.length == 6) args(5)
+     else "local"
+  }
 
 }
