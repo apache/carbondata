@@ -144,8 +144,8 @@ object CarbonSparkUtil {
   }
 
   def getS3EndPoint(args: Array[String]): String = {
-     if (args.length >= 4 && args(3).contains(".com")) args(3)
-     else ""
+    if (args.length >= 4 && args(3).contains(".com")) args(3)
+    else ""
   }
 
 }

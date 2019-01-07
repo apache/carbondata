@@ -113,8 +113,8 @@ object S3UsingSdkExample {
   }
 
   def getSparkMaster(args: Array[String]): String = {
-     if (args.length == 6) args(5)
-     else "local"
+    if (args.length == 6) args(5)
+    else "local"
   }
 
 }
