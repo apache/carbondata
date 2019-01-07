@@ -2012,7 +2012,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testSdkWriteWhenArrayOfStringIsEmpty()
-      throws IOException, IllegalArgumentException, InvalidLoadOptionException {
+      throws IOException, InvalidLoadOptionException {
     String badRecordAction =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
     CarbonProperties.getInstance()

@@ -181,11 +181,10 @@ public class CarbonWriterBuilder {
    *
    * @return updated CarbonWriterBuilder
    */
-  public CarbonWriterBuilder withLoadOptions(Map<String, String> options)
-      throws IllegalArgumentException {
+  public CarbonWriterBuilder withLoadOptions(Map<String, String> options) {
     Objects.requireNonNull(options, "Load options should not be null");
     //validate the options.
-    for (String option: options.keySet()) {
+    for (String option : options.keySet()) {
       if (!option.equalsIgnoreCase("bad_records_logger_enable") &&
           !option.equalsIgnoreCase("bad_records_action") &&
           !option.equalsIgnoreCase("bad_record_path") &&
@@ -245,8 +244,7 @@ public class CarbonWriterBuilder {
    * @param value the value of load option
    * @return updated CarbonWriterBuilder object
    */
-  public CarbonWriterBuilder withLoadOption(String key, String value)
-      throws IllegalArgumentException {
+  public CarbonWriterBuilder withLoadOption(String key, String value) {
     Objects.requireNonNull(key, "key of load properties should not be null");
     Objects.requireNonNull(key, "value of load properties should not be null");
     Map map = new HashMap();

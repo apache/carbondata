@@ -39,8 +39,7 @@ public class CarbonSchemaReaderTest extends TestCase {
   String path = "./testWriteFiles";
 
   @Before
-  public void setUp()
-      throws IOException, InvalidLoadOptionException {
+  public void setUp() throws IOException, InvalidLoadOptionException {
     FileUtils.deleteDirectory(new File(path));
 
     Field[] fields = new Field[12];
