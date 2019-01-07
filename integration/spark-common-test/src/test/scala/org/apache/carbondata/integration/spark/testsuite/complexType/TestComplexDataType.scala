@@ -846,7 +846,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "'carbondata' tblproperties('dictionary_exclude'='a.b')"))
     assertResult(
       "DICTIONARY_EXCLUDE column: a.b does not exist in table or unsupported for complex child " +
-      "column. Please check create table statement.")(
+      "column. Please check the create table statement.")(
       structException.getMessage)
     sql("DROP TABLE IF EXISTS table1")
     val arrayException = intercept[MalformedCarbonCommandException](
@@ -856,7 +856,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
         "'carbondata' tblproperties('dictionary_exclude'='a[0]')"))
     assertResult(
       "DICTIONARY_EXCLUDE column: a[0] does not exist in table or unsupported for complex child " +
-      "column. Please check create table statement.")(
+      "column. Please check the create table statement.")(
       arrayException.getMessage)
   }
 
@@ -870,7 +870,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
         "'carbondata' tblproperties('dictionary_include'='a.b')"))
     assertResult(
       "DICTIONARY_INCLUDE column: a.b does not exist in table or unsupported for complex child " +
-      "column. Please check create table statement.")(
+      "column. Please check the create table statement.")(
       structException.getMessage)
     sql("DROP TABLE IF EXISTS table1")
     val arrayException = intercept[MalformedCarbonCommandException](
@@ -880,7 +880,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
         "'carbondata' tblproperties('dictionary_include'='a[0]')"))
     assertResult(
       "DICTIONARY_INCLUDE column: a[0] does not exist in table or unsupported for complex child " +
-      "column. Please check create table statement.")(
+      "column. Please check the create table statement.")(
       arrayException.getMessage)
   }
 
