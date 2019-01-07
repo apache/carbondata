@@ -115,8 +115,10 @@ CarbonData has rich set of features to support various use cases in Big Data ana
 
 - ##### HDFS
 
-  CarbonData uses HDFS api to write and read data from HDFS.CarbonData can take advantage of the locality information to efficiently suggest spark to run tasks near to the data.
+  CarbonData uses HDFS api to write and read data from HDFS. CarbonData can take advantage of the locality information to efficiently suggest spark to run tasks near to the data.
 
+- ##### Alluxio
+  CarbonData also supports read and write with [Alluxio](./quick-start-guide.md#alluxio). 
 
 
 ## Integration with Big Data ecosystem

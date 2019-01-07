@@ -35,9 +35,10 @@ This tutorial provides a quick introduction to using CarbonData. To follow along
 
 ## Integration
 
-CarbonData can be integrated with Spark,Presto and Hive Execution Engines. The below documentation guides on Installing and Configuring with these execution engines.
+### Integration with Execution Engines
+CarbonData can be integrated with Spark,Presto and Hive execution engines. The below documentation guides on Installing and Configuring with these execution engines.
 
-### Spark
+#### Spark
 
 [Installing and Configuring CarbonData to run locally with Spark Shell](#installing-and-configuring-carbondata-to-run-locally-with-spark-shell)
 
@@ -48,13 +49,21 @@ CarbonData can be integrated with Spark,Presto and Hive Execution Engines. The b
 [Installing and Configuring CarbonData Thrift Server for Query Execution](#query-execution-using-carbondata-thrift-server)
 
 
-### Presto
+#### Presto
 [Installing and Configuring CarbonData on Presto](#installing-and-configuring-carbondata-on-presto)
 
-### Hive
+#### Hive
 [Installing and Configuring CarbonData on Hive](https://github.com/apache/carbondata/blob/master/docs/hive-guide.md)
 
+### Integration with Storage Engines
+#### HDFS
+[CarbonData supports read and write with HDFS](https://github.com/apache/carbondata/blob/master/docs/quick-start-guide.md#installing-and-configuring-carbondata-on-standalone-spark-cluster)
 
+#### S3
+[CarbonData supports read and write with S3](https://github.com/apache/carbondata/blob/master/docs/s3-guide.md) 
+
+#### Alluxio
+[CarbonData supports read and write with Alluxio](https://github.com/apache/carbondata/blob/master/docs/alluxio-guide.md)
 
 ## Installing and Configuring CarbonData to run locally with Spark Shell
 
