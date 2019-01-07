@@ -30,12 +30,19 @@ object ExampleUtils {
       .getCanonicalPath
   val storeLocation: String = currentPath + "/target/store"
 
-  def createCarbonSession(appName: String, workThreadNum: Int = 1): SparkSession = {
+  def createCarbonSession (appName: String, workThreadNum: Int = 1,
+      storePath: String = null): SparkSession = {
     val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/examples/spark2/target/store"
+      + "../../../..").getCanonicalPath
+
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metaStoreDB = s"$rootPath/examples/spark2/target"
+
+    val storeLocation = if (null != storePath) {
+      storePath
+    } else {
+      s"$rootPath/examples/spark2/target/store"
+    }
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")

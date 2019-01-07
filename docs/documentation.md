@@ -29,7 +29,7 @@ Apache CarbonData is a new big data file format for faster interactive query usi
 
 **Quick Start:** [Run an example program](./quick-start-guide.md#installing-and-configuring-carbondata-to-run-locally-with-spark-shell) on your local machine or [study some examples](https://github.com/apache/carbondata/tree/master/examples/spark2/src/main/scala/org/apache/carbondata/examples).
 
-**CarbonData SQL Language Reference:** CarbonData extends the Spark SQL language and adds several [DDL](./ddl-of-carbondata.md) and [DML](./dml-of-carbondata.md) statements to support operations on it.Refer to the [Reference Manual](./language-manual.md) to understand the supported features and functions.
+**CarbonData SQL Language Reference:** CarbonData extends the Spark SQL language and adds several [DDL](./ddl-of-carbondata.md) and [DML](./dml-of-carbondata.md) statements to support operations on it. Refer to the [Reference Manual](./language-manual.md) to understand the supported features and functions.
 
 **Programming Guides:** You can read our guides about [Java APIs supported](./sdk-guide.md) or [C++ APIs supported](./csdk-guide.md) to learn how to integrate CarbonData with your applications.
 
@@ -37,7 +37,9 @@ Apache CarbonData is a new big data file format for faster interactive query usi
 
 ## Integration
 
-CarbonData can be integrated with popular Execution engines like [Spark](./quick-start-guide.md#spark) , [Presto](./quick-start-guide.md#presto) and [Hive](./quick-start-guide.md#hive).Refer to the [Installation and Configuration](./quick-start-guide.md#integration) section to understand all modes of Integrating CarbonData.
+ - CarbonData can be integrated with popular execution engines like [Spark](./quick-start-guide.md#spark) , [Presto](./quick-start-guide.md#presto) and [Hive](./quick-start-guide.md#hive).
+ - CarbonData can be integrated with popular storage engines like HDFS, Huawei Cloud(OBS) and [Alluxio](./quick-start-guide.md#alluxio).   
+  Refer to the [Installation and Configuration](./quick-start-guide.md#integration) section to understand all modes of Integrating CarbonData.
 
 
 
