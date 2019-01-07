@@ -239,6 +239,7 @@ object CarbonDataStoreCreator {
     bonus.setDataType(DataTypes.createDecimalType(10, 4))
     bonus.setPrecision(10)
     bonus.setScale(4)
+    bonus.setEncodingList(dictionaryEncoding)
     bonus.setEncodingList(invertedIndexEncoding)
     bonus.setColumnUniqueId(UUID.randomUUID().toString)
     bonus.setDimensionColumn(false)

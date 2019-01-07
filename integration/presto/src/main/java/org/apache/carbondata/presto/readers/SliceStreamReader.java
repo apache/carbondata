@@ -17,11 +17,17 @@
 
 package org.apache.carbondata.presto.readers;
 
+import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.Optional;
 
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -44,27 +50,31 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   protected BlockBuilder builder;
 
-  int[] values;
-
   private Block dictionaryBlock;
 
+  private boolean isLocalDict;
+
+  private Dictionary globalDictionary;
+
   public SliceStreamReader(int batchSize, DataType dataType,
-      Block dictionaryBlock) {
+      Dictionary dictionary) {
     super(batchSize, dataType);
+    this.globalDictionary = dictionary;
     this.batchSize = batchSize;
-    if (dictionaryBlock == null) {
-      this.builder = type.createBlockBuilder(null, batchSize);
-    } else {
-      this.dictionaryBlock = dictionaryBlock;
-      this.values = new int[batchSize];
-    }
+    this.builder = type.createBlockBuilder(null, batchSize);
   }
 
   @Override public Block buildBlock() {
     if (dictionaryBlock == null) {
       return builder.build();
     } else {
-      return new DictionaryBlock(batchSize, dictionaryBlock, values);
+      int[] dataArray;
+      if (isLocalDict) {
+        dataArray = (int[]) ((CarbonColumnVectorImpl) getDictionaryVector()).getDataArray();
+      } else {
+        dataArray = (int[]) getDataArray();
+      }
+      return new DictionaryBlock(batchSize, dictionaryBlock, dataArray);
     }
   }
 
@@ -95,22 +105,13 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     dictOffsets[dictOffsets.length - 1] = size;
     dictionaryBlock = new VariableWidthBlock(dictionary.getDictionarySize(),
         Slices.wrappedBuffer(singleArrayDictValues), dictOffsets, Optional.of(nulls));
-    values = (int[]) ((CarbonColumnVectorImpl) getDictionaryVector()).getDataArray();
+    this.isLocalDict = true;
   }
-
   @Override public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
 
-  @Override public void putInt(int rowId, int value) {
-    values[rowId] = value;
-  }
 
-  @Override public void putInts(int rowId, int count, int value) {
-    for (int i = 0; i < count; i++) {
-      values[rowId++] = value;
-    }
-  }
 
   @Override public void putByteArray(int rowId, byte[] value) {
     type.writeSlice(builder, wrappedBuffer(value));
@@ -142,5 +143,17 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
+    this.isLocalDict = false;
+  }
+
+  @Override public void putInt(int rowId, int value) {
+    Object data = DataTypeUtil
+        .getDataBasedOnDataType(globalDictionary.getDictionaryValueForKey(value), DataTypes.STRING);
+    if (Objects.isNull(data)) {
+      builder.appendNull();
+    } else {
+      type.writeSlice(builder, wrappedBuffer(
+          ((String) data).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))));
+    }
   }
 }
