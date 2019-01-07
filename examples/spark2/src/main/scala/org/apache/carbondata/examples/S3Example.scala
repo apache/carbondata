@@ -25,16 +25,16 @@ import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 object S3Example {
 
-   /**
-    * This example demonstrate usage of
-    * 1. create carbon table with storage location on object based storage
-    * like AWS S3, Huawei OBS, etc
-    * 2. load data into carbon table, the generated file will be stored on object based storage
-    * query the table.
-    *
-    * @param args require three parameters "Access-key" "Secret-key"
-    *             "table-path on s3" "s3-endpoint" "spark-master"
-    */
+  /**
+   * This example demonstrate usage of
+   * 1. create carbon table with storage location on object based storage
+   * like AWS S3, Huawei OBS, etc
+   * 2. load data into carbon table, the generated file will be stored on object based storage
+   * query the table.
+   *
+   * @param args require three parameters "Access-key" "Secret-key"
+   *             "table-path on s3" "s3-endpoint" "spark-master"
+   */
   def main(args: Array[String]) {
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
