@@ -23,10 +23,10 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
- /**
-  * Generate data and write data to S3
-  * User can generate different numbers of data by specifying the number-of-rows in parameters
-  */
+/**
+ * Generate data and write data to S3
+ * User can generate different numbers of data by specifying the number-of-rows in parameters
+ */
 object S3UsingSdkExample {
 
   // prepare SDK writer output
@@ -61,16 +61,16 @@ object S3UsingSdkExample {
     }
   }
 
-   /**
-    * This example demonstrate usage of
-    * 1. create carbon table with storage location on object based storage
-    * like AWS S3, Huawei OBS, etc
-    * 2. load data into carbon table, the generated file will be stored on object based storage
-    * query the table.
-    *
-    * @param args require three parameters "Access-key" "Secret-key"
-    *             "table-path on s3" "s3-endpoint" "spark-master"
-    */
+  /**
+   * This example demonstrate usage of
+   * 1. create carbon table with storage location on object based storage
+   * like AWS S3, Huawei OBS, etc
+   * 2. load data into carbon table, the generated file will be stored on object based storage
+   * query the table.
+   *
+   * @param args require three parameters "Access-key" "Secret-key"
+   *             "table-path on s3" "s3-endpoint" "spark-master"
+   */
   def main(args: Array[String]) {
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 

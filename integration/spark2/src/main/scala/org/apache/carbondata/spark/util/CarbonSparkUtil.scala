@@ -31,10 +31,9 @@ import org.apache.carbondata.core.util.CarbonUtil
 
 case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
- /**
-  * carbon spark common methods
-  */
-
+/**
+ * carbon spark common methods
+ */
 object CarbonSparkUtil {
 
   def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
@@ -64,12 +63,12 @@ object CarbonSparkUtil {
       table)
   }
 
-   /**
-    * return's the formatted column comment if column comment is present else empty("")
-    *
-    * @param carbonColumn the column of carbonTable
-    * @return string
-    */
+  /**
+   * return's the formatted column comment if column comment is present else empty("")
+   *
+   * @param carbonColumn the column of carbonTable
+   * @return string
+   */
   def getColumnComment(carbonColumn: CarbonColumn): String = {
     {
       val columnProperties = carbonColumn.getColumnProperties
@@ -83,12 +82,12 @@ object CarbonSparkUtil {
     }
   }
 
-   /**
-    * the method return's raw schema
-    *
-    * @param carbonRelation logical plan for one carbon table
-    * @return schema
-    */
+  /**
+   * the method return's raw schema
+   *
+   * @param carbonRelation logical plan for one carbon table
+   * @return schema
+   */
   def getRawSchema(carbonRelation: CarbonRelation): String = {
     val fields = new Array[String](
       carbonRelation.dimensionsAttr.size + carbonRelation.measureAttr.size)
@@ -113,13 +112,13 @@ object CarbonSparkUtil {
     fields.mkString(",")
   }
 
-   /**
-    * add escape prefix for delimiter
-    *
-    * @param delimiter A delimiter is a sequence of one or more characters
-    * used to specify the boundary between separate
-    * @return delimiter
-    */
+  /**
+   * add escape prefix for delimiter
+   *
+   * @param delimiter A delimiter is a sequence of one or more characters
+   * used to specify the boundary between separate
+   * @return delimiter
+   */
   def delimiterConverter4Udf(delimiter: String): String = delimiter match {
     case "|" | "*" | "." | ":" | "^" | "\\" | "$" | "+" | "?" | "(" | ")" | "{" | "}" | "[" | "]" =>
       "\\\\" + delimiter
