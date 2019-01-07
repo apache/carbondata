@@ -99,6 +99,7 @@
               <exclude>org.apache.avro:*</exclude>
               <exclude>com.google.guava:guava</exclude>
               <exclude>org.xerial.snappy:snappy-java</exclude>
+              <exclude>org.apache.carbondata:carbondata-minmax-datamap-examples</exclude>
               <!--add more items to be excluded from the assembly-->
             </excludes>
           </artifactSet>
