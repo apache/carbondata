@@ -44,19 +44,18 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   protected BlockBuilder builder;
 
-  int[] values;
-
   private Block dictionaryBlock;
 
+  private boolean isLocalDict;
+
   public SliceStreamReader(int batchSize, DataType dataType,
-      Block dictionaryBlock) {
+      Block globalDictionaryBlock) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
-    if (dictionaryBlock == null) {
+    if (globalDictionaryBlock == null) {
       this.builder = type.createBlockBuilder(null, batchSize);
     } else {
-      this.dictionaryBlock = dictionaryBlock;
-      this.values = new int[batchSize];
+      this.dictionaryBlock = globalDictionaryBlock;
     }
   }
 
@@ -64,7 +63,13 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     if (dictionaryBlock == null) {
       return builder.build();
     } else {
-      return new DictionaryBlock(batchSize, dictionaryBlock, values);
+      int[] dataArray;
+      if (isLocalDict) {
+        dataArray = (int[]) ((CarbonColumnVectorImpl) getDictionaryVector()).getDataArray();
+      } else {
+        dataArray = (int[]) getDataArray();
+      }
+      return new DictionaryBlock(batchSize, dictionaryBlock, dataArray);
     }
   }
 
@@ -95,22 +100,14 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     dictOffsets[dictOffsets.length - 1] = size;
     dictionaryBlock = new VariableWidthBlock(dictionary.getDictionarySize(),
         Slices.wrappedBuffer(singleArrayDictValues), dictOffsets, Optional.of(nulls));
-    values = (int[]) ((CarbonColumnVectorImpl) getDictionaryVector()).getDataArray();
+    this.isLocalDict = true;
   }
 
   @Override public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
 
-  @Override public void putInt(int rowId, int value) {
-    values[rowId] = value;
-  }
 
-  @Override public void putInts(int rowId, int count, int value) {
-    for (int i = 0; i < count; i++) {
-      values[rowId++] = value;
-    }
-  }
 
   @Override public void putByteArray(int rowId, byte[] value) {
     type.writeSlice(builder, wrappedBuffer(value));
@@ -142,5 +139,6 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
+    this.isLocalDict = false;
   }
 }
