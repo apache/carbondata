@@ -17,10 +17,8 @@
 
 package org.apache.carbondata.core.datastore.page;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 
-import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
@@ -112,7 +110,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   private void updatePageSize(int rowId) {
     if (pageSize < rowId) {
-      pageSize = rowId;
+      // update the actual number of rows
+      pageSize = rowId + 1;
     }
   }
 
@@ -359,7 +358,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public float[] getFloatPage() {
-    float[] data = new float[getPageSize()];
+    float[] data = new float[getEndLoop()];
     for (long i = 0; i < data.length; i++) {
       long offset = i << floatBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getFloat(baseAddress, baseOffset + offset);
@@ -369,7 +368,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public double[] getDoublePage() {
-    double[] data = new double[getPageSize()];
+    double[] data = new double[getEndLoop()];
     for (long i = 0; i < data.length; i++) {
       long offset = i << doubleBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset);
@@ -539,26 +538,6 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     // For unsafe column page, we are always tracking the total length
     // so return it directly instead of calculate it again (super class implementation)
     return totalLength;
-  }
-
-  @Override public byte[] compress(Compressor compressor) throws MemoryException, IOException {
-    if (UnsafeMemoryManager.isOffHeap() && compressor.supportUnsafe()) {
-      // use raw compression and copy to byte[]
-      int inputSize = totalLength;
-      long compressedMaxSize = compressor.maxCompressedLength(inputSize);
-      MemoryBlock compressed =
-          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, compressedMaxSize);
-      long outSize = compressor.rawCompress(baseOffset, inputSize, compressed.getBaseOffset());
-      assert outSize < Integer.MAX_VALUE;
-      byte[] output = new byte[(int) outSize];
-      CarbonUnsafe.getUnsafe()
-          .copyMemory(compressed.getBaseObject(), compressed.getBaseOffset(), output,
-              CarbonUnsafe.BYTE_ARRAY_OFFSET, outSize);
-      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, compressed);
-      return output;
-    } else {
-      return super.compress(compressor);
-    }
   }
 
   /**
