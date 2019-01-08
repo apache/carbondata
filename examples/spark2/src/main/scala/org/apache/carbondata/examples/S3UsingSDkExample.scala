@@ -18,6 +18,7 @@ package org.apache.carbondata.examples
 
 import org.apache.spark.sql.SparkSession
 import org.slf4j.{Logger, LoggerFactory}
+import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
@@ -31,6 +32,7 @@ object S3UsingSdkExample {
 
   // prepare SDK writer output
   def buildTestData(
+                     args: Array[String],
                      path: String,
                      num: Int = 3): Any = {
 
@@ -48,6 +50,10 @@ object S3UsingSdkExample {
         builder.outputPath(writerPath)
           .uniqueIdentifier(System.currentTimeMillis)
           .withBlockSize(2)
+          .writtenBy("S3UsingSdkExample")
+          .withHadoopConf(ACCESS_KEY, args(0))
+          .withHadoopConf(SECRET_KEY, args(1))
+          .withHadoopConf(ENDPOINT, CarbonSparkUtil.getS3EndPoint(args))
           .withCsvInput(new Schema(fields)).build()
       var i = 0
       val row = num
@@ -57,7 +63,7 @@ object S3UsingSdkExample {
       }
       writer.close()
     } catch {
-      case _: Throwable => None
+      case e: Exception => throw e
     }
   }
 
@@ -103,7 +109,7 @@ object S3UsingSdkExample {
     } else {
       3
     }
-    buildTestData(path, num)
+    buildTestData(args, path, num)
 
     spark.sql("DROP TABLE IF EXISTS s3_sdk_table")
     spark.sql(s"CREATE EXTERNAL TABLE s3_sdk_table STORED BY 'carbondata'" +
