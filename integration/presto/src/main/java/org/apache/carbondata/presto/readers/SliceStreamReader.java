@@ -17,11 +17,17 @@
 
 package org.apache.carbondata.presto.readers;
 
+import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.Optional;
 
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -48,15 +54,14 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   private boolean isLocalDict;
 
+  private Dictionary globalDictionary;
+
   public SliceStreamReader(int batchSize, DataType dataType,
-      Block globalDictionaryBlock) {
+      Dictionary dictionary) {
     super(batchSize, dataType);
+    this.globalDictionary = dictionary;
     this.batchSize = batchSize;
-    if (globalDictionaryBlock == null) {
-      this.builder = type.createBlockBuilder(null, batchSize);
-    } else {
-      this.dictionaryBlock = globalDictionaryBlock;
-    }
+    this.builder = type.createBlockBuilder(null, batchSize);
   }
 
   @Override public Block buildBlock() {
@@ -102,7 +107,6 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
         Slices.wrappedBuffer(singleArrayDictValues), dictOffsets, Optional.of(nulls));
     this.isLocalDict = true;
   }
-
   @Override public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
@@ -140,5 +144,16 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
     this.isLocalDict = false;
+  }
+
+  @Override public void putInt(int rowId, int value) {
+    Object data = DataTypeUtil
+        .getDataBasedOnDataType(globalDictionary.getDictionaryValueForKey(value), DataTypes.STRING);
+    if (Objects.isNull(data)) {
+      builder.appendNull();
+    } else {
+      type.writeSlice(builder, wrappedBuffer(
+          ((String) data).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))));
+    }
   }
 }
