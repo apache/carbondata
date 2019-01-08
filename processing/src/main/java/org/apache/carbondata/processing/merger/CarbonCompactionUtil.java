@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TaskBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -135,11 +136,10 @@ public class CarbonCompactionUtil {
       // in getting the schema last updated time based on which compaction flow is decided that
       // whether it will go to restructure compaction flow or normal compaction flow.
       // This decision will impact the compaction performance so it needs to be decided carefully
-      //TODO will impact the perfornace in case of Block Cache, for this we need to set sort info to
-      //TODO Index File
+      final BlockletInfo blockletInfo = blockInfo.getDetailInfo().getBlockletInfo();
       if (null != blockInfo.getDetailInfo() && (
-          blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp() == 0L || null == blockInfo
-              .getDetailInfo().getBlockletInfo())) {
+          blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp() == 0L || null == blockletInfo
+              || null == blockletInfo.isSorted() || !blockletInfo.isSorted())) {
         dataFileMatadata = CarbonUtil.readMetadataFile(blockInfo, true);
         if (null == dataFileMatadata.isSorted()) {
           dataFileMatadata.setSorted(isSortedTable);
