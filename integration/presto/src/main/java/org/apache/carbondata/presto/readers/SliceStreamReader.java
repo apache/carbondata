@@ -27,6 +27,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
@@ -154,6 +155,18 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     } else {
       type.writeSlice(builder, wrappedBuffer(
           ((String) data).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))));
+    }
+  }
+
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      if (dictionaryBlock == null) {
+        putByteArray(rowId, ByteUtil.toBytes((String) value));
+      } else {
+        putInt(rowId, (int) value);
+      }
     }
   }
 }

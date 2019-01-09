@@ -195,7 +195,9 @@ public class CarbonInputSplit extends FileSplit
                 blockletInfos, split.getVersion(), split.getDeleteDeltaFiles());
         blockInfo.setDetailInfo(split.getDetailInfo());
         blockInfo.setDataMapWriterPath(split.dataMapWritePath);
-        blockInfo.setBlockOffset(split.getDetailInfo().getBlockFooterOffset());
+        if (split.getDetailInfo() != null) {
+          blockInfo.setBlockOffset(split.getDetailInfo().getBlockFooterOffset());
+        }
         tableBlockInfoList.add(blockInfo);
       } catch (IOException e) {
         throw new RuntimeException("fail to get location of split: " + split, e);

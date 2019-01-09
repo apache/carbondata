@@ -86,4 +86,16 @@ public class ShortStreamReader extends CarbonColumnVectorImpl implements PrestoV
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
   }
+
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      if (dictionary == null) {
+        putShort(rowId, (short) value);
+      } else {
+        putInt(rowId, (int) value);
+      }
+    }
+  }
 }

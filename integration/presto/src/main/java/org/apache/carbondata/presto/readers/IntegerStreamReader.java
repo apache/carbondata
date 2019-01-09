@@ -88,4 +88,11 @@ public class IntegerStreamReader extends CarbonColumnVectorImpl
     builder = type.createBlockBuilder(null, batchSize);
   }
 
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      putInt(rowId, (int) value);
+    }
+  }
 }

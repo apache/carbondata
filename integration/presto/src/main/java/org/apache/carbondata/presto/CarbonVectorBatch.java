@@ -75,7 +75,7 @@ public class CarbonVectorBatch {
     }
   }
 
-  private CarbonColumnVectorImpl createDirectStreamReader(int batchSize, DataType dataType,
+  public static CarbonColumnVectorImpl createDirectStreamReader(int batchSize, DataType dataType,
       StructField field, Dictionary dictionary) {
     if (dataType == DataTypes.BOOLEAN) {
       return new BooleanStreamReader(batchSize, field.getDataType(), dictionary);
@@ -92,8 +92,12 @@ public class CarbonVectorBatch {
     } else if (dataType == DataTypes.STRING) {
       return new SliceStreamReader(batchSize, field.getDataType(), dictionary);
     } else if (DataTypes.isDecimal(dataType)) {
-      return new DecimalSliceStreamReader(batchSize, field.getDataType(), (DecimalType) dataType,
-          dictionary);
+      if (dataType instanceof DecimalType) {
+        return new DecimalSliceStreamReader(batchSize, field.getDataType(), (DecimalType) dataType,
+            dictionary);
+      } else {
+        return null;
+      }
     } else {
       return new ObjectStreamReader(batchSize, field.getDataType());
     }

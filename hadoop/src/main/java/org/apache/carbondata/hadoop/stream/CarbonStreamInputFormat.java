@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.streaming;
+package org.apache.carbondata.hadoop.stream;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -37,7 +37,6 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.InputMetricsStats;
-import org.apache.carbondata.streaming.CarbonStreamUtils;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -80,7 +79,7 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
 
   @Override
   public RecordReader<Void, Object> createRecordReader(InputSplit split, TaskAttemptContext context)
-      throws IOException, InterruptedException {
+      throws IOException {
     try {
       Constructor cons = CarbonStreamUtils
           .getConstructorWithReflection(STREAM_RECORD_READER_INSTANCE, boolean.class,
