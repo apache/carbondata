@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.streaming;
+package org.apache.carbondata.hadoop.stream;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

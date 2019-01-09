@@ -87,4 +87,16 @@ public class TimestampStreamReader extends CarbonColumnVectorImpl
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
   }
+
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      if (dictionary == null) {
+        putLong(rowId, (Long) value);
+      } else {
+        putInt(rowId, (int) value);
+      }
+    }
+  }
 }
