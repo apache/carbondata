@@ -609,6 +609,14 @@ public final class CarbonLoaderUtil {
           blockAssignmentStrategy = BlockAssignmentStrategy.BLOCK_SIZE_FIRST;
         } else {
           blockAssignmentStrategy = BlockAssignmentStrategy.BLOCK_NUM_FIRST;
+          // fall back to BLOCK_NUM_FIRST strategy need to reset
+          // the average expected size for each node
+          if (numOfNodes == 0) {
+            sizePerNode = 1;
+          } else {
+            sizePerNode = blockInfos.size() / numOfNodes;
+            sizePerNode = sizePerNode <= 0 ? 1 : sizePerNode;
+          }
         }
         LOGGER.info("Specified minimum data size to load is less than the average size "
             + "for each node, fallback to default strategy" + blockAssignmentStrategy);
