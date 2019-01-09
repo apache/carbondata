@@ -70,6 +70,9 @@ public class CarbonLocalMultiBlockSplit {
       @JsonProperty("locations") String[] locations) {
     this.splitList = splitList;
     this.locations = locations;
+    if (!splitList.isEmpty()) {
+      this.fileFormat = splitList.get(0).getFileFormat();
+    }
   }
 
   public String getJsonString() {
@@ -87,6 +90,7 @@ public class CarbonLocalMultiBlockSplit {
 
     CarbonMultiBlockSplit carbonMultiBlockSplit =
         new CarbonMultiBlockSplit(carbonInputSplitList, carbonLocalMultiBlockSplit.getLocations());
+    carbonMultiBlockSplit.setFileFormat(carbonLocalMultiBlockSplit.getFileFormat());
 
     return carbonMultiBlockSplit;
   }

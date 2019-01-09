@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.streaming;
+package org.apache.carbondata.hadoop.stream;
 
 import java.io.EOFException;
 import java.io.IOException;

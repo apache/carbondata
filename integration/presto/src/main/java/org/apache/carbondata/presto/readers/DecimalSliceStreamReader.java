@@ -167,4 +167,16 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
         "Read decimal precision larger than column precision");
     return decimal;
   }
+
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      if (dictionary == null) {
+        decimalBlockWriter((BigDecimal) value);
+      } else {
+        putInt(rowId, (int) value);
+      }
+    }
+  }
 }

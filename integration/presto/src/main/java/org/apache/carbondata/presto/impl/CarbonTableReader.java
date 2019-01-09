@@ -277,7 +277,8 @@ public class CarbonTableReader {
               carbonInputSplit.getLength(), Arrays.asList(carbonInputSplit.getLocations()),
               carbonInputSplit.getNumberOfBlocklets(), carbonInputSplit.getVersion().number(),
               carbonInputSplit.getDeleteDeltaFiles(), carbonInputSplit.getBlockletId(),
-              gson.toJson(carbonInputSplit.getDetailInfo())));
+              gson.toJson(carbonInputSplit.getDetailInfo()),
+              carbonInputSplit.getFileFormat().ordinal()));
         }
 
         // Use block distribution
