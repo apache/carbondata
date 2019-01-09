@@ -20,13 +20,16 @@ package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Expression, PredicateHelper, _}
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
+import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftOuter}
+import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.mv.datamap.MVHelper
 import org.apache.carbondata.mv.plans.modular.{JoinEdge, Matchable, ModularPlan, _}
 import org.apache.carbondata.mv.plans.modular
 import org.apache.carbondata.mv.plans.modular.Flags._
 import org.apache.carbondata.mv.plans.util.SQLBuilder
+
 
 abstract class DefaultMatchMaker extends MatchMaker[ModularPlan]
 
@@ -676,10 +679,12 @@ object SelectSelectGroupbyChildDelta extends DefaultMatchPattern with PredicateH
 
               val aliasMap_exp = AttributeMap(
                 gb_2c.outputList.collect {
-                  case a: Alias => (a.toAttribute, a) })
+                  case a: Alias => (a.toAttribute, AliasWrapper(a)) })
               val sel_3q_exp = sel_3q.transformExpressions({
                 case attr: Attribute if aliasMap_exp.contains(attr) => aliasMap_exp(attr)
-              })
+              }).transformExpressions {
+                case AliasWrapper(alias: Alias) => alias
+              }
               // Mappings of output of two plans by checking semantic equals.
               val mappings = sel_3q_exp.outputList.zipWithIndex.map { case(exp, index) =>
                 (exp, gb_2c.outputList.find {
@@ -705,6 +710,17 @@ object SelectSelectGroupbyChildDelta extends DefaultMatchPattern with PredicateH
       case _ => Nil
     }
   }
+
+
+  case class AliasWrapper(alias: Alias) extends UnaryExpression {
+    override def child: Expression = null
+
+    override protected def doGenCode(ctx: CodegenContext,
+        ev: ExprCode): ExprCode = ev
+
+    override def dataType: DataType = alias.dataType
+  }
+
 }
 
 
