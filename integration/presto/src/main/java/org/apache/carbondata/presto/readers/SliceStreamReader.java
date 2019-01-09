@@ -83,6 +83,7 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     super.setDictionary(dictionary);
     if (dictionary == null) {
       dictionaryBlock = null;
+      this.isLocalDict = false;
       return;
     }
     boolean[] nulls = new boolean[dictionary.getDictionarySize()];
@@ -144,7 +145,6 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
-    this.isLocalDict = false;
   }
 
   @Override public void putInt(int rowId, int value) {
