@@ -169,10 +169,6 @@
           <artifactId>compress-lzf</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.roaringbitmap</groupId>
-          <artifactId>RoaringBitmap</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>com.thoughtworks.paranamer</groupId>
           <artifactId>paranamer</artifactId>
         </exclusion>
