@@ -678,12 +678,15 @@ object SelectSelectGroupbyChildDelta extends DefaultMatchPattern with PredicateH
                 gb_2c.outputList.collect {
                   case a: Alias => (a.toAttribute, a) })
 
-              //avoid to transform a expression duplicate
-              val transformedExpFlags = scala.collection.mutable.Set[ExprId]()
+              //avoid to transform a expression more than twrice
+              //accept for select and having
+              val transformedExpFlags = scala.collection.mutable.Map[ExprId, Int]()
+              aliasMap_exp.keySet.map(alias =>
+                transformedExpFlags += (alias.exprId -> 0))
               val sel_3q_exp = sel_3q.transformExpressions({
                 case attr: Attribute if aliasMap_exp.contains(attr) &&
-                  !transformedExpFlags.contains(attr.exprId) => {
-                  transformedExpFlags += attr.exprId
+                  transformedExpFlags(attr.exprId) < 2 => {
+                  transformedExpFlags(attr.exprId) += 1
                   aliasMap_exp(attr)
                 }
               })
