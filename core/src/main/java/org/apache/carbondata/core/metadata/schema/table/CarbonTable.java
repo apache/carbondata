@@ -1357,12 +1357,20 @@ public class CarbonTable implements Serializable {
       if (getNumberOfSortColumns() == 0) {
         return SortScopeOptions.SortScope.NO_SORT;
       } else {
-        return SortScopeOptions.getSortScope(
-            CarbonProperties.getInstance().getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-                CarbonProperties.getInstance().getProperty(
-                    CarbonCommonConstants.LOAD_SORT_SCOPE,
-                    CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)));
+        // Check SORT_SCOPE in Session Properties first.
+        String sortScopeSessionProp = CarbonProperties.getInstance().getProperty(
+            CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE + getDatabaseName() + "."
+                + getTableName());
+        if (null != sortScopeSessionProp) {
+          return SortScopeOptions.getSortScope(sortScopeSessionProp);
+        }
+
+        // If SORT_SCOPE is not found in Session Properties,
+        // then retrieve it from Table.
+        return SortScopeOptions.getSortScope(CarbonProperties.getInstance()
+            .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+                CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "LOCAL_SORT")));
       }
     } else {
       return SortScopeOptions.getSortScope(sortScope);

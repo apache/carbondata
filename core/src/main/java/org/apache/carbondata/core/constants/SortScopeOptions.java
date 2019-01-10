@@ -36,7 +36,7 @@ public class SortScopeOptions {
       case "NO_SORT":
         return SortScope.NO_SORT;
       default:
-        return SortScope.LOCAL_SORT;
+        return getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
     }
   }
 
