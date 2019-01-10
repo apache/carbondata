@@ -192,6 +192,9 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
         }
       }
     }
+    if (dataSkewCountTmp > 1) {
+      dataSkewNumTmp += dataSkewCountTmp
+    }
     if (dataSkewIndexTmp.size > 0) {
       (finalBounds.toArray, dataSkewIndexTmp.size, dataSkewIndexTmp.toArray, dataSkewNumTmp.toArray)
     } else {

@@ -17,6 +17,10 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import scala.collection.mutable.ArrayBuffer
+import scala.reflect.classTag
+
+import org.apache.spark.DataSkewRangePartitioner
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -25,8 +29,10 @@ import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.spark.load.PrimtiveOrdering
 
 class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   var filePath: String = s"$resourcesPath/globalsort"
@@ -97,19 +103,101 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
   test("range_column with data skew") {
     sql(
       """
-        | CREATE TABLE carbon_range_column4(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'SORT_COLUMNS'='name, city')
+        | CREATE TABLE carbon_range_column4(c1 int, c2 string)
+        | STORED AS carbondata
+        | TBLPROPERTIES('sort_columns'='c1,c2', 'sort_scope'='local_sort')
       """.stripMargin)
 
     val dataSkewPath = s"$resourcesPath/range_column"
 
-    sql(s"LOAD DATA LOCAL INPATH '$dataSkewPath' INTO TABLE carbon_range_column4 " +
-        "OPTIONS('GLOBAL_SORT_PARTITIONS'='5', 'range_column'='name', " +
-        "'BAD_RECORDS_ACTION'='force')")
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$dataSkewPath'
+         | INTO TABLE carbon_range_column4
+         | OPTIONS('FILEHEADER'='c1,c2', 'range_column'='c2', 'global_sort_partitions'='10')
+        """.stripMargin)
 
-    assert(getIndexFileCount("carbon_range_column4") === 5)
-    checkAnswer(sql("SELECT COUNT(*) FROM carbon_range_column4"), Seq(Row(10)))
+    assert(getIndexFileCount("carbon_range_column4") === 9)
+    checkAnswer(sql("SELECT COUNT(*) FROM carbon_range_column4"), Seq(Row(20)))
+  }
+
+  test("DataSkewRangePartitioner.combineDataSkew") {
+    val partitioner =
+      new DataSkewRangePartitioner(1, null)(new PrimtiveOrdering(DataTypes.STRING),
+        classTag[Object])
+
+    testCombineDataSkew(
+      partitioner,
+      Array("a", "b"),
+      0)
+
+    testCombineDataSkew(
+      partitioner,
+      Array("a", "a"),
+      1,
+      Array(0),
+      Array(2))
+
+    testCombineDataSkew(
+      partitioner,
+      Array("a", "b", "c"),
+      0)
+
+    testCombineDataSkew(
+      partitioner,
+      Array("a", "b", "b", "c", "c", "c"),
+      2,
+      Array(1, 2),
+      Array(2, 3))
+
+    testCombineDataSkew(
+      partitioner,
+      Array("a", "b", "b", "b", "c", "c"),
+      2,
+      Array(1, 2),
+      Array(3, 2))
+
+    testCombineDataSkew(
+      partitioner,
+      Array("a", "a", "b", "b", "c", "c"),
+      3,
+      Array(0, 1, 2),
+      Array(2, 2, 2))
+
+    testCombineDataSkew(
+      partitioner,
+      Array("a", "a", "a", "b", "c", "c"),
+      2,
+      Array(0, 2),
+      Array(3, 2))
+
+    testCombineDataSkew(
+      partitioner,
+      Array("a", "a", "a", "b", "b", "c"),
+      2,
+      Array(0, 1),
+      Array(3, 2))
+
+    testCombineDataSkew(
+      partitioner,
+      Array("a", "a", "b", "b", "b", "c"),
+      2,
+      Array(0, 1),
+      Array(2, 3))
+  }
+
+  private def testCombineDataSkew(partitioner: DataSkewRangePartitioner[Object, Nothing],
+      bounds: Array[String], skewCount: Int, skewIndexes: Array[Int] = null,
+      skewWeights: Array[Int] = null
+  ): Unit = {
+    val boundsBuffer = new ArrayBuffer[Object]()
+    bounds.map(_.getBytes()).foreach(boundsBuffer += _)
+    val (_, actualSkewCount, actualSkewIndexes, actualSkewWeights) =
+      partitioner.combineDataSkew(boundsBuffer)
+    assertResult(skewCount)(actualSkewCount)
+    if (skewCount > 0) {
+      assertResult(skewIndexes)(actualSkewIndexes)
+      assertResult(skewWeights)(actualSkewWeights)
+    }
   }
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
