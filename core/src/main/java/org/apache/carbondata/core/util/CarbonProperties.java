@@ -1364,6 +1364,30 @@ public final class CarbonProperties {
     return thresholdSize;
   }
 
+  public int getRangeColumnScaleFactor() {
+    boolean isValid = true;
+    int scaleFactor = 1;
+    try {
+      scaleFactor = Integer.parseInt(CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR,
+          CarbonCommonConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR_DEFAULT));
+      if (scaleFactor < 1 || scaleFactor > 300) {
+        isValid = false;
+      }
+    } catch (NumberFormatException ex) {
+      LOGGER.warn("Range column scala factor isn't number format");
+      isValid = false;
+    }
+
+    if (isValid) {
+      return scaleFactor;
+    } else {
+      LOGGER.warn("The scale factor is invalid. Using the default value "
+          + CarbonCommonConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR_DEFAULT);
+      return Integer.parseInt(CarbonCommonConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR_DEFAULT);
+    }
+  }
+
   /**
    * Get the number of hours the segment lock files will be preserved.
    * It will be converted to microseconds to return.

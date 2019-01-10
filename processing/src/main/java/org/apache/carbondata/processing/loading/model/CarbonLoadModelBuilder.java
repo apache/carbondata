@@ -306,15 +306,6 @@ public class CarbonLoadModelBuilder {
 
   private void validateRangeColumn(Map<String, String> optionsFinal,
       CarbonLoadModel carbonLoadModel) throws InvalidLoadOptionException {
-    String rangeColumn = optionsFinal.get("range_column");
-    if (rangeColumn != null) {
-      carbonLoadModel
-          .setRangePartitionColumn(table.getColumnByName(table.getTableName(), rangeColumn));
-      if (carbonLoadModel.getRangePartitionColumn() == null) {
-        throw new InvalidLoadOptionException("Invalid range_column option");
-      }
-    }
-
     String scaleFactor = optionsFinal.get("scale_factor");
     if (scaleFactor != null) {
       try {

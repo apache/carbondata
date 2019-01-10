@@ -426,6 +426,7 @@ public final class CarbonCommonConstants {
    */
   public static final String DICTIONARY_PATH = "dictionary_path";
   public static final String SORT_COLUMNS = "sort_columns";
+  public static final String RANGE_COLUMN = "range_column";
   public static final String PARTITION_TYPE = "partition_type";
   public static final String NUM_PARTITIONS = "num_partitions";
   public static final String RANGE_INFO = "range_info";
@@ -1175,6 +1176,16 @@ public final class CarbonCommonConstants {
    * min carbon sort size
    */
   public static final int SORT_SIZE_MIN_VAL = 1000;
+
+  /**
+   * For Range_Column, it will use SCALE_FACTOR to control the size of each partition.
+   * When SCALE_FACTOR is the compression ratio of carbonData,
+   * each task will generate one CarbonData file.
+   * And the size of this CarbonData file is about TABLE_BLOCKSIZE of this table.
+   */
+  public static final String CARBON_RANGE_COLUMN_SCALE_FACTOR = "carbon.range.column.scale.factor";
+
+  public static final String CARBON_RANGE_COLUMN_SCALE_FACTOR_DEFAULT = "3";
 
   //////////////////////////////////////////////////////////////////////////////////////////
   // Query parameter start here

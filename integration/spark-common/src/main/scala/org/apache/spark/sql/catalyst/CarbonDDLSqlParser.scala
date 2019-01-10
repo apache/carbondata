@@ -787,6 +787,23 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       }
     }
 
+    // range_column should be there in create table cols
+    if (tableProperties.get(CarbonCommonConstants.RANGE_COLUMN).isDefined) {
+      val rangeColumn = tableProperties.get(CarbonCommonConstants.RANGE_COLUMN).get.trim
+      if (rangeColumn.contains(",")) {
+        val errorMsg = "range_column not support multiple columns"
+        throw new MalformedCarbonCommandException(errorMsg)
+      }
+      val rangeField = fields.find(_.column.equalsIgnoreCase(rangeColumn))
+      if (rangeField.isEmpty) {
+        val errorMsg = "range_column: " + rangeColumn +
+                       " does not exist in table. Please check the create table statement."
+        throw new MalformedCarbonCommandException(errorMsg)
+      } else {
+        tableProperties.put(CarbonCommonConstants.RANGE_COLUMN, rangeField.get.column)
+      }
+    }
+
     // All excluded cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
       LOGGER.warn("dictionary_exclude option was deprecated, " +
@@ -1104,7 +1121,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "SKIP_EMPTY_LINE",
       "SORT_COLUMN_BOUNDS",
       "LOAD_MIN_SIZE_INMB",
-      "RANGE_COLUMN",
       "SCALE_FACTOR",
       "SORT_SCOPE"
     )

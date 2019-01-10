@@ -304,9 +304,8 @@ object DataLoadProcessBuilderOnSpark {
         val blockSize = 1024L * 1024 * table.getBlockSizeInMB
         val blockletSize = 1024L * 1024 * table.getBlockletSizeInMB
         val scaleFactor = if (model.getScaleFactor == 0) {
-          // here it assumes the compression ratio of CarbonData is about 30%,
-          // so it multiply by 3 to get the split size of CSV files.
-          CarbonLoadOptionConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR_DEFAULT
+          // use system properties
+          CarbonProperties.getInstance().getRangeColumnScaleFactor
         } else {
           model.getScaleFactor
         }
