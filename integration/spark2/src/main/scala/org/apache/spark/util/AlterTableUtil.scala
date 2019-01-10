@@ -357,6 +357,9 @@ object AlterTableUtil {
       // validate the load min size properties
       validateLoadMinSizeProperties(carbonTable, lowerCasePropertiesMap)
 
+      // validate the range column properties
+      validateRangeColumnProperties(carbonTable, lowerCasePropertiesMap)
+
       // below map will be used for cache invalidation. As tblProperties map is getting modified
       // in the next few steps the original map need to be retained for any decision making
       val existingTablePropertiesMap = mutable.Map(tblPropertiesMap.toSeq: _*)
@@ -428,7 +431,8 @@ object AlterTableUtil {
       "LOCAL_DICTIONARY_THRESHOLD",
       "LOCAL_DICTIONARY_INCLUDE",
       "LOCAL_DICTIONARY_EXCLUDE",
-      "LOAD_MIN_SIZE_INMB")
+      "LOAD_MIN_SIZE_INMB",
+      "RANGE_COLUMN")
     supportedOptions.contains(propKey.toUpperCase)
   }
 
@@ -508,6 +512,25 @@ object AlterTableUtil {
       CommonUtil.validateCacheLevel(
         propertiesMap.get(CarbonCommonConstants.CACHE_LEVEL).get,
         propertiesMap)
+    }
+  }
+
+  def validateRangeColumnProperties(carbonTable: CarbonTable,
+      propertiesMap: mutable.Map[String, String]): Unit = {
+    if (propertiesMap.get(CarbonCommonConstants.RANGE_COLUMN).isDefined) {
+      val rangeColumnProp = propertiesMap.get(CarbonCommonConstants.RANGE_COLUMN).get
+      if (rangeColumnProp.contains(",")) {
+        val errorMsg = "range_column not support multiple columns"
+        throw new MalformedCarbonCommandException(errorMsg)
+      }
+      val rangeColumn = carbonTable.getColumnByName(carbonTable.getTableName, rangeColumnProp)
+      if (rangeColumn == null) {
+        throw new MalformedCarbonCommandException(
+          s"Table property ${ CarbonCommonConstants.RANGE_COLUMN }: ${ rangeColumnProp }" +
+          s" is not exists in the table")
+      } else {
+        propertiesMap.put(CarbonCommonConstants.RANGE_COLUMN, rangeColumn.getColName)
+      }
     }
   }
 

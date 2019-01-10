@@ -947,6 +947,16 @@ public class CarbonTable implements Serializable {
     return numberOfNoDictSortColumns;
   }
 
+  public CarbonColumn getRangeColumn() {
+    String rangeColumn =
+        tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.RANGE_COLUMN);
+    if (rangeColumn == null) {
+      return null;
+    } else {
+      return getColumnByName(getTableName(), rangeColumn);
+    }
+  }
+
   public TableInfo getTableInfo() {
     return tableInfo;
   }

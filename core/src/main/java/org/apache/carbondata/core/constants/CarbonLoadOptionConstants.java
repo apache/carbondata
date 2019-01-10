@@ -172,10 +172,4 @@ public final class CarbonLoadOptionConstants {
 
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
 
-  /**
-   * For Range_Column, it will use SCALE_FACTOR to control the size of each partition.
-   * When SCALE_FACTOR is about the compression ratio, each task will generate one CarbonData file.
-   * And the size of the file is about TABLE_BLOCKSIZE of this table.
-   */
-  public static final int CARBON_RANGE_COLUMN_SCALE_FACTOR_DEFAULT = 3;
 }
