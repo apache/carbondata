@@ -28,7 +28,9 @@ This tutorial provides a quick introduction to using current integration/presto 
 ### Installing Presto
 
   1. Download the 0.210 version of Presto using:
-  `wget https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.210/presto-server-0.210.tar.gz`
+  ```
+  wget https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.210/presto-server-0.210.tar.gz
+  ```
 
   2. Extract Presto tar file: `tar zxvf presto-server-0.210.tar.gz`.
 
@@ -144,9 +146,7 @@ To run it as a background process.
 To run it in foreground.
 
 ### Start Presto CLI
-```
-./presto
-```
+
 To connect to carbondata catalog use the following command:
 
 ```
@@ -220,7 +220,8 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
   Secondly: Create a folder named 'carbondata' under $PRESTO_HOME$/plugin and
   copy all jars from carbondata/integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
         to $PRESTO_HOME$/plugin/carbondata
-
+  **NOTE:**  Copying assemble jar alone will not work, need to copy all jars from integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
+  
   Thirdly: Create a carbondata.properties file under $PRESTO_HOME$/etc/catalog/ containing the following contents:
   ```
   connector.name=carbondata
