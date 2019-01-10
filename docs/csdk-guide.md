@@ -30,7 +30,7 @@ code and without CarbonSession.
 In the carbon jars package, there exist a carbondata-sdk.jar, 
 including SDK reader for C++ SDK.
 
-# Compile/Build CSDK
+## Compile/Build CSDK
 CSDK supports cmake based compilation and has dependency list in CMakeLists.txt.
 <br> Prerequisites
 <br>GCC >=4.8.5
@@ -42,11 +42,12 @@ Steps
 2. Create build folder . (/opt/.../CSDK/build) 
 3. Run Command from build folder `cmake ../`
 4. `make`
+5. Run CSDK program like `./CSDK` if want to redirect test case report in separate file then run command like `./CSDK --gtest_output="xml:${REPORT_PATH}/CSDK_Report.xml"`
 
 To Configure/build CSDK in IDE(Cion,Eclipse(CDT) Please refer respective IDE help doc about how importing Cmake project.
 
 Test Cases are written in  [main_ft.cpp](https://github.com/apache/carbondata/blob/master/store/CSDK/test/main_ft.cpp) with GoogleTest C++ Framework.
-2. Follow below Steps to configure GoogleTest Framework.
+Follow below Steps to configure GoogleTest Framework.
    * Download googleTest release (Current testcase runs with 1.8) https://github.com/google/googletest/releases
    * Extract to folder like /opt/googletest/googletest-release-1.8.1/ and create build folder inside this  like /opt/googletest/googletest-release-1.8.1/googletest/build)
    * build googleTest , Goto build path and run `cmake ../` . this will generate google lib in build folder. 
