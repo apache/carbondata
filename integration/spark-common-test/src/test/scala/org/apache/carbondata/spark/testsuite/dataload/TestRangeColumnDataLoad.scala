@@ -25,12 +25,14 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException
+import org.apache.carbondata.common.exceptions.sql.{InvalidLoadOptionException, MalformedCarbonCommandException}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.load.PrimtiveOrdering
 
@@ -50,6 +52,8 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql("DROP TABLE IF EXISTS carbon_range_column2")
     sql("DROP TABLE IF EXISTS carbon_range_column3")
     sql("DROP TABLE IF EXISTS carbon_range_column4")
+    sql("DROP TABLE IF EXISTS carbon_range_column5")
+    sql("DROP TABLE IF EXISTS carbon_range_column6")
   }
 
   test("range_column with option GLOBAL_SORT_PARTITIONS") {
@@ -57,11 +61,11 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city')
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
-        "OPTIONS('GLOBAL_SORT_PARTITIONS'='1', 'range_column'='name')")
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='1')")
 
     assert(getIndexFileCount("carbon_range_column1") === 1)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_range_column1"), Seq(Row(12)))
@@ -74,11 +78,11 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column2(id INT, name STRING, city STRING, age INT)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city')
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column2 " +
-        "OPTIONS('scale_factor'='10', 'range_column'='name')")
+        "OPTIONS('scale_factor'='10')")
 
     assert(getIndexFileCount("carbon_range_column2") === 1)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_range_column2"), Seq(Row(12)))
@@ -86,17 +90,28 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       sql("SELECT * FROM carbon_range_column2 ORDER BY name"))
   }
 
-  test("range_column only support single column ") {
+  test("only support single column for create table") {
+    intercept[MalformedCarbonCommandException] {
+      sql(
+        """
+          | CREATE TABLE carbon_range_column3(id INT, name STRING, city STRING, age INT)
+          | STORED BY 'org.apache.carbondata.format'
+          | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name,id')
+        """.stripMargin)
+    }
+  }
+
+  test("load data command not support range_column") {
     sql(
       """
         | CREATE TABLE carbon_range_column3(id INT, name STRING, city STRING, age INT)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city')
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
-    intercept[InvalidLoadOptionException] {
+    intercept[MalformedCarbonCommandException] {
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column3 " +
-          "OPTIONS('scale_factor'='10', 'range_column'='name,id')")
+          "OPTIONS('scale_factor'='10', 'range_column'='name')")
     }
   }
 
@@ -105,7 +120,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column4(c1 int, c2 string)
         | STORED AS carbondata
-        | TBLPROPERTIES('sort_columns'='c1,c2', 'sort_scope'='local_sort')
+        | TBLPROPERTIES('sort_columns'='c1,c2', 'sort_scope'='local_sort', 'range_column'='c2')
       """.stripMargin)
 
     val dataSkewPath = s"$resourcesPath/range_column"
@@ -113,7 +128,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       s"""LOAD DATA LOCAL INPATH '$dataSkewPath'
          | INTO TABLE carbon_range_column4
-         | OPTIONS('FILEHEADER'='c1,c2', 'range_column'='c2', 'global_sort_partitions'='10')
+         | OPTIONS('FILEHEADER'='c1,c2', 'global_sort_partitions'='10')
         """.stripMargin)
 
     assert(getIndexFileCount("carbon_range_column4") === 9)
@@ -198,6 +213,41 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       assertResult(skewIndexes)(actualSkewIndexes)
       assertResult(skewWeights)(actualSkewWeights)
     }
+  }
+
+  test("range_column with system property carbon.range.column.scale.factor") {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR,
+      "10"
+    )
+
+    sql(
+      """
+        | CREATE TABLE carbon_range_column5(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column5 ")
+
+    assert(getIndexFileCount("carbon_range_column5") === 1)
+    checkAnswer(sql("SELECT COUNT(*) FROM carbon_range_column5"), Seq(Row(12)))
+    checkAnswer(sql("SELECT * FROM carbon_range_column5"),
+      sql("SELECT * FROM carbon_range_column5 ORDER BY name"))
+  }
+
+  test("set and unset table property: range_column") {
+    sql(
+      """
+        | CREATE TABLE carbon_range_column6(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city')
+      """.stripMargin)
+
+    sql("ALTER TABLE carbon_range_column6 SET TBLPROPERTIES('range_column'='city')")
+    sql("ALTER TABLE carbon_range_column6 SET TBLPROPERTIES('range_column'='name')")
+    sql("ALTER TABLE carbon_range_column6 UNSET TBLPROPERTIES('range_column')")
+    sql("ALTER TABLE carbon_range_column6 SET TBLPROPERTIES('range_column'='name')")
   }
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {

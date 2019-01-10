@@ -29,6 +29,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
@@ -1362,6 +1363,29 @@ public final class CarbonProperties {
           CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
     }
     return thresholdSize;
+  }
+
+  public int getRangeColumnScaleFactor() {
+    boolean isValid = true;
+    int scaleFactor = 1;
+    try {
+      scaleFactor = Integer.parseInt(CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR,
+          CarbonCommonConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR_DEFAULT));
+      if (scaleFactor < 1 || scaleFactor > 300) {
+        isValid = false;
+      }
+    } catch (NumberFormatException ex) {
+      isValid = false;
+    }
+
+    if (isValid) {
+      return scaleFactor;
+    } else {
+      LOGGER.warn("The scale factor is invalid. Using the default value "
+          + CarbonCommonConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR_DEFAULT);
+      return Integer.parseInt(CarbonCommonConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR_DEFAULT);
+    }
   }
 
   /**

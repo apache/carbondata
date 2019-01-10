@@ -219,24 +219,25 @@ case class CarbonLoadDataCommand(
               carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
                 CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))))
 
-      optionsFinal
-        .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
-      val factPath = if (dataFrame.isDefined) {
-        ""
-      } else {
-        FileUtils.getPaths(factPathFromUser, hadoopConf)
-      }
-      carbonLoadModel.setParentTablePath(parentTablePath)
-      carbonLoadModel.setFactFilePath(factPath)
-      carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
-      carbonLoadModel.setAggLoadRequest(
-        internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
-          CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT).toBoolean)
-      carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
-      val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-        .getOrElse(CarbonCommonConstants.COMPRESSOR,
-          CompressorFactory.getInstance().getCompressor.getName)
-      carbonLoadModel.setColumnCompressor(columnCompressor)
+    optionsFinal
+      .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
+    val factPath = if (dataFrame.isDefined) {
+      ""
+    } else {
+      FileUtils.getPaths(factPathFromUser, hadoopConf)
+    }
+    carbonLoadModel.setParentTablePath(parentTablePath)
+    carbonLoadModel.setFactFilePath(factPath)
+    carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
+    carbonLoadModel.setAggLoadRequest(
+      internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
+        CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT).toBoolean)
+    carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
+    val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.COMPRESSOR,
+        CompressorFactory.getInstance().getCompressor.getName)
+    carbonLoadModel.setColumnCompressor(columnCompressor)
+    carbonLoadModel.setRangePartitionColumn(table.getRangeColumn)
 
     val javaPartition = mutable.Map[String, String]()
     partition.foreach { case (k, v) =>
