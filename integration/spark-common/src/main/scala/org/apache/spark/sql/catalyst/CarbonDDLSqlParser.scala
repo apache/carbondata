@@ -35,6 +35,7 @@ import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
@@ -1200,6 +1201,16 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
             "option SKIP_EMPTY_LINE can have option either true or false")
         }
       }
+
+    // Validate SORT_SCOPE
+    if (options.exists(_._1.equalsIgnoreCase("SORT_SCOPE"))) {
+      val optionValue: String = options.get("sort_scope").get.head._2
+      if (!CarbonUtil.isValidSortOption(optionValue)) {
+        throw new InvalidConfigurationException(
+          s"Passing invalid SORT_SCOPE '$optionValue', valid SORT_SCOPE are 'NO_SORT'," +
+          s" 'BATCH_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT' ")
+      }
+    }
 
     // check for duplicate options
     val duplicateOptions = options filter {

@@ -49,6 +49,7 @@ CarbonData DML statements are documented here,which includes:
 | [COMMENTCHAR](#commentchar)                             | Character used to comment the rows in the input csv file. Those rows will be skipped from processing |
 | [HEADER](#header)                                       | Whether the input csv files have header row                  |
 | [FILEHEADER](#fileheader)                               | If header is not present in the input csv, what is the column names to be used for data read from input csv |
+| [SORT_SCOPE](#sort_scope)                               | Sort Scope to be used for current load.                      |
 | [MULTILINE](#multiline)                                 | Whether a row data can span across multiple lines.           |
 | [ESCAPECHAR](#escapechar)                               | Escape character used to excape the data in input csv file.For eg.,\ is a standard escape character |
 | [SKIP_EMPTY_LINE](#skip_empty_line)                     | Whether empty lines in input csv file should be skipped or loaded as null row |
@@ -105,6 +106,13 @@ CarbonData DML statements are documented here,which includes:
     ```
     OPTIONS('FILEHEADER'='column1,column2') 
     ```
+
+  - ##### SORT_SCOPE:
+  Sort Scope to be used for the current load. This overrides the Sort Scope of Table.
+
+  ```
+  OPTIONS('SORT_SCOPE'='BATCH_SORT')
+  ```
 
   - ##### MULTILINE:
 
@@ -458,4 +466,3 @@ CarbonData DML statements are documented here,which includes:
   ```
   CLEAN FILES FOR TABLE carbon_table
   ```
-
