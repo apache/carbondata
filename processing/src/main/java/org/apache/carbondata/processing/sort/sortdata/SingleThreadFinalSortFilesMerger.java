@@ -135,8 +135,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
               noDicAndComplexColumns, sortParameters, measureDataType);
       if (inMemorySortTempChunkHolder.hasNext()) {
         inMemorySortTempChunkHolder.readRow();
+        recordHolderHeapLocal.add(inMemorySortTempChunkHolder);
       }
-      recordHolderHeapLocal.add(inMemorySortTempChunkHolder);
     }
   }
 
