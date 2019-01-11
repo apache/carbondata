@@ -1217,6 +1217,16 @@ public final class CarbonCommonConstants {
   public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 100;
 
   /**
+   * Maximum batch size of carbon.detail.batch.size property
+   */
+  public static final int DETAIL_QUERY_BATCH_SIZE_MAX = 1000;
+
+  /**
+   * Minimum batch size of carbon.detail.batch.size property
+   */
+  public static final int DETAIL_QUERY_BATCH_SIZE_MIN = 100;
+
+  /**
    * max driver lru cache size upto which lru cache will be loaded in memory
    */
   @CarbonProperty
