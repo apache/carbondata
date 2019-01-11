@@ -94,6 +94,9 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     if (null != batchSizeString) {
       try {
         batchSize = Integer.parseInt(batchSizeString);
+        if (0 == batchSize) {
+          batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
+        }
       } catch (NumberFormatException ne) {
         LOGGER.error("Invalid inmemory records size. Using default value");
         batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
