@@ -30,8 +30,8 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
+import org.apache.carbondata.hadoop.stream.CarbonStreamInputFormat;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
-import org.apache.carbondata.streaming.CarbonStreamInputFormat;
 
 import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;
