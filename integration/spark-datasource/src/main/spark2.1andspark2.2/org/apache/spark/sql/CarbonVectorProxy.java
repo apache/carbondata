@@ -311,6 +311,7 @@ public class CarbonVectorProxy {
         vector.setDictionary(dictionaryWrapper);
         this.dictionary = dictionaryWrapper;
       } else {
+        this.dictionary = null;
         vector.setDictionary(null);
       }
     }
