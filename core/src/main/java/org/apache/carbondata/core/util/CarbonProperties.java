@@ -1376,6 +1376,7 @@ public final class CarbonProperties {
         isValid = false;
       }
     } catch (NumberFormatException ex) {
+      LOGGER.warn("Range column scala factor isn't number format");
       isValid = false;
     }
 
