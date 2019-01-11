@@ -516,7 +516,7 @@ object AlterTableUtil {
   }
 
   def validateRangeColumnProperties(carbonTable: CarbonTable,
-      propertiesMap: mutable.Map[String, String]) = {
+      propertiesMap: mutable.Map[String, String]): Unit = {
     if (propertiesMap.get(CarbonCommonConstants.RANGE_COLUMN).isDefined) {
       val rangeColumnProp = propertiesMap.get(CarbonCommonConstants.RANGE_COLUMN).get
       val rangeColumn = carbonTable.getColumnByName(carbonTable.getTableName, rangeColumnProp)
