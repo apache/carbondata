@@ -508,7 +508,6 @@
       <id>hadoop-2.8</id>
       <properties>
         <hadoop.version>2.8.3</hadoop.version>
-        <!--<httpclient.version>4.5.2</httpclient.version>-->
       </properties>
     </profile>
     <profile>
