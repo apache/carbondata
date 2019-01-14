@@ -361,6 +361,14 @@ object CarbonReflectionUtils {
         instanceMirror.reflectField(field.asTerm).set(updatedSerdeMap)
       case _ =>
     }
-
   }
+
+  def invokeMethod(obj: Object,
+      methodName: String,
+      args: Array[Object]): Object = {
+    val method: Method = obj.getClass
+      .getMethod(methodName, args.map(_.getClass): _*)
+    method.invoke(obj, args: _*)
+  }
+
 }

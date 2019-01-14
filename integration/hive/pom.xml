@@ -68,6 +68,12 @@
             <groupId>org.apache.carbondata</groupId>
             <artifactId>carbondata-spark2</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.spark</groupId>
+                    <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.hive</groupId>
