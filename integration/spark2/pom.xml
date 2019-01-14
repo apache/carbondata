@@ -206,6 +206,7 @@
             <spark.carbon.hive.schema.store>${carbon.hive.based.metastore}</spark.carbon.hive.schema.store>
           </systemProperties>
           <failIfNoTests>false</failIfNoTests>
+          <skipTests>true</skipTests>
         </configuration>
       </plugin>
       <plugin>

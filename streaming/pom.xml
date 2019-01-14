@@ -105,6 +105,7 @@
             <java.awt.headless>true</java.awt.headless>
           </systemProperties>
           <failIfNoTests>false</failIfNoTests>
+          <skipTests>true</skipTests>
         </configuration>
       </plugin>
       <plugin>
