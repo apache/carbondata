@@ -18,6 +18,7 @@
 package org.apache.spark.carbondata.restructure.vectorreader
 
 import org.apache.spark.sql.common.util.Spark2QueryTest
+import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.CarbonMetadata
@@ -312,7 +313,11 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     createTable()
     checkExistence(sql("describe formatted rename"), true, "This column has comment ")
     sql("alter table rename change deptno classno bigint")
-    checkExistence(sql("describe formatted rename"), true, "This column has comment ")
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+      checkExistence(sql("describe formatted rename"), false, "This column has comment ")
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      checkExistence(sql("describe formatted rename"), true, "This column has comment ")
+    }
   }
 
   override def afterAll(): Unit = {

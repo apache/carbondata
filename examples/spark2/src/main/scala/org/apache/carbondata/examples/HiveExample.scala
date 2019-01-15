@@ -37,7 +37,7 @@ object HiveExample {
     exampleBody(carbonSession, CarbonProperties.getStorePath
       + CarbonCommonConstants.FILE_SEPARATOR
       + CarbonCommonConstants.DATABASE_DEFAULT_NAME)
-    carbonSession.close()
+    carbonSession.stop()
 
     System.exit(0)
   }
@@ -63,8 +63,6 @@ object HiveExample {
        """.stripMargin)
 
     carbonSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
-
-    carbonSession.stop()
 
     try {
       Class.forName(driverName)
