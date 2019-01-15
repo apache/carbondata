@@ -164,7 +164,7 @@ object HiveExample {
       }
       individualColRowsFetched = individualColRowsFetched + 1
     }
-    println(" ********** Total Rows Fetched When Quering The Individual Columns **********" +
+    println(" ********** Total Rows Fetched When Querying The Individual Columns **********" +
       s"$individualColRowsFetched")
     assert(individualColRowsFetched == 2)
 
@@ -198,7 +198,7 @@ object HiveExample {
       }
       outOfOrderColFetched = outOfOrderColFetched + 1
     }
-    println(" ********** Total Rows Fetched When Quering The Out Of Order Columns **********" +
+    println(" ********** Total Rows Fetched When Querying The Out Of Order Columns **********" +
       s"$outOfOrderColFetched")
     assert(outOfOrderColFetched == 2)
 

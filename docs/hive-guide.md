@@ -18,11 +18,14 @@
 # Quick Start
 This tutorial provides a quick introduction to using current integration/hive module.
 
-## Build (In 1.2.0, hive integration only support spark2.1 and hadoop2.7.2)
-mvn -DskipTests -Pspark-2.1 -Phadoop-2.7.2 clean package
+## Build (In 1.2.0, hive integration only support spark2.1.0 and hadoop2.7.2)
+```$command
+mvn -DskipTests -Pspark-2.1 -Pbuild-with-format clean package
+```
 
 ## Prepare CarbonData in Spark
-* Create a sample.csv file using the following commands. The CSV file is required for loading data into CarbonData.
+### Prepare data
+ Create a sample.csv file using the following commands. The CSV file is required for loading data into CarbonData.
 
   ```
   cd carbondata
@@ -33,25 +36,27 @@ mvn -DskipTests -Pspark-2.1 -Phadoop-2.7.2 clean package
   EOF
   ```
 
-* copy data to HDFS
+### Copy data to HDFS
 
 ```
 $HADOOP_HOME/bin/hadoop fs -put sample.csv <hdfs store path>/sample.csv
 ```
-
-* Add the following params to $SPARK_CONF_DIR/conf/hive-site.xml
+### Add configuration
+ Add the following params to $SPARK_HOME/conf/hive-site.xml
 ```xml
 <property>
   <name>hive.metastore.pre.event.listeners</name>
   <value>org.apache.carbondata.hive.CarbonHiveMetastoreListener</value>
 </property>
 ```
-* Start Spark shell by running the following command in the Spark directory
+### Start Spark-shell
+ Start Spark shell by running the following command in the Spark directory
 
 ```
 ./bin/spark-shell --jars <carbondata assembly jar path, carbon hive jar path>
 ```
 
+### Run code
 ```
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.CarbonSession._
@@ -64,15 +69,26 @@ val carbon = SparkSession.builder().enableHiveSupport().config("spark.sql.wareho
 
 carbon.sql("create table hive_carbon(id int, name string, scale decimal, country string, salary double) STORED BY 'carbondata'")
 carbon.sql("LOAD DATA INPATH '<hdfs store path>/sample.csv' INTO TABLE hive_carbon")
-scala>carbon.sql("SELECT * FROM hive_carbon").show()
+carbon.sql("SELECT * FROM hive_carbon").show()
+```
+
+### Result
+```
+scala> carbon.sql("SELECT * FROM hive_carbon").show()
++---+------+-----+-------+-------+
+| id|  name|scale|country| salary|
++---+------+-----+-------+-------+
+|  1| yuhai|    2|  china|33000.1|
+|  2|runlin|    2|  china|33000.2|
++---+------+-----+-------+-------+
 ```
 
 ## Query Data in Hive
 ### Configure hive classpath
 ```
 mkdir hive/auxlibs/
-cp carbondata/assembly/target/scala-2.11/carbondata_2.11*.jar hive/auxlibs/
-cp carbondata/integration/hive/target/carbondata-hive-*.jar hive/auxlibs/
+cp carbondata/assembly/target/scala-2.11/apache-carbondata-${CARBON_VERSION}-bin-spark${SPARK_VERSION}-hadoop${HADOOP_VERSION}.jar hive/auxlibs/
+cp carbondata/integration/hive/target/carbondata-hive-${CARBON_VERSION}.jar hive/auxlibs/
 cp $SPARK_HOME/jars/spark-catalyst*.jar hive/auxlibs/
 cp $SPARK_HOME/jars/scala*.jar hive/auxlibs/
 export HIVE_AUX_JARS_PATH=hive/auxlibs/
