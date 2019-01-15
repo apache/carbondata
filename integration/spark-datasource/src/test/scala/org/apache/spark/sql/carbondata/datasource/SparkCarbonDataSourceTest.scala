@@ -16,7 +16,6 @@
  */
 package org.apache.spark.sql.carbondata.datasource
 
-
 import java.io.File
 import java.util
 
@@ -38,7 +37,6 @@ import org.apache.carbondata.hadoop.testutil.StoreCreator
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 
 class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
-
 
   test("test write using dataframe") {
     import spark.implicits._
@@ -96,7 +94,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       sql("INSERT INTO carbon_table SELECT * FROM test_parquet")
       TestUtil.checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
         sql("SELECT * FROM test_parquet WHERE c1='a1'"))
-      if (!sparkContext.version.startsWith("2.1")) {
+      if (!SparkUtil.isSparkVersionEqualTo("2.1")) {
         val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
         DataMapStoreManager.getInstance()
           .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
@@ -107,12 +105,9 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e: Exception =>
-        println("\n\n")
-        e.printStackTrace()
-        println("\n\n")
-        if (sparkContext.version.startsWith("2.1")) {
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
           assert(e.getMessage.contains("Operation not allowed: ALTER TABLE ADD COLUMNS"))
-        } else if (SparkUtil.isSparkVersionXandAbove("2.2")){
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
           assert(e.getMessage.contains("ALTER ADD COLUMNS does not support datasource table with type carbon."))
         }
     } finally {
@@ -245,7 +240,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       sql("INSERT INTO carbon_table SELECT * FROM test_parquet")
       TestUtil.checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
         sql("SELECT * FROM test_parquet WHERE c1='a1'"))
-      if (!sparkContext.version.startsWith("2.1")) {
+      if (!SparkUtil.isSparkVersionEqualTo("2.1")) {
         val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
         DataMapStoreManager.getInstance()
           .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
@@ -256,7 +251,11 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("Operation not allowed: ALTER TABLE change"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          assert(e.getMessage.contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
+        }
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet")
       sql("DROP TABLE IF EXISTS carbon_table")
@@ -286,8 +285,12 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       TestUtil.checkAnswer(sql("SELECT COUNT(*) FROM test_parquet2"), Seq(Row(2)))
     } catch {
       case e: Exception =>
-        e.printStackTrace()
-        assert(false)
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("ALTER TABLE test_parquet ADD COLUMNS"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          e.printStackTrace()
+          assert(false)
+        }
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet")
       sql("DROP TABLE IF EXISTS test_parquet2")
@@ -369,8 +372,12 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       checkAnswer(sql("SELECT COUNT(*) FROM test_parquet22"), Seq(Row(1)));
     } catch {
       case e: Exception =>
-        e.printStackTrace()
-        assert(false)
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("Operation not allowed: ALTER TABLE CHANGE"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          e.printStackTrace()
+          assert(false)
+        }
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet2")
       sql("DROP TABLE IF EXISTS test_parquet22")
@@ -393,7 +400,11 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("Operation not allowed: ALTER TABLE CHANGE"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          assert(e.getMessage.contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
+        }
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet")
     }
@@ -405,7 +416,11 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("Operation not allowed: ALTER TABLE CHANGE"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          assert(e.getMessage.contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
+        }
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet2")
     }
