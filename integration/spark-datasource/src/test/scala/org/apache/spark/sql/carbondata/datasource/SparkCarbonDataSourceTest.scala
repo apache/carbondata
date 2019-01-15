@@ -107,7 +107,14 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("ALTER ADD COLUMNS does not support datasource table with type carbon."))
+        println("\n\n")
+        e.printStackTrace()
+        println("\n\n")
+        if (sparkContext.version.startsWith("2.1")) {
+          assert(e.getMessage.contains("Operation not allowed: ALTER TABLE ADD COLUMNS"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")){
+          assert(e.getMessage.contains("ALTER ADD COLUMNS does not support datasource table with type carbon."))
+        }
     } finally {
       sql("DROP TABLE IF EXISTS test_parquet")
       sql("DROP TABLE IF EXISTS carbon_table")
