@@ -19,6 +19,7 @@ package org.apache.carbondata.examples.sdk;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.HashMap;
@@ -150,10 +151,16 @@ public class CarbonReaderExample {
                 i++;
             }
             reader2.close();
-            FileUtils.deleteDirectory(new File(path));
         } catch (Throwable e) {
             e.printStackTrace();
+            assert (false);
             System.out.println(e.getMessage());
+        } finally {
+            try {
+                FileUtils.deleteDirectory(new File(path));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
