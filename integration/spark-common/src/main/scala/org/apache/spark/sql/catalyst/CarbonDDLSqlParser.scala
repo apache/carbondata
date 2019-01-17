@@ -790,6 +790,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     // range_column should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.RANGE_COLUMN).isDefined) {
       val rangeColumn = tableProperties.get(CarbonCommonConstants.RANGE_COLUMN).get.trim
+      if (rangeColumn.contains(",")) {
+        val errorMsg = "range_column not support multiple columns"
+        throw new MalformedCarbonCommandException(errorMsg)
+      }
       val rangeField = fields.find(_.column.equalsIgnoreCase(rangeColumn))
       if (rangeField.isEmpty) {
         val errorMsg = "range_column: " + rangeColumn +

@@ -25,7 +25,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import org.apache.carbondata.common.exceptions.sql.{InvalidLoadOptionException, MalformedCarbonCommandException}
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -91,7 +91,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
   }
 
   test("only support single column for create table") {
-    intercept[MalformedCarbonCommandException] {
+    val ex = intercept[MalformedCarbonCommandException] {
       sql(
         """
           | CREATE TABLE carbon_range_column3(id INT, name STRING, city STRING, age INT)
@@ -99,6 +99,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
           | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name,id')
         """.stripMargin)
     }
+    assertResult("range_column not support multiple columns")(ex.getMessage)
   }
 
   test("load data command not support range_column") {
@@ -109,10 +110,11 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
-    intercept[MalformedCarbonCommandException] {
+    val ex = intercept[MalformedCarbonCommandException] {
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column3 " +
           "OPTIONS('scale_factor'='10', 'range_column'='name')")
     }
+    assertResult("Error: Invalid option(s): range_column")(ex.getMessage)
   }
 
   test("range_column with data skew") {

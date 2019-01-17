@@ -1179,8 +1179,9 @@ public final class CarbonCommonConstants {
 
   /**
    * For Range_Column, it will use SCALE_FACTOR to control the size of each partition.
-   * When SCALE_FACTOR is about the compression ratio, each task will generate one CarbonData file.
-   * And the size of the file is about TABLE_BLOCKSIZE of this table.
+   * When SCALE_FACTOR is the compression ratio of carbonData,
+   * each task will generate one CarbonData file.
+   * And the size of this CarbonData file is about TABLE_BLOCKSIZE of this table.
    */
   public static final String CARBON_RANGE_COLUMN_SCALE_FACTOR = "carbon.range.column.scale.factor";
 
