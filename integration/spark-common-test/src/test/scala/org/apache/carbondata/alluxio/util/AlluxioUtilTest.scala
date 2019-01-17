@@ -24,9 +24,8 @@ import alluxio.{Configuration, Constants, PropertyKey}
 import java.util.{HashMap, Map}
 
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
 
-class AlluxioUtilTest extends QueryTest with BeforeAndAfterAll {
+class AlluxioUtilTest extends QueryTest {
 
     val localAlluxioCluster = {
         AuthenticatedClientUser.remove()
@@ -50,14 +49,4 @@ class AlluxioUtilTest extends QueryTest with BeforeAndAfterAll {
     }
 
     var fileSystemShell: FileSystemShell = null
-
-    override protected def beforeAll(): Unit = {
-        fileSystemShell = new FileSystemShell()
-    }
-
-    override protected def afterAll(): Unit = {
-        if (null != fileSystemShell) {
-            fileSystemShell.close()
-        }
-    }
 }

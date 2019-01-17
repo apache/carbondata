@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.alluxio
 
+import alluxio.cli.fs.FileSystemShell
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -43,7 +44,7 @@ class AlluxioWithSDKAndSparkCarbonFileFormatTest extends AlluxioUtilTest with Be
     var SDKPath = "SDK"
 
     override protected def beforeAll(): Unit = {
-        super.beforeAll()
+        fileSystemShell = new FileSystemShell()
         storeLocationOriginal = CarbonProperties.getInstance().
                 getProperty(CarbonCommonConstants.STORE_LOCATION)
         val alluxioStoreLocation = localAlluxioCluster.getMasterURI + carbonAndAlluxio
@@ -341,9 +342,9 @@ class AlluxioWithSDKAndSparkCarbonFileFormatTest extends AlluxioUtilTest with Be
     }
 
     override protected def afterAll(): Unit = {
-        // fileSystemShell.run("rm", remoteFile)
-        // fileSystemShell.run("rm", allDataTypeRemote)
-        super.afterAll()
+        if (null != fileSystemShell) {
+            fileSystemShell.close()
+        }
         CarbonProperties.getInstance()
                 .addProperty(CarbonCommonConstants.STORE_LOCATION, storeLocationOriginal)
                 .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
