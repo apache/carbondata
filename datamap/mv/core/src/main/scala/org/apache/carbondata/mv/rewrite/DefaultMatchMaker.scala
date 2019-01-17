@@ -19,7 +19,7 @@
 package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Expression, PredicateHelper, _}
-import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
+import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, DeclarativeAggregate}
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftOuter}
 
 import org.apache.carbondata.mv.datamap.MVHelper
@@ -511,6 +511,7 @@ object GroupbyGroupbySelectOnlyChildDelta extends DefaultMatchPattern with Predi
                 val aggFunExists = g.outputList.exists { f =>
                   f.find {
                     case ag: AggregateExpression => true
+                    case de: DeclarativeAggregate => true
                     case _ => false
                   }.isDefined
                 }

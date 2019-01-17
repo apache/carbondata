@@ -183,7 +183,7 @@ object Utils extends PredicateHelper {
                                  .aggregateFunction.isInstanceOf[Count] => { // case for groupby
             val cnt_a = alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
             val exprs_a = cnt_a.aggregateFunction.asInstanceOf[Count].children
-            if (!cnt_a.isDistinct && exprs_a.sameElements(Set(expr_q))) {
+            if (!cnt_a.isDistinct && exprs_a.sameElements(expr_q.children)) {
               true
             } else {
               false
@@ -202,7 +202,8 @@ object Utils extends PredicateHelper {
             }
           }
           case _ => false
-        }.map { cnt => Sum(cnt.toAttribute) }
+        }
+        val sum_q = cnt_q.map { cnt => Sum(cnt.toAttribute) }
           .getOrElse { matchable = false; NoOp }
 
         val derivative = if (matchable) {
@@ -263,10 +264,11 @@ object Utils extends PredicateHelper {
               .aggregateFunction
             if (fun.isInstanceOf[Sum]) {
               val accu = Sum(sum_or_avg.toAttribute)
-              Divide(accu, Cast(cnt_q, accu.dataType))
+              Divide(accu, Cast(sum_q, accu.dataType))
             } else {
-              val accu = Sum(Multiply(sum_or_avg.toAttribute, Cast(cnt_q, sum_or_avg.dataType)))
-              Divide(accu, Cast(cnt_q, accu.dataType))
+              val accu = Sum(Multiply(sum_or_avg.toAttribute, Cast(cnt_q.get.toAttribute
+                , sum_or_avg.dataType)))
+              Divide(accu, Cast(sum_q, accu.dataType))
             }
           }
         } else {
