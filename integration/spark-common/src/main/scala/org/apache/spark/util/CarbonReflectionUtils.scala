@@ -361,6 +361,14 @@ object CarbonReflectionUtils {
         instanceMirror.reflectField(field.asTerm).set(updatedSerdeMap)
       case _ =>
     }
+  }
 
+  /**
+   * This method updates the field of case class through reflection.
+   */
+  def setFieldToCaseClass(caseObj: Object, fieldName: String, objToSet: Object): Unit = {
+    val nameField = caseObj.getClass.getDeclaredField(fieldName)
+    nameField.setAccessible(true)
+    nameField.set(caseObj, objToSet)
   }
 }

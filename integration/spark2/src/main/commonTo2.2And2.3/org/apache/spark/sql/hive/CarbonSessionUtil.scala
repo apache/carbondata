@@ -70,8 +70,21 @@ object CarbonSessionUtil {
             "tableMeta",
             relation
           ).asInstanceOf[CatalogTable]
-        isRelationRefreshed =
-          CarbonEnv.refreshRelationFromCache(catalogTable.identifier)(sparkSession)
+        catalogTable.provider match {
+          case Some(provider)
+            if provider.equals("org.apache.spark.sql.CarbonSource") ||
+               provider.equalsIgnoreCase("carbondata") =>
+            // Update stats to none in case of carbon table as we are not expecting any stats from
+            // Hive. Hive gives wrong stats for carbon table.
+            catalogTable.stats match {
+              case Some(stats) =>
+                CarbonReflectionUtils.setFieldToCaseClass(catalogTable, "stats", None)
+              case _ =>
+            }
+            isRelationRefreshed =
+              CarbonEnv.refreshRelationFromCache(catalogTable.identifier)(sparkSession)
+          case _ =>
+        }
       case _ =>
     }
     isRelationRefreshed
