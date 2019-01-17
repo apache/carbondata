@@ -67,6 +67,7 @@ CarbonData DDL statements are documented here,which includes:
   * [SPLIT PARTITION](#split-a-partition)
   * [DROP PARTITION](#drop-a-partition)
 * [BUCKETING](#bucketing)
+* [CACHE](#cache)
 
 ## CREATE TABLE
 
@@ -1088,4 +1089,24 @@ Users can specify which columns to include and exclude for local dictionary gene
   TBLPROPERTIES ('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='productName')
   ```
 
+## CACHE
 
+  CarbonData internally uses LRU caching to improve the performance. The user can get information 
+  about current cache used status in memory through the following command:
+
+  ```sql
+  SHOW METADATA
+  ``` 
+  
+  This shows the overall memory consumed in the cache by categories - index files, dictionary and 
+  datamaps. This also shows the cache usage by all the tables and children tables in the current 
+  database.
+  
+  ```sql
+  SHOW METADATA ON TABLE tableName
+  ```
+  
+  This shows detailed information on cache usage by the table `tableName` and its carbonindex files, 
+  its dictionary files, its datamaps and children tables.
+  
+  This command is not allowed on child tables.
