@@ -195,4 +195,8 @@ public class CacheProvider {
     }
     cacheTypeToCacheMap.clear();
   }
+
+  public CarbonLRUCache getCarbonCache() {
+    return carbonLRUCache;
+  }
 }
