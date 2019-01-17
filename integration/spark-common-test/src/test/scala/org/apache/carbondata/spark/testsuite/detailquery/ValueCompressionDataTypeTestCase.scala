@@ -22,14 +22,14 @@ import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 import org.apache.spark.sql.test.util.QueryTest
 
 class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
-  val tempDirPath = s"$resourcesPath/temp"
+  val tempDirPath = s"$resourcesPath/tempdir"
 
   override def beforeAll {
     FileFactory.mkdirs(tempDirPath,FileType.LOCAL)
   }
 
   test("ActualDataType:double,ChangedDatatype:Short,CompressionType:NonDecimalMaxMin") {
-    val tempFilePath = s"$resourcesPath/temp/double2short.csv"
+    val tempFilePath = tempDirPath + "/double2short.csv"
     try {
       sql("CREATE TABLE double2short (name String, value double) STORED BY 'org.apache.carbondata.format'")
       sql("CREATE TABLE double2short_hive (name String, value double)row format delimited fields terminated by ','")
@@ -51,7 +51,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   test("ActualDataType:double,ChangedDatatype:byte,CompressionType:NonDecimalMaxMin") {
-    val tempFilePath = s"$resourcesPath/temp/double2byte.csv"
+    val tempFilePath = tempDirPath + "double2byte.csv"
     try {
       sql("CREATE TABLE double2byte (name String, value double) STORED BY 'org.apache.carbondata.format'")
       sql("CREATE TABLE double2byte_hive (name String, value double)row format delimited fields terminated by ','")
@@ -73,7 +73,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   test("When the values of Double datatype are negative values") {
-    val tempFilePath = s"$resourcesPath/temp/doubleISnegtive.csv"
+    val tempFilePath = tempDirPath + "/doubleISnegtive.csv"
     try {
       sql("drop table if exists doubleISnegtive")
       sql("drop table if exists doubleISnegtive_hive")
@@ -97,7 +97,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   test("When the values of Double datatype have both postive and negative values") {
-    val tempFilePath = s"$resourcesPath/temp/doublePAN.csv"
+    val tempFilePath = tempDirPath + "/doublePAN.csv"
     try {
       sql("drop table if exists doublePAN")
       sql("drop table if exists doublePAN_hive")
@@ -130,4 +130,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
     file.delete()
   }
 
+  override def afterAll {
+    deleteFile(tempDirPath)
+  }
 }
