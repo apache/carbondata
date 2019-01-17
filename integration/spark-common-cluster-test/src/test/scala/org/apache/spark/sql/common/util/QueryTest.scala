@@ -44,8 +44,6 @@ class QueryTest extends PlanTest with Suite {
 
   // Add Locale setting
   Locale.setDefault(Locale.US)
-  CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP, "false")
 
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the
@@ -139,7 +137,7 @@ class QueryTest extends PlanTest with Suite {
 
   val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
 
-  sqlContext.sparkSession.experimental.extraOptimizations = Seq(new CarbonFileIndexReplaceRule)
+  sqlContext.sparkSession.experimental.extraOptimizations :+ Seq(new CarbonFileIndexReplaceRule)
 
   val resourcesPath = TestQueryExecutor.resourcesPath
 
