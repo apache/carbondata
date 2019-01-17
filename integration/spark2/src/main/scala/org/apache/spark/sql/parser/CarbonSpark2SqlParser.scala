@@ -33,11 +33,11 @@ import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
+import org.apache.spark.sql.execution.command.lru.CarbonDataShowLRUCommand
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
@@ -77,7 +77,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    alterPartition | datamapManagement | alterTableFinishStreaming | stream | cli
+    alterPartition | datamapManagement | alterTableFinishStreaming | stream | cli | showLru
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -494,6 +494,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           showHistory.isDefined)
     }
 
+  protected lazy val showLru: Parser[LogicalPlan] =
+    SHOW ~> LRU ~> opt( ontable) <~ opt(";") ^^ {
+      case table =>
+        CarbonDataShowLRUCommand(table)
+    }
 
   protected lazy val cli: Parser[LogicalPlan] =
     (CARBONCLI ~> FOR ~> TABLE) ~> (ident <~ ".").? ~ ident ~

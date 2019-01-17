@@ -305,4 +305,8 @@ public final class CarbonLRUCache {
       lruCacheMap.clear();
     }
   }
+
+  public Map<String, Cacheable> getLruCacheMap() {
+    return lruCacheMap;
+  }
 }
