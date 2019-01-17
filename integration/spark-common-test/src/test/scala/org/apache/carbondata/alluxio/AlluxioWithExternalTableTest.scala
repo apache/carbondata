@@ -53,6 +53,8 @@ class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAl
         allDataTypeRemote = "/alldatatype" + time + ".csv"
         fileSystemShell.run("copyFromLocal", allDataTypeLocal, allDataTypeRemote)
         fileSystemShell.run("ls", allDataTypeRemote)
+        fileSystemShell.run("chmod", "-R", "777", "/")
+        fileSystemShell.run("ls", "/")
     }
 
     test("test alluxio with all data type and Create/Load/Select/Insert/Update/Delete") {
