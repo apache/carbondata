@@ -51,8 +51,7 @@ class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAl
 
         val allDataTypeLocal = resourcesPath + "/alldatatypeforpartition.csv"
         allDataTypeRemote = "/alldatatype" + time + ".csv"
-        fileSystemShell.run("copyFromLocal", allDataTypeLocal, localAlluxioCluster.getMasterURI + "/" + allDataTypeRemote)
-        println(alluxioStoreLocation)
+        fileSystemShell.run("copyFromLocal", allDataTypeLocal, allDataTypeRemote)
         fileSystemShell.run("ls", allDataTypeRemote)
     }
 
@@ -221,7 +220,7 @@ class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAl
         if (null != fileSystemShell) {
             fileSystemShell.close()
         }
-        CarbonProperties.getInstance().
-                addProperty(CarbonCommonConstants.STORE_LOCATION, storeLocationOriginal)
+        CarbonProperties.getInstance()
+                .addProperty(CarbonCommonConstants.STORE_LOCATION, storeLocationOriginal)
     }
 }
