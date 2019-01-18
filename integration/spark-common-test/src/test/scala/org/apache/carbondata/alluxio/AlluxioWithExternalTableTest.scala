@@ -29,6 +29,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAll {
+    var localFile = ""
     var remoteFile = ""
     var allDataTypeRemote = ""
     var allDataTypeLocal = ""
@@ -46,7 +47,7 @@ class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAl
                 + "../../../..").getCanonicalPath
 
         val time = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date())
-        val localFile = rootPath + "/hadoop/src/test/resources/data.csv"
+        localFile = rootPath + "/hadoop/src/test/resources/data.csv"
         remoteFile = "/carbon_alluxio" + time + ".csv"
         fileSystemShell.run("copyFromLocal", localFile, remoteFile)
 
@@ -151,6 +152,11 @@ class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAl
              """.stripMargin)
 
             val path = localAlluxioCluster.getMasterURI + remoteFile
+
+            val result = fileSystemShell.run("ls", path)
+            if (result < 0) {
+                fileSystemShell.run("copyFromLocal", localFile, remoteFile)
+            }
             sql(s"""LOAD DATA LOCAL INPATH '$path' INTO TABLE $tableNameOriginal""")
 
             fileSystemShell.run("ls", carbonAndAlluxio + "/default")
@@ -200,6 +206,11 @@ class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAl
              """.stripMargin)
 
             val path = localAlluxioCluster.getMasterURI + remoteFile
+
+            val result = fileSystemShell.run("ls", path)
+            if (result < 0) {
+                fileSystemShell.run("copyFromLocal", localFile, remoteFile)
+            }
             sql(s"""LOAD DATA LOCAL INPATH '$path' INTO TABLE $tableNameOriginal""")
 
             fileSystemShell.run("ls", carbonAndAlluxio + "/default")
