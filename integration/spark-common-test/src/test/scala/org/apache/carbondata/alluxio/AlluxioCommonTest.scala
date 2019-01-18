@@ -76,6 +76,7 @@ object AlluxioCommonTest extends AlluxioUtilTest {
                 assert(Integer.compare(Integer.valueOf(result(i).toString), temp) >= 0)
                 temp = Integer.valueOf(result(i).toString)
             }
+            sql(s"SELECT intfield,stringfield FROM $tableNameForAllType order by intfield").show()
         } catch {
             case e: Exception =>
                 e.printStackTrace()

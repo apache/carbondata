@@ -39,7 +39,7 @@ class AlluxioUtilTest extends QueryTest {
         mConfiguration.put(PropertyKey.USER_BLOCK_SIZE_BYTES_DEFAULT, SIZE_BYTES.toString)
         mConfiguration.put(PropertyKey.MASTER_TTL_CHECKER_INTERVAL_MS, Integer.MAX_VALUE.toString)
         // TODO: remove the webapp, but need Alluxio community support it in the future.
-        mConfiguration.put(PropertyKey.WEB_RESOURCES, resourcesPath + "/webapp")
+        mConfiguration.put(PropertyKey.WEB_RESOURCES, "")
         for (entry <- mConfiguration.entrySet()) {
             Configuration.set(entry.getKey, entry.getValue)
         }
