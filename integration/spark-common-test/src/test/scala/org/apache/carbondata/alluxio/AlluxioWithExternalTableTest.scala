@@ -31,6 +31,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAll {
     var remoteFile = ""
     var allDataTypeRemote = ""
+    var allDataTypeLocal = ""
     var storeLocationOriginal = ""
     val carbonAndAlluxio = "/CarbonAndAlluxio"
 
@@ -49,7 +50,7 @@ class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAl
         remoteFile = "/carbon_alluxio" + time + ".csv"
         fileSystemShell.run("copyFromLocal", localFile, remoteFile)
 
-        val allDataTypeLocal = resourcesPath + "/alldatatypeforpartition.csv"
+        allDataTypeLocal = resourcesPath + "/alldatatypeforpartition.csv"
         allDataTypeRemote = "/alldatatype" + time + ".csv"
         fileSystemShell.run("copyFromLocal", allDataTypeLocal, allDataTypeRemote)
         fileSystemShell.run("ls", allDataTypeRemote)
@@ -90,6 +91,11 @@ class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAl
 
             val path = localAlluxioCluster.getMasterURI + allDataTypeRemote
 
+            val result = fileSystemShell.run("ls", path)
+            if (result < 0) {
+                fileSystemShell.run("copyFromLocal", allDataTypeLocal, allDataTypeRemote)
+            }
+
             fileSystemShell.run("ls", "/")
 
             sql(s"LOAD DATA LOCAL INPATH '$path' INTO TABLE $tableNameForAllTypeOriginal " +
@@ -100,7 +106,7 @@ class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAl
             sql(s"CREATE EXTERNAL TABLE $tableNameForAllType STORED BY 'carbondata'" +
                     s" LOCATION '$externalTablePath'")
 
-            AlluxioCommonTest.testAllDataType(tableNameForAllType)
+            AlluxioCommonTest.testAllDataType(tableNameForAllType, true)
 
             fileSystemShell.run("ls", carbonAndAlluxio + "/default")
         } catch {
@@ -109,6 +115,7 @@ class AlluxioWithExternalTableTest extends AlluxioUtilTest with BeforeAndAfterAl
                 assert(false)
         } finally {
             sql("DROP TABLE IF EXISTS " + tableNameForAllTypeOriginal)
+            sql("DROP TABLE IF EXISTS " + tableNameForAllType)
         }
     }
 

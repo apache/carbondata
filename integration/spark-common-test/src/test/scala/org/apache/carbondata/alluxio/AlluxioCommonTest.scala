@@ -32,7 +32,7 @@ object AlluxioCommonTest extends AlluxioUtilTest {
 
     val carbonAndAlluxio = "/CarbonAndAlluxio"
 
-    def testAllDataType(tableNameForAllType: String) {
+    def testAllDataType(tableNameForAllType: String, isExternal: Boolean = false) {
         try {
             // Count
             checkAnswer(sql(s"SELECT count(*) FROM $tableNameForAllType"), Seq(Row(3)))
@@ -56,9 +56,11 @@ object AlluxioCommonTest extends AlluxioUtilTest {
                 Seq(Row(123, 2147483640, 9223372036854775800L, 2147483648.0, 9223372036854775808.0, BigDecimal("9223372036854775808.1230"), Timestamp.valueOf("2017-06-13 23:59:50"), sqlData.valueOf("2017-06-10"), "abc3", "abcd3", "abcde3", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "3")), Row("a", "b", "3"), false)))
 
             // Update of IUD
-            sql(s"UPDATE $tableNameForAllType SET (booleanfield)=(true) WHERE smallIntField=123").collect()
-            checkAnswer(sql(s"select smallIntField,intField,bigIntField,floatField,doubleField,decimalField,timestampField,dateField,stringField,varcharField,charField,arrayField,structField,booleanField from $tableNameForAllType where smallIntField = 123"),
-                Seq(Row(123, 2147483640, 9223372036854775800L, 2147483648.0, 9223372036854775808.0, BigDecimal("9223372036854775808.1230"), Timestamp.valueOf("2017-06-13 23:59:50"), sqlData.valueOf("2017-06-10"), "abc3", "abcd3", "abcde3", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "3")), Row("a", "b", "3"), true)))
+            if (isExternal) {
+                sql(s"UPDATE $tableNameForAllType SET (booleanfield)=(true) WHERE smallIntField=123").collect()
+                checkAnswer(sql(s"select smallIntField,intField,bigIntField,floatField,doubleField,decimalField,timestampField,dateField,stringField,varcharField,charField,arrayField,structField,booleanField from $tableNameForAllType where smallIntField = 123"),
+                    Seq(Row(123, 2147483640, 9223372036854775800L, 2147483648.0, 9223372036854775808.0, BigDecimal("9223372036854775808.1230"), Timestamp.valueOf("2017-06-13 23:59:50"), sqlData.valueOf("2017-06-10"), "abc3", "abcd3", "abcde3", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "3")), Row("a", "b", "3"), true)))
+            }
 
             // Delete of IUD
             checkAnswer(sql(s"SELECT count(*) FROM $tableNameForAllType"), Seq(Row(4)))
