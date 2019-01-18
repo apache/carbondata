@@ -29,7 +29,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   test("ActualDataType:double,ChangedDatatype:Short,CompressionType:NonDecimalMaxMin") {
-    val tempFilePath = tempDirPath + "/double2short.csv"
+    val tempFilePath = s"$tempDirPath/double2short.csv"
     try {
       sql("CREATE TABLE double2short (name String, value double) STORED BY 'org.apache.carbondata.format'")
       sql("CREATE TABLE double2short_hive (name String, value double)row format delimited fields terminated by ','")
@@ -51,7 +51,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   test("ActualDataType:double,ChangedDatatype:byte,CompressionType:NonDecimalMaxMin") {
-    val tempFilePath = tempDirPath + "double2byte.csv"
+    val tempFilePath = s"$tempDirPath/double2byte.csv"
     try {
       sql("CREATE TABLE double2byte (name String, value double) STORED BY 'org.apache.carbondata.format'")
       sql("CREATE TABLE double2byte_hive (name String, value double)row format delimited fields terminated by ','")
@@ -73,7 +73,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   test("When the values of Double datatype are negative values") {
-    val tempFilePath = tempDirPath + "/doubleISnegtive.csv"
+    val tempFilePath = s"$tempDirPath/doubleISnegtive.csv"
     try {
       sql("drop table if exists doubleISnegtive")
       sql("drop table if exists doubleISnegtive_hive")
@@ -97,7 +97,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   test("When the values of Double datatype have both postive and negative values") {
-    val tempFilePath = tempDirPath + "/doublePAN.csv"
+    val tempFilePath = s"$tempDirPath/doublePAN.csv"
     try {
       sql("drop table if exists doublePAN")
       sql("drop table if exists doublePAN_hive")
