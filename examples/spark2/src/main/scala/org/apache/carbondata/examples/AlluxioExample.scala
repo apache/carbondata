@@ -32,9 +32,9 @@ import org.apache.carbondata.examples.util.ExampleUtils
 /**
  * configure alluxio:
  * 1.start alluxio
- * 2. Please upload data t alluxio if you set runShell as false
- * ./bin/alluxio fs  copyFromLocal /carbondata_path/hadoop/src/test/resources/data.csv /
- * 3.Get more detail at: https://www.alluxio.org/docs/1.8/en/compute/Spark.html
+ * 2. Please upload data to alluxio if you set runShell as false
+ * ./bin/alluxio fs copyFromLocal /carbondata_path/hadoop/src/test/resources/data.csv /
+ * 3.Get more details at: https://www.alluxio.org/docs/1.8/en/compute/Spark.html
  */
 object AlluxioExample {
   def main (args: Array[String]) {
