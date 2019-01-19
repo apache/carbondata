@@ -20,9 +20,7 @@ package org.apache.carbondata.spark.load
 import org.apache.spark.Accumulator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.loading.BadRecordsLogger
 
 object GlobalSortHelper {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)

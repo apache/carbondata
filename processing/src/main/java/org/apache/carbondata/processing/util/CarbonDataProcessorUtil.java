@@ -34,6 +34,8 @@ import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.SortScopeOptions;
+import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -311,20 +313,12 @@ public final class CarbonDataProcessorUtil {
 
   // TODO: need to simplify it. Not required create string first.
   public static Map<String, GenericDataType> getComplexTypesMap(DataField[] dataFields,
-      CarbonDataLoadConfiguration configuration) {
+      String nullFormat) {
     String complexTypeString = getComplexTypeString(dataFields);
 
     if (null == complexTypeString || complexTypeString.equals("")) {
       return new LinkedHashMap<>();
     }
-
-    String nullFormat =
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
-            .toString();
-    boolean isEmptyBadRecord = Boolean.parseBoolean(
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
-            .toString());
-
     Map<String, GenericDataType> complexTypesMap = new LinkedHashMap<String, GenericDataType>();
     String[] hierarchies = complexTypeString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
     for (int i = 0; i < hierarchies.length; i++) {
@@ -347,8 +341,8 @@ public final class CarbonDataProcessorUtil {
         } else {
           g.addChildren(
               new PrimitiveDataType(levelInfo[0], DataTypeUtil.valueOf(levelInfo[1]),
-                  levelInfo[2], levelInfo[4], levelInfo[3].contains("true"), nullFormat,
-                  isEmptyBadRecord));
+                  levelInfo[2], levelInfo[4], levelInfo[3].contains("true"), nullFormat
+              ));
         }
       }
     }
@@ -705,6 +699,37 @@ public final class CarbonDataProcessorUtil {
       iterators[i % parallelThreadNumber].add(inputIterators[i]);
     }
     return iterators;
+  }
+
+  public static int[] calcDimensionLengths(int numberOfSortColumns, int[] complexCardinality) {
+    // For no sort we are having the cardinality as MAX_VALUE for any non zero value
+    if (numberOfSortColumns == 0) {
+      for (int i = 0; i < complexCardinality.length; i++) {
+        if (complexCardinality[i] != 0) {
+          complexCardinality[i] = Integer.MAX_VALUE;
+        }
+      }
+    }
+    List<Integer> dimsLenList = new ArrayList<Integer>();
+    for (int eachDimLen : complexCardinality) {
+      if (eachDimLen != 0) dimsLenList.add(eachDimLen);
+    }
+    int[] dimLens = new int[dimsLenList.size()];
+    for (int i = 0; i < dimsLenList.size(); i++) {
+      dimLens[i] = dimsLenList.get(i);
+    }
+    return dimLens;
+  }
+
+  // This will give us KeyGenerators for all the children inside the complex datatype
+  public static KeyGenerator[] createKeyGeneratorForComplexDimension(int numberOfSortColumns,
+      int[] complexCardinality) {
+    int[] dimLens = calcDimensionLengths(numberOfSortColumns, complexCardinality);
+    KeyGenerator[] complexKeyGenerators = new KeyGenerator[dimLens.length];
+    for (int i = 0; i < dimLens.length; i++) {
+      complexKeyGenerators[i] = KeyGeneratorFactory.getKeyGenerator(new int[] { dimLens[i] });
+    }
+    return complexKeyGenerators;
   }
 
 }

@@ -65,7 +65,7 @@ case class CarbonDropDataMapCommand(
       val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
       val locksToBeAcquired = List(LockUsage.METADATA_LOCK)
       val carbonEnv = CarbonEnv.getInstance(sparkSession)
-      val catalog = carbonEnv.carbonMetastore
+      val catalog = carbonEnv.carbonMetaStore
       val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName)(sparkSession)
       catalog.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
       if (mainTable == null) {
@@ -103,7 +103,7 @@ case class CarbonDropDataMapCommand(
             Some(childCarbonTable.get.getDatabaseName),
             childCarbonTable.get.getTableName,
             dropChildTable = true)
-          commandToRun.processMetadata(sparkSession)
+          commandToRun.run(sparkSession)
         }
         dropDataMapFromSystemFolder(sparkSession)
         return Seq.empty

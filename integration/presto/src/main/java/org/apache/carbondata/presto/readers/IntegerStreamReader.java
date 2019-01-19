@@ -68,12 +68,31 @@ public class IntegerStreamReader extends CarbonColumnVectorImpl
     }
   }
 
+  @Override public void putInts(int rowId, int count, int value) {
+    for (int i = 0; i < count; i++) {
+      putInt(rowId++, value);
+    }
+  }
+
   @Override public void putNull(int rowId) {
     builder.appendNull();
+  }
+
+  @Override public void putNulls(int rowId, int count) {
+    for (int i = 0; i < count; i++) {
+      builder.appendNull();
+    }
   }
 
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
   }
 
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      putInt(rowId, (int) value);
+    }
+  }
 }

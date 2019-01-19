@@ -25,7 +25,6 @@ public final class CarbonFactHandlerFactory {
   /**
    * Creating fact handler to write data.
    * @param model
-   * @param handlerType
    * @return
    */
   public static CarbonFactHandler createCarbonFactHandler(CarbonFactDataHandlerModel model) {

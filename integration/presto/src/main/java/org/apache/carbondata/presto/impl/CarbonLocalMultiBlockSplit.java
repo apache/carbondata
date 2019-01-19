@@ -26,6 +26,7 @@ import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.Gson;
 
 /**
  * CarbonLocalInputSplit represents a block, it contains a set of blocklet.
@@ -69,16 +70,27 @@ public class CarbonLocalMultiBlockSplit {
       @JsonProperty("locations") String[] locations) {
     this.splitList = splitList;
     this.locations = locations;
+    if (!splitList.isEmpty()) {
+      this.fileFormat = splitList.get(0).getFileFormat();
+    }
   }
 
-  public static CarbonMultiBlockSplit convertSplit(
-      CarbonLocalMultiBlockSplit carbonLocalMultiBlockSplit) {
+  public String getJsonString() {
+    Gson gson = new Gson();
+    return gson.toJson(this);
+  }
+
+  public static CarbonMultiBlockSplit convertSplit(String multiSplitJson) {
+    Gson gson = new Gson();
+    CarbonLocalMultiBlockSplit carbonLocalMultiBlockSplit =
+        gson.fromJson(multiSplitJson, CarbonLocalMultiBlockSplit.class);
     List<CarbonInputSplit> carbonInputSplitList =
         carbonLocalMultiBlockSplit.getSplitList().stream().map(CarbonLocalInputSplit::convertSplit)
             .collect(Collectors.toList());
 
     CarbonMultiBlockSplit carbonMultiBlockSplit =
         new CarbonMultiBlockSplit(carbonInputSplitList, carbonLocalMultiBlockSplit.getLocations());
+    carbonMultiBlockSplit.setFileFormat(carbonLocalMultiBlockSplit.getFileFormat());
 
     return carbonMultiBlockSplit;
   }

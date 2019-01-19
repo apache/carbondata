@@ -70,7 +70,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   /**
    * return row
    */
-  private IntermediateSortTempRow returnRow;
+  protected IntermediateSortTempRow returnRow;
   private int readBufferSize;
   private String compressorName;
 
@@ -96,10 +96,18 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * totalRecordFetch
    */
   private int totalRecordFetch;
-  private TableFieldStat tableFieldStat;
+  protected TableFieldStat tableFieldStat;
   private SortStepRowHandler sortStepRowHandler;
-  private Comparator<IntermediateSortTempRow> comparator;
+  protected Comparator<IntermediateSortTempRow> comparator;
   private boolean convertToActualField;
+
+  public SortTempFileChunkHolder(SortParameters sortParameters) {
+    this.tableFieldStat = new TableFieldStat(sortParameters);
+    this.comparator =
+        new IntermediateSortTempRowComparator(tableFieldStat.getIsSortColNoDictFlags(),
+            tableFieldStat.getNoDictDataType());
+  }
+
   /**
    * Constructor to initialize
    *
@@ -109,14 +117,12 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   public SortTempFileChunkHolder(File tempFile, SortParameters sortParameters, String tableName,
       boolean convertToActualField) {
+    this(sortParameters);
     // set temp file
     this.tempFile = tempFile;
     this.readBufferSize = sortParameters.getBufferSize();
     this.compressorName = sortParameters.getSortTempCompressorName();
-    this.tableFieldStat = new TableFieldStat(sortParameters);
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
-    this.comparator = new IntermediateSortTempRowComparator(
-        tableFieldStat.getIsSortColNoDictFlags(), tableFieldStat.getNoDictDataType());
     this.executorService = Executors
         .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName));
     this.convertToActualField = convertToActualField;

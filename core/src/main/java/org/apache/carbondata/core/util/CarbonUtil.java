@@ -560,7 +560,7 @@ public final class CarbonUtil {
   }
 
   /**
-   * From beeline if a delimeter is passed as \001, in code we get it as
+   * From beeline if a delimiter is passed as \001, in code we get it as
    * escaped string as \\001. So this method will unescape the slash again and
    * convert it back t0 \001
    *
@@ -597,6 +597,10 @@ public final class CarbonUtil {
    */
   public static String delimiterConverter(String delimiter) {
     switch (delimiter) {
+      case "\\001":
+      case "\\002":
+      case "\\003":
+      case "\\004":
       case "|":
       case "*":
       case ".":

@@ -302,7 +302,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   test("create pre-agg table with path") {
     sql("drop table if exists main_preagg")
     sql("drop table if exists main ")
-    val warehouse = s"$metastoredb/warehouse"
+    val warehouse = s"$metaStoreDB/warehouse"
     val path = warehouse + "/" + System.nanoTime + "_preAggTestPath"
     sql(
       s"""

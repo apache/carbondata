@@ -67,11 +67,35 @@ public class LongStreamReader extends CarbonColumnVectorImpl implements PrestoVe
     type.writeLong(builder, value);
   }
 
+  @Override public void putLongs(int rowId, int count, long value) {
+    for (int i = 0; i < count; i++) {
+      type.writeLong(builder, value);
+    }
+  }
+
   @Override public void putNull(int rowId) {
     builder.appendNull();
   }
 
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
+  }
+
+  @Override public void putNulls(int rowId, int count) {
+    for (int i = 0; i < count; i++) {
+      builder.appendNull();
+    }
+  }
+
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      if (dictionary == null) {
+        putLong(rowId, (long) value);
+      } else {
+        putInt(rowId, (int) value);
+      }
+    }
   }
 }

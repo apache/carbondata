@@ -44,7 +44,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
   extends MetadataCommand {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     setAuditTable(relation.databaseName, relation.tableName)
     var results: Seq[(String, String, String)] = child.schema.fields.map { field =>
@@ -92,7 +92,9 @@ private[sql] case class CarbonDescribeFormattedCommand(
         Strings.formatSize(
           tblProps.getOrElse(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
             CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT).toFloat), ""),
-
+      ("Data File Compressor ", tblProps
+        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+          CarbonCommonConstants.DEFAULT_COMPRESSOR), ""),
       //////////////////////////////////////////////////////////////////////////////
       //  Index Information
       //////////////////////////////////////////////////////////////////////////////

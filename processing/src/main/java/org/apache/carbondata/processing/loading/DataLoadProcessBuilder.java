@@ -221,9 +221,10 @@ public final class DataLoadProcessBuilder {
     configuration.setHeader(loadModel.getCsvHeaderColumns());
     configuration.setSegmentId(loadModel.getSegmentId());
     configuration.setTaskNo(loadModel.getTaskNo());
-    configuration.setDataLoadProperty(DataLoadProcessorConstants.COMPLEX_DELIMITERS,
-        new String[] { loadModel.getComplexDelimiterLevel1(),
-            loadModel.getComplexDelimiterLevel2() });
+    String[] complexDelimiters = new String[loadModel.getComplexDelimiters().size()];
+    loadModel.getComplexDelimiters().toArray(complexDelimiters);
+    configuration
+        .setDataLoadProperty(DataLoadProcessorConstants.COMPLEX_DELIMITERS, complexDelimiters);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT,
         loadModel.getSerializationNullFormat().split(",")[1]);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP,

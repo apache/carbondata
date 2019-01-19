@@ -107,8 +107,8 @@ object CarbonStore {
             (indices.asScala.map(_.getFile_size).sum, FileFactory.getCarbonFile(indexPath).getSize)
           } else {
             // for batch segment, we can get the data size from table status file directly
-            (if (load.getDataSize == null) 0L else load.getDataSize.toLong,
-              if (load.getIndexSize == null) 0L else load.getIndexSize.toLong)
+            (if (load.getDataSize == null) -1L else load.getDataSize.toLong,
+              if (load.getIndexSize == null) -1L else load.getIndexSize.toLong)
           }
 
           if (showHistory) {
@@ -192,9 +192,9 @@ object CarbonStore {
       }
     } finally {
       if (currentTablePartitions.equals(None)) {
-        cleanUpPartitionFoldersRecurssively(carbonTable, List.empty[PartitionSpec])
+        cleanUpPartitionFoldersRecursively(carbonTable, List.empty[PartitionSpec])
       } else {
-        cleanUpPartitionFoldersRecurssively(carbonTable, currentTablePartitions.get.toList)
+        cleanUpPartitionFoldersRecursively(carbonTable, currentTablePartitions.get.toList)
       }
 
       if (carbonCleanFilesLock != null) {
@@ -204,12 +204,12 @@ object CarbonStore {
   }
 
   /**
-   * delete partition folders recurssively
+   * delete partition folders recursively
    *
    * @param carbonTable
    * @param partitionSpecList
    */
-  def cleanUpPartitionFoldersRecurssively(carbonTable: CarbonTable,
+  def cleanUpPartitionFoldersRecursively(carbonTable: CarbonTable,
       partitionSpecList: List[PartitionSpec]): Unit = {
     if (carbonTable != null) {
       val loadMetadataDetails = SegmentStatusManager

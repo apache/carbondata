@@ -16,28 +16,29 @@
  */
 package org.apache.carbondata.examples
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.sql.SparkSession
 import org.slf4j.{Logger, LoggerFactory}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
+import org.apache.carbondata.spark.util.CarbonSparkUtil
+
 
 /**
  * Generate data and write data to S3
  * User can generate different numbers of data by specifying the number-of-rows in parameters
  */
-object S3UsingSDKExample {
+object S3UsingSdkExample {
 
   // prepare SDK writer output
   def buildTestData(
-      path: String,
-      num: Int = 3): Any = {
+                     args: Array[String],
+                     path: String,
+                     num: Int = 3): Any = {
 
     // getCanonicalPath gives path with \, but the code expects /.
-    val writerPath = path.replace("\\", "/");
+    val writerPath = path.replace("\\", "/")
 
     val fields: Array[Field] = new Array[Field](3)
     fields(0) = new Field("name", DataTypes.STRING)
@@ -50,16 +51,20 @@ object S3UsingSDKExample {
         builder.outputPath(writerPath)
           .uniqueIdentifier(System.currentTimeMillis)
           .withBlockSize(2)
+          .writtenBy("S3UsingSdkExample")
+          .withHadoopConf(ACCESS_KEY, args(0))
+          .withHadoopConf(SECRET_KEY, args(1))
+          .withHadoopConf(ENDPOINT, CarbonSparkUtil.getS3EndPoint(args))
           .withCsvInput(new Schema(fields)).build()
       var i = 0
-      var row = num
+      val row = num
       while (i < row) {
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
         i += 1
       }
       writer.close()
     } catch {
-      case ex: Throwable => None
+      case e: Exception => throw e
     }
   }
 
@@ -79,11 +84,11 @@ object S3UsingSDKExample {
     import org.apache.spark.sql.CarbonSession._
     if (args.length < 2 || args.length > 6) {
       logger.error("Usage: java CarbonS3Example <access-key> <secret-key>" +
-                   "[table-path-on-s3] [s3-endpoint] [number-of-rows] [spark-master]")
+        "[table-path-on-s3] [s3-endpoint] [number-of-rows] [spark-master]")
       System.exit(0)
     }
 
-    val (accessKey, secretKey, endpoint) = getKeyOnPrefix(args(2))
+    val (accessKey, secretKey, endpoint) = CarbonSparkUtil.getKeyOnPrefix(args(2))
     val spark = SparkSession
       .builder()
       .master(getSparkMaster(args))
@@ -91,7 +96,7 @@ object S3UsingSDKExample {
       .config("spark.driver.host", "localhost")
       .config(accessKey, args(0))
       .config(secretKey, args(1))
-      .config(endpoint, getS3EndPoint(args))
+      .config(endpoint, CarbonSparkUtil.getS3EndPoint(args))
       .getOrCreateCarbonSession()
 
     spark.sparkContext.setLogLevel("WARN")
@@ -105,7 +110,7 @@ object S3UsingSDKExample {
     } else {
       3
     }
-    buildTestData(path, num)
+    buildTestData(args, path, num)
 
     spark.sql("DROP TABLE IF EXISTS s3_sdk_table")
     spark.sql(s"CREATE EXTERNAL TABLE s3_sdk_table STORED BY 'carbondata'" +
@@ -114,29 +119,9 @@ object S3UsingSDKExample {
     spark.stop()
   }
 
-  def getKeyOnPrefix(path: String): (String, String, String) = {
-    val endPoint = "spark.hadoop." + ENDPOINT
-    if (path.startsWith(CarbonCommonConstants.S3A_PREFIX)) {
-      ("spark.hadoop." + ACCESS_KEY, "spark.hadoop." + SECRET_KEY, endPoint)
-    } else if (path.startsWith(CarbonCommonConstants.S3N_PREFIX)) {
-      ("spark.hadoop." + CarbonCommonConstants.S3N_ACCESS_KEY,
-        "spark.hadoop." + CarbonCommonConstants.S3N_SECRET_KEY, endPoint)
-    } else if (path.startsWith(CarbonCommonConstants.S3_PREFIX)) {
-      ("spark.hadoop." + CarbonCommonConstants.S3_ACCESS_KEY,
-        "spark.hadoop." + CarbonCommonConstants.S3_SECRET_KEY, endPoint)
-    } else {
-      throw new Exception("Incorrect Store Path")
-    }
-  }
-
-  def getS3EndPoint(args: Array[String]): String = {
-    if (args.length >= 4 && args(3).contains(".com")) args(3)
-    else ""
-  }
-
   def getSparkMaster(args: Array[String]): String = {
     if (args.length == 6) args(5)
-    else if (args(3).contains("spark:") || args(3).contains("mesos:")) args(3)
     else "local"
   }
+
 }

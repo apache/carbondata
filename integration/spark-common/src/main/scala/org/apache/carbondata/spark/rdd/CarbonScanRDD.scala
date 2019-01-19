@@ -50,20 +50,22 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.scan.expression.Expression
+import org.apache.carbondata.core.scan.expression.conditional.ImplicitExpression
 import org.apache.carbondata.core.scan.filter.FilterUtil
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.statusmanager.FileFormat
 import org.apache.carbondata.core.util._
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop._
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
+import org.apache.carbondata.hadoop.stream.CarbonStreamInputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
 import org.apache.carbondata.spark.util.Util
-import org.apache.carbondata.streaming.CarbonStreamInputFormat
 
 /**
  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
@@ -416,7 +418,7 @@ class CarbonScanRDD[T: ClassTag](
     TaskMetricsMap.getInstance().registerThreadCallback()
     inputMetricsStats.initBytesReadCallback(context, inputSplit)
     val iterator = if (inputSplit.getAllSplits.size() > 0) {
-      val model = format.createQueryModel(inputSplit, attemptContext)
+      val model = format.createQueryModel(inputSplit, attemptContext, filterExpression)
       // one query id per table
       model.setQueryId(queryId)
       // get RecordReader by FileFormat
@@ -687,6 +689,33 @@ class CarbonScanRDD[T: ClassTag](
       if (identifiedPartitions.nonEmpty &&
           !checkForBlockWithoutBlockletInfo(identifiedPartitions)) {
         FilterUtil.removeInExpressionNodeWithPositionIdColumn(filterExpression)
+      } else if (identifiedPartitions.nonEmpty) {
+        // the below piece of code will serialize only the required blocklet ids
+        val filterValues = FilterUtil.getImplicitFilterExpression(filterExpression)
+        if (null != filterValues) {
+          val implicitExpression = filterValues.asInstanceOf[ImplicitExpression]
+          identifiedPartitions.foreach { partition =>
+            // for each partition get the list if input split
+            val inputSplit = partition.asInstanceOf[CarbonSparkPartition].split.value
+            val splitList = if (inputSplit.isInstanceOf[CarbonMultiBlockSplit]) {
+              inputSplit.asInstanceOf[CarbonMultiBlockSplit].getAllSplits
+            } else {
+              new java.util.ArrayList().add(inputSplit.asInstanceOf[CarbonInputSplit])
+            }.asInstanceOf[java.util.List[CarbonInputSplit]]
+            // for each split and given block path set all the valid blocklet ids
+            splitList.asScala.map { split =>
+              val uniqueBlockPath = split.getPath.toString
+              val shortBlockPath = CarbonTablePath
+                .getShortBlockId(uniqueBlockPath
+                  .substring(uniqueBlockPath.lastIndexOf("/Part") + 1))
+              val blockletIds = implicitExpression.getBlockIdToBlockletIdMapping.get(shortBlockPath)
+              split.setValidBlockletIds(blockletIds)
+            }
+          }
+          // remove the right child of the expression here to prevent serialization of
+          // implicit filter values to executor
+          FilterUtil.setTrueExpressionAsRightChild(filterExpression)
+        }
       }
     }
   }

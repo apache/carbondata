@@ -250,7 +250,7 @@ public class SegmentProperties {
       int[] columnCardinality) {
     ColumnSchema columnSchema = null;
     // ordinal will be required to read the data from file block
-    int dimensonOrdinal = 0;
+    int dimensionOrdinal = 0;
     int measureOrdinal = -1;
     // table ordinal is actually a schema ordinal this is required as
     // cardinality array
@@ -287,31 +287,31 @@ public class SegmentProperties {
           // if it is a columnar dimension participated in mdkey then added
           // key ordinal and dimension ordinal
           carbonDimension =
-              new CarbonDimension(columnSchema, dimensonOrdinal++, keyOrdinal++, -1);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, keyOrdinal++, -1);
         }
         // as complex type will be stored at last so once complex type started all the dimension
         // will be added to complex type
         else if (isComplexDimensionStarted || columnSchema.getDataType().isComplexType()) {
           cardinalityIndexForComplexDimensionColumn.add(tableOrdinal);
           carbonDimension =
-              new CarbonDimension(columnSchema, dimensonOrdinal++, -1, ++complexTypeOrdinal);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, ++complexTypeOrdinal);
           carbonDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           complexDimensions.add(carbonDimension);
           isComplexDimensionStarted = true;
-          int previouseOrdinal = dimensonOrdinal;
-          dimensonOrdinal =
-              readAllComplexTypeChildren(dimensonOrdinal, columnSchema.getNumberOfChild(),
+          int previousOrdinal = dimensionOrdinal;
+          dimensionOrdinal =
+              readAllComplexTypeChildren(dimensionOrdinal, columnSchema.getNumberOfChild(),
                   columnsInTable, carbonDimension, complexTypeOrdinal);
-          int numberOfChildrenDimensionAdded = dimensonOrdinal - previouseOrdinal;
+          int numberOfChildrenDimensionAdded = dimensionOrdinal - previousOrdinal;
           for (int i = 0; i < numberOfChildrenDimensionAdded; i++) {
             cardinalityIndexForComplexDimensionColumn.add(++tableOrdinal);
           }
-          counter = dimensonOrdinal;
+          counter = dimensionOrdinal;
           complexTypeOrdinal = assignComplexOrdinal(carbonDimension, complexTypeOrdinal);
           continue;
         } else {
           // for no dictionary dimension
-          carbonDimension = new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1);
+          carbonDimension = new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1);
           numberOfNoDictionaryDimension++;
           if (columnSchema.isSortColumn()) {
             this.numberOfSortColumns++;
@@ -324,7 +324,7 @@ public class SegmentProperties {
       }
       counter++;
     }
-    lastDimensionColOrdinal = dimensonOrdinal;
+    lastDimensionColOrdinal = dimensionOrdinal;
     dimColumnsCardinality = new int[cardinalityIndexForNormalDimensionColumn.size()];
     complexDimColumnCardinality = new int[cardinalityIndexForComplexDimensionColumn.size()];
     int index = 0;

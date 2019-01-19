@@ -22,13 +22,12 @@ import java.math.BigDecimal
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
-import org.apache.spark.sql.test.util.QueryTest
-
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.util.CarbonProperties
@@ -192,7 +191,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
       sql(s"load data local inpath '$testdata' into table load32000bytes OPTIONS ('FILEHEADER'='name')")
     }.getMessage.contains("DataLoad failure: Dataload failed, String size cannot exceed 32000 bytes"))
 
-    val source = scala.io.Source.fromFile(testdata)
+    val source = scala.io.Source.fromFile(testdata, CarbonCommonConstants.DEFAULT_CHARSET)
     val data = source.mkString
 
     intercept[Exception] {
@@ -216,7 +215,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
       sql(s"load data local inpath '$testdata' into table load32000bytes OPTIONS ('FILEHEADER'='name')")
     }.getMessage.contains("generate global dictionary failed, Dataload failed, String size cannot exceed 32000 bytes"))
 
-    val source = scala.io.Source.fromFile(testdata)
+    val source = scala.io.Source.fromFile(testdata, CarbonCommonConstants.DEFAULT_CHARSET)
     val data = source.mkString
 
     intercept[Exception] {

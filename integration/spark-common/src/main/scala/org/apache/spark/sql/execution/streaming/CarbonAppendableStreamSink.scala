@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.execution.streaming
 
+import java.util
 import java.util.Date
 
 import scala.collection.JavaConverters._
@@ -49,6 +50,7 @@ import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConst
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.rdd.StreamHandoffRDD
+import org.apache.carbondata.spark.util.CommonUtil
 import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamOutputFormat}
 import org.apache.carbondata.streaming.index.StreamFileIndex
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
@@ -77,10 +79,10 @@ class CarbonAppendableStreamSink(
       conf.set(entry._1, entry._2)
     }
     // properties below will be used for default CarbonStreamParser
-    conf.set("carbon_complex_delimiter_level_1",
-      carbonLoadModel.getComplexDelimiterLevel1)
-    conf.set("carbon_complex_delimiter_level_2",
-      carbonLoadModel.getComplexDelimiterLevel2)
+    val complexDelimiters = carbonLoadModel.getComplexDelimiters
+    conf.set("carbon_complex_delimiter_level_1", complexDelimiters.get(0))
+    conf.set("carbon_complex_delimiter_level_2", complexDelimiters.get(1))
+    conf.set("carbon_complex_delimiter_level_3", complexDelimiters.get(2))
     conf.set(
       DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT,
       carbonLoadModel.getSerializationNullFormat().split(",")(1))
@@ -92,6 +94,7 @@ class CarbonAppendableStreamSink(
       carbonLoadModel.getDateFormat())
     conf
   }
+  CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
   // segment max size(byte)
   private val segmentMaxSize = hadoopConf.getLong(
     CarbonCommonConstants.HANDOFF_SIZE,

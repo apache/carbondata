@@ -17,7 +17,6 @@
 package org.apache.carbondata.core.scan.result;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -46,6 +45,7 @@ import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.ReUsableByteArrayDataOutputStream;
 
 import org.apache.log4j.Logger;
 
@@ -282,30 +282,38 @@ public abstract class BlockletScannedResult {
   }
 
   public void fillColumnarComplexBatch(ColumnVectorInfo[] vectorInfos) {
+    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    ReUsableByteArrayDataOutputStream reuseableDataOutput =
+        new ReUsableByteArrayDataOutputStream(byteStream);
+    boolean isExceptionThrown = false;
     for (int i = 0; i < vectorInfos.length; i++) {
       int offset = vectorInfos[i].offset;
       int len = offset + vectorInfos[i].size;
       int vectorOffset = vectorInfos[i].vectorOffset;
       CarbonColumnVector vector = vectorInfos[i].vector;
       for (int j = offset; j < len; j++) {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutputStream dataOutput = new DataOutputStream(byteStream);
         try {
-          vectorInfos[i].genericQueryType.parseBlocksAndReturnComplexColumnByteArray(
-              dimRawColumnChunks,
-              pageFilteredRowId == null ? j : pageFilteredRowId[pageCounter][j], pageCounter,
-              dataOutput);
+          vectorInfos[i].genericQueryType
+              .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, dimensionColumnPages,
+                  pageFilteredRowId == null ? j : pageFilteredRowId[pageCounter][j], pageCounter,
+                  reuseableDataOutput);
           Object data = vectorInfos[i].genericQueryType
-              .getDataBasedOnDataType(ByteBuffer.wrap(byteStream.toByteArray()));
+              .getDataBasedOnDataType(ByteBuffer.wrap(reuseableDataOutput.getByteArray()));
           vector.putObject(vectorOffset++, data);
+          reuseableDataOutput.reset();
         } catch (IOException e) {
+          isExceptionThrown = true;
           LOGGER.error(e);
         } finally {
-          CarbonUtil.closeStreams(dataOutput);
-          CarbonUtil.closeStreams(byteStream);
+          if (isExceptionThrown) {
+            CarbonUtil.closeStreams(reuseableDataOutput);
+            CarbonUtil.closeStreams(byteStream);
+          }
         }
       }
     }
+    CarbonUtil.closeStreams(reuseableDataOutput);
+    CarbonUtil.closeStreams(byteStream);
   }
 
   /**
@@ -541,6 +549,10 @@ public abstract class BlockletScannedResult {
    */
   protected List<byte[][]> getComplexTypeKeyArrayBatch() {
     List<byte[][]> complexTypeArrayList = new ArrayList<>(validRowIds.size());
+    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    ReUsableByteArrayDataOutputStream reUseableDataOutput =
+        new ReUsableByteArrayDataOutputStream(byteStream);
+    boolean isExceptionThrown = false;
     byte[][] complexTypeData = null;
     // everyTime it is initialized new as in case of prefetch it can modify the data
     for (int i = 0; i < validRowIds.size(); i++) {
@@ -552,23 +564,27 @@ public abstract class BlockletScannedResult {
       GenericQueryType genericQueryType =
           complexParentIndexToQueryMap.get(complexParentBlockIndexes[i]);
       for (int j = 0; j < validRowIds.size(); j++) {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutputStream dataOutput = new DataOutputStream(byteStream);
         try {
           genericQueryType
-              .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, validRowIds.get(j),
-                  pageCounter, dataOutput);
+              .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, dimensionColumnPages,
+                  validRowIds.get(j), pageCounter, reUseableDataOutput);
           // get the key array in columnar way
           byte[][] complexKeyArray = complexTypeArrayList.get(j);
           complexKeyArray[i] = byteStream.toByteArray();
+          reUseableDataOutput.reset();
         } catch (IOException e) {
+          isExceptionThrown = true;
           LOGGER.error(e);
         } finally {
-          CarbonUtil.closeStreams(dataOutput);
-          CarbonUtil.closeStreams(byteStream);
+          if (isExceptionThrown) {
+            CarbonUtil.closeStreams(reUseableDataOutput);
+            CarbonUtil.closeStreams(byteStream);
+          }
         }
       }
     }
+    CarbonUtil.closeStreams(reUseableDataOutput);
+    CarbonUtil.closeStreams(byteStream);
     return complexTypeArrayList;
   }
 
@@ -607,24 +623,32 @@ public abstract class BlockletScannedResult {
    * @return complex type key array for all the complex dimension selected in query
    */
   protected byte[][] getComplexTypeKeyArray(int rowId) {
+    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    ReUsableByteArrayDataOutputStream reUsableDataOutput =
+        new ReUsableByteArrayDataOutputStream(byteStream);
+    boolean isExceptionThrown = false;
     byte[][] complexTypeData = new byte[complexParentBlockIndexes.length][];
     for (int i = 0; i < complexTypeData.length; i++) {
       GenericQueryType genericQueryType =
           complexParentIndexToQueryMap.get(complexParentBlockIndexes[i]);
-      ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-      DataOutputStream dataOutput = new DataOutputStream(byteStream);
       try {
         genericQueryType
-            .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, rowId, pageCounter,
-                dataOutput);
+            .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, dimensionColumnPages,
+                rowId, pageCounter, reUsableDataOutput);
         complexTypeData[i] = byteStream.toByteArray();
+        reUsableDataOutput.reset();
       } catch (IOException e) {
+        isExceptionThrown = true;
         LOGGER.error(e);
       } finally {
-        CarbonUtil.closeStreams(dataOutput);
-        CarbonUtil.closeStreams(byteStream);
+        if (isExceptionThrown) {
+          CarbonUtil.closeStreams(reUsableDataOutput);
+          CarbonUtil.closeStreams(byteStream);
+        }
       }
     }
+    CarbonUtil.closeStreams(reUsableDataOutput);
+    CarbonUtil.closeStreams(byteStream);
     return complexTypeData;
   }
 
@@ -639,6 +663,12 @@ public abstract class BlockletScannedResult {
       return true;
     } else if (pageCounter < pageFilteredRowCount.length) {
       pageCounter++;
+      if (pageCounter >= pageFilteredRowCount.length) {
+        return false;
+      }
+      if (this.pageFilteredRowCount[pageCounter] == 0) {
+        return hasNext();
+      }
       fillDataChunks();
       rowCounter = 0;
       currentRow = -1;

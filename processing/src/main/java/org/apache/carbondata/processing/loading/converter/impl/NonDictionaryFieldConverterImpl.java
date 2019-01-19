@@ -34,7 +34,7 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
 
   private int index;
 
-  private String nullformat;
+  private String nullFormat;
 
   private CarbonColumn column;
 
@@ -42,13 +42,13 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
 
   private DataField dataField;
 
-  public NonDictionaryFieldConverterImpl(DataField dataField, String nullformat, int index,
+  public NonDictionaryFieldConverterImpl(DataField dataField, String nullFormat, int index,
       boolean isEmptyBadRecord) {
     this.dataField = dataField;
     this.dataType = dataField.getColumn().getDataType();
     this.column = dataField.getColumn();
     this.index = index;
-    this.nullformat = nullformat;
+    this.nullFormat = nullFormat;
     this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
@@ -65,7 +65,7 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
       logHolder.setReason(
           CarbonDataProcessorUtil.prepareFailureReason(column.getColName(), column.getDataType()));
       return getNullValue();
-    } else if (dimensionValue == null || dimensionValue.equals(nullformat)) {
+    } else if (dimensionValue == null || dimensionValue.equals(nullFormat)) {
       return getNullValue();
     } else {
       String dateFormat = null;

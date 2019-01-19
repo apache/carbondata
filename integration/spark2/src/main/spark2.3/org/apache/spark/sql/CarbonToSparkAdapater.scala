@@ -18,8 +18,11 @@
 
 package org.apache.spark.sql
 
+import java.net.URI
+
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
+import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, SubqueryExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation}
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -27,7 +30,7 @@ import org.apache.spark.sql.execution.command.ExplainCommand
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{DataType, Metadata}
 
-object CarbonToSparkAdapater {
+object CarbonToSparkAdapter {
 
   def addSparkListener(sparkContext: SparkContext) = {
     sparkContext.addSparkListener(new SparkListener {
@@ -80,5 +83,11 @@ object CarbonToSparkAdapater {
   // As per SPARK-22520 OptimizeCodegen is removed in 2.3.1
   def getOptimizeCodegenRule(conf :SQLConf): Seq[Rule[LogicalPlan]] = {
     Seq.empty
+  }
+
+  def getUpdatedStorageFormat(storageFormat: CatalogStorageFormat,
+      map: Map[String, String],
+      tablePath: String): CatalogStorageFormat = {
+    storageFormat.copy(properties = map, locationUri = Some(new URI(tablePath)))
   }
 }

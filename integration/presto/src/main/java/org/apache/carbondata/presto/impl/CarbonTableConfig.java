@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.presto.impl;
 
-import javax.validation.constraints.NotNull;
-
 import io.airlift.configuration.Config;
 
 /**
@@ -27,9 +25,6 @@ import io.airlift.configuration.Config;
 public class CarbonTableConfig {
 
   //read from config
-  private String dbPath;
-  private String tablePath;
-  private String storePath;
   private String unsafeMemoryInMb;
   private String enableUnsafeInQueryExecution;
   private String enableUnsafeColumnPage;
@@ -43,37 +38,8 @@ public class CarbonTableConfig {
   private String s3N_acesssKey;
   private String s3N_secretKey;
   private String endPoint;
+  private String pushRowFilter;
 
-
-  @NotNull public String getDbPath() {
-    return dbPath;
-  }
-
-  @Config("carbondata-store")
-  public CarbonTableConfig setDbPath(String dbPath) {
-    this.dbPath = dbPath;
-    return this;
-  }
-
-  @NotNull public String getTablePath() {
-    return tablePath;
-  }
-
-  @Config("carbondata-store")
-  public CarbonTableConfig setTablePath(String tablePath) {
-    this.tablePath = tablePath;
-    return this;
-  }
-
-  @NotNull public String getStorePath() {
-    return storePath;
-  }
-
-  @Config("carbondata-store")
-  public CarbonTableConfig setStorePath(String storePath) {
-    this.storePath = storePath;
-    return this;
-  }
 
   public String getUnsafeMemoryInMb() {
     return unsafeMemoryInMb;
@@ -194,5 +160,14 @@ public class CarbonTableConfig {
   public CarbonTableConfig setS3EndPoint(String endPoint) {
     this.endPoint = endPoint;
     return this;
+  }
+
+  public String getPushRowFilter() {
+    return pushRowFilter;
+  }
+
+  @Config("carbon.push.rowfilters.for.vector")
+  public void setPushRowFilter(String pushRowFilter) {
+    this.pushRowFilter = pushRowFilter;
   }
 }

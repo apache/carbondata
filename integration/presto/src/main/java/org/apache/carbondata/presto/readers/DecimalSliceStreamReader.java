@@ -24,6 +24,7 @@ import java.util.Objects;
 import static java.math.RoundingMode.HALF_UP;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -57,10 +58,12 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
   protected BlockBuilder builder;
   private Dictionary dictionary;
 
-  public DecimalSliceStreamReader(int batchSize,
-      org.apache.carbondata.core.metadata.datatype.DecimalType dataType, Dictionary dictionary) {
+  public DecimalSliceStreamReader(int batchSize, DataType dataType,
+      org.apache.carbondata.core.metadata.datatype.DecimalType decimalDataType,
+      Dictionary dictionary) {
     super(batchSize, dataType);
-    this.type = DecimalType.createDecimalType(dataType.getPrecision(), dataType.getScale());
+    this.type =
+        DecimalType.createDecimalType(decimalDataType.getPrecision(), decimalDataType.getScale());
     this.batchSize = batchSize;
     this.builder = type.createBlockBuilder(null, batchSize);
     this.dictionary = dictionary;
@@ -87,6 +90,18 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
 
   @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
     decimalBlockWriter(value);
+  }
+
+  @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
+    for (int i = 0; i < count; i++) {
+      putDecimal(rowId++, value, precision);
+    }
+  }
+
+  @Override public void putNulls(int rowId, int count) {
+    for (int i = 0; i < count; i++) {
+      builder.appendNull();
+    }
   }
 
   @Override public void putNull(int rowId) {
@@ -151,5 +166,17 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
     checkState(decimal.precision() <= type.getPrecision(),
         "Read decimal precision larger than column precision");
     return decimal;
+  }
+
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      if (dictionary == null) {
+        decimalBlockWriter((BigDecimal) value);
+      } else {
+        putInt(rowId, (int) value);
+      }
+    }
   }
 }

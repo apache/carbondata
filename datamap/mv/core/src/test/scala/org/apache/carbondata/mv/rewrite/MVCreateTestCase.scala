@@ -994,6 +994,31 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists dm_stream_test3")
   }
 
+  test("select mv stack exception") {
+    val querySQL = "select sum(x12) as y1, sum(x13) as y2, sum(x14) as y3,sum(x15) " +
+      "as y4,X8,x9,x1 from all_table group by X8,x9,x1"
+
+    sql("drop datamap if exists all_table_mv")
+    sql("drop table if exists all_table")
+
+    sql("""
+       | create table all_table(x1 bigint,x2 bigint,
+       | x3 string,x4 bigint,x5 bigint,x6 int,x7 string,x8 int, x9 int,x10 bigint,
+       | x11 bigint, x12 bigint,x13 bigint,x14 bigint,x15 bigint,x16 bigint,
+       | x17 bigint,x18 bigint,x19 bigint) stored by 'carbondata'""".stripMargin)
+    sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,1,1")
+
+    sql("create datamap all_table_mv on table all_table using 'mv' as " + querySQL)
+    sql("rebuild datamap all_table_mv")
+
+    val frame = sql(querySQL)
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "all_table_mv"))
+    assert(1 == frame.collect().size)
+
+    sql("drop table if exists all_table")
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get

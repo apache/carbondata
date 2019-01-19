@@ -17,6 +17,7 @@
 package org.apache.spark.sql.execution.command.preaaggregate
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSession, SparkSession, _}
@@ -426,7 +427,7 @@ object PreAggregateUtil {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     try {
-      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       locks = acquireLock(dbName, tableName, locksToBeAcquired, carbonTable)
       // get the latest carbon table and check for column existence
       // read the latest schema file
@@ -468,7 +469,7 @@ object PreAggregateUtil {
       thriftTable: TableInfo)(sparkSession: SparkSession): Unit = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
-    CarbonEnv.getInstance(sparkSession).carbonMetastore
+    CarbonEnv.getInstance(sparkSession).carbonMetaStore
       .updateTableSchemaForDataMap(carbonTable.getCarbonTableIdentifier,
         carbonTable.getCarbonTableIdentifier,
         thriftTable,
@@ -527,7 +528,7 @@ object PreAggregateUtil {
    */
   def revertMainTableChanges(dbName: String, tableName: String, numberOfChildSchema: Int)
     (sparkSession: SparkSession): Unit = {
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
     carbonTable.getTableLastUpdatedTime
     val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTable)
@@ -539,7 +540,7 @@ object PreAggregateUtil {
 
   def getChildCarbonTable(databaseName: String, tableName: String)
     (sparkSession: SparkSession): Option[CarbonTable] = {
-    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonTable = metaStore.getTableFromMetadataCache(databaseName, tableName)
     if (carbonTable.isEmpty) {
       try {
@@ -587,7 +588,7 @@ object PreAggregateUtil {
       validateSegments: Boolean,
       loadCommand: CarbonLoadDataCommand,
       isOverwrite: Boolean,
-      sparkSession: SparkSession): Unit = {
+      sparkSession: SparkSession): Boolean = {
     CarbonSession.threadSet(
       CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
       parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
@@ -601,6 +602,11 @@ object PreAggregateUtil {
       "true")
     try {
       loadCommand.processData(sparkSession)
+      true
+    } catch {
+      case ex: Exception =>
+        LOGGER.error("Data Load failed for DataMap: ", ex)
+        false
     } finally {
       CarbonSession.threadUnset(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
@@ -626,12 +632,14 @@ object PreAggregateUtil {
           case _ => a.getAggFunction}}(${a.getColumnName})"
       } else {
         groupingExpressions += a.getColumnName
-        aggregateColumns+= a.getColumnName
+        aggregateColumns += a.getColumnName
       }
     }
+    val groupByString = if (groupingExpressions.nonEmpty) {
+      s" group by ${ groupingExpressions.mkString(",") }"
+    } else { "" }
     s"select ${ aggregateColumns.mkString(",") } " +
-    s"from $databaseName.${ tableSchema.getTableName }" +
-    s" group by ${ groupingExpressions.mkString(",") }"
+    s"from $databaseName.${ tableSchema.getTableName }" + groupByString
   }
 
   /**
@@ -888,6 +896,7 @@ object PreAggregateUtil {
       dataFrame: DataFrame,
       isOverwrite: Boolean,
       sparkSession: SparkSession,
+      options: mutable.Map[String, String],
       timeseriesParentTableName: String = ""): CarbonLoadDataCommand = {
     val headers = columns.asScala.filter { column =>
       !column.getColumnName.equalsIgnoreCase(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)

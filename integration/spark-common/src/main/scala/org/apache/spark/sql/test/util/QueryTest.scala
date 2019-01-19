@@ -42,7 +42,7 @@ class QueryTest extends PlanTest {
   Locale.setDefault(Locale.US)
 
   CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP, "false")
+    .addProperty(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP, "true")
 
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the
@@ -118,7 +118,7 @@ class QueryTest extends PlanTest {
   lazy val storeLocation = CarbonProperties.getInstance().
     getProperty(CarbonCommonConstants.STORE_LOCATION)
   val resourcesPath = TestQueryExecutor.resourcesPath
-  val metastoredb = TestQueryExecutor.metastoredb
+  val metaStoreDB = TestQueryExecutor.metaStoreDB
   val integrationPath = TestQueryExecutor.integrationPath
   val dblocation = TestQueryExecutor.location
   val defaultParallelism = sqlContext.sparkContext.defaultParallelism

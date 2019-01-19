@@ -157,7 +157,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       List<InputSplit> splits = new ArrayList<>();
       boolean useBlockDataMap = job.getConfiguration().getBoolean("filter_blocks", true);
       // useBlockDataMap would be false in case of SDK when user has not provided any filter, In
-      // this case we dont want to load block/blocklet datamap. It would be true in all other
+      // this case we don't want to load block/blocklet datamap. It would be true in all other
       // scenarios
       if (useBlockDataMap) {
         // do block filtering and get split

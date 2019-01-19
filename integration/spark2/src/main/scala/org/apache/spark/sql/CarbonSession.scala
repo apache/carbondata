@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession.Builder
@@ -179,8 +180,9 @@ object CarbonSession {
         getValue("options", builder).asInstanceOf[scala.collection.mutable.HashMap[String, String]]
       val userSuppliedContext: Option[SparkContext] =
         getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
+      CarbonReflectionUtils.updateCarbonSerdeInfo()
 
-      if (metaStorePath != null) {
+      if (StringUtils.isNotBlank(metaStorePath)) {
         val hadoopConf = new Configuration()
         val configFile = Utils.getContextOrSparkClassLoader.getResource("hive-site.xml")
         if (configFile != null) {
@@ -248,7 +250,7 @@ object CarbonSession {
 
         session = new CarbonSession(sparkContext, None, !enableInMemCatlog)
         val carbonProperties = CarbonProperties.getInstance()
-        if (storePath != null) {
+        if (StringUtils.isNotBlank(storePath)) {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
           // In case if it is in carbon.properties for backward compatible
         } else if (carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
@@ -262,7 +264,7 @@ object CarbonSession {
         // Register a successfully instantiated context to the singleton. This should be at the
         // end of the class definition so that the singleton is updated only if there is no
         // exception in the construction of the instance.
-        CarbonToSparkAdapater.addSparkListener(sparkContext)
+        CarbonToSparkAdapter.addSparkListener(sparkContext)
         session.streams.addListener(new CarbonStreamingQueryListener(session))
       }
 

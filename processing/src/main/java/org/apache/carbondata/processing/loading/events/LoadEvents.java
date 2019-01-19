@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.processing.loading.events;
 
+import java.util.Map;
+
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.events.Event;
@@ -101,15 +103,24 @@ public class LoadEvents {
   public static class LoadMetadataEvent extends Event {
     private CarbonTable carbonTable;
     private boolean isCompaction;
-    public LoadMetadataEvent(CarbonTable carbonTable, boolean isCompaction) {
+    private Map<String, String> options;
+
+    public LoadMetadataEvent(CarbonTable carbonTable, boolean isCompaction,
+        Map<String, String> options) {
       this.carbonTable = carbonTable;
       this.isCompaction = isCompaction;
+      this.options = options;
     }
     public boolean isCompaction() {
       return isCompaction;
     }
     public CarbonTable getCarbonTable() {
       return carbonTable;
+    }
+
+
+    public Map<String, String> getOptions() {
+      return options;
     }
   }
 

@@ -19,7 +19,9 @@ package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
 import java.util.BitSet;
+import java.util.Set;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -85,13 +87,24 @@ public class ImplicitIncludeFilterExecutorImpl
     boolean isScanRequired = false;
     String shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
     if (uniqueBlockPath.endsWith(".carbondata")) {
-      if (dimColumnEvaluatorInfo.getFilterValues().getImplicitDriverColumnFilterList()
-          .contains(shortBlockId)) {
+      if (dimColumnEvaluatorInfo.getFilterValues().getImplicitColumnFilterBlockToBlockletsMap()
+          .containsKey(shortBlockId)) {
         isScanRequired = true;
       }
-    } else if (dimColumnEvaluatorInfo.getFilterValues().getImplicitColumnFilterList()
-        .contains(shortBlockId)) {
-      isScanRequired = true;
+    } else {
+      // in case of CACHE_LEVEL = BLOCKLET, shortBlockId contains both block id and blocklet id
+      // so separating out block id for look up in implicit filter
+      String blockId =
+          shortBlockId.substring(0, shortBlockId.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
+      Set<Integer> blockletIds =
+          dimColumnEvaluatorInfo.getFilterValues().getImplicitColumnFilterBlockToBlockletsMap()
+              .get(blockId);
+      if (null != blockletIds) {
+        int idInUniqueBlockPath = Integer.parseInt(shortBlockId.substring(blockId.length() + 1));
+        if (blockletIds.contains(idInUniqueBlockPath)) {
+          isScanRequired = true;
+        }
+      }
     }
     if (isScanRequired) {
       bitSet.set(0);

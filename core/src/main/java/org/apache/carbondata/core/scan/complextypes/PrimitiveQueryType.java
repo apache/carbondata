@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -39,7 +40,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 public class PrimitiveQueryType extends ComplexQueryType implements GenericQueryType {
 
   private String name;
-  private String parentname;
+  private String parentName;
 
   private int keySize;
 
@@ -53,15 +54,15 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   private DirectDictionaryGenerator directDictGenForDate;
 
-  public PrimitiveQueryType(String name, String parentname, int blockIndex,
+  public PrimitiveQueryType(String name, String parentName, int blockIndex,
       DataType dataType, int keySize,
       Dictionary dictionary, boolean isDirectDictionary) {
-    super(name, parentname, blockIndex);
+    super(name, parentName, blockIndex);
     this.dataType = dataType;
     this.keySize = keySize;
     this.dictionary = dictionary;
     this.name = name;
-    this.parentname = parentname;
+    this.parentName = parentName;
     this.isDirectDictionary = isDirectDictionary;
     this.isDictionary = (dictionary != null && !isDirectDictionary);
     this.directDictGenForDate =
@@ -80,12 +81,12 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     this.name = name;
   }
 
-  @Override public String getParentname() {
-    return parentname;
+  @Override public String getParentName() {
+    return parentName;
   }
 
-  @Override public void setParentname(String parentname) {
-    this.parentname = parentname;
+  @Override public void setParentName(String parentName) {
+    this.parentName = parentName;
 
   }
 
@@ -93,10 +94,12 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     return 1;
   }
 
-  @Override public void parseBlocksAndReturnComplexColumnByteArray(
-      DimensionRawColumnChunk[] rawColumnChunks, int rowNumber,
-      int pageNumber, DataOutputStream dataOutputStream) throws IOException {
-    byte[] currentVal = copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber);
+  @Override
+  public void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
+      DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
+      DataOutputStream dataOutputStream) throws IOException {
+    byte[] currentVal =
+        copyBlockDataChunk(rawColumnChunks, dimensionColumnPages, rowNumber, pageNumber);
     if (!this.isDictionary && !this.isDirectDictionary) {
       dataOutputStream.writeShort(currentVal.length);
     }

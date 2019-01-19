@@ -18,7 +18,7 @@ package org.apache.carbondata.spark.util
 
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -55,8 +55,8 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setFactFilePath(filePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(",")
-    carbonLoadModel.setComplexDelimiterLevel1("$")
-    carbonLoadModel.setComplexDelimiterLevel2(":")
+    carbonLoadModel.setComplexDelimiter("$")
+    carbonLoadModel.setComplexDelimiter(":")
     carbonLoadModel.setAllDictPath(allDictFilePath)
     carbonLoadModel.setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
@@ -82,6 +82,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop table if exists sample")
     sql("drop table if exists complextypes")
+    sql("drop table if exists tabletest")
     buildTestData
     // second time comment this line
     buildTable
@@ -121,7 +122,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   def buildRelation() = {
     val warehouse = s"$resourcesPath/target/warehouse"
     val storeLocation = s"$resourcesPath/target/store"
-    val metastoredb = s"$resourcesPath/target"
+    val metaStoreDB = s"$resourcesPath/target"
     CarbonProperties.getInstance()
       .addProperty("carbon.custom.distribution", "true")
     CarbonProperties.getInstance()
@@ -136,8 +137,8 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       .config("spark.network.timeout", "600s")
       .config("spark.executor.heartbeatInterval", "600s")
       .config("carbon.enable.vector.reader","false")
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
-    val catalog = CarbonEnv.getInstance(spark).carbonMetastore
+      .getOrCreateCarbonSession(storeLocation, metaStoreDB)
+    val catalog = CarbonEnv.getInstance(spark).carbonMetaStore
     sampleRelation = catalog.lookupRelation(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       "sample")(spark).asInstanceOf[CarbonRelation]
     complexRelation = catalog.lookupRelation(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
@@ -167,9 +168,20 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     DictionaryTestCaseUtil.
       checkDictionary(complexRelation, "channelsId", "1650")
   }
-  
+
+  test("test create table thorugh 'using carbondata' and load data") {
+    sql(
+      "CREATE TABLE tabletest (empno INT, workgroupcategory STRING, deptno INT, projectcode INT, " +
+      "attendance INT) USING carbondata")
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tabletest OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""".stripMargin)
+    checkAnswer(sql("select count(*) from tabletest"), Row(10))
+  }
+
   override def afterAll {
     sql("drop table sample")
     sql("drop table complextypes")
+    sql("drop table tabletest")
   }
 }

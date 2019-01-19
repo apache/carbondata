@@ -80,7 +80,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     String tableName = tableIdentifier.getTableName();
     try {
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
+          .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
               System.currentTimeMillis());
       int i = 0;
       String[] storeLocation = getStoreLocation();
@@ -145,10 +145,10 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       }
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-        .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
+        .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
             System.currentTimeMillis());
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-        .recordMdkGenerateTotalTime(CarbonTablePath.DEPRECATED_PATITION_ID,
+        .recordMdkGenerateTotalTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
             System.currentTimeMillis());
     if (null != exception) {
       throw exception;

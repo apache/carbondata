@@ -212,6 +212,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             .isUseMinMaxForPruning()) {
         blockInfo.setBlockOffset(blockletDetailInfo.getBlockFooterOffset());
         DataFileFooter fileFooter = filePathToFileFooterMapping.get(blockInfo.getFilePath());
+        if (null != blockInfo.getDataFileFooter()) {
+          fileFooter = blockInfo.getDataFileFooter();
+        }
         if (null == fileFooter) {
           blockInfo.setDetailInfo(null);
           fileFooter = CarbonUtil.readMetadataFile(blockInfo);
@@ -549,12 +552,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionChunkIndexes = QueryUtil.getDimensionChunkIndexes(projectDimensions,
         segmentProperties.getDimensionOrdinalToChunkMapping(),
         currentBlockFilterDimensions, allProjectionListDimensionIdexes);
-    int reusableBufferSize = segmentProperties.getDimensionOrdinalToChunkMapping().size()
-        < projectDimensions.size() ?
-        projectDimensions.size() :
-        segmentProperties.getDimensionOrdinalToChunkMapping().size();
-    ReusableDataBuffer[] dimensionBuffer =
-        new ReusableDataBuffer[reusableBufferSize];
+    int reusableBufferSize = Math.max(segmentProperties.getDimensionOrdinalToChunkMapping().size(),
+        projectDimensions.size());
+    ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[reusableBufferSize];
     for (int i = 0; i < dimensionBuffer.length; i++) {
       dimensionBuffer[i] = new ReusableDataBuffer();
     }
@@ -583,8 +583,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         currentBlockQueryMeasures, expressionMeasures,
         segmentProperties.getMeasuresOrdinalToChunkMapping(), filterMeasures,
         allProjectionListMeasureIndexes);
-    ReusableDataBuffer[] measureBuffer =
-        new ReusableDataBuffer[segmentProperties.getMeasuresOrdinalToChunkMapping().size()];
+    reusableBufferSize = Math.max(segmentProperties.getMeasuresOrdinalToChunkMapping().size(),
+        allProjectionListMeasureIndexes.size());
+    ReusableDataBuffer[] measureBuffer = new ReusableDataBuffer[reusableBufferSize];
     for (int i = 0; i < measureBuffer.length; i++) {
       measureBuffer[i] = new ReusableDataBuffer();
     }
@@ -799,6 +800,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (freeUnsafeMemory) {
       UnsafeMemoryManager.INSTANCE
           .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
+      ThreadLocalTaskInfo.clearCarbonTaskInfo();
     }
     if (null != queryProperties.executorService) {
       // In case of limit query when number of limit records is already found so executors
@@ -810,6 +812,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (null != exceptionOccurred) {
       throw new QueryExecutionException(exceptionOccurred);
     }
+    DataTypeUtil.clearFormatter();
   }
 
 }

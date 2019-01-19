@@ -165,7 +165,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     assert(exceptionCaught.getMessage.contains("does not exist in table"))
   }
 
-  test("long_string_columns: columns cannot exist in patitions columns") {
+  test("long_string_columns: columns cannot exist in partitions columns") {
     val exceptionCaught = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
@@ -189,6 +189,19 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
            |""".stripMargin)
     }
     assert(exceptionCaught.getMessage.contains("both in no_inverted_index and long_string_columns"))
+  }
+
+  test("inverted index columns cannot be present in long_string_cols as they do not support sort_cols") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE TABLE if not exists $longStringTable(
+           | id INT, name STRING, description STRING, address STRING, note STRING
+           | ) STORED BY 'carbondata'
+           | TBLPROPERTIES('inverted_index'='note', 'long_string_columns'='note,description')
+           |""".stripMargin)
+    }
+    assert(exceptionCaught.getMessage.contains("INVERTED_INDEX column: note should be present in SORT_COLUMNS"))
   }
 
   private def prepareTable(): Unit = {
@@ -320,6 +333,37 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     sql(s"DROP DATAMAP IF EXISTS $datamapName ON TABLE $longStringTable")
   }
 
+  test("creating datamap with long string column selected and loading data should be success") {
+
+    sql(s"drop table if exists $longStringTable")
+    val datamapName = "pre_agg_dm"
+    sql(
+      s"""
+         | CREATE TABLE if not exists $longStringTable(
+         | id INT, name STRING, description STRING, address STRING, note STRING
+         | ) STORED BY 'carbondata'
+         | TBLPROPERTIES('LONG_STRING_COLUMNS'='description, note', 'SORT_COLUMNS'='name')
+         |""".stripMargin)
+
+    sql(
+      s"""
+         | CREATE DATAMAP $datamapName ON TABLE $longStringTable
+         | USING 'preaggregate'
+         | AS SELECT id,description,note,count(*) FROM $longStringTable
+         | GROUP BY id,description,note
+         |""".
+        stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $longStringTable
+         | OPTIONS('header'='false')
+       """.stripMargin)
+
+    checkAnswer(sql(s"select count(*) from $longStringTable"), Row(1000))
+    sql(s"drop table if exists $longStringTable")
+  }
+
   test("create table with varchar column and complex column") {
     sql("DROP TABLE IF EXISTS varchar_complex_table")
     sql("""
@@ -331,8 +375,8 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     sql(
       """
         | INSERT INTO TABLE varchar_complex_table
-        | VALUES(1,'ar1.0$ar1.1','longstr10','normal string1','longstr11','ar2.0$ar2.1'),
-        | (2,'ar1.2$ar1.3','longstr20','normal string2','longstr21','ar2.2$ar2.3')
+        | VALUES(1,'ar1.0\001ar1.1','longstr10','normal string1','longstr11','ar2.0\001ar2.1'),
+        | (2,'ar1.2\001ar1.3','longstr20','normal string2','longstr21','ar2.2\001ar2.3')
         | """.stripMargin)
     checkAnswer(
       sql("SELECT * FROM varchar_complex_table where varchar1='longstr10'"),

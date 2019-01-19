@@ -23,11 +23,12 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonSession, SQLContext}
 import org.apache.spark.sql.execution.command.CompactionModel
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
-import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
+import org.apache.spark.sql.execution.command.preaaggregate.{CommitPreAggregateListener, PreAggregateUtil}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
-import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.OperationContext
@@ -79,20 +80,32 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
           "true")
         loadCommand.processData(sqlContext.sparkSession)
-        val newLoadMetaDataDetails = SegmentStatusManager.readLoadMetadata(
+        // After load is completed for child table the UUID table status will have 0.1 as success
+        // and the table status file will have 0,1,2,3 as Success and 0.1 as In Progress.
+        // Therefore we will read the table status and write 0,1,2,3 as Compacted as the commit
+        // listener will take care of merging the UUID and the table status files.
+        val newMetadataDetails = SegmentStatusManager.readLoadMetadata(
           carbonTable.getMetadataPath, uuid)
-        val updatedLoadMetaDataDetails = newLoadMetaDataDetails collect {
-          case load if loadMetaDataDetails.contains(load) =>
-            load.setMergedLoadName(mergedLoadName)
-            load.setSegmentStatus(SegmentStatus.COMPACTED)
-            load.setModificationOrdeletionTimesStamp(System.currentTimeMillis())
-            load
-          case other => other
-        }
+        val mergedContent = loadMetaDataDetails.asScala.map {
+          segment => segment.setSegmentStatus(SegmentStatus.COMPACTED)
+            segment.setMergedLoadName(mergedLoadName)
+            segment.setModificationOrdeletionTimesStamp(CarbonUpdateUtil.readCurrentTime)
+            segment
+        } ++ newMetadataDetails
         SegmentStatusManager.writeLoadDetailsIntoFile(
           CarbonTablePath.getTableStatusFilePathWithUUID(carbonTable.getTablePath, uuid),
-            updatedLoadMetaDataDetails)
-        carbonLoadModel.setLoadMetadataDetails(updatedLoadMetaDataDetails.toList.asJava)
+          mergedContent.toArray)
+        carbonLoadModel.setLoadMetadataDetails((carbonLoadModel.getLoadMetadataDetails.asScala ++
+        newMetadataDetails).asJava)
+        // If isCompaction is true then it means that the compaction on aggregate table was
+        // triggered by the maintable thus no need to commit the tablestatus file but if the
+        // compaction was triggered directly for aggregate table then commit has to be fired as
+        // the commit listener would not be called.
+        val directAggregateCompactionCall = Option(operationContext
+          .getProperty("isCompaction")).getOrElse("false").toString.toBoolean
+        if (!directAggregateCompactionCall) {
+          commitAggregateTableStatus(carbonTable, uuid)
+        }
       } finally {
         // check if any other segments needs compaction on in case of MINOR_COMPACTION.
         // For example: after 8.1 creation 0.1, 4.1, 8.1 have to be merged to 0.2 if threshhold
@@ -112,12 +125,7 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         if (!compactionModel.compactionType.equals(CompactionType.MAJOR) &&
           !compactionModel.compactionType.equals(CompactionType.CUSTOM)) {
           if (!identifySegmentsToBeMerged().isEmpty) {
-            val uuidTableStaus = CarbonTablePath.getTableStatusFilePathWithUUID(
-              carbonTable.getTablePath, uuid)
-            val tableStatus = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
-            if (!uuidTableStaus.equalsIgnoreCase(tableStatus)) {
-              FileFactory.getCarbonFile(uuidTableStaus).renameForce(tableStatus)
-            }
+            commitAggregateTableStatus(carbonTable, uuid)
             executeCompaction()
           }
         }
@@ -133,4 +141,27 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
       }
     }
   }
+
+  /**
+   * Used to merge the contents of tablestatus and tablestatus_uuid files and write the new
+   * details to tablestatus file. For Example:-
+   * tablestatus contents are = 0(Success), 1(Success),2(Success),3(Success), 0.1(In Progress)
+   * tablestatus_uuid contents are = 0(Compacted), 1(Compacted),2(Compacted),3(Compacted), 0.1
+   * (Success).
+   *
+   * So after merging the tablestatus file will have: 0(Compacted), 1(Compacted),2(Compacted),
+   * 3(Compacted), 0.1(Success).
+   *
+   * NOTE: This method will be called when direct compaction is fired on child aggregate table or
+   * when there are anymore segments to be compacted and the intermediate state of the
+   * tablestatus has to be committed for further compaction to pick other segments.
+   */
+  private def commitAggregateTableStatus(carbonTable: CarbonTable, uuid: String) {
+    if (!CommitPreAggregateListener.mergeTableStatusContents(carbonTable, CarbonTablePath
+      .getTableStatusFilePathWithUUID(carbonTable.getTablePath, uuid), CarbonTablePath
+      .getTableStatusFilePathWithUUID(carbonTable.getTablePath, ""))) {
+      throw new RuntimeException("Unable to acquire lock for table status updation")
+    }
+  }
+
 }

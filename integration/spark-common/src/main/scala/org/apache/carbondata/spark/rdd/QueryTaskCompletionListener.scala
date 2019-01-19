@@ -27,7 +27,7 @@ import org.apache.spark.sql.profiler.{Profiler, QueryTaskEnd}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.memory.UnsafeMemoryManager
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
-import org.apache.carbondata.core.util.{TaskMetricsMap, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util.{DataTypeUtil, TaskMetricsMap, ThreadLocalTaskInfo}
 import org.apache.carbondata.spark.InitInputMetrics
 
 class QueryTaskCompletionListener(freeMemory: Boolean,
@@ -51,6 +51,8 @@ class QueryTaskCompletionListener(freeMemory: Boolean,
     if (freeMemory) {
       UnsafeMemoryManager.INSTANCE
         .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      ThreadLocalTaskInfo.clearCarbonTaskInfo()
+      DataTypeUtil.clearFormatter()
     }
   }
 

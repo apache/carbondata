@@ -645,7 +645,9 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     checkExistence(sql("desc formatted NO_INVERTED_CARBON"),false,"Inverted Index Columns name, col1")
   }
 
-  test("inverted index after alter command") {
+  // sort_columns cannot be given for newly added column, so inverted index will not be displayed
+  // if it is not in sort_columns
+  ignore("inverted index after alter command") {
     sql("drop table if exists NO_INVERTED_CARBON")
     sql(
       """

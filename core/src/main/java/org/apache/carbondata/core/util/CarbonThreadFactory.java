@@ -34,14 +34,25 @@ public class CarbonThreadFactory implements ThreadFactory {
    */
   private String name;
 
+  private boolean withTime = false;
+
   public CarbonThreadFactory(String name) {
     this.defaultFactory = Executors.defaultThreadFactory();
     this.name = name;
   }
 
+  public CarbonThreadFactory(String name, boolean withTime) {
+    this(name);
+    this.withTime = withTime;
+  }
+
   @Override public Thread newThread(Runnable r) {
     final Thread thread = defaultFactory.newThread(r);
-    thread.setName(name);
+    if (withTime) {
+      thread.setName(name + "_" + System.currentTimeMillis());
+    } else {
+      thread.setName(name);
+    }
     return thread;
   }
 }

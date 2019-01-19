@@ -20,7 +20,7 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.{CarbonToSparkAdapater, DeleteRecords, UpdateTable}
+import org.apache.spark.sql.{CarbonToSparkAdapter, DeleteRecords, UpdateTable}
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRebuildCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableDropPartitionCommand, CarbonAlterTableSplitPartitionCommand}
-import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
+import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
@@ -83,7 +83,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
 
   protected lazy val restructure: Parser[LogicalPlan] =
-    alterTableModifyDataType | alterTableDropColumn | alterTableAddColumns
+    alterTableColumnRenameAndModifyDataType | alterTableDropColumn | alterTableAddColumns
 
   protected lazy val alterPartition: Parser[LogicalPlan] =
     alterAddPartition | alterSplitPartition | alterDropPartition
@@ -480,7 +480,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         logicalPlan match {
           case _: CarbonCreateTableCommand =>
             ExplainCommand(logicalPlan, extended = isExtended.isDefined)
-          case _ => CarbonToSparkAdapater.getExplainCommandObj
+          case _ => CarbonToSparkAdapter.getExplainCommandObj
         }
     }
 
@@ -511,22 +511,26 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
 
-  protected lazy val alterTableModifyDataType: Parser[LogicalPlan] =
+  protected lazy val alterTableColumnRenameAndModifyDataType: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ CHANGE ~ ident ~ ident ~
     ident ~ opt("(" ~> rep1sep(valueOptions, ",") <~ ")") <~ opt(";") ^^ {
       case dbName ~ table ~ change ~ columnName ~ columnNameCopy ~ dataType ~ values =>
-        // both the column names should be same
+
+        var isColumnRename = false
+        // If both the column name are not same, then its a call for column rename
         if (!columnName.equalsIgnoreCase(columnNameCopy)) {
-          throw new MalformedCarbonCommandException(
-            "Column names provided are different. Both the column names should be same")
+          isColumnRename = true
         }
-        val alterTableChangeDataTypeModel =
-          AlterTableDataTypeChangeModel(parseDataType(dataType.toLowerCase, values),
+        val alterTableColRenameAndDataTypeChangeModel =
+          AlterTableDataTypeChangeModel(parseDataType(dataType.toLowerCase,
+            values,
+            isColumnRename),
             convertDbNameToLowerCase(dbName),
             table.toLowerCase,
             columnName.toLowerCase,
-            columnNameCopy.toLowerCase)
-        CarbonAlterTableDataTypeChangeCommand(alterTableChangeDataTypeModel)
+            columnNameCopy.toLowerCase,
+            isColumnRename)
+        CarbonAlterTableColRenameDataTypeChangeCommand(alterTableColRenameAndDataTypeChangeModel)
     }
 
   protected lazy val alterTableAddColumns: Parser[LogicalPlan] =

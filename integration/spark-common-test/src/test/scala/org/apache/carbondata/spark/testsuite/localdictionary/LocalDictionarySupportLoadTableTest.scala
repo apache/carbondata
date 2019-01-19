@@ -21,6 +21,7 @@ import java.io.{File, PrintWriter}
 import java.util
 import java.util.Collections
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
@@ -134,6 +135,22 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     assert(!checkForLocalDictionary(getDimRawChunk(0)))
     assert(checkForLocalDictionary(getDimRawChunk(1)))
     assert(checkForLocalDictionary(getDimRawChunk(2)))
+  }
+
+  test("test local dictionary generation for map type") {
+    sql("drop table if exists local2")
+    sql(
+      "CREATE TABLE local2(name map<string,string>) STORED BY 'carbondata' tblproperties" +
+      "('local_dictionary_enable'='true','local_dictionary_include'='name')")
+    sql(
+      "insert into local2 values('Manish\002Nalla\001Manish\002Gupta\001Shardul\002Singh" +
+      "\001Vishal\002Kumar')")
+    checkAnswer(sql("select * from local2"), Seq(
+      Row(Map("Manish" -> "Nalla", "Shardul" -> "Singh", "Vishal" -> "Kumar"))))
+    assert(!checkForLocalDictionary(getDimRawChunk(0)))
+    assert(!checkForLocalDictionary(getDimRawChunk(1)))
+    assert(checkForLocalDictionary(getDimRawChunk(2)))
+    assert(checkForLocalDictionary(getDimRawChunk(3)))
   }
 
   test("test local dictionary data validation") {

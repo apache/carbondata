@@ -69,7 +69,7 @@ import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.events.exception.PreEventException
-import org.apache.carbondata.processing.loading.TableProcessingOperations
+import org.apache.carbondata.processing.loading.{ComplexDelimitersEnum, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModelBuilder, LoadOption}
@@ -114,7 +114,7 @@ case class CarbonLoadDataCommand(
     table = if (tableInfoOp.isDefined) {
         CarbonTable.buildFromTableInfo(tableInfoOp.get)
       } else {
-        val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+        val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
           .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         if (relation == null) {
           throw new NoSuchTableException(dbName, tableName)
@@ -142,7 +142,7 @@ case class CarbonLoadDataCommand(
     }
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     if(CarbonUtil.hasAggregationDataMap(table)) {
-      val loadMetadataEvent = new LoadMetadataEvent(table, false)
+      val loadMetadataEvent = new LoadMetadataEvent(table, false, options.asJava)
       OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
     }
     Seq.empty
@@ -188,10 +188,36 @@ case class CarbonLoadDataCommand(
     val carbonLoadModel = new CarbonLoadModel()
     val tableProperties = table.getTableInfo.getFactTable.getTableProperties
     val optionsFinal = LoadOption.fillOptionWithDefaultValue(options.asJava)
-    optionsFinal.put("sort_scope", tableProperties.asScala.getOrElse("sort_scope",
-      carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-        carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
+    optionsFinal
+      .put("complex_delimiter_level_4",
+        ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_4.value())
+
+    /**
+    * Priority of sort_scope assignment :
+    * -----------------------------------
+    *
+    * 1. Load Options  ->
+    *     LOAD DATA INPATH 'data.csv' INTO TABLE tableName OPTIONS('sort_scope'='no_sort')
+    *
+    * 2. Session property CARBON_TABLE_LOAD_SORT_SCOPE  ->
+    *     SET CARBON.TABLE.LOAD.SORT.SCOPE.database.table=no_sort
+    *     SET CARBON.TABLE.LOAD.SORT.SCOPE.database.table=batch_sort
+    *     SET CARBON.TABLE.LOAD.SORT.SCOPE.database.table=local_sort
+    *     SET CARBON.TABLE.LOAD.SORT.SCOPE.database.table=global_sort
+    *
+    * 3. Sort Scope provided in TBLPROPERTIES
+    * 4. Session property CARBON_OPTIONS_SORT_SCOPE
+    * 5. Default Sort Scope LOAD_SORT_SCOPE
+    */
+    optionsFinal.put("sort_scope",
+      options.getOrElse("sort_scope",
+        carbonProperty.getProperty(
+          CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE + table.getDatabaseName + "." +
+          table.getTableName,
+          tableProperties.asScala.getOrElse("sort_scope",
+            carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+              carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))))
 
       optionsFinal
         .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
@@ -302,6 +328,7 @@ case class CarbonLoadDataCommand(
       }
       val partitionStatus = SegmentStatus.SUCCESS
       val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
+      LOGGER.info("Sort Scope : " + carbonLoadModel.getSortScope)
       if (carbonLoadModel.getUseOnePass) {
         loadDataUsingOnePass(
           sparkSession,
@@ -349,7 +376,7 @@ case class CarbonLoadDataCommand(
       case ex: Exception =>
         LOGGER.error(ex)
         // update the load entry in table status file for changing the status to marked for delete
-        if (isUpdateTableStatusRequired) {
+        if (isUpdateTableStatusRequired && !table.isChildDataMap) {
           CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
         }
         throw ex
@@ -829,21 +856,15 @@ case class CarbonLoadDataCommand(
     }
     try {
       carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
-      // Block compaction for table containing complex datatype
-      if (table.getTableInfo.getFactTable.getListOfColumns.asScala
-        .exists(m => m.getDataType.isComplexType)) {
-        LOGGER.warn("Compaction is skipped as table contains complex columns")
-      } else {
-        val compactedSegments = new util.ArrayList[String]()
-        // Trigger auto compaction
-        CarbonDataRDDFactory.handleSegmentMerging(
-          sparkSession.sqlContext,
-          carbonLoadModel,
-          table,
-          compactedSegments,
-          operationContext)
-        carbonLoadModel.setMergedSegmentIds(compactedSegments)
-      }
+      val compactedSegments = new util.ArrayList[String]()
+      // Trigger auto compaction
+      CarbonDataRDDFactory.handleSegmentMerging(
+        sparkSession.sqlContext,
+        carbonLoadModel,
+        table,
+        compactedSegments,
+        operationContext)
+      carbonLoadModel.setMergedSegmentIds(compactedSegments)
     } catch {
       case e: Exception =>
         throw new Exception(
@@ -889,7 +910,7 @@ case class CarbonLoadDataCommand(
       // datatype is always int
       val column = table.getColumnByName(table.getTableName, attr.name)
       if (column.hasEncoding(Encoding.DICTIONARY)) {
-        CarbonToSparkAdapater.createAttributeReference(attr.name,
+        CarbonToSparkAdapter.createAttributeReference(attr.name,
           IntegerType,
           attr.nullable,
           attr.metadata,
@@ -897,7 +918,7 @@ case class CarbonLoadDataCommand(
           attr.qualifier,
           attr)
       } else if (attr.dataType == TimestampType || attr.dataType == DateType) {
-        CarbonToSparkAdapater.createAttributeReference(attr.name,
+        CarbonToSparkAdapter.createAttributeReference(attr.name,
           LongType,
           attr.nullable,
           attr.metadata,

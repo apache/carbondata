@@ -70,11 +70,35 @@ public class DoubleStreamReader extends CarbonColumnVectorImpl implements Presto
     type.writeDouble(builder, value);
   }
 
+  @Override public void putDoubles(int rowId, int count, double value) {
+    for (int i = 0; i < count; i++) {
+      type.writeDouble(builder, value);
+    }
+  }
+
   @Override public void putNull(int rowId) {
     builder.appendNull();
   }
 
+  @Override public void putNulls(int rowId, int count) {
+    for (int i = 0; i < count; i++) {
+      builder.appendNull();
+    }
+  }
+
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
+  }
+
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      if (dictionary == null) {
+        putDouble(rowId, (double) value);
+      } else {
+        putInt(rowId, (int) value);
+      }
+    }
   }
 }

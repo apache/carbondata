@@ -165,6 +165,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       int ordinal = 0;
       int taskMinMaxOrdinal = 0;
       BlockletInfo blockletInfo = blockletList.get(index);
+      blockletInfo.setSorted(fileFooter.isSorted());
       BlockletMinMaxIndex minMaxIndex = blockletInfo.getBlockletIndex().getMinMaxIndex();
       // get min max values for columns to be cached
       byte[][] minValuesForColumnsToBeCached = BlockletDataMapUtil

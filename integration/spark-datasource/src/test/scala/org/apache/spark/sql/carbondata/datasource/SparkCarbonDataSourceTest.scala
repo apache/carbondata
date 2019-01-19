@@ -16,16 +16,17 @@
  */
 package org.apache.spark.sql.carbondata.datasource
 
-
 import java.io.File
 import java.util
-import java.util.Arrays
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField => SparkStructField, StructType}
+import org.apache.spark.util.SparkUtil
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
@@ -36,7 +37,6 @@ import org.apache.carbondata.hadoop.testutil.StoreCreator
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 
 class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
-
 
   test("test write using dataframe") {
     import spark.implicits._
@@ -74,6 +74,356 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     }
     spark.sql("drop table if exists testparquet")
     spark.sql("drop table if exists testformat")
+  }
+
+  test("test add columns for table of using carbon with sql") {
+    // TODO: should support add columns for carbon dataSource table
+    // Limit from spark
+    import spark.implicits._
+    import spark._
+    try {
+      val df = spark.sparkContext.parallelize(1 to 10)
+        .map(x => ("a" + x % 10, "b", x))
+        .toDF("c1", "c2", "number")
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS carbon_table")
+      // Saves dataFrame to carbon file
+      df.write
+        .format("parquet").saveAsTable("test_parquet")
+      sql("CREATE TABLE carbon_table(c1 STRING, c2 STRING, number INT) USING carbon")
+      sql("INSERT INTO carbon_table SELECT * FROM test_parquet")
+      TestUtil.checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
+        sql("SELECT * FROM test_parquet WHERE c1='a1'"))
+      if (!SparkUtil.isSparkVersionEqualTo("2.1")) {
+        val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+        DataMapStoreManager.getInstance()
+          .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+        assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+      }
+      assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
+      sql("ALTER TABLE carbon_table ADD COLUMNS (a1 INT, b1 STRING) ")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("Operation not allowed: ALTER TABLE ADD COLUMNS"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          assert(e.getMessage.contains("ALTER ADD COLUMNS does not support datasource table with type carbon."))
+        }
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test("test add columns for table of using carbon with DF") {
+    import spark.implicits._
+    import spark._
+    try {
+      val df = spark.sparkContext.parallelize(1 to 10)
+        .map(x => ("a" + x % 10, "b", x))
+        .toDF("c1", "c2", "number")
+      sql("DROP TABLE IF EXISTS carbon_table")
+      // Saves dataFrame to carbon file
+      df.write
+        .format("carbon").saveAsTable("carbon_table")
+      val customSchema = StructType(Array(
+        SparkStructField("c1", StringType),
+        SparkStructField("c2", StringType),
+        SparkStructField("number", IntegerType)))
+
+      val carbonDF = spark.read
+        .format("carbon")
+        .option("tableName", "carbon_table")
+        .schema(customSchema)
+        .load()
+
+      assert(carbonDF.schema.map(_.name) === Seq("c1", "c2", "number"))
+      val carbonDF2 = carbonDF.drop("c1")
+      assert(carbonDF2.schema.map(_.name) === Seq("c2", "number"))
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        assert(false)
+    } finally {
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test("test drop columns for table of using carbon") {
+    // TODO: should support drop columns for carbon dataSource table
+    // Limit from spark
+    import spark.implicits._
+    import spark._
+    try {
+      val df = spark.sparkContext.parallelize(1 to 10)
+        .map(x => ("a" + x % 10, "b", x))
+        .toDF("c1", "c2", "number")
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS carbon_table")
+      // Saves dataFrame to carbon file
+      df.write
+        .format("parquet").saveAsTable("test_parquet")
+      sql("CREATE TABLE carbon_table(c1 STRING, c2 STRING, number INT) USING carbon")
+      sql("INSERT INTO carbon_table SELECT * FROM test_parquet")
+      TestUtil.checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
+        sql("SELECT * FROM test_parquet WHERE c1='a1'"))
+      if (!sparkContext.version.startsWith("2.1")) {
+        val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+        DataMapStoreManager.getInstance()
+          .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+        assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+      }
+      assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
+      sql("ALTER TABLE carbon_table drop COLUMNS (a1 INT, b1 STRING) ")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting"))
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test("test rename table name for table of using carbon") {
+    import spark.implicits._
+    import spark._
+    try {
+      val df = spark.sparkContext.parallelize(1 to 10)
+        .map(x => ("a" + x % 10, "b", x))
+        .toDF("c1", "c2", "number")
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql("DROP TABLE IF EXISTS carbon_table2")
+      // Saves dataFrame to carbon file
+      df.write
+        .format("parquet").saveAsTable("test_parquet")
+      sql("CREATE TABLE carbon_table(c1 STRING, c2 STRING, number INT) USING carbon")
+      sql("INSERT INTO carbon_table SELECT * FROM test_parquet")
+      TestUtil.checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
+        sql("SELECT * FROM test_parquet WHERE c1='a1'"))
+      if (!sparkContext.version.startsWith("2.1")) {
+        val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+        DataMapStoreManager.getInstance()
+          .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+        assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+      }
+      assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
+      sql("ALTER TABLE carbon_table RENAME TO carbon_table2 ")
+      checkAnswer(sql("SELECT COUNT(*) FROM carbon_table2"), Seq(Row(10)));
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        assert(false)
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test("test change data type for table of using carbon") {
+    //TODO: Limit from spark
+    import spark.implicits._
+    import spark._
+    try {
+      val df = spark.sparkContext.parallelize(1 to 10)
+        .map(x => ("a" + x % 10, "b", x))
+        .toDF("c1", "c2", "number")
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql("DROP TABLE IF EXISTS carbon_table2")
+      // Saves dataFrame to carbon file
+      df.write
+        .format("parquet").saveAsTable("test_parquet")
+      sql("CREATE TABLE carbon_table(c1 STRING, c2 STRING, number decimal(8,2)) USING carbon")
+      sql("INSERT INTO carbon_table SELECT * FROM test_parquet")
+      TestUtil.checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
+        sql("SELECT * FROM test_parquet WHERE c1='a1'"))
+      if (!SparkUtil.isSparkVersionEqualTo("2.1")) {
+        val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+        DataMapStoreManager.getInstance()
+          .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+        assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+      }
+      assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
+      sql("ALTER TABLE carbon_table change number number decimal(9,4)")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("Operation not allowed: ALTER TABLE change"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          assert(e.getMessage.contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
+        }
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test("test add columns for table of using parquet") {
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, "b", x))
+      .toDF("c1", "c2", "number")
+    import spark._
+    try {
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS test_parquet2")
+      df.write
+        .format("parquet").saveAsTable("test_parquet")
+      sql("ALTER TABLE test_parquet ADD COLUMNS(a1 INT, b1 STRING) ")
+      sql("INSERT INTO test_parquet VALUES('Bob','xu',12,1,'parquet')")
+      TestUtil.checkAnswer(sql("SELECT COUNT(*) FROM test_parquet"), Seq(Row(11)))
+
+      sql("DROP TABLE IF EXISTS test_parquet2")
+      sql("CREATE TABLE test_parquet2(c1 STRING, c2 STRING, number INT) USING parquet")
+      sql("INSERT INTO test_parquet2 VALUES('Bob','xu',12)")
+      sql("ALTER TABLE test_parquet2 ADD COLUMNS (a1 INT, b1 STRING) ")
+      sql("INSERT INTO test_parquet2 VALUES('Bob','xu',12,1,'parquet')")
+      TestUtil.checkAnswer(sql("SELECT COUNT(*) FROM test_parquet2"), Seq(Row(2)))
+    } catch {
+      case e: Exception =>
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("ALTER TABLE test_parquet ADD COLUMNS"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          e.printStackTrace()
+          assert(false)
+        }
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS test_parquet2")
+    }
+  }
+
+  test("test drop columns for table of using parquet") {
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, "b", x))
+      .toDF("c1", "c2", "number")
+    import spark._
+
+    sql("DROP TABLE IF EXISTS test_parquet")
+    sql("DROP TABLE IF EXISTS test_parquet2")
+    df.write
+      .format("parquet").saveAsTable("test_parquet")
+
+    val df2 = df.drop("c1")
+
+    assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
+    assert(df2.schema.map(_.name) === Seq("c2", "number"))
+
+    try {
+      sql("ALTER TABLE test_parquet DROP COLUMNS(c1)")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting"))
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet")
+    }
+
+    sql("DROP TABLE IF EXISTS test_parquet2")
+    sql("CREATE TABLE test_parquet2(c1 STRING, c2 STRING, number INT) USING parquet")
+    sql("INSERT INTO test_parquet2 VALUES('Bob','xu',12)")
+    try {
+      sql("ALTER TABLE test_parquet2 DROP COLUMNS (a1 INT, b1 STRING) ")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("mismatched input 'COLUMNS' expecting"))
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet2")
+    }
+  }
+
+  test("test rename table name for table of using parquet") {
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, "b", x))
+      .toDF("c1", "c2", "number")
+    import spark._
+
+    sql("DROP TABLE IF EXISTS test_parquet")
+    sql("DROP TABLE IF EXISTS test_parquet2")
+    sql("DROP TABLE IF EXISTS test_parquet3")
+    sql("DROP TABLE IF EXISTS test_parquet22")
+    df.write
+      .format("parquet").saveAsTable("test_parquet")
+
+    try {
+      sql("ALTER TABLE test_parquet rename to test_parquet3")
+      checkAnswer(sql("SELECT COUNT(*) FROM test_parquet3"), Seq(Row(10)));
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        assert(false)
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet")
+      sql("DROP TABLE IF EXISTS test_parquet3")
+    }
+
+    sql("DROP TABLE IF EXISTS test_parquet2")
+    sql("CREATE TABLE test_parquet2(c1 STRING, c2 STRING, number INT) USING parquet")
+    sql("INSERT INTO test_parquet2 VALUES('Bob','xu',12)")
+    try {
+      sql("ALTER TABLE test_parquet2 rename to test_parquet22")
+      checkAnswer(sql("SELECT COUNT(*) FROM test_parquet22"), Seq(Row(1)));
+    } catch {
+      case e: Exception =>
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("Operation not allowed: ALTER TABLE CHANGE"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          e.printStackTrace()
+          assert(false)
+        }
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet2")
+      sql("DROP TABLE IF EXISTS test_parquet22")
+    }
+  }
+
+  test("test change data type for table of using parquet") {
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, "b", x))
+      .toDF("c1", "c2", "number")
+    import spark._
+
+    sql("DROP TABLE IF EXISTS test_parquet")
+    sql("DROP TABLE IF EXISTS test_parquet2")
+    df.write
+      .format("parquet").saveAsTable("test_parquet")
+    try {
+      sql("ALTER TABLE test_parquet CHANGE number number long")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("Operation not allowed: ALTER TABLE CHANGE"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          assert(e.getMessage.contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
+        }
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet")
+    }
+    sql("DROP TABLE IF EXISTS test_parquet2")
+    sql("CREATE TABLE test_parquet2(c1 STRING, c2 STRING, number INT) USING parquet")
+    sql("INSERT INTO test_parquet2 VALUES('Bob','xu',12)")
+    try {
+      sql("ALTER TABLE test_parquet2 CHANGE number number long")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          assert(e.getMessage.contains("Operation not allowed: ALTER TABLE CHANGE"))
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          assert(e.getMessage.contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
+        }
+    } finally {
+      sql("DROP TABLE IF EXISTS test_parquet2")
+    }
   }
 
   test("test read with df write") {
@@ -993,14 +1343,24 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
       var i = 0
       while (i < 11) {
-        val array = Array[String](s"name$i", s"$i" + "$" +s"$i.${i}12")
+        val array = Array[String](s"name$i", s"$i" + "\001" +s"$i.${i}12")
         writer.write(array)
         i += 1
       }
       writer.close()
-      spark.sql("create table complextable (stringfield string, structfield struct<bytefield: " +
-                "byte, floatfield: float>) " +
-                s"using carbon location '$path'")
+      if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+        if (!FileFactory.isFileExist(path)) {
+          FileFactory.createDirectoryAndSetPermission(path,
+            new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+        }
+        spark.sql("create table complextable (stringfield string, structfield struct<bytefield: " +
+          "byte, floatfield: float>) " +
+          s"using carbon options(path '$path')")
+      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        spark.sql("create table complextable (stringfield string, structfield struct<bytefield: " +
+          "byte, floatfield: float>) " +
+          s"using carbon location '$path'")
+      }
     } catch {
       case ex: Exception => throw new RuntimeException(ex)
       case _ => None
@@ -1052,13 +1412,33 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       writer.close()
       spark.sql("drop table if exists sorted_par")
       spark.sql("drop table if exists sort_table")
-      spark.sql(s"create table sort_table (age int, height double, name string, address string," +
-                s" salary long, bytefield byte) using carbon location '$path'")
-      FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(s"$warehouse1/../warehouse2"))
-      spark.sql(s"create table sorted_par(age int, height double, name string, address " +
-                s"string," +
-                s"salary long, bytefield byte) using parquet location " +
-                s"'$warehouse1/../warehouse2'")
+      val path2 = s"$warehouse1/../warehouse2";
+      if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+        if (!FileFactory.isFileExist(path)) {
+          FileFactory.createDirectoryAndSetPermission(path,
+            new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+        }
+        spark.sql(s"create table sort_table (age int, height double, name string, address string," +
+          s" salary long, bytefield byte) using carbon  options(path '$path')")
+        FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(s"$warehouse1/../warehouse2"))
+        if (!FileFactory.isFileExist(path2)) {
+          FileFactory.createDirectoryAndSetPermission(path2,
+            new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+        }
+        spark.sql(s"create table sorted_par(age int, height double, name string, address " +
+          s"string," +
+          s"salary long, bytefield byte) using parquet options(path " +
+          s"'$path2')")
+      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        spark.sql(s"create table sort_table (age int, height double, name string, address string," +
+          s" salary long, bytefield byte) using carbon location '$path'")
+        FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(s"$warehouse1/../warehouse2"))
+        spark.sql(s"create table sorted_par(age int, height double, name string, address " +
+          s"string," +
+          s"salary long, bytefield byte) using parquet location " +
+          s"'$warehouse1/../warehouse2'")
+      }
+
       (0 to 10).foreach {
         i =>
           spark.sql(s"insert into sorted_par select '$i', ${ i.toDouble / 2 }, 'name$i', " +
@@ -1093,15 +1473,26 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
       var i = 0
       while (i < 10) {
-        val array = Array[String](s"name$i",s"$i" + "$" + s"${i*2}", s"${i/2}" + "$" + s"${i/3}")
+        val array = Array[String](s"name$i",s"$i" + "\001" + s"${i*2}", s"${i/2}" + "\001" + s"${i/3}")
         writer.write(array)
         i += 1
       }
       writer.close()
-      spark.sql(s"create table complextable (stringfield string, bytearray " +
-                s"array<byte>, floatarray array<float>) using carbon " +
-                s"location " +
-                s"'$path'")
+      if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+        if (!FileFactory.isFileExist(path)) {
+          FileFactory.createDirectoryAndSetPermission(path,
+            new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+        }
+        spark.sql(s"create table complextable (stringfield string, bytearray " +
+          s"array<byte>, floatarray array<float>) using carbon " +
+          s"options( path " +
+          s"'$path')")
+      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        spark.sql(s"create table complextable (stringfield string, bytearray " +
+          s"array<byte>, floatarray array<float>) using carbon " +
+          s"location " +
+          s"'$path'")
+      }
     } catch {
       case ex: Exception => throw new RuntimeException(ex)
       case _ => None
@@ -1123,9 +1514,20 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
   private def createParquetTable {
     val path = FileFactory.getUpdatedFilePath(s"$warehouse1/../warehouse2")
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(s"$path"))
-    spark.sql(s"create table par_table(male boolean, age int, height double, name string, address " +
-              s"string," +
-              s"salary long, floatField float, bytefield byte) using parquet location '$path'")
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+      if (!FileFactory.isFileExist(path)) {
+        FileFactory.createDirectoryAndSetPermission(path,
+          new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+      }
+      spark.sql(s"create table par_table(male boolean, age int, height double, name string, address " +
+        s"string," +
+        s"salary long, floatField float, bytefield byte) using parquet options(path '$path')")
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      spark.sql(s"create table par_table(male boolean, age int, height double, name string, address " +
+        s"string," +
+        s"salary long, floatField float, bytefield byte) using parquet location '$path'")
+    }
+
     (0 to 10).foreach {
       i => spark.sql(s"insert into par_table select 'true','$i', ${i.toDouble / 2}, 'name$i', " +
                      s"'address$i', ${i*100}, $i.$i, '$i'")
@@ -1237,7 +1639,15 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     val rowCount = 3
     buildStructSchemaWithNestedArrayOfMapTypeAsValue(writerPath, rowCount)
     spark.sql("drop table if exists carbon_external")
-    spark.sql(s"create table carbon_external using carbon location '$writerPath'")
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+      if (!FileFactory.isFileExist(writerPath)) {
+        FileFactory.createDirectoryAndSetPermission(writerPath,
+          new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+      }
+      spark.sql(s"create table carbon_external using carbon options(path '$writerPath')")
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      spark.sql(s"create table carbon_external using carbon location '$writerPath'")
+    }
     assert(spark.sql("select * from carbon_external").count() == rowCount)
     spark.sql("drop table if exists carbon_external")
   }
@@ -1268,8 +1678,17 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
         i += 1
       }
       writer.close()
-      spark.sql(s"create table multi_page (a string, b float, c byte) using carbon location " +
-                s"'$path'")
+      if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+        if (!FileFactory.isFileExist(path)) {
+          FileFactory.createDirectoryAndSetPermission(path,
+            new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+        }
+        spark.sql(s"create table multi_page (a string, b float, c byte) using carbon options(path " +
+          s"'$path')")
+      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        spark.sql(s"create table multi_page (a string, b float, c byte) using carbon location " +
+          s"'$path'")
+      }
       assert(spark.sql("select * from multi_page").count() == 33000)
     } catch {
       case ex: Exception => throw new RuntimeException(ex)

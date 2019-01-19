@@ -17,14 +17,11 @@
 
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
+import java.io.File
 import java.util
 import java.util.concurrent.{Callable, ExecutorService, Executors, TimeUnit}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success}
 
 import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -209,8 +206,8 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select column3, sum(column3),column5, sum(column5) from maintable group by column3,column5")
     val df = sql("select * from maintable_agg0")
     val carbontable = getCarbonTable(df.queryExecution.analyzed)
-    assert(carbontable.getAllMeasures.size()==2)
-    assert(carbontable.getAllDimensions.size()==2)
+    assert(carbontable.getAllMeasures.size()==3)
+    assert(carbontable.getAllDimensions.size()==1)
     carbontable.getAllDimensions.asScala.foreach{ f =>
       assert(!f.getEncoder.contains(Encoding.DICTIONARY))
     }
@@ -221,8 +218,8 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select column3, sum(column3),column5, sum(column5) from maintable group by column3,column5,column2")
     val df = sql("select * from maintable_agg0")
     val carbontable = getCarbonTable(df.queryExecution.analyzed)
-    assert(carbontable.getAllMeasures.size()==2)
-    assert(carbontable.getAllDimensions.size()==3)
+    assert(carbontable.getAllMeasures.size()==3)
+    assert(carbontable.getAllDimensions.size()==2)
     carbontable.getAllDimensions.asScala.foreach{ f =>
       assert(!f.getEncoder.contains(Encoding.DICTIONARY))
     }

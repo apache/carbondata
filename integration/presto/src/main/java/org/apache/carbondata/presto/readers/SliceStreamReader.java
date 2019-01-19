@@ -17,14 +17,26 @@
 
 package org.apache.carbondata.presto.readers;
 
+import java.nio.charset.Charset;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.block.DictionaryBlock;
+import com.facebook.presto.spi.block.VariableWidthBlock;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.VarcharType;
+import io.airlift.slice.Slices;
 
 import static io.airlift.slice.Slices.wrappedBuffer;
 
@@ -39,46 +51,82 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   protected BlockBuilder builder;
 
-  int[] values;
-
   private Block dictionaryBlock;
 
+  private boolean isLocalDict;
+
+  private Dictionary globalDictionary;
+
   public SliceStreamReader(int batchSize, DataType dataType,
-      Block dictionaryBlock) {
+      Dictionary dictionary) {
     super(batchSize, dataType);
+    this.globalDictionary = dictionary;
     this.batchSize = batchSize;
-    if (dictionaryBlock == null) {
-      this.builder = type.createBlockBuilder(null, batchSize);
-    } else {
-      this.dictionaryBlock = dictionaryBlock;
-      this.values = new int[batchSize];
-    }
+    this.builder = type.createBlockBuilder(null, batchSize);
   }
 
   @Override public Block buildBlock() {
     if (dictionaryBlock == null) {
       return builder.build();
     } else {
-      return new DictionaryBlock(batchSize, dictionaryBlock, values);
+      int[] dataArray;
+      if (isLocalDict) {
+        dataArray = (int[]) ((CarbonColumnVectorImpl) getDictionaryVector()).getDataArray();
+      } else {
+        dataArray = (int[]) getDataArray();
+      }
+      return new DictionaryBlock(batchSize, dictionaryBlock, dataArray);
     }
   }
 
+  @Override public void setDictionary(CarbonDictionary dictionary) {
+    super.setDictionary(dictionary);
+    if (dictionary == null) {
+      dictionaryBlock = null;
+      this.isLocalDict = false;
+      return;
+    }
+    boolean[] nulls = new boolean[dictionary.getDictionarySize()];
+    nulls[0] = true;
+    nulls[1] = true;
+    int[] dictOffsets = new int[dictionary.getDictionarySize() + 1];
+    int size = 0;
+    for (int i = 0; i < dictionary.getDictionarySize(); i++) {
+      dictOffsets[i] = size;
+      if (dictionary.getDictionaryValue(i) != null) {
+        size += dictionary.getDictionaryValue(i).length;
+      }
+    }
+    byte[] singleArrayDictValues = new byte[size];
+    for (int i = 0; i < dictionary.getDictionarySize(); i++) {
+      if (dictionary.getDictionaryValue(i) != null) {
+        System.arraycopy(dictionary.getDictionaryValue(i), 0, singleArrayDictValues, dictOffsets[i],
+            dictionary.getDictionaryValue(i).length);
+      }
+    }
+    dictOffsets[dictOffsets.length - 1] = size;
+    dictionaryBlock = new VariableWidthBlock(dictionary.getDictionarySize(),
+        Slices.wrappedBuffer(singleArrayDictValues), dictOffsets, Optional.of(nulls));
+    this.isLocalDict = true;
+  }
   @Override public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
 
-  @Override public void putInt(int rowId, int value) {
-    values[rowId] = value;
-  }
+
 
   @Override public void putByteArray(int rowId, byte[] value) {
     type.writeSlice(builder, wrappedBuffer(value));
   }
 
   @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
-    byte[] byteArr = new byte[length];
-    System.arraycopy(value, offset, byteArr, 0, length);
-    type.writeSlice(builder, wrappedBuffer(byteArr));
+    type.writeSlice(builder, wrappedBuffer(value), offset, length);
+  }
+
+  @Override public void putByteArray(int rowId, int count, byte[] value) {
+    for (int i = 0; i < count; i++) {
+      type.writeSlice(builder, wrappedBuffer(value));
+    }
   }
 
   @Override public void putNull(int rowId) {
@@ -87,7 +135,38 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     }
   }
 
+  @Override public void putNulls(int rowId, int count) {
+    if (dictionaryBlock == null) {
+      for (int i = 0; i < count; ++i) {
+        builder.appendNull();
+      }
+    }
+  }
+
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
+  }
+
+  @Override public void putInt(int rowId, int value) {
+    Object data = DataTypeUtil
+        .getDataBasedOnDataType(globalDictionary.getDictionaryValueForKey(value), DataTypes.STRING);
+    if (Objects.isNull(data)) {
+      builder.appendNull();
+    } else {
+      type.writeSlice(builder, wrappedBuffer(
+          ((String) data).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))));
+    }
+  }
+
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      if (dictionaryBlock == null) {
+        putByteArray(rowId, ByteUtil.toBytes((String) value));
+      } else {
+        putInt(rowId, (int) value);
+      }
+    }
   }
 }

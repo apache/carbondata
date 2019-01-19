@@ -32,11 +32,11 @@ import org.apache.commons.lang.ArrayUtils;
  */
 public class ArrayParserImpl implements ComplexParser<ArrayObject> {
 
-  private Pattern pattern;
+  protected Pattern pattern;
 
-  private GenericParser child;
+  protected GenericParser child;
 
-  private String nullFormat;
+  protected String nullFormat;
 
   public ArrayParserImpl(String delimiter, String nullFormat) {
     pattern = Pattern.compile(CarbonUtil.delimiterConverter(delimiter));
@@ -56,6 +56,10 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
           }
           return new ArrayObject(array);
         }
+      } else if (value.isEmpty()) {
+        Object[] array = new Object[1];
+        array[0] = child.parse(value);
+        return new ArrayObject(array);
       }
     }
     return null;

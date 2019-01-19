@@ -26,7 +26,7 @@ import org.apache.spark.util.TaskCompletionListener
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.memory.UnsafeMemoryManager
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo
+import org.apache.carbondata.core.util.{DataTypeUtil, ThreadLocalTaskInfo}
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable
 
 /**
@@ -40,7 +40,7 @@ trait CarbonQueryTaskCompletionListener extends TaskCompletionListener
 trait CarbonLoadTaskCompletionListener extends TaskCompletionListener
 
 case class CarbonQueryTaskCompletionListenerImpl(iter: RecordReaderIterator[InternalRow],
-    freeMemory: Boolean) extends CarbonQueryTaskCompletionListener {
+    freeMemory: Boolean = false) extends CarbonQueryTaskCompletionListener {
   override def onTaskCompletion(context: TaskContext): Unit = {
     if (iter != null) {
       try {
@@ -53,7 +53,9 @@ case class CarbonQueryTaskCompletionListenerImpl(iter: RecordReaderIterator[Inte
     if (freeMemory) {
       UnsafeMemoryManager.INSTANCE
         .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      ThreadLocalTaskInfo.clearCarbonTaskInfo()
     }
+    DataTypeUtil.clearFormatter()
   }
 }
 
@@ -67,6 +69,8 @@ case class CarbonLoadTaskCompletionListenerImpl(recordWriter: RecordWriter[NullW
     } finally {
       UnsafeMemoryManager.INSTANCE
         .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      ThreadLocalTaskInfo.clearCarbonTaskInfo()
+      DataTypeUtil.clearFormatter()
     }
   }
 }

@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
@@ -60,8 +61,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileStatus;
@@ -71,6 +70,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.apache.log4j.Logger;
 
 /**
  * InputFormat for reading carbondata files with table level metadata support,
@@ -86,7 +86,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   // comma separated list of input files
   public static final String INPUT_FILES = "mapreduce.input.carboninputformat.files";
   private static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
-  private static final Log LOG = LogFactory.getLog(CarbonTableInputFormat.class);
+  private static final Logger LOG =
+      LogServiceFactory.getLogService(CarbonTableInputFormat.class.getName());
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
   private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
   private static final String CARBON_TRANSACTIONAL_TABLE =
@@ -633,7 +634,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       String segmentId = Segment.toSegment(blocklet.getSegmentId()).getSegmentNo();
       String key = CarbonUpdateUtil.getSegmentBlockNameKey(segmentId, blockName);
 
-      // if block is invalid then dont add the count
+      // if block is invalid then don't add the count
       SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
 
       if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus())) {

@@ -57,7 +57,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
           DataMapWriter.getDefaultDataMapPath(tableIdentifier.getTablePath(),
               segment.getSegmentNo(), dataMapName), segment.getConfiguration()));
     } catch (MemoryException e) {
-      LOGGER.error("failed to get lucene datamap , detail is {}" + e.getMessage());
+      LOGGER.error(String.format("failed to get lucene datamap, detail is %s", e.getMessage()));
       return lstDataMap;
     }
     lstDataMap.add(dataMap);
@@ -76,7 +76,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
     try {
       dataMap.init(new DataMapModel(indexPath, FileFactory.getConfiguration()));
     } catch (MemoryException e) {
-      LOGGER.error(String.format("failed to get lucene datamap , detail is %s", e.getMessage()));
+      LOGGER.error(String.format("failed to get lucene datamap, detail is %s", e.getMessage()));
       return lstDataMap;
     }
     lstDataMap.add(dataMap);
@@ -97,6 +97,8 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
       case ALTER_ADD_COLUMN:
         return true;
       case ALTER_CHANGE_DATATYPE:
+        return true;
+      case ALTER_COLUMN_RENAME:
         return true;
       case STREAMING:
         return false;

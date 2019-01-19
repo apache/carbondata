@@ -19,6 +19,7 @@ package org.apache.carbondata.streaming.parser
 
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
+import java.util
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
@@ -28,8 +29,7 @@ object FieldConverter {
    * Return a String representation of the input value
    * @param value input value
    * @param serializationNullFormat string for null value
-   * @param delimiterLevel1 level 1 delimiter for complex type
-   * @param delimiterLevel2 level 2 delimiter for complex type
+   * @param complexDelimiters List of Complex Delimiters
    * @param timeStampFormat timestamp format
    * @param dateFormat date format
    * @param isVarcharType whether it is varchar type. A varchar type has no string length limit
@@ -38,12 +38,11 @@ object FieldConverter {
   def objectToString(
       value: Any,
       serializationNullFormat: String,
-      delimiterLevel1: String,
-      delimiterLevel2: String,
+      complexDelimiters: util.ArrayList[String],
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
       isVarcharType: Boolean = false,
-      level: Int = 1): String = {
+      level: Int = 0): String = {
     if (value == null) {
       serializationNullFormat
     } else {
@@ -66,30 +65,35 @@ object FieldConverter {
         case bs: Array[Byte] => new String(bs,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))
         case s: scala.collection.Seq[Any] =>
-          val delimiter = if (level == 1) {
-            delimiterLevel1
-          } else {
-            delimiterLevel2
-          }
+          val delimiter = complexDelimiters.get(level)
           val builder = new StringBuilder()
           s.foreach { x =>
-            builder.append(objectToString(x, serializationNullFormat, delimiterLevel1,
-              delimiterLevel2, timeStampFormat, dateFormat, isVarcharType, level + 1))
+            builder.append(objectToString(x, serializationNullFormat, complexDelimiters,
+              timeStampFormat, dateFormat, isVarcharType, level + 1))
               .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())
+        // First convert the 'key' of Map and then append the keyValueDelimiter and then convert
+        // the 'value of the map and append delimiter
         case m: scala.collection.Map[_, _] =>
-          throw new Exception("Unsupported data type: Map")
-        case r: org.apache.spark.sql.Row =>
-          val delimiter = if (level == 1) {
-            delimiterLevel1
-          } else {
-            delimiterLevel2
+          val delimiter = complexDelimiters.get(level)
+          val keyValueDelimiter = complexDelimiters.get(level + 1)
+          val builder = new StringBuilder()
+          m.foreach { x =>
+            builder.append(objectToString(x._1, serializationNullFormat, complexDelimiters,
+              timeStampFormat, dateFormat, isVarcharType, level + 2))
+              .append(keyValueDelimiter)
+            builder.append(objectToString(x._2, serializationNullFormat, complexDelimiters,
+              timeStampFormat, dateFormat, isVarcharType, level + 2))
+              .append(delimiter)
           }
+          builder.substring(0, builder.length - delimiter.length())
+        case r: org.apache.spark.sql.Row =>
+          val delimiter = complexDelimiters.get(level)
           val builder = new StringBuilder()
           for (i <- 0 until r.length) {
-            builder.append(objectToString(r(i), serializationNullFormat, delimiterLevel1,
-              delimiterLevel2, timeStampFormat, dateFormat, isVarcharType, level + 1))
+            builder.append(objectToString(r(i), serializationNullFormat, complexDelimiters,
+              timeStampFormat, dateFormat, isVarcharType, level + 1))
               .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())

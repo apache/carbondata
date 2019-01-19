@@ -273,7 +273,7 @@ object SimpleQueryBenchmark {
     }
   }
 
-  // run testcases and print comparison result
+  // run test cases and print comparison result
   private def runTest(spark: SparkSession, table1: String, table2: String): Unit = {
     val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     val date = new Date

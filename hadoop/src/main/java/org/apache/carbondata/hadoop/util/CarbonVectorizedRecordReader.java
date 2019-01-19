@@ -19,8 +19,7 @@ package org.apache.carbondata.hadoop.util;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
@@ -68,6 +67,10 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   private AbstractDetailQueryResultIterator iterator;
 
   private QueryModel queryModel;
+  //This holds mapping of  fetch index with respect to project col index.
+  // it is used when same col is used in projection many times.So need to fetch only that col.
+  private List<Integer> projectionMapping = new ArrayList<>();
+
 
   public CarbonVectorizedRecordReader(QueryModel queryModel) {
     this.queryModel = queryModel;
@@ -87,6 +90,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
                 ((CarbonInputSplit) inputSplit).getDetailInfo().getBlockSize() - 8,
                 8);
         ((CarbonInputSplit) inputSplit).getDetailInfo().setBlockFooterOffset(buffer.getLong());
+        reader.finish();
       }
       splitList = new ArrayList<>(1);
       splitList.add((CarbonInputSplit) inputSplit);
@@ -155,10 +159,19 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
         }
       }
       CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
+
+      Map<String, Integer> colmap = new HashMap<>();
       for (int i = 0; i < fields.length; i++) {
         vectors[i] = new CarbonColumnVectorImpl(
-            CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT,
-            fields[i].getDataType());
+                CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT,
+                fields[i].getDataType());
+        if (colmap.containsKey(fields[i].getFieldName())) {
+          int reusedIndex = colmap.get(fields[i].getFieldName());
+          projectionMapping.add(reusedIndex);
+        } else {
+          colmap.put(fields[i].getFieldName(), i);
+          projectionMapping.add(i);
+        }
       }
       carbonColumnarBatch = new CarbonColumnarBatch(vectors,
           CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT,
@@ -166,27 +179,37 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     }
   }
 
+  // if same col is given in projection many time then below logic is used to scan only once
+  // Ex. project cols=C1,C2,C3,C2 , projectionMapping holds[0,1,2,1]
+  // Row will be formed based on projectionMapping.
   @Override
   public Object getCurrentValue() throws IOException, InterruptedException {
     rowCount += 1;
-    Object[] row = new Object[carbonColumnarBatch.columnVectors.length];
-    for (int i = 0; i < carbonColumnarBatch.columnVectors.length; i ++) {
-      Object data = carbonColumnarBatch.columnVectors[i].getData(batchIdx - 1);
-      if (carbonColumnarBatch.columnVectors[i].getType() == DataTypes.STRING
-          || carbonColumnarBatch.columnVectors[i].getType() == DataTypes.VARCHAR) {
-        if (data == null) {
-          row[i] = null;
-        } else {
-          row[i] = ByteUtil.toString((byte[]) data, 0, (((byte[]) data).length));
-        }
-      } else if (carbonColumnarBatch.columnVectors[i].getType() == DataTypes.BOOLEAN) {
-        if (data == null) {
-          row[i] = null;
-        } else {
-          row[i] = ByteUtil.toBoolean((byte) data);
-        }
+    Object[] row = new Object[projectionMapping.size()];
+    for (int i = 0; i < projectionMapping.size(); i ++) {
+      // if projectionMapping.get(i) <i it means row is fetched already
+      if (projectionMapping.get(i) < i) {
+        row[i] = row[projectionMapping.get(i)];
       } else {
-        row[i] = carbonColumnarBatch.columnVectors[i].getData(batchIdx - 1);
+        Object data = carbonColumnarBatch.columnVectors[projectionMapping.get(i)]
+                .getData(batchIdx - 1);
+        if (carbonColumnarBatch.columnVectors[i].getType() == DataTypes.STRING
+                || carbonColumnarBatch.columnVectors[i].getType() == DataTypes.VARCHAR) {
+          if (data == null) {
+            row[i] = null;
+          } else {
+            row[i] = ByteUtil.toString((byte[]) data, 0, (((byte[]) data).length));
+          }
+        } else if (carbonColumnarBatch.columnVectors[i].getType() == DataTypes.BOOLEAN) {
+          if (data == null) {
+            row[i] = null;
+          } else {
+            row[i] = ByteUtil.toBoolean((byte) data);
+          }
+        } else {
+          row[i] = carbonColumnarBatch.columnVectors[projectionMapping.get(i)]
+                  .getData(batchIdx - 1);
+        }
       }
     }
     return row;

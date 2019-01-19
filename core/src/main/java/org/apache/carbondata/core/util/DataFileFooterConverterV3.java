@@ -73,6 +73,11 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     dataFileFooter.setNumberOfRows(footer.getNum_rows());
     dataFileFooter.setSegmentInfo(getSegmentInfo(footer.getSegment_info()));
     dataFileFooter.setSchemaUpdatedTimeStamp(fileHeader.getTime_stamp());
+    if (footer.isSetIs_sort()) {
+      dataFileFooter.setSorted(footer.isIs_sort());
+    } else {
+      dataFileFooter.setSorted(null);
+    }
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
     for (int i = 0; i < table_columns.size(); i++) {

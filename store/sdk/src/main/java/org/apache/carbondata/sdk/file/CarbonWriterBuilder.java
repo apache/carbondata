@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -46,6 +47,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
+import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -57,14 +59,16 @@ import org.apache.hadoop.conf.Configuration;
 public class CarbonWriterBuilder {
   private Schema schema;
   private String path;
-  private String[] sortColumns;
+  //initialize with empty array , as no columns should be selected for sorting in NO_SORT
+  private String[] sortColumns = new String[0];
   private int blockletSize;
   private int blockSize;
   private long timestamp;
   private Map<String, String> options;
   private String taskNo;
   private int localDictionaryThreshold;
-  private boolean isLocalDictionaryEnabled;
+  private boolean isLocalDictionaryEnabled = Boolean.parseBoolean(
+          CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT);
   private short numOfThreads;
   private Configuration hadoopConf;
   private String writtenByApp;
@@ -77,8 +81,9 @@ public class CarbonWriterBuilder {
 
   /**
    * Sets the output path of the writer builder
+   *
    * @param path is the absolute path where output files are written
-   * This method must be called when building CarbonWriterBuilder
+   *             This method must be called when building CarbonWriterBuilder
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder outputPath(String path) {
@@ -89,15 +94,16 @@ public class CarbonWriterBuilder {
 
   /**
    * sets the list of columns that needs to be in sorted order
+   *
    * @param sortColumns is a string array of columns that needs to be sorted.
-   * If it is null or by default all dimensions are selected for sorting
-   * If it is empty array, no columns are sorted
+   *                    If it is null or by default all dimensions are selected for sorting
+   *                    If it is empty array, no columns are sorted
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder sortBy(String[] sortColumns) {
     if (sortColumns != null) {
       for (int i = 0; i < sortColumns.length; i++) {
-        sortColumns[i] = sortColumns[i].toLowerCase();
+        sortColumns[i] = sortColumns[i].toLowerCase().trim();
       }
     }
     this.sortColumns = sortColumns;
@@ -114,7 +120,7 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder invertedIndexFor(String[] invertedIndexColumns) {
     if (invertedIndexColumns != null) {
       for (int i = 0; i < invertedIndexColumns.length; i++) {
-        invertedIndexColumns[i] = invertedIndexColumns[i].toLowerCase();
+        invertedIndexColumns[i] = invertedIndexColumns[i].toLowerCase().trim();
       }
     }
     this.invertedIndexColumns = invertedIndexColumns;
@@ -124,8 +130,9 @@ public class CarbonWriterBuilder {
   /**
    * sets the taskNo for the writer. SDKs concurrently running
    * will set taskNo in order to avoid conflicts in file's name during write.
+   *
    * @param taskNo is the TaskNo user wants to specify.
-   * by default it is system time in nano seconds.
+   *               by default it is system time in nano seconds.
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder taskNo(long taskNo) {
@@ -135,8 +142,9 @@ public class CarbonWriterBuilder {
 
   /**
    * to set the timestamp in the carbondata and carbonindex index files
+   *
    * @param timestamp is a timestamp to be used in the carbondata and carbonindex index files.
-   * By default set to zero.
+   *                  By default set to zero.
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder uniqueIdentifier(long timestamp) {
@@ -166,8 +174,8 @@ public class CarbonWriterBuilder {
    * c. bad_record_path -- ""
    * d. dateformat -- "" , uses from carbon.properties file
    * e. timestampformat -- "", uses from carbon.properties file
-   * f. complex_delimiter_level_1 -- "$"
-   * g. complex_delimiter_level_2 -- ":"
+   * f. complex_delimiter_level_1 -- "\001"
+   * g. complex_delimiter_level_2 -- "\002"
    * h. quotechar -- "\""
    * i. escapechar -- "\\"
    *
@@ -176,7 +184,7 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder withLoadOptions(Map<String, String> options) {
     Objects.requireNonNull(options, "Load options should not be null");
     //validate the options.
-    for (String option: options.keySet()) {
+    for (String option : options.keySet()) {
       if (!option.equalsIgnoreCase("bad_records_logger_enable") &&
           !option.equalsIgnoreCase("bad_records_action") &&
           !option.equalsIgnoreCase("bad_record_path") &&
@@ -184,10 +192,40 @@ public class CarbonWriterBuilder {
           !option.equalsIgnoreCase("timestampformat") &&
           !option.equalsIgnoreCase("complex_delimiter_level_1") &&
           !option.equalsIgnoreCase("complex_delimiter_level_2") &&
+          !option.equalsIgnoreCase("complex_delimiter_level_3") &&
           !option.equalsIgnoreCase("quotechar") &&
           !option.equalsIgnoreCase("escapechar")) {
         throw new IllegalArgumentException("Unsupported option:" + option
             + ". Refer method header or documentation");
+      }
+    }
+
+    for (Map.Entry<String, String> entry : options.entrySet()) {
+      if (entry.getKey().equalsIgnoreCase("bad_records_action")) {
+        try {
+          LoggerAction.valueOf(entry.getValue().toUpperCase());
+        } catch (Exception e) {
+          throw new IllegalArgumentException(
+              "option BAD_RECORDS_ACTION can have only either " +
+                  "FORCE or IGNORE or REDIRECT or FAIL. It shouldn't be " + entry.getValue());
+        }
+      } else if (entry.getKey().equalsIgnoreCase("bad_records_logger_enable")) {
+        boolean isValid;
+        isValid = CarbonUtil.validateBoolean(entry.getValue());
+        if (!isValid) {
+          throw new IllegalArgumentException("Invalid value "
+              + entry.getValue() + " for key " + entry.getKey());
+        }
+      } else if (entry.getKey().equalsIgnoreCase("quotechar")) {
+        String quoteChar = entry.getValue();
+        if (quoteChar.length() > 1) {
+          throw new IllegalArgumentException("QUOTECHAR cannot be more than one character.");
+        }
+      } else if (entry.getKey().equalsIgnoreCase("escapechar")) {
+        String escapeChar = entry.getValue();
+        if (escapeChar.length() > 1 && !CarbonLoaderUtil.isValidEscapeSequence(escapeChar)) {
+          throw new IllegalArgumentException("ESCAPECHAR cannot be more than one character.");
+        }
       }
     }
 
@@ -196,6 +234,22 @@ public class CarbonWriterBuilder {
       this.options = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
     this.options.putAll(options);
+    return this;
+  }
+
+  /**
+   * To support the load options for sdk writer
+   *
+   * @param key   the key of load option
+   * @param value the value of load option
+   * @return updated CarbonWriterBuilder object
+   */
+  public CarbonWriterBuilder withLoadOption(String key, String value) {
+    Objects.requireNonNull(key, "key of load properties should not be null");
+    Objects.requireNonNull(key, "value of load properties should not be null");
+    Map map = new HashMap();
+    map.put(key, value);
+    withLoadOptions(map);
     return this;
   }
 
@@ -269,6 +323,22 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * To support the table properties for sdk writer
+   *
+   * @param key   property key
+   * @param value property value
+   * @return CarbonWriterBuilder object
+   */
+  public CarbonWriterBuilder withTableProperty(String key, String value) {
+    Objects.requireNonNull(key, "key of table properties should not be null");
+    Objects.requireNonNull(key, "value of table properties  should not be null");
+    Map map = new HashMap();
+    map.put(key, value);
+    withTableProperties(map);
+    return this;
+  }
+
+  /**
    * To make sdk writer thread safe.
    *
    * @param numOfThreads should number of threads in which writer is called in multi-thread scenario
@@ -299,7 +369,7 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * configure hadoop configuration with key value
+   * Updates the hadoop configuration with the given key value
    *
    * @param key   key word
    * @param value value
@@ -315,8 +385,9 @@ public class CarbonWriterBuilder {
 
   /**
    * To set the carbondata file size in MB between 1MB-2048MB
+   *
    * @param blockSize is size in MB between 1MB to 2048 MB
-   * default value is 1024 MB
+   *                  default value is 1024 MB
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withBlockSize(int blockSize) {
@@ -328,7 +399,7 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * @param localDictionaryThreshold is localDictionaryThreshold,default is 10000
+   * @param localDictionaryThreshold is localDictionaryThreshold, default is 10000
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder localDictionaryThreshold(int localDictionaryThreshold) {
@@ -350,7 +421,7 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * @param enableLocalDictionary enable local dictionary  , default is false
+   * @param enableLocalDictionary enable local dictionary, default is false
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder enableLocalDictionary(boolean enableLocalDictionary) {
@@ -361,8 +432,9 @@ public class CarbonWriterBuilder {
 
   /**
    * To set the blocklet size of CarbonData file
+   *
    * @param blockletSize is blocklet size in MB
-   * default value is 64 MB
+   *                     default value is 64 MB
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withBlockletSize(int blockletSize) {
@@ -501,6 +573,19 @@ public class CarbonWriterBuilder {
     }
     // for the longstring field, change the datatype from string to varchar
     this.schema = updateSchemaFields(carbonSchema, longStringColumns);
+    if (sortColumns != null && sortColumns.length != 0) {
+      if (options == null || options.get("sort_scope") == null) {
+        // If sort_columns are specified and sort_scope is not specified,
+        // change sort scope to local_sort as now by default sort scope is no_sort.
+        if (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
+            == null) {
+          if (options == null) {
+            options = new HashMap<>();
+          }
+          options.put("sort_scope", "local_sort");
+        }
+      }
+    }
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
     // build LoadModel
@@ -708,7 +793,6 @@ public class CarbonWriterBuilder {
     Field[] fields =  schema.getFields();
     for (int i = 0; i < fields.length; i++) {
       if (fields[i] != null) {
-        fields[i].updateNameToLowerCase();
         if (longStringColumns != null) {
           /* Also update the string type to varchar */
           if (longStringColumns.contains(fields[i].getFieldName())) {

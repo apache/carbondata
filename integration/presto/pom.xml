@@ -169,10 +169,6 @@
           <artifactId>compress-lzf</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.roaringbitmap</groupId>
-          <artifactId>RoaringBitmap</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>com.thoughtworks.paranamer</groupId>
           <artifactId>paranamer</artifactId>
         </exclusion>
@@ -409,6 +405,25 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>com.facebook.presto</groupId>
+      <artifactId>presto-hive</artifactId>
+      <version>${presto.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.openjdk.jol</groupId>
+          <artifactId>jol-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-runtime</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
       <version>1.4.1</version>
@@ -437,13 +452,11 @@
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-network-common_${scala.binary.version}</artifactId>
       <scope>test</scope>
-      <version>${spark.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_${scala.binary.version}</artifactId>
       <scope>test</scope>
-      <version>${spark.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.hadoop</groupId>
@@ -487,7 +500,12 @@
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
       <scope>test</scope>
-      <version>${spark.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-store-sdk</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.lz4</groupId>
@@ -540,7 +558,7 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
-      <version>4.2</version>
+      <version>${httpcore.version}</version>
     </dependency>
   </dependencies>
 

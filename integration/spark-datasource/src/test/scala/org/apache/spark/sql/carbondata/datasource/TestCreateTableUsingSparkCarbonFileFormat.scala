@@ -299,6 +299,28 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     cleanTestData()
   }
 
+  test("Test complex json nested data with empty array of struct data") {
+    val rootPath = new File(this.getClass.getResource("/").getPath
+                            + "../../../..").getCanonicalPath
+    val resource = s"$rootPath/integration/spark-datasource/src/test/resources/test_json.json"
+    val path = writerPath + "_json"
+    FileUtils.deleteDirectory(new File(path))
+    val json = spark.read.json(s"$resource")
+    json.write.format("carbon").save(s"$path")
+    spark.sql("DROP TABLE IF EXISTS test_json")
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+      spark.sql(s"""CREATE TABLE test_json USING carbon OPTIONS (PATH '$path') """)
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      spark.sql(
+        s"""CREATE TABLE test_json USING carbon LOCATION
+           |'$path' """.stripMargin)
+    } else {
+    }
+    assert(spark.sql("select age from test_json").collect().length == 1)
+    spark.sql("DROP TABLE IF EXISTS test_json")
+    FileUtils.deleteDirectory(new File(path))
+  }
+
   test("Read sdk writer output file without index file should not fail") {
     buildTestData()
     deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
@@ -428,7 +450,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     val schema = new StringBuilder()
       .append("[ \n")
       .append("   {\"name\":\"string\"},\n")
-      .append("   {\"address\":\"varchar\"},\n")
+      .append("   {\"  address    \":\"varchar\"},\n")
       .append("   {\"age\":\"int\"},\n")
       .append("   {\"note\":\"varchar\"}\n")
       .append("]")

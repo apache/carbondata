@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -65,8 +66,7 @@ public class CarbonLoadModel implements Serializable {
   private String csvHeader;
   private String[] csvHeaderColumns;
   private String csvDelimiter;
-  private String complexDelimiterLevel1;
-  private String complexDelimiterLevel2;
+  private ArrayList<String> complexDelimiters;
 
   private List<LoadMetadataDetails> loadMetadataDetails;
   private transient SegmentUpdateStatusManager segmentUpdateStatusManager;
@@ -218,7 +218,7 @@ public class CarbonLoadModel implements Serializable {
   private boolean isJsonFileLoad;
 
   /**
-   * Flder path to where data should be written for this load.
+   * Folder path to where data should be written for this load.
    */
   private String dataWritePath;
 
@@ -233,6 +233,22 @@ public class CarbonLoadModel implements Serializable {
    * compressor used to compress column page
    */
   private String columnCompressor;
+
+  /**
+   * the total size of loading data
+   */
+  private long totalSize;
+
+  /**
+   * range partition data by this column
+   */
+  private CarbonColumn rangePartitionColumn;
+
+  /**
+   * control the file size of input data for each range partition
+   * input size = max(bockletSize, (blockSize - blocketSize)) * scaleFactor
+   */
+  private int scaleFactor;
 
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;
@@ -276,20 +292,14 @@ public class CarbonLoadModel implements Serializable {
     this.csvDelimiter = csvDelimiter;
   }
 
-  public String getComplexDelimiterLevel1() {
-    return complexDelimiterLevel1;
+  public void setComplexDelimiter(String delimiter) {
+    checkAndInitializeComplexDelimiterList();
+    this.complexDelimiters.add(delimiter);
   }
 
-  public void setComplexDelimiterLevel1(String complexDelimiterLevel1) {
-    this.complexDelimiterLevel1 = complexDelimiterLevel1;
-  }
-
-  public String getComplexDelimiterLevel2() {
-    return complexDelimiterLevel2;
-  }
-
-  public void setComplexDelimiterLevel2(String complexDelimiterLevel2) {
-    this.complexDelimiterLevel2 = complexDelimiterLevel2;
+  public ArrayList<String> getComplexDelimiters() {
+    checkAndInitializeComplexDelimiterList();
+    return complexDelimiters;
   }
 
   public String getAllDictPath() {
@@ -441,8 +451,7 @@ public class CarbonLoadModel implements Serializable {
     copy.csvHeader = csvHeader;
     copy.csvHeaderColumns = csvHeaderColumns;
     copy.csvDelimiter = csvDelimiter;
-    copy.complexDelimiterLevel1 = complexDelimiterLevel1;
-    copy.complexDelimiterLevel2 = complexDelimiterLevel2;
+    copy.complexDelimiters = complexDelimiters;
     copy.carbonDataLoadSchema = carbonDataLoadSchema;
     copy.blocksID = blocksID;
     copy.taskNo = taskNo;
@@ -500,8 +509,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.csvHeader = header;
     copyObj.csvHeaderColumns = csvHeaderColumns;
     copyObj.csvDelimiter = delimiter;
-    copyObj.complexDelimiterLevel1 = complexDelimiterLevel1;
-    copyObj.complexDelimiterLevel2 = complexDelimiterLevel2;
+    copyObj.complexDelimiters = complexDelimiters;
     copyObj.blocksID = blocksID;
     copyObj.taskNo = taskNo;
     copyObj.factTimeStamp = factTimeStamp;
@@ -631,7 +639,16 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String[] getDelimiters() {
-    return new String[] { complexDelimiterLevel1, complexDelimiterLevel2 };
+    checkAndInitializeComplexDelimiterList();
+    String[] delimiters = new String[complexDelimiters.size()];
+    delimiters = complexDelimiters.toArray(delimiters);
+    return delimiters;
+  }
+
+  private void checkAndInitializeComplexDelimiterList() {
+    if (null == complexDelimiters) {
+      complexDelimiters = new ArrayList<>();
+    }
   }
 
   /**
@@ -935,5 +952,29 @@ public class CarbonLoadModel implements Serializable {
 
   public void setColumnCompressor(String columnCompressor) {
     this.columnCompressor = columnCompressor;
+  }
+
+  public CarbonColumn getRangePartitionColumn() {
+    return rangePartitionColumn;
+  }
+
+  public void setRangePartitionColumn(CarbonColumn rangePartitionColumn) {
+    this.rangePartitionColumn = rangePartitionColumn;
+  }
+
+  public long getTotalSize() {
+    return totalSize;
+  }
+
+  public void setTotalSize(long totalSize) {
+    this.totalSize = totalSize;
+  }
+
+  public void setScaleFactor(int scaleFactor) {
+    this.scaleFactor = scaleFactor;
+  }
+
+  public int getScaleFactor() {
+    return scaleFactor;
   }
 }

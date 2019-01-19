@@ -49,27 +49,23 @@ public class CarbonBloomFilter extends BloomFilter {
 
   @Override
   public boolean membershipTest(Key key) {
-    if (key == null) {
-      throw new NullPointerException("key cannot be null");
-    }
-
-    int[] h = hash.hash(key);
-    hash.clear();
     if (compress) {
       // If it is compressed check in roaring bitmap
+      if (key == null) {
+        throw new NullPointerException("key cannot be null");
+      }
+      int[] h = hash.hash(key);
+      hash.clear();
       for (int i = 0; i < nbHash; i++) {
         if (!bitmap.contains(h[i])) {
           return false;
         }
       }
+      return true;
     } else {
-      for (int i = 0; i < nbHash; i++) {
-        if (!bits.get(h[i])) {
-          return false;
-        }
-      }
+      // call super method to avoid IllegalAccessError for `bits` field
+      return super.membershipTest(key);
     }
-    return true;
   }
 
   @Override

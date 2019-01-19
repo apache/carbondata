@@ -66,16 +66,19 @@ public class CarbonLockFactory {
     }
     if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
       return new ZooKeeperLocking(absoluteLockPath, lockFile);
-    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.S3A_PREFIX) || absoluteLockPath
-        .startsWith(CarbonCommonConstants.S3N_PREFIX) || absoluteLockPath
-        .startsWith(CarbonCommonConstants.S3_PREFIX)) {
+    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
+            absoluteLockPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
+            absoluteLockPath.startsWith(CarbonCommonConstants.S3_PREFIX)) {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_S3;
       return new S3FileLock(absoluteLockPath,
-          lockFile);
-    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || absoluteLockPath
-        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+                lockFile);
+    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)
+            || absoluteLockPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS;
       return new HdfsFileLock(absoluteLockPath, lockFile);
+    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_ALLUXIO;
+      return new AlluxioFileLock(absoluteLockPath, lockFile);
     } else {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL;
       return new LocalFileLock(absoluteLockPath, lockFile);
@@ -83,9 +86,9 @@ public class CarbonLockFactory {
   }
 
   /**
-   * If user has configured carbon.lock.path the same property will be used to store lock files.
-   * If not configured then use locFileLocation parameter.
+   *
    * @param locFileLocation
+   * @param lockFile
    * @return carbon lock
    */
   public static ICarbonLock getSystemLevelCarbonLockObj(String locFileLocation, String lockFile) {
@@ -104,6 +107,8 @@ public class CarbonLockFactory {
         return new HdfsFileLock(lockFileLocation, lockFile);
       case CarbonCommonConstants.CARBON_LOCK_TYPE_S3:
         return new S3FileLock(lockFileLocation, lockFile);
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_ALLUXIO:
+        return new AlluxioFileLock(lockFileLocation, lockFile);
       default:
         throw new UnsupportedOperationException("Not supported the lock type");
     }

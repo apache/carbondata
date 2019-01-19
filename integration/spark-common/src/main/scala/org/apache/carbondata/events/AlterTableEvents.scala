@@ -20,7 +20,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command._
 
-import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
@@ -42,7 +41,7 @@ case class AlterTableDropColumnPreEvent(
  * @param carbonTable
  * @param alterTableDataTypeChangeModel
  */
-case class AlterTableDataTypeChangePreEvent(
+case class AlterTableColRenameAndDataTypeChangePreEvent(
     sparkSession: SparkSession,
     carbonTable: CarbonTable,
         alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)
@@ -54,7 +53,7 @@ case class AlterTableDataTypeChangePreEvent(
  * @param carbonTable
  * @param alterTableDataTypeChangeModel
  */
-case class AlterTableDataTypeChangePostEvent(
+case class AlterTableColRenameAndDataTypeChangePostEvent(
     sparkSession: SparkSession,
     carbonTable: CarbonTable,
     alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)

@@ -110,7 +110,29 @@ case class PreAggregateTableHelper(
     // Datamap table name and columns are automatically added prefix with parent table name
     // in carbon. For convenient, users can type column names same as the ones in select statement
     // when config dmproperties, and here we update column names with prefix.
-    val longStringColumn = tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS)
+    // If longStringColumn is not present in dm properties then we take long_string_columns from
+    // the parent table.
+    var longStringColumn = tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS)
+    if (longStringColumn.isEmpty) {
+      val longStringColumnInParents = parentTable.getTableInfo.getFactTable.getTableProperties
+        .asScala
+        .getOrElse(CarbonCommonConstants.LONG_STRING_COLUMNS, "").split(",").map(_.trim)
+      val varcharDatamapFields = scala.collection.mutable.ArrayBuffer.empty[String]
+      fieldRelationMap foreach (fields => {
+        val aggFunc = fields._2.aggregateFunction
+        val relationList = fields._2.columnTableRelationList
+        // check if columns present in datamap are long_string_col in parent table. If they are
+        // long_string_columns in parent, make them long_string_columns in datamap
+        if (aggFunc.isEmpty && relationList.size == 1 && longStringColumnInParents
+          .contains(relationList.head.head.parentColumnName)) {
+          varcharDatamapFields += relationList.head.head.parentColumnName
+        }
+      })
+      if (!varcharDatamapFields.isEmpty) {
+        longStringColumn = Option(varcharDatamapFields.mkString(","))
+      }
+    }
+
     if (longStringColumn != None) {
       val fieldNames = fields.map(_.column)
       val newLongStringColumn = longStringColumn.get.split(",").map(_.trim).map{ colName =>
@@ -253,7 +275,8 @@ case class PreAggregateTableHelper(
       tableIdentifier,
       dataFrame,
       isOverwrite = false,
-      sparkSession = sparkSession)
+      sparkSession = sparkSession,
+      mutable.Map.empty[String, String])
     loadCommand.processMetadata(sparkSession)
     Seq.empty
   }

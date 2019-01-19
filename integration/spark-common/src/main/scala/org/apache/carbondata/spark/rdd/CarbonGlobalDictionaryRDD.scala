@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.rdd
 import java.io.{DataInputStream, InputStreamReader}
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
+import java.util
 import java.util.regex.Pattern
 
 import scala.collection.mutable
@@ -293,11 +294,12 @@ class CarbonBlockDistinctValuesCombineRDD(
         row = rddIter.next()
         if (row != null) {
           rowCount += 1
+          val complexDelimiters = new util.ArrayList[String]
+          model.delimiters.foreach(x => complexDelimiters.add(x))
           for (i <- 0 until dimNum) {
             dimensionParsers(i).parseString(CarbonScalaUtil.getString(row.get(i),
               model.serializationNullFormat,
-              model.delimiters(0),
-              model.delimiters(1),
+              complexDelimiters,
               timeStampFormat,
               dateFormat))
           }
@@ -481,12 +483,12 @@ class CarbonGlobalDictionaryGenerateRDD(
 }
 
 /**
- * Set column dictionry patition format
+ * Set column dictionary partition format
  *
  * @param id        partition id
  * @param dimension current carbon dimension
  */
-class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
+class CarbonColumnDictPartition(id: Int, dimension: CarbonDimension)
   extends Partition {
   override val index: Int = id
   val preDefDictDimension: CarbonDimension = dimension
@@ -497,9 +499,8 @@ class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
  * Use external column dict to generate global dictionary
  *
  * @param carbonLoadModel carbon load model
- * @param sparkSession    spark context
  * @param table           carbon table identifier
- * @param dimensions      carbon dimenisons having predefined dict
+ * @param dimensions      carbon dimensions having predefined dict
  * @param dictFolderPath  path of dictionary folder
  */
 class CarbonColumnDictGenerateRDD(
@@ -516,14 +517,14 @@ class CarbonColumnDictGenerateRDD(
     val primDimLength = primDimensions.length
     val result = new Array[Partition](primDimLength)
     for (i <- 0 until primDimLength) {
-      result(i) = new CarbonColumnDictPatition(i, primDimensions(i))
+      result(i) = new CarbonColumnDictPartition(i, primDimensions(i))
     }
     result
   }
 
   override def internalCompute(split: Partition, context: TaskContext)
   : Iterator[(Int, ColumnDistinctValues)] = {
-    val theSplit = split.asInstanceOf[CarbonColumnDictPatition]
+    val theSplit = split.asInstanceOf[CarbonColumnDictPartition]
     val primDimension = theSplit.preDefDictDimension
     // read the column dict data
     val preDefDictFilePath = carbonLoadModel.getPredefDictFilePath(primDimension)
@@ -578,4 +579,5 @@ class CarbonColumnDictGenerateRDD(
     Array((distinctValues._1,
       ColumnDistinctValues(distinctValues._2.toArray, 0L))).iterator
   }
+
 }

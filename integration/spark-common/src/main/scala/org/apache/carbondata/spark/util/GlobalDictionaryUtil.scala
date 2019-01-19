@@ -17,11 +17,10 @@
 
 package org.apache.carbondata.spark.util
 
-import java.nio.charset.Charset
 import java.util.regex.Pattern
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 import scala.language.implicitConversions
 import scala.util.control.Breaks.{break, breakable}
@@ -40,7 +39,7 @@ import org.apache.spark.sql._
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
@@ -48,17 +47,13 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTable
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
-import org.apache.carbondata.core.reader.CarbonDictionaryReader
-import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.writer.CarbonDictionaryWriter
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, StringArrayWritable}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.rdd._
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
@@ -182,7 +177,7 @@ object GlobalDictionaryUtil {
       case None =>
         None
       case Some(dim) =>
-        if (DataTypes.isArrayType(dim.getDataType)) {
+        if (DataTypes.isArrayType(dim.getDataType) || DataTypes.isMapType(dim.getDataType)) {
           val arrDim = ArrayParser(dim, format)
           generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, arrDim)
           Some(arrDim)
@@ -387,7 +382,7 @@ object GlobalDictionaryUtil {
    * @param table         carbon table identifier
    * @param colName       user specified  column name for predefined dict
    * @param colDictPath   column dictionary file path
-   * @param parentDimName parent dimenion for complex type
+   * @param parentDimName parent dimension for complex type
    */
   def setPredefineDict(carbonLoadModel: CarbonLoadModel,
       dimensions: Array[CarbonDimension],

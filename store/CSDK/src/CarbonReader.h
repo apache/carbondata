@@ -94,8 +94,8 @@ public:
     /**
      * Configure the projection column names of carbon reader
      *
-     * @param argc argument counter
-     * @param argv argument vector
+     * @param argc argument counter, the number of projection column
+     * @param argv argument vector, projection column names
      */
     void projection(int argc, char *argv[]);
 
@@ -108,7 +108,7 @@ public:
     void withHadoopConf(char *key, char *value);
 
     /**
-     * set batch size
+     * Sets the batch size of records to read
      *
      * @param batch batch size
      * @return CarbonReaderBuilder object

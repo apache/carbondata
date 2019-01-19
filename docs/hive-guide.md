@@ -55,12 +55,12 @@ $HADOOP_HOME/bin/hadoop fs -put sample.csv <hdfs store path>/sample.csv
 ```
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.CarbonSession._
-val rootPath = "hdfs:////user/hadoop/carbon"
+val rootPath = "hdfs:///user/hadoop/carbon"
 val storeLocation = s"$rootPath/store"
 val warehouse = s"$rootPath/warehouse"
-val metastoredb = s"$rootPath/metastore_db"
+val metaStoreDB = s"$rootPath/metastore_db"
 
-val carbon = SparkSession.builder().enableHiveSupport().config("spark.sql.warehouse.dir", warehouse).config(org.apache.carbondata.core.constants.CarbonCommonConstants.STORE_LOCATION, storeLocation).getOrCreateCarbonSession(storeLocation, metastoredb)
+val carbon = SparkSession.builder().enableHiveSupport().config("spark.sql.warehouse.dir", warehouse).config(org.apache.carbondata.core.constants.CarbonCommonConstants.STORE_LOCATION, storeLocation).getOrCreateCarbonSession(storeLocation, metaStoreDB)
 
 carbon.sql("create table hive_carbon(id int, name string, scale decimal, country string, salary double) STORED BY 'carbondata'")
 carbon.sql("LOAD DATA INPATH '<hdfs store path>/sample.csv' INTO TABLE hive_carbon")
@@ -84,7 +84,9 @@ export HADOOP_OPTS="-Dorg.xerial.snappy.lib.path=/Library/Java/Extensions -Dorg.
 ```
 
 ### Start hive client
+```
 $HIVE_HOME/bin/hive
+```
 
 ### Query data from hive table
 

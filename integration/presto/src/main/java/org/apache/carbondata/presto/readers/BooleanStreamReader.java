@@ -64,6 +64,16 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
     }
   }
 
+  @Override public void putByte(int rowId, byte value) {
+    type.writeBoolean(builder, value == 1);
+  }
+
+  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+    for (int i = 0; i < count; i++) {
+      type.writeBoolean(builder, src[srcIndex++] == 1);
+    }
+  }
+
   @Override public void putBoolean(int rowId, boolean value) {
     type.writeBoolean(builder, value);
   }
@@ -72,8 +82,25 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
     builder.appendNull();
   }
 
+  @Override public void putNulls(int rowId, int count) {
+    for (int i = 0; i < count; i++) {
+      builder.appendNull();
+    }
+  }
+
   @Override public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
   }
 
+  @Override public void putObject(int rowId, Object value) {
+    if (value == null) {
+      putNull(rowId);
+    } else {
+      if (dictionary == null) {
+        putBoolean(rowId, (boolean) value);
+      } else {
+        putInt(rowId, (int) value);
+      }
+    }
+  }
 }

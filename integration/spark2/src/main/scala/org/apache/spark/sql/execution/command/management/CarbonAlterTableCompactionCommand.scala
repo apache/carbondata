@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -73,7 +74,7 @@ case class CarbonAlterTableCompactionCommand(
     table = if (tableInfoOp.isDefined) {
       CarbonTable.buildFromTableInfo(tableInfoOp.get)
     } else {
-      val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
         .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
       if (relation == null) {
         throw new NoSuchTableException(dbName, tableName)
@@ -87,13 +88,6 @@ case class CarbonAlterTableCompactionCommand(
     if (!table.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-
-    if (table.getTableInfo.getFactTable.getListOfColumns.asScala
-      .exists(m => m.getDataType.isComplexType)) {
-      throw new UnsupportedOperationException(
-        "Compaction is unsupported for Table containing Complex Columns")
-    }
-
     if (CarbonUtil.hasAggregationDataMap(table) ||
         (table.isChildDataMap && null == operationContext.getProperty(table.getTableName))) {
       // If the compaction request is of 'streaming' type then we need to generate loadCommands
@@ -101,9 +95,9 @@ case class CarbonAlterTableCompactionCommand(
       // If set to true then only loadCommands for compaction will be created.
       val loadMetadataEvent =
         if (alterTableModel.compactionType.equalsIgnoreCase(CompactionType.STREAMING.name())) {
-          new LoadMetadataEvent(table, false)
+          new LoadMetadataEvent(table, false, Map.empty[String, String].asJava)
         } else {
-          new LoadMetadataEvent(table, true)
+          new LoadMetadataEvent(table, true, Map.empty[String, String].asJava)
         }
       OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
     }

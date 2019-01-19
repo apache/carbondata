@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -189,7 +190,7 @@ public final class FileFactory {
    * @param fileType
    * @param bufferSize
    * @param compressorName name of compressor to write this file
-   * @return data out put stram
+   * @return data out put stream
    * @throws IOException
    */
   public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
@@ -368,6 +369,29 @@ public final class FileFactory {
   }
 
   /**
+   * Adds the schema to file path if not exists to the file path.
+   * @param filePath path of file
+   * @return Updated filepath
+   */
+  public static String addSchemeIfNotExists(String filePath) {
+    FileType fileType = getFileType(filePath);
+    switch (fileType) {
+      case LOCAL:
+        if (filePath.startsWith("file:")) {
+          return filePath;
+        } else {
+          return new Path("file://" + filePath).toString();
+        }
+      case HDFS:
+      case ALLUXIO:
+      case VIEWFS:
+      case S3:
+      default:
+        return filePath;
+    }
+  }
+
+  /**
    * below method will be used to update the file path
    * for local type
    * it removes the file:/ from the path
@@ -379,10 +403,11 @@ public final class FileFactory {
   public static String getUpdatedFilePath(String filePath, FileType fileType) {
     switch (fileType) {
       case HDFS:
-      case ALLUXIO:
       case VIEWFS:
       case S3:
         return filePath;
+      case ALLUXIO:
+        return StringUtils.startsWith(filePath, "alluxio") ? filePath : "alluxio:///" + filePath;
       case LOCAL:
       default:
         if (filePath != null && !filePath.isEmpty()) {
@@ -470,6 +495,7 @@ public final class FileFactory {
     switch (fileType) {
       case S3:
       case HDFS:
+      case ALLUXIO:
       case VIEWFS:
         try {
           Path path = new Path(directoryPath);

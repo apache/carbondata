@@ -22,8 +22,8 @@ import java.io.{File, PrintWriter}
 import scala.util.Random
 
 import org.apache.spark.SparkException
-import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
@@ -658,6 +658,11 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       sql("delete from datamap_test7 where name = 'n10'").show()
     }
     assert(ex6.getMessage.contains("Delete operation is not supported"))
+
+    val ex7 = intercept[MalformedCarbonCommandException] {
+      sql("alter table datamap_test7 change id test int")
+    }
+    assert(ex7.getMessage.contains("alter table column rename is not supported"))
   }
 
   ignore("test lucene fine grain multiple data map on table") {

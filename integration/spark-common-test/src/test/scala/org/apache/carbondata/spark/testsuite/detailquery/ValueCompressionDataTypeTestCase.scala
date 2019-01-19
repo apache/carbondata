@@ -22,19 +22,19 @@ import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 import org.apache.spark.sql.test.util.QueryTest
 
 class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
-  val tempDirPath = s"$resourcesPath/temp"
+  val tempDirPath = s"$resourcesPath/tempdir"
 
   override def beforeAll {
     FileFactory.mkdirs(tempDirPath,FileType.LOCAL)
   }
 
   test("ActualDataType:double,ChangedDatatype:Short,CompressionType:NonDecimalMaxMin") {
-    val tempFilePath = s"$resourcesPath/temp/double2short.csv"
+    val tempFilePath = s"$tempDirPath/double2short.csv"
     try {
       sql("CREATE TABLE double2short (name String, value double) STORED BY 'org.apache.carbondata.format'")
       sql("CREATE TABLE double2short_hive (name String, value double)row format delimited fields terminated by ','")
       val data ="a,3.141111\nb,3.141212\nc,3.141313\nd,3.141515\ne,3.141616\nf,3.141616\ng,3.141717\nh,3.141818";
-      writedata(tempFilePath, data)
+      writeData(tempFilePath, data)
       sql(s"LOAD data local inpath '${tempFilePath}' into table double2short options('fileheader'='name,value')")
       sql(s"LOAD data local inpath '${tempFilePath}' into table double2short_hive")
       checkAnswer(sql("select * from double2short"),
@@ -49,14 +49,14 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
       deleteFile(tempFilePath)
     }
   }
-  
+
   test("ActualDataType:double,ChangedDatatype:byte,CompressionType:NonDecimalMaxMin") {
-    val tempFilePath = s"$resourcesPath/temp/double2byte.csv"
+    val tempFilePath = s"$tempDirPath/double2byte.csv"
     try {
       sql("CREATE TABLE double2byte (name String, value double) STORED BY 'org.apache.carbondata.format'")
       sql("CREATE TABLE double2byte_hive (name String, value double)row format delimited fields terminated by ','")
       val data ="a,4.200001\nb,4.200009";
-      writedata(tempFilePath, data)
+      writeData(tempFilePath, data)
       sql(s"LOAD data local inpath '${tempFilePath}' into table double2byte options('fileheader'='name,value')")
       sql(s"LOAD data local inpath '${tempFilePath}' into table double2byte_hive")
       checkAnswer(sql("select * from double2byte"),
@@ -73,14 +73,14 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   test("When the values of Double datatype are negative values") {
-    val tempFilePath = s"$resourcesPath/temp/doubleISnegtive.csv"
+    val tempFilePath = s"$tempDirPath/doubleISnegtive.csv"
     try {
       sql("drop table if exists doubleISnegtive")
       sql("drop table if exists doubleISnegtive_hive")
       sql("CREATE TABLE doubleISnegtive (name String, value double) STORED BY 'org.apache.carbondata.format'")
       sql("CREATE TABLE doubleISnegtive_hive (name String, value double)row format delimited fields terminated by ','")
       val data ="a,-7489.7976000000\nb,-11234567489.797\nc,-11234567489.7\nd,-1.2\ne,-2\nf,-11234567489.7976000000\ng,-11234567489.7976000000"
-      writedata(tempFilePath, data)
+      writeData(tempFilePath, data)
       sql(s"LOAD data local inpath '${tempFilePath}' into table doubleISnegtive options('fileheader'='name,value')")
       sql(s"LOAD data local inpath '${tempFilePath}' into table doubleISnegtive_hive")
 
@@ -97,14 +97,14 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   test("When the values of Double datatype have both postive and negative values") {
-    val tempFilePath = s"$resourcesPath/temp/doublePAN.csv"
+    val tempFilePath = s"$tempDirPath/doublePAN.csv"
     try {
       sql("drop table if exists doublePAN")
       sql("drop table if exists doublePAN_hive")
       sql("CREATE TABLE doublePAN (name String, value double) STORED BY 'org.apache.carbondata.format'")
       sql("CREATE TABLE doublePAN_hive (name String, value double)row format delimited fields terminated by ','")
       val data ="a,-7489.7976000000\nb,11234567489.797\nc,-11234567489.7\nd,-1.2\ne,2\nf,-11234567489.7976000000\ng,11234567489.7976000000"
-      writedata(tempFilePath, data)
+      writeData(tempFilePath, data)
       sql(s"LOAD data local inpath '${tempFilePath}' into table doublePAN options('fileheader'='name,value')")
       sql(s"LOAD data local inpath '${tempFilePath}' into table doublePAN_hive")
 
@@ -120,7 +120,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
     }
   }
 
-  def writedata(filePath: String, data: String) = {
+  def writeData(filePath: String, data: String) = {
     val dis = FileFactory.getDataOutputStream(filePath, FileFactory.getFileType(filePath))
     dis.writeBytes(data.toString())
     dis.close()

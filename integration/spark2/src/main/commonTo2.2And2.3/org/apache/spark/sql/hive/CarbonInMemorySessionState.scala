@@ -35,6 +35,7 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParser
 import org.apache.spark.sql.types.{StructField, StructType}
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 
+import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema => ColumnSchema}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.format.TableInfo
@@ -79,15 +80,13 @@ class InMemorySessionCatalog(
 
   override def alterTable(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]])
-  : Unit = {
+      cols: Option[Seq[ColumnSchema]]): Unit = {
     // NOt Required in case of In-memory catalog
   }
 
   override def alterAddColumns(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      newColumns: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]])
-  : Unit = {
+      newColumns: Option[Seq[ColumnSchema]]): Unit = {
     val catalogTable = sparkSession.sessionState.catalog.getTableMetadata(tableIdentifier)
     val structType = catalogTable.schema
     var newStructType = structType
@@ -101,8 +100,7 @@ class InMemorySessionCatalog(
 
   override def alterDropColumns(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      dropCols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]])
-  : Unit = {
+      dropCols: Option[Seq[ColumnSchema]]): Unit = {
     val catalogTable = sparkSession.sessionState.catalog.getTableMetadata(tableIdentifier)
     val fields = catalogTable.schema.fields.filterNot { field =>
       dropCols.get.exists { col =>
@@ -112,10 +110,9 @@ class InMemorySessionCatalog(
     alterSchema(new StructType(fields), catalogTable, tableIdentifier)
   }
 
-  override def alterColumnChangeDataType(tableIdentifier: TableIdentifier,
+  override def alterColumnChangeDataTypeOrRename(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      columns: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]])
-  : Unit = {
+      columns: Option[Seq[ColumnSchema]]): Unit = {
     val catalogTable = sparkSession.sessionState.catalog.getTableMetadata(tableIdentifier)
     val a = catalogTable.schema.fields.flatMap { field =>
       columns.get.map { col =>

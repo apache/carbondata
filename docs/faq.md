@@ -79,14 +79,12 @@ The store location specified while creating carbon session is used by the Carbon
 Try creating ``carbonsession`` with ``storepath`` specified in the following manner :
 
 ```
-val carbon = SparkSession.builder().config(sc.getConf)
-             .getOrCreateCarbonSession(<store_path>)
+val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(<carbon_store_path>)
 ```
 Example:
 
 ```
-val carbon = SparkSession.builder().config(sc.getConf)
-             .getOrCreateCarbonSession("hdfs://localhost:9000/carbon/store")
+val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("hdfs://localhost:9000/carbon/store")
 ```
 
 ## What is Carbon Lock Type?
@@ -216,20 +214,18 @@ TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"))
 ## How to check LRU cache memory footprint?
 To observe the LRU cache memory footprint in the logs, configure the below properties in log4j.properties file.
 ```
-log4j.logger.org.apache.carbondata.core.memory.UnsafeMemoryManager = DEBUG
 log4j.logger.org.apache.carbondata.core.cache.CarbonLRUCache = DEBUG
 ```
-These properties will enable the DEBUG log for the CarbonLRUCache and UnsafeMemoryManager which will print the information of memory consumed using which the LRU cache size can be decided. **Note:** Enabling the DEBUG log will degrade the query performance.
+This property will enable the DEBUG log for the CarbonLRUCache and UnsafeMemoryManager which will print the information of memory consumed using which the LRU cache size can be decided. **Note:** Enabling the DEBUG log will degrade the query performance. Ensure carbon.max.driver.lru.cache.size is configured to observe the current cache size.
 
 **Example:**
 ```
-18/09/26 15:05:28 DEBUG UnsafeMemoryManager: pool-44-thread-1 Memory block (org.apache.carbondata.core.memory.MemoryBlock@21312095) is created with size 10. Total memory used 413Bytes, left 536870499Bytes
 18/09/26 15:05:29 DEBUG CarbonLRUCache: main Required size for entry /home/target/store/default/stored_as_carbondata_table/Fact/Part0/Segment_0/0_1537954529044.carbonindexmerge :: 181 Current cache size :: 0
-18/09/26 15:05:30 DEBUG UnsafeMemoryManager: main Freeing memory of size: 105available memory:  536870836
-18/09/26 15:05:30 DEBUG UnsafeMemoryManager: main Freeing memory of size: 76available memory:  536870912
 18/09/26 15:05:30 INFO CarbonLRUCache: main Removed entry from InMemory lru cache :: /home/target/store/default/stored_as_carbondata_table/Fact/Part0/Segment_0/0_1537954529044.carbonindexmerge
 ```
+**Note:** If  `Removed entry from InMemory LRU cache` are frequently observed in logs, you may have to increase the configured LRU size.
 
+To observe the LRU cache from heap dump, check the heap used by CarbonLRUCache class.
 ## Getting tablestatus.lock issues When loading data
 
   **Symptom**
@@ -294,10 +290,11 @@ java.io.FileNotFoundException: hdfs:/localhost:9000/carbon/store/default/hdfstab
 
   2. Use the following command :
 
-```
-"mvn -Pspark-2.1 -Dspark.version {yourSparkVersion} clean package"
-```
-Note :  Refrain from using "mvn clean package" without specifying the profile.
+  ```
+  mvn -Pspark-2.1 -Dspark.version {yourSparkVersion} clean package
+  ```
+  
+Note : Refrain from using "mvn clean package" without specifying the profile.
 
 ## Failed to execute load query on cluster
 
@@ -418,9 +415,9 @@ Note :  Refrain from using "mvn clean package" without specifying the profile.
 
   Insertion fails with the following exception :
 
-   ```
-   Data Load failure exception
-   ```
+  ```
+  Data Load failure exception
+  ```
 
   **Possible Cause**
 
@@ -447,9 +444,9 @@ Note :  Refrain from using "mvn clean package" without specifying the profile.
 
   Execution fails with the following exception :
 
-   ```
-   Table is locked for updation.
-   ```
+  ```
+  Table is locked for updation.
+  ```
 
   **Possible Cause**
 
@@ -465,9 +462,9 @@ Note :  Refrain from using "mvn clean package" without specifying the profile.
 
   Execution fails with the following exception :
 
-   ```
-   Table creation fails.
-   ```
+  ```
+  Table creation fails.
+  ```
 
   **Possible Cause**
 

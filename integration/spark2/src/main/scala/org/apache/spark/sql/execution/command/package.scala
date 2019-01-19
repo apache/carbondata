@@ -36,7 +36,7 @@ object Checker {
       session: SparkSession): Unit = {
     val database = dbName.getOrElse(session.catalog.currentDatabase)
     val identifier = TableIdentifier(tableName, dbName)
-    if (!CarbonEnv.getInstance(session).carbonMetastore.tableExists(identifier)(session)) {
+    if (!CarbonEnv.getInstance(session).carbonMetaStore.tableExists(identifier)(session)) {
       val err = s"table $dbName.$tableName not found"
       LogServiceFactory.getLogService(this.getClass.getName).error(err)
       throw new NoSuchTableException(database, tableName)
@@ -47,7 +47,7 @@ object Checker {
 /**
  * Operation that modifies metadata(schema, table_status, etc)
  */
-trait MetadataProcessOpeation {
+trait MetadataProcessOperation {
   def processMetadata(sparkSession: SparkSession): Seq[Row]
 
   // call this to throw exception when processMetadata failed
@@ -117,7 +117,8 @@ trait Auditable {
 /**
  * Command that modifies metadata(schema, table_status, etc) only without processing data
  */
-abstract class MetadataCommand extends RunnableCommand with MetadataProcessOpeation with Auditable {
+abstract class MetadataCommand
+  extends RunnableCommand with MetadataProcessOperation with Auditable {
   override def run(sparkSession: SparkSession): Seq[Row] = {
     runWithAudit(processMetadata, sparkSession)
   }
@@ -138,7 +139,7 @@ abstract class DataCommand extends RunnableCommand with DataProcessOperation wit
  * if process data failed.
  */
 abstract class AtomicRunnableCommand
-  extends RunnableCommand with MetadataProcessOpeation with DataProcessOperation with Auditable {
+  extends RunnableCommand with MetadataProcessOperation with DataProcessOperation with Auditable {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     runWithAudit(spark => {

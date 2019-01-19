@@ -48,7 +48,7 @@ public class StructDataType implements GenericDataType<StructObject> {
   /**
    * parent column name
    */
-  private String parentname;
+  private String parentName;
   /**
    * column unique id
    */
@@ -79,26 +79,26 @@ public class StructDataType implements GenericDataType<StructObject> {
   /**
    * constructor
    * @param name
-   * @param parentname
+   * @param parentName
    * @param columnId
    */
-  public StructDataType(String name, String parentname, String columnId) {
+  public StructDataType(String name, String parentName, String columnId) {
     this.name = name;
-    this.parentname = parentname;
+    this.parentName = parentName;
     this.columnId = columnId;
   }
 
   /**
    * constructor
    * @param name
-   * @param parentname
+   * @param parentName
    * @param columnId
    * @param isDictionaryColumn
    */
-  public StructDataType(String name, String parentname, String columnId,
+  public StructDataType(String name, String parentName, String columnId,
       Boolean isDictionaryColumn) {
     this.name = name;
-    this.parentname = parentname;
+    this.parentName = parentName;
     this.columnId = columnId;
     this.isDictionaryColumn = isDictionaryColumn;
   }
@@ -108,7 +108,7 @@ public class StructDataType implements GenericDataType<StructObject> {
    */
   @Override
   public void addChildren(GenericDataType newChild) {
-    if (this.getName().equals(newChild.getParentname())) {
+    if (this.getName().equals(newChild.getParentName())) {
       this.children.add(newChild);
     } else {
       for (GenericDataType child : this.children) {
@@ -130,8 +130,8 @@ public class StructDataType implements GenericDataType<StructObject> {
    * get parent column name
    */
   @Override
-  public String getParentname() {
-    return parentname;
+  public String getParentName() {
+    return parentName;
   }
 
   /*
@@ -190,7 +190,7 @@ public class StructDataType implements GenericDataType<StructObject> {
         children.get(i).writeByteArray(data[i], dataOutputStream, logHolder);
       }
 
-      // For other children elements which dont have data, write empty
+      // For other children elements which don't have data, write empty
       for (int i = data.length; i < children.size(); i++) {
         children.get(i).writeByteArray(null, dataOutputStream, logHolder);
       }

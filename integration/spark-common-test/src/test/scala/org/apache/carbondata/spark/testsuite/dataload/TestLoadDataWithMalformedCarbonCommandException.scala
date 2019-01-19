@@ -86,7 +86,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
     assert(e.getMessage
       .equals(
         "DICTIONARY_EXCLUDE column: ccc does not exist in table or unsupported for complex child " +
-        "column. Please check create table statement."))
+        "column. Please check the create table statement."))
   }
 
   test("test load data with dictionary include columns which no exist in table.") {
@@ -96,7 +96,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
     assert(e.getMessage
       .equals(
         "DICTIONARY_INCLUDE column: aaa does not exist in table or unsupported for complex child " +
-        "column. Please check create table statement."))
+        "column. Please check the create table statement."))
   }
 
   test("test load data with dictionary include is same with dictionary exclude") {
@@ -104,7 +104,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
       buildTableWithSameDictExcludeAndInclude()
     }
     assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
-      "with DICTIONARY_INCLUDE. Please check create table statement."))
+      "with DICTIONARY_INCLUDE. Please check the create table statement."))
   }
 
   test("test load data with invalid option") {
@@ -139,6 +139,6 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
       buildTableWithSameDictExcludeAndIncludeWithSpaces()
     }
     assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
-      "with DICTIONARY_INCLUDE. Please check create table statement."))
+      "with DICTIONARY_INCLUDE. Please check the create table statement."))
   }
 }

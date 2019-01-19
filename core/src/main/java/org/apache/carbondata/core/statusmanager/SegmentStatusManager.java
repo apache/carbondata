@@ -356,7 +356,7 @@ public class SegmentStatusManager {
         if (listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(identifier, loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if (invalidLoadIds.isEmpty()) {
-            // All or None , if anything fails then dont write
+            // All or None , if anything fails then don't write
             if (carbonTableStatusLock.lockWithRetries()) {
               LOG.info("Table status lock has been successfully acquired");
               // To handle concurrency scenarios, always take latest metadata before writing

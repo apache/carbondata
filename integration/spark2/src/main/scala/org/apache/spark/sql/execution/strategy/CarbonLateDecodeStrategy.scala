@@ -174,13 +174,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     if (names.nonEmpty) {
       val partitionSet = AttributeSet(names
         .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
-      val partitionKeyFilters = CarbonToSparkAdapater
+      val partitionKeyFilters = CarbonToSparkAdapter
         .getPartitionKeyFilter(partitionSet, filterPredicates)
       // Update the name with lower case as it is case sensitive while getting partition info.
       val updatedPartitionFilters = partitionKeyFilters.map { exp =>
         exp.transform {
           case attr: AttributeReference =>
-            CarbonToSparkAdapater.createAttributeReference(
+            CarbonToSparkAdapter.createAttributeReference(
               attr.name.toLowerCase,
               attr.dataType,
               attr.nullable,
@@ -366,18 +366,18 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       var newProjectList: Seq[Attribute] = Seq.empty
       // In case of implicit exist we should disable vectorPushRowFilters as it goes in IUD flow
       // to get the positionId or tupleID
-      var implictsExisted = false
-      val updatedProjects = projects.map {
+      var implicitExisted = false
+      var updatedProjects = projects.map {
           case a@Alias(s: ScalaUDF, name)
             if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
                 name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
             val reference = AttributeReference(name, StringType, true)().withExprId(a.exprId)
             newProjectList :+= reference
-            implictsExisted = true
+            implicitExisted = true
             reference
           case a@Alias(s: ScalaUDF, name)
             if name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_SEGMENTID) =>
-            implictsExisted = true
+            implicitExisted = true
             val reference =
               AttributeReference(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID,
                 StringType, true)().withExprId(a.exprId)
@@ -388,12 +388,18 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             }
           case other => other
       }
+      val updatedColumns: (Seq[Attribute], Seq[Expression]) = getRequestedColumns(relation,
+        projectsAttr,
+        filterSet,
+        handledSet,
+        newProjectList,
+        updatedProjects)
       // Don't request columns that are only referenced by pushed filters.
-      val requestedColumns =
-        getRequestedColumns(relation, projectsAttr, filterSet, handledSet, newProjectList)
+      val requestedColumns = updatedColumns._1
+      updatedProjects = updatedColumns._2
 
       var updateRequestedColumns =
-        if (!vectorPushRowFilters && !implictsExisted && !hasDictionaryFilterCols
+        if (!vectorPushRowFilters && !implicitExisted && !hasDictionaryFilterCols
             && !hasMoreDictionaryCols) {
           updateRequestedColumnsFunc(
             (projectSet ++ filterSet).map(relation.attributeMap).toSeq,
@@ -406,7 +412,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         supportBatchedDataSource(relation.relation.sqlContext,
           updateRequestedColumns.asInstanceOf[Seq[Attribute]]) &&
         needDecoder.isEmpty
-      if (!vectorPushRowFilters && !supportBatch && !implictsExisted && !hasDictionaryFilterCols
+      if (!vectorPushRowFilters && !supportBatch && !implicitExisted && !hasDictionaryFilterCols
           && !hasMoreDictionaryCols) {
         // revert for row scan
         updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
@@ -423,7 +429,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
       // Check whether spark should handle row filters in case of vector flow.
       if (!vectorPushRowFilters && scan.isInstanceOf[CarbonDataSourceScan]
-          && !implictsExisted && !hasDictionaryFilterCols && !hasMoreDictionaryCols) {
+          && !implicitExisted && !hasDictionaryFilterCols && !hasMoreDictionaryCols) {
         // Here carbon only do page pruning and row level pruning will be done by spark.
         scan.inputRDDs().head match {
           case rdd: CarbonScanRDD[InternalRow] =>
@@ -449,9 +455,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       projectsAttr: Seq[Attribute],
       filterSet: AttributeSet,
       handledSet: AttributeSet,
-      newProjectList: Seq[Attribute]) = {
-    (projectsAttr.to[mutable.LinkedHashSet] ++ filterSet -- handledSet)
-      .map(relation.attributeMap).toSeq ++ newProjectList
+      newProjectList: Seq[Attribute],
+      updatedProjects: Seq[Expression]): (Seq[Attribute], Seq[Expression]) = {
+    ((projectsAttr.to[mutable.LinkedHashSet] ++ filterSet -- handledSet)
+       .map(relation.attributeMap).toSeq ++ newProjectList, updatedProjects)
   }
 
   private def getDataSourceScan(relation: LogicalRelation,

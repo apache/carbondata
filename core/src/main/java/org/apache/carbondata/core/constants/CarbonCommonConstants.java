@@ -960,7 +960,7 @@ public final class CarbonCommonConstants {
    * If set to GLOBAL_SORT, the sorting scope is bigger and one index tree per task will be
    * created, thus loading is slower but query is faster.
    */
-  public static final String LOAD_SORT_SCOPE_DEFAULT = "LOCAL_SORT";
+  public static final String LOAD_SORT_SCOPE_DEFAULT = "NO_SORT";
 
   /**
    * Size of batch data to keep in memory, as a thumb rule it supposed
@@ -1122,7 +1122,7 @@ public final class CarbonCommonConstants {
   public static final int CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT = 512;
 
   /*
-   * whether to enable prefetch for rowbatch to enhance row reconstruction during compaction
+   * whether to enable prefetch for rowBatch to enhance row reconstruction during compaction
    */
   @CarbonProperty
   public static final String CARBON_COMPACTION_PREFETCH_ENABLE =
@@ -1448,12 +1448,6 @@ public final class CarbonCommonConstants {
       "carbon.query.directQueryOnDataMap.enabled";
 
   public static final String SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "false";
-
-  @CarbonProperty
-  public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP =
-      "carbon.query.validate.direct.query.on.datamap";
-
-  public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "true";
 
   @CarbonProperty
   public static final String CARBON_SHOW_DATAMAPS = "carbon.query.show.datamaps";
@@ -1809,6 +1803,11 @@ public final class CarbonCommonConstants {
    * S3LOCK TYPE
    */
   public static final String CARBON_LOCK_TYPE_S3 = "S3LOCK";
+
+  /**
+   * ALLUXIOLOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_ALLUXIO = "ALLUXIOLOCK";
 
   /**
    * Invalid filter member log string

@@ -140,6 +140,9 @@ public class LocalDictColumnPage extends ColumnPage {
     } else {
       actualDataColumnPage.putBytes(rowId, bytes);
     }
+    if (pageSize <= rowId) {
+      pageSize = rowId + 1;
+    }
   }
 
   @Override public void disableLocalDictEncoding() {

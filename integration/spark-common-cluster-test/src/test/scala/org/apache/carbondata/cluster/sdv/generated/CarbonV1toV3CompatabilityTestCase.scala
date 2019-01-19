@@ -31,15 +31,22 @@ import org.apache.carbondata.core.util.CarbonProperties
 class CarbonV1toV3CompatabilityTestCase extends QueryTest with BeforeAndAfterAll {
 
   var localspark: CarbonSession = null
-  val storeLocation = s"${TestQueryExecutor.integrationPath}/spark-common-test/src/test/resources/Data/v1_version/store"
-  val metaLocation = s"${TestQueryExecutor.integrationPath}/spark-common-test/src/test/resources/Data/v1_version"
+  val storeLocation = s"${
+    TestQueryExecutor
+      .integrationPath
+  }/spark-common-test/src/test/resources/Data/v1_version/store"
+  val metaLocation = s"${
+    TestQueryExecutor
+      .integrationPath
+  }/spark-common-test/src/test/resources/Data/v1_version"
 
   override def beforeAll {
     sqlContext.sparkSession.stop()
     CarbonEnv.carbonEnvMap.clear()
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION, storeLocation)
     import org.apache.spark.sql.CarbonSession._
-    println(s"store path for CarbonV1toV3CompatabilityTestCase is $storeLocation and metastore is $metaLocation")
+    println(s"store path for CarbonV1toV3CompatabilityTestCase is $storeLocation and metastore is" +
+            s" $metaLocation")
     localspark = SparkSession
       .builder()
       .master("local")
@@ -49,8 +56,8 @@ class CarbonV1toV3CompatabilityTestCase extends QueryTest with BeforeAndAfterAll
     println("store path : " + CarbonProperties.getStorePath)
     localspark.sparkContext.setLogLevel("WARN")
     hiveClient.runSqlHive(
-        s"ALTER TABLE default.t3 SET SERDEPROPERTIES" +
-        s"('tablePath'='$storeLocation/default/t3', 'dbname'='default', 'tablename'='t3')")
+      s"ALTER TABLE default.t3 SET SERDEPROPERTIES" +
+      s"('tablePath'='$storeLocation/default/t3', 'dbname'='default', 'tablename'='t3')")
     localspark.sql("show tables").show()
   }
 

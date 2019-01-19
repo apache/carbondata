@@ -43,7 +43,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
   /**
    * thread pool size to be used for dictionary data reading
    */
-  protected int thread_pool_size;
+  protected int threadPoolSize;
 
   /**
    * LRU cache variable
@@ -70,7 +70,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    * max number of threads for a job
    */
   private void initThreadPoolSize() {
-    thread_pool_size = CarbonProperties.getInstance().getNumberOfLoadingCores();
+    threadPoolSize = CarbonProperties.getInstance().getNumberOfLoadingCores();
   }
 
   /**

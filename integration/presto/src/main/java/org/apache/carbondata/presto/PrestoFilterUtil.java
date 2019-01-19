@@ -47,26 +47,20 @@ import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 
-import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.hive.HiveColumnHandle;
+import com.facebook.presto.hive.HiveType;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Range;
 import com.facebook.presto.spi.predicate.TupleDomain;
-import com.facebook.presto.spi.type.BigintType;
-import com.facebook.presto.spi.type.BooleanType;
-import com.facebook.presto.spi.type.DateType;
-import com.facebook.presto.spi.type.DecimalType;
 import com.facebook.presto.spi.type.Decimals;
-import com.facebook.presto.spi.type.DoubleType;
-import com.facebook.presto.spi.type.IntegerType;
-import com.facebook.presto.spi.type.SmallintType;
-import com.facebook.presto.spi.type.TimestampType;
 import com.facebook.presto.spi.type.Type;
-import com.facebook.presto.spi.type.VarcharType;
 import io.airlift.slice.Slice;
+import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 
 import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
 import static com.google.common.base.Preconditions.checkArgument;
+
 
 /**
  * PrestoFilterUtil create the carbonData Expression from the presto-domain
@@ -78,31 +72,30 @@ public class PrestoFilterUtil {
   private static final String HIVE_DEFAULT_DYNAMIC_PARTITION = "__HIVE_DEFAULT_PARTITION__";
 
   /**
-   * @param carbondataColumnHandle
+   * @param columnHandle
    * @return
    */
-  private static DataType spi2CarbondataTypeMapper(CarbondataColumnHandle carbondataColumnHandle) {
-    Type colType = carbondataColumnHandle.getColumnType();
-    if (colType == BooleanType.BOOLEAN) {
+  private static DataType spi2CarbondataTypeMapper(HiveColumnHandle columnHandle) {
+    HiveType colType = columnHandle.getHiveType();
+    if (colType.equals(HiveType.HIVE_BOOLEAN)) {
       return DataTypes.BOOLEAN;
-    } else if (colType == SmallintType.SMALLINT) {
+    } else if (colType.equals(HiveType.HIVE_SHORT)) {
       return DataTypes.SHORT;
-    } else if (colType == IntegerType.INTEGER) {
+    } else if (colType.equals(HiveType.HIVE_INT)) {
       return DataTypes.INT;
-    } else if (colType == BigintType.BIGINT) {
+    } else if (colType.equals(HiveType.HIVE_LONG)) {
       return DataTypes.LONG;
-    } else if (colType == DoubleType.DOUBLE) {
+    } else if (colType.equals(HiveType.HIVE_DOUBLE)) {
       return DataTypes.DOUBLE;
-    } else if (colType == VarcharType.VARCHAR) {
+    } else if (colType.equals(HiveType.HIVE_STRING)) {
       return DataTypes.STRING;
-    } else if (colType == DateType.DATE) {
+    } else if (colType.equals(HiveType.HIVE_DATE)) {
       return DataTypes.DATE;
-    } else if (colType == TimestampType.TIMESTAMP) {
+    } else if (colType.equals(HiveType.HIVE_TIMESTAMP)) {
       return DataTypes.TIMESTAMP;
-    } else if (colType.equals(DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
-        carbondataColumnHandle.getScale()))) {
-      return DataTypes.createDecimalType(carbondataColumnHandle.getPrecision(),
-          carbondataColumnHandle.getScale());
+    } else if (colType.getTypeInfo() instanceof DecimalTypeInfo) {
+      DecimalTypeInfo typeInfo = (DecimalTypeInfo) colType.getTypeInfo();
+      return DataTypes.createDecimalType(typeInfo.getPrecision(),typeInfo.getScale());
     } else {
       return DataTypes.STRING;
     }
@@ -115,16 +108,15 @@ public class PrestoFilterUtil {
    * @return
    */
   public static List<String> getPartitionFilters(CarbonTable carbonTable,
-      TupleDomain<ColumnHandle> originalConstraint) {
+      TupleDomain<HiveColumnHandle> originalConstraint) {
     List<ColumnSchema> columnSchemas = carbonTable.getPartitionInfo().getColumnSchemaList();
     List<String> filter = new ArrayList<>();
-    for (ColumnHandle columnHandle : originalConstraint.getDomains().get().keySet()) {
-      CarbondataColumnHandle carbondataColumnHandle = (CarbondataColumnHandle) columnHandle;
+    for (HiveColumnHandle columnHandle : originalConstraint.getDomains().get().keySet()) {
       List<ColumnSchema> partitionedColumnSchema = columnSchemas.stream().filter(
-          columnSchema -> carbondataColumnHandle.getColumnName()
+          columnSchema -> columnHandle.getName()
               .equals(columnSchema.getColumnName())).collect(toList());
       if (partitionedColumnSchema.size() != 0) {
-        filter.addAll(createPartitionFilters(originalConstraint, carbondataColumnHandle));
+        filter.addAll(createPartitionFilters(originalConstraint, columnHandle));
       }
     }
     return filter;
@@ -132,46 +124,49 @@ public class PrestoFilterUtil {
 
   /** Returns list of partition key and values using domain constraints
    * @param originalConstraint
-   * @param carbonDataColumnHandle
+   * @param columnHandle
    */
-  private static List<String> createPartitionFilters(TupleDomain<ColumnHandle> originalConstraint,
-      CarbondataColumnHandle carbonDataColumnHandle) {
+  private static List<String> createPartitionFilters(
+      TupleDomain<HiveColumnHandle> originalConstraint, HiveColumnHandle columnHandle) {
     List<String> filter = new ArrayList<>();
-    Domain domain = originalConstraint.getDomains().get().get(carbonDataColumnHandle);
+    if (!originalConstraint.getDomains().isPresent()) {
+      return filter;
+    }
+    Domain domain = originalConstraint.getDomains().get().get(columnHandle);
     if (domain != null && domain.isNullableSingleValue()) {
       Object value = domain.getNullableSingleValue();
       Type type = domain.getType();
       if (value == null) {
-        filter.add(carbonDataColumnHandle.getColumnName() + "=" + HIVE_DEFAULT_DYNAMIC_PARTITION);
-      } else if (carbonDataColumnHandle.getColumnType() instanceof DecimalType) {
-        int scale = ((DecimalType) carbonDataColumnHandle.getColumnType()).getScale();
+        filter.add(columnHandle.getName() + "=" + HIVE_DEFAULT_DYNAMIC_PARTITION);
+      } else if (columnHandle.getHiveType().getTypeInfo() instanceof DecimalTypeInfo) {
+        int scale = ((DecimalTypeInfo) columnHandle.getHiveType().getTypeInfo()).getScale();
         if (value instanceof Long) {
           //create decimal value from Long
           BigDecimal decimalValue = new BigDecimal(new BigInteger(String.valueOf(value)), scale);
-          filter.add(carbonDataColumnHandle.getColumnName() + "=" + decimalValue.toString());
+          filter.add(columnHandle.getName() + "=" + decimalValue.toString());
         } else if (value instanceof Slice) {
           //create decimal value from Slice
           BigDecimal decimalValue =
               new BigDecimal(Decimals.decodeUnscaledValue((Slice) value), scale);
-          filter.add(carbonDataColumnHandle.getColumnName() + "=" + decimalValue.toString());
+          filter.add(columnHandle.getName() + "=" + decimalValue.toString());
         }
       } else if (value instanceof Slice) {
-        filter.add(carbonDataColumnHandle.getColumnName() + "=" + ((Slice) value).toStringUtf8());
-      } else if (value instanceof Long && carbonDataColumnHandle.getColumnType()
-          .equals(DateType.DATE)) {
+        filter.add(columnHandle.getName() + "=" + ((Slice) value).toStringUtf8());
+      } else if (value instanceof Long && columnHandle.getHiveType()
+          .equals(HiveType.HIVE_DATE)) {
         Calendar c = Calendar.getInstance();
         c.setTime(new java.sql.Date(0));
         c.add(Calendar.DAY_OF_YEAR, ((Long) value).intValue());
         java.sql.Date date = new java.sql.Date(c.getTime().getTime());
-        filter.add(carbonDataColumnHandle.getColumnName() + "=" + date.toString());
-      } else if (value instanceof Long && carbonDataColumnHandle.getColumnType()
-          .equals(TimestampType.TIMESTAMP)) {
+        filter.add(columnHandle.getName() + "=" + date.toString());
+      } else if (value instanceof Long && columnHandle.getHiveType()
+          .equals(HiveType.HIVE_TIMESTAMP)) {
         String timeStamp = new Timestamp((Long) value).toString();
-        filter.add(carbonDataColumnHandle.getColumnName() + "=" + timeStamp
+        filter.add(columnHandle.getName() + "=" + timeStamp
             .substring(0, timeStamp.indexOf('.')));
       } else if ((value instanceof Boolean) || (value instanceof Double)
           || (value instanceof Long)) {
-        filter.add(carbonDataColumnHandle.getColumnName() + "=" + value.toString());
+        filter.add(columnHandle.getName() + "=" + value.toString());
       } else {
         throw new PrestoException(NOT_SUPPORTED,
             format("Unsupported partition key type: %s", type.getDisplayName()));
@@ -186,23 +181,26 @@ public class PrestoFilterUtil {
    * @param originalConstraint presto-TupleDomain
    * @return
    */
-  static Expression parseFilterExpression(TupleDomain<ColumnHandle> originalConstraint) {
+  static Expression parseFilterExpression(TupleDomain<HiveColumnHandle> originalConstraint) {
 
     Domain domain;
+
+    if (originalConstraint.isNone()) {
+      return null;
+    }
 
     // final expression for the table,
     // returned by the method after combining all the column filters (colValueExpression).
     Expression finalFilters = null;
 
-    for (ColumnHandle c : originalConstraint.getDomains().get().keySet()) {
+    for (HiveColumnHandle cdch : originalConstraint.getDomains().get().keySet()) {
 
       // Build ColumnExpression for Expression(Carbondata)
-      CarbondataColumnHandle cdch = (CarbondataColumnHandle) c;
-      Type type = cdch.getColumnType();
+      HiveType type = cdch.getHiveType();
       DataType coltype = spi2CarbondataTypeMapper(cdch);
-      Expression colExpression = new ColumnExpression(cdch.getColumnName(), coltype);
+      Expression colExpression = new ColumnExpression(cdch.getName(), coltype);
 
-      domain = originalConstraint.getDomains().get().get(c);
+      domain = originalConstraint.getDomains().get().get(cdch);
       checkArgument(domain.getType().isOrderable(), "Domain type must be orderable");
       List<Object> singleValues = new ArrayList<>();
 
@@ -282,36 +280,38 @@ public class PrestoFilterUtil {
     return finalFilters;
   }
 
-  private static Object convertDataByType(Object rawdata, Type type) {
-    if (type.equals(IntegerType.INTEGER) || type.equals(SmallintType.SMALLINT)) {
+  private static Object convertDataByType(Object rawdata, HiveType type) {
+    if (type.equals(HiveType.HIVE_INT) || type.equals(HiveType.HIVE_SHORT)) {
       return Integer.valueOf(rawdata.toString());
-    } else if (type.equals(BigintType.BIGINT)) {
+    } else if (type.equals(HiveType.HIVE_LONG)) {
       return rawdata;
-    } else if (type.equals(VarcharType.VARCHAR)) {
+    } else if (type.equals(HiveType.HIVE_STRING)) {
       if (rawdata instanceof Slice) {
         return ((Slice) rawdata).toStringUtf8();
       } else {
         return rawdata;
       }
-    } else if (type.equals(BooleanType.BOOLEAN)) {
+    } else if (type.equals(HiveType.HIVE_BOOLEAN)) {
       return rawdata;
-    } else if (type.equals(DateType.DATE)) {
+    } else if (type.equals(HiveType.HIVE_DATE)) {
       Calendar c = Calendar.getInstance();
       c.setTime(new Date(0));
       c.add(Calendar.DAY_OF_YEAR, ((Long) rawdata).intValue());
       Date date = c.getTime();
       return date.getTime() * 1000;
-    } else if (type instanceof DecimalType) {
+    }
+    else if (type.getTypeInfo() instanceof DecimalTypeInfo) {
       if (rawdata instanceof Double) {
         return new BigDecimal((Double) rawdata);
       } else if (rawdata instanceof Long) {
         return new BigDecimal(new BigInteger(String.valueOf(rawdata)),
-            ((DecimalType) type).getScale());
+            ((DecimalTypeInfo) type.getTypeInfo()).getScale());
       } else if (rawdata instanceof Slice) {
         return new BigDecimal(Decimals.decodeUnscaledValue((Slice) rawdata),
-            ((DecimalType) type).getScale());
+            ((DecimalTypeInfo) type.getTypeInfo()).getScale());
       }
-    } else if (type.equals(TimestampType.TIMESTAMP)) {
+    }
+    else if (type.equals(HiveType.HIVE_TIMESTAMP)) {
       return (Long) rawdata * 1000;
     }
 

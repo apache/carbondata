@@ -157,7 +157,7 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putBytes(int rowId, int count, byte[] value) {
+  @Override public void putByteArray(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
         columnVector.putByteArray(counter++, value);
@@ -244,7 +244,7 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public CarbonColumnVector getDictionaryVector() {
-    return this.columnVector;
+    return this.columnVector.getDictionaryVector();
   }
 
   @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {

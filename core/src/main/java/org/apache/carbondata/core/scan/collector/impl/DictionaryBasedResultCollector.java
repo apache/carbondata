@@ -62,7 +62,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
   boolean[] directDictionaryEncodingArray;
 
-  private boolean[] implictColumnArray;
+  private boolean[] implicitColumnArray;
 
   private boolean[] complexDataTypeArray;
 
@@ -213,7 +213,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         // complex dictionary columns comes.
         ByteBuffer buffer;
         if (!dictionaryEncodingArray[i]) {
-          if (implictColumnArray[i]) {
+          if (implicitColumnArray[i]) {
             throw new RuntimeException("Not Supported Column Type");
           } else if (complexDataTypeArray[i]) {
             buffer = ByteBuffer.wrap(complexTypeKeyArray[complexTypeComplexColumnIndex++]);
@@ -242,7 +242,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       byte[][] noDictionaryKeys, byte[][] complexTypeKeyArray,
       Map<Integer, GenericQueryType> complexDimensionInfoMap, Object[] row, int i) {
     if (!dictionaryEncodingArray[i]) {
-      if (implictColumnArray[i]) {
+      if (implicitColumnArray[i]) {
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
             .equals(queryDimensions[i].getColumnName())) {
           row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
@@ -347,7 +347,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
     dictionaryEncodingArray = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
     directDictionaryEncodingArray = CarbonUtil.getDirectDictionaryEncodingArray(queryDimensions);
-    implictColumnArray = CarbonUtil.getImplicitColumnArray(queryDimensions);
+    implicitColumnArray = CarbonUtil.getImplicitColumnArray(queryDimensions);
     complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
 
     parentToChildColumnsMap.clear();

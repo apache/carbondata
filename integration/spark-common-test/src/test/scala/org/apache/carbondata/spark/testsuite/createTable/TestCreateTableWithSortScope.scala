@@ -32,25 +32,6 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS tableWithBatchSort")
     sql("DROP TABLE IF EXISTS tableWithNoSort")
     sql("DROP TABLE IF EXISTS tableWithUnsupportSortScope")
-    sql("DROP TABLE IF EXISTS tableLoadWithSortScope")
-  }
-
-  test("Do not support load data with specify sort scope") {
-    sql(
-    s"""
-       | CREATE TABLE tableLoadWithSortScope(
-       | intField INT,
-       | stringField STRING
-       | )
-       | STORED BY 'carbondata'
-       | TBLPROPERTIES('SORT_COLUMN'='stringField')
-       """.stripMargin)
-
-    val exception_loaddata_sortscope: Exception = intercept[Exception] {
-      sql("LOAD DATA LOCAL INPATH '/path/to/data' INTO TABLE tableLoadWithSortScope " +
-          "OPTIONS('SORT_SCOPE'='GLOBAL_SORT')")
-    }
-    assert(exception_loaddata_sortscope.getMessage.contains("Error: Invalid option(s): sort_scope"))
   }
 
   test("test create table with sort scope in normal cases") {
@@ -61,7 +42,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | stringField STRING
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMN'='stringField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
     checkExistence(sql("DESCRIBE FORMATTED tableWithGlobalSort"), true, "global_sort")
@@ -73,7 +54,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | stringField STRING
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMN'='stringField', 'SORT_SCOPE'='LOCAL_SORT')
+         | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='LOCAL_SORT')
        """.stripMargin)
 
     sql("DESCRIBE FORMATTED tableWithLocalSort")
@@ -87,7 +68,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | stringField STRING
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMN'='stringField', 'SORT_SCOPE'='BATCH_SORT')
+         | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='BATCH_SORT')
        """.stripMargin)
 
     checkExistence(sql("DESCRIBE FORMATTED tableWithBatchSort"), true, "batch_sort")
@@ -99,7 +80,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | stringField STRING
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMN'='stringField', 'SORT_SCOPE'='NO_SORT')
+         | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='NO_SORT')
        """.stripMargin)
 
     checkExistence(sql("DESCRIBE FORMATTED tableWithNoSort"), true, "no_sort")
@@ -114,7 +95,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
            | stringField STRING
            | )
            | STORED BY 'carbondata'
-           | TBLPROPERTIES('SORT_COLUMN'='stringField', 'SORT_SCOPE'='abc')
+           | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='abc')
        """.stripMargin)
     }
     assert(exception_unsupported_sortscope.getMessage.contains(

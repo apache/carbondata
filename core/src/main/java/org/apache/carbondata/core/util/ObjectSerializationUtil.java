@@ -24,15 +24,17 @@ import java.io.ObjectOutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+
+import org.apache.log4j.Logger;
 
 /**
  * It provides methods to convert object to Base64 string and vice versa.
  */
 public class ObjectSerializationUtil {
 
-  private static final Log LOG = LogFactory.getLog(ObjectSerializationUtil.class);
+  private static final Logger LOG =
+      LogServiceFactory.getLogService(ObjectSerializationUtil.class.getName());
 
   /**
    * Convert object to Base64 String

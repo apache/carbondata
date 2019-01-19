@@ -34,7 +34,7 @@ import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericR
 import org.apache.avro.io.{DecoderFactory, Encoder}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
@@ -119,6 +119,13 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     buildTestData(rows, options, List("name"))
   }
 
+  def buildTestDataWithOptionsAndEmptySortColumn(rows: Int,
+      options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestData(rows, options, List())
+  }
+
+
   // prepare sdk writer output
   def buildTestData(rows: Int,
       options: util.Map[String, String],
@@ -157,7 +164,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         }
         i += 1
       }
-      if (options != null) {
+      if ((options != null) && sortColumns.nonEmpty) {
         //Keep one valid record. else carbon data file will not generate
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
       }
@@ -436,6 +443,24 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     }
 
     assert(!(new File(writerPath).exists()))
+    cleanTestData()
+  }
+
+  test("test create external table with all the records as bad record with redirect") {
+    var options = Map("bAd_RECords_action" -> "REDIRECT").asJava
+    buildTestDataWithOptionsAndEmptySortColumn(3, options)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    // when one row is bad record and it it redirected.
+    // Empty carbon files must not create in no_sort flow
+    var exception = intercept[AnalysisException] {
+      sql(
+        s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
+           |'carbondata' LOCATION
+           |'$writerPath' """.stripMargin)
+    }
+    assert(exception.getMessage()
+      .contains("Invalid table path provided"))
     cleanTestData()
   }
 
@@ -2426,7 +2451,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
     val df = sql("describe formatted sdkTable")
     checkExistence(df, true, "Local Dictionary Enabled true")
-    checkExistence(df, true, "Inverted Index Columns name")
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
@@ -2471,7 +2495,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
-  test("test inverted index column by API") {
+  // Inverted index display is based on sort_scope, now by default sort_scope is no_sort.
+  // Hence inverted index will not be displayed for external table
+  // as we don't support table-properties inferring
+  ignore("test inverted index column by API") {
     FileUtils.deleteDirectory(new File(writerPath))
     val builder = CarbonWriter.builder
       .sortBy(Array[String]("name")).withBlockSize(12).enableLocalDictionary(true)
@@ -2487,6 +2514,26 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val df = sql("describe formatted sdkTable")
     checkExistence(df, true, "Inverted Index Columns name")
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(1)))
+    FileUtils.deleteDirectory(new File(writerPath))
+  }
+
+  test("test Local Dictionary with Default") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    val builder = CarbonWriter.builder
+      .sortBy(Array[String]("name")).withBlockSize(12)
+      .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
+    generateCarbonData(builder)
+    assert(FileFactory.getCarbonFile(writerPath).exists())
+    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
+    sql("DROP TABLE IF EXISTS sdkTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    val descLoc = sql("describe formatted sdkTable").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
+    }
     FileUtils.deleteDirectory(new File(writerPath))
   }
 

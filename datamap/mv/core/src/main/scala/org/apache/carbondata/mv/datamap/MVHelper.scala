@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapater, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Expression, NamedExpression, ScalaUDF, SortOrder}
@@ -300,7 +300,7 @@ object MVHelper {
         case Alias(agg: AggregateExpression, name) =>
           agg.aggregateFunction.collect {
             case attr: AttributeReference =>
-              CarbonToSparkAdapater.createAttributeReference(attr.name,
+              CarbonToSparkAdapter.createAttributeReference(attr.name,
                 attr.dataType,
                 attr.nullable,
                 attr.metadata,
@@ -317,7 +317,7 @@ object MVHelper {
     expressions.map {
         case alias@Alias(agg: AggregateExpression, name) =>
           attrMap.get(AttributeKey(agg)).map { exp =>
-            CarbonToSparkAdapater.createAliasRef(
+            CarbonToSparkAdapter.createAliasRef(
               getAttribute(exp),
               name,
               alias.exprId,
@@ -329,7 +329,7 @@ object MVHelper {
         case attr: AttributeReference =>
           val uattr = attrMap.get(AttributeKey(attr)).map{a =>
             if (keepAlias) {
-              CarbonToSparkAdapater.createAttributeReference(a.name,
+              CarbonToSparkAdapter.createAttributeReference(a.name,
                 a.dataType,
                 a.nullable,
                 a.metadata,
@@ -343,7 +343,7 @@ object MVHelper {
           uattr
         case alias@Alias(expression: Expression, name) =>
           attrMap.get(AttributeKey(expression)).map { exp =>
-            CarbonToSparkAdapater
+            CarbonToSparkAdapter
               .createAliasRef(getAttribute(exp), name, alias.exprId, alias.qualifier,
                 alias.explicitMetadata, Some(alias))
           }.getOrElse(alias)
@@ -385,7 +385,7 @@ object MVHelper {
         case attr: AttributeReference =>
           val uattr = attrMap.get(AttributeKey(attr)).map{a =>
             if (keepAlias) {
-              CarbonToSparkAdapater
+              CarbonToSparkAdapter
                 .createAttributeReference(a.name,
                   a.dataType,
                   a.nullable,

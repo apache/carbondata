@@ -59,29 +59,40 @@ public class WriteStepRowUtil {
     }
     converted[DICTIONARY_DIMENSION] = dictDimensions;
 
+    Object[] noDictAndComplexKeys =
+        new Object[segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
+            .getComplexDimensions().size()];
+
     byte[][] noDictionaryKeys = ((ByteArrayWrapper) row[0]).getNoDictionaryKeys();
-    Object[] noDictKeys = new Object[noDictionaryKeys.length];
     for (int i = 0; i < noDictionaryKeys.length; i++) {
       // in case of compaction rows are collected from result collector and are in byte[].
       // Convert the no dictionary columns to original data,
       // as load expects the no dictionary column with original data.
       if (DataTypeUtil.isPrimitiveColumn(noDicAndComplexColumns[i].getDataType())) {
-        noDictKeys[i] = DataTypeUtil
+        noDictAndComplexKeys[i] = DataTypeUtil
             .getDataBasedOnDataTypeForNoDictionaryColumn(noDictionaryKeys[i],
                 noDicAndComplexColumns[i].getDataType());
         // for timestamp the above method will give the original data, so it should be
         // converted again to the format to be loaded (without micros)
-        if (null != noDictKeys[i]
+        if (null != noDictAndComplexKeys[i]
             && noDicAndComplexColumns[i].getDataType() == DataTypes.TIMESTAMP) {
-          noDictKeys[i] = (long) noDictKeys[i] / 1000L;
+          noDictAndComplexKeys[i] = (long) noDictAndComplexKeys[i] / 1000L;
         }
       } else {
-        noDictKeys[i] = noDictionaryKeys[i];
+        noDictAndComplexKeys[i] = noDictionaryKeys[i];
       }
     }
 
+    // For Complex Type Columns
+    byte[][] complexKeys = ((ByteArrayWrapper) row[0]).getComplexTypesKeys();
+    for (int i = segmentProperties.getNumberOfNoDictionaryDimension(), j = 0;
+         i < segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
+             .getComplexDimensions().size(); i++) {
+      noDictAndComplexKeys[i] = complexKeys[j++];
+    }
+
     // no dictionary and complex dimension
-    converted[NO_DICTIONARY_AND_COMPLEX] = noDictKeys;
+    converted[NO_DICTIONARY_AND_COMPLEX] = noDictAndComplexKeys;
 
     // measure
     int measureCount = row.length - 1;

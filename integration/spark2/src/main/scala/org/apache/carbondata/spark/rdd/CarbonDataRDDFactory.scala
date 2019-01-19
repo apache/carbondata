@@ -192,7 +192,7 @@ object CarbonDataRDDFactory {
             LOGGER.info("System level compaction lock is enabled.")
             val skipCompactionTables = ListBuffer[CarbonTableIdentifier]()
             var tableForCompaction = CarbonCompactionUtil.getNextTableToCompact(
-              CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
+              CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore
                 .listAllTables(sqlContext.sparkSession).toArray,
               skipCompactionTables.toList.asJava)
             while (null != tableForCompaction) {
@@ -247,7 +247,7 @@ object CarbonDataRDDFactory {
               }
               // ********* check again for all the tables.
               tableForCompaction = CarbonCompactionUtil.getNextTableToCompact(
-                CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
+                CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore
                   .listAllTables(sqlContext.sparkSession).toArray,
                 skipCompactionTables.asJava)
             }
@@ -351,6 +351,12 @@ object CarbonDataRDDFactory {
         } else {
           status = if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
             loadDataForPartitionTable(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
+          } else if (dataFrame.isEmpty && isSortTable &&
+                     carbonLoadModel.getRangePartitionColumn != null &&
+                     (sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) ||
+                      sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT))) {
+            DataLoadProcessBuilderOnSpark
+              .loadDataUsingRangeSort(sqlContext.sparkSession, carbonLoadModel, hadoopConf)
           } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
             DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
               dataFrame, carbonLoadModel, hadoopConf)
@@ -461,7 +467,8 @@ object CarbonDataRDDFactory {
       }
       return null
     }
-    val uniqueTableStatusId = operationContext.getProperty("uuid").asInstanceOf[String]
+    val uniqueTableStatusId = Option(operationContext.getProperty("uuid")).getOrElse("")
+      .asInstanceOf[String]
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
       // update the load entry in table status file for changing the status to marked for delete
       CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uniqueTableStatusId)
@@ -570,19 +577,13 @@ object CarbonDataRDDFactory {
         if (carbonTable.isHivePartitionTable) {
           carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
         }
-        // Block compaction for table containing complex datatype
-        if (carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
-          .exists(m => m.getDataType.isComplexType)) {
-          LOGGER.warn("Compaction is skipped as table contains complex columns")
-        } else {
-          val compactedSegments = new util.ArrayList[String]()
-          handleSegmentMerging(sqlContext,
-            carbonLoadModel,
-            carbonTable,
-            compactedSegments,
-            operationContext)
-          carbonLoadModel.setMergedSegmentIds(compactedSegments)
-        }
+        val compactedSegments = new util.ArrayList[String]()
+        handleSegmentMerging(sqlContext,
+          carbonLoadModel,
+          carbonTable,
+          compactedSegments,
+          operationContext)
+        carbonLoadModel.setMergedSegmentIds(compactedSegments)
         writtenSegment
       } catch {
         case e: Exception =>
@@ -749,7 +750,7 @@ object CarbonDataRDDFactory {
                              CarbonCommonConstants.UNDERSCORE +
                              (index + "_0")
 
-        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
+        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PARTITION_ID)
         loadMetadataDetails.setLoadName(segId)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
         carbonLoadModel.setSegmentId(segId)
@@ -988,15 +989,14 @@ object CarbonDataRDDFactory {
     // generate RDD[(K, V)] to use the partitionBy method of PairRDDFunctions
     val inputRDD: RDD[(String, Row)] = if (dataFrame.isDefined) {
       // input data from DataFrame
-      val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
-      val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
+      val complexDelimiters = carbonLoadModel.getComplexDelimiters
       val serializationNullFormat =
         carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
       dataFrame.get.rdd.map { row =>
         if (null != row && row.length > partitionColumnIndex &&
             null != row.get(partitionColumnIndex)) {
           (CarbonScalaUtil.getString(row.get(partitionColumnIndex), serializationNullFormat,
-            delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat), row)
+            complexDelimiters, timeStampFormat, dateFormat), row)
         } else {
           (null, row)
         }

@@ -35,10 +35,12 @@ import org.apache.spark.sql.catalyst.plans.physical.Partitioning
 import org.apache.spark.sql.execution.{RowDataSourceScanExec, SparkPlan}
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.execution.datasources.{DataSource, LogicalRelation}
+import org.apache.spark.sql.internal.HiveSerDe
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.hadoop.api.{CarbonTableInputFormat, CarbonTableOutputFormat}
 
 /**
  * Reflection APIs
@@ -330,5 +332,35 @@ object CarbonReflectionUtils {
     val ctor = clazz.getDeclaredConstructors.head
     ctor.setAccessible(true)
     (ctor.newInstance(conArgs: _*), clazz)
+  }
+
+  /**
+   * It is a hack to update the carbon input, output format information to #HiveSerDe
+   */
+  def updateCarbonSerdeInfo(): Unit = {
+    val currentMirror = scala.reflect.runtime.currentMirror
+    val instanceMirror = currentMirror.reflect(HiveSerDe)
+    currentMirror.staticClass(HiveSerDe.getClass.getName).
+      toType.members.find { p =>
+      !p.isMethod && p.name.toString.equals("serdeMap")
+    } match {
+      case Some(field) =>
+        val serdeMap =
+          instanceMirror.reflectField(field.asTerm).get.asInstanceOf[Map[String, HiveSerDe]]
+        val updatedSerdeMap =
+          serdeMap ++ Map[String, HiveSerDe](
+            ("org.apache.spark.sql.carbonsource", HiveSerDe(Some(
+              classOf[CarbonTableInputFormat[_]].getName),
+              Some(classOf[CarbonTableOutputFormat].getName))),
+            ("carbon", HiveSerDe(Some(
+              classOf[CarbonTableInputFormat[_]].getName),
+              Some(classOf[CarbonTableOutputFormat].getName))),
+            ("carbondata", HiveSerDe(Some(
+              classOf[CarbonTableInputFormat[_]].getName),
+              Some(classOf[CarbonTableOutputFormat].getName))))
+        instanceMirror.reflectField(field.asTerm).set(updatedSerdeMap)
+      case _ =>
+    }
+
   }
 }

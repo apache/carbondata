@@ -19,16 +19,15 @@ package org.apache.spark.sql.hive
 
 import org.apache.spark.sql.catalyst.parser.ParserUtils.{string, withOrigin}
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser
-import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{AddTableColumnsContext,ChangeColumnContext, CreateTableContext, ShowTablesContext}
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{AddTableColumnsContext, ChangeColumnContext, CreateTableContext, ShowTablesContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel,AlterTableDataTypeChangeModel}
-import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand,CarbonAlterTableDataTypeChangeCommand}
+import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel}
+import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand}
 import org.apache.spark.sql.execution.command.table.{CarbonExplainCommand, CarbonShowTablesCommand}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.types.DecimalType
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -38,9 +37,10 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
   override def visitChangeColumn(ctx: ChangeColumnContext): LogicalPlan = {
 
     val newColumn = visitColType(ctx.colType)
-    if (!ctx.identifier.getText.equalsIgnoreCase(newColumn.name)) {
-      throw new MalformedCarbonCommandException(
-        "Column names provided are different. Both the column names should be same")
+    val isColumnRename = if (!ctx.identifier.getText.equalsIgnoreCase(newColumn.name)) {
+      true
+    } else {
+      false
     }
 
     val (typeString, values): (String, Option[List[(Int, Int)]]) = newColumn.dataType match {
@@ -48,15 +48,17 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
       case _ => (newColumn.dataType.typeName.toLowerCase, None)
     }
 
-    val alterTableChangeDataTypeModel =
-      AlterTableDataTypeChangeModel(new CarbonSpark2SqlParser().parseDataType(typeString, values),
+    val alterTableColRenameAndDataTypeChangeModel =
+      AlterTableDataTypeChangeModel(new CarbonSpark2SqlParser()
+        .parseDataType(typeString, values, isColumnRename),
         new CarbonSpark2SqlParser()
           .convertDbNameToLowerCase(Option(ctx.tableIdentifier().db).map(_.getText)),
         ctx.tableIdentifier().table.getText.toLowerCase,
         ctx.identifier.getText.toLowerCase,
-        newColumn.name.toLowerCase)
+        newColumn.name.toLowerCase,
+        isColumnRename)
 
-    CarbonAlterTableDataTypeChangeCommand(alterTableChangeDataTypeModel)
+    CarbonAlterTableColRenameDataTypeChangeCommand(alterTableColRenameAndDataTypeChangeModel)
   }
 
 

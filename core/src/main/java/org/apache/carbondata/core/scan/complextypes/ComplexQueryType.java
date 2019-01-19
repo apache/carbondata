@@ -19,19 +19,20 @@ package org.apache.carbondata.core.scan.complextypes;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 
 public class ComplexQueryType {
   protected String name;
 
-  protected String parentname;
+  protected String parentName;
 
   protected int blockIndex;
 
-  public ComplexQueryType(String name, String parentname, int blockIndex) {
+  public ComplexQueryType(String name, String parentName, int blockIndex) {
     this.name = name;
-    this.parentname = parentname;
+    this.parentName = parentName;
     this.blockIndex = blockIndex;
   }
 
@@ -40,9 +41,10 @@ public class ComplexQueryType {
    * This method is also used by child.
    */
   protected byte[] copyBlockDataChunk(DimensionRawColumnChunk[] rawColumnChunks,
-      int rowNumber, int pageNumber) {
+      DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber) {
     byte[] data =
-        rawColumnChunks[blockIndex].decodeColumnPage(pageNumber).getChunkData(rowNumber);
+        getDecodedDimensionPage(dimensionColumnPages, rawColumnChunks[blockIndex], pageNumber)
+            .getChunkData(rowNumber);
     byte[] output = new byte[data.length];
     System.arraycopy(data, 0, output, 0, output.length);
     return output;
@@ -56,5 +58,13 @@ public class ComplexQueryType {
       blockChunkHolder.getDimensionRawColumnChunks()[blockIndex] = blockChunkHolder.getDataBlock()
           .readDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
     }
+  }
+
+  private DimensionColumnPage getDecodedDimensionPage(DimensionColumnPage[][] dimensionColumnPages,
+      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) {
+    if (dimensionColumnPages == null || null == dimensionColumnPages[blockIndex]) {
+      return dimensionRawColumnChunk.decodeColumnPage(pageNumber);
+    }
+    return dimensionColumnPages[blockIndex][pageNumber];
   }
 }

@@ -116,7 +116,7 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
   def buildRelation() = {
     val warehouse = s"$resourcesPath/target/warehouse"
     val storeLocation = s"$resourcesPath/target/store"
-    val metastoredb = s"$resourcesPath/target"
+    val metaStoreDB = s"$resourcesPath/target"
     CarbonProperties.getInstance()
       .addProperty("carbon.custom.distribution", "true")
     CarbonProperties.getInstance()
@@ -131,8 +131,8 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
       .config("spark.network.timeout", "600s")
       .config("spark.executor.heartbeatInterval", "600s")
       .config("carbon.enable.vector.reader","false")
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
-    val catalog = CarbonEnv.getInstance(spark).carbonMetastore
+      .getOrCreateCarbonSession(storeLocation, metaStoreDB)
+    val catalog = CarbonEnv.getInstance(spark).carbonMetaStore
     extComplexRelation = catalog
       .lookupRelation(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
         "extComplextypes")(spark)
@@ -165,8 +165,8 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     carbonLoadModel.setFactFilePath(filePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(csvDelimiter)
-    carbonLoadModel.setComplexDelimiterLevel1("$")
-    carbonLoadModel.setComplexDelimiterLevel2(":")
+    carbonLoadModel.setComplexDelimiter("$")
+    carbonLoadModel.setComplexDelimiter(":")
     carbonLoadModel.setColDictFilePath(extColFilePath)
     carbonLoadModel.setQuoteChar("\"");
     carbonLoadModel.setSerializationNullFormat(

@@ -25,26 +25,16 @@ class MVQueryPlanTestCase extends QueryTest {
 
   test("test avg mv") {
     sql("drop table if exists test_table")
-
     sql("create table test_table(name string, age int, height int,weight int) stored by 'carbondata'")
-
     sql("insert into test_table select 'tom',20,175,130")
-
     sql("insert into test_table select 'tom',22,185,150")
-
     sql("create datamap test_table_mv using 'mv' as select sum(height),count(age),avg(age),name from test_table group by name")
-
     sql("rebuild datamap test_table_mv")
-
     val frame = sql("select count(age),avg(age),name from test_table group by name")
-
     val analyzed = frame.queryExecution.analyzed
-
     assert(verifyMVDataMap(analyzed, "test_table_mv"))
-
     checkAnswer(sql("select avg(age),name from test_table group by name"),
       Seq(Row(21.0, "tom")))
-
     sql("drop table if exists test_table")
   }
 

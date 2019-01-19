@@ -339,8 +339,14 @@ public final class CarbonLoaderUtil {
           }
         }
 
-        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
-            .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+        if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !loadStartEntry
+            && !uuid.isEmpty() && segmentsToBeDeleted.isEmpty() && !insertOverwrite) {
+          SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath,
+              new LoadMetadataDetails[] { newMetaEntry });
+        } else {
+          SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
+              .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+        }
         // Delete all old stale segment folders
         for (CarbonFile staleFolder : staleFolders) {
           // try block is inside for loop because even if there is failure in deletion of 1 stale
@@ -545,14 +551,14 @@ public final class CarbonLoaderUtil {
    * This method will divide the blocks among the nodes as per the data locality
    *
    * @param blockInfos blocks
-   * @param noOfNodesInput -1 if number of nodes has to be decided
+   * @param numOfNodesInput -1 if number of nodes has to be decided
    *                       based on block location information
    * @param blockAssignmentStrategy strategy used to assign blocks
    * @param expectedMinSizePerNode the property load_min_size_inmb specified by the user
    * @return a map that maps node to blocks
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(
-      List<Distributable> blockInfos, int noOfNodesInput, List<String> activeNodes,
+      List<Distributable> blockInfos, int numOfNodesInput, List<String> activeNodes,
       BlockAssignmentStrategy blockAssignmentStrategy, String expectedMinSizePerNode) {
     ArrayList<NodeMultiBlockRelation> rtnNode2Blocks = new ArrayList<>();
 
@@ -563,9 +569,9 @@ public final class CarbonLoaderUtil {
       nodes.add(relation.getNode());
     }
 
-    int noofNodes = (-1 == noOfNodesInput) ? nodes.size() : noOfNodesInput;
+    int numOfNodes = (-1 == numOfNodesInput) ? nodes.size() : numOfNodesInput;
     if (null != activeNodes) {
-      noofNodes = activeNodes.size();
+      numOfNodes = activeNodes.size();
     }
 
     // calculate the average expected size for each node
@@ -573,7 +579,7 @@ public final class CarbonLoaderUtil {
     long totalFileSize = 0;
     if (BlockAssignmentStrategy.BLOCK_NUM_FIRST == blockAssignmentStrategy) {
       if (blockInfos.size() > 0) {
-        sizePerNode = blockInfos.size() / noofNodes;
+        sizePerNode = blockInfos.size() / numOfNodes;
       }
       sizePerNode = sizePerNode <= 0 ? 1 : sizePerNode;
     } else if (BlockAssignmentStrategy.BLOCK_SIZE_FIRST == blockAssignmentStrategy
@@ -581,33 +587,41 @@ public final class CarbonLoaderUtil {
       for (Distributable blockInfo : uniqueBlocks) {
         totalFileSize += ((TableBlockInfo) blockInfo).getBlockLength();
       }
-      sizePerNode = totalFileSize / noofNodes;
+      sizePerNode = totalFileSize / numOfNodes;
     }
 
     // if enable to control the minimum amount of input data for each node
     if (BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST == blockAssignmentStrategy) {
-      long iexpectedMinSizePerNode = 0;
+      long expectedMinSizePerNodeInt = 0;
       // validate the property load_min_size_inmb specified by the user
       if (CarbonUtil.validateValidIntType(expectedMinSizePerNode)) {
-        iexpectedMinSizePerNode = Integer.parseInt(expectedMinSizePerNode);
+        expectedMinSizePerNodeInt = Integer.parseInt(expectedMinSizePerNode);
       } else {
         LOGGER.warn("Invalid load_min_size_inmb value found: " + expectedMinSizePerNode
             + ", only int value greater than 0 is supported.");
-        iexpectedMinSizePerNode = Integer.parseInt(
+        expectedMinSizePerNodeInt = Integer.parseInt(
             CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT);
       }
       // If the average expected size for each node greater than load min size,
       // then fall back to default strategy
-      if (iexpectedMinSizePerNode * 1024 * 1024 < sizePerNode) {
+      if (expectedMinSizePerNodeInt * 1024 * 1024 < sizePerNode) {
         if (CarbonProperties.getInstance().isLoadSkewedDataOptimizationEnabled()) {
           blockAssignmentStrategy = BlockAssignmentStrategy.BLOCK_SIZE_FIRST;
         } else {
           blockAssignmentStrategy = BlockAssignmentStrategy.BLOCK_NUM_FIRST;
+          // fall back to BLOCK_NUM_FIRST strategy need to reset
+          // the average expected size for each node
+          if (numOfNodes == 0) {
+            sizePerNode = 1;
+          } else {
+            sizePerNode = blockInfos.size() / numOfNodes;
+            sizePerNode = sizePerNode <= 0 ? 1 : sizePerNode;
+          }
         }
         LOGGER.info("Specified minimum data size to load is less than the average size "
             + "for each node, fallback to default strategy" + blockAssignmentStrategy);
       } else {
-        sizePerNode = iexpectedMinSizePerNode;
+        sizePerNode = expectedMinSizePerNodeInt;
       }
     }
 
@@ -1146,7 +1160,7 @@ public final class CarbonLoaderUtil {
    * @return
    * @throws IOException
    */
-  public static String mergeIndexFilesinPartitionedSegment(CarbonTable table, String segmentId,
+  public static String mergeIndexFilesInPartitionedSegment(CarbonTable table, String segmentId,
       String uuid) throws IOException {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
