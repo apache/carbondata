@@ -220,7 +220,7 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
   Secondly: Create a folder named 'carbondata' under $PRESTO_HOME$/plugin and
   copy all jars from carbondata/integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
         to $PRESTO_HOME$/plugin/carbondata
-  **NOTE:**  Not copy one assemble jar, need to copy many jars from integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
+  **NOTE:**  Copying assemble jar alone will not work, need to copy all jars from integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
   
   Thirdly: Create a carbondata.properties file under $PRESTO_HOME$/etc/catalog/ containing the following contents:
   ```
