@@ -28,8 +28,10 @@ import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.presto.readers.BooleanStreamReader;
+import org.apache.carbondata.presto.readers.ByteStreamReader;
 import org.apache.carbondata.presto.readers.DecimalSliceStreamReader;
 import org.apache.carbondata.presto.readers.DoubleStreamReader;
+import org.apache.carbondata.presto.readers.FloatStreamReader;
 import org.apache.carbondata.presto.readers.IntegerStreamReader;
 import org.apache.carbondata.presto.readers.LongStreamReader;
 import org.apache.carbondata.presto.readers.ObjectStreamReader;
@@ -89,6 +91,10 @@ public class CarbonVectorBatch {
       return new LongStreamReader(batchSize, field.getDataType(), dictionary);
     } else if (dataType == DataTypes.DOUBLE) {
       return new DoubleStreamReader(batchSize, field.getDataType(), dictionary);
+    } else if (dataType == DataTypes.FLOAT) {
+      return new FloatStreamReader(batchSize, field.getDataType(), dictionary);
+    } else if (dataType == DataTypes.BYTE) {
+      return new ByteStreamReader(batchSize, field.getDataType(), dictionary);
     } else if (dataType == DataTypes.STRING) {
       return new SliceStreamReader(batchSize, field.getDataType(), dictionary);
     } else if (DataTypes.isDecimal(dataType)) {
