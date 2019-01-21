@@ -854,18 +854,6 @@ class TableNewProcessor(cm: TableModel) {
       tableSchema.getTableId,
       cm.databaseNameOp.getOrElse("default"))
     tablePropertiesMap.put("bad_record_path", badRecordsPath)
-    if (tablePropertiesMap.get("sort_columns") != null) {
-      val sortCol = tablePropertiesMap.get("sort_columns")
-      if ((!sortCol.trim.isEmpty) && tablePropertiesMap.get("sort_scope") == null) {
-        // If sort_scope is not specified, but sort_columns are present, set sort_scope as
-        // local_sort in carbon_properties (cannot add in table properties as if user sets carbon
-        // properties it won't be reflected as table properties is given higher priority)
-        if (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE) ==
-            null) {
-          tablePropertiesMap.put("sort_scope", "LOCAL_SORT")
-        }
-      }
-    }
     tableSchema.setTableProperties(tablePropertiesMap)
     if (cm.bucketFields.isDefined) {
       val bucketCols = cm.bucketFields.get.bucketColumns.map { b =>

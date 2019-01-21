@@ -30,11 +30,11 @@ import org.apache.spark.sql.execution.command.MetadataCommand
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.Strings
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
 private[sql] case class CarbonDescribeFormattedCommand(
     child: SparkPlan,
@@ -54,10 +54,22 @@ private[sql] case class CarbonDescribeFormattedCommand(
 
     val carbonTable = relation.carbonTable
     val tblProps = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+    // If Sort Columns are given and Sort Scope is not given in either table properties
+    // or carbon properties then pass LOCAL_SORT as the sort scope,
+    // else pass NO_SORT
     val sortScope = if (carbonTable.getNumberOfSortColumns == 0) {
       "NO_SORT"
     } else {
-      tblProps.getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      if (tblProps.contains(CarbonCommonConstants.SORT_SCOPE)) {
+        tblProps.get(CarbonCommonConstants.SORT_SCOPE).toString
+      } else {
+        tblProps
+          .getOrElse(CarbonCommonConstants.SORT_SCOPE,
+            CarbonProperties.getInstance()
+              .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+                CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+                  "LOCAL_SORT")))
+      }
     }
     val streaming: String = if (carbonTable.isStreamingSink) {
       "sink"
