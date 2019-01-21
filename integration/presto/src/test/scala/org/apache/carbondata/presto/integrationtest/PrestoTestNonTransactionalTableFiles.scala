@@ -82,7 +82,8 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     prestoServer.execute("create schema sdk_output")
     prestoServer
       .execute(
-        "create table sdk_output.files(name varchar, age int, height double) with" +
+        "create table sdk_output.files(name varchar, age int, id tinyint, height double, salary " +
+        "real) with" +
         "(format='CARBON') ")
   }
 
@@ -98,7 +99,9 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
       .append("[ \n")
       .append("   {\"NaMe\":\"string\"},\n")
       .append("   {\"age\":\"int\"},\n")
-      .append("   {\"height\":\"double\"}\n")
+      .append("   {\"id\":\"byte\"},\n")
+      .append("   {\"height\":\"double\"},\n")
+      .append("   {\"salary\":\"float\"}\n")
       .append("]")
       .toString()
 
@@ -124,16 +127,30 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
       while (i < rows) {
         if ((options != null) && (i < 3)) {
           // writing a bad record
-          writer.write(Array[String]("robot" + i, String.valueOf(i.toDouble / 2), "robot"))
+          writer
+            .write(Array[String]("robot" + i,
+              String.valueOf(i),
+              String.valueOf(i.toDouble / 2),
+              "robot",
+              String.valueOf(i.toFloat / 2)))
         } else {
           writer
-            .write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
+            .write(Array[String]("robot" + i,
+              String.valueOf(i),
+              String.valueOf(i % 128),
+              String.valueOf(i.toDouble / 2),
+              String.valueOf(i.toFloat / 2)))
         }
         i += 1
       }
       if (options != null) {
         //Keep one valid record. else carbon data file will not generate
-        writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
+        writer
+          .write(Array[String]("robot" + i,
+            String.valueOf(i),
+            String.valueOf(i),
+            String.valueOf(i.toDouble / 2),
+            String.valueOf(i.toFloat / 2)))
       }
       writer.close()
     } catch {
@@ -143,11 +160,13 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
 
   // prepare sdk writer output with other schema
   def buildTestDataOtherDataType(rows: Int, sortColumns: Array[String]): Any = {
-    val fields: Array[Field] = new Array[Field](3)
+    val fields: Array[Field] = new Array[Field](5)
     // same column name, but name as boolean type
     fields(0) = new Field("name", DataTypes.BOOLEAN)
     fields(1) = new Field("age", DataTypes.INT)
-    fields(2) = new Field("height", DataTypes.DOUBLE)
+    fields(2) = new Field("id", DataTypes.BYTE)
+    fields(3) = new Field("height", DataTypes.DOUBLE)
+    fields(4) = new Field("salary", DataTypes.FLOAT)
 
     try {
       val builder = CarbonWriter.builder()
@@ -157,7 +176,12 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
           .withCsvInput(new Schema(fields)).writtenBy("TestNonTransactionalCarbonTable").build()
       var i = 0
       while (i < rows) {
-        writer.write(Array[String]("true", String.valueOf(i), String.valueOf(i.toDouble / 2)))
+        writer
+          .write(Array[String]("true",
+            String.valueOf(i),
+            String.valueOf(i),
+            String.valueOf(i.toDouble / 2),
+            String.valueOf(i.toFloat / 2)))
         i += 1
       }
       writer.close()
@@ -246,5 +270,28 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     assert(exception.getMessage()
       .contains("No Index files are present in the table location"))
     cleanTestData()
+  }
+
+  test("test select all columns") {
+    buildTestDataSingleFile()
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select * from files ")
+    val expectedResult: List[Map[String, Any]] = List(Map(
+      "name" -> "robot0",
+      "height" -> 0.0,
+      "age" -> 0,
+      "salary" -> 0.0,
+      "id" -> 0),
+      Map("name" -> "robot1",
+        "height" -> 0.5,
+        "age" -> 1,
+        "salary" -> 0.5,
+        "id" -> 1),
+      Map("name" -> "robot2",
+        "height" -> 1.0,
+        "age" -> 2,
+        "salary" -> 1.0,
+        "id" -> 2))
+    assert(actualResult.toString() equals expectedResult.toString())
   }
 }
