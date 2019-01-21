@@ -209,11 +209,11 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("SET carbon.options.sort.scope=local_sort")
     sql(
       "create table carbon_table(empno int, empname String, designation String, doj Timestamp," +
-      "workgroupcategory int) STORED BY 'org.apache.carbondata.format'")
-    checkExistence(sql("DESC FORMATTED carbon_table"), true, "LOCAL_SORT")
-    val sortscope=sql("DESC FORMATTED carbon_table").collect().filter(_.getString(1).trim.equals("LOCAL_SORT"))
+      "workgroupcategory int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_COLUMNS'='empno,empname')")
+    checkExistence(sql("DESC FORMATTED carbon_table"), true, "local_sort")
+    val sortscope=sql("DESC FORMATTED carbon_table").collect().filter(_.getString(1).trim.equals("local_sort"))
     assertResult(1)(sortscope.length)
-    assertResult("LOCAL_SORT")(sortscope(0).getString(1).trim)
+    assertResult("local_sort")(sortscope(0).getString(1).trim)
   }
 
   test("TC_011-test SET property to Enable Unsafe Sort") {
