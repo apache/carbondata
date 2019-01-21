@@ -861,16 +861,17 @@ case class CarbonLoadDataCommand(
       // Trigger auto compaction
       CarbonDataRDDFactory.handleSegmentMerging(
         sparkSession.sqlContext,
-        carbonLoadModel,
+        carbonLoadModel
+          .getCopyWithPartition(carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter),
         table,
         compactedSegments,
         operationContext)
       carbonLoadModel.setMergedSegmentIds(compactedSegments)
     } catch {
       case e: Exception =>
-        throw new Exception(
-          "Dataload is success. Auto-Compaction has failed. Please check logs.",
-          e)
+        LOGGER.error(
+          "Auto-Compaction has failed. Ignoring this exception because the " +
+          "load is passed.", e)
     }
     val specs =
       SegmentFileStore.getPartitionSpecs(carbonLoadModel.getSegmentId, carbonLoadModel.getTablePath)

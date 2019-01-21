@@ -488,6 +488,9 @@ public class CarbonLoadModel implements Serializable {
     copy.parentTablePath = parentTablePath;
     copy.sdkWriterCores = sdkWriterCores;
     copy.columnCompressor = columnCompressor;
+    copy.rangePartitionColumn = rangePartitionColumn;
+    copy.scaleFactor = scaleFactor;
+    copy.totalSize = totalSize;
     return copy;
   }
 
@@ -544,6 +547,9 @@ public class CarbonLoadModel implements Serializable {
     copyObj.parentTablePath = parentTablePath;
     copyObj.sdkWriterCores = sdkWriterCores;
     copyObj.columnCompressor = columnCompressor;
+    copyObj.rangePartitionColumn = rangePartitionColumn;
+    copyObj.scaleFactor = scaleFactor;
+    copyObj.totalSize = totalSize;
     return copyObj;
   }
 
