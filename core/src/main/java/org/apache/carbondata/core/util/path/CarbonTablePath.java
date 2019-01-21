@@ -25,6 +25,8 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Helps to get Table content paths.
  */
@@ -175,12 +177,27 @@ public class CarbonTablePath {
    * @return schema file path
    */
   public static String getSchemaFilePath(String tablePath) {
-    return getActualSchemaFilePath(tablePath);
+    return getActualSchemaFilePath(tablePath, null);
   }
 
-  private static String getActualSchemaFilePath(String tablePath) {
+  /**
+   * return the schema file path
+   * @param tablePath path to table files
+   * @param hadoopConf hadoop configuration instance
+   * @return schema file path
+   */
+  public static String getSchemaFilePath(String tablePath, Configuration hadoopConf) {
+    return getActualSchemaFilePath(tablePath, hadoopConf);
+  }
+
+  private static String getActualSchemaFilePath(String tablePath, Configuration hadoopConf) {
     String metaPath = tablePath + CarbonCommonConstants.FILE_SEPARATOR + METADATA_DIR;
-    CarbonFile carbonFile = FileFactory.getCarbonFile(metaPath);
+    CarbonFile carbonFile;
+    if (hadoopConf != null) {
+      carbonFile = FileFactory.getCarbonFile(metaPath, hadoopConf);
+    } else {
+      carbonFile = FileFactory.getCarbonFile(metaPath);
+    }
     CarbonFile[] schemaFile = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
         return file.getName().startsWith(SCHEMA_FILE);
