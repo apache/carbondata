@@ -26,7 +26,6 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -201,17 +200,8 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     }
 
     for (ProjectionMeasure msr : queryMeasures) {
-      DataType dataType = msr.getMeasure().getDataType();
-      if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT || dataType == DataTypes.INT
-          || dataType == DataTypes.LONG) {
-        fields[msr.getOrdinal()] =
-            new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
-      } else if (DataTypes.isDecimal(dataType)) {
-        fields[msr.getOrdinal()] =
-            new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
-      } else {
-        fields[msr.getOrdinal()] = new StructField(msr.getColumnName(), DataTypes.DOUBLE);
-      }
+      fields[msr.getOrdinal()] =
+          new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
     }
 
     columnarBatch =
