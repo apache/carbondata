@@ -209,15 +209,28 @@ case class CarbonLoadDataCommand(
     * 4. Session property CARBON_OPTIONS_SORT_SCOPE
     * 5. Default Sort Scope LOAD_SORT_SCOPE
     */
-    optionsFinal.put("sort_scope",
-      options.getOrElse("sort_scope",
-        carbonProperty.getProperty(
-          CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE + table.getDatabaseName + "." +
-          table.getTableName,
-          tableProperties.asScala.getOrElse("sort_scope",
-            carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-              carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))))
+    if (tableProperties.get(CarbonCommonConstants.SORT_COLUMNS) != null &&
+        tableProperties.get(CarbonCommonConstants.SORT_SCOPE) == null) {
+      // If there are Sort Columns given for the table and Sort Scope is not specified,
+      // we will take it as whichever sort scope given or LOCAL_SORT as default
+      optionsFinal
+        .put(CarbonCommonConstants.SORT_SCOPE,
+          carbonProperty
+            .getProperty(
+              CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE + table.getDatabaseName + "." +
+              table.getTableName, carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+                SortScopeOptions.getSortScope("LOCAL_SORT").toString)))
+    } else {
+      optionsFinal.put(CarbonCommonConstants.SORT_SCOPE,
+        options.getOrElse(CarbonCommonConstants.SORT_SCOPE,
+          carbonProperty.getProperty(
+            CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE + table.getDatabaseName + "." +
+            table.getTableName,
+            tableProperties.asScala.getOrElse(CarbonCommonConstants.SORT_SCOPE,
+              carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+                carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+                  CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))))
+    }
 
     optionsFinal
       .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
