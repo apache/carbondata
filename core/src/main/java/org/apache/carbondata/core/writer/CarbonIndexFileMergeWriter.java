@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -39,6 +40,7 @@ import org.apache.carbondata.format.MergedBlockIndex;
 import org.apache.carbondata.format.MergedBlockIndexHeader;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 public class CarbonIndexFileMergeWriter {
 
@@ -51,6 +53,8 @@ public class CarbonIndexFileMergeWriter {
    * thrift writer object
    */
   private ThriftWriter thriftWriter;
+
+  private Logger LOGGER = LogServiceFactory.getLogService(this.getClass().getCanonicalName());
 
   public CarbonIndexFileMergeWriter(CarbonTable table) {
     this.table = table;
@@ -68,27 +72,32 @@ public class CarbonIndexFileMergeWriter {
    */
   private String mergeCarbonIndexFilesOfSegment(String segmentId,
       String tablePath, List<String> indexFileNamesTobeAdded,
-      boolean readFileFooterFromCarbonDataFile, String uuid) throws IOException {
-    Segment segment = Segment.getSegment(segmentId, tablePath);
-    String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
-    CarbonFile[] indexFiles;
-    SegmentFileStore sfs = null;
-    if (segment != null && segment.getSegmentFileName() != null) {
-      sfs = new SegmentFileStore(tablePath, segment.getSegmentFileName());
-      List<CarbonFile> indexCarbonFiles = sfs.getIndexCarbonFiles();
-      indexFiles = indexCarbonFiles.toArray(new CarbonFile[indexCarbonFiles.size()]);
-    } else {
-      indexFiles =
-          SegmentIndexFileStore.getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
-    }
-    if (isCarbonIndexFilePresent(indexFiles) || indexFileNamesTobeAdded != null) {
-      if (sfs == null) {
-        return writeMergeIndexFileBasedOnSegmentFolder(indexFileNamesTobeAdded,
-            readFileFooterFromCarbonDataFile, segmentPath, indexFiles, segmentId);
+      boolean readFileFooterFromCarbonDataFile, String uuid) {
+    try {
+      Segment segment = Segment.getSegment(segmentId, tablePath);
+      String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
+      CarbonFile[] indexFiles;
+      SegmentFileStore sfs = null;
+      if (segment != null && segment.getSegmentFileName() != null) {
+        sfs = new SegmentFileStore(tablePath, segment.getSegmentFileName());
+        List<CarbonFile> indexCarbonFiles = sfs.getIndexCarbonFiles();
+        indexFiles = indexCarbonFiles.toArray(new CarbonFile[indexCarbonFiles.size()]);
       } else {
-        return writeMergeIndexFileBasedOnSegmentFile(
-            segmentId, indexFileNamesTobeAdded, sfs, indexFiles, uuid);
+        indexFiles =
+            SegmentIndexFileStore.getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
       }
+      if (isCarbonIndexFilePresent(indexFiles) || indexFileNamesTobeAdded != null) {
+        if (sfs == null) {
+          return writeMergeIndexFileBasedOnSegmentFolder(indexFileNamesTobeAdded,
+              readFileFooterFromCarbonDataFile, segmentPath, indexFiles, segmentId);
+        } else {
+          return writeMergeIndexFileBasedOnSegmentFile(segmentId, indexFileNamesTobeAdded, sfs,
+              indexFiles, uuid);
+        }
+      }
+    } catch (Exception e) {
+      LOGGER.error(
+          "Failed to merge index files in path: " + tablePath, e);
     }
     return null;
   }
