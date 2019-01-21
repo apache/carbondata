@@ -579,7 +579,8 @@ object CarbonDataRDDFactory {
         }
         val compactedSegments = new util.ArrayList[String]()
         handleSegmentMerging(sqlContext,
-          carbonLoadModel,
+          carbonLoadModel
+            .getCopyWithPartition(carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter),
           carbonTable,
           compactedSegments,
           operationContext)
@@ -587,8 +588,10 @@ object CarbonDataRDDFactory {
         writtenSegment
       } catch {
         case e: Exception =>
-          throw new Exception(
-            "Dataload is success. Auto-Compaction has failed. Please check logs.")
+          LOGGER.error(
+            "Auto-Compaction has failed. Ignoring this exception because the" +
+            " load is passed.", e)
+          writtenSegment
       }
     }
   }
