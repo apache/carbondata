@@ -101,6 +101,7 @@ This tutorial provides a quick introduction to using current integration/presto 
   ```
 The options `node-scheduler.include-coordinator=false` and `coordinator=true` indicate that the node is the coordinator and tells the coordinator not to do any of the computation work itself and to use the workers.
 
+
 **Note**: We recommend setting `query.max-memory-per-node` to half of the JVM config max memory, though if your workload is highly concurrent, you may want to use a lower value for `query.max-memory-per-node`.
 
 Also relation between below two configuration-properties should be like:
@@ -167,8 +168,10 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
 * Download presto server (0.210 is suggested and supported) : https://repo1.maven.org/maven2/com/facebook/presto/presto-server/
 * Finish presto configuration following https://prestodb.io/docs/current/installation/deployment.html.
   A configuration example:
+  
+ **config.properties**
+  
   ```
-  config.properties:
   coordinator=true
   node-scheduler.include-coordinator=true
   http-server.http.port=8086
@@ -180,10 +183,13 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
   discovery.uri=http://localhost:8086
   task.max-worker-threads=4
   optimizer.dictionary-aggregation=true
-  optimizer.optimize-hash-generation = false
+  optimizer.optimize-hash-generation = false  
+  ``` 
  
   
-  jvm.config:
+  **jvm.config**
+  
+  ```
   -server
   -Xmx4G
   -XX:+UseG1GC
@@ -193,12 +199,20 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
   -XX:+HeapDumpOnOutOfMemoryError
   -XX:OnOutOfMemoryError=kill -9 %p
   -XX:+TraceClassLoading
+  -Dcarbon.properties.filepath=<path>/carbon.properties
   
-  log.properties:
+  ```
+  `carbon.properties.filepath` property is used to set the carbon.properties file path and it is recommended to set otherwise some features may not work. Please check the above example.
+  
+  
+  **log.properties**
+  ```
   com.facebook.presto=DEBUG
   com.facebook.presto.server.PluginManager=DEBUG
+  ```
   
-  node.properties:
+  **node.properties**
+  ```
   node.environment=carbondata
   node.id=ffffffff-ffff-ffff-ffff-ffffffffffff
   node.data-dir=/Users/apple/DEMO/presto_test/data
@@ -220,21 +234,20 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
   Secondly: Create a folder named 'carbondata' under $PRESTO_HOME$/plugin and
   copy all jars from carbondata/integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
         to $PRESTO_HOME$/plugin/carbondata
+ 
   **NOTE:**  Copying assemble jar alone will not work, need to copy all jars from integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
   
   Thirdly: Create a carbondata.properties file under $PRESTO_HOME$/etc/catalog/ containing the following contents:
   ```
   connector.name=carbondata
-  carbondata-store={schema-store-path}
-  enable.unsafe.in.query.processing=false
-  carbon.unsafe.working.memory.in.mb={value}
-  enable.unsafe.columnpage=false
-  enable.unsafe.sort=false
-
+  hive.metastore.uri=thrift://<host>:<port>
   ```
-  Replace the schema-store-path with the absolute path of the parent directory of the schema.
-  For example, if you have a schema named 'default' stored in hdfs://namenode:9000/test/carbondata/,
-  Then set carbondata-store=hdfs://namenode:9000/test/carbondata
+  Carbondata becomes one of the supported format of presto hive plugin, so the configurations and setup is similar to hive connector of presto.
+  Please refer <a>https://prestodb.io/docs/current/connector/hive.html</a> for more details.
+  
+  **Note**: Since carbon can work only with hive metastore, it is necessary that spark also connects to same metastore db for creating tables and updating tables.
+  All the operations done on spark will be reflected in presto immediately. 
+  It is mandatory to create Carbon tables from spark using CarbonData 1.5.2 or greater version since input/output formats are updated in carbon table properly from this version. 
   
 #### Connecting to carbondata store on s3
  * In case you want to query carbonstore on S3 using S3A api put following additional properties inside $PRESTO_HOME$/etc/catalog/carbondata.properties 
@@ -258,23 +271,7 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
         fs.s3n.awsAccessKeyId={value}
         fs.s3n.awsSecretAccessKey={value}
      ```
-     
-    Replace the schema-store-path with the absolute path of the parent directory of the schema.
-    For example, if you have a schema named 'default' stored in a bucket s3a://s3-carbon/store,
-    Then set carbondata-store=s3a://s3-carbon/store
     
-####  Unsafe Properties    
-  enable.unsafe.in.query.processing property by default is true in CarbonData system, the carbon.unsafe.working.memory.in.mb 
-  property defines the limit for Unsafe Memory usage in Mega Bytes, the default value is 512 MB.
-  Currently Presto does not support Unsafe Memory so we have to disable the unsafe feature by setting below properties to false.
-
-  enable.unsafe.in.query.processing=false.
-  enable.unsafe.columnpage=false
-  enable.unsafe.sort=false
-
-  If you updated the jar balls or configuration files, make sure you have dispatched them
-   to all the presto nodes and restarted the presto servers on the nodes. The updates will not take effect before restarting.
-  
 ### Generate CarbonData file
 
 Please refer to quick start: https://github.com/apache/carbondata/blob/master/docs/quick-start-guide.md.
