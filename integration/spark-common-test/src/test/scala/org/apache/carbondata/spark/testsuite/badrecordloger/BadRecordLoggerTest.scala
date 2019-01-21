@@ -21,10 +21,9 @@ import java.io.{File, FileFilter}
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.constants.{CarbonCommonConstants}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
@@ -36,7 +35,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
  *
  */
 class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
-  var hiveContext: HiveContext = _
 
   override def beforeAll {
     try {
