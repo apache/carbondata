@@ -34,7 +34,8 @@ CarbonData DDL statements are documented here,which includes:
   * [Extra Long String columns](#string-longer-than-32000-characters)
   * [Compression for Table](#compression-for-table)
   * [Bad Records Path](#bad-records-path) 
-  * [Load Minimum Input File Size](#load-minimum-data-size) 
+  * [Load Minimum Input File Size](#load-minimum-data-size)
+  * [Range Column](#range-column)
 
 * [CREATE TABLE AS SELECT](#create-table-as-select)
 * [CREATE EXTERNAL TABLE](#create-external-table)
@@ -109,6 +110,7 @@ CarbonData DDL statements are documented here,which includes:
 | [BUCKETNUMBER](#bucketing)                                   | Number of buckets to be created                              |
 | [BUCKETCOLUMNS](#bucketing)                                  | Columns which are to be placed in buckets                    |
 | [LOAD_MIN_SIZE_INMB](#load-minimum-data-size)                | Minimum input data size per node for data loading          |
+| [Range Column](#range-column)                                | partition input data by range                              |
 
  Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
 
@@ -493,6 +495,14 @@ CarbonData DDL statements are documented here,which includes:
 
      ```
      TBLPROPERTIES('LOAD_MIN_SIZE_INMB'='256')
+     ```
+
+   - ##### Range Column
+     This property is used to specify a column to partition the input data by range.
+     Only one column can be configured. During data loading, you can use "global_sort_partitions" or "scale_factor" to avoid generating small files.
+
+     ```
+     TBLPROPERTIES('RANGE_COLUMN'='col1')
      ```
 
 ## CREATE TABLE AS SELECT
