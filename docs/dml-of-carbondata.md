@@ -65,7 +65,7 @@ CarbonData DML statements are documented here,which includes:
 | [BAD_RECORDS_ACTION](#bad-records-handling)             | Behavior of data loading when bad record is found            |
 | [IS_EMPTY_DATA_BAD_RECORD](#bad-records-handling)       | Whether empty data of a column to be considered as bad record or not |
 | [GLOBAL_SORT_PARTITIONS](#global_sort_partitions)       | Number of partition to use for shuffling of data during sorting |
-
+| [SCALE_FACTOR](#scale_factor)                           | Control the partition size for RANGE_COLUMN feature          |
   You can use the following options to load data:
 
   - ##### DELIMITER: 
@@ -251,7 +251,7 @@ CarbonData DML statements are documented here,which includes:
   - ##### GLOBAL_SORT_PARTITIONS:
 
     If the SORT_SCOPE is defined as GLOBAL_SORT, then user can specify the number of partitions to use while shuffling data for sort using GLOBAL_SORT_PARTITIONS. If it is not configured, or configured less than 1, then it uses the number of map task as reduce task. It is recommended that each reduce task deal with 512MB-1GB data.
-
+    For RANGE_COLUMN, GLOBAL_SORT_PARTITIONS is used to  specify the number of range partitions also.
   ```
   OPTIONS('GLOBAL_SORT_PARTITIONS'='2')
   ```
@@ -259,6 +259,22 @@ CarbonData DML statements are documented here,which includes:
    NOTE:
    * GLOBAL_SORT_PARTITIONS should be Integer type, the range is [1,Integer.MaxValue].
    * It is only used when the SORT_SCOPE is GLOBAL_SORT.
+
+   - ##### SCALE_FACTOR
+
+   For RANGE_COLUMN, SCALE_FACTOR is used to control the number of range partitions as following.
+   ```
+     splitSize = max(blocklet_size, (block_size - blocklet_size)) * scale_factor
+     numPartitions = total size of input data / splitSize
+   ```
+   The range is [1, 300]
+
+   ```
+     OPTIONS('SCALE_FACTOR'='10')
+   ```
+   **NOTE:**
+   * If both GLOBAL_SORT_PARTITIONS and SCALE_FACTOR are used at the same time, only GLOBAL_SORT_PARTITIONS is valid.
+   * If the compaction on RANGE_COLUMN will use LOCAL_SORT by default now.
 
 ### INSERT DATA INTO CARBONDATA TABLE
 
