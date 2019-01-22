@@ -66,6 +66,7 @@ CarbonData DML statements are documented here,which includes:
 | [IS_EMPTY_DATA_BAD_RECORD](#bad-records-handling)       | Whether empty data of a column to be considered as bad record or not |
 | [GLOBAL_SORT_PARTITIONS](#global_sort_partitions)       | Number of partition to use for shuffling of data during sorting |
 | [SCALE_FACTOR](#scale_factor)                           | Control the partition size for RANGE_COLUMN feature          |
+-
   You can use the following options to load data:
 
   - ##### DELIMITER: 
@@ -256,7 +257,7 @@ CarbonData DML statements are documented here,which includes:
   OPTIONS('GLOBAL_SORT_PARTITIONS'='2')
   ```
 
-   NOTE:
+   **NOTE:**
    * GLOBAL_SORT_PARTITIONS should be Integer type, the range is [1,Integer.MaxValue].
    * It is only used when the SORT_SCOPE is GLOBAL_SORT.
 
@@ -267,14 +268,14 @@ CarbonData DML statements are documented here,which includes:
      splitSize = max(blocklet_size, (block_size - blocklet_size)) * scale_factor
      numPartitions = total size of input data / splitSize
    ```
-   The range is [1, 300]
+   The default value is 3, and the range is [1, 300].
 
    ```
      OPTIONS('SCALE_FACTOR'='10')
    ```
    **NOTE:**
    * If both GLOBAL_SORT_PARTITIONS and SCALE_FACTOR are used at the same time, only GLOBAL_SORT_PARTITIONS is valid.
-   * If the compaction on RANGE_COLUMN will use LOCAL_SORT by default now.
+   * The compaction on RANGE_COLUMN will use LOCAL_SORT by default now.
 
 ### INSERT DATA INTO CARBONDATA TABLE
 
