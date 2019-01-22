@@ -50,7 +50,7 @@ CarbonData DDL statements are documented here,which includes:
     * [RENAME COLUMN](#change-column-nametype)
     * [CHANGE COLUMN NAME/TYPE](#change-column-nametype)
     * [MERGE INDEXES](#merge-index)
-    * [SET/UNSET Local Dictionary Properties](#set-and-unset-for-local-dictionary-properties)
+    * [SET/UNSET](#set-and-unset)
   * [DROP TABLE](#drop-table)
   * [REFRESH TABLE](#refresh-table)
   * [COMMENTS](#table-and-column-comment)
@@ -624,7 +624,7 @@ CarbonData DDL statements are documented here,which includes:
 
   The following section introduce the commands to modify the physical or logical state of the existing table(s).
 
-   - ##### RENAME TABLE
+   - #### RENAME TABLE
    
      This command is used to rename the existing table.
      ```
@@ -638,7 +638,7 @@ CarbonData DDL statements are documented here,which includes:
      ALTER TABLE test_db.carbon RENAME TO test_db.carbonTable
      ```
 
-   - ##### ADD COLUMNS
+   - #### ADD COLUMNS
    
      This command is used to add a new column to the existing table.
      ```
@@ -666,7 +666,7 @@ Users can specify which columns to include and exclude for local dictionary gene
      ALTER TABLE carbon ADD COLUMNS (a1 STRING, b1 STRING) TBLPROPERTIES('LOCAL_DICTIONARY_INCLUDE'='a1','LOCAL_DICTIONARY_EXCLUDE'='b1')
      ```
 
-   - ##### DROP COLUMNS
+   - #### DROP COLUMNS
    
      This command is used to delete the existing column(s) in a table.
 
@@ -686,7 +686,7 @@ Users can specify which columns to include and exclude for local dictionary gene
 
      **NOTE:** Drop Complex child column is not supported.
 
-   - ##### CHANGE COLUMN NAME/TYPE
+   - #### CHANGE COLUMN NAME/TYPE
    
      This command is used to change column name and the data type from INT to BIGINT or decimal precision from lower to higher.
      Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
@@ -719,7 +719,8 @@ Users can specify which columns to include and exclude for local dictionary gene
      ```
 
      **NOTE:** Once the column is renamed, user has to take care about replacing the fileheader with the new name or changing the column header in csv file.
-- ##### MERGE INDEX
+   
+   - #### MERGE INDEX
 
      This command is used to merge all the CarbonData index files (.carbonindex) inside a segment to a single CarbonData index merge file (.carbonindexmerge). This enhances the first query performance.
 
@@ -737,23 +738,36 @@ Users can specify which columns to include and exclude for local dictionary gene
 
      * Merge index is not supported on streaming table.
 
-- ##### SET and UNSET for Local Dictionary Properties
-
-   When set command is used, all the newly set properties will override the corresponding old properties if exists.
+   - #### SET and UNSET
+   
+     When set command is used, all the newly set properties will override the corresponding old properties if exists.
   
-   Example to SET Local Dictionary Properties:
-   ```
-   ALTER TABLE tablename SET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE'='false','LOCAL_DICTIONARY_THRESHOLD'='1000','LOCAL_DICTIONARY_INCLUDE'='column1','LOCAL_DICTIONARY_EXCLUDE'='column2')
-   ```
-   When Local Dictionary properties are unset, corresponding default values will be used for these properties.
-   
-   Example to UNSET Local Dictionary Properties:
-   ```
-   ALTER TABLE tablename UNSET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE','LOCAL_DICTIONARY_THRESHOLD','LOCAL_DICTIONARY_INCLUDE','LOCAL_DICTIONARY_EXCLUDE')
-   ```
-   
-   **NOTE:** For old tables, by default, local dictionary is disabled. If user wants local dictionary for these tables, user can enable/disable local dictionary for new data at their discretion. 
-   This can be achieved by using the alter table set command.
+     - ##### Local Dictionary Properties
+       Example to SET Local Dictionary Properties:
+       ```
+       ALTER TABLE tablename SET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE'='false','LOCAL_DICTIONARY_THRESHOLD'='1000','LOCAL_DICTIONARY_INCLUDE'='column1','LOCAL_DICTIONARY_EXCLUDE'='column2')
+       ```
+       When Local Dictionary properties are unset, corresponding default values will be used for these properties.
+    
+       Example to UNSET Local Dictionary Properties:
+       ```
+       ALTER TABLE tablename UNSET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE','LOCAL_DICTIONARY_THRESHOLD','LOCAL_DICTIONARY_INCLUDE','LOCAL_DICTIONARY_EXCLUDE')
+       ```
+    
+       **NOTE:** For old tables, by default, local dictionary is disabled. If user wants local dictionary for these tables, user can enable/disable local dictionary for new data at their discretion.
+       This can be achieved by using the alter table set command.
+  
+     - ##### SORT SCOPE
+       Example to SET SORT SCOPE:
+       ```
+       ALTER TABLE tablename SET TBLPROPERTIES('SORT_SCOPE'='NO_SORT')
+       ```
+       When Sort Scope is unset, the default values (NO_SORT) will be used.
+    
+       Example to UNSET SORT SCOPE:
+       ```
+       ALTER TABLE tablename UNSET TBLPROPERTIES('SORT_SCOPE')
+       ```
 
 ### DROP TABLE
 
