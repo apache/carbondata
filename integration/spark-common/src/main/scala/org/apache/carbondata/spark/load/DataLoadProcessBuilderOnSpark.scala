@@ -19,6 +19,8 @@ package org.apache.carbondata.spark.load
 
 import java.util.Comparator
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{Accumulator, DataSkewRangePartitioner, RangePartitioner, TaskContext}
 import org.apache.spark.broadcast.Broadcast
@@ -34,13 +36,14 @@ import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
-import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer
 import org.apache.carbondata.processing.loading.{CarbonDataLoadConfiguration, DataField, DataLoadProcessBuilder, FailureCauses}
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.sort.sortdata.{NewRowComparator, NewRowComparatorForNormalDims, SortParameters}
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
+import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Use sortBy operator in spark to load the data
@@ -127,9 +130,32 @@ object DataLoadProcessBuilderOnSpark {
       }
 
     // 4. Write
-    sc.runJob(sortRDD, (context: TaskContext, rows: Iterator[CarbonRow]) =>
+    sc.runJob(sortRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
+      TaskContext.get.addTaskCompletionListener(_ => ThreadLocalSessionInfo.unsetAll())
+      val carbonSessionInfo: CarbonSessionInfo = {
+        var info = ThreadLocalSessionInfo.getCarbonSessionInfo
+        if (info == null || null == info.getSessionParams) {
+          info = new CarbonSessionInfo
+          info.setSessionParams(new SessionParams())
+        }
+        info.getSessionParams.addProps(CarbonProperties.getInstance().getAddedProperty)
+        info
+      }
+      carbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf", conf.value.value)
+      TaskContext.get.addTaskCompletionListener { _ =>
+        CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      }
+      ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+      TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
+      val carbonTaskInfo = new CarbonTaskInfo
+      carbonTaskInfo.setTaskId(CarbonUtil.generateUUID())
+      ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)
+      carbonSessionInfo.getSessionParams.getAddedProps.asScala.map {
+        f => CarbonProperties.getInstance().addProperty(f._1, f._2)
+      }
       DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, modelBroadcast,
-        writeStepRowCounter, conf.value.value))
+        writeStepRowCounter, conf.value.value)
+    })
 
     // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will
     // not have any functional impact as spark automatically monitors the cache usage on each node
@@ -221,9 +247,32 @@ object DataLoadProcessBuilderOnSpark {
       .map(_._2)
 
     // 4. Sort and Write data
-    sc.runJob(rangeRDD, (context: TaskContext, rows: Iterator[CarbonRow]) =>
+    sc.runJob(rangeRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
+      TaskContext.get.addTaskCompletionListener(_ => ThreadLocalSessionInfo.unsetAll())
+      val carbonSessionInfo: CarbonSessionInfo = {
+        var info = ThreadLocalSessionInfo.getCarbonSessionInfo
+        if (info == null || null == info.getSessionParams) {
+          info = new CarbonSessionInfo
+          info.setSessionParams(new SessionParams())
+        }
+        info.getSessionParams.addProps(CarbonProperties.getInstance().getAddedProperty)
+        info
+      }
+      carbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf", conf.value.value)
+      TaskContext.get.addTaskCompletionListener { _ =>
+        CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      }
+      ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+      TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
+      val carbonTaskInfo = new CarbonTaskInfo
+      carbonTaskInfo.setTaskId(CarbonUtil.generateUUID())
+      ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)
+      carbonSessionInfo.getSessionParams.getAddedProps.asScala.map {
+        f => CarbonProperties.getInstance().addProperty(f._1, f._2)
+      }
       DataLoadProcessorStepOnSpark.sortAndWriteFunc(rows, context.partitionId, modelBroadcast,
-        writeStepRowCounter, conf.value.value))
+        writeStepRowCounter, conf.value.value)
+    })
 
     // Log the number of rows in each step
     LOGGER.info("Total rows processed in step Input Processor: " + inputStepRowCounter.value)
