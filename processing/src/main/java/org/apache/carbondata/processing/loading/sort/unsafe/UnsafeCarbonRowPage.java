@@ -42,8 +42,6 @@ public class UnsafeCarbonRowPage {
 
   private MemoryBlock dataBlock;
 
-  private boolean saveToDisk;
-
   private MemoryManagerType managerType;
 
   private String taskId;
@@ -53,10 +51,9 @@ public class UnsafeCarbonRowPage {
   private boolean convertNoSortFields;
 
   public UnsafeCarbonRowPage(TableFieldStat tableFieldStat, MemoryBlock memoryBlock,
-      boolean saveToDisk, String taskId) {
+      String taskId) {
     this.tableFieldStat = tableFieldStat;
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
-    this.saveToDisk = saveToDisk;
     this.taskId = taskId;
     buffer = new IntPointerBuffer(this.taskId);
     this.dataBlock = memoryBlock;
@@ -124,10 +121,6 @@ public class UnsafeCarbonRowPage {
         UnsafeSortMemoryManager.INSTANCE.freeMemory(taskId, dataBlock);
         buffer.freeMemory();
     }
-  }
-
-  public boolean isSaveToDisk() {
-    return saveToDisk;
   }
 
   public IntPointerBuffer getBuffer() {
