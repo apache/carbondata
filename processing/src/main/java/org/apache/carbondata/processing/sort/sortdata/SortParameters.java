@@ -441,7 +441,6 @@ public class SortParameters implements Serializable {
 
     parameters.setTempFileLocation(sortTempDirs);
     LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
-
     int numberOfCores = 1;
     // In case of loading from partition we should use the cores specified by it
     if (configuration.getWritingCoresCount() > 0) {

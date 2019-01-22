@@ -112,37 +112,11 @@ public class UnsafeSortMemoryManager {
   }
 
   /**
-   * Below method will be used to check whether memory required is
-   * available or not
-   *
-   * @param required
-   * @return if memory available
-   */
-  public synchronized boolean isMemoryAvailable(long required) {
-    return memoryUsed + required < totalMemory;
-  }
-
-  /**
    * total usable memory for sort memory manager
    * @return size in bytes
    */
   public long getUsableMemory() {
     return totalMemory;
-  }
-
-  /**
-   * Below method will be used to allocate dummy memory
-   * this will be used to allocate first and then used when u need
-   *
-   * @param size
-   */
-  public synchronized void allocateDummyMemory(long size) {
-    memoryUsed += size;
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug(String.format(
-          "Sort Memory block is created with size %d. Total memory used %d Bytes, left %d Bytes",
-          size, memoryUsed, totalMemory - memoryUsed));
-    }
   }
 
   public synchronized void freeMemory(String taskId, MemoryBlock memoryBlock) {
@@ -195,52 +169,17 @@ public class UnsafeSortMemoryManager {
   }
 
   /**
-   * Before calling this method caller should call allocateMemoryDummy
-   * This method will be used to allocate the memory, this can be used
-   * when caller wants to allocate memory first and used it anytime
-   * @param taskId
-   * @param memoryRequested
-   * @return memory block
+   * Below method will be used to check whether memory required is
+   * available or not
+   *
+   * @param required
+   * @return if memory available
    */
-  public synchronized MemoryBlock allocateMemoryLazy(String taskId, long memoryRequested) {
-    MemoryBlock allocate = allocator.allocate(memoryRequested);
-    Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
-    if (null == listOfMemoryBlock) {
-      listOfMemoryBlock = new HashSet<>();
-      taskIdToMemoryBlockMap.put(taskId, listOfMemoryBlock);
-    }
-    listOfMemoryBlock.add(allocate);
-    return allocate;
+  public synchronized boolean isMemoryAvailable(long required) {
+    return memoryUsed + required < totalMemory;
   }
 
-  /**
-   * It tries to allocate memory of `size` bytes, keep retry until it allocates successfully.
-   */
-  public static MemoryBlock allocateMemoryWithRetry(String taskId, long size)
-          throws MemoryException {
-    MemoryBlock baseBlock = null;
-    int tries = 0;
-    while (tries < 100) {
-      baseBlock = INSTANCE.allocateMemory(taskId, size);
-      if (baseBlock == null) {
-        try {
-          Thread.sleep(50);
-        } catch (InterruptedException e) {
-          throw new MemoryException(e);
-        }
-      } else {
-        break;
-      }
-      tries++;
-    }
-    if (baseBlock == null) {
-      throw new MemoryException("Not enough sort memory, please increase "
-          + CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB);
-    }
-    return baseBlock;
-  }
-
-  private synchronized MemoryBlock allocateMemory(String taskId, long memoryRequested) {
+  public synchronized MemoryBlock allocateMemory(String taskId, long memoryRequested) {
     if (memoryUsed + memoryRequested <= totalMemory) {
       MemoryBlock allocate = allocator.allocate(memoryRequested);
       memoryUsed += allocate.size();
