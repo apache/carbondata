@@ -775,6 +775,75 @@ test("test alter command for boolean data type with correct default measure valu
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timestampFormat)
   }
 
+
+  test("Alter Table Change Sort Scope 1") {
+    sql("DROP TABLE IF EXISTS t1")
+    sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
+        s"('sort_columns'='age', 'sort_scope'='local_sort')")
+    sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='batch_sort')")
+    assert(sortScopeInDescFormatted("t1").equalsIgnoreCase("BATCH_SORT"))
+    sql("DROP TABLE t1")
+  }
+
+  test("Alter Table Change Sort Scope 2") {
+    sql("DROP TABLE IF EXISTS t1")
+    sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
+        s"('sort_columns'='age', 'sort_scope'='local_sort')")
+    sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='no_sort')")
+    assert(sortScopeInDescFormatted("t1").equalsIgnoreCase("NO_SORT"))
+    sql("DROP TABLE t1")
+  }
+
+  test("Alter Table Change Sort Scope 3") {
+    sql("DROP TABLE IF EXISTS t1")
+    sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
+        s"('sort_columns'='')")
+
+    // This throws exception as SORT_COLUMNS is empty
+    intercept[RuntimeException] {
+      sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='local_sort')")
+    }
+
+    // Even if we change the SORT_SCOPE to LOCAL_SORT
+    // the SORT_SCOPE should remain to NO_SORT
+    // because SORT_COLUMNS does not contain anything.
+    assert(sortScopeInDescFormatted("t1").equalsIgnoreCase("NO_SORT"))
+    sql("DROP TABLE t1")
+  }
+
+  test("Alter Table Change Sort Scope 4") {
+    sql("DROP TABLE IF EXISTS t1")
+    sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
+        s"('sort_columns'='age', 'sort_scope'='local_sort')")
+    sql("ALTER TABLE t1 UNSET TBLPROPERTIES('sort_scope')")
+
+    // Unsetting the SORT_SCOPE should change the SORT_SCOPE to
+    // CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT
+    assert(sortScopeInDescFormatted("t1")
+      .equalsIgnoreCase(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
+    sql("DROP TABLE t1")
+  }
+
+  test("Alter Table Change Sort Scope 5") {
+    sql("DROP TABLE IF EXISTS t1")
+    sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
+        s"('sort_scope'='local_sort', 'sort_columns'='age')")
+    intercept[RuntimeException] {
+      sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='fake_sort')")
+    }
+
+    // SORT_SCOPE should remain unchanged
+    assert(sortScopeInDescFormatted("t1").equalsIgnoreCase("LOCAL_SORT"))
+    sql("DROP TABLE t1")
+  }
+
+  def sortScopeInDescFormatted(tableName: String): String = {
+    sql(s"DESCRIBE FORMATTED $tableName").filter(
+      (x: Row) => x.getString(0).equalsIgnoreCase("sort scope")
+    ).collectAsList().get(0).get(1).toString
+  }
+
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("drop table if exists table1")
