@@ -950,7 +950,7 @@ Users can specify which columns to include and exclude for local dictionary gene
       col_D DECIMAL(10,2),
       col_E LONG
   ) partitioned by (col_F Timestamp)
-  PARTITIONED BY 'carbondata'
+  STORED BY 'carbondata'
   TBLPROPERTIES('PARTITION_TYPE'='RANGE',
   'RANGE_INFO'='2015-01-01, 2016-01-01, 2017-01-01, 2017-02-01')
   ```
