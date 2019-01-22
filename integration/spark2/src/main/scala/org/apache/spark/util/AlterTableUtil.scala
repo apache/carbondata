@@ -35,6 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
@@ -360,6 +361,9 @@ object AlterTableUtil {
       // validate the range column properties
       validateRangeColumnProperties(carbonTable, lowerCasePropertiesMap)
 
+      // validate the Sort Scope
+      validateSortScopeProperty(carbonTable, lowerCasePropertiesMap)
+
       // below map will be used for cache invalidation. As tblProperties map is getting modified
       // in the next few steps the original map need to be retained for any decision making
       val existingTablePropertiesMap = mutable.Map(tblPropertiesMap.toSeq: _*)
@@ -387,11 +391,14 @@ object AlterTableUtil {
             // older tables. So no need to remove from table properties map for unset just to ensure
             // for older table behavior. So in case of unset, if enable property is already present
             // in map, then just set it to default value of local dictionary which is true.
-            if (!propKey.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)) {
-              tblPropertiesMap.remove(propKey.toLowerCase)
-            } else {
+            if (propKey.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)) {
               tblPropertiesMap
                 .put(propKey.toLowerCase, CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+            } else if (propKey.equalsIgnoreCase("sort_scope")) {
+              tblPropertiesMap
+                .put(propKey.toLowerCase, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+            } else {
+              tblPropertiesMap.remove(propKey.toLowerCase)
             }
           } else {
             val errorMessage = "Error: Invalid option(s): " + propKey
@@ -432,7 +439,8 @@ object AlterTableUtil {
       "LOCAL_DICTIONARY_INCLUDE",
       "LOCAL_DICTIONARY_EXCLUDE",
       "LOAD_MIN_SIZE_INMB",
-      "RANGE_COLUMN")
+      "RANGE_COLUMN",
+      "SORT_SCOPE")
     supportedOptions.contains(propKey.toUpperCase)
   }
 
@@ -530,6 +538,23 @@ object AlterTableUtil {
           s" is not exists in the table")
       } else {
         propertiesMap.put(CarbonCommonConstants.RANGE_COLUMN, rangeColumn.getColName)
+      }
+    }
+  }
+
+  def validateSortScopeProperty(carbonTable: CarbonTable,
+      propertiesMap: mutable.Map[String, String]): Unit = {
+    propertiesMap.foreach { property =>
+      if (property._1.equalsIgnoreCase("SORT_SCOPE")) {
+        if (!CarbonUtil.isValidSortOption(property._2)) {
+          throw new MalformedCarbonCommandException(
+            s"Invalid SORT_SCOPE ${ property._2 }, valid SORT_SCOPE are 'NO_SORT', 'BATCH_SORT', " +
+            s"'LOCAL_SORT' and 'GLOBAL_SORT'")
+        } else if (!property._2.equalsIgnoreCase("NO_SORT") &&
+                   (carbonTable.getNumberOfSortColumns == 0)) {
+          throw new InvalidConfigurationException(
+            s"Cannot set SORT_SCOPE as ${ property._2 } when table has no SORT_COLUMNS")
+        }
       }
     }
   }
