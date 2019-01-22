@@ -140,7 +140,7 @@ public class UnsafeIntermediateMerger {
     mergerTask.add(executorService.submit(merger));
   }
 
-  public void tryTriggerInmemoryMerging(boolean spillDisk)
+  public void tryTriggerInMemoryMerging(boolean spillDisk)
       throws CarbonSortKeyAndGroupByException {
     List<UnsafeCarbonRowPage> pages2Merge = new ArrayList<>();
     int totalRows2Merge = 0;
@@ -170,7 +170,7 @@ public class UnsafeIntermediateMerger {
 
   public void startInmemoryMergingIfPossible() throws CarbonSortKeyAndGroupByException {
     if (rowPages.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
-      tryTriggerInmemoryMerging(false);
+      tryTriggerInMemoryMerging(false);
     }
   }
 

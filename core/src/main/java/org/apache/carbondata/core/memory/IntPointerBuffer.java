@@ -75,17 +75,17 @@ public class IntPointerBuffer {
   }
 
   public void loadToUnsafe() {
-    try {
-      pointerMemoryBlock =
-          UnsafeSortMemoryManager.allocateMemoryWithRetry(this.taskId, pointerBlock.length * 4);
+    pointerMemoryBlock =
+        UnsafeSortMemoryManager.INSTANCE.allocateMemory(this.taskId, pointerBlock.length * 4);
+    // pointerMemoryBlock it means sort storage memory manager does not have space to loaf pointer
+    // buffer in that case use pointerBlock
+    if (null != pointerMemoryBlock) {
       for (int i = 0; i < pointerBlock.length; i++) {
         CarbonUnsafe.getUnsafe()
             .putInt(pointerMemoryBlock.getBaseObject(), pointerMemoryBlock.getBaseOffset() + i * 4,
                 pointerBlock[i]);
       }
       pointerBlock = null;
-    } catch (MemoryException e) {
-      LOGGER.warn("Not enough memory for allocating pointer buffer, sorting in heap");
     }
   }
 
