@@ -501,6 +501,10 @@ CarbonData DDL statements are documented here,which includes:
      This property is used to specify a column to partition the input data by range.
      It supports only one column now. During data loading, you can use "global_sort_partitions" or "scale_factor" to avoid to generate small files.
 
+     ```
+     TBLPROPERTIES('RANGE_COLUMN'='col1')
+     ```
+
 ## CREATE TABLE AS SELECT
   This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
 
