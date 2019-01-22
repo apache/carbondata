@@ -32,7 +32,7 @@ import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
@@ -60,6 +60,13 @@ private[sql] case class CarbonProjectForUpdateCommand(
       return Seq.empty
     }
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    if (carbonTable.getPartitionInfo != null &&
+      (carbonTable.getPartitionInfo.getPartitionType == PartitionType.RANGE ||
+        carbonTable.getPartitionInfo.getPartitionType == PartitionType.HASH ||
+        carbonTable.getPartitionInfo.getPartitionType == PartitionType.LIST)) {
+      throw new UnsupportedOperationException("Unsupported update operation for range/" +
+        "hash/list partition table")
+    }
     setAuditTable(carbonTable)
     setAuditInfo(Map("plan" -> plan.simpleString))
     columns.foreach { col =>
