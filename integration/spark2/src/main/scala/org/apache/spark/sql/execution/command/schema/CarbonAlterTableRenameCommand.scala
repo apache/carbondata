@@ -169,9 +169,9 @@ private[sql] case class CarbonAlterTableRenameCommand(
       case e: Exception =>
         if (hiveRenameSuccess) {
           sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].alterTableRename(
-            newTableIdentifier,
-            oldTableIdentifier,
-            carbonTable.getAbsoluteTableIdentifier.getTableName)
+            TableIdentifier(newTableName, Some(oldDatabaseName)),
+            TableIdentifier(oldTableName, Some(oldDatabaseName)),
+            carbonTable.getAbsoluteTableIdentifier.getTablePath)
         }
         if (carbonTable != null) {
           AlterTableUtil.revertRenameTableChanges(
