@@ -85,9 +85,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
     } catch (Exception e) {
       throw new CarbonDataLoadingException(e);
     }
-    // setting the number of cores to 1 in case of range sort
-    int numberOfCores = sortParameters.isRangeSort() ? 1 : iterators.length;
-    this.executorService = Executors.newFixedThreadPool(numberOfCores,
+    this.executorService = Executors.newFixedThreadPool(iterators.length,
         new CarbonThreadFactory("UnsafeParallelSorterPool:" + sortParameters.getTableName()));
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
 

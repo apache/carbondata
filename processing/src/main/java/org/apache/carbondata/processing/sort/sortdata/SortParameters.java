@@ -144,8 +144,6 @@ public class SortParameters implements Serializable {
    */
   private CarbonTable carbonTable;
 
-  private boolean isRangeSort;
-
   public SortParameters getCopy() {
     SortParameters parameters = new SortParameters();
     parameters.tempFileLocation = tempFileLocation;
@@ -180,7 +178,6 @@ public class SortParameters implements Serializable {
     parameters.batchSortSizeinMb = batchSortSizeinMb;
     parameters.rangeId = rangeId;
     parameters.carbonTable = carbonTable;
-    parameters.isRangeSort = isRangeSort;
     return parameters;
   }
 
@@ -444,9 +441,6 @@ public class SortParameters implements Serializable {
 
     parameters.setTempFileLocation(sortTempDirs);
     LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
-
-    parameters
-        .setIsRangeSort(configuration.getTableSpec().getCarbonTable().getRangeColumn() != null);
     int numberOfCores = 1;
     // In case of loading from partition we should use the cores specified by it
     if (configuration.getWritingCoresCount() > 0) {
@@ -490,13 +484,6 @@ public class SortParameters implements Serializable {
     this.rangeId = rangeId;
   }
 
-  public boolean isRangeSort() {
-    return isRangeSort;
-  }
-
-  public void setIsRangeSort(boolean isRangeSort) {
-    this.isRangeSort = isRangeSort;
-  }
   public static SortParameters createSortParameters(CarbonTable carbonTable, String databaseName,
       String tableName, int dimColCount, int complexDimColCount, int measureColCount,
       int noDictionaryCount, String segmentId, String taskNo, boolean[] noDictionaryColMaping,
