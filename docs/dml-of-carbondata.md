@@ -252,7 +252,7 @@ CarbonData DML statements are documented here,which includes:
   - ##### GLOBAL_SORT_PARTITIONS:
 
     If the SORT_SCOPE is defined as GLOBAL_SORT, then user can specify the number of partitions to use while shuffling data for sort using GLOBAL_SORT_PARTITIONS. If it is not configured, or configured less than 1, then it uses the number of map task as reduce task. It is recommended that each reduce task deal with 512MB-1GB data.
-    For RANGE_COLUMN, GLOBAL_SORT_PARTITIONS is used to  specify the number of range partitions also.
+    For RANGE_COLUMN, GLOBAL_SORT_PARTITIONS is used to specify the number of range partitions also.
   ```
   OPTIONS('GLOBAL_SORT_PARTITIONS'='2')
   ```
