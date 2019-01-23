@@ -150,7 +150,29 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>2.17</version>
         <configuration>
-          <skip>true</skip>
+          <skip>false</skip>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.scalastyle</groupId>
+        <artifactId>scalastyle-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbose>false</verbose>
+          <failOnViolation>true</failOnViolation>
+          <includeTestSourceDirectory>false</includeTestSourceDirectory>
+          <failOnWarning>false</failOnWarning>
+          <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
+          <testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>
+          <configLocation>${dev.path}/scalastyle-config.xml</configLocation>
+          <outputFile>${basedir}/target/scalastyle-output.xml</outputFile>
+          <outputEncoding>${project.build.sourceEncoding}</outputEncoding>
         </configuration>
       </plugin>
       <plugin>
