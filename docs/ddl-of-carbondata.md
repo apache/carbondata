@@ -499,7 +499,7 @@ CarbonData DDL statements are documented here,which includes:
 
    - ##### Range Column
      This property is used to specify a column to partition the input data by range.
-     It supports only one column now. During data loading, you can use "global_sort_partitions" or "scale_factor" to avoid to generate small files.
+     Only one column can be configured. During data loading, you can use "global_sort_partitions" or "scale_factor" to avoid generating small files.
 
      ```
      TBLPROPERTIES('RANGE_COLUMN'='col1')

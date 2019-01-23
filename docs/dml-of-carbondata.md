@@ -275,7 +275,7 @@ CarbonData DML statements are documented here,which includes:
    ```
    **NOTE:**
    * If both GLOBAL_SORT_PARTITIONS and SCALE_FACTOR are used at the same time, only GLOBAL_SORT_PARTITIONS is valid.
-   * The compaction on RANGE_COLUMN will use LOCAL_SORT by default now.
+   * The compaction on RANGE_COLUMN will use LOCAL_SORT by default.
 
 ### INSERT DATA INTO CARBONDATA TABLE
 
