@@ -19,10 +19,8 @@ package org.apache.carbondata.spark.load
 
 import java.util.Comparator
 
-import scala.collection.JavaConverters._
-
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.{Accumulator, DataSkewRangePartitioner, RangePartitioner, TaskContext}
+import org.apache.spark.{Accumulator, DataSkewRangePartitioner, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -31,7 +29,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
@@ -131,28 +129,7 @@ object DataLoadProcessBuilderOnSpark {
 
     // 4. Write
     sc.runJob(sortRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
-      TaskContext.get.addTaskCompletionListener(_ => ThreadLocalSessionInfo.unsetAll())
-      val carbonSessionInfo: CarbonSessionInfo = {
-        var info = ThreadLocalSessionInfo.getCarbonSessionInfo
-        if (info == null || null == info.getSessionParams) {
-          info = new CarbonSessionInfo
-          info.setSessionParams(new SessionParams())
-        }
-        info.getSessionParams.addProps(CarbonProperties.getInstance().getAddedProperty)
-        info
-      }
-      carbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf", conf.value.value)
-      TaskContext.get.addTaskCompletionListener { _ =>
-        CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
-      }
-      ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
-      TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
-      val carbonTaskInfo = new CarbonTaskInfo
-      carbonTaskInfo.setTaskId(CarbonUtil.generateUUID())
-      ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)
-      carbonSessionInfo.getSessionParams.getAddedProps.asScala.map {
-        f => CarbonProperties.getInstance().addProperty(f._1, f._2)
-      }
+      setTaskListener()
       DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, modelBroadcast,
         writeStepRowCounter, conf.value.value)
     })
@@ -248,28 +225,7 @@ object DataLoadProcessBuilderOnSpark {
 
     // 4. Sort and Write data
     sc.runJob(rangeRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
-      TaskContext.get.addTaskCompletionListener(_ => ThreadLocalSessionInfo.unsetAll())
-      val carbonSessionInfo: CarbonSessionInfo = {
-        var info = ThreadLocalSessionInfo.getCarbonSessionInfo
-        if (info == null || null == info.getSessionParams) {
-          info = new CarbonSessionInfo
-          info.setSessionParams(new SessionParams())
-        }
-        info.getSessionParams.addProps(CarbonProperties.getInstance().getAddedProperty)
-        info
-      }
-      carbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf", conf.value.value)
-      TaskContext.get.addTaskCompletionListener { _ =>
-        CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
-      }
-      ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
-      TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
-      val carbonTaskInfo = new CarbonTaskInfo
-      carbonTaskInfo.setTaskId(CarbonUtil.generateUUID())
-      ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)
-      carbonSessionInfo.getSessionParams.getAddedProps.asScala.map {
-        f => CarbonProperties.getInstance().addProperty(f._1, f._2)
-      }
+      setTaskListener()
       DataLoadProcessorStepOnSpark.sortAndWriteFunc(rows, context.partitionId, modelBroadcast,
         writeStepRowCounter, conf.value.value)
     })
@@ -388,6 +344,16 @@ object DataLoadProcessBuilderOnSpark {
     } else {
       new PrimtiveOrdering(column.getDataType)
     }
+  }
+
+  def setTaskListener(): Unit = {
+    TaskContext.get.addTaskCompletionListener { _ =>
+      CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+    }
+    TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
+    val carbonTaskInfo = new CarbonTaskInfo
+    carbonTaskInfo.setTaskId(CarbonUtil.generateUUID())
+    ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)
   }
 }
 
