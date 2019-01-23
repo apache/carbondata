@@ -131,46 +131,6 @@ public class ConcurrentSdkReaderTest {
       executorService.awaitTermination(10, TimeUnit.MINUTES);
     }
   }
-
-  @Test public void testReadWithZeroBatchSize() throws InterruptedException {
-    int numFiles = 5;
-    int numRowsPerFile = 5;
-    short numThreads = 4;
-    writeDataMultipleFiles(numFiles, numRowsPerFile);
-
-    // Concurrent Reading
-    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-    try {
-      long count;
-      CarbonReader reader =
-          CarbonReader.builder(dataDir).withRowRecordReader().withBatch(0).build();
-      List<CarbonReader> multipleReaders = reader.split(numThreads);
-      try {
-        List<ReadLogic> tasks = new ArrayList<>();
-        List<Future<Long>> results;
-        count = 0;
-
-        for (CarbonReader reader_i : multipleReaders) {
-          tasks.add(new ReadLogic(reader_i));
-        }
-        results = executorService.invokeAll(tasks);
-        for (Future result_i : results) {
-          count += (long) result_i.get();
-        }
-        Assert.assertEquals(numFiles * numRowsPerFile, count);
-      } catch (Exception e) {
-        e.printStackTrace();
-        Assert.fail(e.getMessage());
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-      Assert.fail(e.getMessage());
-    } finally {
-      executorService.shutdown();
-      executorService.awaitTermination(10, TimeUnit.MINUTES);
-    }
-  }
-
   class ReadLogic implements Callable<Long> {
     CarbonReader reader;
 

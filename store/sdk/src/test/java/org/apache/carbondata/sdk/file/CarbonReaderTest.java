@@ -104,6 +104,29 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
   }
 
+  @Test public void testReadWithZeroBatchSize() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+    DataMapStoreManager.getInstance().clearDataMaps(AbsoluteTableIdentifier.from(path));
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(10, new Schema(fields), path);
+    CarbonReader reader;
+    reader = CarbonReader.builder(path).withRowRecordReader().withBatch(0).build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      Assert.assertEquals(("robot" + (i % 10)), row[0]);
+      Assert.assertEquals(i, row[1]);
+      i++;
+    }
+    Assert.assertEquals(i, 10);
+    FileUtils.deleteDirectory(new File(path));
+  }
+
   @Test
   public void testReadWithFilterOfNonTransactionalSimple() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
