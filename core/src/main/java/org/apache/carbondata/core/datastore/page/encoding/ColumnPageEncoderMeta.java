@@ -158,7 +158,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
         out.writeInt(-1);
         out.writeInt(-1);
       }
-    } else if (dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.BYTE_ARRAY || dataType == DataTypes.BINARY) {
       // for complex type, it will come here, ignoring stats for complex type
       // TODO: support stats for complex type
     } else {
@@ -206,7 +206,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       in.readInt();
       // precision field is obsoleted. It is stored in the schema data type in columnSpec
       in.readInt();
-    } else if (dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.BYTE_ARRAY || dataType == DataTypes.BINARY) {
       // for complex type, it will come here, ignoring stats for complex type
       // TODO: support stats for complex type
     } else {

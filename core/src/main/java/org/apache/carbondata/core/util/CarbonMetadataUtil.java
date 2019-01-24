@@ -512,6 +512,8 @@ public class CarbonMetadataUtil {
         compare = -1;
       }
       return (int) compare;
+    } else if (dataType == DataTypes.BINARY) {
+      return 0;
     } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.byteToBigDecimal(first).compareTo(DataTypeUtil.byteToBigDecimal(second));
     } else {

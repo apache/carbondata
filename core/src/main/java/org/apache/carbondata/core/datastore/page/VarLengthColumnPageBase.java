@@ -18,6 +18,8 @@
 package org.apache.carbondata.core.datastore.page;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
@@ -42,6 +44,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   static final int longBits = DataTypes.LONG.getSizeBits();
   // default size for each row, grows as needed
   static final int DEFAULT_ROW_SIZE = 8;
+  static final int DEFAULT_BINARY_SIZE = 512;
 
   static final double FACTOR = 1.25;
 
@@ -148,6 +151,13 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       int lvLength, String compressorName) throws MemoryException {
     return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataTypes.BYTE_ARRAY,
         lvLength, compressorName);
+  }
+
+  static ColumnPage newBinaryColumnPage(TableSpec.ColumnSpec columnSpec, byte[] lvEncodedBytes,
+      int offset, int length, String compressorName)
+      throws MemoryException {
+    return getBinaryColumnPage(columnSpec,
+        lvEncodedBytes, DataTypes.BINARY, offset, length, compressorName);
   }
 
   /**
@@ -287,6 +297,49 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     return page;
   }
 
+  private static ColumnPage getBinaryColumnPage(TableSpec.ColumnSpec columnSpec,
+      byte[] lvEncodedBytes, DataType dataType, int start, int len, String compressorName)
+      throws MemoryException {
+
+    ColumnPage rowOffset = ColumnPage.newPage(
+        new ColumnPageEncoderMeta(columnSpec, dataType, compressorName),
+        CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+
+    List<Integer> rowLength = new ArrayList<>();
+    int length;
+    int offset;
+    int lvEncodedOffset = start;
+
+    // extract Length field in input and calculate total length
+    for (offset = 0; lvEncodedOffset < len; offset += length) {
+      length = ByteUtil.toInt(lvEncodedBytes, lvEncodedOffset);
+      rowOffset.putInt(rowLength.size(), offset);
+      rowLength.add(length);
+      lvEncodedOffset += 4 + length;
+    }
+    rowOffset.putInt(rowLength.size(), offset);
+    VarLengthColumnPageBase page;
+    if (unsafe) {
+      page = new UnsafeVarLengthColumnPage(new ColumnPageEncoderMeta(columnSpec,
+          dataType, compressorName), rowLength.size());
+    } else {
+      page = new SafeVarLengthColumnPage(new ColumnPageEncoderMeta(columnSpec,
+          dataType, compressorName), rowLength.size());
+    }
+    // set total length and rowOffset in page
+    page.totalLength = offset;
+    page.rowOffset = rowOffset;
+
+    // set data in page
+    lvEncodedOffset = start;
+    for (int i = 0; i < rowLength.size(); i++) {
+      length = rowLength.get(i);
+      page.putBytes(i, lvEncodedBytes, lvEncodedOffset + 4, length);
+      lvEncodedOffset += 4 + length;
+    }
+    return page;
+  }
+
   @Override
   public void putByte(int rowId, byte value) {
     throw new UnsupportedOperationException(
@@ -307,8 +360,21 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public void putInt(int rowId, int value) {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+    try {
+      ensureMemory(ByteUtil.SIZEOF_INT);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
+    long offset = ((long) rowId) << intBits;
+    CarbonUnsafe.getUnsafe().putInt(baseAddress, baseOffset + offset, value);
+    totalLength += ByteUtil.SIZEOF_INT;
+    updatePageSize(rowId);
+  }
+
+  private void updatePageSize(int rowId) {
+    if (pageSize < rowId) {
+      pageSize = rowId;
+    }
   }
 
   @Override
@@ -349,8 +415,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public byte getByte(int rowId) {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+    long offset = ((long) rowId) << byteBits;
+    return CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset);
   }
 
   @Override
@@ -367,8 +433,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public int getInt(int rowId) {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+    long offset = ((long) rowId) << intBits;
+    return CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset);
   }
 
   @Override

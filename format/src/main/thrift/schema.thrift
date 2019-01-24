@@ -33,6 +33,7 @@ enum DataType {
 	TIMESTAMP = 6,
 	DATE = 7,
 	BOOLEAN = 8,
+	BINARY = 19,
 	ARRAY = 20,
 	STRUCT = 21,
 	VARCHAR = 22,
