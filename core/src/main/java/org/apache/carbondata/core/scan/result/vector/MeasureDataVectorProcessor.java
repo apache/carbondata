@@ -410,6 +410,58 @@ public class MeasureDataVectorProcessor {
     }
   }
 
+  public static class BinaryVectorFiller implements MeasureVectorFiller {
+    @Override
+    public void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info) {
+      int offset = info.offset;
+      int len = dataChunk.getPageSize();
+      int vectorOffset = info.vectorOffset;
+      CarbonColumnVector vector = info.vector;
+      BitSet nullBitSet = dataChunk.getNullBits();
+      if (nullBitSet.isEmpty()) {
+        for (int i = offset; i < len; i++) {
+          vector.putByteArray(vectorOffset, dataChunk.getBytes(i));
+          vectorOffset++;
+        }
+      } else {
+        for (int i = offset; i < len; i++) {
+          if (nullBitSet.get(i)) {
+            vector.putNull(vectorOffset);
+          } else {
+            vector.putByteArray(vectorOffset, dataChunk.getBytes(i));
+          }
+          vectorOffset++;
+        }
+      }
+    }
+    @Override
+    public void fillMeasureVector(int[] filteredRowId, ColumnPage dataChunk,
+        ColumnVectorInfo info) {
+      int offset = info.offset;
+      int len = offset + info.size;
+      int vectorOffset = info.vectorOffset;
+      CarbonColumnVector vector = info.vector;
+      BitSet nullBitSet = dataChunk.getNullBits();
+      if (nullBitSet.isEmpty()) {
+        for (int i = offset; i < len; i++) {
+          int currentRow = filteredRowId[i];
+          vector.putByteArray(vectorOffset, dataChunk.getBytes(currentRow));
+          vectorOffset++;
+        }
+      } else {
+        for (int i = offset; i < len; i++) {
+          int currentRow = filteredRowId[i];
+          if (nullBitSet.get(currentRow)) {
+            vector.putNull(vectorOffset);
+          } else {
+            vector.putByteArray(vectorOffset, dataChunk.getBytes(currentRow));
+          }
+          vectorOffset++;
+        }
+      }
+    }
+  }
+
   public static class DefaultMeasureVectorFiller implements MeasureVectorFiller {
 
     @Override
@@ -481,6 +533,8 @@ public class MeasureDataVectorProcessor {
         return new FloatMeasureVectorFiller();
       } else if (dataType == DataTypes.BYTE) {
         return new ByteMeasureVectorFiller();
+      } else if (dataType == DataTypes.BINARY) {
+        return new BinaryVectorFiller();
       } else {
         return new DefaultMeasureVectorFiller();
       }

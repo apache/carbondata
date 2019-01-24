@@ -41,6 +41,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.MeasureDataVectorProcessor;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
@@ -115,7 +116,14 @@ public class DirectCompressCodec implements ColumnPageCodec {
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
         int uncompressedLength;
         byte[] unCompressData;
-        if (null != reusableDataBuffer && compressor.supportReusableBuffer()) {
+        if (DataTypes.BINARY.getName().equalsIgnoreCase(meta.getStoreDataType().getName())) {
+          ColumnPage columnPage = ColumnPage.decompress(meta, input, offset, length, isLVEncoded);
+          MeasureDataVectorProcessor.MeasureVectorFiller measureVectorFiller =
+              MeasureDataVectorProcessor.MeasureVectorFillerFactory
+                  .getMeasureVectorFiller(dataType);
+          measureVectorFiller.fillMeasureVector(columnPage, vectorInfo);
+          return;
+        } else if (null != reusableDataBuffer && compressor.supportReusableBuffer()) {
           uncompressedLength = compressor.unCompressedLength(input, offset, length);
           unCompressData = reusableDataBuffer.getDataBuffer(uncompressedLength);
           compressor.rawUncompress(input, offset, length, unCompressData);

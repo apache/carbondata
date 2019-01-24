@@ -2177,7 +2177,11 @@ public final class CarbonUtil {
         return DataTypes.FLOAT;
       case BYTE:
         return DataTypes.BYTE;
+      case BINARY:
+        return DataTypes.BINARY;
       default:
+        LOGGER.warn(String.format("It can't match the data type, so use default data type: %s",
+            DataTypes.STRING.getName()));
         return DataTypes.STRING;
     }
   }
@@ -2372,7 +2376,7 @@ public final class CarbonUtil {
       return b.array();
     } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
-    } else if (dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.BYTE_ARRAY || dataType == DataTypes.BINARY) {
       return (byte[]) value;
     } else if (dataType == DataTypes.STRING
         || dataType == DataTypes.DATE

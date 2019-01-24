@@ -92,7 +92,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     } else if (dataType instanceof DecimalType) {
       decimals = new BigDecimal[batchSize];
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
-        || dataType == DataTypes.VARCHAR) {
+        || dataType == DataTypes.VARCHAR || dataType == DataTypes.BINARY) {
       dictionaryVector = new CarbonColumnVectorImpl(batchSize, DataTypes.INT);
       bytes = new byte[batchSize][];
     } else {
@@ -233,7 +233,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     } else if (dataType instanceof DecimalType) {
       return decimals[rowId];
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
-        || dataType == DataTypes.VARCHAR) {
+        || dataType == DataTypes.VARCHAR || dataType == DataTypes.BINARY) {
       if (null != carbonDictionary) {
         int dictKey = (Integer) dictionaryVector.getData(rowId);
         return carbonDictionary.getDictionaryValue(dictKey);
@@ -295,7 +295,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     } else if (dataType instanceof DecimalType) {
       Arrays.fill(decimals, null);
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
-        || dataType == DataTypes.VARCHAR) {
+        || dataType == DataTypes.VARCHAR || dataType == DataTypes.BINARY) {
       Arrays.fill(bytes, null);
       this.dictionaryVector.reset();
     } else {

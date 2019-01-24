@@ -130,6 +130,9 @@ public class FieldEncoderFactory {
         return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
       }
     } else {
+      if (dataField.getColumn().getDataType() == DataTypes.BINARY) {
+        return new BinaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
+      }
       return new MeasureFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
     }
   }

@@ -114,9 +114,12 @@ public class DefaultEncodingFactory extends EncodingFactory {
 
   private ColumnPageEncoder createEncoderForMeasureOrNoDictionaryPrimitive(ColumnPage columnPage,
       TableSpec.ColumnSpec columnSpec) {
+
     SimpleStatsResult stats = columnPage.getStatistics();
     DataType dataType = stats.getDataType();
-    if (dataType == DataTypes.BOOLEAN) {
+    if (dataType == DataTypes.BOOLEAN
+        || dataType == DataTypes.BYTE_ARRAY
+        || columnPage.getDataType() == DataTypes.BINARY) {
       return new DirectCompressCodec(columnPage.getDataType()).createEncoder(null);
     } else if (dataType == DataTypes.BYTE ||
         dataType == DataTypes.SHORT ||
@@ -128,8 +131,6 @@ public class DefaultEncodingFactory extends EncodingFactory {
       return createEncoderForDecimalDataTypeMeasure(columnPage, columnSpec);
     } else if (dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
       return selectCodecByAlgorithmForFloating(stats, false, columnSpec).createEncoder(null);
-    } else if (dataType == DataTypes.BYTE_ARRAY) {
-      return new DirectCompressCodec(columnPage.getDataType()).createEncoder(null);
     } else {
       throw new RuntimeException("unsupported data type: " + stats.getDataType());
     }

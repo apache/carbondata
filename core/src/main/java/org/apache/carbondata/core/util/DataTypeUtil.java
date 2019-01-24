@@ -1057,6 +1057,8 @@ public final class DataTypeUtil {
       return DataTypes.BYTE_ARRAY;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.BYTE_ARRAY;
+    } else if (DataTypes.BINARY.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.BINARY;
     } else if (dataType.getName().equalsIgnoreCase("decimal")) {
       return DataTypes.createDecimalType(precision, scale);
     } else if (dataType.getName().equalsIgnoreCase("array")) {
