@@ -109,11 +109,19 @@ CarbonData DML statements are documented here,which includes:
     ```
 
   - ##### SORT_SCOPE:
-  Sort Scope to be used for the current load. This overrides the Sort Scope of Table.
-
-  ```
-  OPTIONS('SORT_SCOPE'='BATCH_SORT')
-  ```
+    Sort Scope to be used for the current load. This overrides the Sort Scope of Table.
+    Requirement: Sort Columns must be set while creating table. If Sort Columns is null, Sort Scope is always NO_SORT.
+  
+    ```
+    OPTIONS('SORT_SCOPE'='BATCH_SORT')
+    ```
+    
+    Priority order for choosing Sort Scope is:
+    1. Load Data Command
+    2. CARBON.TABLE.LOAD.SORT.SCOPE.<db>.<table> session property
+    3. Table level Sort Scope
+    4. CARBON.OPTIONS.SORT.SCOPE session property
+    5. Default Value: NO_SORT
 
   - ##### MULTILINE:
 
