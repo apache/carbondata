@@ -95,7 +95,7 @@ public class CarbonVectorBatch {
       return new FloatStreamReader(batchSize, field.getDataType(), dictionary);
     } else if (dataType == DataTypes.BYTE) {
       return new ByteStreamReader(batchSize, field.getDataType(), dictionary);
-    } else if (dataType == DataTypes.STRING) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.VARCHAR) {
       return new SliceStreamReader(batchSize, field.getDataType(), dictionary);
     } else if (DataTypes.isDecimal(dataType)) {
       if (dataType instanceof DecimalType) {
