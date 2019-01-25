@@ -22,6 +22,7 @@ import java.sql.SQLException
 import java.util
 
 import org.apache.commons.io.FileUtils
+import org.apache.commons.lang.RandomStringUtils
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -45,6 +46,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
   private val systemPath = s"$rootPath/integration/presto/target/system"
   private val writerPath = storePath + "/sdk_output/files"
   private val prestoServer = new PrestoServer
+  private var varcharString = new String
 
   override def beforeAll: Unit = {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
@@ -67,13 +69,13 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     FileUtils.deleteDirectory(new File(writerPath))
     createTable
 
-    buildTestData(3, null)
+    buildTestData(3, null, true)
   }
 
   def buildTestDataMultipleFiles(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     createTable
-    buildTestData(1000000, null)
+    buildTestData(1000000, null, false)
   }
 
   private def createTable = {
@@ -83,28 +85,40 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     prestoServer
       .execute(
         "create table sdk_output.files(name varchar, age int, id tinyint, height double, salary " +
-        "real) with" +
+        "real, address varchar) with" +
         "(format='CARBON') ")
   }
 
-  def buildTestData(rows: Int, options: util.Map[String, String]): Any = {
-    buildTestData(rows, options, List("name"))
+  def buildTestData(rows: Int, options: util.Map[String, String], varcharDataGen: Boolean): Any = {
+    buildTestData(rows, options, List("name"), varcharDataGen)
   }
 
   // prepare sdk writer output
   def buildTestData(rows: Int,
       options: util.Map[String, String],
-      sortColumns: List[String]): Any = {
+      sortColumns: List[String],
+      varcharDataGen: Boolean): Any = {
     val schema = new StringBuilder()
       .append("[ \n")
       .append("   {\"NaMe\":\"string\"},\n")
       .append("   {\"age\":\"int\"},\n")
       .append("   {\"id\":\"byte\"},\n")
       .append("   {\"height\":\"double\"},\n")
-      .append("   {\"salary\":\"float\"}\n")
+      .append("   {\"salary\":\"float\"},\n")
+      .append("   {\"address\":\"varchar\"}\n")
       .append("]")
       .toString()
 
+    // Build Varchar Column data
+    var varcharValue: String = {
+      if (varcharDataGen) {
+        RandomStringUtils.randomAlphabetic(32001)
+      } else {
+        "a"
+      }
+    }
+
+    varcharString = varcharValue
     try {
       val builder = CarbonWriter.builder()
       val writer =
@@ -132,14 +146,16 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
               String.valueOf(i),
               String.valueOf(i.toDouble / 2),
               "robot",
-              String.valueOf(i.toFloat / 2)))
+              String.valueOf(i.toFloat / 2),
+              String.valueOf(varcharValue)))
         } else {
           writer
             .write(Array[String]("robot" + i,
               String.valueOf(i),
               String.valueOf(i % 128),
               String.valueOf(i.toDouble / 2),
-              String.valueOf(i.toFloat / 2)))
+              String.valueOf(i.toFloat / 2),
+              String.valueOf(varcharValue)))
         }
         i += 1
       }
@@ -150,7 +166,8 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
             String.valueOf(i),
             String.valueOf(i),
             String.valueOf(i.toDouble / 2),
-            String.valueOf(i.toFloat / 2)))
+            String.valueOf(i.toFloat / 2),
+            String.valueOf(varcharValue)))
       }
       writer.close()
     } catch {
@@ -281,17 +298,28 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
       "height" -> 0.0,
       "age" -> 0,
       "salary" -> 0.0,
-      "id" -> 0),
+      "id" -> 0,
+      "address" -> varcharString),
       Map("name" -> "robot1",
         "height" -> 0.5,
         "age" -> 1,
         "salary" -> 0.5,
-        "id" -> 1),
+        "id" -> 1,
+        "address" -> varcharString),
       Map("name" -> "robot2",
         "height" -> 1.0,
         "age" -> 2,
         "salary" -> 1.0,
-        "id" -> 2))
+        "id" -> 2,
+        "address" -> varcharString))
     assert(actualResult.toString() equals expectedResult.toString())
+  }
+
+  test("Test for query on Varchar columns") {
+    buildTestDataSingleFile()
+    val actualRes: List[Map[String, Any]] = prestoServer.
+      executeQuery("select max(length(address)) from files")
+    val expectedRes: List[Map[String, Any]] = List(Map("_col0" -> 32001))
+    assert(actualRes.toString() equals expectedRes.toString())
   }
 }
