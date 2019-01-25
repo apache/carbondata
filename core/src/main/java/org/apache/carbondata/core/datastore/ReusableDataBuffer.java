@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * class holds the reusable data buffer based on request it will resize.
@@ -47,7 +48,13 @@ public class ReusableDataBuffer {
    */
   public byte[] getDataBuffer(int requestedSize) {
     if (dataBuffer == null || requestedSize > size) {
-      this.size = requestedSize + ((requestedSize * 30) / 100);
+      // increase by 30% only if the requestedSize less than 10 MB
+      // otherwise take the original requestedSize.
+      if (requestedSize < CarbonCommonConstants.REQUESTED_PAGE_SIZE_MAX) {
+        this.size = requestedSize + ((requestedSize * 30) / 100);
+      } else {
+        this.size = requestedSize;
+      }
       dataBuffer = new byte[size];
     }
     return dataBuffer;

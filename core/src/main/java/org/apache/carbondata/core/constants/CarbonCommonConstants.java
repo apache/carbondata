@@ -1387,6 +1387,13 @@ public final class CarbonCommonConstants {
   public static final int CARBON_DYNAMIC_ALLOCATION_SCHEDULER_THREAD_SLEEP_TIME = 250;
 
   /**
+   * We increment the requested page size by 30% only if the requested size is less than 10MB.
+   * Otherwise we take the original requested page size.This parameter will be used till the
+   * size based page implementation comes in carbon.
+   */
+  public static final int REQUESTED_PAGE_SIZE_MAX = 10485760;
+
+  /**
    * It allows queries on hive metastore directly along with filter information, otherwise first
    * fetches all partitions from hive and apply filters on it.
    */
