@@ -17,11 +17,12 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSet}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap}
 
 import org.apache.carbondata.mv.expressions.modular._
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, Select}
 import org.apache.carbondata.mv.plans.modular
+import org.apache.carbondata.mv.plans.util.MVSQLOptimizer
 import org.apache.carbondata.mv.session.MVSession
 
 private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) {
@@ -49,8 +50,8 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
         else {
           val compensation =
             (for { dataset <- catalog.lookupFeasibleSummaryDatasets(currentFragment).toStream
-                   subsumer <- session.sessionState.modularizer.modularize(
-                     session.sessionState.optimizer.execute(dataset.plan)).map(_.semiHarmonized)
+                   subsumer <- session.sessionState.modularizer.modularize(MVSQLOptimizer.execute(
+                     session.sessionState.optimizer.execute(dataset.plan))).map(_.semiHarmonized)
                    subsumee <- unifySubsumee(currentFragment)
                    comp <- subsume(
                      unifySubsumer2(

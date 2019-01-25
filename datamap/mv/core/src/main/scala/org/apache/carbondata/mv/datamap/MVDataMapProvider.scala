@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datamap.{DataMapCatalog, DataMapProvider, Data
 import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory}
 import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.mv.plans.util.MVSQLOptimizer
 import org.apache.carbondata.mv.rewrite.{SummaryDataset, SummaryDatasetCatalog}
 
 @InterfaceAudience.Internal
@@ -89,7 +90,7 @@ class MVDataMapProvider(
         }
       val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(ctasQuery)
       val queryPlan = SparkSQLUtil.execute(
-        sparkSession.sql(updatedQuery).queryExecution.analyzed,
+        MVSQLOptimizer.execute(sparkSession.sql(updatedQuery).queryExecution.analyzed),
         sparkSession).drop("preAgg")
       val header = logicalPlan.output.map(_.name).mkString(",")
       val loadCommand = CarbonLoadDataCommand(

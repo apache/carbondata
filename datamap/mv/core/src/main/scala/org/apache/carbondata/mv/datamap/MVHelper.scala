@@ -39,6 +39,7 @@ import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, RelationIdentifier}
 import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.mv.plans.modular.{GroupBy, Matchable, ModularPlan, Select}
+import org.apache.carbondata.mv.plans.util.MVSQLOptimizer
 import org.apache.carbondata.mv.rewrite.{MVPlanWrapper, QueryRewrite, SummaryDatasetCatalog}
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -54,7 +55,7 @@ object MVHelper {
     val dmProperties = dataMapSchema.getProperties.asScala
     val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
     val query = sparkSession.sql(updatedQuery)
-    val logicalPlan = MVHelper.dropDummFuc(query.queryExecution.analyzed)
+    val logicalPlan = MVSQLOptimizer.execute(MVHelper.dropDummFuc(query.queryExecution.analyzed))
     validateMVQuery(sparkSession, logicalPlan)
     val fullRebuild = isFullReload(logicalPlan)
     val fields = logicalPlan.output.map { attr =>
@@ -154,21 +155,7 @@ object MVHelper {
     if (!modularPlan.isSPJGH)  {
       throw new UnsupportedOperationException("MV is not supported for this query")
     }
-    val isValid = modularPlan match {
-      case g: GroupBy =>
-        // Make sure all predicates are present in projections.
-        g.predicateList.forall{p =>
-          g.outputList.exists{
-            case a: Alias =>
-              a.semanticEquals(p) || a.child.semanticEquals(p)
-            case other => other.semanticEquals(p)
-          }
-        }
-      case _ => true
-    }
-    if (!isValid) {
-      throw new UnsupportedOperationException("Group by columns must be present in project columns")
-    }
+
     if (catalog.isMVWithSameQueryPresent(logicalPlan)) {
       throw new UnsupportedOperationException("MV with same query present")
     }

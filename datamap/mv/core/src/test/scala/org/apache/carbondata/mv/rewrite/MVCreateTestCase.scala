@@ -826,19 +826,16 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists mv_unional")
   }
 
-  test("jira carbondata-2533") {
-
+  test("jira carbondata-2533 and jira carbondata-3270") {
     sql("drop datamap if exists MV_exp")
-    intercept[UnsupportedOperationException] {
-      sql(
-        "create datamap MV_exp using 'mv' as select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
+    sql(
+      "create datamap MV_exp using 'mv' as select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
 
-      sql("rebuild datamap MV_exp")
-      val frame = sql(
-        "select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
-      val analyzed = frame.queryExecution.analyzed
-      assert(verifyMVDataMap(analyzed, "MV_exp"))
-    }
+    sql("rebuild datamap MV_exp")
+    val frame = sql(
+      "select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "MV_exp"))
     sql("drop datamap if exists MV_exp")
   }
 
