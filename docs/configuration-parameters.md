@@ -208,7 +208,7 @@ RESET
 | carbon.options.date.format                 | Specifies the data format of the date columns in the data being loaded |
 | carbon.options.timestamp.format            | Specifies the timestamp format of the time stamp columns in the data being loaded |
 | carbon.options.sort.scope                 | Specifies how the current data load should be sorted with. **NOTE:** Refer to [Data Loading Configuration](#data-loading-configuration)#carbon.sort.scope for detailed information. |
-| carbon.table.load.sort.scope              | Overrides the SORT_SCOPE provided in CREATE TABLE.           |
+| carbon.table.load.sort.scope.<db>.<table> | Overrides the SORT_SCOPE provided in CREATE TABLE.           |
 | carbon.options.global.sort.partitions     |                                                              |
 | carbon.options.serialization.null.format  | Default Null value representation in the data being loaded. **NOTE:** Refer to [Data Loading Configuration](#data-loading-configuration)#carbon.options.serialization.null.format for detailed information. |
 | carbon.query.directQueryOnDataMap.enabled | Specifies whether datamap can be queried directly. This is useful for debugging purposes.**NOTE: **Refer to [Query Configuration](#query-configuration) for detailed information. |
