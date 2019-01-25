@@ -41,6 +41,7 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
+import org.apache.carbondata.core.scan.wrappers.IntArrayWrapper;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
@@ -117,7 +118,7 @@ public class CarbonCompactionExecutor {
     resultList.put(CarbonCompactionUtil.SORTED_IDX,
         new ArrayList<RawResultIterator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
 
-    List<TableBlockInfo> list = null;
+    List<TableBlockInfo> tableBlockInfos = null;
     QueryModelBuilder builder = new QueryModelBuilder(carbonTable)
         .projectAllColumns()
         .dataConverter(dataTypeConverter)
@@ -130,7 +131,6 @@ public class CarbonCompactionExecutor {
     for (Map.Entry<String, TaskBlockInfo> taskMap : segmentMapping.entrySet()) {
       String segmentId = taskMap.getKey();
       List<DataFileFooter> listMetadata = dataFileMetadataSegMapping.get(segmentId);
-      SegmentProperties sourceSegProperties = getSourceSegmentProperties(listMetadata);
       // for each segment get taskblock info
       TaskBlockInfo taskBlockInfo = taskMap.getValue();
       Set<String> taskBlockListMapping = taskBlockInfo.getTaskSet();
@@ -139,24 +139,69 @@ public class CarbonCompactionExecutor {
           CarbonCompactionUtil.isRestructured(listMetadata, carbonTable.getTableLastUpdatedTime())
               || !CarbonCompactionUtil.isSorted(listMetadata.get(0));
       for (String task : taskBlockListMapping) {
-        list = taskBlockInfo.getTableBlockInfoList(task);
-        Collections.sort(list);
-        LOGGER.info(
-            "for task -" + task + "- in segment id -" + segmentId + "- block size is -" + list
-                .size());
-        queryModel.setTableBlockInfos(list);
-        if (sortingRequired) {
-          resultList.get(CarbonCompactionUtil.UNSORTED_IDX).add(
-              new RawResultIterator(executeBlockList(list, segmentId, task, configuration),
-                  sourceSegProperties, destinationSegProperties, false));
-        } else {
-          resultList.get(CarbonCompactionUtil.SORTED_IDX).add(
-              new RawResultIterator(executeBlockList(list, segmentId, task, configuration),
-                  sourceSegProperties, destinationSegProperties, false));
+        tableBlockInfos = taskBlockInfo.getTableBlockInfoList(task);
+        // during update there may be a chance that the cardinality may change within the segment
+        // which may lead to failure while converting the row, so get all the blocks present in a
+        // task and then split into multiple lists of same column values and create separate
+        // RawResultIterator for each tableBlockInfo of same column values. If all the blocks have
+        // same column values, then make a single RawResultIterator for all the blocks
+        List<List<TableBlockInfo>> listOfTableBlocksBasedOnKeyLength =
+            getListOfTableBlocksBasedOnColumnValueSize(tableBlockInfos);
+        for (List<TableBlockInfo> tableBlockInfoList : listOfTableBlocksBasedOnKeyLength) {
+          Collections.sort(tableBlockInfoList);
+          LOGGER.info("for task -" + task + "- in segment id -" + segmentId + "- block size is -"
+              + tableBlockInfos.size());
+          queryModel.setTableBlockInfos(tableBlockInfoList);
+          if (sortingRequired) {
+            resultList.get(CarbonCompactionUtil.UNSORTED_IDX).add(
+                getRawResultIterator(configuration, segmentId, task, tableBlockInfoList));
+          } else {
+            resultList.get(CarbonCompactionUtil.SORTED_IDX).add(
+                getRawResultIterator(configuration, segmentId, task, tableBlockInfoList));
+          }
         }
       }
     }
     return resultList;
+  }
+
+  private RawResultIterator getRawResultIterator(Configuration configuration, String segmentId,
+      String task, List<TableBlockInfo> tableBlockInfoList)
+      throws QueryExecutionException, IOException {
+    return new RawResultIterator(
+        executeBlockList(tableBlockInfoList, segmentId, task, configuration),
+        getSourceSegmentProperties(
+            Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter())),
+        destinationSegProperties, false);
+  }
+
+  /**
+   * This method returns the List of TableBlockInfoList, where each listOfTableBlockInfos will have
+   * same columnvalues
+   * @param tableBlockInfos List of tableBlockInfos present in each task
+   */
+  private List<List<TableBlockInfo>> getListOfTableBlocksBasedOnColumnValueSize(
+      List<TableBlockInfo> tableBlockInfos) {
+    List<List<TableBlockInfo>> listOfTableBlockInfoListOnColumnvaluesSize = new ArrayList<>();
+    Map<IntArrayWrapper, List<TableBlockInfo>> columnvalueSizeToTableBlockInfoMap = new HashMap<>();
+    for (TableBlockInfo tableBlock : tableBlockInfos) {
+      // get the columnValueSize for the dataFileFooter
+      IntArrayWrapper columnValueSize = new IntArrayWrapper(
+          getSourceSegmentProperties(Collections.singletonList(tableBlock.getDataFileFooter()))
+              .getColumnsValueSize());
+      List<TableBlockInfo> tempBlockInfoList =
+          columnvalueSizeToTableBlockInfoMap.get(columnValueSize);
+      if (tempBlockInfoList == null) {
+        tempBlockInfoList = new ArrayList<>();
+        columnvalueSizeToTableBlockInfoMap.put(columnValueSize, tempBlockInfoList);
+      }
+      tempBlockInfoList.add(tableBlock);
+    }
+    for (Map.Entry<IntArrayWrapper, List<TableBlockInfo>> taskMap :
+        columnvalueSizeToTableBlockInfoMap.entrySet()) {
+      listOfTableBlockInfoListOnColumnvaluesSize.add(taskMap.getValue());
+    }
+    return listOfTableBlockInfoListOnColumnvaluesSize;
   }
 
   /**
