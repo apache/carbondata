@@ -202,7 +202,7 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
     }
   }
 
-  private val skewPartitions: Int = if (skewCount == 0) {
+  private var skewPartitions: Int = if (skewCount == 0) {
     0
   } else {
     skewWeights.map(_ - 1).sum
@@ -307,6 +307,7 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
         case js: JavaSerializer => out.defaultWriteObject()
         case _ =>
           out.writeInt(skewCount)
+          out.writeInt(skewPartitions)
           if (skewCount > 0) {
             out.writeObject(skewIndexes)
             out.writeObject(skewWeights)
@@ -332,6 +333,7 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
         case js: JavaSerializer => in.defaultReadObject()
         case _ =>
           skewCount = in.readInt()
+          skewPartitions = in.readInt()
           if (skewCount > 0) {
             skewIndexes = in.readObject().asInstanceOf[Array[Int]]
             skewWeights = in.readObject().asInstanceOf[Array[Int]]
