@@ -61,7 +61,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
       "NO_SORT"
     } else {
       if (tblProps.contains(CarbonCommonConstants.SORT_SCOPE)) {
-        tblProps.get(CarbonCommonConstants.SORT_SCOPE).toString
+        tblProps.get(CarbonCommonConstants.SORT_SCOPE).get
       } else {
         tblProps
           .getOrElse(CarbonCommonConstants.SORT_SCOPE,
