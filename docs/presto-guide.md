@@ -254,23 +254,15 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
    ```
     Required properties
 
-    fs.s3a.access.key={value}
-    fs.s3a.secret.key={value}
+    hive.s3.aws-access-key={value}
+    hive.s3.aws-secret-key={value}
     
     Optional properties
     
-    fs.s3a.endpoint={value}
+    hive.s3.endpoint={value}
    ```
- * In case you want to query carbonstore on s3 using S3 api put following additional properties inside $PRESTO_HOME$/etc/catalog/carbondata.properties 
-    ```
-      fs.s3.awsAccessKeyId={value}
-      fs.s3.awsSecretAccessKey={value}
-    ```
-  * In case You want to query carbonstore on s3 using S3N api put following additional properties inside $PRESTO_HOME$/etc/catalog/carbondata.properties 
-    ```
-        fs.s3n.awsAccessKeyId={value}
-        fs.s3n.awsSecretAccessKey={value}
-     ```
+   
+   Please refer <a>https://prestodb.io/docs/current/connector/hive.html</a> for more details on S3 integration.
     
 ### Generate CarbonData file
 
