@@ -52,6 +52,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -655,7 +656,7 @@ public class SegmentUpdateStatusManager {
     // get the updated status file identifier from the table status.
     String tableUpdateStatusIdentifier = getUpdatedStatusIdentifier();
 
-    if (null == tableUpdateStatusIdentifier) {
+    if (StringUtils.isEmpty(tableUpdateStatusIdentifier)) {
       return new SegmentUpdateDetails[0];
     }
 
