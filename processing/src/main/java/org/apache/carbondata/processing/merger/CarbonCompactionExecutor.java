@@ -41,6 +41,7 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
+import org.apache.carbondata.core.scan.wrappers.IntArrayWrapper;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
@@ -141,11 +142,11 @@ public class CarbonCompactionExecutor {
         tableBlockInfos = taskBlockInfo.getTableBlockInfoList(task);
         // during update there may be a chance that the cardinality may change within the segment
         // which may lead to failure while converting the row, so get all the blocks present in a
-        // task and then split into multiple lists of same key length and create separate
-        // RawResultIterator for each tableBlockInfo of same key length. If all the blocks have same
-        // keylength, then make a single RawResultIterator for all the blocks
+        // task and then split into multiple lists of same column values and create separate
+        // RawResultIterator for each tableBlockInfo of same column values. If all the blocks have
+        // same column values, then make a single RawResultIterator for all the blocks
         List<List<TableBlockInfo>> listOfTableBlocksBasedOnKeyLength =
-            getListOfTableBlocksBasedOnKeyLength(tableBlockInfos);
+            getListOfTableBlocksBasedOnColumnValueSize(tableBlockInfos);
         for (List<TableBlockInfo> tableBlockInfoList : listOfTableBlocksBasedOnKeyLength) {
           Collections.sort(tableBlockInfoList);
           LOGGER.info("for task -" + task + "- in segment id -" + segmentId + "- block size is -"
@@ -176,29 +177,31 @@ public class CarbonCompactionExecutor {
 
   /**
    * This method returns the List of TableBlockInfoList, where each listOfTableBlockInfos will have
-   * same keySize
+   * same columnvalues
    * @param tableBlockInfos List of tableBlockInfos present in each task
    */
-  private List<List<TableBlockInfo>> getListOfTableBlocksBasedOnKeyLength(
+  private List<List<TableBlockInfo>> getListOfTableBlocksBasedOnColumnValueSize(
       List<TableBlockInfo> tableBlockInfos) {
-    List<List<TableBlockInfo>> listOfTableBlockInfoListOnKeySize = new ArrayList<>();
-    Map<Integer, List<TableBlockInfo>> keySizeToTableBlockInfoMap = new HashMap<>();
+    List<List<TableBlockInfo>> listOfTableBlockInfoListOnColumnvaluesSize = new ArrayList<>();
+    Map<IntArrayWrapper, List<TableBlockInfo>> columnvalueSizeToTableBlockInfoMap = new HashMap<>();
     for (TableBlockInfo tableBlock : tableBlockInfos) {
-      // get the keySizeInBytes for the dataFileFooter
-      int keySizeInBytes =
+      // get the columnValueSize for the dataFileFooter
+      IntArrayWrapper columnValueSize = new IntArrayWrapper(
           getSourceSegmentProperties(Collections.singletonList(tableBlock.getDataFileFooter()))
-              .getDimensionKeyGenerator().getKeySizeInBytes();
-      List<TableBlockInfo> tempBlockInfoList = keySizeToTableBlockInfoMap.get(keySizeInBytes);
+              .getColumnsValueSize());
+      List<TableBlockInfo> tempBlockInfoList =
+          columnvalueSizeToTableBlockInfoMap.get(columnValueSize);
       if (tempBlockInfoList == null) {
         tempBlockInfoList = new ArrayList<>();
-        keySizeToTableBlockInfoMap.put(keySizeInBytes, tempBlockInfoList);
+        columnvalueSizeToTableBlockInfoMap.put(columnValueSize, tempBlockInfoList);
       }
       tempBlockInfoList.add(tableBlock);
     }
-    for (Map.Entry<Integer, List<TableBlockInfo>> taskMap : keySizeToTableBlockInfoMap.entrySet()) {
-      listOfTableBlockInfoListOnKeySize.add(taskMap.getValue());
+    for (Map.Entry<IntArrayWrapper, List<TableBlockInfo>> taskMap :
+        columnvalueSizeToTableBlockInfoMap.entrySet()) {
+      listOfTableBlockInfoListOnColumnvaluesSize.add(taskMap.getValue());
     }
-    return listOfTableBlockInfoListOnKeySize;
+    return listOfTableBlockInfoListOnColumnvaluesSize;
   }
 
   /**
