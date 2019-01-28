@@ -25,6 +25,7 @@ import scala.util.{Failure, Success, Try}
 
 import com.facebook.presto.Session
 import com.facebook.presto.execution.QueryIdGenerator
+import com.facebook.presto.jdbc.PrestoStatement
 import com.facebook.presto.metadata.SessionPropertyManager
 import com.facebook.presto.spi.`type`.TimeZoneKey.UTC_KEY
 import com.facebook.presto.spi.security.Identity
@@ -47,18 +48,17 @@ class PrestoServer {
   createSession
   lazy val queryRunner = new DistributedQueryRunner(createSession, 4, prestoProperties)
   var dbName : String = null
+  var statement : PrestoStatement = _
 
 
   /**
    * start the presto server
    *
-   * @param carbonStorePath the store path of carbon
    */
-  def startServer(carbonStorePath: String): Unit = {
+  def startServer(): Unit = {
 
     LOGGER.info("======== STARTING PRESTO SERVER ========")
-    val queryRunner: DistributedQueryRunner = createQueryRunner(
-      prestoProperties, carbonStorePath)
+    val queryRunner: DistributedQueryRunner = createQueryRunner(prestoProperties)
 
     LOGGER.info("STARTED SERVER AT :" + queryRunner.getCoordinator.getBaseUrl)
   }
@@ -66,25 +66,23 @@ class PrestoServer {
   /**
    * start the presto server
    *
-   * @param carbonStorePath the store path of carbon
    * @param dbName the database name, if not a default database
    */
-  def startServer(carbonStorePath: String, dbName: String, properties: util.Map[String, String]= new util.HashMap[String, String]()): Unit = {
+  def startServer(dbName: String, properties: util.Map[String, String] = new util.HashMap[String, String]()): Unit = {
 
     this.dbName = dbName
     carbonProperties.putAll(properties)
     LOGGER.info("======== STARTING PRESTO SERVER ========")
-    val queryRunner: DistributedQueryRunner = createQueryRunner(
-      prestoProperties, carbonStorePath)
-
+    val queryRunner: DistributedQueryRunner = createQueryRunner(prestoProperties)
+    val conn: Connection = createJdbcConnection(dbName)
+    statement = conn.createStatement().asInstanceOf[PrestoStatement]
     LOGGER.info("STARTED SERVER AT :" + queryRunner.getCoordinator.getBaseUrl)
   }
 
   /**
    * Instantiates the Presto Server to connect with the Apache CarbonData
    */
-  private def createQueryRunner(extraProperties: util.Map[String, String],
-      carbonStorePath: String): DistributedQueryRunner = {
+  private def createQueryRunner(extraProperties: util.Map[String, String]) = {
     Try {
       queryRunner.installPlugin(new CarbondataPlugin)
       val carbonProperties = ImmutableMap.builder[String, String]
@@ -105,6 +103,7 @@ class PrestoServer {
    */
   def stopServer(): Unit = {
     queryRunner.close()
+    statement.close()
     LOGGER.info("***** Stopping The Server *****")
   }
 
@@ -117,9 +116,7 @@ class PrestoServer {
   def executeQuery(query: String): List[Map[String, Any]] = {
 
     Try {
-      val conn: Connection = createJdbcConnection(dbName)
       LOGGER.info(s"***** executing the query ***** \n $query")
-      val statement = conn.createStatement()
       val result: ResultSet = statement.executeQuery(query)
       convertResultSetToList(result)
     } match {
@@ -131,11 +128,8 @@ class PrestoServer {
   }
 
   def execute(query: String) = {
-
     Try {
-      val conn: Connection = createJdbcConnection(dbName)
       LOGGER.info(s"***** executing the query ***** \n $query")
-      val statement = conn.createStatement()
       statement.execute(query)
     } match {
       case Success(result) => result
