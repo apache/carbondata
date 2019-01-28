@@ -80,6 +80,21 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.facebook.presto</groupId>
+      <artifactId>presto-jdbc</artifactId>
+      <version>0.210</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-runtime</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
 
   <build>
@@ -164,6 +179,8 @@
             <java.awt.headless>true</java.awt.headless>
             <spark.master.url>${spark.master.url}</spark.master.url>
             <hdfs.url>${hdfs.url}</hdfs.url>
+            <presto.jdbc.url>${presto.jdbc.url}</presto.jdbc.url>
+            <spark.hadoop.hive.metastore.uris>${spark.hadoop.hive.metastore.uris}</spark.hadoop.hive.metastore.uris>
             <spark.carbon.hive.schema.store>${carbon.hive.based.metastore}</spark.carbon.hive.schema.store>
           </systemProperties>
         </configuration>

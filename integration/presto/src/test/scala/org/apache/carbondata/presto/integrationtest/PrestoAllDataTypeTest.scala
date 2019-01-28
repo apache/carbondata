@@ -80,7 +80,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     map.put("hive.metastore", "file")
     map.put("hive.metastore.catalog.dir", s"file://$storePath")
 
-    prestoServer.startServer(storePath, "testdb", map)
+    prestoServer.startServer("testdb", map)
     prestoServer.execute("drop table if exists testdb.testtable")
     prestoServer.execute("drop schema if exists testdb")
     prestoServer.execute("create schema testdb")
