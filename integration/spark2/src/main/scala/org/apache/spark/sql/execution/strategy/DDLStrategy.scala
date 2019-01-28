@@ -35,8 +35,8 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils, SparkUtil}
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, NoSuchCarbonTableException}
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.util.Util
@@ -124,8 +124,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if (isCarbonTable) {
             ExecutedCommandExec(alterTable) :: Nil
         } else {
-          throw new MalformedCarbonCommandException(
-            "Operation not allowed : " + altertablemodel.alterSql)
+          throw new NoSuchCarbonTableException(altertablemodel.dbName.getOrElse("default"),
+            altertablemodel.tableName)
         }
       case colRenameDataTypeChange@CarbonAlterTableColRenameDataTypeChangeCommand(
       alterTableColRenameAndDataTypeChangeModel, _) =>
@@ -146,7 +146,9 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             ExecutedCommandExec(colRenameDataTypeChange) :: Nil
           }
         } else {
-          throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
+          throw new NoSuchCarbonTableException(alterTableColRenameAndDataTypeChangeModel.
+            databaseName.getOrElse("default"),
+            alterTableColRenameAndDataTypeChangeModel.tableName)
         }
       case addColumn@CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
