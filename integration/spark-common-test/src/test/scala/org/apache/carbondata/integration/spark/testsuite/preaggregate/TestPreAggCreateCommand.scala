@@ -55,6 +55,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
 
   test("test pre agg create table 1") {
     sql("create datamap preagg1 on table PreAggMain using 'preaggregate' as select a,sum(b) from PreAggMain group by a")
+    checkExistence(sql("SHOW DATAMAP ON TABLE PreAggMain"), true, "select a,sum(b) from PreAggMain group by a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg1"), true, "preaggmain_a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg1"), true, "preaggmain_b_sum")
     sql("drop datamap preagg1 on table PreAggMain")

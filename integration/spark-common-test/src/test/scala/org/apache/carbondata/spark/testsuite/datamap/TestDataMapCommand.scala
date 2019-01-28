@@ -229,9 +229,9 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
     var result = sql(s"show datamap on table $tableName").cache()
     checkAnswer(sql(s"show datamap on table $tableName"),
-      Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'bloom_fpp'='0.001', 'bloom_size'='32000', 'index_columns'='a'"),
-        Row(datamapName2, "bloomfilter", s"default.$tableName", "'index_columns'='b'"),
-        Row(datamapName3, "bloomfilter", s"default.$tableName", "'index_columns'='c'")))
+      Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'bloom_fpp'='0.001', 'bloom_size'='32000', 'index_columns'='a'", null),
+        Row(datamapName2, "bloomfilter", s"default.$tableName", "'index_columns'='b'", null),
+        Row(datamapName3, "bloomfilter", s"default.$tableName", "'index_columns'='c'", null)))
     result.unpersist()
     sql(s"drop table if exists $tableName")
 
@@ -248,7 +248,8 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
          | GROUP BY mytime
        """.stripMargin)
     checkAnswer(sql(s"show datamap on table $tableName"),
-      Seq(Row("agg0_hour", "timeSeries", s"default.${tableName}_agg0_hour", "'event_time'='mytime', 'hour_granularity'='1'")))
+      Seq(Row("agg0_hour", "timeSeries", s"default.${tableName}_agg0_hour", "'event_time'='mytime', 'hour_granularity'='1'",
+        "SELECT mytime, SUM(age) FROM datamapshowtest  GROUP BY mytime")))
     sql(s"drop table if exists $tableName")
 
     // for preaggreate datamap, the property is empty
@@ -262,7 +263,8 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
          | FROM $tableName GROUP BY name
          | """.stripMargin)
     checkAnswer(sql(s"show datamap on table $tableName"),
-      Seq(Row("agg0", "preaggregate", s"default.${tableName}_agg0", "")))
+      Seq(Row("agg0", "preaggregate", s"default.${tableName}_agg0", "",
+        "SELECT name,  count(age)  FROM datamapshowtest GROUP BY name")))
     sql(s"drop table if exists $tableName")
   }
 

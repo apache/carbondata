@@ -106,6 +106,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists datamap1")
     sql("create datamap datamap1 using 'mv' as select empname, designation from fact_table1")
     sql(s"rebuild datamap datamap1")
+    checkExistence(sql("show datamap on table fact_table1"), true, "select empname, designation from fact_table1")
     val df = sql("select empname,designation from fact_table1")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap1"))

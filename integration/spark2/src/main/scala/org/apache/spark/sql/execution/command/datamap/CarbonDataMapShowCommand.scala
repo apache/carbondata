@@ -25,11 +25,12 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, DataMapSchema}
 
 /**
  * Show the datamaps on the table
@@ -43,7 +44,8 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
     Seq(AttributeReference("DataMapName", StringType, nullable = false)(),
       AttributeReference("ClassName", StringType, nullable = false)(),
       AttributeReference("Associated Table", StringType, nullable = false)(),
-      AttributeReference("DataMap Properties", StringType, nullable = false)())
+      AttributeReference("DataMap Properties", StringType, nullable = false)(),
+      AttributeReference("Subquery", StringType, nullable = true)())
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -92,7 +94,21 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
               .map(p => s"'${ p._1 }'='${ p._2 }'").toSeq
               .sorted.mkString(", ")
           }
-        Row(s.getDataMapName, s.getProviderName, table, dmPropertieStr)
+
+          val subquery = if (s.getProviderName.equalsIgnoreCase(
+            DataMapClassProvider.MV.getShortName)) {
+            s.getCtasQuery
+          } else if (s.getProviderName.equalsIgnoreCase(
+            DataMapClassProvider.PREAGGREGATE.getShortName)
+            || s.getProviderName.equalsIgnoreCase(
+            DataMapClassProvider.TIMESERIES.getShortName)) {
+            PreAggregateUtil.getChildQuery(s.asInstanceOf[AggregationDataMapSchema])
+          } else {
+            null
+          }
+
+          Row(s.getDataMapName, s.getProviderName, table, dmPropertieStr,
+            if (null == subquery) null else subquery.replace("\n", " "))
       }
     } else {
       Seq.empty
