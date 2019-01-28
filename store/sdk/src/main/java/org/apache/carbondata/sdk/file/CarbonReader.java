@@ -171,6 +171,17 @@ public class CarbonReader<T> {
   }
 
   /**
+   * Return a new {@link CarbonReaderBuilder} instance
+   *
+   * @return CarbonReaderBuilder object
+   */
+  public static CarbonReaderBuilder builder() {
+    UUID uuid = UUID.randomUUID();
+    String tableName = "UnknownTable" + uuid;
+    return new CarbonReaderBuilder(tableName);
+  }
+
+  /**
    * Breaks the list of CarbonRecordReader in CarbonReader into multiple
    * CarbonReader objects, each iterating through some 'carbondata' files
    * and return that list of CarbonReader objects
