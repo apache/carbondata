@@ -17,3 +17,4 @@ store/CSDK/cmake-build-debug/*
 .classpath
 metastore_db/
 derby.log
+store/PYSDK/venv/*

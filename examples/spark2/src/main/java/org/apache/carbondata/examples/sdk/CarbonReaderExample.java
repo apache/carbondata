@@ -160,11 +160,11 @@ public class CarbonReaderExample {
       assert (false);
       System.out.println(e.getMessage());
     } finally {
-      try {
-        FileUtils.deleteDirectory(new File(path));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+//      try {
+//        FileUtils.deleteDirectory(new File(path));
+//      } catch (IOException e) {
+//        e.printStackTrace();
+//      }
     }
   }
 }

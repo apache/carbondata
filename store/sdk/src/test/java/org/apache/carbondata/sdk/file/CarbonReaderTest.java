@@ -2463,4 +2463,90 @@ public class CarbonReaderTest extends TestCase {
     System.out.println("\nFinished");
     reader.close();
   }
+
+
+  @Test
+  public void testBinaryWithManyImages() throws IOException, InvalidLoadOptionException, InterruptedException {
+    int num = 1;
+    String path = "./target/flowers";
+    Field[] fields = new Field[5];
+    fields[0] = new Field("imageId", DataTypes.INT);
+    fields[1] = new Field("imageName", DataTypes.STRING);
+    fields[2] = new Field("imageBinary", DataTypes.BINARY);
+    fields[1] = new Field("txtName", DataTypes.STRING);
+    fields[2] = new Field("txtContent", DataTypes.BINARY);
+
+    String imageFolder = "./src/main/resources/image/flowers";
+
+    byte[] originBinary = null;
+
+    // read and write image data
+    for (int j = 0; j < num; j++) {
+      CarbonWriter writer = CarbonWriter
+          .builder()
+          .outputPath(path)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("SDKS3Example")
+          .build();
+      File file = new File(imageFolder);
+      File[] files = file.listFiles(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          if (name == null) {
+            return false;
+          }
+          return name.endsWith(".jpg");
+        }
+      });
+
+      if (null != files) {
+        for (int i = 0; i < files.length; i++) {
+          // read image and encode to Hex
+          BufferedInputStream bis = new BufferedInputStream(new FileInputStream(files[i]));
+          char[] hexValue = null;
+          originBinary = new byte[bis.available()];
+          while ((bis.read(originBinary)) != -1) {
+            hexValue = Hex.encodeHex(originBinary);
+          }
+
+          String txtFileName = files[i].getCanonicalPath().split(".jpg")[0] + ".txt";
+          BufferedInputStream txtBis = new BufferedInputStream(new FileInputStream(txtFileName));
+          char[] txtValue = null;
+          byte[] txtBinary = null;
+          txtBinary = new byte[txtBis.available()];
+          while ((txtBis.read(txtBinary)) != -1) {
+            txtValue = Hex.encodeHex(txtBinary);
+          }
+          // write data
+          System.out.println(files[i].getCanonicalPath());
+          writer.write(new String[]{String.valueOf(i), files[i].getCanonicalPath(), String.valueOf(hexValue),
+              txtFileName, String.valueOf(txtValue)});
+          bis.close();
+        }
+      }
+      writer.close();
+    }
+
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .build();
+
+    System.out.println("\nData:");
+    int i = 0;
+    while (i < 20 && reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+
+      byte[] outputBinary = (byte[]) row[2];
+      System.out.println(row[0] + " " + row[1] + " image size:" + outputBinary.length);
+
+      // save image, user can compare the save image and original image
+      String destString = "./target/flowers/image" + i + ".jpg";
+      BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
+      bos.write(outputBinary);
+      bos.close();
+      i++;
+    }
+    System.out.println("\nFinished");
+    reader.close();
+  }
 }
