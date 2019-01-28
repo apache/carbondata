@@ -125,6 +125,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   protected int numStreamFiles = 0;
   protected int hitedStreamFiles = 0;
   protected int numBlocks = 0;
+  protected List fileLists = null;
 
   public int getNumSegments() {
     return numSegments;
@@ -144,6 +145,10 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
   public int getNumBlocks() {
     return numBlocks;
+  }
+
+  public void setFileLists(List fileLists) {
+    this.fileLists = fileLists;
   }
 
   /**

@@ -144,7 +144,6 @@ public class CarbonReader<T> {
 
   /**
    * Return a new {@link CarbonReaderBuilder} instance
-   * Default value of table name is table + tablePath + time
    *
    * @param tablePath table path
    * @return CarbonReaderBuilder object
@@ -153,6 +152,17 @@ public class CarbonReader<T> {
     UUID uuid = UUID.randomUUID();
     String tableName = "UnknownTable" + uuid;
     return builder(tablePath, tableName);
+  }
+
+  /**
+   * Return a new {@link CarbonReaderBuilder} instance
+   *
+   * @return CarbonReaderBuilder object
+   */
+  public static CarbonReaderBuilder builder() {
+    UUID uuid = UUID.randomUUID();
+    String tableName = "UnknownTable" + uuid;
+    return new CarbonReaderBuilder(tableName);
   }
 
   /**
