@@ -59,6 +59,11 @@ object Spark2TestQueryExecutor {
     FileFactory.getConfiguration.
       set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
   }
+
+  if (System.getProperty("spark.hadoop.hive.metastore.uris") != null) {
+    conf.set("spark.hadoop.hive.metastore.uris",
+      System.getProperty("spark.hadoop.hive.metastore.uris"))
+  }
   val metaStoreDB = s"$integrationPath/spark-common-cluster-test/target"
   val spark = SparkSession
     .builder().config(conf)

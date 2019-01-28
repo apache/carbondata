@@ -121,6 +121,8 @@
     <dev.path>${basedir}/dev</dev.path>
     <spark.master.url>local[2]</spark.master.url>
     <hdfs.url>local</hdfs.url>
+    <presto.jdbc.url>localhost:8086</presto.jdbc.url>
+    <spark.hadoop.hive.metastore.uris>thrift://localhost:8086</spark.hadoop.hive.metastore.uris>
     <suite.name>org.apache.carbondata.cluster.sdv.suite.SDVSuites</suite.name>
     <script.exetension>.sh</script.exetension>
     <carbon.hive.based.metastore>false</carbon.hive.based.metastore>

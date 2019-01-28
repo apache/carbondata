@@ -57,7 +57,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     map.put("hive.metastore", "file")
     map.put("hive.metastore.catalog.dir", s"file://$storePath")
 
-    prestoServer.startServer(storePath, "sdk_output", map)
+    prestoServer.startServer("sdk_output", map)
   }
 
   override def afterAll(): Unit = {

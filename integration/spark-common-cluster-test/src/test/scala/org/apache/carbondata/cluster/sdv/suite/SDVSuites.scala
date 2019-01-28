@@ -187,3 +187,19 @@ class SDVSuites4 extends Suites with BeforeAndAfterAll {
     println("---------------- Stopped spark -----------------")
   }
 }
+
+/**
+ * Suite class for presto tests
+ */
+class SDVSuites5 extends Suites with BeforeAndAfterAll {
+
+  val suites =  new PrestoSampleTestCase :: Nil
+
+  override val nestedSuites = suites.toIndexedSeq
+
+  override protected def afterAll() = {
+    println("---------------- Stopping spark -----------------")
+    TestQueryExecutor.INSTANCE.stop()
+    println("---------------- Stopped spark -----------------")
+  }
+}
