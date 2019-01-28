@@ -19,6 +19,7 @@ package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -57,6 +58,7 @@ public class CarbonReaderBuilder {
   private String tableName;
   private Configuration hadoopConf;
   private boolean useVectorReader = true;
+  private List fileLists;
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -70,6 +72,53 @@ public class CarbonReaderBuilder {
     ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
   }
 
+  /**
+   * Construct a CarbonReaderBuilder with table name
+   *
+   * @param tableName table name
+   */
+  CarbonReaderBuilder(String tableName) {
+    this.tableName = tableName;
+    ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
+  }
+
+  /**
+   * set carbonData file folder
+   *
+   * @param tablePath table path
+   * @return CarbonReaderBuilder object
+   */
+  public CarbonReaderBuilder withFolder(String tablePath) {
+    this.tablePath = tablePath;
+    return this;
+  }
+
+  /**
+   * set carbondata file lists
+   *
+   * @param fileLists carbondata file lists
+   * @return CarbonReaderBuilder object
+   */
+  public CarbonReaderBuilder withFileLists(List fileLists) {
+    if (null == this.fileLists) {
+      this.fileLists = fileLists;
+    } else {
+      this.fileLists.addAll(fileLists);
+    }
+    return this;
+  }
+
+  /**
+   * set one carbondata file
+   *
+   * @param file carbondata file
+   * @return CarbonReaderBuilder object
+   */
+  public CarbonReaderBuilder withFile(String file) {
+    List fileLists = new LinkedList();
+    fileLists.add(file);
+    return withFileLists(fileLists);
+  }
 
   /**
    * Configure the projection column names of carbon reader
@@ -80,6 +129,16 @@ public class CarbonReaderBuilder {
   public CarbonReaderBuilder projection(String[] projectionColumnNames) {
     Objects.requireNonNull(projectionColumnNames);
     this.projectionColumns = projectionColumnNames;
+    return this;
+  }
+
+  public CarbonReaderBuilder projection(List<String> projectionColumnNames) {
+    Objects.requireNonNull(projectionColumnNames);
+    String[] strings = new String[projectionColumnNames.size()];
+    for (int i = 0; i < projectionColumnNames.size(); i++) {
+      strings[i] = projectionColumnNames.get(i);
+    }
+    this.projectionColumns = strings;
     return this;
   }
 
@@ -131,7 +190,6 @@ public class CarbonReaderBuilder {
   public CarbonReaderBuilder withHadoopConf(String key, String value) {
     if (this.hadoopConf == null) {
       this.hadoopConf = new Configuration();
-
     }
     this.hadoopConf.set(key, value);
     return this;
@@ -161,7 +219,14 @@ public class CarbonReaderBuilder {
     }
     CarbonTable table;
     // now always infer schema. TODO:Refactor in next version.
-    table = CarbonTable.buildTable(tablePath, tableName, hadoopConf);
+    if (null == this.fileLists && null == tablePath) {
+      throw new IllegalArgumentException("Please set table path first.");
+    }
+    if (null != this.fileLists) {
+      table = CarbonTable.buildTable(this.fileLists.get(0).toString(), tableName, hadoopConf, true);
+    } else {
+      table = CarbonTable.buildTable(tablePath, tableName, hadoopConf, false);
+    }
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     final Job job = new Job(hadoopConf);
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
@@ -170,6 +235,9 @@ public class CarbonReaderBuilder {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
     if (filterExpression != null) {
       format.setFilterPredicates(job.getConfiguration(), filterExpression);
+    }
+    if (null != this.fileLists) {
+      format.setFileLists(this.fileLists);
     }
 
     if (projectionColumns != null) {

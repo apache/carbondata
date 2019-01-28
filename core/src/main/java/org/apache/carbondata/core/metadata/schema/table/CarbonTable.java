@@ -250,7 +250,12 @@ public class CarbonTable implements Serializable {
   public static CarbonTable buildTable(
       String tablePath,
       String tableName,
-      Configuration configuration) throws IOException {
+      Configuration configuration,
+      boolean isFile) throws IOException {
+    if (isFile) {
+      int index = tablePath.lastIndexOf("/");
+      tablePath = tablePath.substring(0, index);
+    }
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
     CarbonFile carbonFile = getLatestIndexFile(FileFactory.getCarbonFile(tablePath, configuration));
     if (carbonFile == null) {
