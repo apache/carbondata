@@ -19,17 +19,13 @@ package org.apache.carbondata.datamap.bloom;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -57,6 +53,7 @@ import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
+import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -303,35 +300,6 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     return queryModels;
   }
 
-  /**
-   * Here preprocessed NULL and date/timestamp data type.
-   *
-   * Note that if the datatype is date/timestamp, the expressionValue is long type.
-   */
-  private Object getLiteralExpValue(LiteralExpression le) {
-    Object expressionValue = le.getLiteralExpValue();
-    Object literalValue;
-
-    if (null == expressionValue) {
-      literalValue = null;
-    } else if (le.getLiteralExpDataType() == DataTypes.DATE) {
-      DateFormat format = new SimpleDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
-      // the below settings are set statically according to DateDirectDirectionaryGenerator
-      format.setLenient(false);
-      format.setTimeZone(TimeZone.getTimeZone("GMT"));
-      literalValue = format.format(new Date((long) expressionValue / 1000));
-    } else if (le.getLiteralExpDataType() == DataTypes.TIMESTAMP) {
-      DateFormat format =
-          new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-      // the below settings are set statically according to TimeStampDirectDirectionaryGenerator
-      format.setLenient(false);
-      literalValue = format.format(new Date((long) expressionValue / 1000));
-    } else {
-      literalValue = expressionValue;
-    }
-    return literalValue;
-  }
-
 
   private BloomQueryModel buildQueryModelForEqual(ColumnExpression ce,
       LiteralExpression le) throws DictionaryGenerationException, UnsupportedEncodingException {
@@ -358,11 +326,12 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
 
   private byte[] getInternalFilterValue(CarbonColumn carbonColumn, LiteralExpression le) throws
       DictionaryGenerationException, UnsupportedEncodingException {
-    Object filterLiteralValue = getLiteralExpValue(le);
     // convert the filter value to string and apply converters on it to get carbon internal value
     String strFilterValue = null;
-    if (null != filterLiteralValue) {
-      strFilterValue = String.valueOf(filterLiteralValue);
+    try {
+      strFilterValue = le.getExpressionResult().getString();
+    } catch (FilterIllegalMemberException e) {
+      throw new RuntimeException("Error while resolving filter expression", e);
     }
 
     Object convertedValue = this.name2Converters.get(carbonColumn.getColName()).convert(
