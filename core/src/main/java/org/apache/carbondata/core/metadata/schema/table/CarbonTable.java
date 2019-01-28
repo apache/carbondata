@@ -250,7 +250,12 @@ public class CarbonTable implements Serializable, Writable {
   public static CarbonTable buildTable(
       String tablePath,
       String tableName,
-      Configuration configuration) throws IOException {
+      Configuration configuration,
+      boolean isFile) throws IOException {
+    if (isFile) {
+      int index = tablePath.lastIndexOf("/");
+      tablePath = tablePath.substring(0, index);
+    }
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
     // InferSchema from data file
     org.apache.carbondata.format.TableInfo tableInfo =

@@ -26,6 +26,7 @@ import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.util.BinaryUtil;
 
 import org.apache.commons.codec.DecoderException;
@@ -43,6 +44,7 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -813,6 +815,155 @@ public class ImageTest extends TestCase {
     }
     System.out.println("\nFinished");
     reader.close();
+  }
+
+  @Test
+  public void testBinaryWithProjectionAndFileListsAndWithFile() throws Exception {
+    int num = 3;
+    String path = "./target/flowersFolder";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    Field[] fields = new Field[5];
+    fields[0] = new Field("imageId", DataTypes.INT);
+    fields[1] = new Field("imageName", DataTypes.STRING);
+    fields[2] = new Field("imageBinary", DataTypes.BINARY);
+    fields[3] = new Field("txtName", DataTypes.STRING);
+    fields[4] = new Field("txtContent", DataTypes.STRING);
+
+    String imageFolder = "./src/test/resources/image/flowers";
+
+    byte[] originBinary = null;
+
+    // read and write image data
+    for (int j = 0; j < num; j++) {
+      CarbonWriter writer = CarbonWriter
+          .builder()
+          .outputPath(path)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("SDKS3Example")
+          .withPageSizeInMb(1)
+          .build();
+      ArrayList files = listFiles(imageFolder, ".jpg");
+
+      if (null != files) {
+        for (int i = 0; i < files.size(); i++) {
+          // read image and encode to Hex
+          BufferedInputStream bis = new BufferedInputStream(new FileInputStream(files.get(i).toString()));
+          char[] hexValue = null;
+          originBinary = new byte[bis.available()];
+          while ((bis.read(originBinary)) != -1) {
+            hexValue = Hex.encodeHex(originBinary);
+          }
+
+          String txtFileName = files.get(i).toString().split(".jpg")[0] + ".txt";
+          BufferedInputStream txtBis = new BufferedInputStream(new FileInputStream(txtFileName));
+          String txtValue = null;
+          byte[] txtBinary = null;
+          txtBinary = new byte[txtBis.available()];
+          while ((txtBis.read(txtBinary)) != -1) {
+            txtValue = new String(txtBinary, "UTF-8");
+          }
+          // write data
+          System.out.println(files.get(i).toString());
+          writer.write(new String[]{String.valueOf(i), files.get(i).toString(), String.valueOf(hexValue),
+              txtFileName, txtValue});
+          bis.close();
+        }
+      }
+      writer.close();
+    }
+
+    // 1. read with file list
+    List fileLists = listFiles(path, CarbonTablePath.CARBON_DATA_EXT);
+
+    Schema schema = CarbonSchemaReader.readSchema((String) fileLists.get(0)).asOriginOrder();
+    List projectionLists = new ArrayList();
+    projectionLists.add((schema.getFields())[1].getFieldName());
+    projectionLists.add((schema.getFields())[2].getFieldName());
+
+    CarbonReader reader = CarbonReader
+        .builder()
+        .withFileLists(fileLists.subList(0, fileLists.size()))
+        .projection(projectionLists)
+        .build();
+
+    System.out.println("\nData:");
+    int i = 0;
+    while (i < 20 && reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+
+      assertEquals(2, row.length);
+      byte[] outputBinary = (byte[]) row[1];
+      System.out.println(row[0] + " " + row[1] + " image size:" + outputBinary.length);
+
+      // save image, user can compare the save image and original image
+      String destString = path + "image" + i + ".jpg";
+      BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
+      bos.write(outputBinary);
+      bos.close();
+      i++;
+    }
+    assert (9 == i);
+    System.out.println("\nFinished: " + i);
+    reader.close();
+
+    // 2. read withFile
+    CarbonReader reader2 = CarbonReader
+        .builder()
+        .withFile(fileLists.get(0).toString())
+        .build();
+
+    System.out.println("\nData2:");
+    i = 0;
+    while (i < 20 && reader2.hasNext()) {
+      Object[] row = (Object[]) reader2.readNextRow();
+      assertEquals(5, row.length);
+
+      assert (null != row[0].toString());
+      assert (null != row[0].toString());
+      assert (null != row[0].toString());
+      byte[] outputBinary = (byte[]) row[1];
+
+      String txt = row[2].toString();
+      System.out.println(row[0] + " " + row[2] +
+          " image size:" + outputBinary.length + " txt size:" + txt.length());
+
+      // save image, user can compare the save image and original image
+      String destString = path + "/image" + i + ".jpg";
+      BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
+      bos.write(outputBinary);
+      bos.close();
+      i++;
+    }
+    System.out.println("\nFinished: " + i);
+    reader2.close();
+
+    // 3. read with folder
+    CarbonReader reader3 = CarbonReader
+        .builder()
+        .withFolder(path)
+        .build();
+
+    System.out.println("\nData:");
+    i = 0;
+    while (i < 20 && reader3.hasNext()) {
+      Object[] row = (Object[]) reader3.readNextRow();
+
+      byte[] outputBinary = (byte[]) row[1];
+      System.out.println(row[0] + " " + row[2] + " image size:" + outputBinary.length);
+
+      // save image, user can compare the save image and original image
+      String destString = "./target/flowers/image" + i + ".jpg";
+      BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
+      bos.write(outputBinary);
+      bos.close();
+      i++;
+    }
+    System.out.println("\nFinished: " + i);
+    reader3.close();
   }
 
 }

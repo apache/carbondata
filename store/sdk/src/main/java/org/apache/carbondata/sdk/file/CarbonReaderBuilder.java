@@ -63,6 +63,7 @@ public class CarbonReaderBuilder {
   private boolean useVectorReader = true;
   private InputSplit inputSplit;
   private boolean useArrowReader;
+  private List fileLists;
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -79,6 +80,54 @@ public class CarbonReaderBuilder {
   CarbonReaderBuilder(InputSplit inputSplit) {
     this.inputSplit = inputSplit;
     ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
+  }
+
+  /**
+   * Construct a CarbonReaderBuilder with table name
+   *
+   * @param tableName table name
+   */
+  CarbonReaderBuilder(String tableName) {
+    this.tableName = tableName;
+    ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
+  }
+
+  /**
+   * set carbonData file folder
+   *
+   * @param tablePath table path
+   * @return CarbonReaderBuilder object
+   */
+  public CarbonReaderBuilder withFolder(String tablePath) {
+    this.tablePath = tablePath;
+    return this;
+  }
+
+  /**
+   * set carbondata file lists
+   *
+   * @param fileLists carbondata file lists
+   * @return CarbonReaderBuilder object
+   */
+  public CarbonReaderBuilder withFileLists(List fileLists) {
+    if (null == this.fileLists) {
+      this.fileLists = fileLists;
+    } else {
+      this.fileLists.addAll(fileLists);
+    }
+    return this;
+  }
+
+  /**
+   * set one carbondata file
+   *
+   * @param file carbondata file
+   * @return CarbonReaderBuilder object
+   */
+  public CarbonReaderBuilder withFile(String file) {
+    List fileLists = new ArrayList();
+    fileLists.add(file);
+    return withFileLists(fileLists);
   }
 
   /**
@@ -190,7 +239,19 @@ public class CarbonReaderBuilder {
           ((CarbonInputSplit) inputSplit).getSegment().getReadCommittedScope().getFilePath();
       tableName = "UnknownTable" + UUID.randomUUID();
     }
-    CarbonTable table = CarbonTable.buildTable(tablePath, tableName, hadoopConf);
+    CarbonTable table;
+    // now always infer schema. TODO:Refactor in next version.
+    if (null == this.fileLists && null == tablePath) {
+      throw new IllegalArgumentException("Please set table path first.");
+    }
+    if (null != this.fileLists) {
+      if (fileLists.size() < 1) {
+        throw new IllegalArgumentException("fileLists must have one file in list as least!");
+      }
+      table = CarbonTable.buildTable(this.fileLists.get(0).toString(), tableName, hadoopConf, true);
+    } else {
+      table = CarbonTable.buildTable(tablePath, tableName, hadoopConf, false);
+    }
     if (enableBlockletDistribution) {
       // set cache level to blocklet level
       Map<String, String> tableProperties =
@@ -205,6 +266,9 @@ public class CarbonReaderBuilder {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
     if (filterExpression != null) {
       format.setFilterPredicates(job.getConfiguration(), filterExpression);
+    }
+    if (null != this.fileLists) {
+      format.setFileLists(this.fileLists);
     }
     if (projectionColumns != null) {
       // set the user projection

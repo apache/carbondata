@@ -34,7 +34,7 @@ public class SDKUtil {
                                     final String suf, Configuration conf) throws Exception {
     final String sufImageFinal = suf;
     ArrayList result = new ArrayList();
-    CarbonFile[] fileList = FileFactory.getCarbonFile(sourceImageFolder).listFiles();
+    CarbonFile[] fileList = FileFactory.getCarbonFile(sourceImageFolder, conf).listFiles();
     for (int i = 0; i < fileList.length; i++) {
       if (fileList[i].isDirectory()) {
         result.addAll(listFiles(fileList[i].getCanonicalPath(), sufImageFinal, conf));
