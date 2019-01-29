@@ -491,7 +491,6 @@ CarbonData DML statements are documented here,which includes:
   ```
   ALTER TABLE table_name COMPACT 'CUSTOM' WHERE SEGMENT.ID IN (2,3,4)
   ```
-  NOTE: Compaction is unsupported for table containing Complex columns.
 
 
   - **CLEAN SEGMENTS AFTER Compaction**
