@@ -104,7 +104,7 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
   }
 
-  @Test public void testReadWithZeroBatchSize() throws IOException, InterruptedException {
+  @Test public void testReadWithZeroBatchSize() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance().clearDataMaps(AbsoluteTableIdentifier.from(path));
@@ -124,6 +124,29 @@ public class CarbonReaderTest extends TestCase {
       i++;
     }
     Assert.assertEquals(i, 10);
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+
+  @Test
+  public void testReadBatchWithZeroBatchSize() throws Exception {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+    DataMapStoreManager.getInstance().clearDataMaps(AbsoluteTableIdentifier.from(path));
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(10, new Schema(fields), path);
+    CarbonReader reader;
+    reader = CarbonReader.builder(path).withRowRecordReader().withBatch(0).build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = reader.readNextBatchRow();
+      Assert.assertEquals(row.length, 10);
+      i++;
+    }
     FileUtils.deleteDirectory(new File(path));
   }
 
@@ -532,6 +555,7 @@ public class CarbonReaderTest extends TestCase {
   .withCsvInput(schema).writtenBy("CarbonReaderTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     }
     carbonWriter.write(new String[] { "MNO", "100" });
     carbonWriter.close();
@@ -546,22 +570,25 @@ public class CarbonReaderTest extends TestCase {
    .withCsvInput(schema1).writtenBy("CarbonReaderTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     }
     carbonWriter1.write(new String[] { "PQR", "200" });
     carbonWriter1.close();
 
     try {
-       CarbonReader reader =
-       CarbonReader.builder(path1, "_temp").
-       projection(new String[] { "c1", "c3" })
-       .build();
-    } catch (Exception e){
-       System.out.println("Success");
+      CarbonReader reader =
+          CarbonReader.builder(path1, "_temp")
+              .projection(new String[]{"c1", "c3"})
+              .build();
+      Assert.fail();
+    } catch (Exception e) {
+      System.out.println("Success");
+      Assert.assertTrue(true);
     }
     CarbonReader reader1 =
-         CarbonReader.builder(path2, "_temp1")
-     .projection(new String[] { "p1", "p2" })
-     .build();
+        CarbonReader.builder(path2, "_temp1")
+            .projection(new String[]{"p1", "p2"})
+            .build();
 
     while (reader1.hasNext()) {
        Object[] row1 = (Object[]) reader1.readNextRow();
@@ -1292,6 +1319,7 @@ public class CarbonReaderTest extends TestCase {
       WriteAvroComplexData(mySchema, json, path);
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     }
 
     File folder = new File(path);
@@ -1357,6 +1385,7 @@ public class CarbonReaderTest extends TestCase {
       WriteAvroComplexData(mySchema, json, path);
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     }
 
     Field[] fields = new Field[3];
@@ -1509,6 +1538,7 @@ public class CarbonReaderTest extends TestCase {
       FileUtils.deleteDirectory(new File(path));
     } catch (Throwable e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     }
   }
 
@@ -1833,9 +1863,9 @@ public class CarbonReaderTest extends TestCase {
           .writtenBy("CarbonReaderTest")
           .build();
 
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < 300; i++) {
         String[] row2 = new String[]{
-            "robot" + (i % 10),
+            "robot" + (i % 10000),
             String.valueOf(i % 10000),
             String.valueOf(i),
             String.valueOf(Long.MAX_VALUE - i),
@@ -1852,11 +1882,11 @@ public class CarbonReaderTest extends TestCase {
       }
       writer.close();
 
-      // Read data
-      int batchSize =4;
+        // Read data
+      int batchSize = 150;
       CarbonReader reader = CarbonReader
           .builder(path, "_temp")
-          .withBatch(4)
+          .withBatch(batchSize)
           .build();
 
       int i = 0;
@@ -1889,6 +1919,7 @@ public class CarbonReaderTest extends TestCase {
       reader.close();
     } catch (Throwable e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     } finally {
       try {
         FileUtils.deleteDirectory(new File(path));
@@ -1897,6 +1928,7 @@ public class CarbonReaderTest extends TestCase {
       }
     }
   }
+
   @Test
   public void testReadNextBatchRowWithVectorReader() {
     String path = "./carbondata";
@@ -1926,9 +1958,9 @@ public class CarbonReaderTest extends TestCase {
           .writtenBy("CarbonReaderTest")
           .build();
 
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < 300; i++) {
         String[] row2 = new String[]{
-            "robot" + (i % 10),
+            "robot" + (i % 10000),
             String.valueOf(i % 10000),
             String.valueOf(i),
             String.valueOf(Long.MAX_VALUE - i),
@@ -1945,10 +1977,10 @@ public class CarbonReaderTest extends TestCase {
       writer.close();
 
       // Read data
-      int batchSize =4;
+      int batchSize = 150;
       CarbonReader reader = CarbonReader
           .builder(path, "_temp")
-          .withBatch(4)
+          .withBatch(batchSize)
           .build();
 
       int i = 0;
@@ -1975,6 +2007,7 @@ public class CarbonReaderTest extends TestCase {
       reader.close();
     } catch (Throwable e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     } finally {
       try {
         FileUtils.deleteDirectory(new File(path));
@@ -2114,9 +2147,9 @@ public class CarbonReaderTest extends TestCase {
           .build();
     } catch (IllegalArgumentException e) {
       e.printStackTrace();
-      Assert.fail();
+      Assert.fail(e.getMessage());
     } catch (Exception e) {
-      Assert.fail();
+      Assert.fail(e.getMessage());
     } finally {
       FileUtils.deleteDirectory(new File(path));
     }
@@ -2144,7 +2177,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertTrue(e.getMessage().contains(
           "Invalid value FLSE for key bad_records_logger_enable"));
     } catch (Exception e) {
-      Assert.fail();
+      Assert.fail(e.getMessage());
     } finally {
       FileUtils.deleteDirectory(new File(path));
     }
@@ -2171,7 +2204,7 @@ public class CarbonReaderTest extends TestCase {
       e.printStackTrace();
       Assert.fail();
     } catch (Exception e) {
-      Assert.fail();
+      Assert.fail(e.getMessage());
     } finally {
       FileUtils.deleteDirectory(new File(path));
     }
@@ -2199,7 +2232,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertTrue(e.getMessage().contains(
           "QUOTECHAR cannot be more than one character."));
     } catch (Exception e) {
-      Assert.fail();
+      Assert.fail(e.getMessage());
     } finally {
       FileUtils.deleteDirectory(new File(path));
     }
@@ -2226,7 +2259,7 @@ public class CarbonReaderTest extends TestCase {
       e.printStackTrace();
       Assert.fail();
     } catch (Exception e) {
-      Assert.fail();
+      Assert.fail(e.getMessage());
     } finally {
       FileUtils.deleteDirectory(new File(path));
     }
@@ -2254,7 +2287,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertTrue(e.getMessage().contains(
           "ESCAPECHAR cannot be more than one character."));
     } catch (Exception e) {
-      Assert.fail();
+      Assert.fail(e.getMessage());
     } finally {
       FileUtils.deleteDirectory(new File(path));
     }
@@ -2279,9 +2312,9 @@ public class CarbonReaderTest extends TestCase {
           .build();
     } catch (IllegalArgumentException e) {
       e.printStackTrace();
-      Assert.fail();
+      Assert.fail(e.getMessage());
     } catch (Exception e) {
-      Assert.fail();
+      Assert.fail(e.getMessage());
     } finally {
       FileUtils.deleteDirectory(new File(path));
     }

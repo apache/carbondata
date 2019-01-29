@@ -1572,7 +1572,7 @@ public final class CarbonProperties {
       try {
         batchSize = Integer.parseInt(batchSizeString);
         if (batchSize < DETAIL_QUERY_BATCH_SIZE_MIN || batchSize > DETAIL_QUERY_BATCH_SIZE_MAX) {
-          LOGGER.info("Invalid carbon.detail.batch.size.Using default value "
+          LOGGER.warn("Invalid carbon.detail.batch.size.Using default value "
               + DETAIL_QUERY_BATCH_SIZE_DEFAULT);
           carbonProperties.setProperty(DETAIL_QUERY_BATCH_SIZE,
               Integer.toString(DETAIL_QUERY_BATCH_SIZE_DEFAULT));
