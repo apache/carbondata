@@ -1257,6 +1257,11 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MAX_LRU_CACHE_SIZE_DEFAULT = "-1";
 
   /**
+   * when LRU cache if beyond the jvm max memory size,set 60% percent of max size
+   */
+  public static final double CARBON_LRU_CACHE_PERCENT_OVER_MAX_SIZE = 0.6d;
+
+  /**
    * property to enable min max during filter query
    */
   @CarbonProperty
