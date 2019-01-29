@@ -206,7 +206,7 @@ case class CarbonLoadDataCommand(
     * 4. Session property CARBON_OPTIONS_SORT_SCOPE
     * 5. Default Sort Scope LOAD_SORT_SCOPE
     */
-    if (StringUtils.isBlank(tableProperties.get(CarbonCommonConstants.SORT_COLUMNS))) {
+    if (table.getNumberOfSortColumns == 0) {
       // If tableProperties.SORT_COLUMNS is null
       optionsFinal.put(CarbonCommonConstants.SORT_SCOPE,
         SortScopeOptions.SortScope.NO_SORT.name)
