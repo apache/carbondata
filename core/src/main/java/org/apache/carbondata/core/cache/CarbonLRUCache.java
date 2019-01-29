@@ -70,6 +70,16 @@ public final class CarbonLRUCache {
           + CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
       lruCacheMemorySize = Long.parseLong(defaultPropertyName);
     }
+
+    // if lru cache is bigger than jvm max heap then set part size of max heap (60% default)
+    if (isBeyondMaxMemory()) {
+      double changeSize = getPartOfXmx();
+      LOGGER.warn("Configured LRU size " + lruCacheMemorySize +
+              "MB exceeds the max size of JVM heap. Carbon will fallback to use " +
+              changeSize + " MB instead");
+      lruCacheMemorySize = (long)changeSize;
+    }
+
     initCache();
     if (lruCacheMemorySize > 0) {
       LOGGER.info("Configured LRU cache size is " + lruCacheMemorySize + " MB");
@@ -325,5 +335,27 @@ public final class CarbonLRUCache {
 
   public Map<String, Cacheable> getCacheMap() {
     return lruCacheMap;
+  }
+
+  /**
+   * Check if LRU cache setting is bigger than max memory of jvm.
+   * if LRU cache is bigger than max memory of jvm when query for a big segments table,
+   * may cause JDBC server crash.
+   * @return true LRU cache is bigger than max memory of jvm, false otherwise
+   */
+  private boolean isBeyondMaxMemory() {
+    long mSize = Runtime.getRuntime().maxMemory();
+    long lruSize = lruCacheMemorySize * BYTE_CONVERSION_CONSTANT;
+    return lruSize >= mSize;
+  }
+
+  /**
+   * when LRU cache is bigger than max heap of jvm.
+   * set to part of  max heap size, use CARBON_LRU_CACHE_PERCENT_OVER_MAX_SIZE default 60%.
+   * @return the LRU cache size
+   */
+  private double getPartOfXmx() {
+    long mSizeMB = Runtime.getRuntime().maxMemory() / BYTE_CONVERSION_CONSTANT;
+    return mSizeMB * CarbonCommonConstants.CARBON_LRU_CACHE_PERCENT_OVER_MAX_SIZE;
   }
 }
