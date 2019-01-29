@@ -43,6 +43,7 @@
 - [Failed to insert data on the cluster](#failed-to-insert-data-on-the-cluster)
 - [Failed to execute Concurrent Operations(Load,Insert,Update) on table by multiple workers](#failed-to-execute-concurrent-operations-on-table-by-multiple-workers)
 - [Failed to create a table with a single numeric column](#failed-to-create-a-table-with-a-single-numeric-column)
+- [Failed to create datamap and drop datamap is also not working](#failed-to-create-datamap-and-drop-datamap-is-also-not-working)
 
 ## 
 
@@ -474,4 +475,21 @@ Note : Refrain from using "mvn clean package" without specifying the profile.
 
   A single column that can be considered as dimension is mandatory for table creation.
 
+## Failed to create datamap and drop datamap is also not working
+  
+  **Symptom**
 
+  Execution fails with the following exception :
+
+  ```
+  HDFS Quota Exceeded
+  ```
+
+  **Possible Cause**
+
+  HDFS Quota is set, and it is not letting carbondata write or modify any files.
+
+  **Procedure**
+
+  Drop that particular datamap using Drop Table command using table name as
+  parentTableName_datamapName so as to clear the stale folders.
