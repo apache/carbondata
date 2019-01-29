@@ -147,6 +147,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertEquals(row.length, 10);
       i++;
     }
+    Assert.assertEquals(i, 1);
     FileUtils.deleteDirectory(new File(path));
   }
 
