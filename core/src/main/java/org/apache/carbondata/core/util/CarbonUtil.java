@@ -3338,4 +3338,20 @@ public final class CarbonUtil {
   public static String generateUUID() {
     return UUID.randomUUID().toString();
   }
+
+  /**
+   * Below method will be used to get the datamap schema name from datamap table name
+   * it will split name based on character '_' and get the last name
+   * This is only for pre aggregate and timeseries tables
+   *
+   * @param tableName
+   * @return datamapschema name
+   */
+  public static String getDatamapNameFromTableName(String tableName) {
+    int i = tableName.lastIndexOf('_');
+    if (i != -1) {
+      return tableName.substring(i + 1, tableName.length());
+    }
+    return null;
+  }
 }
