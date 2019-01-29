@@ -551,6 +551,11 @@
       <artifactId>httpclient</artifactId>
       <version>4.5.5</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-bloom</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>

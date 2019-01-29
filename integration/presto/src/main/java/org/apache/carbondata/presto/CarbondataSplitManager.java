@@ -30,6 +30,7 @@ import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.presto.impl.CarbonLocalMultiBlockSplit;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
@@ -117,6 +118,8 @@ public class CarbondataSplitManager extends HiveSplitManager {
         new HdfsEnvironment.HdfsContext(session, schemaTableName.getSchemaName(),
             schemaTableName.getTableName()), new Path(location));
     configuration = carbonTableReader.updateS3Properties(configuration);
+    // set the hadoop configuration to thread local, so that FileFactory can use it.
+    ThreadLocalSessionInfo.setConfigurationToCurrentThread(configuration);
     CarbonTableCacheModel cache =
         carbonTableReader.getCarbonCache(schemaTableName, location, configuration);
     Expression filters = PrestoFilterUtil.parseFilterExpression(predicate);
