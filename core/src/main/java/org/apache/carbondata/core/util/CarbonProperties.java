@@ -23,7 +23,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -34,9 +37,114 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.annotations.CarbonProperty;
 
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.*;
-import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.*;
-import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.*;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.BITSET_PIPE_LINE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.BITSET_PIPE_LINE_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.BLOCKLET_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DATA_FILE_VERSION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DATE_FORMAT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_QUERY_MIN_MAX_ENABLED;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MAX;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MIN;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SHOW_DATAMAPS;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_BLOCK;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_BLOCKLET;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_CUSTOM;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_MERGE_FILES;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CSV_READ_BUFFER_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DATA_MANAGEMENT_DRIVER;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_ENABLE_CALCULATE_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_MAX;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_MIN;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_AUTO_HANDOFF;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_CALCULATE_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_OFFHEAP_SORT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_QUERY_STATISTICS;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_VECTOR_READER;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_XXHASH;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_XXHASH_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.HANDOFF_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.IS_DRIVER_INSTANCE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.IS_INTERNAL_LOAD_CALL;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.LOCK_TYPE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.MIN_MAX_DEFAULT_VALUE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB;
+import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
@@ -68,7 +176,7 @@ public final class CarbonProperties {
   /**
    * Boolean type properties default value
    */
-  Map<String, String> booleanProperties = new ConcurrentHashMap<>();
+  private Map<String, String> booleanProperties = new ConcurrentHashMap<>();
 
   /**
    * Private constructor this will call load properties method to load all the
@@ -491,7 +599,7 @@ public final class CarbonProperties {
     booleanProperties.put(ENABLE_XXHASH,
             ENABLE_XXHASH_DEFAULT);
     booleanProperties.put(LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
-            LOCAL_DICTIONARY_DECODER_BASED_FALLBACK);
+            LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT);
     booleanProperties.put(DATA_MANAGEMENT_DRIVER,
             DATA_MANAGEMENT_DRIVER_DEFAULT);
     booleanProperties.put(CARBON_SECURE_DICTIONARY_SERVER,
@@ -1659,9 +1767,7 @@ public final class CarbonProperties {
    */
   private void validateBooleanProperties() {
     for (Map.Entry<String, String> property: booleanProperties.entrySet()) {
-      if (!CarbonUtil.validateBoolean(carbonProperties.getProperty(property.getKey()))) {
-        carbonProperties.setProperty(property.getKey(), property.getValue());
-      }
+      validateBooleanProperty(property.getKey());
     }
   }
 }
