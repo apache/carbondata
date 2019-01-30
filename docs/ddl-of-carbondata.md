@@ -453,7 +453,7 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Compression for table
 
      Data compression is also supported by CarbonData.
-     By default, Snappy is used to compress the data. CarbonData also supports ZSTD compressor.
+     By default, Snappy is used to compress the data. CarbonData also supports ZSTD and Gzip compressor.
      User can specify the compressor in the table property:
 
      ```
@@ -462,6 +462,10 @@ CarbonData DDL statements are documented here,which includes:
      or
      ```
      TBLPROPERTIES('carbon.column.compressor'='zstd')
+     ```
+     or
+     ```
+     TBLPROPERTIES('carbon.column.compressor'='gzip')
      ```
      If the compressor is configured, all the data loading and compaction will use that compressor.
      If the compressor is not configured, the data loading and compaction will use the compressor from current system property.
@@ -473,6 +477,10 @@ CarbonData DDL statements are documented here,which includes:
      or
      ```
      carbon.column.compressor=zstd
+     ```
+     or
+     ```
+     carbon.column.compressor=gzip
      ```
 
    - ##### Bad Records Path

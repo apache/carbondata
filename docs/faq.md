@@ -44,6 +44,7 @@
 - [Failed to execute Concurrent Operations(Load,Insert,Update) on table by multiple workers](#failed-to-execute-concurrent-operations-on-table-by-multiple-workers)
 - [Failed to create a table with a single numeric column](#failed-to-create-a-table-with-a-single-numeric-column)
 - [Failed to create datamap and drop datamap is also not working](#failed-to-create-datamap-and-drop-datamap-is-also-not-working)
+- [Failed to execute select query on column having varchar datatype](#failed-to-execute-select-query-on-column-having-varchar-datatype)
 
 ## 
 
@@ -493,3 +494,28 @@ Note : Refrain from using "mvn clean package" without specifying the profile.
 
   Drop that particular datamap using Drop Table command using table name as
   parentTableName_datamapName so as to clear the stale folders.
+  
+  ## Failed to execute select query on column having varchar datatype.
+    
+   **Symptom**
+   
+   Execution fails with following exception :
+   
+   ```
+       java.lang.RuntimeException: java.lang.RuntimeException: Cannot reserve additional contiguous bytes in the vectorized reader (requested 1839007356 bytes).
+       at org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk.convertToDimColDataChunkAndFillVector(DimensionRawColumnChunk.java:140)
+       at org.apache.carbondata.core.scan.scanner.LazyPageLoader.loadPage(LazyPageLoader.java:74)
+       at org.apache.spark.sql.CarbonVectorProxy$ColumnVectorProxyWithLazyLoad.checkPageLoaded(CarbonVectorProxy.java:511)
+   ```
+   
+   **Possible Cause**
+       
+   JVM cannot reserve the additional contigous bytes in the the vectorized reader.
+       
+   **Procedure**
+       
+   For carbondata, as a workaround you can try decreasing the number of executor cores or increasing the executor memory.If this does not work you can disable the following property in carbon.properties.
+       
+   ```
+   carbon.enable.vector.reader = false
+   ``` 
