@@ -1,5 +1,5 @@
 from pycarbon.CarbonReader import CarbonReader
-from pycarbon.java_gateway import java_gateway
+from pycarbon.javagateway import JavaGateWay
 import sys
 
 
@@ -9,7 +9,7 @@ def main(argv):
     print(argv[1])
     print(argv[2])
     print(argv[3])
-    gateway = java_gateway()
+    gateway = JavaGateWay()
     reader = CarbonReader(gateway.get_java_entry()) \
         .builder() \
         .withBatch(200) \

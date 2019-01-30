@@ -1,12 +1,12 @@
 from pycarbon.CarbonReader import CarbonReader
-from pycarbon.java_gateway import java_gateway
+from pycarbon.javagateway import JavaGateWay
 import sys
 
 
 def main(argv):
     print("Start")
     print(argv)
-    gateway = java_gateway()
+    gateway = JavaGateWay()
     reader = CarbonReader(gateway.get_java_entry()) \
         .builder() \
         .withFile(

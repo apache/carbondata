@@ -1,7 +1,7 @@
 from py4j.java_gateway import JavaGateway
 
 
-class java_gateway(object):
+class JavaGateWay(object):
     def __init__(self):
         self.gateway = JavaGateway()
 

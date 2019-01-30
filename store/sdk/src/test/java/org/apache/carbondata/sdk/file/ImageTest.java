@@ -14,7 +14,6 @@ import org.junit.Test;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 public class ImageTest extends TestCase {
@@ -385,14 +384,14 @@ public class ImageTest extends TestCase {
     reader2.close();
   }
 
-  //  @Test
-  //  public void testReadSchemaFromBinary() throws IOException {
-  //    Schema schema = CarbonSchemaReader.readSchema("/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-57361387723974_batchno0-0-null-57360382295747.carbondata");
-  //    for (int i = 0; i < schema.getFields().length; i++) {
-  //      System.out.println(schema.getFieldName(i));
-  //    }
-  //    assert (true);
-  //  }
+    @Test
+    public void testReadSchemaFromBinary() throws IOException {
+      Schema schema = CarbonSchemaReader.readSchema("/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-57361387723974_batchno0-0-null-57360382295747.carbondata");
+      for (int i = 0; i < schema.getFields().length; i++) {
+        System.out.println(schema.getFieldName(i));
+      }
+      assert (true);
+    }
 
   @Test
   public void testWithoutTablePath() throws IOException, InterruptedException {

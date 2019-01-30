@@ -1,39 +1,12 @@
 class CarbonSchemaReader(object):
-    def __init__(self, java_entry):
-        self.java_entry = java_entry
+    def __init__(self, java_gate_way):
+        self.gateway = java_gate_way
+        self.carbonSchemaReader = self.gateway.jvm.org.apache.carbondata.sdk.file.CarbonSchemaReader
 
-    def builder(self):
-        self.CarbonReaderBuilder = self.jvm.org.apache.carbondata.sdk.file.CarbonSchemaReader()
-        return self
-
-    def withFile(self, fileName):
-        self.CarbonReaderBuilder.withFile(fileName)
-        return self
-
-    def withFileLists(self, fileLists):
-        self.CarbonReaderBuilder.withFileLists(fileLists)
-        return self
-
-    def withBatch(self, batchSize):
-        self.CarbonReaderBuilder.withBatch(batchSize)
-        return self
-
-    def withHadoopConf(self, key, value):
-        self.CarbonReaderBuilder.withHadoopConf(key, value)
-        return self
-
-    def build(self):
-        self.reader = self.CarbonReaderBuilder.build()
-        return self
-
-    def hasNext(self):
-        return self.reader.hasNext()
-
-    def readNextRow(self):
-        return self.reader.readNextRow()
-
-    def readNextBatchRow(self):
-        return self.reader.readNextBatchRow()
-
-    def close(self):
-        return self.reader.close()
+    def readSchema(self, path, *para):
+        if (len(para) == 0):
+            return self.carbonSchemaReader.readSchema(path)
+        if (len(para) == 1):
+            return self.carbonSchemaReader.readSchema(path, para[0])
+        if (len(para) == 2):
+            return self.carbonSchemaReader.readSchema(path, para[0], para[1])

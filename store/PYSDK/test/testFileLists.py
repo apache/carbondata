@@ -1,19 +1,17 @@
 from pycarbon.CarbonReader import CarbonReader
-from pycarbon.java_gateway import java_gateway
+from pycarbon.javagateway import JavaGateWay
 
 print("Start")
-java_gate_way = java_gateway()
+java_gate_way = JavaGateWay()
 
 java_list = java_gate_way.gateway.jvm.java.util.ArrayList()
-java_list.append(
-    "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-54142179118994_batchno0-0-null-54141188855741.carbondata")
-java_list.append(
-    "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-54142492312606_batchno0-0-null-54142455443385.carbondata")
+java_list.append("/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-64449395812322_batchno0-0-null-64448026510510.carbondata")
+java_list.append("/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-64455426141135_batchno0-0-null-64454873535049.carbondata")
 
 projection_list = java_gate_way.gateway.jvm.java.util.ArrayList()
-# projection_list.append("imageName")
-# projection_list.append("imageBinary")
-# projection_list.append("txtName")
+projection_list.append("imageName")
+projection_list.append("imageBinary")
+projection_list.append("txtName")
 projection_list.append("txtcontent")
 
 reader = CarbonReader(java_gate_way.get_java_entry())\
@@ -36,7 +34,7 @@ while (reader.hasNext()):
         for row in rows:
             j = j + 1
             print("column:" + str(j))
-            row
+            print(row)
 
 reader.close()
 print("Finish")
