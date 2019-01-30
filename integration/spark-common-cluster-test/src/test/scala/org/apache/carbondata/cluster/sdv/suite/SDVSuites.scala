@@ -83,6 +83,7 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
 class SDVSuites1 extends Suites with BeforeAndAfterAll {
 
   val suites =     new BadRecordTestCase ::
+                   new ComplexDataTypeTestCase ::
                    new BatchSortLoad1TestCase ::
                    new BatchSortQueryTestCase ::
                    new DataLoadingTestCase ::
@@ -156,7 +157,6 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new TestPartitionWithGlobalSort ::
                     new SDKwriterTestCase ::
                     new SetParameterTestCase ::
-                    new ComplexDataTypeTestCase ::
                     new PartitionWithPreAggregateTestCase ::
                     new CreateTableWithLocalDictionaryTestCase ::
                     new LoadTableWithLocalDictionaryTestCase :: Nil

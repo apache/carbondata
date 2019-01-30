@@ -127,8 +127,6 @@ private[sql] case class CarbonAlterTableRenameCommand(
       schemaEvolutionEntry.setTime_stamp(timeStamp)
       val newCarbonTableIdentifier = new CarbonTableIdentifier(oldDatabaseName,
         newTableName, carbonTable.getCarbonTableIdentifier.getTableId)
-      val oldIdentifier = TableIdentifier(oldTableName, Some(oldDatabaseName))
-      val newIdentifier = TableIdentifier(newTableName, Some(oldDatabaseName))
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
       var partitions: Seq[CatalogTablePartition] = Seq.empty
       if (carbonTable.isHivePartitionTable) {
