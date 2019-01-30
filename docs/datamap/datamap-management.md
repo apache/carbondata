@@ -141,6 +141,7 @@ There is a SHOW DATAMAPS command, when this is issued, system will read all data
 - DataMapName
 - DataMapProviderName like mv, preaggreagte, timeseries, etc
 - Associated Table
+- DataMap Properties
 
 ### Compaction on DataMap
 
