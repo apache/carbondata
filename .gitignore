@@ -18,3 +18,4 @@ store/CSDK/cmake-build-debug/*
 metastore_db/
 derby.log
 store/PYSDK/venv/*
+store/PYSDK/.DS_Store

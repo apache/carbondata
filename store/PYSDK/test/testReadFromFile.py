@@ -1,5 +1,5 @@
 from pycarbon.CarbonReader import CarbonReader
-from pycarbon.javagateway import JavaGateWay
+from pycarbon.JavaGateWay import JavaGateWay
 import sys
 
 
@@ -10,7 +10,7 @@ def main(argv):
     reader = CarbonReader(gateway.get_java_entry()) \
         .builder() \
         .withFile(
-        "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-7548049181287_batchno0-0-null-7548045761060.carbondata") \
+        "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-72301447989333_batchno0-0-null-72300450978611.carbondata") \
         .withBatch(200) \
         .build()
 

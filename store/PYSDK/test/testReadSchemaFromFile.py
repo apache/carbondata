@@ -1,6 +1,6 @@
 from pycarbon.CarbonSchemaReader import CarbonSchemaReader
 from pycarbon.Configuration import Configuration
-from pycarbon.javagateway import JavaGateWay
+from pycarbon.JavaGateWay import JavaGateWay
 import sys
 
 
@@ -10,7 +10,7 @@ def main(argv):
     javaGateWay = JavaGateWay()
     carbonSchemaReader = CarbonSchemaReader(javaGateWay.gateway)
     schema = carbonSchemaReader.readSchema(
-        "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-64449395812322_batchno0-0-null-64448026510510.carbondata")
+        "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-72301447989333_batchno0-0-null-72300450978611.carbondata")
     print(schema.getFieldsLength())
     for each in schema.getFields():
         print(each)

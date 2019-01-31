@@ -1,5 +1,5 @@
 from pycarbon.CarbonReader import CarbonReader
-from pycarbon.javagateway import JavaGateWay
+from pycarbon.JavaGateWay import JavaGateWay
 
 print("Start")
 java_gate_way = JavaGateWay()
