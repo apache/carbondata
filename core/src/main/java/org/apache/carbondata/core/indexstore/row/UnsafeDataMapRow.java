@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.indexstore.row;
 
+import java.util.List;
+
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -39,10 +41,14 @@ public class UnsafeDataMapRow extends DataMapRow {
 
   private int pointer;
 
-  public UnsafeDataMapRow(CarbonRowSchema[] schemas, MemoryBlock block, int pointer) {
+  private List<Object> dataPosition;
+
+  public UnsafeDataMapRow(CarbonRowSchema[] schemas, MemoryBlock block, int pointer,
+      List<Object> dataPosition) {
     super(schemas);
     this.block = block;
     this.pointer = pointer;
+    this.dataPosition = dataPosition;
   }
 
   @Override public byte[] getByteArray(int ordinal) {
@@ -115,7 +121,8 @@ public class UnsafeDataMapRow extends DataMapRow {
   @Override public DataMapRow getRow(int ordinal) {
     CarbonRowSchema[] childSchemas =
         ((CarbonRowSchema.StructCarbonRowSchema) schemas[ordinal]).getChildSchemas();
-    return new UnsafeDataMapRow(childSchemas, block, pointer + getPosition(ordinal));
+    return new UnsafeDataMapRow(childSchemas, block, pointer + getPosition(ordinal),
+        (List<Object>) dataPosition.get(ordinal));
   }
 
   @Override public void setByteArray(byte[] byteArray, int ordinal) {
@@ -308,10 +315,27 @@ public class UnsafeDataMapRow extends DataMapRow {
   }
 
   private int getPosition(int ordinal) {
-    int position = 0;
+    int data = 0;
     for (int i = 0; i < ordinal; i++) {
-      position += getSizeInBytes(i, position);
+      if (dataPosition.get(i) instanceof List) {
+        data += dataPosLength((List<Object>) dataPosition.get(i));
+      } else {
+        data += (int) dataPosition.get(i);
+      }
     }
-    return position;
+    return data;
   }
+
+  private int dataPosLength(List<Object> dataPosition) {
+    int sum = 0;
+    for (Object data : dataPosition) {
+      if (data instanceof List) {
+        sum += dataPosLength((List<Object>) data);
+      } else {
+        sum += (int) data;
+      }
+    }
+    return sum;
+  }
+
 }

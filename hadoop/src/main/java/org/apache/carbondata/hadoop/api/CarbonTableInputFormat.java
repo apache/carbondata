@@ -32,7 +32,6 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -586,7 +585,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     ExplainCollector.remove();
 
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
-    TableDataMap blockletMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);
+    TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);
 
     ReadCommittedScope readCommittedScope = getReadCommitted(job, identifier);
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
@@ -622,16 +621,19 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
               toBeCleanedSegments);
     }
-    List<ExtendedBlocklet> blocklets =
-        blockletMap.prune(filteredSegment, (FilterResolverIntf) null, partitions);
-    for (ExtendedBlocklet blocklet : blocklets) {
-      String blockName = blocklet.getPath();
+    Map<String, Integer> blockletToRowCountMap =
+        defaultDataMap.getBlockRowCount(filteredSegment, partitions, defaultDataMap);
+
+    // key is the (segmentId+","+blockletPath) and key is the row count of that blocklet
+    for (Map.Entry<String, Integer> eachBlocklet : blockletToRowCountMap.entrySet()) {
+      String[] segmentIdAndPath = eachBlocklet.getKey().split(",", 2);
+      String segmentId = segmentIdAndPath[0];
+      String blockName = segmentIdAndPath[1];
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);
       blockName = blockName + CarbonTablePath.getCarbonDataExtension();
 
-      long rowCount = blocklet.getDetailInfo().getRowCount();
+      long rowCount = eachBlocklet.getValue();
 
-      String segmentId = Segment.toSegment(blocklet.getSegmentId()).getSegmentNo();
       String key = CarbonUpdateUtil.getSegmentBlockNameKey(segmentId, blockName);
 
       // if block is invalid then don't add the count

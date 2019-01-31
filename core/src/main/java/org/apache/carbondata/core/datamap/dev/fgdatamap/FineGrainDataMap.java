@@ -18,9 +18,11 @@ package org.apache.carbondata.core.datamap.dev.fgdatamap;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -38,6 +40,12 @@ public abstract class FineGrainDataMap implements DataMap<FineGrainBlocklet> {
   public List<FineGrainBlocklet> prune(Expression filter, SegmentProperties segmentProperties,
       List<PartitionSpec> partitions, CarbonTable carbonTable) throws IOException {
     throw new UnsupportedOperationException("Filter expression not supported");
+  }
+
+  @Override
+  public Map<String, Integer> getRowCount(Segment segment, SegmentProperties segmentProperties,
+      List<PartitionSpec> partitions) throws IOException {
+    throw new UnsupportedOperationException("Operation not supported");
   }
 
   @Override public int getNumberOfEntries() {

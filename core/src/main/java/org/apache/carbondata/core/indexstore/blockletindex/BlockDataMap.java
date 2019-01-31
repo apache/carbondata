@@ -23,10 +23,13 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -660,9 +663,9 @@ public class BlockDataMap extends CoarseGrainDataMap
     int hitBlocklets = 0;
     if (filterExp == null) {
       for (int i = 0; i < numEntries; i++) {
-        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, i).convertToSafeRow();
-        blocklets.add(createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath),
-            getBlockletId(safeRow), false));
+        DataMapRow dataMapRow = memoryDMStore.getDataMapRow(schema, i);
+        blocklets.add(createBlocklet(dataMapRow, getFileNameWithFilePath(dataMapRow, filePath),
+            getBlockletId(dataMapRow), false));
       }
       hitBlocklets = totalBlocklets;
     } else {
@@ -675,15 +678,15 @@ public class BlockDataMap extends CoarseGrainDataMap
       boolean useMinMaxForPruning = useMinMaxForExecutorPruning(filterExp);
       // min and max for executor pruning
       while (entryIndex < numEntries) {
-        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, entryIndex).convertToSafeRow();
-        boolean[] minMaxFlag = getMinMaxFlag(safeRow, BLOCK_MIN_MAX_FLAG);
-        String fileName = getFileNameWithFilePath(safeRow, filePath);
-        short blockletId = getBlockletId(safeRow);
+        DataMapRow dataMapRow = memoryDMStore.getDataMapRow(schema, entryIndex);
+        boolean[] minMaxFlag = getMinMaxFlag(dataMapRow, BLOCK_MIN_MAX_FLAG);
+        String fileName = getFileNameWithFilePath(dataMapRow, filePath);
+        short blockletId = getBlockletId(dataMapRow);
         boolean isValid =
-            addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(safeRow, MAX_VALUES_INDEX),
-                getMinMaxValue(safeRow, MIN_VALUES_INDEX), minMaxFlag, fileName, blockletId);
+            addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(dataMapRow, MAX_VALUES_INDEX),
+                getMinMaxValue(dataMapRow, MIN_VALUES_INDEX), minMaxFlag, fileName, blockletId);
         if (isValid) {
-          blocklets.add(createBlocklet(safeRow, fileName, blockletId, useMinMaxForPruning));
+          blocklets.add(createBlocklet(dataMapRow, fileName, blockletId, useMinMaxForPruning));
           hitBlocklets += getBlockletNumOfEntry(entryIndex);
         }
         entryIndex++;
@@ -721,6 +724,33 @@ public class BlockDataMap extends CoarseGrainDataMap
           CarbonTable.resolveFilter(expression, carbonTable.getAbsoluteTableIdentifier());
     }
     return prune(filterResolverIntf, properties, partitions);
+  }
+
+  @Override
+  public Map<String, Integer> getRowCount(Segment segment, SegmentProperties segmentProperties,
+      List<PartitionSpec> partitions) throws IOException {
+    if (memoryDMStore.getRowCount() == 0) {
+      return new HashMap<>();
+    }
+    // if it has partitioned datamap but there is no partitioned information stored, it means
+    // partitions are dropped so return empty list.
+    if (partitions != null) {
+      if (!validatePartitionInfo(partitions)) {
+        return new HashMap<>();
+      }
+    }
+    Map<String, Integer> blockletToRowCountMap = new HashMap<>();
+    CarbonRowSchema[] schema = getFileFooterEntrySchema();
+    String filePath = getFilePath();
+    int numEntries = memoryDMStore.getRowCount();
+    for (int i = 0; i < numEntries; i++) {
+      DataMapRow dataMapRow = memoryDMStore.getDataMapRow(schema, i);
+      String fileNameWithFilePath = getFileNameWithFilePath(dataMapRow, filePath);
+      int rowCount = dataMapRow.getInt(ROW_COUNT_INDEX);
+      // prepend segment number with the blocklet file path
+      blockletToRowCountMap.put((segment.getSegmentNo() + "," + fileNameWithFilePath), rowCount);
+    }
+    return blockletToRowCountMap;
   }
 
   @Override

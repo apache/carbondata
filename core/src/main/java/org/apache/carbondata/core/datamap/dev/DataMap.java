@@ -18,8 +18,10 @@ package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -53,6 +55,12 @@ public interface DataMap<T extends Blocklet> {
    */
   List<T> prune(Expression filter, SegmentProperties segmentProperties,
       List<PartitionSpec> partitions, CarbonTable carbonTable) throws IOException;
+
+  /**
+   * Get the row count. It returns a Map of blockletpath and the row count
+   */
+  Map<String, Integer> getRowCount(Segment segment, SegmentProperties segmentProperties,
+      List<PartitionSpec> partitions) throws IOException;
 
   // TODO Move this method to Abstract class
   /**

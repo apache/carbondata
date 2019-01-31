@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datamap;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -34,6 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -144,12 +146,12 @@ public final class TableDataMap extends OperationEventListener {
   public List<ExtendedBlocklet> prune(List<Segment> segments, final FilterResolverIntf filterExp,
       final List<PartitionSpec> partitions) throws IOException {
     final List<ExtendedBlocklet> blocklets = new ArrayList<>();
-    final Map<Segment, List<DataMap>> dataMaps = dataMapFactory.getDataMaps(segments);
     // for non-filter queries
     if (filterExp == null) {
       // if filter is not passed, then return all the blocklets.
       return pruneWithoutFilter(segments, partitions, blocklets);
     }
+    final Map<Segment, List<DataMap>> dataMaps = dataMapFactory.getDataMaps(segments);
     // for filter queries
     int totalFiles = 0;
     int datamapsCount = 0;
@@ -499,4 +501,28 @@ public final class TableDataMap extends OperationEventListener {
     }
     return prunedSegments;
   }
+
+  /**
+   * Prune the datamap of the given segments and return the Map of blocklet path and row count
+   *
+   * @param segments
+   * @param partitions
+   * @param defaultDataMap
+   * @return
+   * @throws IOException
+   */
+  public Map<String, Integer> getBlockRowCount(List<Segment> segments,
+      final List<PartitionSpec> partitions, TableDataMap defaultDataMap) throws IOException {
+    Map<String, Integer> blockletToRowCountMap = new HashMap<>();
+    for (Segment segment : segments) {
+      List<CoarseGrainDataMap> dataMaps =
+          defaultDataMap.getDataMapFactory().getDataMaps(segment);
+      for (CoarseGrainDataMap dataMap : dataMaps) {
+        blockletToRowCountMap.putAll(dataMap.getRowCount(segment,
+            ((SegmentPropertiesFetcher) dataMapFactory).getSegmentProperties(segment), partitions));
+      }
+    }
+    return blockletToRowCountMap;
+  }
+
 }
