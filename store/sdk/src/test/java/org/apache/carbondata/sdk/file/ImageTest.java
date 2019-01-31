@@ -462,9 +462,28 @@ public class ImageTest extends TestCase {
   }
 
   @Test
-  public void testWriteWithByteArrayDataTypeAndManyImages() throws IOException, InvalidLoadOptionException, InterruptedException {
+  public void testWriteWithByteArrayDataTypeAndManyImagesTxt()
+      throws InvalidLoadOptionException, InterruptedException, IOException {
+    String sourceImageFolder = "./src/main/resources/image/flowers";
+    String outputPath = "./target/flowers";
+    String preDestPath = "./target/flowers/image";
+    String sufAnnotation = ".txt";
+    writeAndRead(sourceImageFolder, outputPath, preDestPath, sufAnnotation);
+  }
+
+  @Test
+  public void testWriteWithByteArrayDataTypeAndManyImagesXml()
+      throws InvalidLoadOptionException, InterruptedException, IOException {
+    String sourceImageFolder = "./src/main/resources/image/voc";
+    String outputPath = "./target/voc";
+    String preDestPath = "./target/voc/image";
+    String sufAnnotation = ".xml";
+    writeAndRead(sourceImageFolder, outputPath, preDestPath, sufAnnotation);
+  }
+
+  public void writeAndRead(String sourceImageFolder, String outputPath, String preDestPath, String sufAnnotation)
+      throws IOException, InvalidLoadOptionException, InterruptedException {
     int num = 1;
-    String path = "./target/flowers";
     Field[] fields = new Field[5];
     fields[0] = new Field("imageId", DataTypes.INT);
     fields[1] = new Field("imageName", DataTypes.STRING);
@@ -472,19 +491,17 @@ public class ImageTest extends TestCase {
     fields[3] = new Field("txtName", DataTypes.STRING);
     fields[4] = new Field("txtContent", DataTypes.STRING);
 
-    String imageFolder = "./src/main/resources/image/flowers";
-
     byte[] originBinary = null;
 
     // read and write image data
     for (int j = 0; j < num; j++) {
       CarbonWriter writer = CarbonWriter
           .builder()
-          .outputPath(path)
+          .outputPath(outputPath)
           .withCsvInput(new Schema(fields))
           .writtenBy("SDKS3Example")
           .build();
-      File file = new File(imageFolder);
+      File file = new File(sourceImageFolder);
       File[] files = file.listFiles(new FilenameFilter() {
         @Override
         public boolean accept(File dir, String name) {
@@ -503,7 +520,7 @@ public class ImageTest extends TestCase {
           while ((bis.read(originBinary)) != -1) {
           }
 
-          String txtFileName = files[i].getCanonicalPath().split(".jpg")[0] + ".txt";
+          String txtFileName = files[i].getCanonicalPath().split(".jpg")[0] + sufAnnotation;
           BufferedInputStream txtBis = new BufferedInputStream(new FileInputStream(txtFileName));
           String txtValue = null;
           byte[] txtBinary = null;
@@ -523,7 +540,7 @@ public class ImageTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder()
-        .withFolder(path)
+        .withFolder(outputPath)
         .build();
 
     System.out.println("\nData:");
@@ -535,7 +552,7 @@ public class ImageTest extends TestCase {
       System.out.println(row[0] + " " + row[1] + " image size:" + outputBinary.length);
 
       // save image, user can compare the save image and original image
-      String destString = "./target/flowers/image" + i + ".jpg";
+      String destString = preDestPath + i + ".jpg";
       BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
       bos.write(outputBinary);
       bos.close();
@@ -544,5 +561,4 @@ public class ImageTest extends TestCase {
     System.out.println("\nFinished");
     reader.close();
   }
-
 }
