@@ -80,7 +80,7 @@ public class ImageTest extends TestCase {
       }
 
       // save image, user can compare the save image and original image
-      String destString = "./target/image" + i + ".jpg";
+      String destString = "./target/binary/image" + i + ".jpg";
       BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
       bos.write(outputBinary);
       bos.close();
@@ -396,4 +396,153 @@ public class ImageTest extends TestCase {
       assert (true);
     }
   }
+
+  @Test
+  public void testWriteWithByteArrayDataType() throws IOException, InvalidLoadOptionException, InterruptedException {
+    String imagePath = "./src/main/resources/image/carbondatalogo.jpg";
+    int num = 1;
+    int rows = 10;
+    String path = "./target/binary";
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("image", DataTypes.BINARY);
+
+    byte[] originBinary = null;
+
+    // read and write image data
+    for (int j = 0; j < num; j++) {
+      CarbonWriter writer = CarbonWriter
+          .builder()
+          .outputPath(path)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("SDKS3Example")
+          .build();
+
+      for (int i = 0; i < rows; i++) {
+        // read image and encode to Hex
+        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(imagePath));
+        originBinary = new byte[bis.available()];
+        while ((bis.read(originBinary)) != -1) {
+        }
+        // write data
+        writer.write(new Object[]{"robot" + (i % 10), i, originBinary});
+        bis.close();
+      }
+      writer.close();
+    }
+
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .build();
+
+    System.out.println("\nData:");
+    int i = 0;
+    while (i < 20 && reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+
+      byte[] outputBinary = (byte[]) row[2];
+      System.out.println(row[0] + " " + row[1] + " image size:" + outputBinary.length);
+
+      // validate output binary data and origin binary data
+      assert (originBinary.length == outputBinary.length);
+      for (int j = 0; j < originBinary.length; j++) {
+        assert (originBinary[j] == outputBinary[j]);
+      }
+
+      // save image, user can compare the save image and original image
+      String destString = "./target/binary/image" + i + ".jpg";
+      BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
+      bos.write(outputBinary);
+      bos.close();
+      i++;
+    }
+    System.out.println("\nFinished");
+    reader.close();
+  }
+
+  @Test
+  public void testWriteWithByteArrayDataTypeAndManyImages() throws IOException, InvalidLoadOptionException, InterruptedException {
+    int num = 1;
+    String path = "./target/flowers";
+    Field[] fields = new Field[5];
+    fields[0] = new Field("imageId", DataTypes.INT);
+    fields[1] = new Field("imageName", DataTypes.STRING);
+    fields[2] = new Field("imageBinary", DataTypes.BINARY);
+    fields[3] = new Field("txtName", DataTypes.STRING);
+    fields[4] = new Field("txtContent", DataTypes.STRING);
+
+    String imageFolder = "./src/main/resources/image/flowers";
+
+    byte[] originBinary = null;
+
+    // read and write image data
+    for (int j = 0; j < num; j++) {
+      CarbonWriter writer = CarbonWriter
+          .builder()
+          .outputPath(path)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("SDKS3Example")
+          .build();
+      File file = new File(imageFolder);
+      File[] files = file.listFiles(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          if (name == null) {
+            return false;
+          }
+          return name.endsWith(".jpg");
+        }
+      });
+
+      if (null != files) {
+        for (int i = 0; i < files.length; i++) {
+          // read image and encode to Hex
+          BufferedInputStream bis = new BufferedInputStream(new FileInputStream(files[i]));
+          originBinary = new byte[bis.available()];
+          while ((bis.read(originBinary)) != -1) {
+          }
+
+          String txtFileName = files[i].getCanonicalPath().split(".jpg")[0] + ".txt";
+          BufferedInputStream txtBis = new BufferedInputStream(new FileInputStream(txtFileName));
+          String txtValue = null;
+          byte[] txtBinary = null;
+          txtBinary = new byte[txtBis.available()];
+          while ((txtBis.read(txtBinary)) != -1) {
+            txtValue = new String(txtBinary, "UTF-8");
+          }
+          // write data
+          System.out.println(files[i].getCanonicalPath());
+          writer.write(new Object[]{i, files[i].getCanonicalPath(), originBinary,
+              txtFileName, txtValue});
+          bis.close();
+        }
+      }
+      writer.close();
+    }
+
+    CarbonReader reader = CarbonReader
+        .builder()
+        .withFolder(path)
+        .build();
+
+    System.out.println("\nData:");
+    int i = 0;
+    while (i < 20 && reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+
+      byte[] outputBinary = (byte[]) row[4];
+      System.out.println(row[0] + " " + row[1] + " image size:" + outputBinary.length);
+
+      // save image, user can compare the save image and original image
+      String destString = "./target/flowers/image" + i + ".jpg";
+      BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
+      bos.write(outputBinary);
+      bos.close();
+      i++;
+    }
+    System.out.println("\nFinished");
+    reader.close();
+  }
+
 }

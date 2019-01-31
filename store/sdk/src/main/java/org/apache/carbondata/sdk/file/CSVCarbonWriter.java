@@ -65,7 +65,7 @@ class CSVCarbonWriter extends CarbonWriter {
   @Override
   public void write(Object object) throws IOException {
     try {
-      writable.set((String[]) object);
+      writable.set((Object[]) object);
       recordWriter.write(NullWritable.get(), writable);
     } catch (Exception e) {
       throw new IOException(e);

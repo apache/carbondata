@@ -54,7 +54,7 @@ public class CarbonRow implements Serializable {
   }
 
   public String getString(int ordinal) {
-    return (String) data[ordinal];
+    return String.valueOf(data[ordinal]);
   }
 
   public Object getObject(int ordinal) {

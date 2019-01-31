@@ -18,6 +18,7 @@ package org.apache.carbondata.processing.loading.converter.impl;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.processing.loading.DataField;
@@ -52,10 +53,17 @@ public class BinaryFieldConverterImpl implements FieldConverter {
     this.isEmptyBadRecord = isEmptyBadRecord;
     this.dataField = dataField;
   }
+
   @Override
   public void convert(CarbonRow row, BadRecordLogHolder logHolder)
       throws CarbonDataLoadingException {
-    row.update(convert(row.getString(index), logHolder), index);
+    if (row.getObject(index) instanceof String) {
+      row.update(convert(row.getString(index), logHolder), index);
+    } else if (row.getObject(index) instanceof byte[]) {
+      row.update(row.getObject(index), index);
+    } else {
+      throw new CarbonDataLoadingException("Binary only support String and byte[] data type");
+    }
   }
 
   @Override
