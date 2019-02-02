@@ -354,6 +354,30 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
 }
 
 object GroupbyGroupbyNoChildDelta extends DefaultMatchPattern {
+  def  tryMatch(gb_2a: GroupBy,
+               gb_2q: GroupBy,
+               isGroupingEmR: Boolean,
+                isInheritTableRelation: Boolean) : Seq[ModularPlan] = {
+    val aliasMap = AttributeMap(gb_2a.outputList.collect { case a: Alias =>
+      (a.toAttribute, a)})
+    if (isGroupingEmR) {
+      Utils.tryMatch(
+        gb_2a, gb_2q, aliasMap).flatMap {
+        case g: GroupBy =>
+          Some(g.copy(child = g.child.withNewChildren(
+            g.child.children.map {
+              case modular.Select(_, _, _, _, _, _, _, _, _, _) => gb_2a;
+              case other => other
+            }), dataMapTableRelation =
+            if (isInheritTableRelation) gb_2a.dataMapTableRelation
+            else g.dataMapTableRelation
+          ));
+        case _ => None}.map(Seq(_)).getOrElse(Nil)
+    } else {
+      Nil
+    }
+  }
+
   def apply(
       subsumer: ModularPlan,
       subsumee: ModularPlan,
@@ -398,24 +422,10 @@ object GroupbyGroupbyNoChildDelta extends DefaultMatchPattern {
 
             Seq(gb_2a.copy(outputList = oList))
           } else {
-            Nil
+            tryMatch(gb_2a, gb_2q, isGroupingEmR, true)
           }
         } else {
-          val aliasMap = AttributeMap(gb_2a.outputList.collect { case a: Alias =>
-            (a.toAttribute, a)})
-          if (isGroupingEmR) {
-            Utils.tryMatch(
-              gb_2a, gb_2q, aliasMap).flatMap {
-              case g: GroupBy =>
-                Some(g.copy(child = g.child.withNewChildren(
-                  g.child.children.map {
-                    case modular.Select(_, _, _, _, _, _, _, _, _, _) => gb_2a;
-                    case other => other
-                  })));
-              case _ => None}.map(Seq(_)).getOrElse(Nil)
-          } else {
-            Nil
-          }
+          tryMatch(gb_2a, gb_2q, isGroupingEmR, false)
         }
 
       case _ => Nil

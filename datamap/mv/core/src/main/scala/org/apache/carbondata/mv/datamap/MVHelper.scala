@@ -25,7 +25,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Expression, NamedExpression, ScalaUDF, SortOrder}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Coalesce, Expression, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, Project}
 import org.apache.spark.sql.execution.command.{Field, TableModel, TableNewProcessor}
@@ -246,7 +246,7 @@ object MVHelper {
 
   def getAttributeMap(subsumer: Seq[NamedExpression],
       subsume: Seq[NamedExpression]): Map[AttributeKey, NamedExpression] = {
-    if (subsumer.length == subsume.length) {
+    if (subsumer.length >= subsume.length) {
       subsume.zip(subsumer).flatMap { case (left, right) =>
         var tuples = left collect {
           case attr: AttributeReference =>
@@ -260,7 +260,7 @@ object MVHelper {
         Seq((AttributeKey(left), createAttrReference(right, left.name))) ++ tuples
       }.toMap
     } else {
-      throw new UnsupportedOperationException("Cannot create mapping with unequal sizes")
+      throw new UnsupportedOperationException("Cannot create mapping with less sizes")
     }
   }
 
@@ -437,6 +437,8 @@ object MVHelper {
             case Alias(agg@AggregateExpression(fun@Count(Seq(child)), _, _, _), name) =>
               val uFun = Sum(right)
               Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
+            case Alias(coalesce@Coalesce(_), name) =>
+              Alias(coalesce.copy(), name)(exprId = left.exprId)
             case _ =>
               if (left.name != right.name) Alias(right, left.name)(exprId = left.exprId) else right
           }
