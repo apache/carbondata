@@ -1,31 +1,36 @@
 from pycarbon.CarbonReader import CarbonReader
 from pycarbon.JavaGateWay import JavaGateWay
 import sys
-
+import time
 
 def main(argv):
     print("Start")
-    print(argv)
-    print(argv[1])
-    print(argv[2])
-    print(argv[3])
+    start = time.time()
     gateway = JavaGateWay()
     reader = CarbonReader(gateway.get_java_entry()) \
         .builder() \
-        .withBatch(200) \
-        .withFile(
-        "s3a://modelartscarbon/test/flowersCarbon/part-0-173838118202852_batchno0-0-null-173837348004479.carbondata") \
+        .withBatch(1000) \
+        .withFolder(
+        "s3a://modelartscarbon/voc/vocCarbon1000/voc1000/") \
         .withHadoopConf("fs.s3a.access.key", argv[1]) \
         .withHadoopConf("fs.s3a.secret.key", argv[2]) \
         .withHadoopConf("fs.s3a.endpoint", argv[3]) \
         .build()
 
+    num=0
     while (reader.hasNext()):
-        object = reader.readNextRow();
-        print
-        for row in object:
-            print(row)
+        object = reader.readNextBatchRow()
+        for rows in object:
+            num = num + 1
+            if(0==(num%1000)):
+                print(num)
+            for row in rows:
+                row
+
+    print(num)
     reader.close()
+    end = time.time()
+    print(end-start)
     print("Finish")
 
 

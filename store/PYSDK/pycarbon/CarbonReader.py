@@ -14,6 +14,10 @@ class CarbonReader(object):
         self.CarbonReaderBuilder.withFileLists(fileLists)
         return self
 
+    def withFolder(self, fileName):
+        self.CarbonReaderBuilder.withFolder(fileName)
+        return self
+
     def withBatch(self, batchSize):
         self.CarbonReaderBuilder.withBatch(batchSize)
         return self

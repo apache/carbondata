@@ -472,11 +472,31 @@ public class ImageTest extends TestCase {
   }
 
   @Test
+  public void testWriteWithByteArrayDataTypeAndManyImagesTxt2()
+      throws InvalidLoadOptionException, InterruptedException, IOException {
+    String sourceImageFolder = "/huawei/xubo/data/modelarts/flowers";
+    String outputPath = "./target/flowers";
+    String preDestPath = "./target/flowers/image";
+    String sufAnnotation = ".txt";
+    writeAndRead(sourceImageFolder, outputPath, preDestPath, sufAnnotation);
+  }
+
+  @Test
   public void testWriteWithByteArrayDataTypeAndManyImagesXml()
       throws InvalidLoadOptionException, InterruptedException, IOException {
     String sourceImageFolder = "./src/main/resources/image/voc";
     String outputPath = "./target/voc";
     String preDestPath = "./target/voc/image";
+    String sufAnnotation = ".xml";
+    writeAndRead(sourceImageFolder, outputPath, preDestPath, sufAnnotation);
+  }
+
+  @Test
+  public void testWriteWithByteArrayDataTypeAndManyImagesXml2()
+      throws InvalidLoadOptionException, InterruptedException, IOException {
+    String sourceImageFolder = "/huawei/xubo/data/voc/VOCdevkit/vocImageAndAnnotation1000";
+    String outputPath = "./target/voc1000";
+    String preDestPath = "./target/voc1000/image";
     String sufAnnotation = ".xml";
     writeAndRead(sourceImageFolder, outputPath, preDestPath, sufAnnotation);
   }
@@ -499,6 +519,7 @@ public class ImageTest extends TestCase {
           .builder()
           .outputPath(outputPath)
           .withCsvInput(new Schema(fields))
+          .withBlockSize(256)
           .writtenBy("SDKS3Example")
           .build();
       File file = new File(sourceImageFolder);

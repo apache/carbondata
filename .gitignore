@@ -19,3 +19,4 @@ metastore_db/
 derby.log
 store/PYSDK/venv/*
 store/PYSDK/.DS_Store
+store/PYSDK/obs/

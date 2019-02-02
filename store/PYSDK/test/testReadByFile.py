@@ -9,8 +9,7 @@ def main(argv):
     gateway = JavaGateWay()
     reader = CarbonReader(gateway.get_java_entry()) \
         .builder() \
-        .withFile(
-        "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers/part-0-72301447989333_batchno0-0-null-72300450978611.carbondata") \
+        .withFile(argv[1]) \
         .withBatch(200) \
         .build()
 
@@ -31,7 +30,6 @@ def main(argv):
 
     reader.close()
     print("Finish")
-
 
 if __name__ == '__main__':
     main(sys.argv)
