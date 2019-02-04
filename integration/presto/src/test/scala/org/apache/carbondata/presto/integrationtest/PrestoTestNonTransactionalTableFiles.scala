@@ -272,7 +272,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
           .executeQuery("select count(*) as RESULT from files ")
       }
     assert(exception.getMessage()
-      .contains("All the files doesn't have same schema"))
+      .contains("All common columns present in the files doesn't have same datatype"))
     cleanTestData()
   }
 

@@ -43,6 +43,7 @@ import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -64,6 +65,8 @@ import org.apache.log4j.Logger;
 @InterfaceAudience.Internal
 public final class TableDataMap extends OperationEventListener {
 
+  private CarbonTable table;
+
   private AbsoluteTableIdentifier identifier;
 
   private DataMapSchema dataMapSchema;
@@ -80,10 +83,11 @@ public final class TableDataMap extends OperationEventListener {
   /**
    * It is called to initialize and load the required table datamap metadata.
    */
-  TableDataMap(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema,
+  TableDataMap(CarbonTable table, DataMapSchema dataMapSchema,
       DataMapFactory dataMapFactory, BlockletDetailsFetcher blockletDetailsFetcher,
       SegmentPropertiesFetcher segmentPropertiesFetcher) {
-    this.identifier = identifier;
+    this.identifier = table.getAbsoluteTableIdentifier();
+    this.table = table;
     this.dataMapSchema = dataMapSchema;
     this.dataMapFactory = dataMapFactory;
     this.blockletDetailsFetcher = blockletDetailsFetcher;
@@ -115,8 +119,8 @@ public final class TableDataMap extends OperationEventListener {
       } else {
         segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment);
         for (DataMap dataMap : dataMaps.get(segment)) {
-          pruneBlocklets
-              .addAll(dataMap.prune(filterExp, segmentProperties, partitions, identifier));
+          pruneBlocklets.addAll(dataMap
+              .prune(filterExp, segmentProperties, partitions, table));
         }
       }
       blocklets.addAll(addSegmentId(
@@ -124,6 +128,10 @@ public final class TableDataMap extends OperationEventListener {
           segment.toString()));
     }
     return blocklets;
+  }
+
+  public CarbonTable getTable() {
+    return table;
   }
 
   /**

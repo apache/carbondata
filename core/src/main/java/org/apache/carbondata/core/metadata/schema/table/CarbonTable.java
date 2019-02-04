@@ -1058,7 +1058,7 @@ public class CarbonTable implements Serializable {
         new QueryModel.FilterProcessVO(getDimensionByTableName(getTableName()),
             getMeasureByTableName(getTableName()), getImplicitDimensionByTableName(getTableName()));
     QueryModel.processFilterExpression(processVO, filterExpression, isFilterDimensions,
-        isFilterMeasures);
+        isFilterMeasures, this);
 
     if (null != filterExpression) {
       // Optimize Filter Expression and fit RANGE filters is conditions apply.

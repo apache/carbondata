@@ -145,29 +145,33 @@ public class QueryModel {
   }
 
   public static void processFilterExpression(FilterProcessVO processVO, Expression filterExpression,
-      final boolean[] isFilterDimensions, final boolean[] isFilterMeasures) {
+      final boolean[] isFilterDimensions, final boolean[] isFilterMeasures,
+      CarbonTable carbonTable) {
     if (null != filterExpression) {
       if (null != filterExpression.getChildren() && filterExpression.getChildren().size() == 0) {
         if (filterExpression instanceof ConditionalExpression) {
           List<ColumnExpression> listOfCol =
               ((ConditionalExpression) filterExpression).getColumnList();
           for (ColumnExpression expression : listOfCol) {
-            setDimAndMsrColumnNode(processVO, expression, isFilterDimensions, isFilterMeasures);
+            setDimAndMsrColumnNode(processVO, expression, isFilterDimensions, isFilterMeasures,
+                carbonTable);
           }
         }
       }
       for (Expression expression : filterExpression.getChildren()) {
         if (expression instanceof ColumnExpression) {
           setDimAndMsrColumnNode(processVO, (ColumnExpression) expression, isFilterDimensions,
-              isFilterMeasures);
+              isFilterMeasures, carbonTable);
         } else if (expression instanceof UnknownExpression) {
           UnknownExpression exp = ((UnknownExpression) expression);
           List<ColumnExpression> listOfColExpression = exp.getAllColumnList();
           for (ColumnExpression col : listOfColExpression) {
-            setDimAndMsrColumnNode(processVO, col, isFilterDimensions, isFilterMeasures);
+            setDimAndMsrColumnNode(processVO, col, isFilterDimensions, isFilterMeasures,
+                carbonTable);
           }
         } else {
-          processFilterExpression(processVO, expression, isFilterDimensions, isFilterMeasures);
+          processFilterExpression(processVO, expression, isFilterDimensions, isFilterMeasures,
+              carbonTable);
         }
       }
     }
@@ -184,7 +188,7 @@ public class QueryModel {
   }
 
   private static void setDimAndMsrColumnNode(FilterProcessVO processVO, ColumnExpression col,
-      boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
+      boolean[] isFilterDimensions, boolean[] isFilterMeasures, CarbonTable table) {
     CarbonDimension dim;
     CarbonMeasure msr;
     String columnName;
@@ -209,13 +213,25 @@ public class QueryModel {
       if (null != isFilterMeasures) {
         isFilterMeasures[msr.getOrdinal()] = true;
       }
-    } else {
+    } else if (null != CarbonUtil.findDimension(processVO.getImplicitDimensions(), columnName)) {
       // check if this is an implicit dimension
-      dim = CarbonUtil
-          .findDimension(processVO.getImplicitDimensions(), columnName);
+      dim = CarbonUtil.findDimension(processVO.getImplicitDimensions(), columnName);
       col.setCarbonColumn(dim);
       col.setDimension(dim);
       col.setDimension(true);
+    } else {
+      // in case of sdk or fileformat, there can be chance that each carbondata file may have
+      // different schema, so every segment properties will have dims and measures based on
+      // corresponding segment. So the filter column may not be present in it. so generate the
+      // dimension and measure from the carbontable
+      CarbonDimension dimension =
+          table.getDimensionByName(table.getTableName(), col.getColumnName());
+      CarbonMeasure measure = table.getMeasureByName(table.getTableName(), col.getColumnName());
+      col.setDimension(dimension);
+      col.setMeasure(measure);
+      col.setCarbonColumn(dimension == null ? measure : dimension);
+      col.setDimension(null != dimension);
+      col.setMeasure(null != measure);
     }
   }
 
