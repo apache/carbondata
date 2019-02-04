@@ -1225,12 +1225,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     assert(spark.sql("select * from sdkout").collect().length == 5)
     buildTestDataOtherDataType(5, null, warehouse1+"/sdk1", 2)
     spark.sql("refresh table sdkout")
-    intercept[Exception] {
-      spark.sql("select * from sdkout").show()
-    }
-    intercept[Exception] {
-      spark.sql("select * from sdkout where salary=100").show()
-    }
+    assert(spark.sql("select * from sdkout").count() == 10)
+    assert(spark.sql("select * from sdkout where salary=100").count() == 1)
     FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
   }
 

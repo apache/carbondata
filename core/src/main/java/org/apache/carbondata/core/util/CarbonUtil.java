@@ -2188,9 +2188,14 @@ public final class CarbonUtil {
     CarbonFile segment = FileFactory.getCarbonFile(path, configuration);
 
     CarbonFile[] dataFiles = segment.listFiles();
+    CarbonFile latestCarbonFile = null;
+    long latestDatafileTimestamp = 0L;
+    // get the latest carbondatafile to get the latest schema in the folder
     for (CarbonFile dataFile : dataFiles) {
-      if (dataFile.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
-        return dataFile.getAbsolutePath();
+      if (dataFile.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)
+          && dataFile.getLastModifiedTime() > latestDatafileTimestamp) {
+        latestCarbonFile = dataFile;
+        latestDatafileTimestamp = dataFile.getLastModifiedTime();
       } else if (dataFile.isDirectory()) {
         // if the list has directories that doesn't contain data files,
         // continue checking other files/directories in the list.
@@ -2201,8 +2206,13 @@ public final class CarbonUtil {
         }
       }
     }
-    //returning null only if the path doesn't have data files.
-    return null;
+
+    if (latestCarbonFile != null) {
+      return latestCarbonFile.getAbsolutePath();
+    } else {
+      //returning null only if the path doesn't have data files.
+      return null;
+    }
   }
 
   /**
