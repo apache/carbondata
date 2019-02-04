@@ -273,12 +273,15 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (queryModel.getTable().isTransactionalTable()) {
       return;
     }
-    // First validate the schema of the carbondata file
-    boolean sameColumnSchemaList = BlockletDataMapUtil.isSameColumnSchemaList(columnsInTable,
-        queryModel.getTable().getTableInfo().getFactTable().getListOfColumns());
+    // First validate the schema of the carbondata file if the same column name have different
+    // datatype
+    boolean sameColumnSchemaList = BlockletDataMapUtil
+        .isSameColumnAndDifferentDatatypeInSchema(columnsInTable,
+            queryModel.getTable().getTableInfo().getFactTable().getListOfColumns());
     if (!sameColumnSchemaList) {
-      LOGGER.error("Schema of " + filePath + " doesn't match with the table's schema");
-      throw new IOException("All the files doesn't have same schema. "
+      LOGGER.error("Datatype of the common columns present in " + filePath + " doesn't match with"
+          + "the column's datatype in table schema");
+      throw new IOException("All common columns present in the files doesn't have same datatype. "
           + "Unsupported operation on nonTransactional table. Check logs.");
     }
     List<ProjectionDimension> dimensions = queryModel.getProjectionDimensions();
@@ -331,10 +334,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   private void createFilterExpression(QueryModel queryModel, SegmentProperties properties) {
     Expression expression = queryModel.getFilterExpression();
     if (expression != null) {
-      QueryModel.FilterProcessVO processVO =
-          new QueryModel.FilterProcessVO(properties.getDimensions(), properties.getMeasures(),
-              new ArrayList<CarbonDimension>());
-      QueryModel.processFilterExpression(processVO, expression, null, null);
+      QueryModel.FilterProcessVO processVO = new QueryModel.FilterProcessVO(
+          properties.getDimensions(),
+          properties.getMeasures(),
+          new ArrayList<CarbonDimension>());
+      QueryModel.processFilterExpression(processVO, expression, null, null, queryModel.getTable());
       // Optimize Filter Expression and fit RANGE filters is conditions apply.
       FilterOptimizer rangeFilterOptimizer = new RangeFilterOptmizer(expression);
       rangeFilterOptimizer.optimizeFilter();

@@ -246,7 +246,7 @@ public class CarbonTable implements Serializable {
       String tableName,
       Configuration configuration) throws IOException {
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
-    CarbonFile carbonFile = getFirstIndexFile(FileFactory.getCarbonFile(tablePath, configuration));
+    CarbonFile carbonFile = getLatestIndexFile(FileFactory.getCarbonFile(tablePath, configuration));
     if (carbonFile == null) {
       throw new RuntimeException("Carbon index file not exists.");
     }
@@ -265,22 +265,31 @@ public class CarbonTable implements Serializable {
     return CarbonTable.buildFromTableInfo(tableInfoInfer);
   }
 
-  private static CarbonFile getFirstIndexFile(CarbonFile tablePath) {
+  private static CarbonFile getLatestIndexFile(CarbonFile tablePath) {
     CarbonFile[] carbonFiles = tablePath.listFiles();
+    CarbonFile latestCarbonIndexFile = null;
+    long latestIndexFileTimestamp = 0L;
     for (CarbonFile carbonFile : carbonFiles) {
-      if (carbonFile.isDirectory()) {
+      if (carbonFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)
+          && carbonFile.getLastModifiedTime() > latestIndexFileTimestamp) {
+        latestCarbonIndexFile = carbonFile;
+        latestIndexFileTimestamp = carbonFile.getLastModifiedTime();
+      } else if (carbonFile.isDirectory()) {
         // if the list has directories that doesn't contain index files,
         // continue checking other files/directories in the list.
-        if (getFirstIndexFile(carbonFile) == null) {
+        if (getLatestIndexFile(carbonFile) == null) {
           continue;
         } else {
-          return getFirstIndexFile(carbonFile);
+          return getLatestIndexFile(carbonFile);
         }
-      } else if (carbonFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        return carbonFile;
       }
     }
-    return null;
+    if (latestCarbonIndexFile != null) {
+      return latestCarbonIndexFile;
+    } else {
+      // returning null only if the path doesn't have index files.
+      return null;
+    }
   }
 
   public static CarbonTable buildDummyTable(String tablePath) throws IOException {
@@ -1058,7 +1067,7 @@ public class CarbonTable implements Serializable {
         new QueryModel.FilterProcessVO(getDimensionByTableName(getTableName()),
             getMeasureByTableName(getTableName()), getImplicitDimensionByTableName(getTableName()));
     QueryModel.processFilterExpression(processVO, filterExpression, isFilterDimensions,
-        isFilterMeasures);
+        isFilterMeasures, this);
 
     if (null != filterExpression) {
       // Optimize Filter Expression and fit RANGE filters is conditions apply.
