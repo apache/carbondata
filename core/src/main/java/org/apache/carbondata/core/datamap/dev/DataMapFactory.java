@@ -111,9 +111,11 @@ public abstract class DataMapFactory<T extends DataMap> {
   public abstract void fireEvent(Event event);
 
   /**
-   * Clears datamap of the segment
+   * Clear all datamaps for a segment from memory
    */
-  public abstract void clear(Segment segment);
+  public void clear(String segmentNo) {
+
+  }
 
   /**
    * Clear all datamaps from memory
@@ -139,6 +141,13 @@ public abstract class DataMapFactory<T extends DataMap> {
    * delete datamap data if any
    */
   public abstract void deleteDatamapData();
+
+  /**
+   * delete datamap data if any
+   */
+  public void deleteSegmentDatamapData(String segmentNo) throws IOException {
+
+  }
 
   /**
    * This function should return true is the input operation enum will make the datamap become stale

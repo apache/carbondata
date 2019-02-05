@@ -37,6 +37,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
+import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.loading.FailureCauses
 
 private[sql] case class CarbonProjectForUpdateCommand(
@@ -153,6 +154,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
             currentTime,
             executionErrors,
             segmentsToBeDeleted)
+
+          DeleteExecution.clearDistributedSegmentCache(carbonTable, segmentsToBeDeleted)
+
         } else {
           throw new ConcurrentOperationException(carbonTable, "compaction", "update")
         }

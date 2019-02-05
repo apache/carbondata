@@ -25,7 +25,9 @@ import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
+import org.apache.carbondata.core.datamap.DataMapUtil
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{DropTableCacheEvent, OperationContext, OperationListenerBus}
 
 case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall: Boolean = false)
@@ -48,16 +50,19 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
 
     val cache = CacheProvider.getInstance().getCarbonCache
     if (cache != null) {
-
       // Get all Index files for the specified table.
-      val allIndexFiles = CacheUtil.getAllIndexFiles(carbonTable)
+      if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable.getDatabaseName,
+        carbonTable.getTableName)) {
+        DataMapUtil.executeClearDataMapJob(carbonTable, DataMapUtil.DISTRIBUTED_JOB_NAME)
+      } else {
+        val allIndexFiles = CacheUtil.getAllIndexFiles(carbonTable)
+        // Extract dictionary keys for the table and create cache keys from those
+        val dictKeys: List[String] = CacheUtil.getAllDictCacheKeys(carbonTable)
 
-      // Extract dictionary keys for the table and create cache keys from those
-      val dictKeys: List[String] = CacheUtil.getAllDictCacheKeys(carbonTable)
-
-      // Remove elements from cache
-      val keysToRemove = allIndexFiles ++ dictKeys
-      cache.removeAll(keysToRemove.asJava)
+        // Remove elements from cache
+        val keysToRemove = allIndexFiles ++ dictKeys
+        cache.removeAll(keysToRemove.asJava)
+      }
     }
     LOGGER.info("Drop cache request served for table " + carbonTable.getTableUniqueName)
   }

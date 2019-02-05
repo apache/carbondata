@@ -625,4 +625,8 @@ public class CarbonInputSplit extends FileSplit
     }
     return this.location;
   }
+
+  public void setLocation(String[] location) {
+    this.location = location;
+  }
 }

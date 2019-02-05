@@ -225,8 +225,8 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
 
     // for each segment fetch blocks matching filter in Driver BTree
     List<CarbonInputSplit> dataBlocksOfSegment =
-        getDataBlocksOfSegment(job, carbonTable, expression, matchedPartitions,
-            validSegments, partitionInfo, oldPartitionIdList);
+        getDataBlocksOfSegment(job, carbonTable, expression, matchedPartitions, validSegments,
+            partitionInfo, oldPartitionIdList, new ArrayList<Segment>(), new ArrayList<String>());
     numBlocks = dataBlocksOfSegment.size();
     result.addAll(dataBlocksOfSegment);
     return result;

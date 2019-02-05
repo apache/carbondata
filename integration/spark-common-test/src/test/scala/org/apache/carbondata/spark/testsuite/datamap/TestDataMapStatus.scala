@@ -226,8 +226,6 @@ class TestDataMapFactory(
 
   override def fireEvent(event: Event): Unit = ???
 
-  override def clear(segmentId: Segment): Unit = {}
-
   override def clear(): Unit = {}
 
   override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = {

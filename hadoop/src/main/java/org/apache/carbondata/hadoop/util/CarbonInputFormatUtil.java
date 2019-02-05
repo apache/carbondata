@@ -163,7 +163,7 @@ public class CarbonInputFormatUtil {
    * @throws IOException
    */
   public static void setDataMapJobIfConfigured(Configuration conf) throws IOException {
-    String className = "org.apache.carbondata.spark.rdd.SparkDataMapJob";
+    String className = "org.apache.carbondata.indexserver.EmbeddedDataMapJob";
     DataMapUtil.setDataMapJob(conf, DataMapUtil.createDataMapJob(className));
   }
 

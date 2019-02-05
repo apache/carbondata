@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.core.datamap;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -37,7 +40,7 @@ import org.apache.hadoop.conf.Configuration;
 /**
  * Represents one load of carbondata
  */
-public class Segment implements Serializable {
+public class Segment implements Serializable, Writable {
 
   private static final long serialVersionUID = 7044555408162234064L;
 
@@ -55,14 +58,25 @@ public class Segment implements Serializable {
    * transactional isolation level which only allows snapshot read of the
    * data and make non committed data invisible to the reader.
    */
-  private ReadCommittedScope readCommittedScope;
+  private transient ReadCommittedScope readCommittedScope;
 
   /**
    * keeps all the details about segments
    */
-  private LoadMetadataDetails loadMetadataDetails;
+  private transient LoadMetadataDetails loadMetadataDetails;
 
   private String segmentString;
+
+  private long indexSize = 0;
+
+  /**
+   * Whether to cache the segment data maps in executors or not.
+   */
+  private boolean isCacheable = true;
+
+  public Segment() {
+
+  }
 
   public Segment(String segmentNo) {
     this.segmentNo = segmentNo;
@@ -120,6 +134,9 @@ public class Segment implements Serializable {
     this.segmentFileName = segmentFileName;
     this.readCommittedScope = readCommittedScope;
     this.loadMetadataDetails = loadMetadataDetails;
+    if (loadMetadataDetails.getIndexSize() != null) {
+      this.indexSize = Long.parseLong(loadMetadataDetails.getIndexSize());
+    }
     if (segmentFileName != null) {
       segmentString = segmentNo + "#" + segmentFileName;
     } else {
@@ -153,6 +170,10 @@ public class Segment implements Serializable {
 
   public void setReadCommittedScope(ReadCommittedScope readCommittedScope) {
     this.readCommittedScope = readCommittedScope;
+  }
+
+  public ReadCommittedScope getReadCommittedScope() {
+    return readCommittedScope;
   }
 
   public static List<Segment> toSegmentList(String[] segmentIds,
@@ -256,5 +277,57 @@ public class Segment implements Serializable {
 
   public LoadMetadataDetails getLoadMetadataDetails() {
     return loadMetadataDetails;
+  }
+
+  public long getIndexSize() {
+    return indexSize;
+  }
+
+  public void setIndexSize(long indexSize) {
+    this.indexSize = indexSize;
+  }
+
+  public boolean isCacheable() {
+    return isCacheable;
+  }
+
+  public void setCacheable(boolean cacheable) {
+    isCacheable = cacheable;
+  }
+
+  @Override public void write(DataOutput out) throws IOException {
+    out.writeUTF(segmentNo);
+    boolean writeSegmentFileName = segmentFileName != null;
+    out.writeBoolean(writeSegmentFileName);
+    if (writeSegmentFileName) {
+      out.writeUTF(segmentFileName);
+    }
+    out.writeInt(filteredIndexShardNames.size());
+    for (String name: filteredIndexShardNames) {
+      out.writeUTF(name);
+    }
+    if (segmentString == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      out.writeUTF(segmentString);
+    }
+    out.writeLong(indexSize);
+  }
+
+  @Override public void readFields(DataInput in) throws IOException {
+    this.segmentNo = in.readUTF();
+    if (in.readBoolean()) {
+      this.segmentFileName = in.readUTF();
+    }
+    filteredIndexShardNames = new HashSet<>();
+    int indexShardNameSize = in.readInt();
+    for (int i = 0; i < indexShardNameSize; i++) {
+      filteredIndexShardNames.add(in.readUTF());
+    }
+    if (in.readBoolean()) {
+      this.segmentString = in.readUTF();
+    }
+    this.indexSize = in.readLong();
   }
 }

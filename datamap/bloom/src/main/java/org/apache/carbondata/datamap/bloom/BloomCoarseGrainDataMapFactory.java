@@ -313,6 +313,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
           filteredShards.contains(new File(shardPath).getName())) {
         DataMapDistributable bloomDataMapDistributable =
             new BloomDataMapDistributable(shardPath, filteredShards);
+        bloomDataMapDistributable.setSegment(segment);
+        bloomDataMapDistributable.setDataMapSchema(getDataMapSchema());
         dataMapDistributableList.add(bloomDataMapDistributable);
       }
     }
@@ -325,8 +327,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   @Override
-  public void clear(Segment segment) {
-    Set<String> shards = segmentMap.remove(segment.getSegmentNo());
+  public void clear(String segment) {
+    Set<String> shards = segmentMap.remove(segment);
     if (shards != null) {
       for (String shard : shards) {
         for (CarbonColumn carbonColumn : dataMapMeta.getIndexedColumns()) {
@@ -341,15 +343,19 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     if (segmentMap.size() > 0) {
       List<String> segments = new ArrayList<>(segmentMap.keySet());
       for (String segmentId : segments) {
-        clear(new Segment(segmentId, null, null));
+        clear(segmentId);
       }
     }
   }
 
   @Override
   public void deleteDatamapData(Segment segment) throws IOException {
+    deleteSegmentDatamapData(segment.getSegmentNo());
+  }
+
+  @Override
+  public void deleteSegmentDatamapData(String segmentId) throws IOException {
     try {
-      String segmentId = segment.getSegmentNo();
       String datamapPath = CarbonTablePath
           .getDataMapStorePath(getCarbonTable().getTablePath(), segmentId, dataMapName);
       if (FileFactory.isFileExist(datamapPath)) {
@@ -357,9 +363,9 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
             FileFactory.getFileType(datamapPath));
         CarbonUtil.deleteFoldersAndFilesSilent(file);
       }
-      clear(segment);
+      clear(segmentId);
     } catch (InterruptedException ex) {
-      throw new IOException("Failed to delete datamap for segment_" + segment.getSegmentNo());
+      throw new IOException("Failed to delete datamap for segment_" + segmentId);
     }
   }
 

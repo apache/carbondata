@@ -66,6 +66,7 @@ import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentSta
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
+import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, StringArrayWritable}
@@ -252,6 +253,12 @@ object CarbonDataRDDFactory {
                   .listAllTables(sqlContext.sparkSession).toArray,
                 skipCompactionTables.asJava)
             }
+          }
+          // Remove compacted segments from executor cache.
+          if (CarbonProperties.getInstance().isDistributedPruningEnabled(
+              carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)) {
+            IndexServer.getClient.invalidateSegmentCache(carbonLoadModel.getDatabaseName,
+              carbonLoadModel.getTableName, compactedSegments.asScala.toArray)
           }
           // giving the user his error for telling in the beeline if his triggered table
           // compaction is failed.
