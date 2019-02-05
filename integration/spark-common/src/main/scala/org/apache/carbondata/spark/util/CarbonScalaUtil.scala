@@ -39,7 +39,7 @@ import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -58,7 +58,7 @@ import org.apache.carbondata.streaming.parser.FieldConverter
 
 object CarbonScalaUtil {
 
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  private val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def getString(value: Any,
       serializationNullFormat: String,
@@ -698,6 +698,13 @@ object CarbonScalaUtil {
     newColumnSchemas ++= columnSchemas.filter(columnSchema => columnSchema.isSortColumn)
     newColumnSchemas ++= columnSchemas.filterNot(columnSchema => columnSchema.isSortColumn)
     newColumnSchemas
+  }
+
+  def logTime[T](f: => T): (T, Long) = {
+    val startTime = System.currentTimeMillis()
+    val response = f
+    val endTime = System.currentTimeMillis() - startTime
+    (response, endTime)
   }
 
 }

@@ -32,7 +32,13 @@ public class BlockletDataMapDistributable extends DataMapDistributable {
    */
   private String filePath;
 
+  private String segmentPath;
+
   private TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier;
+
+  public BlockletDataMapDistributable() {
+
+  }
 
   public BlockletDataMapDistributable(String indexFilePath) {
     this.filePath = indexFilePath;
@@ -49,5 +55,13 @@ public class BlockletDataMapDistributable extends DataMapDistributable {
   public void setTableBlockIndexUniqueIdentifier(
       TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifiers) {
     this.tableBlockIndexUniqueIdentifier = tableBlockIndexUniqueIdentifiers;
+  }
+
+  public String getSegmentPath() {
+    return segmentPath;
+  }
+
+  public void setSegmentPath(String segmentPath) {
+    this.segmentPath = segmentPath;
   }
 }

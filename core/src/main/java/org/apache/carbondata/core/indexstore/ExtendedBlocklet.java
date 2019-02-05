@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.core.indexstore;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.List;
 
@@ -33,6 +35,10 @@ public class ExtendedBlocklet extends Blocklet {
   private String dataMapUniqueId;
 
   private CarbonInputSplit inputSplit;
+
+  public ExtendedBlocklet() {
+
+  }
 
   public ExtendedBlocklet(String filePath, String blockletId,
       boolean compareBlockletIdForObjectMatching, ColumnarFormatVersion version) {
@@ -142,6 +148,53 @@ public class ExtendedBlocklet extends Blocklet {
 
   public void setColumnSchema(List<ColumnSchema> columnSchema) {
     this.inputSplit.setColumnSchema(columnSchema);
+  }
+
+
+
+  @Override public void write(DataOutput out) throws IOException {
+    super.write(out);
+    if (dataMapUniqueId == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      out.writeUTF(dataMapUniqueId);
+    }
+    if (inputSplit != null) {
+      out.writeBoolean(true);
+      inputSplit.write(out);
+      String[] locations = getLocations();
+      if (locations != null) {
+        out.writeBoolean(true);
+        out.writeInt(locations.length);
+        for (String location : locations) {
+          out.writeUTF(location);
+        }
+      } else {
+        out.writeBoolean(false);
+      }
+    } else {
+      out.writeBoolean(false);
+    }
+  }
+
+  @Override public void readFields(DataInput in) throws IOException {
+    super.readFields(in);
+    if (in.readBoolean()) {
+      dataMapUniqueId = in.readUTF();
+    }
+    if (in.readBoolean()) {
+      inputSplit = new CarbonInputSplit();
+      inputSplit.readFields(in);
+      if (in.readBoolean()) {
+        int numLocations = in.readInt();
+        String[] locations = new String[numLocations];
+        for (int i = 0; i < numLocations; i++) {
+          locations[i] = in.readUTF();
+        }
+        inputSplit.setLocation(locations);
+      }
+    }
   }
 
 }

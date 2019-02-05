@@ -59,6 +59,10 @@
     <Bug pattern="STCAL_INVOKE_ON_STATIC_DATE_FORMAT_INSTANCE"/>
   </Match>
   <Match>
+    <Class name="org.apache.carbondata.core.datamap.DistributableDataMapFormat"/>
+    <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+  </Match>
+  <Match>
     <!--
     Returning a reference to a mutable object value stored in one of the object's fields exposes
     the internal representation of the object.  If instances are accessed by untrusted code,
@@ -101,5 +105,9 @@
   </Match>
   <Match>
     <Bug pattern="JLM_JSR166_UTILCONCURRENT_MONITORENTER"/>
+  </Match>
+  <Match>
+    <Class name="org.apache.carbondata.core.datamap.Segment"/>
+    <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
 </FindBugsFilter>

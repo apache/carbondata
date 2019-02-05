@@ -356,14 +356,7 @@ public final class TableDataMap extends OperationEventListener {
   public List<DataMapDistributable> toDistributable(List<Segment> segments) throws IOException {
     List<DataMapDistributable> distributables = new ArrayList<>();
     for (Segment segment : segments) {
-      List<DataMapDistributable> list =
-          dataMapFactory.toDistributable(segment);
-      for (DataMapDistributable distributable : list) {
-        distributable.setDataMapSchema(dataMapSchema);
-        distributable.setSegment(segment);
-        distributable.setTablePath(identifier.getTablePath());
-      }
-      distributables.addAll(list);
+      distributables.addAll(dataMapFactory.toDistributable(segment));
     }
     return distributables;
   }
@@ -420,10 +413,10 @@ public final class TableDataMap extends OperationEventListener {
 
   /**
    * Clear only the datamaps of the segments
-   * @param segments
+   * @param segmentIds list of segmentIds to be cleared from cache.
    */
-  public void clear(List<Segment> segments) {
-    for (Segment segment: segments) {
+  public void clear(List<String> segmentIds) {
+    for (String segment: segmentIds) {
       dataMapFactory.clear(segment);
     }
   }
@@ -452,6 +445,13 @@ public final class TableDataMap extends OperationEventListener {
     dataMapFactory.deleteDatamapData();
   }
 
+  /**
+   * delete datamap data for a segment if any
+   */
+  public void deleteSegmentDatamapData(String segmentNo) throws IOException {
+    dataMapFactory.deleteSegmentDatamapData(segmentNo);
+  }
+
   public DataMapSchema getDataMapSchema() {
     return dataMapSchema;
   }
@@ -462,31 +462,6 @@ public final class TableDataMap extends OperationEventListener {
 
   @Override public void onEvent(Event event, OperationContext opContext) throws Exception {
     dataMapFactory.fireEvent(event);
-  }
-
-  /**
-   * Method to prune the segments based on task min/max values
-   *
-   * @param segments
-   * @param filterExp
-   * @return
-   * @throws IOException
-   */
-  public List<Segment> pruneSegments(List<Segment> segments, FilterResolverIntf filterExp)
-      throws IOException {
-    List<Segment> prunedSegments = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for (Segment segment : segments) {
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
-      for (DataMap dataMap : dataMaps) {
-        if (dataMap.isScanRequired(filterExp)) {
-          // If any one task in a given segment contains the data that means the segment need to
-          // be scanned and we need to validate further data maps in the same segment
-          prunedSegments.add(segment);
-          break;
-        }
-      }
-    }
-    return prunedSegments;
   }
 
   /**

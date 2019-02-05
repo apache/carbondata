@@ -217,6 +217,7 @@ public final class CarbonLRUCache {
     } else {
       synchronized (lruCacheMap) {
         addEntryToLRUCacheMap(columnIdentifier, cacheInfo);
+        currentSize = currentSize + requiredSize;
       }
       columnKeyAddedSuccessfully = true;
     }
@@ -357,5 +358,12 @@ public final class CarbonLRUCache {
   private double getPartOfXmx() {
     long mSizeMB = Runtime.getRuntime().maxMemory() / BYTE_CONVERSION_CONSTANT;
     return mSizeMB * CarbonCommonConstants.CARBON_LRU_CACHE_PERCENT_OVER_MAX_SIZE;
+  }
+
+  /**
+   * @return current size of the cache in memory.
+   */
+  public long getCurrentSize() {
+    return currentSize;
   }
 }

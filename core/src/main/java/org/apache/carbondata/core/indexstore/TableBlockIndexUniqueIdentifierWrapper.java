@@ -53,7 +53,7 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
     this.configuration = FileFactory.getConfiguration();
   }
 
-  public TableBlockIndexUniqueIdentifierWrapper(
+  private TableBlockIndexUniqueIdentifierWrapper(
       TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier, CarbonTable carbonTable,
       Configuration configuration) {
     this.tableBlockIndexUniqueIdentifier = tableBlockIndexUniqueIdentifier;
@@ -65,9 +65,8 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
   // Kindly do not remove
   public TableBlockIndexUniqueIdentifierWrapper(
       TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier, CarbonTable carbonTable,
-      boolean addTableBlockToUnsafeAndLRUCache) {
-    this(tableBlockIndexUniqueIdentifier, carbonTable);
-    this.configuration = FileFactory.getConfiguration();
+      Configuration configuration, boolean addTableBlockToUnsafeAndLRUCache) {
+    this(tableBlockIndexUniqueIdentifier, carbonTable, configuration);
     this.addTableBlockToUnsafeAndLRUCache = addTableBlockToUnsafeAndLRUCache;
   }
 

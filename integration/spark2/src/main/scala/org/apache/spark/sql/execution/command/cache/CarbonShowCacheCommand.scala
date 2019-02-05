@@ -32,8 +32,11 @@ import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, ShowTableCacheEvent}
+import org.apache.carbondata.indexserver.IndexServer
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.spark.util.CommonUtil.bytesToDisplaySize
 
 
@@ -41,7 +44,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
     internalCall: Boolean = false)
   extends MetadataCommand {
 
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  private val LOGGER = LogServiceFactory.getLogService(classOf[CarbonShowCacheCommand].getName)
 
   override def output: Seq[AttributeReference] = {
     if (tableIdentifier.isEmpty) {
@@ -171,14 +174,16 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
     OperationListenerBus.getInstance.fireEvent(showTableCacheEvent, operationContext)
 
     // Get all Index files for the specified table in cache
-    val indexFilesInCache: List[String] = allIndexFiles.filter {
-      indexFile =>
-        cache.get(indexFile) != null
+    val (indexFilesLength, size) = if (CarbonProperties.getInstance()
+        .isDistributedPruningEnabled(carbonTable.getDatabaseName, carbonTable.getTableName)) {
+      getTableCache(carbonTable.getTableUniqueName)
+    } else {
+      val memorySizeForEachIndexFile: List[Long] = allIndexFiles.collect {
+        case indexFile if cache.get(indexFile) != null =>
+          cache.get(indexFile).getMemorySize
+      }
+      (memorySizeForEachIndexFile.length, memorySizeForEachIndexFile.sum)
     }
-    val sizeOfIndexFilesInCache: Long = indexFilesInCache.map {
-      indexFile =>
-        cache.get(indexFile).getMemorySize
-    }.sum
 
     // Extract dictionary keys for the table and create cache keys from those
     val dictKeys = CacheUtil.getAllDictCacheKeys(carbonTable)
@@ -194,15 +199,44 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
       case (name, (provider, indexSize, dmSize)) =>
         Row(name, indexSize, dmSize, provider)
     }.toSeq
-
-    var comments = indexFilesInCache.size + "/" + allIndexFiles.size + " index files cached"
+    var comments = indexFilesLength + "/" + allIndexFiles.size + " index files cached"
     if (!carbonTable.isTransactionalTable) {
       comments += " (external table)"
     }
     Seq(
-      Row("Index", sizeOfIndexFilesInCache, comments),
+      Row("Index", size, comments),
       Row("Dictionary", sizeOfDictInCache, "")
     ) ++ otherDatamapsResults
+  }
+
+  private lazy val cacheResult: Seq[(String, Int, Long)] = {
+    val tableUniqueName = tableIdentifier match {
+      case Some(identifier) => s"${
+        identifier.database.getOrElse(SparkSession.getActiveSession
+          .get.catalog.currentDatabase)
+      }_${ identifier.table }"
+      case None => ""
+    }
+    val (result, time) = CarbonScalaUtil.logTime {
+      IndexServer.getClient.showCache(tableUniqueName).map(_.split(":"))
+        .groupBy(_.head).map { t =>
+        var sum = 0L
+        var length = 0
+        t._2.foreach {
+          arr =>
+            sum += arr(2).toLong
+            length += arr(1).toInt
+        }
+        (t._1, length, sum)
+      }
+    }
+    LOGGER.info(s"Time taken to get cache results from Index Server is $time ms")
+    result.toList
+  }
+
+  private def getTableCache(tableName: String): (Int, Long) = {
+    val (_, indexFileLength, cacheSize) = cacheResult.find(_._1 == tableName).getOrElse(("", 0, 0L))
+    (indexFileLength, cacheSize)
   }
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {

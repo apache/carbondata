@@ -1601,4 +1601,56 @@ public final class CarbonProperties {
       }
     }
   }
+
+  /**
+   * Check whether the Distributed Pruning is enabled by the user or not.
+   */
+  public boolean isDistributedPruningEnabled(String dbName, String tableName) {
+    // Check if user has enabled/disabled the use of index server for the current session using
+    // the set command
+    String configuredValue = getSessionPropertyValue(
+        CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER + "." + dbName + "." + tableName);
+    if (configuredValue == null) {
+      // if not set in session properties then check carbon.properties for the same.
+      configuredValue = getProperty(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER);
+    }
+    boolean isServerEnabledByUser = Boolean.parseBoolean(configuredValue);
+    if (isServerEnabledByUser) {
+      LOGGER.info("Distributed Index server is enabled for " + dbName + "." + tableName);
+    }
+    return isServerEnabledByUser;
+  }
+
+  public String getIndexServerIP() {
+    return carbonProperties.getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_IP, "");
+  }
+
+  public int getIndexServerPort() {
+    String configuredPort =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_PORT);
+    try {
+      return Integer.parseInt(configuredPort);
+    } catch (NumberFormatException e) {
+      LOGGER.error("Configured port for index server is not a valid number", e);
+      throw e;
+    }
+  }
+
+  /**
+   * Whether fallback is disabled by the user or not.
+   */
+  public boolean isFallBackDisabled() {
+    return Boolean.parseBoolean(carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_DISABLE_INDEX_SERVER_FALLBACK, "false"));
+  }
+
+  public int getNumberOfHandlersForIndexServer() {
+    String configuredValue =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_WORKER_THREADS);
+    if (configuredValue != null) {
+      return Integer.parseInt(configuredValue);
+    }
+    return CarbonCommonConstants.CARBON_INDEX_SERVER_WORKER_THREADS_DEFAULT;
+  }
+
 }

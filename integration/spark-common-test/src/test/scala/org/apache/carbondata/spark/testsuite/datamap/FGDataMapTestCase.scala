@@ -98,6 +98,8 @@ class FGDataMapFactory(carbonTable: CarbonTable,
     val files = file.listFiles()
     files.map { f =>
       val d: DataMapDistributable = new BlockletDataMapDistributable(f.getCanonicalPath)
+      d.setSegment(segment)
+      d.setDataMapSchema(getDataMapSchema)
       d
     }.toList.asJava
   }
@@ -108,12 +110,6 @@ class FGDataMapFactory(carbonTable: CarbonTable,
    */
   override def fireEvent(event: Event):Unit = {
     ???
-  }
-
-  /**
-   * Clears datamap of the segment
-   */
-  override def clear(segment: Segment): Unit = {
   }
 
   /**

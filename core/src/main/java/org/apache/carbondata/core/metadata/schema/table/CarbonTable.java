@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.metadata.schema.table;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -73,7 +75,7 @@ import org.apache.log4j.Logger;
 /**
  * Mapping class for Carbon actual table
  */
-public class CarbonTable implements Serializable {
+public class CarbonTable implements Serializable, Writable {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonTable.class.getName());
@@ -186,7 +188,7 @@ public class CarbonTable implements Serializable {
    */
   private boolean isTransactionalTable = true;
 
-  private CarbonTable() {
+  public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableMeasuresMap = new HashMap<String, List<CarbonMeasure>>();
@@ -1404,5 +1406,15 @@ public class CarbonTable implements Serializable {
     } else {
       return SortScopeOptions.getSortScope(sortScope);
     }
+  }
+
+  @Override public void write(DataOutput out) throws IOException {
+    tableInfo.write(out);
+  }
+
+  @Override public void readFields(DataInput in) throws IOException {
+    tableInfo = new TableInfo();
+    tableInfo.readFields(in);
+    updateTableByTableInfo(this, tableInfo);
   }
 }

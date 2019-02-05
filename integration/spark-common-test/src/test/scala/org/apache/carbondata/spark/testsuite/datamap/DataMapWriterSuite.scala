@@ -47,8 +47,6 @@ class C2DataMapFactory(
 
   override def fireEvent(event: Event): Unit = ???
 
-  override def clear(segment: Segment): Unit = {}
-
   override def clear(): Unit = {}
 
   override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = ???

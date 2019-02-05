@@ -74,9 +74,4 @@ class MergeBloomIndexEventListener extends OperationEventListener with Logging {
     }
   }
 
-
-  private def clearBloomCache(carbonTable: CarbonTable, segmentIds: Seq[String]): Unit = {
-    DataMapStoreManager.getInstance.clearDataMaps(carbonTable.getTableUniqueName)
-  }
-
 }

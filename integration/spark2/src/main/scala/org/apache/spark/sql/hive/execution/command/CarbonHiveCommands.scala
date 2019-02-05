@@ -123,6 +123,11 @@ object CarbonSetCommand {
           "property should be in \" carbon.table.load.sort.scope.<database_name>" +
           ".<table_name>=<sort_sope> \" format.")
       }
+    } else if (key.startsWith(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER)) {
+      val keySplits = key.split("\\.")
+      if (keySplits.length == 6 || keySplits.length == 4) {
+        sessionParams.addProperty(key.toString, value)
+      }
     }
     else if (isCarbonProperty) {
       sessionParams.addProperty(key, value)

@@ -26,7 +26,10 @@ import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.bloom.{BloomCacheKeyValue, BloomCoarseGrainDataMapFactory}
+import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
 
@@ -41,7 +44,17 @@ object CacheUtil {
   def getAllIndexFiles(carbonTable: CarbonTable): List[String] = {
     if (carbonTable.isTransactionalTable) {
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-      CarbonDataMergerUtil.getValidSegmentList(absoluteTableIdentifier).asScala.flatMap {
+      val validAndInvalidSegmentsInfo = new SegmentStatusManager(absoluteTableIdentifier)
+        .getValidAndInvalidSegments()
+      // Fire a job to clear the invalid segments cached in the executors.
+      if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable.getDatabaseName,
+        carbonTable.getTableName)) {
+        val invalidSegmentIds = validAndInvalidSegmentsInfo.getInvalidSegments.asScala
+          .map(_.getSegmentNo).toArray
+        IndexServer.getClient.invalidateSegmentCache(carbonTable.getDatabaseName, carbonTable
+          .getTableName, invalidSegmentIds)
+      }
+      validAndInvalidSegmentsInfo.getValidSegments.asScala.flatMap {
         segment =>
           segment.getCommittedIndexFile.keySet().asScala
       }.map { indexFile =>

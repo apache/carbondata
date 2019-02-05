@@ -114,14 +114,6 @@ class CGDataMapFactory(
     }.toList.asJava
   }
 
-
-  /**
-   * Clears datamap of the segment
-   */
-  override def clear(segment: Segment): Unit = {
-
-  }
-
   /**
    * Clear all datamaps from memory
    */

@@ -16,62 +16,102 @@
  */
 package org.apache.carbondata.core.datamap;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
-import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.log4j.Logger;
 
 /**
  * Input format for datamaps, it makes the datamap pruning distributable.
  */
-public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBlocklet> implements
-    Serializable {
+public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBlocklet>
+    implements Serializable, Writable {
+
+  private static final transient Logger LOGGER =
+      LogServiceFactory.getLogService(DistributableDataMapFormat.class.getName());
+
+  private static final long serialVersionUID = 9189779090091151248L;
 
   private CarbonTable table;
 
-  private DataMapExprWrapper dataMapExprWrapper;
+  private FilterResolverIntf filterResolverIntf;
 
   private List<Segment> validSegments;
 
-  private List<Segment> invalidSegments;
+  private List<String> invalidSegments;
 
   private List<PartitionSpec> partitions;
 
-  private  DataMapDistributableWrapper distributable;
-
   private boolean isJobToClearDataMaps = false;
 
-  DistributableDataMapFormat(CarbonTable table, DataMapExprWrapper dataMapExprWrapper,
-      List<Segment> validSegments, List<Segment> invalidSegments, List<PartitionSpec> partitions,
-      boolean isJobToClearDataMaps) {
+  private DataMapLevel dataMapLevel;
+
+  private boolean isFallbackJob = false;
+
+  private String dataMapToClear = "";
+
+  private ReadCommittedScope readCommittedScope;
+
+  DistributableDataMapFormat() {
+
+  }
+
+  DistributableDataMapFormat(CarbonTable table,
+      List<Segment> validSegments, List<String> invalidSegments, boolean isJobToClearDataMaps,
+      String dataMapToClear) throws IOException {
+    this(table, null, validSegments, invalidSegments, null,
+        isJobToClearDataMaps, null, false);
+    this.dataMapToClear = dataMapToClear;
+  }
+
+  DistributableDataMapFormat(CarbonTable table, FilterResolverIntf filterResolverIntf,
+      List<Segment> validSegments, List<String> invalidSegments, List<PartitionSpec> partitions,
+      boolean isJobToClearDataMaps, DataMapLevel dataMapLevel, boolean isFallbackJob)
+      throws IOException {
     this.table = table;
-    this.dataMapExprWrapper = dataMapExprWrapper;
+    this.filterResolverIntf = filterResolverIntf;
     this.validSegments = validSegments;
+    if (!validSegments.isEmpty()) {
+      this.readCommittedScope = validSegments.get(0).getReadCommittedScope();
+    }
     this.invalidSegments = invalidSegments;
     this.partitions = partitions;
     this.isJobToClearDataMaps = isJobToClearDataMaps;
+    this.dataMapLevel = dataMapLevel;
+    this.isFallbackJob = isFallbackJob;
   }
 
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
-    List<DataMapDistributableWrapper> distributables =
-        dataMapExprWrapper.toDistributable(validSegments);
+    List<DataMapDistributableWrapper> distributables;
+    distributables =
+        DataMapChooser.getDefaultDataMap(table, filterResolverIntf).toDistributable(validSegments);
     List<InputSplit> inputSplits = new ArrayList<>(distributables.size());
     inputSplits.addAll(distributables);
     return inputSplits;
@@ -85,33 +125,67 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
       private ExtendedBlocklet currBlocklet;
       private List<DataMap> dataMaps;
 
-      @Override public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
+      @Override
+      public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
           throws IOException, InterruptedException {
-        distributable = (DataMapDistributableWrapper) inputSplit;
-        // clear the segmentMap and from cache in executor when there are invalid segments
-        if (invalidSegments.size() > 0) {
+        DataMapDistributableWrapper distributable = (DataMapDistributableWrapper) inputSplit;
+        distributable.getDistributable().getSegment().setCacheable(!isFallbackJob);
+        distributable.getDistributable().getSegment().setReadCommittedScope(readCommittedScope);
+        List<Segment> segmentsToLoad = new ArrayList<>();
+        segmentsToLoad.add(distributable.getDistributable().getSegment());
+        if (isJobToClearDataMaps) {
+          if (StringUtils.isNotEmpty(dataMapToClear)) {
+            List<TableDataMap> dataMaps =
+                DataMapStoreManager.getInstance().getAllDataMap(table);
+            int i = 0;
+            for (TableDataMap tableDataMap : dataMaps) {
+              if (tableDataMap != null && dataMapToClear
+                  .equalsIgnoreCase(tableDataMap.getDataMapSchema().getDataMapName())) {
+                tableDataMap.deleteSegmentDatamapData(
+                    ((DataMapDistributableWrapper) inputSplit).getDistributable().getSegment()
+                        .getSegmentNo());
+                tableDataMap.clear();
+                dataMaps.remove(i);
+                break;
+              }
+              i++;
+            }
+            DataMapStoreManager.getInstance().getAllDataMaps().put(table.getTableUniqueName(),
+                dataMaps);
+          } else {
+            // if job is to clear datamaps just clear datamaps from cache and return
+            DataMapStoreManager.getInstance()
+                .clearDataMaps(table.getCarbonTableIdentifier().getTableUniqueName());
+            // clear the segment properties cache from executor
+            SegmentPropertiesAndSchemaHolder.getInstance()
+                .invalidate(table.getAbsoluteTableIdentifier());
+          }
+          List<ExtendedBlocklet> list = new ArrayList<ExtendedBlocklet>();
+          list.add(new ExtendedBlocklet());
+          blockletIterator = list.iterator();
+          return;
+        } else if (invalidSegments.size() > 0) {
+          // clear the segmentMap and from cache in executor when there are invalid segments
           DataMapStoreManager.getInstance().clearInvalidSegments(table, invalidSegments);
         }
-        TableDataMap tableDataMap = DataMapStoreManager.getInstance()
-            .getDataMap(table, distributable.getDistributable().getDataMapSchema());
-        if (isJobToClearDataMaps) {
-          // if job is to clear datamaps just clear datamaps from cache and return
-          DataMapStoreManager.getInstance()
-              .clearDataMaps(table.getCarbonTableIdentifier().getTableUniqueName());
-          // clear the segment properties cache from executor
-          SegmentPropertiesAndSchemaHolder.getInstance()
-              .invalidate(table.getAbsoluteTableIdentifier());
-          blockletIterator = Collections.emptyIterator();
-          return;
-        }
-        dataMaps = tableDataMap.getTableDataMaps(distributable.getDistributable());
-        List<ExtendedBlocklet> blocklets = tableDataMap
-            .prune(dataMaps,
-                distributable.getDistributable(),
-                dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions);
-        for (ExtendedBlocklet blocklet : blocklets) {
-          blocklet.getDetailInfo();
-          blocklet.setDataMapUniqueId(distributable.getUniqueId());
+        List<ExtendedBlocklet> blocklets = new ArrayList<>();
+        if (dataMapLevel == null) {
+          TableDataMap defaultDataMap = DataMapStoreManager.getInstance()
+              .getDataMap(table, distributable.getDistributable().getDataMapSchema());
+          dataMaps = defaultDataMap.getTableDataMaps(distributable.getDistributable());
+          if (table.isTransactionalTable()) {
+            blocklets = defaultDataMap.prune(dataMaps, distributable.getDistributable(),
+                filterResolverIntf, partitions);
+          } else {
+            blocklets = defaultDataMap.prune(segmentsToLoad, new DataMapFilter(filterResolverIntf),
+                partitions);
+          }
+          blocklets = DataMapUtil
+              .pruneDataMaps(table, filterResolverIntf, segmentsToLoad, partitions, blocklets);
+        } else {
+          blocklets = DataMapUtil
+              .pruneDataMaps(table, filterResolverIntf, segmentsToLoad, partitions, blocklets,
+                  dataMapLevel);
         }
         blockletIterator = blocklets.iterator();
       }
@@ -154,4 +228,110 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     };
   }
 
+  public CarbonTable getCarbonTable() {
+    return table;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    table.write(out);
+    out.writeInt(invalidSegments.size());
+    for (String invalidSegment : invalidSegments) {
+      out.writeUTF(invalidSegment);
+    }
+    out.writeBoolean(isJobToClearDataMaps);
+    out.writeBoolean(isFallbackJob);
+    if (dataMapLevel == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      out.writeUTF(dataMapLevel.name());
+    }
+    out.writeInt(validSegments.size());
+    for (Segment segment : validSegments) {
+      segment.write(out);
+    }
+    if (partitions == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeInt(partitions.size());
+      for (PartitionSpec partitionSpec : partitions) {
+        partitionSpec.write(out);
+      }
+    }
+    if (filterResolverIntf != null) {
+      out.writeBoolean(true);
+      byte[] filterResolverBytes = ObjectSerializationUtil.convertObjectToString(filterResolverIntf)
+          .getBytes(Charset.defaultCharset());
+      out.writeInt(filterResolverBytes.length);
+      out.write(filterResolverBytes);
+
+    } else {
+      out.writeBoolean(false);
+    }
+    out.writeUTF(dataMapToClear);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    this.table = new CarbonTable();
+    table.readFields(in);
+    int invalidSegmentSize = in.readInt();
+    invalidSegments = new ArrayList<>(invalidSegmentSize);
+    for (int i = 0; i < invalidSegmentSize; i++) {
+      invalidSegments.add(in.readUTF());
+    }
+    this.isJobToClearDataMaps = in.readBoolean();
+    this.isFallbackJob = in.readBoolean();
+    if (in.readBoolean()) {
+      this.dataMapLevel = DataMapLevel.valueOf(in.readUTF());
+    }
+    int validSegmentSize = in.readInt();
+    validSegments = new ArrayList<>(validSegmentSize);
+    initReadCommittedScope();
+    for (int i = 0; i < validSegmentSize; i++) {
+      Segment segment = new Segment();
+      segment.setReadCommittedScope(readCommittedScope);
+      segment.readFields(in);
+      validSegments.add(segment);
+    }
+    if (in.readBoolean()) {
+      int numPartitions = in.readInt();
+      partitions = new ArrayList<>(numPartitions);
+      for (int i = 0; i < numPartitions; i++) {
+        PartitionSpec partitionSpec = new PartitionSpec();
+        partitionSpec.readFields(in);
+        partitions.add(partitionSpec);
+      }
+    }
+    if (in.readBoolean()) {
+      byte[] filterResolverBytes = new byte[in.readInt()];
+      in.readFully(filterResolverBytes, 0, filterResolverBytes.length);
+      this.filterResolverIntf = (FilterResolverIntf) ObjectSerializationUtil
+          .convertStringToObject(new String(filterResolverBytes, Charset.defaultCharset()));
+    }
+    this.dataMapToClear = in.readUTF();
+  }
+
+  private void initReadCommittedScope() throws IOException {
+    if (readCommittedScope == null) {
+      this.readCommittedScope =
+          new TableStatusReadCommittedScope(table.getAbsoluteTableIdentifier(),
+              FileFactory.getConfiguration());
+    }
+  }
+
+  /**
+   * @return Whether the job is fallback or not.
+   */
+  public boolean isFallbackJob() {
+    return isFallbackJob;
+  }
+
+  /**
+   * @return Whether the job is to clear cached datamaps or not.
+   */
+  public boolean isJobToClearDataMaps() {
+    return isJobToClearDataMaps;
+  }
 }

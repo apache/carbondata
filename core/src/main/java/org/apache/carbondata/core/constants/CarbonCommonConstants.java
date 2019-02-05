@@ -2124,4 +2124,38 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL = "512";
 
+  /**
+   * The IP on which Index Server will be started.
+   */
+  @CarbonProperty
+  public static final String CARBON_INDEX_SERVER_IP = "carbon.index.server.ip";
+
+  /**
+   * The Port to be used to start Index Server.
+   */
+  @CarbonProperty
+  public static final String CARBON_INDEX_SERVER_PORT = "carbon.index.server.port";
+
+  /**
+   * Whether to use index server for caching and pruning or not.
+   * This property can be used for
+   * 1. the whole application(carbon.properties).
+   * 2. the whole session(set carbon.enable.index.server)
+   * 3. a specific table for one session (set carbon.enable.index.server.<dbName>.<tableName>)
+   */
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_ENABLE_INDEX_SERVER = "carbon.enable.index.server";
+
+  /**
+   * Property is used to enable/disable fallback for indexserver.
+   * Used for testing purposes only.
+   */
+  public static final String CARBON_DISABLE_INDEX_SERVER_FALLBACK =
+      "carbon.disable.index.server.fallback";
+
+  public static final String CARBON_INDEX_SERVER_WORKER_THREADS =
+      "carbon.index.server.max.worker.threads";
+
+  public static final int CARBON_INDEX_SERVER_WORKER_THREADS_DEFAULT =
+      500;
 }

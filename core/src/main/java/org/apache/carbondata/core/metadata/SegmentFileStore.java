@@ -342,13 +342,10 @@ public class SegmentFileStore {
    */
   public static void clearBlockDataMapCache(CarbonTable carbonTable, String segmentId) {
     TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable);
-    Segment segment = new Segment(segmentId);
-    List<Segment> segments = new ArrayList<>();
-    segments.add(segment);
     LOGGER.info(
         "clearing cache while updating segment file entry in table status file for segmentId: "
             + segmentId);
-    defaultDataMap.clear(segments);
+    defaultDataMap.getDataMapFactory().clear(segmentId);
   }
 
   private static CarbonFile[] getSegmentFiles(String segmentPath) {

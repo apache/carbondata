@@ -34,6 +34,7 @@ import org.apache.carbondata.core.preagg.TimeSeriesFunctionEnum;
  */
 public class AggregationDataMapSchema extends DataMapSchema {
 
+  private static final long serialVersionUID = 5900935117929888412L;
   /**
    * map of parent column name to set of child column column without
    * aggregation function
@@ -63,7 +64,9 @@ public class AggregationDataMapSchema extends DataMapSchema {
    */
   private int ordinal = Integer.MAX_VALUE;
 
-  private Set aggExpToColumnMapping;
+  // Dont remove transient otherwise serialization for carbonTable will fail using
+  // JavaSerialization in spark.
+  private transient Set aggExpToColumnMapping;
 
   AggregationDataMapSchema(String dataMapName, String className) {
     super(dataMapName, className);
