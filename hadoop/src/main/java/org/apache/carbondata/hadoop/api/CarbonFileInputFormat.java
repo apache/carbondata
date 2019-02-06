@@ -162,7 +162,13 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         // do block filtering and get split
         splits = getSplits(job, filter, externalTableSegments, null, partitionInfo, null);
       } else {
-        for (CarbonFile carbonFile : getAllCarbonDataFiles(carbonTable.getTablePath())) {
+        List<CarbonFile> carbonFiles = null;
+        if (null != this.fileLists) {
+          carbonFiles = getAllCarbonDataFiles(this.fileLists);
+        } else {
+          carbonFiles = getAllCarbonDataFiles(carbonTable.getTablePath());
+        }
+        for (CarbonFile carbonFile : carbonFiles) {
           // Segment id is set to null because SDK does not write carbondata files with respect
           // to segments. So no specific name is present for this load.
           CarbonInputSplit split =
@@ -203,6 +209,18 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         }
       });
     } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return carbonFiles;
+  }
+
+  private List<CarbonFile> getAllCarbonDataFiles(List fileLists) {
+    List<CarbonFile> carbonFiles = new LinkedList<>();
+    try {
+      for (int i = 0; i < fileLists.size(); i++) {
+        carbonFiles.add(FileFactory.getCarbonFile(fileLists.get(i).toString()));
+      }
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
     return carbonFiles;
