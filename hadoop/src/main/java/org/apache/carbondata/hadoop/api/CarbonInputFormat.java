@@ -806,4 +806,7 @@ m filterExpression
     getQuerySegmentToAccess(conf, carbonTable.getDatabaseName(), tableName);
   }
 
+  public void setFileLists(List fileLists) {
+    this.fileLists = fileLists;
+  }
 }

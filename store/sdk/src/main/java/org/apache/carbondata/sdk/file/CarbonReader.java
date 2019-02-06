@@ -28,6 +28,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
+import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 
 import org.apache.hadoop.mapreduce.RecordReader;
 
@@ -94,6 +95,15 @@ public class CarbonReader<T> {
     return currentReader.getCurrentValue();
   }
 
+  public byte[] readArrowBatch(Schema carbonSchema) throws Exception {
+    ArrowConverter arrowConverter = new ArrowConverter(carbonSchema, 10000);
+    while (hasNext()) {
+      arrowConverter.addToArrowBuffer(readNextBatchRow());
+    }
+    final byte[] bytes = arrowConverter.toSerializeArray();
+    arrowConverter.close();
+    return bytes;
+  }
   /**
    * Read and return next batch row objects
    */
