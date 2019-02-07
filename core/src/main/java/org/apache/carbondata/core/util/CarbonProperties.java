@@ -656,8 +656,6 @@ public final class CarbonProperties {
             CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT);
     booleanProperties.put(IS_INTERNAL_LOAD_CALL,
             IS_INTERNAL_LOAD_CALL_DEFAULT);
-    booleanProperties.put(IS_DRIVER_INSTANCE,
-            IS_DRIVER_INSTANCE_DEFAULT);
     booleanProperties.put(USE_DISTRIBUTED_DATAMAP,
             USE_DISTRIBUTED_DATAMAP_DEFAULT);
     booleanProperties.put(SUPPORT_DIRECT_QUERY_ON_DATAMAP,
@@ -986,7 +984,7 @@ public final class CarbonProperties {
     addedProperty.put(key, value);
     // the method will validate the added property
     // if the added property is not valid then will reset to default value.
-    validateAndLoadDefaultProperties(key.toLowerCase());
+    validateAndLoadDefaultProperties(key);
     return this;
   }
 
