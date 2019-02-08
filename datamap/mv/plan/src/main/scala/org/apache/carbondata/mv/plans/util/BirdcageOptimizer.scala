@@ -72,6 +72,10 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
       "Aggregate", fixedPoint,
       RemoveLiteralFromGroupExpressions,
       RemoveRepetitionFromGroupExpressions) ::
+    Batch("MV Operator Optimizations", Once,
+      PushDownPredicate,
+      SimplifyCasts,
+      MVPredicateAlias)::
     Batch(
       "Operator Optimizations", fixedPoint, Seq(
         // Operator push down
@@ -79,7 +83,6 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         SparkSQLUtil.getReorderJoinObj(conf),
         SparkSQLUtil.getEliminateOuterJoinObj(conf),
         PushPredicateThroughJoin,
-        PushDownPredicate,
         //      LimitPushDown(conf),
         ColumnPruning,
         //      InferFiltersFromConstraints(conf),
