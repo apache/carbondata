@@ -336,10 +336,11 @@ public final class CarbonProperties {
             CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT);
       }
     } catch (NumberFormatException e) {
-      LOGGER.warn("The value \"" + value
-          + "\" configured for key " + CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO
-          + "\" is invalid. Using the default value \""
-          + CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT);
+      LOGGER.warn(String.format("The value \"%s\" configured for key  \"%s\" is invalid. " +
+                      "Using the default value \"%s\"",
+              value,
+              CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO,
+              CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT));
       carbonProperties.setProperty(CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO,
           CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT);
     }
@@ -355,10 +356,8 @@ public final class CarbonProperties {
     try {
       new SimpleDateFormat(dateFormat);
     } catch (Exception e) {
-      LOGGER.warn("The value \"" + dateFormat + "\" configured for key "
-          + key
-          + "\" is invalid. Using the default value \""
-          + key);
+      LOGGER.warn(String.format("The value \"%s\" configured for key \"%s\" is invalid. " +
+              "Using the default value \"%s\"",dateFormat, key, key));
       carbonProperties.setProperty(key, defaultValue);
     }
   }
@@ -422,9 +421,10 @@ public final class CarbonProperties {
         carbonProperties.getProperty(ENABLE_VECTOR_READER);
     boolean isValidBooleanValue = CarbonUtil.validateBoolean(vectorReaderStr);
     if (!isValidBooleanValue) {
-      LOGGER.warn("The enable vector reader value \"" + vectorReaderStr
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT);
+      LOGGER.warn(String.format("The enable vector reader value \"%s\" is invalid. " +
+                      "Using the default value \"%s\"",
+              vectorReaderStr,
+              CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT));
       carbonProperties.setProperty(ENABLE_VECTOR_READER,
           CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT);
     }
@@ -435,9 +435,8 @@ public final class CarbonProperties {
         carbonProperties.getProperty(CARBON_CUSTOM_BLOCK_DISTRIBUTION);
     boolean isValidBooleanValue = CarbonUtil.validateBoolean(customBlockDistributionStr);
     if (!isValidBooleanValue) {
-      LOGGER.warn("The custom block distribution value \"" + customBlockDistributionStr
-          + "\" is invalid. Using the default value \""
-          + false);
+      LOGGER.warn(String.format("The custom block distribution value \"%s\" is invalid. " +
+              "Using the default value \"false\"",customBlockDistributionStr));
       carbonProperties.setProperty(CARBON_CUSTOM_BLOCK_DISTRIBUTION, "false");
     }
   }
@@ -450,9 +449,10 @@ public final class CarbonProperties {
             || carbonTaskDistribution.equalsIgnoreCase(CARBON_TASK_DISTRIBUTION_BLOCK)
             || carbonTaskDistribution.equalsIgnoreCase(CARBON_TASK_DISTRIBUTION_CUSTOM));
     if (!isValid) {
-      LOGGER.warn("The carbon task distribution value \"" + carbonTaskDistribution
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT);
+      LOGGER.warn(String.format("The carbon task distribution value \"%s\" is invalid. " +
+                      "Using the default value \"%s\"",
+              carbonTaskDistribution,
+              CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT));
       carbonProperties.setProperty(CARBON_TASK_DISTRIBUTION,
           CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT);
     }
@@ -462,9 +462,11 @@ public final class CarbonProperties {
     String unSafeSortStr = carbonProperties.getProperty(ENABLE_UNSAFE_SORT);
     boolean isValidBooleanValue = CarbonUtil.validateBoolean(unSafeSortStr);
     if (!isValidBooleanValue) {
-      LOGGER.warn("The enable unsafe sort value \"" + unSafeSortStr
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT);
+      LOGGER.warn(String.format("The enable unsafe sort value \"%s\" is invalid. " +
+                      "Using the default value \"%s\"",
+              unSafeSortStr,
+              CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT
+      ));
       carbonProperties.setProperty(ENABLE_UNSAFE_SORT,
           CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT);
     }
@@ -474,9 +476,10 @@ public final class CarbonProperties {
     String value = carbonProperties.getProperty(ENABLE_OFFHEAP_SORT);
     boolean isValidBooleanValue = CarbonUtil.validateBoolean(value);
     if (!isValidBooleanValue) {
-      LOGGER.warn("The enable off heap sort value \"" + value
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT);
+      LOGGER.warn(String.format("The enable off heap sort value \"%s\" is invalid. " +
+                      "Using the default value \"%s\"",
+              value,
+              CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
       carbonProperties.setProperty(ENABLE_OFFHEAP_SORT,
           CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT);
     }
@@ -553,9 +556,10 @@ public final class CarbonProperties {
         carbonProperties.getProperty(ENABLE_AUTO_HANDOFF);
     boolean isValid = CarbonUtil.validateBoolean(enableAutoHandoffStr);
     if (!isValid) {
-      LOGGER.warn("The enable auto handoff value \"" + enableAutoHandoffStr
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT);
+      LOGGER.warn(String.format("The enable auto handoff value \"%s\" is invalid. " +
+                      "Using the default value \"%s\"",
+              enableAutoHandoffStr,
+              CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT));
       carbonProperties.setProperty(ENABLE_AUTO_HANDOFF,
           CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT);
     }
@@ -571,22 +575,24 @@ public final class CarbonProperties {
     try {
       short numberOfPagePerBlockletColumn = Short.parseShort(numberOfPagePerBlockletColumnString);
       if (numberOfPagePerBlockletColumn < CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_MIN) {
-        LOGGER.info("Blocklet Size Configured value \"" + numberOfPagePerBlockletColumnString
-            + "\" is invalid. Using the default value \""
-            + CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
+        LOGGER.info(String.format("Blocklet Size Configured value \"%s\" is invalid. " +
+                        "Using the default value \"%s\"",
+                numberOfPagePerBlockletColumnString,
+                CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE));
         carbonProperties.setProperty(BLOCKLET_SIZE_IN_MB,
             CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
       }
     } catch (NumberFormatException e) {
-      LOGGER.info("Blocklet Size Configured value \"" + numberOfPagePerBlockletColumnString
-          + "\" is invalid. Using the default value \""
-          + CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
+      LOGGER.info(String.format("Blocklet Size Configured value \"%s\" is invalid. " +
+                      "Using the default value \"%s\"",
+              numberOfPagePerBlockletColumnString,
+              CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE));
       carbonProperties.setProperty(BLOCKLET_SIZE_IN_MB,
           CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
     }
-    LOGGER.info("Blocklet Size Configured value is \"" + carbonProperties
+    LOGGER.info(String.format("Blocklet Size Configured value is \"%s\"", carbonProperties
         .getProperty(BLOCKLET_SIZE_IN_MB,
-            CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE));
+            CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE)));
   }
 
   /**
@@ -652,15 +658,19 @@ public final class CarbonProperties {
 
       if (sortSize < CarbonCommonConstants.SORT_SIZE_MIN_VAL) {
         LOGGER.info(
-            "The batch size value \"" + sortSizeStr + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
+            String.format("The batch size value \"%s\" is invalid. " +
+                            "Using the default value \"%s\"",
+                    sortSizeStr,
+                    CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
         carbonProperties.setProperty(SORT_SIZE,
             CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
       }
     } catch (NumberFormatException e) {
       LOGGER.info(
-          "The batch size value \"" + sortSizeStr + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
+          String.format("The batch size value \"%s\" is invalid. " +
+                          "Using the default value \"%s\"",
+                  sortSizeStr,
+                  CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
       carbonProperties.setProperty(SORT_SIZE,
           CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
     }
@@ -1296,7 +1306,7 @@ public final class CarbonProperties {
           .setProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, unsafeWorkingMemory + "");
     } catch (NumberFormatException e) {
       LOGGER.warn("The specified value for property "
-          + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT + "is invalid.");
+          + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT + " is invalid.");
     }
   }
 
@@ -1306,10 +1316,10 @@ public final class CarbonProperties {
       unsafeSortStorageMemory = Integer.parseInt(carbonProperties
           .getProperty(CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB));
     } catch (NumberFormatException e) {
-      LOGGER.warn("The specified value for property "
-          + CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB + "is invalid."
-          + " Taking the default value."
-          + CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT);
+      LOGGER.warn(String.format("The specified value for property %s is invalid."
+          + " Taking the default value.%s",
+              CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB,
+              CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT));
       unsafeSortStorageMemory = CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT;
     }
     if (unsafeSortStorageMemory
@@ -1330,9 +1340,10 @@ public final class CarbonProperties {
         CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
     boolean isValidBooleanValue = CarbonUtil.validateBoolean(enableQueryStatistics);
     if (!isValidBooleanValue) {
-      LOGGER.warn("The enable query statistics value \"" + enableQueryStatistics
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
+      LOGGER.warn(String.format("The enable query statistics value \"%s\" is invalid. " +
+                      "Using the default value \"%s\"",
+              enableQueryStatistics,
+              CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT));
       carbonProperties.setProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
           CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
     }
@@ -1473,18 +1484,20 @@ public final class CarbonProperties {
       int spillPercentage = Integer.parseInt(spillPercentageStr);
       if (spillPercentage > 100 || spillPercentage < 0) {
         LOGGER.info(
-            "The sort memory spill percentage value \"" + spillPercentageStr +
-                "\" is invalid. Using the default value \""
-                + CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+            String.format("The sort memory spill percentage value \"%s\" is invalid. " +
+                            "Using the default value \"%s\"",
+                    spillPercentageStr,
+                    CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT));
         carbonProperties.setProperty(
             CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
             CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
       }
     } catch (NumberFormatException e) {
       LOGGER.info(
-          "The sort memory spill percentage value \"" + spillPercentageStr +
-              "\" is invalid. Using the default value \""
-              + CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+          String.format("The sort memory spill percentage value \"%s\" is invalid. " +
+                          "Using the default value \"%s\"",
+                  spillPercentageStr,
+                  CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT));
       carbonProperties.setProperty(
           CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
           CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
@@ -1503,9 +1516,11 @@ public final class CarbonProperties {
       if (allowedCharactersLimit < CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_MIN
           || allowedCharactersLimit
           > CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_MAX) {
-        LOGGER.info("The min max byte limit for string type value \"" + allowedCharactersLimit
-            + "\" is invalid. Using the default value \""
-            + CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT);
+        LOGGER.info(String.format("The min max byte limit for " +
+                        "string type value \"%s\" is invalid. " +
+                        "Using the default value \"%s\"",
+                allowedCharactersLimit,
+                CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT));
         carbonProperties.setProperty(CARBON_MINMAX_ALLOWED_BYTE_COUNT,
             CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT);
       } else {
@@ -1515,9 +1530,10 @@ public final class CarbonProperties {
             .setProperty(CARBON_MINMAX_ALLOWED_BYTE_COUNT, allowedCharactersLimit + "");
       }
     } catch (NumberFormatException e) {
-      LOGGER.info("The min max byte limit for string type value \"" + allowedCharactersLimit
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT);
+      LOGGER.info(String.format("The min max byte limit for string type value \"%s\" is invalid. " +
+                      "Using the default value \"%s\"",
+              allowedCharactersLimit,
+              CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT));
       carbonProperties.setProperty(CARBON_MINMAX_ALLOWED_BYTE_COUNT,
           CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT);
     }
