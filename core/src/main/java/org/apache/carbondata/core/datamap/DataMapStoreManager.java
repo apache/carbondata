@@ -52,6 +52,7 @@ import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
@@ -325,10 +326,9 @@ public final class DataMapStoreManager {
     // in case of fileformat or sdk, when table is dropped or schema is changed the datamaps are
     // not cleared, they need to be cleared by using API, so compare the columns, if not same, clear
     // the datamaps on that table
-    if (allDataMaps.size() > 0 && null != allDataMaps.get(tableUniqueName)
-        && allDataMaps.get(tableUniqueName).size() > 0 && !allDataMaps.get(tableUniqueName).get(0)
-        .getTable().getTableInfo().getFactTable().getListOfColumns()
-        .equals(table.getTableInfo().getFactTable().getListOfColumns())) {
+    if (allDataMaps.size() > 0 && !CollectionUtils.isEmpty(allDataMaps.get(tableUniqueName))
+        && !allDataMaps.get(tableUniqueName).get(0).getTable().getTableInfo().getFactTable()
+        .getListOfColumns().equals(table.getTableInfo().getFactTable().getListOfColumns())) {
       clearDataMaps(tableUniqueName);
       tableIndices = null;
     }
