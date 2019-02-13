@@ -162,8 +162,14 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
         // are 1-1 correspondence.
         // Change the following two conditions to more complicated ones if we want to
         // consider things that combine extrajoin, rejoin, and harmonized relations
-        val isUniqueRmE = subsumer.children.filter { x => subsumee.children.count(_ == x) != 1 }
-        val isUniqueEmR = subsumee.children.filter { x => subsumer.children.count(_ == x) != 1 }
+        val isUniqueRmE = subsumer.children.filter { x => subsumee.children.count{
+          case relation: ModularRelation => relation.fineEquals(x)
+          case other => other == x
+        } != 1 }
+        val isUniqueEmR = subsumee.children.filter { x => subsumer.children.count{
+          case relation: ModularRelation => relation.fineEquals(x)
+          case other => other == x
+        } != 1 }
 
         val extrajoin = sel_1a.children.filterNot { child => sel_1q.children.contains(child) }
         val rejoin = sel_1q.children.filterNot { child => sel_1a.children.contains(child) }
@@ -180,7 +186,10 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
             isPredicateEmdR && isOutputEdR) {
           val mappings = sel_1a.children.zipWithIndex.map {
             case (childr, fromIdx) if sel_1q.children.contains(childr) =>
-              val toIndx = sel_1q.children.indexWhere(_ == childr)
+              val toIndx = sel_1q.children.indexWhere{
+                case relation: ModularRelation => relation.fineEquals(childr)
+                case other => other == childr
+              }
               (toIndx -> fromIdx)
 
           }

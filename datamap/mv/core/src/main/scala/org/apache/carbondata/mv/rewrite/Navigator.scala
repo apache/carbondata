@@ -17,11 +17,11 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSet}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap}
 
 import org.apache.carbondata.mv.expressions.modular._
-import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, Select}
 import org.apache.carbondata.mv.plans.modular
+import org.apache.carbondata.mv.plans.modular._
 import org.apache.carbondata.mv.session.MVSession
 
 private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) {
@@ -146,21 +146,28 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
     val rtables = subsumer.collect { case n: modular.LeafNode => n }
     val etables = subsumee.collect { case n: modular.LeafNode => n }
     val pairs = for {
-      rtable <- rtables
-      etable <- etables
-      if rtable == etable
-    } yield (rtable, etable)
+      i <- rtables.indices
+      j <- etables.indices
+      if rtables(i) == etables(j) && reTablesJoinMatched(
+        rtables(i), etables(j), subsumer, subsumee, i, j
+      )
+    } yield (rtables(i), etables(j))
 
     pairs.foldLeft(subsumer) {
       case (curSubsumer, pair) =>
         val mappedOperator =
-          if (pair._1.isInstanceOf[modular.HarmonizedRelation] &&
-              pair._1.asInstanceOf[modular.HarmonizedRelation].hasTag) {
-          pair._2.asInstanceOf[modular.HarmonizedRelation].addTag
-        } else {
-          pair._2
+          pair._1 match {
+            case relation: HarmonizedRelation if relation.hasTag =>
+              pair._2.asInstanceOf[HarmonizedRelation].addTag
+            case _ =>
+              pair._2
+          }
+        val nxtSubsumer = curSubsumer.transform {
+          case node: ModularRelation if node.asInstanceOf[ModularRelation].
+            fineEquals(pair._1) => mappedOperator
+          case pair._1 if !pair._1.isInstanceOf[ModularRelation] => mappedOperator
         }
-        val nxtSubsumer = curSubsumer.transform { case pair._1 => mappedOperator }
+
         // val attributeSet = AttributeSet(pair._1.output)
         // reverse first due to possible tag for left join
         val rewrites = AttributeMap(pair._1.output.zip(mappedOperator.output))
@@ -170,5 +177,28 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
           }
         }
     }
+  }
+
+  // match the join table of subsumer and subsumee
+  // when the table names are the same
+  def reTablesJoinMatched(rtable: modular.LeafNode, etable: modular.LeafNode,
+                          subsumer: ModularPlan, subsumee: ModularPlan,
+                          rIndex: Int, eIndex: Int): Boolean = {
+    (rtable, etable) match {
+      case _: (ModularRelation, ModularRelation) =>
+        val rtableParent = subsumer.find(p => p.children.contains(rtable)).get
+        val etableParent = subsumee.find(p => p.children.contains(etable)).get
+        (rtableParent, etableParent) match {
+          case _: (Select, Select) =>
+            val rJoinEdges = rtableParent.asInstanceOf[Select].joinEdges
+            val eJoinEdges = etableParent.asInstanceOf[Select].joinEdges
+            val intersetJoinEdges: Seq[JoinEdge] = rJoinEdges intersect eJoinEdges
+            if (intersetJoinEdges.nonEmpty) {
+              return intersetJoinEdges.exists(j => j.left == rIndex && j.left == eIndex ||
+                j.right == rIndex && j.right == eIndex)
+            }
+        }
+    }
+    true
   }
 }
