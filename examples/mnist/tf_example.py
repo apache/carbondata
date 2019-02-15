@@ -23,6 +23,7 @@ import argparse
 import os
 
 import tensorflow as tf
+import time
 
 from examples.mnist import DEFAULT_MNIST_DATA_PATH
 from petastorm import make_reader
@@ -104,6 +105,8 @@ def train_and_test(dataset_url, training_iterations, batch_size, evaluation_inte
 
 
 def main():
+    print("Start")
+    start = time.time()
     # Training settings
     parser = argparse.ArgumentParser(description='Petastorm Tensorflow MNIST Example')
     default_dataset_url = 'file://{}'.format(DEFAULT_MNIST_DATA_PATH)
@@ -125,6 +128,8 @@ def main():
         batch_size=args.batch_size,
         evaluation_interval=args.evaluation_interval,
     )
+    end = time.time()
+    print("all time: " + str(end - start))
 
 
 if __name__ == '__main__':

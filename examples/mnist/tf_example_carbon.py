@@ -21,6 +21,7 @@ from __future__ import division, print_function
 
 import argparse
 import os
+import time
 
 import tensorflow as tf
 
@@ -28,7 +29,7 @@ from examples.mnist import DEFAULT_MNIST_DATA_PATH
 from petastorm import make_carbon_reader
 from petastorm.tf_utils import tf_tensors
 
-def train_and_test(dataset_url, training_iterations, batch_size, evaluation_interval):
+def train_and_test(dataset_url, training_iterations, batch_size, evaluation_interval,start):
     """
     Train a model for training iterations with a batch size batch_size, printing accuracy every log_interval.
     :param dataset_url: The MNIST dataset url.
@@ -72,6 +73,9 @@ def train_and_test(dataset_url, training_iterations, batch_size, evaluation_inte
                 [test_image, test_label], batch_size=batch_size
             )
 
+            end = time.time()
+            print("before train time: " + str(end - start))
+
             # Train
             print('Training model for {0} training iterations with batch size {1} and evaluation interval {2}'.format(
                 training_iterations, batch_size, evaluation_interval
@@ -103,6 +107,9 @@ def train_and_test(dataset_url, training_iterations, batch_size, evaluation_inte
 
 
 def main():
+
+    print("Start")
+    start = time.time()
     # Training settings
     parser = argparse.ArgumentParser(description='Petastorm Tensorflow MNIST Example')
     default_dataset_url = 'file://{}'.format(DEFAULT_MNIST_DATA_PATH)
@@ -123,6 +130,13 @@ def main():
         training_iterations=args.training_iterations,
         batch_size=args.batch_size,
         evaluation_interval=args.evaluation_interval,
+        start=start
     )
+    end = time.time()
+    print("all time: " + str(end - start))
+    global totalTime
+    print(totalTime)
+    print("Finish")
+
 if __name__ == '__main__':
     main()
