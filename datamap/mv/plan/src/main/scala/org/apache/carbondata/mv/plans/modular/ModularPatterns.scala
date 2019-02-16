@@ -18,11 +18,11 @@
 package org.apache.carbondata.mv.plans.modular
 
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression, PredicateHelper, _}
-import org.apache.spark.sql.catalyst.plans.logical.{Distinct, Limit, LogicalPlan, Window}
+import org.apache.spark.sql.catalyst.plans.logical._
 
 import org.apache.carbondata.mv.plans.{Pattern, _}
 import org.apache.carbondata.mv.plans.modular.Flags._
-import org.apache.carbondata.mv.plans.util.{ExtractGroupByModule, ExtractSelectModule, ExtractSelectModuleForWindow, ExtractTableModule, ExtractUnionModule}
+import org.apache.carbondata.mv.plans.util._
 
 object SimpleModularizer extends ModularPatterns {
   def patterns: Seq[Pattern] = {
@@ -134,8 +134,11 @@ abstract class ModularPatterns extends Modularizer[ModularPlan] {
         case Window(exprs, _, _,
           ExtractSelectModuleForWindow(output, input, predicate, aliasmap, joinedge, children,
             flags1, fspec1, wspec)) =>
-          val sel1 = makeSelectModule(output, input, predicate, aliasmap, joinedge, flags1,
-            children.map(modularizeLater), fspec1, wspec)
+          val sel1 = plan.asInstanceOf[Window].child match {
+            case agg: Aggregate => children.map (modularizeLater)
+            case other => makeSelectModule (output, input, predicate, aliasmap, joinedge, flags1,
+              children.map (modularizeLater), fspec1, wspec)
+          }
           makeSelectModule(
             output.map(_.toAttribute),
             output.map(_.toAttribute),
