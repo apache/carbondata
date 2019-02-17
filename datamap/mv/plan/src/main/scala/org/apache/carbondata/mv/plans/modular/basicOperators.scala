@@ -39,6 +39,12 @@ case class GroupBy(
     flagSpec: Seq[Seq[Any]],
     dataMapTableRelation: Option[ModularPlan] = None) extends UnaryNode with Matchable {
   override def output: Seq[Attribute] = outputList.map(_.toAttribute)
+
+  override def makeCopy(newArgs: Array[AnyRef]): GroupBy = {
+    val groupBy = super.makeCopy(newArgs).asInstanceOf[GroupBy]
+    if (rewritten) groupBy.setRewritten()
+    groupBy
+  }
 }
 
 case class Select(
@@ -73,6 +79,12 @@ case class Select(
 
   override def extractEvaluableConditions(plan: ModularPlan): Seq[Expression] = {
     predicateList.filter(p => canEvaluate(p, plan))
+  }
+
+  override def makeCopy(newArgs: Array[AnyRef]): Select = {
+    val select = super.makeCopy(newArgs).asInstanceOf[Select]
+    if (rewritten) select.setRewritten()
+    select
   }
 }
 
