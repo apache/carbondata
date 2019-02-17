@@ -39,6 +39,21 @@ case class GroupBy(
     flagSpec: Seq[Seq[Any]],
     dataMapTableRelation: Option[ModularPlan] = None) extends UnaryNode with Matchable {
   override def output: Seq[Attribute] = outputList.map(_.toAttribute)
+
+  def coarseEqual(other: Any): Boolean = {
+    if (!this.getClass.equals(other.getClass)) {
+      return false
+    }
+    val otherGroupBy = other.asInstanceOf[GroupBy]
+    if (outputList == otherGroupBy.outputList &&
+      inputList == otherGroupBy.inputList && predicateList == otherGroupBy.predicateList
+      && alias == otherGroupBy.alias && flags == otherGroupBy.flags
+      && flagSpec == otherGroupBy.flagSpec
+      && dataMapTableRelation == otherGroupBy.dataMapTableRelation) {
+      return true
+    }
+    false
+  }
 }
 
 case class Select(
@@ -73,6 +88,22 @@ case class Select(
 
   override def extractEvaluableConditions(plan: ModularPlan): Seq[Expression] = {
     predicateList.filter(p => canEvaluate(p, plan))
+  }
+
+  def coarseEqual(other: Any): Boolean = {
+    if (!this.getClass.equals(other.getClass)) {
+      return false
+    }
+    val otherSelect = other.asInstanceOf[Select]
+    if (outputList == otherSelect.outputList &&
+      inputList == otherSelect.inputList && predicateList == otherSelect.predicateList
+      && aliasMap == otherSelect.aliasMap && flags == otherSelect.flags
+      && flagSpec == otherSelect.flagSpec
+      && dataMapTableRelation == otherSelect.dataMapTableRelation
+      && windowSpec == otherSelect.windowSpec && joinEdges == otherSelect.joinEdges) {
+      return true
+    }
+    false
   }
 }
 

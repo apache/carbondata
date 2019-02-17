@@ -596,12 +596,18 @@ object MVHelper {
         case g: GroupBy =>
           MVHelper.updateDataMap(g, rewrite)
       }
-      // TODO Find a better way to set the rewritten flag, it may fail in some conditions.
-      val mapping =
-        rewrittenPlan.collect { case m: ModularPlan => m } zip
-        updatedDataMapTablePlan.collect { case m: ModularPlan => m }
-      mapping.foreach(f => if (f._1.rewritten) f._2.setRewritten())
 
+      // Use coarse equal to rewrite
+      updatedDataMapTablePlan.map(plan => {
+        if (rewrittenPlan.find (
+          oriPlan => oriPlan.rewritten && (plan match {
+            case select: Select => select.coarseEqual(oriPlan)
+            case groupby: GroupBy => groupby.coarseEqual(oriPlan)
+            case _ => plan.equals(oriPlan)
+          })).isDefined) {
+          plan.setRewritten()
+        }
+      })
       updatedDataMapTablePlan
     } else {
       rewrittenPlan
