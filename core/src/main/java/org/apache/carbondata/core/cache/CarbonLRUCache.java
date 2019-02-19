@@ -306,7 +306,7 @@ public final class CarbonLRUCache {
     }
   }
 
-  public Map<String, Cacheable> getLruCacheMap() {
+  public Map<String, Cacheable> getCacheMap() {
     return lruCacheMap;
   }
 }

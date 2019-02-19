@@ -80,7 +80,7 @@ case class CarbonDataShowCacheCommand(tableIdentifier: Option[TableIdentifier])
       var (dbIndexSize, dbDictSize) = (0L, 0L)
       val tableMapIndexSize = mutable.HashMap[String, Long]()
       val tableMapDictSize = mutable.HashMap[String, Long]()
-      val cacheIterator = cache.getLruCacheMap.entrySet().iterator()
+      val cacheIterator = cache.getCacheMap.entrySet().iterator()
       while (cacheIterator.hasNext) {
         val entry = cacheIterator.next()
         val cache = entry.getValue
@@ -157,7 +157,7 @@ case class CarbonDataShowCacheCommand(tableIdentifier: Option[TableIdentifier])
         .map(_.getColumnId)
         .toArray
 
-      val cacheIterator = cache.getLruCacheMap.entrySet().iterator()
+      val cacheIterator = cache.getCacheMap.entrySet().iterator()
       while (cacheIterator.hasNext) {
         val entry = cacheIterator.next()
         val cache = entry.getValue
