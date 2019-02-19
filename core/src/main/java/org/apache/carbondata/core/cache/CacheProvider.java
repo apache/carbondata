@@ -196,7 +196,7 @@ public class CacheProvider {
     cacheTypeToCacheMap.clear();
   }
 
-  public CarbonLRUCache getCarbonLRUCache() {
+  public CarbonLRUCache getCarbonCache() {
     return carbonLRUCache;
   }
 }

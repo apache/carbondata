@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command.lru
+package org.apache.spark.sql.execution.command.cache
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
@@ -33,9 +33,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
 
 /**
- * SHOW LRU
+ * SHOW CACHE
  */
-case class CarbonDataShowLRUCommand(tableIdentifier: Option[TableIdentifier])
+case class CarbonDataShowCacheCommand(tableIdentifier: Option[TableIdentifier])
   extends DataCommand {
 
   override def output: Seq[Attribute] = {
@@ -45,12 +45,12 @@ case class CarbonDataShowLRUCommand(tableIdentifier: Option[TableIdentifier])
       AttributeReference("dictionary size", LongType, nullable = false)())
   }
 
-  override protected def opName: String = "SHOW LRU"
+  override protected def opName: String = "SHOW CACHE"
 
-  def showLRUOfAllTables(sparkSession: SparkSession): Seq[Row] = {
+  def showAllTablesCache(sparkSession: SparkSession): Seq[Row] = {
     val currentDatabase = sparkSession.sessionState.catalog.getCurrentDatabase
-    val lruCache = CacheProvider.getInstance().getCarbonLRUCache()
-    if (lruCache == null) {
+    val cache = CacheProvider.getInstance().getCarbonCache()
+    if (cache == null) {
       Seq(Row("ALL", "ALL", 0L, 0L),
         Row(currentDatabase, "ALL", 0L, 0L))
     } else {
@@ -80,7 +80,7 @@ case class CarbonDataShowLRUCommand(tableIdentifier: Option[TableIdentifier])
       var (dbIndexSize, dbDictSize) = (0L, 0L)
       val tableMapIndexSize = mutable.HashMap[String, Long]()
       val tableMapDictSize = mutable.HashMap[String, Long]()
-      val cacheIterator = lruCache.getLruCacheMap.entrySet().iterator()
+      val cacheIterator = cache.getLruCacheMap.entrySet().iterator()
       while (cacheIterator.hasNext) {
         val entry = cacheIterator.next()
         val cache = entry.getValue
@@ -135,9 +135,9 @@ case class CarbonDataShowLRUCommand(tableIdentifier: Option[TableIdentifier])
     }
   }
 
-  def showLRUOfTable(sparkSession: SparkSession, tableIdent: TableIdentifier): Seq[Row] = {
-    val lruCache = CacheProvider.getInstance().getCarbonLRUCache()
-    if (lruCache == null) {
+  def showTableCache(sparkSession: SparkSession, tableIdent: TableIdentifier): Seq[Row] = {
+    val cache = CacheProvider.getInstance().getCarbonCache()
+    if (cache == null) {
       Seq(Row(tableIdent.database.get, tableIdent.table, 0L, 0L))
     } else {
       var indexSize = 0L
@@ -157,7 +157,7 @@ case class CarbonDataShowLRUCommand(tableIdentifier: Option[TableIdentifier])
         .map(_.getColumnId)
         .toArray
 
-      val cacheIterator = lruCache.getLruCacheMap.entrySet().iterator()
+      val cacheIterator = cache.getLruCacheMap.entrySet().iterator()
       while (cacheIterator.hasNext) {
         val entry = cacheIterator.next()
         val cache = entry.getValue
@@ -183,7 +183,7 @@ case class CarbonDataShowLRUCommand(tableIdentifier: Option[TableIdentifier])
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (tableIdentifier.isEmpty) {
-      showLRUOfAllTables(sparkSession)
+      showAllTablesCache(sparkSession)
     } else {
       val dbName = CarbonEnv.getDatabaseName(tableIdentifier.get.database)(sparkSession)
       val table = sparkSession.sessionState.catalog.listTables(dbName)
@@ -191,7 +191,7 @@ case class CarbonDataShowLRUCommand(tableIdentifier: Option[TableIdentifier])
       if (table.isEmpty) {
         throw new NoSuchTableException(dbName, tableIdentifier.get.table)
       }
-      showLRUOfTable(sparkSession, table.get)
+      showTableCache(sparkSession, table.get)
     }
   }
 }

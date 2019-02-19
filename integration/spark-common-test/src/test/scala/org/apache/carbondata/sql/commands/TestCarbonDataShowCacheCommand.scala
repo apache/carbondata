@@ -21,18 +21,18 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class TestCarbonDataShowLRUCommand extends QueryTest with BeforeAndAfterAll {
+class TestCarbonDataShowCacheCommand extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
     // use new database
-    sql("drop database if exists lru_db cascade").collect()
-    sql("drop database if exists lru_empty_db cascade").collect()
-    sql("create database lru_db").collect()
-    sql("create database lru_empty_db").collect()
+    sql("drop database if exists cache_db cascade").collect()
+    sql("drop database if exists cache_empty_db cascade").collect()
+    sql("create database cache_db").collect()
+    sql("create database cache_empty_db").collect()
     dropTable
-    sql("use lru_db").collect()
+    sql("use cache_db").collect()
     sql(
       """
-        | CREATE TABLE lru_db.lru_1
+        | CREATE TABLE cache_db.cache_1
         | (empno int, empname String, designation String, doj Timestamp, workgroupcategory int,
         |  workgroupcategoryname String, deptno int, deptname String, projectcode int,
         |  projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,
@@ -40,48 +40,48 @@ class TestCarbonDataShowLRUCommand extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('DICTIONARY_INCLUDE'='deptname')
       """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE lru_1 ")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE cache_1 ")
 
     sql(
       """
-        | CREATE TABLE lru_2
+        | CREATE TABLE cache_2
         | (empno int, empname String, designation String, doj Timestamp, workgroupcategory int,
         |  workgroupcategoryname String, deptno int, deptname String, projectcode int,
         |  projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,
         |  salary int)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE lru_db.lru_2 ")
-    sql("insert into table lru_2 select * from lru_1").collect()
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE cache_db.cache_2 ")
+    sql("insert into table cache_2 select * from cache_1").collect()
 
     sql(
       """
-        | CREATE TABLE lru_3
+        | CREATE TABLE cache_3
         | (empno int, empname String, designation String, doj Timestamp, workgroupcategory int,
         |  workgroupcategoryname String, deptno int, deptname String, projectcode int,
         |  projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,
         |  salary int)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE lru_3 ")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE cache_3 ")
 
     // use default database
     sql("use default").collect()
     sql(
       """
-        | CREATE TABLE lru_4
+        | CREATE TABLE cache_4
         | (empno int, empname String, designation String, doj Timestamp, workgroupcategory int,
         |  workgroupcategoryname String, deptno int, deptname String, projectcode int,
         |  projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,
         |  salary int)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-    sql("insert into table lru_4 select * from lru_db.lru_2").collect()
+    sql("insert into table cache_4 select * from cache_db.cache_2").collect()
 
     // standard partition table
     sql(
       """
-        | CREATE TABLE lru_5
+        | CREATE TABLE cache_5
         | (empno int, empname String, designation String, doj Timestamp, workgroupcategory int,
         |  workgroupcategoryname String, deptname String, projectcode int,
         |  projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,
@@ -90,15 +90,15 @@ class TestCarbonDataShowLRUCommand extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(
-      "insert into table lru_5 select empno,empname,designation,doj,workgroupcategory," +
+      "insert into table cache_5 select empno,empname,designation,doj,workgroupcategory," +
       "workgroupcategoryname,deptname,projectcode,projectjoindate,projectenddate,attendance," +
-      "utilization,salary,deptno from lru_4").collect()
+      "utilization,salary,deptno from cache_4").collect()
 
     // count star to cache index
-    sql("select max(deptname) from lru_db.lru_1").collect()
-    sql("select count(*) from lru_db.lru_2").collect()
-    sql("select count(*) from lru_4").collect()
-    sql("select count(*) from lru_5").collect()
+    sql("select max(deptname) from cache_db.cache_1").collect()
+    sql("select count(*) from cache_db.cache_2").collect()
+    sql("select count(*) from cache_4").collect()
+    sql("select count(*) from cache_5").collect()
   }
 
 
@@ -107,42 +107,42 @@ class TestCarbonDataShowLRUCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   private def dropTable = {
-    sql("DROP TABLE IF EXISTS lru_db.lru_1")
-    sql("DROP TABLE IF EXISTS lru_db.lru_2")
-    sql("DROP TABLE IF EXISTS lru_db.lru_3")
-    sql("DROP TABLE IF EXISTS default.lru_4")
-    sql("DROP TABLE IF EXISTS default.lru_5")
+    sql("DROP TABLE IF EXISTS cache_db.cache_1")
+    sql("DROP TABLE IF EXISTS cache_db.cache_2")
+    sql("DROP TABLE IF EXISTS cache_db.cache_3")
+    sql("DROP TABLE IF EXISTS default.cache_4")
+    sql("DROP TABLE IF EXISTS default.cache_5")
   }
 
-  test("show lru") {
-    sql("use lru_empty_db").collect()
-    val result1 = sql("show lru").collect()
+  test("show cache") {
+    sql("use cache_empty_db").collect()
+    val result1 = sql("show cache").collect()
     assertResult(2)(result1.length)
-    assertResult(Row("lru_empty_db", "ALL", 0L, 0L))(result1(1))
+    assertResult(Row("cache_empty_db", "ALL", 0L, 0L))(result1(1))
 
-    sql("use lru_db").collect()
-    val result2 = sql("show lru").collect()
+    sql("use cache_db").collect()
+    val result2 = sql("show cache").collect()
     assertResult(4)(result2.length)
 
     sql("use default").collect()
-    val result3 = sql("show lru").collect()
+    val result3 = sql("show cache").collect()
     assertResult(4)(result3.length)
   }
 
-  test("show lru on table") {
-    val result1 = sql("show lru on table lru_db.lru_1").collect()
+  test("show cache on table") {
+    val result1 = sql("show cache on table cache_db.cache_1").collect()
     assertResult(1)(result1.length)
 
-    val result2 = sql("show lru on table lru_db.lru_2").collect()
+    val result2 = sql("show cache on table cache_db.cache_2").collect()
     assertResult(1)(result2.length)
 
-    checkAnswer(sql("show lru on table lru_db.lru_3"),
-      Row("lru_db", "lru_3", 0L, 0L))
+    checkAnswer(sql("show cache on table cache_db.cache_3"),
+      Row("cache_db", "cache_3", 0L, 0L))
 
-    val result4 = sql("show lru on table default.lru_4").collect()
+    val result4 = sql("show cache on table default.cache_4").collect()
     assertResult(1)(result4.length)
 
-    val result5 = sql("show lru on table default.lru_5").collect()
+    val result5 = sql("show cache on table default.cache_5").collect()
     assertResult(1)(result5.length)
   }
 }
