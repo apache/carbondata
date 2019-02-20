@@ -18,7 +18,7 @@ package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
@@ -35,7 +35,7 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils, SparkUtil}
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, NoSuchCarbonTableException}
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
@@ -124,7 +124,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if (isCarbonTable) {
             ExecutedCommandExec(alterTable) :: Nil
         } else {
-          throw new NoSuchCarbonTableException(altertablemodel.dbName.getOrElse("default"),
+          throw new NoSuchTableException(altertablemodel.dbName.getOrElse("default"),
             altertablemodel.tableName)
         }
       case colRenameDataTypeChange@CarbonAlterTableColRenameDataTypeChangeCommand(
@@ -146,7 +146,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             ExecutedCommandExec(colRenameDataTypeChange) :: Nil
           }
         } else {
-          throw new NoSuchCarbonTableException(alterTableColRenameAndDataTypeChangeModel.
+          throw new NoSuchTableException(alterTableColRenameAndDataTypeChangeModel.
             databaseName.getOrElse("default"),
             alterTableColRenameAndDataTypeChangeModel.tableName)
         }

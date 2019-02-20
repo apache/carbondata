@@ -24,9 +24,10 @@ import org.apache.spark.sql.common.util._
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.constants.LoggerAction
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, NoSuchCarbonTableException}
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 
 /**
  * Test Class for AlterTableTestCase to verify all scenerios
@@ -896,10 +897,10 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Compaction_001_13", Include) {
     sql("drop table if exists no_table")
-    var ex = intercept[NoSuchCarbonTableException] {
+    var ex = intercept[NoSuchTableException] {
       sql("alter table no_table compact 'major'")
     }
-    assertResult("Carbon table or view 'no_table' not found in database 'default'")(ex.getMessage)
+    assertResult("Table or view 'no_table' not found in database 'default';")(ex.getMessage)
   }
 
 
