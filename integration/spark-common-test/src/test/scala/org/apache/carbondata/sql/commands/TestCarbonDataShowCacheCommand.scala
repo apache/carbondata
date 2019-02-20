@@ -40,7 +40,7 @@ class TestCarbonDataShowCacheCommand extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('DICTIONARY_INCLUDE'='deptname')
       """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE cache_1 ")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE cache_1 ")
 
     sql(
       """
@@ -51,7 +51,7 @@ class TestCarbonDataShowCacheCommand extends QueryTest with BeforeAndAfterAll {
         |  salary int)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE cache_db.cache_2 ")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE cache_db.cache_2 ")
     sql("insert into table cache_2 select * from cache_1").collect()
 
     sql(
@@ -63,7 +63,7 @@ class TestCarbonDataShowCacheCommand extends QueryTest with BeforeAndAfterAll {
         |  salary int)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE cache_3 ")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE cache_3 ")
 
     // use default database
     sql("use default").collect()
@@ -94,15 +94,21 @@ class TestCarbonDataShowCacheCommand extends QueryTest with BeforeAndAfterAll {
       "workgroupcategoryname,deptname,projectcode,projectjoindate,projectenddate,attendance," +
       "utilization,salary,deptno from cache_4").collect()
 
+    // datamap
+    sql("create datamap cache_4_count on table cache_4 using 'preaggregate' as " +
+        "select workgroupcategoryname,count(empname) as count from cache_4 group by workgroupcategoryname")
+
     // count star to cache index
     sql("select max(deptname) from cache_db.cache_1").collect()
     sql("select count(*) from cache_db.cache_2").collect()
     sql("select count(*) from cache_4").collect()
     sql("select count(*) from cache_5").collect()
+    sql("select workgroupcategoryname,count(empname) as count from cache_4 group by workgroupcategoryname").collect()
   }
 
 
   override protected def afterAll(): Unit = {
+    sql("use default").collect()
     dropTable
   }
 
@@ -126,11 +132,17 @@ class TestCarbonDataShowCacheCommand extends QueryTest with BeforeAndAfterAll {
 
     sql("use default").collect()
     val result3 = sql("show cache").collect()
-    assertResult(4)(result3.length)
+    assertResult(5)(result3.length)
+
+    val dataMapCacheInfo = result3
+      .map(row => row.getString(1))
+      .filter(table => table.equals("cache_4_cache_4_count"))
+    assertResult(1)(dataMapCacheInfo.length)
   }
 
   test("show cache on table") {
-    val result1 = sql("show cache on table cache_db.cache_1").collect()
+    sql("use cache_db").collect()
+    val result1 = sql("show cache on table cache_1").collect()
     assertResult(1)(result1.length)
 
     val result2 = sql("show cache on table cache_db.cache_2").collect()
@@ -142,7 +154,8 @@ class TestCarbonDataShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     val result4 = sql("show cache on table default.cache_4").collect()
     assertResult(1)(result4.length)
 
-    val result5 = sql("show cache on table default.cache_5").collect()
+    sql("use default").collect()
+    val result5 = sql("show cache on table cache_5").collect()
     assertResult(1)(result5.length)
   }
 }
