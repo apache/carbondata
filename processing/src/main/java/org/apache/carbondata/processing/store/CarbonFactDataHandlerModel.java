@@ -28,7 +28,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -254,21 +253,10 @@ public class CarbonFactDataHandlerModel {
         }
       }
     }
-    int noDictTotalComplexChildDepth = 0;
-    int noDictIndex = 0;
     List<DataType> noDictDataTypesList = new ArrayList<>();
     for (DataField dataField : configuration.getDataFields()) {
-      if (!dataField.hasDictionaryEncoding()) {
+      if (!dataField.hasDictionaryEncoding() && dataField.getColumn().isDimension()) {
         noDictDataTypesList.add(dataField.getColumn().getDataType());
-        if (dataField.getColumn().isComplex()) {
-          GenericDataType genericDataType =
-              complexIndexMap.get(noDictIndex - noDictionaryCount + simpleDimsLen.length)
-                  .deepCopy();
-          List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();
-          genericDataType.getComplexColumnInfo(complexColumnInfoList);
-          noDictTotalComplexChildDepth += complexColumnInfoList.size();
-        }
-        noDictIndex++;
       }
     }
     CarbonDataFileAttributes carbonDataFileAttributes =
@@ -287,7 +275,6 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setDimensionCount(
         configuration.getDimensionCount() - noDictionaryCount);
     carbonFactDataHandlerModel.setNoDictDataTypesList(noDictDataTypesList);
-    carbonFactDataHandlerModel.setNoDictAllComplexColumnDepth(noDictTotalComplexChildDepth);
     carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
     carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
     carbonFactDataHandlerModel.setColCardinality(colCardinality);
@@ -344,19 +331,12 @@ public class CarbonFactDataHandlerModel {
         new CarbonColumn[segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
             .getComplexDimensions().size()];
     int noDicAndComp = 0;
-    int noDictTotalComplexChildDepth = 0;
     List<DataType> noDictDataTypesList = new ArrayList<>();
     for (CarbonDimension dim : allDimensions) {
       if (!dim.hasEncoding(Encoding.DICTIONARY)) {
         noDicAndComplexColumns[noDicAndComp++] =
             new CarbonColumn(dim.getColumnSchema(), dim.getOrdinal(), dim.getSchemaOrdinal());
         noDictDataTypesList.add(dim.getDataType());
-        if (dim.isComplex()) {
-          // Need to add few logics from above method to find complex index map and all.
-          List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();
-          ((GenericDataType) dim.getDataType()).getComplexColumnInfo(complexColumnInfoList);
-          noDictTotalComplexChildDepth += complexColumnInfoList.size();
-        }
       }
     }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
@@ -404,7 +384,6 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setMeasureDataType(measureDataTypes);
     carbonFactDataHandlerModel.setNoDictAndComplexColumns(noDicAndComplexColumns);
     carbonFactDataHandlerModel.setNoDictDataTypesList(noDictDataTypesList);
-    carbonFactDataHandlerModel.setNoDictAllComplexColumnDepth(noDictTotalComplexChildDepth);
     CarbonUtil.checkAndCreateFolderWithPermission(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setPrimitiveDimLens(segmentProperties.getDimColumnsCardinality());

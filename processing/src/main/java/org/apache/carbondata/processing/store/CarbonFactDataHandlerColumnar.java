@@ -212,7 +212,16 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @throws CarbonDataWriterException
    */
   public void addDataToStore(CarbonRow row) throws CarbonDataWriterException {
-    setFlatCarbonRowForComplex(row);
+    int totalComplexColumnDepth = setFlatCarbonRowForComplex(row);
+    if (noDictColumnPageSize == null) {
+      // initialization using first row.
+      model.setNoDictAllComplexColumnDepth(totalComplexColumnDepth);
+      if (model.getNoDictDataTypesList().size() + model.getNoDictAllComplexColumnDepth() > 0) {
+        noDictColumnPageSize =
+            new int[model.getNoDictDataTypesList().size() + model.getNoDictAllComplexColumnDepth()];
+      }
+    }
+
     dataRows.add(row);
     this.entryCount++;
     // if entry count reaches to leaf node size then we are ready to write
@@ -272,9 +281,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       if (configuredPageSizeStrInBytes != null) {
         configuredPageSizeInBytes = Integer.parseInt(configuredPageSizeStrInBytes) * 1024 * 1024;
       } else {
+        // Set the default 1 MB page size if not configured from 1.6 version.
+        // If set now, it will impact forward compatibility between 1.5.x versions.
         // use default value
-        configuredPageSizeInBytes =
-            CarbonCommonConstants.TABLE_PAGE_SIZE_INMB_DEFAULT * 1024 * 1024;
+        /*configuredPageSizeInBytes =
+            CarbonCommonConstants.TABLE_PAGE_SIZE_INMB_DEFAULT * 1024 * 1024;*/
+        return false;
       }
       Object[] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < noDictDataTypesList.size(); i++) {
@@ -324,7 +336,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     return false;
   }
 
-  private void setFlatCarbonRowForComplex(CarbonRow row) {
+  private int setFlatCarbonRowForComplex(CarbonRow row) {
+    int noDictTotalComplexChildDepth = 0;
     Map<String, List<ArrayList<byte[]>>> complexFlatByteArrayMap = new HashMap<>();
     Object[] noDictAndComplexDimension = WriteStepRowUtil.getNoDictAndComplexDimension(row);
     for (int i = 0; i < noDictAndComplexDimension.length; i++) {
@@ -353,12 +366,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         } catch (IOException | KeyGenException e) {
           throw new CarbonDataWriterException("Problem in splitting and writing complex data", e);
         }
+        noDictTotalComplexChildDepth += flatComplexColumnList.size();
         complexFlatByteArrayMap.put(genericDataType.getName(), flatComplexColumnList);
       }
     }
     if (complexFlatByteArrayMap.size() > 0) {
       row.setComplexFlatByteArrayMap(complexFlatByteArrayMap);
     }
+    return noDictTotalComplexChildDepth;
   }
 
   private int calculateDepth(GenericDataType complexDataType) {
@@ -522,12 +537,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       LOGGER.debug("Number of rows per column page is configured as pageSize = " + pageSize);
     }
     dataRows = new ArrayList<>(this.pageSize);
-
-    if (model.getNoDictDataTypesList().size() + model.getNoDictAllComplexColumnDepth() > 0) {
-      noDictColumnPageSize =
-          new int[model.getNoDictDataTypesList().size() + model.getNoDictAllComplexColumnDepth()];
-    }
-
     int dimSet =
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
     // if at least one dimension is present then initialize column splitter otherwise null
