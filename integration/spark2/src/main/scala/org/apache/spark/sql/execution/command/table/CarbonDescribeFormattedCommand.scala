@@ -148,24 +148,29 @@ private[sql] case class CarbonDescribeFormattedCommand(
       ("## Compaction Information", "", ""),
       (CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE,
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE,
-            CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE)), ""),
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE,
+              CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE)), ""),
       (CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE,
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-            CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)), ""),
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+              CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)), ""),
       (CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD,
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
-            CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)), ""),
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
+              CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)), ""),
       (CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS,
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
-            CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER)), ""),
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
+              CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER)), ""),
       (CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS,
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
-            CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT)), "")
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
+              CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT)), "")
     )
 
     //////////////////////////////////////////////////////////////////////////////
