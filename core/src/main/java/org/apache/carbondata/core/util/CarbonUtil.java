@@ -100,6 +100,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -1536,7 +1537,8 @@ public final class CarbonUtil {
     ValueEncoderMeta meta = null;
     try {
       aos = new ByteArrayInputStream(encoderMeta);
-      objStream = new ObjectInputStream(aos);
+      objStream =
+          new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), aos);
       meta = (ValueEncoderMeta) objStream.readObject();
     } catch (ClassNotFoundException e) {
       LOGGER.error(e);
