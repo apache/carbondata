@@ -18,7 +18,7 @@ package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
@@ -124,8 +124,10 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if (isCarbonTable) {
             ExecutedCommandExec(alterTable) :: Nil
         } else {
-          throw new NoSuchTableException(altertablemodel.dbName.getOrElse("default"),
-            altertablemodel.tableName)
+          throw new MalformedCarbonCommandException(
+            String.format("Table or view '%s' not found in database '%s' or not carbon fileformat",
+            altertablemodel.tableName,
+            altertablemodel.dbName.getOrElse("default")))
         }
       case colRenameDataTypeChange@CarbonAlterTableColRenameDataTypeChangeCommand(
       alterTableColRenameAndDataTypeChangeModel, _) =>
@@ -146,9 +148,11 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             ExecutedCommandExec(colRenameDataTypeChange) :: Nil
           }
         } else {
-          throw new NoSuchTableException(alterTableColRenameAndDataTypeChangeModel.
-            databaseName.getOrElse("default"),
-            alterTableColRenameAndDataTypeChangeModel.tableName)
+          throw new MalformedCarbonCommandException(
+            String.format("Table or view '%s' not found in database '%s' or not carbon fileformat",
+              alterTableColRenameAndDataTypeChangeModel.tableName,
+              alterTableColRenameAndDataTypeChangeModel.
+                databaseName.getOrElse("default")))
         }
       case addColumn@CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore

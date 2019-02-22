@@ -897,10 +897,10 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Compaction_001_13", Include) {
     sql("drop table if exists no_table")
-    var ex = intercept[NoSuchTableException] {
+    var ex = intercept[MalformedCarbonCommandException] {
       sql("alter table no_table compact 'major'")
     }
-    assertResult("Table or view 'no_table' not found in database 'default';")(ex.getMessage)
+    assertResult("Table or view 'no_table' not found in database 'default' or not carbon fileformat")(ex.getMessage)
   }
 
 
