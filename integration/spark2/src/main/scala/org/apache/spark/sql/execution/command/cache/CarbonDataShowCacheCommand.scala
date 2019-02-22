@@ -31,6 +31,7 @@ import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
  * SHOW CACHE
@@ -64,15 +65,25 @@ case class CarbonDataShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           tableIdent.database.get + "." + tableIdent.table)
       }
 
-      val dictIds = tableIdents.flatMap { tableIdent =>
-        CarbonEnv
-          .getCarbonTable(tableIdent)(sparkSession)
-          .getAllDimensions
-          .asScala
-          .filter(_.isGlobalDictionaryEncoding)
-          .toArray
-          .map(dim => (dim.getColumnId, tableIdent.database.get + "." + tableIdent.table))
-      }
+      val dictIds = tableIdents
+        .map { tableIdent =>
+          var table: CarbonTable = null
+          try {
+            table = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
+          } catch {
+            case _ =>
+          }
+          table
+        }
+        .filter(_ != null)
+        .flatMap { table =>
+          table
+            .getAllDimensions
+            .asScala
+            .filter(_.isGlobalDictionaryEncoding)
+            .toArray
+            .map(dim => (dim.getColumnId, table.getDatabaseName + "." + table.getTableName))
+        }
 
       // all databases
       var (allIndexSize, allDictSize) = (0L, 0L)
