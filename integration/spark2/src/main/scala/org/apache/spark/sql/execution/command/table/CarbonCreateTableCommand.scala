@@ -78,8 +78,8 @@ case class CarbonCreateTableCommand(
         path
       }
       val streaming = tableInfo.getFactTable.getTableProperties.get("streaming")
-      if (path.startsWith("s3") && streaming != null && streaming != null &&
-          streaming.equalsIgnoreCase("true")) {
+      if (streaming != null &&
+        streaming.equalsIgnoreCase("true") && path.startsWith("s3")) {
         throw new UnsupportedOperationException("streaming is not supported with s3 store")
       }
       tableInfo.setTablePath(tablePath)
