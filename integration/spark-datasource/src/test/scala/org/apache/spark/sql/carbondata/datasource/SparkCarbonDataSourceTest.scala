@@ -1795,5 +1795,6 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists par_table")
     spark.sql("drop table if exists sdkout")
     spark.sql("drop table if exists validate")
+    spark.sql("drop table if exists fileformat_date")
   }
 }
