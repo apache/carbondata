@@ -84,6 +84,21 @@ public class CarbonReaderBuilder {
   }
 
   /**
+   * Accepts projection list
+   *
+   * @param projectionColumnNames
+   * @return
+   */
+  public CarbonReaderBuilder projection(List<String> projectionColumnNames) {
+    Objects.requireNonNull(projectionColumnNames);
+    String[] strings = new String[projectionColumnNames.size()];
+    for (int i = 0; i < projectionColumnNames.size(); i++) {
+      strings[i] = projectionColumnNames.get(i);
+    }
+    return projection(strings);
+  }
+
+  /**
    * Configure the filter expression for carbon reader
    *
    * @param filterExpression filter expression
