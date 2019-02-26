@@ -236,7 +236,7 @@ def make_reader(dataset_url,
 
 def make_carbon_reader(dataset_url,
                 schema_fields=None,
-                reader_pool_type='thread', workers_count=10, pyarrow_serialize=False, results_queue_size=50,
+                reader_pool_type='thread', workers_count=10, pyarrow_serialize=False, results_queue_size=100,
                 shuffle_row_groups=True, shuffle_row_drop_partitions=1,
                 predicate=None,
                 rowgroup_selector=None,
@@ -818,8 +818,8 @@ class Reader(object):
         (parquet partitioning)."""
 
         if predicate:
-            if not isinstance(predicate, PredicateBase):
-                raise ValueError('predicate parameter is expected to be derived from PredicateBase')
+            # if not isinstance(predicate, PredicateBase):
+            #     raise ValueError('predicate parameter is expected to be derived from PredicateBase')
             predicate_fields = predicate.get_fields()
 
             if set(predicate_fields) == dataset.partitions.partition_names:
@@ -1002,7 +1002,7 @@ class CarbonReader(object):
         # 3. Filter rowgroups
 
         filtered_row_group_indexes = list(range(len(self.carbon_dataset.pieces)))
-        worker_predicate = None
+        worker_predicate = predicate
         # filtered_row_group_indexes, worker_predicate = self._filter_row_groups(self.dataset, row_groups, predicate,
         #                                                                        rowgroup_selector, cur_shard,
         #                                                                        shard_count)
@@ -1139,10 +1139,10 @@ class CarbonReader(object):
         #
         #     return min(shuffle_row_drop_partitions, max_rows_in_row_group)
         # return shuffle_row_drop_partitions
-        if shuffle_row_drop_partitions > 1 and len(carbonSplit.splits) > 0:
+        if shuffle_row_drop_partitions > 1 and carbonSplit.number_of_splits > 0:
             max_rows_in_row_group = 1
             for i in six.moves.xrange(carbonSplit.number_of_splits):
-                max_rows_in_row_group = max(max_rows_in_row_group, carbonSplit.splits(i).num_rows)
+                max_rows_in_row_group = max(max_rows_in_row_group, carbonSplit.pieces.__getitem__(i).num_rows)
             return min(shuffle_row_drop_partitions, max_rows_in_row_group)
         return shuffle_row_drop_partitions
 

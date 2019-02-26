@@ -292,17 +292,17 @@ class ArrowCarbonReaderWorker(WorkerBase):
             if shuffle_row_drop_partition[1] != 1:
                 raise RuntimeError('Local cache is not supported together with shuffle_row_drop_partitions > 1')
 
-        # if worker_predicate:
-        #     all_cols = self._load_rows_with_predicate(parquet_file, piece, worker_predicate, shuffle_row_drop_partition)
-        # else:
+        if worker_predicate:
+            all_cols = self._load_rows_with_predicate(piece, worker_predicate, shuffle_row_drop_partition)
+        else:
             # Using hash of the dataset path with the relative path in order to:
             #  1. Make sure if a common cache serves multiple processes (e.g. redis), we don't have conflicts
             #  2. Dataset path is hashed, to make sure we don't create too long keys, which maybe incompatible with
             #     some cache implementations
             #  3. Still leave relative path and the piece_index in plain text to make it easier to debug
-        cache_key = '{}:{}:{}'.format(hashlib.md5(self._dataset_path.encode('utf-8')).hexdigest(),
+            cache_key = '{}:{}:{}'.format(hashlib.md5(self._dataset_path.encode('utf-8')).hexdigest(),
                                           piece.path, piece_index)
-        all_cols = self._local_cache.get(cache_key,
+            all_cols = self._local_cache.get(cache_key,
                                              lambda: self._load_rows(piece, shuffle_row_drop_partition))
 
         if all_cols:
@@ -323,6 +323,69 @@ class ArrowCarbonReaderWorker(WorkerBase):
             result = pa.Table.from_pandas(self._transform_spec.func(result.to_pandas()), preserve_index=False)
 
         return result
+
+    def _load_rows_with_predicate(self, piece, worker_predicate, shuffle_row_drop_partition):
+        """Loads all rows that match a predicate from a piece"""
+
+        # 1. Read all columns needed by predicate
+        # 2. Apply the predicate. If nothing matches, exit early
+        # 3. Read the remaining columns
+
+        # Split all column names into ones that are needed by predicateand the rest.
+        predicate_column_names = set(worker_predicate.get_fields())
+
+        if not predicate_column_names:
+            raise ValueError('At least one field name must be returned by predicate\'s get_field() method')
+
+        all_schema_names = set(field.name for field in self._schema.fields.values())
+
+        invalid_column_names = predicate_column_names - all_schema_names
+        if invalid_column_names:
+            raise ValueError('At least some column names requested by the predicate ({}) '
+                             'are not valid schema names: ({})'.format(', '.join(invalid_column_names),
+                                                                       ', '.join(all_schema_names)))
+
+        # Split into 'columns for predicate evaluation' and 'other columns'. We load 'other columns' only if at
+        # least one row in the rowgroup matched the predicate
+        other_column_names = all_schema_names - predicate_column_names
+
+        # Read columns needed for the predicate
+        predicate_column_names_list = list(predicate_column_names)
+        predicates_table = self._read_with_shuffle_row_drop(piece, predicate_column_names_list,
+                                                            shuffle_row_drop_partition)
+
+        predicates_data_frame = predicates_table.to_pandas()
+
+        match_predicate_mask = worker_predicate.do_include(predicates_data_frame)
+        erase_mask = match_predicate_mask.map(operator.not_)
+
+        # Don't have anything left after filtering? Exit early.
+        if erase_mask.all():
+            return []
+
+        predicates_data_frame[erase_mask] = None
+
+        if other_column_names:
+            # Read remaining columns
+            other_column_names_list = list(other_column_names)
+            other_table = self._read_with_shuffle_row_drop(piece, other_column_names_list,
+                                                           shuffle_row_drop_partition)
+            other_data_frame = other_table.to_pandas()
+            other_data_frame[erase_mask] = None
+
+            # Partition-by columns will appear in both other and predicate data frames. Deduplicate.
+            columns_from_predicates = predicates_data_frame.columns.difference(other_data_frame.columns)
+            result_data_frame = pd.merge(predicates_data_frame[columns_from_predicates], other_data_frame,
+                                         copy=False, left_index=True, right_index=True)
+        else:
+            result_data_frame = predicates_data_frame
+
+        result = result_data_frame[match_predicate_mask]
+
+        if self._transform_spec:
+            result = self._transform_spec.func(result)
+
+        return pa.Table.from_pandas(result, preserve_index=False)
 
     def _read_with_shuffle_row_drop(self, piece, column_names, shuffle_row_drop_partition):
         table = piece.read_all(

@@ -23,6 +23,7 @@ import argparse
 import os
 import time
 
+import jnius_config
 import tensorflow as tf
 
 from examples.mnist import DEFAULT_MNIST_DATA_PATH
@@ -107,7 +108,12 @@ def train_and_test(dataset_url, training_iterations, batch_size, evaluation_inte
 
 
 def main():
-
+    # os.environ["PYSPARK_PYTHON"] = "/usr/bin/python3"
+    # os.environ["PYSPARK_DRIVER_PYTHON"] = "/usr/bin/python3"
+    # os.environ['JAVA_HOME'] = '/usr/lib/jvm/jdk1.8.0_181'
+    # TODO: fill this in argument
+    jnius_config.set_classpath(
+        "/home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/carbondata-sdk.jar")
     print("Start")
     start = time.time()
     # Training settings
@@ -134,8 +140,6 @@ def main():
     )
     end = time.time()
     print("all time: " + str(end - start))
-    global totalTime
-    print(totalTime)
     print("Finish")
 
 if __name__ == '__main__':

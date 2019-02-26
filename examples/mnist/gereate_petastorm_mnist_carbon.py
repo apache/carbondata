@@ -25,6 +25,8 @@ NOTE: MNIST train and test data will be downloaded automatically.
 """
 
 import argparse
+
+import jnius_config
 import numpy as np
 import os
 import shutil
@@ -129,6 +131,12 @@ def mnist_data_to_petastorm_dataset(download_dir, output_url, spark_master=None,
 
 
 if __name__ == '__main__':
+    # os.environ["PYSPARK_PYTHON"] = "/usr/bin/python3"
+    # os.environ["PYSPARK_DRIVER_PYTHON"] = "/usr/bin/python3"
+    # os.environ['JAVA_HOME'] = '/usr/lib/jvm/jdk1.8.0_181'
+    #TODO: fill this in argument
+    jnius_config.set_classpath(
+        "/home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/carbondata-sdk.jar")
     args = _arg_parser().parse_args()
     if args.download_dir is None:
         # Make a temp dir that we'll clean up afterward
