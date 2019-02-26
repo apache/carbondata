@@ -21,7 +21,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class TestCarbonDataShowCacheCommand extends QueryTest with BeforeAndAfterAll {
+class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
     // use new database
     sql("drop database if exists cache_db cascade").collect()
@@ -132,8 +132,6 @@ class TestCarbonDataShowCacheCommand extends QueryTest with BeforeAndAfterAll {
 
     sql("use default").collect()
     val result3 = sql("show cache").collect()
-    assertResult(5)(result3.length)
-
     val dataMapCacheInfo = result3
       .map(row => row.getString(1))
       .filter(table => table.equals("cache_4_cache_4_count"))

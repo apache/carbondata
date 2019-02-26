@@ -36,7 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 /**
  * SHOW CACHE
  */
-case class CarbonDataShowCacheCommand(tableIdentifier: Option[TableIdentifier])
+case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
   extends DataCommand {
 
   override def output: Seq[Attribute] = {
