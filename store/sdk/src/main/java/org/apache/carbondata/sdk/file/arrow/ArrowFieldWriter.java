@@ -18,14 +18,19 @@ package org.apache.carbondata.sdk.file.arrow;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.BitVector;
+import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.DecimalVector;
 import org.apache.arrow.vector.Float4Vector;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.SmallIntVector;
+import org.apache.arrow.vector.TimeStampMicroTZVector;
 import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
@@ -186,6 +191,40 @@ class DoubleWriter extends ArrowFieldWriter {
   }
 }
 
+class DateWriter extends ArrowFieldWriter {
+  private DateDayVector dateDayVector;
+
+  public DateWriter(DateDayVector dateDayVector) {
+    super(dateDayVector);
+    this.dateDayVector = dateDayVector;
+  }
+
+  @Override public void setNull() {
+    this.dateDayVector.setNull(count);
+  }
+
+  @Override public void setValue(Object data, int ordinal) {
+    this.dateDayVector.setSafe(count, (int)data);
+  }
+}
+
+class TimeStampWriter extends ArrowFieldWriter {
+  private TimeStampMicroTZVector timeStampMicroTZVector;
+
+  public TimeStampWriter(TimeStampMicroTZVector timeStampMicroTZVector) {
+    super(timeStampMicroTZVector);
+    this.timeStampMicroTZVector = timeStampMicroTZVector;
+  }
+
+  @Override public void setNull() {
+    this.timeStampMicroTZVector.setNull(count);
+  }
+
+  @Override public void setValue(Object data, int ordinal) {
+    this.timeStampMicroTZVector.setSafe(count, (long)data);
+  }
+}
+
 class StringWriter extends ArrowFieldWriter {
   private VarCharVector varCharVector;
 
@@ -199,9 +238,9 @@ class StringWriter extends ArrowFieldWriter {
   }
 
   @Override public void setValue(Object data, int ordinal) {
-    //TODO check if it works with JAVA String object intead of utf8 String
-    byte[] bytes = ((String) data).getBytes();
-    ByteBuffer byteBuffer = ByteBuffer.wrap(((String) data).getBytes());
+    byte[] bytes =
+        (String.valueOf(data)).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
     this.varCharVector.setSafe(count, byteBuffer, byteBuffer.position(), bytes.length);
   }
 }

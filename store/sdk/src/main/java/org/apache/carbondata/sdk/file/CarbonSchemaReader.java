@@ -37,6 +37,7 @@ import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
+import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.CARBON_DATA_EXT;
@@ -113,6 +114,21 @@ public class CarbonSchemaReader {
   public static Schema readSchema(String path) throws IOException {
     Configuration conf = new Configuration();
     return readSchema(path, false, conf);
+  }
+
+  /**
+   * Converting carbon schema to arrow schema in byte[],
+   * byte[] can be converted back arrowSchema by other arrow interface module like pyspark etc.
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public static byte[] getArrowSchemaAsBytes(String path) throws IOException {
+    Schema schema = CarbonSchemaReader.readSchema(path).asOriginOrder();
+    ArrowConverter arrowConverter = new ArrowConverter(schema, 0);
+    final byte[] bytes = arrowConverter.toSerializeArray();
+    return bytes;
   }
 
   /**

@@ -54,11 +54,31 @@
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-memory</artifactId>
       <version>0.12.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
       <version>0.12.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
@@ -69,6 +89,12 @@
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-flight</artifactId>
       <version>0.12.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
@@ -89,11 +115,6 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>${dep.jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.sf.py4j</groupId>
-      <artifactId>py4j</artifactId>
-      <version>0.10.8.1</version>
     </dependency>
   </dependencies>
 
