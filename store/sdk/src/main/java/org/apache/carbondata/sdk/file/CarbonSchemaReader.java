@@ -37,6 +37,7 @@ import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
+import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.CARBON_DATA_EXT;
@@ -113,6 +114,14 @@ public class CarbonSchemaReader {
   public static Schema readSchema(String path) throws IOException {
     Configuration conf = new Configuration();
     return readSchema(path, false, conf);
+  }
+
+  public static byte[] getSchemaAsBytes(String path) throws IOException {
+    Schema schema = CarbonSchemaReader.readSchema(path);
+    ArrowConverter arrowConverter = new ArrowConverter(schema, 1);
+    final byte[] bytes = arrowConverter.toSerializeArray();
+    arrowConverter.close();
+    return bytes;
   }
 
   /**
