@@ -62,10 +62,13 @@ public final class CarbonLRUCache {
    */
   public CarbonLRUCache(String propertyName, String defaultPropertyName) {
     try {
-      lruCacheMemorySize = Integer
-          .parseInt(CarbonProperties.getInstance().getProperty(propertyName, defaultPropertyName));
+      lruCacheMemorySize = Long
+          .parseLong(CarbonProperties.getInstance().getProperty(propertyName, defaultPropertyName));
     } catch (NumberFormatException e) {
-      lruCacheMemorySize = Integer.parseInt(defaultPropertyName);
+      LOGGER.error(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE
+          + " is not in a valid format. Falling back to default value: "
+          + CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
+      lruCacheMemorySize = Long.parseLong(defaultPropertyName);
     }
     initCache();
     if (lruCacheMemorySize > 0) {
@@ -145,6 +148,17 @@ public final class CarbonLRUCache {
   public void remove(String key) {
     synchronized (lruCacheMap) {
       removeKey(key);
+    }
+  }
+
+  /**
+   * @param keys
+   */
+  public void removeAll(List<String> keys) {
+    synchronized (lruCacheMap) {
+      for (String key : keys) {
+        removeKey(key);
+      }
     }
   }
 
@@ -302,6 +316,9 @@ public final class CarbonLRUCache {
    */
   public void clear() {
     synchronized (lruCacheMap) {
+      for (Cacheable cachebleObj : lruCacheMap.values()) {
+        cachebleObj.invalidate();
+      }
       lruCacheMap.clear();
     }
   }
