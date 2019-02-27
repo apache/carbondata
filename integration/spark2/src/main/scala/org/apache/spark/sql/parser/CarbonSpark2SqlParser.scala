@@ -77,7 +77,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    alterPartition | datamapManagement | alterTableFinishStreaming | stream | cli | showCache
+    alterPartition | datamapManagement | alterTableFinishStreaming | stream | cli | cacheManagement
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -93,6 +93,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val stream: Parser[LogicalPlan] =
     createStream | dropStream | showStreams
+
+  protected lazy val cacheManagement: Parser[LogicalPlan] =
+    showCache
 
   protected lazy val alterAddPartition: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
@@ -209,6 +212,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val ontable: Parser[TableIdentifier] =
     ON ~> TABLE ~>  (ident <~ ".").? ~ ident ^^ {
+      case dbName ~ tableName =>
+        TableIdentifier(tableName, dbName)
+    }
+
+  protected lazy val forTable: Parser[TableIdentifier] =
+    FOR ~> TABLE ~>  (ident <~ ".").? ~ ident ^^ {
       case dbName ~ tableName =>
         TableIdentifier(tableName, dbName)
     }
@@ -495,7 +504,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val showCache: Parser[LogicalPlan] =
-    SHOW ~> CACHE ~> opt( ontable) <~ opt(";") ^^ {
+    SHOW ~> METACACHE ~> opt(forTable) <~ opt(";") ^^ {
       case table =>
         CarbonShowCacheCommand(table)
     }

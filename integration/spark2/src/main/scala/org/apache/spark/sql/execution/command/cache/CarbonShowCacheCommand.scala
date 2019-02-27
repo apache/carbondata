@@ -32,6 +32,7 @@ import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
 
 /**
  * SHOW CACHE
@@ -62,7 +63,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
       val tablePaths = tableIdents.map { tableIdent =>
         (tempLocation + CarbonCommonConstants.FILE_SEPARATOR +
          tableIdent.table + CarbonCommonConstants.FILE_SEPARATOR,
-          CarbonEnv.getDatabaseName(tableIdent.database) + "." + tableIdent.table)
+          CarbonEnv.getDatabaseName(tableIdent.database)(sparkSession) + "." + tableIdent.table)
       }
 
       val dictIds = tableIdents
@@ -96,6 +97,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
         val entry = cacheIterator.next()
         val cache = entry.getValue
         if (cache.isInstanceOf[BlockletDataMapIndexWrapper]) {
+          // index
           allIndexSize = allIndexSize + cache.getMemorySize
           val indexPath = entry.getKey.replace(
             CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR)
@@ -109,7 +111,22 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
               tableMapIndexSize.put(tablePath.get._2, memorySize.get + cache.getMemorySize)
             }
           }
+        } else if (cache.isInstanceOf[BloomCacheKeyValue.CacheValue]) {
+          // bloom datamap
+          val shardPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
+            CarbonCommonConstants.FILE_SEPARATOR)
+          val tablePath = tablePaths.find(path => shardPath.contains(path._1))
+          if (tablePath.isDefined) {
+            dbIndexSize = dbIndexSize + cache.getMemorySize
+            val memorySize = tableMapIndexSize.get(tablePath.get._2)
+            if (memorySize.isEmpty) {
+              tableMapIndexSize.put(tablePath.get._2, cache.getMemorySize)
+            } else {
+              tableMapIndexSize.put(tablePath.get._2, memorySize.get + cache.getMemorySize)
+            }
+          }
         } else if (cache.isInstanceOf[AbstractColumnDictionaryInfo]) {
+          // dictionary
           allDictSize = allDictSize + cache.getMemorySize
           val dictId = dictIds.find(id => entry.getKey.startsWith(id._1))
           if (dictId.isDefined) {
@@ -178,6 +195,13 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           val indexPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
             CarbonCommonConstants.FILE_SEPARATOR)
           if (indexPath.startsWith(tablePath)) {
+            indexSize = indexSize + cache.getMemorySize
+          }
+        } else if (cache.isInstanceOf[BloomCacheKeyValue.CacheValue]) {
+          // bloom datamap
+          val shardPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
+            CarbonCommonConstants.FILE_SEPARATOR)
+          if (shardPath.contains(tablePath)) {
             indexSize = indexSize + cache.getMemorySize
           }
         } else if (cache.isInstanceOf[AbstractColumnDictionaryInfo]) {

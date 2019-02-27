@@ -155,7 +155,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val HISTORY = carbonKeyWord("HISTORY")
   protected val SEGMENTS = carbonKeyWord("SEGMENTS")
   protected val SEGMENT = carbonKeyWord("SEGMENT")
-  protected val CACHE = carbonKeyWord("CACHE")
+  protected val METACACHE = carbonKeyWord("METACACHE")
 
   protected val STRING = carbonKeyWord("STRING")
   protected val INTEGER = carbonKeyWord("INTEGER")
