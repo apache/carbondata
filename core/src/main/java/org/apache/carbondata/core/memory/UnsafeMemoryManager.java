@@ -185,8 +185,7 @@ public class UnsafeMemoryManager {
   /**
    * It tries to allocate memory of `size` bytes, keep retry until it allocates successfully.
    */
-  public static MemoryBlock allocateMemoryWithRetry(String taskId, long size)
-      throws MemoryException {
+  public static MemoryBlock allocateMemoryWithRetry(String taskId, long size) {
     return allocateMemoryWithRetry(INSTANCE.memoryType, taskId, size);
   }
 

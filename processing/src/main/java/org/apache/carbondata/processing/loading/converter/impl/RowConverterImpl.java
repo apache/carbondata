@@ -121,7 +121,7 @@ public class RowConverterImpl implements RowConverter {
       if (executorService == null) {
         executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
             "DictionaryClientPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
-                .getTableName()));
+                .getTableName(), true));
       }
       DictionaryOnePassService
           .setDictionaryServiceProvider(configuration.getDictionaryServiceProvider());

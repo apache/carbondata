@@ -61,7 +61,8 @@ public class SortIntermediateFileMerger {
     // processed file list
     this.procFiles = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores(),
-        new CarbonThreadFactory("SafeIntermediateMergerPool:" + parameters.getTableName()));
+        new CarbonThreadFactory("SafeIntermediateMergerPool:" + parameters.getTableName(),
+                true));
     mergerTask = new ArrayList<>();
   }
 
