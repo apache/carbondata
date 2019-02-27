@@ -352,7 +352,7 @@ CarbonData DML statements are documented here,which includes:
   ```
   LOAD DATA [LOCAL] INPATH 'folder_path' 
   INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
-  OPTIONS(property_name=property_value, ...)    
+  OPTIONS(property_name=property_value, ...);    
   INSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) <SELECT STATEMENT>
   ```
 
@@ -360,10 +360,10 @@ CarbonData DML statements are documented here,which includes:
   ```
   LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.csv'
   INTO TABLE locationTable
-  PARTITION (country = 'US', state = 'CA')  
+  PARTITION (country = 'US', state = 'CA') ;
   INSERT INTO TABLE locationTable
   PARTITION (country = 'US', state = 'AL')
-  SELECT <columns list excluding partition columns> FROM another_user
+  SELECT <columns list excluding partition columns> FROM another_user;
   ```
 
 ### Load Data Using Dynamic Partition
@@ -373,9 +373,9 @@ CarbonData DML statements are documented here,which includes:
   Example:
   ```
   LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.csv'
-  INTO TABLE locationTable          
+  INTO TABLE locationTable          ;
   INSERT INTO TABLE locationTable
-  SELECT <columns list excluding partition columns> FROM another_user
+  SELECT <columns list excluding partition columns> FROM another_user;
   ```
 
 ## UPDATE AND DELETE
