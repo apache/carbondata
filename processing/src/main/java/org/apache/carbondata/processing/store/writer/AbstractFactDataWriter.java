@@ -186,7 +186,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     }
 
     this.executorService = Executors.newFixedThreadPool(1,
-        new CarbonThreadFactory("CompleteHDFSBackendPool:" + this.model.getTableName()));
+        new CarbonThreadFactory("CompleteHDFSBackendPool:" + this.model.getTableName(),
+                true));
     executorServiceSubmitList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // in case of compaction we will pass the cardinality.
     this.localCardinality = this.model.getColCardinality();
@@ -208,7 +209,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         numberOfCores = model.getNumberOfCores() / 2;
       }
       fallbackExecutorService = Executors.newFixedThreadPool(numberOfCores, new CarbonThreadFactory(
-          "FallbackPool:" + model.getTableName() + ", range: " + model.getBucketId()));
+          "FallbackPool:" + model.getTableName() + ", range: " + model.getBucketId(),
+              true));
     }
   }
 

@@ -124,7 +124,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     this.compressorName = sortParameters.getSortTempCompressorName();
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
     this.executorService = Executors
-        .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName));
+        .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName,
+                true));
     this.convertToActualField = convertToActualField;
   }
 

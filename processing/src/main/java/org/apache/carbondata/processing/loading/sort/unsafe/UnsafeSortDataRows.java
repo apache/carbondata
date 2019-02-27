@@ -138,7 +138,8 @@ public class UnsafeSortDataRows {
     CarbonDataProcessorUtil.createLocations(parameters.getTempFileLocation());
     this.dataSorterAndWriterExecutorService = Executors
         .newFixedThreadPool(parameters.getNumberOfCores(),
-            new CarbonThreadFactory("UnsafeSortDataRowPool:" + parameters.getTableName()));
+            new CarbonThreadFactory("UnsafeSortDataRowPool:" + parameters.getTableName(),
+                    true));
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 
@@ -206,8 +207,7 @@ public class UnsafeSortDataRows {
         }
         bytesAdded += rowPage.addRow(rowBatch[i], reUsableByteArrayDataOutputStream.get());
       } catch (Exception e) {
-        if (e.getMessage().contains("cannot handle this row. create new page"))
-        {
+        if (e.getMessage().contains("cannot handle this row. create new page")) {
           rowPage.makeCanAddFail();
           // so that same rowBatch will be handled again in new page
           i--;
@@ -243,8 +243,7 @@ public class UnsafeSortDataRows {
       }
       rowPage.addRow(row, reUsableByteArrayDataOutputStream.get());
     } catch (Exception e) {
-      if (e.getMessage().contains("cannot handle this row. create new page"))
-      {
+      if (e.getMessage().contains("cannot handle this row. create new page")) {
         rowPage.makeCanAddFail();
         addRow(row);
       } else {
