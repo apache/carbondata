@@ -115,7 +115,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
           .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
               System.currentTimeMillis());
       rangeExecutorService = Executors.newFixedThreadPool(iterators.length,
-          new CarbonThreadFactory("WriterForwardPool: " + tableName));
+          new CarbonThreadFactory("WriterForwardPool: " + tableName, true));
       List<Future<Void>> rangeExecutorServiceSubmitList = new ArrayList<>(iterators.length);
       int i = 0;
       // do this concurrently

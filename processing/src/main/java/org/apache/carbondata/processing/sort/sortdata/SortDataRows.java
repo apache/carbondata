@@ -112,7 +112,8 @@ public class SortDataRows {
     CarbonDataProcessorUtil.createLocations(parameters.getTempFileLocation());
     this.dataSorterAndWriterExecutorService = Executors
         .newFixedThreadPool(parameters.getNumberOfCores(),
-            new CarbonThreadFactory("SortDataRowPool:" + parameters.getTableName()));
+            new CarbonThreadFactory("SortDataRowPool:" + parameters.getTableName(),
+                    true));
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 

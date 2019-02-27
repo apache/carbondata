@@ -21,7 +21,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -74,12 +73,9 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    */
   public UnsafeAbstractDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
       int numberOfRows, int dataLength) {
-    try {
-      // allocating the data page
-      this.dataPageMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, totalSize);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    // allocating the data page
+    this.dataPageMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, totalSize);
+
     this.dataLength = dataLength;
     this.isExplicitSorted = isInvertedIdex;
   }

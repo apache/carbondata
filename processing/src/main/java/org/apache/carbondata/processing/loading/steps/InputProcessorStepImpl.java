@@ -71,7 +71,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     rowParser = new RowParserImpl(getOutput(), configuration);
     executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
         "InputProcessorPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
-            .getTableName()));
+            .getTableName(), true));
     // if logger is enabled then raw data will be required.
     this.isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(configuration);
   }

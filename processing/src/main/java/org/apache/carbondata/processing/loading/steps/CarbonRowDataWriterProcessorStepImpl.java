@@ -142,7 +142,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       } else {
         executorService = Executors.newFixedThreadPool(iterators.length,
             new CarbonThreadFactory("NoSortDataWriterPool:" + configuration.getTableIdentifier()
-                .getCarbonTableIdentifier().getTableName()));
+                .getCarbonTableIdentifier().getTableName(), true));
         Future[] futures = new Future[iterators.length];
         for (int i = 0; i < iterators.length; i++) {
           futures[i] = executorService.submit(new DataWriterRunnable(iterators[i], i, dataHandler));

@@ -262,7 +262,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     DataTypeUtil.clearFormatter();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
     final ExecutorService executorService = Executors.newFixedThreadPool(1,
-        new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));
+        new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName(),
+                true));
     // It should be started in new thread as the underlying iterator uses blocking queue.
     Future future = executorService.submit(new Thread() {
       @Override public void run() {

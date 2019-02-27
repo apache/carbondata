@@ -103,7 +103,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
       }
       double intermediateMergeCostTime =
           (System.currentTimeMillis() - intermediateMergeStartTime) / 1000.0;
-      LOGGER.info("============================== Intermediate Merge of " + fileConterConst
+      LOGGER.info("Intermediate Merge of " + fileConterConst
           + " Sort Temp Files Cost Time: " + intermediateMergeCostTime + "(s)");
     } catch (Exception e) {
       LOGGER.error("Problem while intermediate merging", e);
