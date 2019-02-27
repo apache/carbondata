@@ -62,10 +62,10 @@ public final class CarbonLRUCache {
    */
   public CarbonLRUCache(String propertyName, String defaultPropertyName) {
     try {
-      lruCacheMemorySize = Integer
-          .parseInt(CarbonProperties.getInstance().getProperty(propertyName, defaultPropertyName));
+      lruCacheMemorySize = Long
+          .parseLong(CarbonProperties.getInstance().getProperty(propertyName, defaultPropertyName));
     } catch (NumberFormatException e) {
-      lruCacheMemorySize = Integer.parseInt(defaultPropertyName);
+      lruCacheMemorySize = Long.parseLong(defaultPropertyName);
     }
     initCache();
     if (lruCacheMemorySize > 0) {
@@ -302,6 +302,9 @@ public final class CarbonLRUCache {
    */
   public void clear() {
     synchronized (lruCacheMap) {
+      for (Cacheable cachebleObj : lruCacheMap.values()) {
+        cachebleObj.invalidate();
+      }
       lruCacheMap.clear();
     }
   }

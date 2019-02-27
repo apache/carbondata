@@ -33,7 +33,7 @@ import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
-import org.apache.spark.sql.execution.command.cache.CarbonShowCacheCommand
+import org.apache.spark.sql.execution.command.cache.{CarbonShowCacheCommand, CarbonDropCacheCommand}
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
@@ -95,7 +95,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     createStream | dropStream | showStreams
 
   protected lazy val cacheManagement: Parser[LogicalPlan] =
-    showCache
+    showCache | dropCache
 
   protected lazy val alterAddPartition: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
@@ -501,6 +501,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     SHOW ~> METACACHE ~> opt(ontable) <~ opt(";") ^^ {
       case table =>
         CarbonShowCacheCommand(table)
+    }
+
+  protected lazy val dropCache: Parser[LogicalPlan] =
+    DROP ~> METACACHE ~> forTable <~ opt(";") ^^ {
+      case table =>
+        CarbonDropCacheCommand(table)
     }
 
   protected lazy val cli: Parser[LogicalPlan] =
