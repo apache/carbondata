@@ -66,29 +66,24 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
     val currentDatabase = sparkSession.sessionState.catalog.getCurrentDatabase
     val cache = CacheProvider.getInstance().getCarbonCache()
     if (cache == null) {
-      Seq(Row("ALL", "ALL", 0L, 0L, 0L),
-        Row(currentDatabase, "ALL", 0L, 0L, 0L))
+      Seq(
+        Row("ALL", "ALL", byteCountToDisplaySize(0L),
+          byteCountToDisplaySize(0L), byteCountToDisplaySize(0L)),
+        Row(currentDatabase, "ALL", byteCountToDisplaySize(0L),
+          byteCountToDisplaySize(0L), byteCountToDisplaySize(0L)))
     } else {
-      val tableIdents = sparkSession.sessionState.catalog.listTables(currentDatabase).toArray
-      val dbLocation = CarbonEnv.getDatabaseLocation(currentDatabase, sparkSession)
-      val tempLocation = dbLocation.replace(
-        CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR)
-      val tablePaths = tableIdents.map { tableIdent =>
-        (tempLocation + CarbonCommonConstants.FILE_SEPARATOR +
-         tableIdent.table + CarbonCommonConstants.FILE_SEPARATOR,
-          CarbonEnv.getDatabaseName(tableIdent.database)(sparkSession) + "." + tableIdent.table)
+      val carbonTables = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+        .listAllTables(sparkSession)
+        .filter { table =>
+        table.getDatabaseName.equalsIgnoreCase(currentDatabase)
+      }
+      val tablePaths = carbonTables
+        .map { table =>
+          (table.getTablePath + CarbonCommonConstants.FILE_SEPARATOR,
+            table.getDatabaseName + "." + table.getTableName)
       }
 
-      val dictIds = tableIdents
-        .map { tableIdent =>
-          var table: CarbonTable = null
-          try {
-            table = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
-          } catch {
-            case _ =>
-          }
-          table
-        }
+      val dictIds = carbonTables
         .filter(_ != null)
         .flatMap { table =>
           table
@@ -159,7 +154,8 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
         Seq(
           Row("ALL", "ALL", byteCountToDisplaySize(allIndexSize),
             byteCountToDisplaySize(allDatamapSize), byteCountToDisplaySize(allDictSize)),
-          Row(currentDatabase, "ALL", "0", "0", "0"))
+          Row(currentDatabase, "ALL", byteCountToDisplaySize(0),
+            byteCountToDisplaySize(0), byteCountToDisplaySize(0)))
       } else {
         val tableList = tableMapIndexSize
           .map(_._1)
@@ -187,17 +183,11 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
   }
 
   def showTableCache(sparkSession: SparkSession, carbonTable: CarbonTable): Seq[Row] = {
-    val tableName = carbonTable.getTableName
-    val databaseName = carbonTable.getDatabaseName
     val cache = CacheProvider.getInstance().getCarbonCache()
     if (cache == null) {
       Seq.empty
     } else {
-      val dbLocation = CarbonEnv
-        .getDatabaseLocation(databaseName, sparkSession)
-        .replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR)
-      val tablePath = dbLocation + CarbonCommonConstants.FILE_SEPARATOR +
-                      tableName + CarbonCommonConstants.FILE_SEPARATOR
+      val tablePath = carbonTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
       var numIndexFilesCached = 0
 
       // Path -> Name, Type
@@ -209,8 +199,10 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
       datamapSize.put(tablePath, 0)
       // children tables
       for( schema <- carbonTable.getTableInfo.getDataMapSchemaList.asScala ) {
-        val path = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName + "_" +
-                   schema.getDataMapName + CarbonCommonConstants.FILE_SEPARATOR
+        val childTableName = carbonTable.getTableName + "_" + schema.getDataMapName
+        val childTable = CarbonEnv
+          .getCarbonTable(Some(carbonTable.getDatabaseName), childTableName)(sparkSession)
+        val path = childTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
         val name = schema.getDataMapName
         val dmType = schema.getProviderName
         datamapName.put(path, (name, dmType))
@@ -219,9 +211,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
       // index schemas
       for (schema <- DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
         .asScala) {
-        val path = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName +
-                   CarbonCommonConstants.FILE_SEPARATOR + schema.getDataMapName +
-                   CarbonCommonConstants.FILE_SEPARATOR
+        val path = tablePath + schema.getDataMapName + CarbonCommonConstants.FILE_SEPARATOR
         val name = schema.getDataMapName
         val dmType = schema.getProviderName
         datamapName.put(path, (name, dmType))

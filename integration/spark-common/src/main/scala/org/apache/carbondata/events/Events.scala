@@ -63,6 +63,13 @@ trait DropTableEventInfo {
 }
 
 /**
+ * event for drop cache
+ */
+trait DropCacheEventInfo {
+  val carbonTable: CarbonTable
+}
+
+/**
  * event for alter_table_drop_column
  */
 trait AlterTableDropColumnEventInfo {

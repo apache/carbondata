@@ -128,7 +128,7 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("use cache_empty_db").collect()
     val result1 = sql("show metacache").collect()
     assertResult(2)(result1.length)
-    assertResult(Row("cache_empty_db", "ALL", "0", "0", "0"))(result1(1))
+    assertResult(Row("cache_empty_db", "ALL", "0 bytes", "0 bytes", "0 bytes"))(result1(1))
 
     sql("use cache_db").collect()
     val result2 = sql("show metacache").collect()

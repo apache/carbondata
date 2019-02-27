@@ -1095,7 +1095,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   about current cache used status in memory through the following command:
 
   ```sql
-  SHOW METADATA
+  SHOW METACACHE
   ``` 
   
   This shows the overall memory consumed in the cache by categories - index files, dictionary and 
@@ -1103,10 +1103,19 @@ Users can specify which columns to include and exclude for local dictionary gene
   database.
   
   ```sql
-  SHOW METADATA ON TABLE tableName
+  SHOW METACACHE ON TABLE tableName
   ```
   
   This shows detailed information on cache usage by the table `tableName` and its carbonindex files, 
   its dictionary files, its datamaps and children tables.
   
+  This command is not allowed on child tables.
+
+  ```sql
+    DROP METACACHE ON TABLE tableName
+   ```
+    
+  This clears any entry in cache by the table `tableName`, its carbonindex files, 
+  its dictionary files, its datamaps and children tables.
+    
   This command is not allowed on child tables.
