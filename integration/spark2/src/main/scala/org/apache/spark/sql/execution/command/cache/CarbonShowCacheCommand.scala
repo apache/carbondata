@@ -62,7 +62,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
       val tablePaths = tableIdents.map { tableIdent =>
         (tempLocation + CarbonCommonConstants.FILE_SEPARATOR +
          tableIdent.table + CarbonCommonConstants.FILE_SEPARATOR,
-          tableIdent.database.get + "." + tableIdent.table)
+          CarbonEnv.getDatabaseName(tableIdent.database) + "." + tableIdent.table)
       }
 
       val dictIds = tableIdents
