@@ -37,7 +37,11 @@ public abstract class DataMapRow implements Serializable {
 
   public abstract byte[] getByteArray(int ordinal);
 
+  public abstract byte[] getByteArray(int ordinal, int position);
+
   public abstract DataMapRow getRow(int ordinal);
+
+  public abstract DataMapRow getRow(int ordinal, int position);
 
   public abstract void setRow(DataMapRow row, int ordinal);
 
@@ -118,5 +122,9 @@ public abstract class DataMapRow implements Serializable {
     if (null == this.schemas) {
       this.schemas = schemas;
     }
+  }
+
+  public int getPosition() {
+    return 0;
   }
 }

@@ -167,6 +167,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       BlockletInfo blockletInfo = blockletList.get(index);
       blockletInfo.setSorted(fileFooter.isSorted());
       BlockletMinMaxIndex minMaxIndex = blockletInfo.getBlockletIndex().getMinMaxIndex();
+      row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
       // get min max values for columns to be cached
       byte[][] minValuesForColumnsToBeCached = BlockletDataMapUtil
           .getMinMaxForColumnsToBeCached(segmentProperties, minMaxCacheColumns,
@@ -188,7 +189,9 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
           maxValuesForColumnsToBeCached, TASK_MAX_VALUES_INDEX, false);
       ordinal++;
-      row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
+      // add min max flag for all the dimension columns
+      addMinMaxFlagValues(row, schema[ordinal], minMaxFlagValuesForColumnsToBeCached, ordinal);
+      ordinal++;
       // add file name
       byte[] filePathBytes =
           getFileNameFromPath(filePath).getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
@@ -204,9 +207,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
         // Store block size
         row.setLong(blockMetaInfo.getSize(), ordinal++);
-        // add min max flag for all the dimension columns
-        addMinMaxFlagValues(row, schema[ordinal], minMaxFlagValuesForColumnsToBeCached, ordinal);
-        ordinal++;
+
         // add blocklet info
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DataOutput dataOutput = new DataOutputStream(stream);
@@ -235,8 +236,8 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         .convertToSafeRow();
     short relativeBlockletId = safeRow.getShort(BLOCKLET_ID_INDEX);
     String filePath = getFilePath();
-    return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath), relativeBlockletId,
-        false);
+    return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath, -1),
+        relativeBlockletId, false);
   }
 
   @Override

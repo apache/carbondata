@@ -40,10 +40,13 @@ public class SchemaGenerator {
   public static CarbonRowSchema[] createBlockSchema(SegmentProperties segmentProperties,
       List<CarbonColumn> minMaxCacheColumns) {
     List<CarbonRowSchema> indexSchemas = new ArrayList<>();
-    // get MinMax Schema
-    getMinMaxSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     // for number of rows.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.INT));
+    // get MinMax Schema
+    getMinMaxSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
+    // for storing min max flag for each column which reflects whether min max for a column is
+    // written in the metadata or not.
+    addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     // for table block path
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for version number.
@@ -56,9 +59,6 @@ public class SchemaGenerator {
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for storing block length.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
-    // for storing min max flag for each column which reflects whether min max for a column is
-    // written in the metadata or not.
-    addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     CarbonRowSchema[] schema = indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]);
     return schema;
   }
@@ -72,10 +72,13 @@ public class SchemaGenerator {
   public static CarbonRowSchema[] createBlockletSchema(SegmentProperties segmentProperties,
       List<CarbonColumn> minMaxCacheColumns) {
     List<CarbonRowSchema> indexSchemas = new ArrayList<>();
-    // get MinMax Schema
-    getMinMaxSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     // for number of rows.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.INT));
+    // get MinMax Schema
+    getMinMaxSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
+    // for storing min max flag for each column which reflects whether min max for a column is
+    // written in the metadata or not.
+    addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     // for table block path
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for version number.
@@ -88,9 +91,7 @@ public class SchemaGenerator {
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for storing block length.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
-    // for storing min max flag for each column which reflects whether min max for a column is
-    // written in the metadata or not.
-    addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
+
     //for blocklet info
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for number of pages.

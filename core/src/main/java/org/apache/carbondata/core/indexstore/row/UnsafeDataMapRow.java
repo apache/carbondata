@@ -46,8 +46,14 @@ public class UnsafeDataMapRow extends DataMapRow {
   }
 
   @Override public byte[] getByteArray(int ordinal) {
+    return getByteArray(ordinal, getPosition(ordinal));
+  }
+
+  @Override public byte[] getByteArray(int ordinal, int position) {
+    if (position < 0) {
+      position = getPosition(ordinal);
+    }
     int length;
-    int position = getPosition(ordinal);
     switch (schemas[ordinal].getSchemaType()) {
       case VARIABLE_SHORT:
         length = getUnsafe().getShort(block.getBaseObject(),
@@ -116,6 +122,15 @@ public class UnsafeDataMapRow extends DataMapRow {
     CarbonRowSchema[] childSchemas =
         ((CarbonRowSchema.StructCarbonRowSchema) schemas[ordinal]).getChildSchemas();
     return new UnsafeDataMapRow(childSchemas, block, pointer + getPosition(ordinal));
+  }
+
+  @Override public DataMapRow getRow(int ordinal, int position) {
+    CarbonRowSchema[] childSchemas =
+        ((CarbonRowSchema.StructCarbonRowSchema) schemas[ordinal]).getChildSchemas();
+    if (position < 0) {
+      position = getPosition(ordinal);
+    }
+    return new UnsafeDataMapRow(childSchemas, block, pointer + position);
   }
 
   @Override public void setByteArray(byte[] byteArray, int ordinal) {
@@ -313,5 +328,9 @@ public class UnsafeDataMapRow extends DataMapRow {
       position += getSizeInBytes(i, position);
     }
     return position;
+  }
+
+  @Override public int getPosition() {
+    return pointer;
   }
 }
