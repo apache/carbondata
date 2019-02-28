@@ -40,6 +40,9 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('DICTIONARY_INCLUDE'='deptname')
       """.stripMargin)
+    // bloom
+    sql("CREATE DATAMAP IF NOT EXISTS cache_1_bloom ON TABLE cache_db.cache_1 USING 'bloomfilter' " +
+        "DMPROPERTIES('INDEX_COLUMNS'='deptno')")
     sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE cache_1 ")
 
     sql(
@@ -100,6 +103,7 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
 
     // count star to cache index
     sql("select max(deptname) from cache_db.cache_1").collect()
+    sql("SELECT deptno FROM cache_db.cache_1 where deptno=10").collect()
     sql("select count(*) from cache_db.cache_2").collect()
     sql("select count(*) from cache_4").collect()
     sql("select count(*) from cache_5").collect()
@@ -122,38 +126,38 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
 
   test("show cache") {
     sql("use cache_empty_db").collect()
-    val result1 = sql("show cache").collect()
+    val result1 = sql("show metacache").collect()
     assertResult(2)(result1.length)
-    assertResult(Row("cache_empty_db", "ALL", 0L, 0L))(result1(1))
+    assertResult(Row("cache_empty_db", "ALL", 0L, 0L, 0L))(result1(1))
 
     sql("use cache_db").collect()
-    val result2 = sql("show cache").collect()
+    val result2 = sql("show metacache").collect()
     assertResult(4)(result2.length)
 
     sql("use default").collect()
-    val result3 = sql("show cache").collect()
+    val result3 = sql("show metacache").collect()
     val dataMapCacheInfo = result3
       .map(row => row.getString(1))
       .filter(table => table.equals("cache_4_cache_4_count"))
     assertResult(1)(dataMapCacheInfo.length)
   }
 
-  test("show cache on table") {
+  test("show metacache for table") {
     sql("use cache_db").collect()
-    val result1 = sql("show cache on table cache_1").collect()
+    val result1 = sql("show metacache for table cache_1").collect()
     assertResult(1)(result1.length)
 
-    val result2 = sql("show cache on table cache_db.cache_2").collect()
+    val result2 = sql("show metacache for table cache_db.cache_2").collect()
     assertResult(1)(result2.length)
 
-    checkAnswer(sql("show cache on table cache_db.cache_3"),
-      Row("cache_db", "cache_3", 0L, 0L))
+    checkAnswer(sql("show metacache for table cache_db.cache_3"),
+      Row("cache_db", "cache_3", 0L, 0L, 0L))
 
-    val result4 = sql("show cache on table default.cache_4").collect()
+    val result4 = sql("show metacache for table default.cache_4").collect()
     assertResult(1)(result4.length)
 
     sql("use default").collect()
-    val result5 = sql("show cache on table cache_5").collect()
+    val result5 = sql("show metacache for table cache_5").collect()
     assertResult(1)(result5.length)
   }
 }

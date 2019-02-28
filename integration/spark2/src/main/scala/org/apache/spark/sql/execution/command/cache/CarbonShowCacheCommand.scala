@@ -44,6 +44,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
     Seq(AttributeReference("database", StringType, nullable = false)(),
       AttributeReference("table", StringType, nullable = false)(),
       AttributeReference("index size", LongType, nullable = false)(),
+      AttributeReference("datamap size", LongType, nullable = false)(),
       AttributeReference("dictionary size", LongType, nullable = false)())
   }
 
@@ -53,8 +54,8 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
     val currentDatabase = sparkSession.sessionState.catalog.getCurrentDatabase
     val cache = CacheProvider.getInstance().getCarbonCache()
     if (cache == null) {
-      Seq(Row("ALL", "ALL", 0L, 0L),
-        Row(currentDatabase, "ALL", 0L, 0L))
+      Seq(Row("ALL", "ALL", 0L, 0L, 0L),
+        Row(currentDatabase, "ALL", 0L, 0L, 0L))
     } else {
       val tableIdents = sparkSession.sessionState.catalog.listTables(currentDatabase).toArray
       val dbLocation = CarbonEnv.getDatabaseLocation(currentDatabase, sparkSession)
@@ -87,10 +88,11 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
         }
 
       // all databases
-      var (allIndexSize, allDictSize) = (0L, 0L)
+      var (allIndexSize, allDatamapSize, allDictSize) = (0L, 0L, 0L)
       // current database
-      var (dbIndexSize, dbDictSize) = (0L, 0L)
+      var (dbIndexSize, dbDatamapSize, dbDictSize) = (0L, 0L, 0L)
       val tableMapIndexSize = mutable.HashMap[String, Long]()
+      val tableMapDatamapSize = mutable.HashMap[String, Long]()
       val tableMapDictSize = mutable.HashMap[String, Long]()
       val cacheIterator = cache.getCacheMap.entrySet().iterator()
       while (cacheIterator.hasNext) {
@@ -113,16 +115,17 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           }
         } else if (cache.isInstanceOf[BloomCacheKeyValue.CacheValue]) {
           // bloom datamap
+          allDatamapSize = allDatamapSize + cache.getMemorySize
           val shardPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
             CarbonCommonConstants.FILE_SEPARATOR)
           val tablePath = tablePaths.find(path => shardPath.contains(path._1))
           if (tablePath.isDefined) {
-            dbIndexSize = dbIndexSize + cache.getMemorySize
+            dbDatamapSize = dbDatamapSize + cache.getMemorySize
             val memorySize = tableMapIndexSize.get(tablePath.get._2)
             if (memorySize.isEmpty) {
-              tableMapIndexSize.put(tablePath.get._2, cache.getMemorySize)
+              tableMapDatamapSize.put(tablePath.get._2, cache.getMemorySize)
             } else {
-              tableMapIndexSize.put(tablePath.get._2, memorySize.get + cache.getMemorySize)
+              tableMapDatamapSize.put(tablePath.get._2, memorySize.get + cache.getMemorySize)
             }
           }
         } else if (cache.isInstanceOf[AbstractColumnDictionaryInfo]) {
@@ -140,9 +143,9 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           }
         }
       }
-      if (tableMapIndexSize.isEmpty && tableMapDictSize.isEmpty) {
-        Seq(Row("ALL", "ALL", allIndexSize, allDictSize),
-          Row(currentDatabase, "ALL", 0L, 0L))
+      if (tableMapIndexSize.isEmpty && tableMapDatamapSize.isEmpty && tableMapDictSize.isEmpty) {
+        Seq(Row("ALL", "ALL", allIndexSize, allDatamapSize, allDictSize),
+          Row(currentDatabase, "ALL", 0L, 0L, 0L))
       } else {
         val tableList = tableMapIndexSize
           .map(_._1)
@@ -153,12 +156,13 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           .map { uniqueName =>
             val values = uniqueName.split("\\.")
             val indexSize = tableMapIndexSize.getOrElse(uniqueName, 0L)
+            val datamapSize = tableMapDatamapSize.getOrElse(uniqueName, 0L)
             val dictSize = tableMapDictSize.getOrElse(uniqueName, 0L)
-            Row(values(0), values(1), indexSize, dictSize)
+            Row(values(0), values(1), indexSize, datamapSize, dictSize)
           }
 
-        Seq(Row("ALL", "ALL", allIndexSize, allDictSize),
-          Row(currentDatabase, "ALL", dbIndexSize, dbDictSize)) ++ tableList
+        Seq(Row("ALL", "ALL", allIndexSize, allDatamapSize, allDictSize),
+          Row(currentDatabase, "ALL", dbIndexSize, dbDatamapSize, dbDictSize)) ++ tableList
       }
     }
   }
@@ -169,6 +173,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
       Seq(Row(tableIdent.database.get, tableIdent.table, 0L, 0L))
     } else {
       var indexSize = 0L
+      var datamapSize = 0L
       var dictSize = 0L
       val dbLocation = CarbonEnv
         .getDatabaseLocation(tableIdent.database.get, sparkSession)
@@ -202,7 +207,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           val shardPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
             CarbonCommonConstants.FILE_SEPARATOR)
           if (shardPath.contains(tablePath)) {
-            indexSize = indexSize + cache.getMemorySize
+            datamapSize = datamapSize + cache.getMemorySize
           }
         } else if (cache.isInstanceOf[AbstractColumnDictionaryInfo]) {
           // dictionary
@@ -212,7 +217,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           }
         }
       }
-      Seq(Row(tableIdent.database.get, tableIdent.table, indexSize, dictSize))
+      Seq(Row(tableIdent.database.get, tableIdent.table, indexSize, datamapSize, dictSize))
     }
   }
 
