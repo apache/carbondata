@@ -30,8 +30,9 @@ import org.apache.spark.sql.types.{LongType, StringType}
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
 
 /**
@@ -40,12 +41,19 @@ import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
 case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
   extends DataCommand {
 
-  override def output: Seq[Attribute] = {
-    Seq(AttributeReference("database", StringType, nullable = false)(),
-      AttributeReference("table", StringType, nullable = false)(),
-      AttributeReference("index size", LongType, nullable = false)(),
-      AttributeReference("datamap size", LongType, nullable = false)(),
-      AttributeReference("dictionary size", LongType, nullable = false)())
+  override def output = {
+    if(tableIdentifier.isEmpty) {
+      Seq(
+        AttributeReference("Database", StringType, nullable = false)(),
+        AttributeReference("Table", StringType, nullable = false)(),
+        AttributeReference("Index size", LongType, nullable = false)(),
+        AttributeReference("Datamap size", LongType, nullable = false)(),
+        AttributeReference("Dictionary size", LongType, nullable = false)())
+    } else {
+      Seq(
+        AttributeReference("Field", StringType, nullable = false)(),
+        AttributeReference("Size", StringType, nullable = false)())
+    }
   }
 
   override protected def opName: String = "SHOW CACHE"
@@ -169,18 +177,48 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
 
   def showTableCache(sparkSession: SparkSession, tableIdent: TableIdentifier): Seq[Row] = {
     val cache = CacheProvider.getInstance().getCarbonCache()
+    val carbonTable = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
+    if(carbonTable.isChildDataMap) {
+      throw new UnsupportedOperationException("Operation not allowed on child table.")
+    }
     if (cache == null) {
-      Seq(Row(tableIdent.database.get, tableIdent.table, 0L, 0L))
+      Seq.empty
     } else {
-      var indexSize = 0L
-      var datamapSize = 0L
-      var dictSize = 0L
       val dbLocation = CarbonEnv
         .getDatabaseLocation(tableIdent.database.get, sparkSession)
-        .replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
-          CarbonCommonConstants.FILE_SEPARATOR)
+        .replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR)
       val tablePath = dbLocation + CarbonCommonConstants.FILE_SEPARATOR +
                       tableIdent.table + CarbonCommonConstants.FILE_SEPARATOR
+
+      // Path -> Name, Type
+      val datamapName = mutable.Map[String, (String, String)]()
+      // Path -> Size
+      val datamapSize = mutable.Map[String, Long]()
+      // parent table
+      datamapName.put(tablePath, ("", ""))
+      datamapSize.put(tablePath, 0)
+      // children tables
+      for( schema <- carbonTable.getTableInfo.getDataMapSchemaList.asScala ) {
+        val path = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableIdent.table + "_" +
+                   schema.getDataMapName + CarbonCommonConstants.FILE_SEPARATOR
+        val name = schema.getDataMapName
+        val dmType = schema.getProviderName
+        datamapName.put(path, (name, dmType))
+        datamapSize.put(path, 0)
+      }
+      // index schemas
+      for( schema <- DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable).asScala) {
+        val path = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableIdent.table +
+                   CarbonCommonConstants.FILE_SEPARATOR + schema.getDataMapName +
+                   CarbonCommonConstants.FILE_SEPARATOR
+        val name = schema.getDataMapName
+        val dmType = schema.getProviderName
+        datamapName.put(path, (name, dmType))
+        datamapSize.put(path, 0)
+      }
+
+      var dictSize = 0L
+
       // dictionary column ids
       val dictIds = CarbonEnv
         .getCarbonTable(tableIdent)(sparkSession)
@@ -199,15 +237,20 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           // index
           val indexPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
             CarbonCommonConstants.FILE_SEPARATOR)
-          if (indexPath.startsWith(tablePath)) {
-            indexSize = indexSize + cache.getMemorySize
+
+          val pathEntry = datamapSize.filter(entry => indexPath.startsWith(entry._1))
+          if(pathEntry.nonEmpty) {
+            val (path, size) = pathEntry.iterator.next()
+            datamapSize.put(path, size + cache.getMemorySize)
           }
         } else if (cache.isInstanceOf[BloomCacheKeyValue.CacheValue]) {
           // bloom datamap
           val shardPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
             CarbonCommonConstants.FILE_SEPARATOR)
-          if (shardPath.contains(tablePath)) {
-            datamapSize = datamapSize + cache.getMemorySize
+          val pathEntry = datamapSize.filter(entry => shardPath.contains(entry._1))
+          if(pathEntry.nonEmpty) {
+            val (path, size) = pathEntry.iterator.next()
+            datamapSize.put(path, size + cache.getMemorySize)
           }
         } else if (cache.isInstanceOf[AbstractColumnDictionaryInfo]) {
           // dictionary
@@ -217,7 +260,18 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           }
         }
       }
-      Seq(Row(tableIdent.database.get, tableIdent.table, indexSize, datamapSize, dictSize))
+
+      var result = Seq(
+        Row("Index", humanReadableFormat(datamapSize.get(tablePath).get)),
+        Row("Dictionary", humanReadableFormat(dictSize))
+      )
+      for((path, size) <- datamapSize) {
+        if(path != tablePath) {
+          val (dmName, dmType) = datamapName.get(path).get
+          result = result :+ Row(dmName + " (" + dmType + ")", humanReadableFormat(size))
+        }
+      }
+      result
     }
   }
 
@@ -233,5 +287,25 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
       }
       showTableCache(sparkSession, table.get)
     }
+  }
+
+  def humanReadableFormat(size: Long): String = {
+    var sizeDouble: Double = size
+    if(sizeDouble < 1024) {
+      return sizeDouble + " Bytes"
+    }
+
+    sizeDouble /= 1024
+    if(sizeDouble < 1024) {
+      return sizeDouble + " KB"
+    }
+
+    sizeDouble /= 1024
+    if(sizeDouble < 1024) {
+      return sizeDouble + " MB"
+    }
+
+    sizeDouble /= 1024
+    sizeDouble + " GB"
   }
 }
