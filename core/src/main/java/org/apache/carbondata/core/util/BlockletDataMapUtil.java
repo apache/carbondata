@@ -423,7 +423,7 @@ public class BlockletDataMapUtil {
    * @param minMaxFlag
    * @return
    */
-  public static boolean[] getMinMaxFlagValuesForColumnsToBeCached(
+  public static byte[] getMinMaxFlagValuesForColumnsToBeCached(
       SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns,
       boolean[] minMaxFlag) {
     boolean[] minMaxFlagValuesForColumnsToBeCached = minMaxFlag;
@@ -435,7 +435,11 @@ public class BlockletDataMapUtil {
             minMaxFlag[getColumnOrdinal(segmentProperties, column)];
       }
     }
-    return minMaxFlagValuesForColumnsToBeCached;
+    byte[] flags = new byte[minMaxFlagValuesForColumnsToBeCached.length];
+    for (int i = 0; i < flags.length; i++) {
+      flags[i] = (byte) (minMaxFlagValuesForColumnsToBeCached[i] ? 1 : 0);
+    }
+    return flags;
   }
 
   /**

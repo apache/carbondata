@@ -146,8 +146,6 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         relativeBlockletId += fileFooter.getBlockletList().size();
       }
     }
-    setMinMaxFlagForTaskSummary(summaryRow, taskSummarySchema, segmentProperties,
-        summaryRowMinMaxFlag);
     return summaryRow;
   }
 
@@ -175,36 +173,30 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       byte[][] maxValuesForColumnsToBeCached = BlockletDataMapUtil
           .getMinMaxForColumnsToBeCached(segmentProperties, minMaxCacheColumns,
               minMaxIndex.getMaxValues());
-      boolean[] minMaxFlagValuesForColumnsToBeCached = BlockletDataMapUtil
+      byte[] minMaxFlagValuesForColumnsToBeCached = BlockletDataMapUtil
           .getMinMaxFlagValuesForColumnsToBeCached(segmentProperties, minMaxCacheColumns,
               fileFooter.getBlockletIndex().getMinMaxIndex().getIsMinMaxSet());
-      row.setRow(addMinMax(schema[ordinal], minValuesForColumnsToBeCached), ordinal);
+      row.setRow(
+          addMinMax(schema[ordinal], minValuesForColumnsToBeCached, maxValuesForColumnsToBeCached,
+              minMaxFlagValuesForColumnsToBeCached), ordinal);
+      ordinal++;
       // compute and set task level min values
       addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
-          minValuesForColumnsToBeCached, TASK_MIN_VALUES_INDEX, true);
-      ordinal++;
-      taskMinMaxOrdinal++;
-      row.setRow(addMinMax(schema[ordinal], maxValuesForColumnsToBeCached), ordinal);
-      // compute and set task level max values
-      addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
-          maxValuesForColumnsToBeCached, TASK_MAX_VALUES_INDEX, false);
-      ordinal++;
-      // add min max flag for all the dimension columns
-      addMinMaxFlagValues(row, schema[ordinal], minMaxFlagValuesForColumnsToBeCached, ordinal);
-      ordinal++;
+          minValuesForColumnsToBeCached, maxValuesForColumnsToBeCached,
+          minMaxFlagValuesForColumnsToBeCached, TASK_MIN_VALUES_INDEX);
       // add file name
       byte[] filePathBytes =
           getFileNameFromPath(filePath).getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
       row.setByteArray(filePathBytes, ordinal++);
-      // add version number
-      row.setShort(fileFooter.getVersionId().number(), ordinal++);
-      // add schema updated time
-      row.setLong(fileFooter.getSchemaUpdatedTimeStamp(), ordinal++);
-      byte[] serializedData;
       try {
+        setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
+        // add version number
+        row.setShort(fileFooter.getVersionId().number(), ordinal++);
+        // add schema updated time
+        row.setLong(fileFooter.getSchemaUpdatedTimeStamp(), ordinal++);
+
         // Add block footer offset, it is used if we need to read footer of block
         row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal++);
-        setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
         // Store block size
         row.setLong(blockMetaInfo.getSize(), ordinal++);
 
@@ -212,7 +204,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DataOutput dataOutput = new DataOutputStream(stream);
         blockletInfo.write(dataOutput);
-        serializedData = stream.toByteArray();
+        byte[] serializedData = stream.toByteArray();
         row.setByteArray(serializedData, ordinal++);
         // add pages
         row.setShort((short) blockletInfo.getNumberOfPages(), ordinal++);
