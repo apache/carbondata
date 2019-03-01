@@ -143,6 +143,13 @@ public class SchemaGenerator {
       List<CarbonRowSchema> minMaxSchemas, List<CarbonColumn> minMaxCacheColumns) {
     // Index key
     int[] minMaxLen = getMinMaxLength(segmentProperties, minMaxCacheColumns);
+    if (minMaxLen.length == 0) {
+      CarbonRowSchema mapSchema =
+          new CarbonRowSchema.StructCarbonRowSchema(DataTypes.createDefaultStructType(),
+              new CarbonRowSchema[0]);
+      minMaxSchemas.add(mapSchema);
+      return;
+    }
     int[] columnOrdinals = getColumnOrdinalsToAccess(segmentProperties, minMaxCacheColumns);
     // do it 2 times, one for min and one for max.
     CarbonRowSchema[] mapSchemas = new CarbonRowSchema[(minMaxLen.length * 2) + 1];

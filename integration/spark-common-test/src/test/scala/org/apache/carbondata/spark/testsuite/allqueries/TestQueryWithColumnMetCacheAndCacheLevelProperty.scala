@@ -95,7 +95,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
       .getSegmentPropertiesWrapper(index).getTaskSummarySchemaForBlock(storeBlockletCount, false)
     val minSchemas = summarySchema(0).asInstanceOf[CarbonRowSchema.StructCarbonRowSchema]
       .getChildSchemas
-    minSchemas.length == expectedLength
+    (minSchemas.length - 1) / 2 == expectedLength
   }
 
   test("verify if number of columns cached are as per the COLUMN_META_CACHE property dataMap instance is as per CACHE_LEVEL property") {

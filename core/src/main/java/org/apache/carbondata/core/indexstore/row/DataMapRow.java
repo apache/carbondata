@@ -114,7 +114,7 @@ public abstract class DataMapRow implements Serializable {
    *
    * @return
    */
-  public DataMapRow convertToSafeRow() {
+  public DataMapRow convertToSafeRow(int ordinal, int position) {
     return this;
   }
 
@@ -125,6 +125,10 @@ public abstract class DataMapRow implements Serializable {
   }
 
   public int getPosition() {
+    return 0;
+  }
+
+  public int getCurrentPointer() {
     return 0;
   }
 }

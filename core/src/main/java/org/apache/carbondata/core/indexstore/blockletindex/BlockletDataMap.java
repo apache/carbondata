@@ -224,8 +224,10 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       return super.getDetailedBlocklet(blockletId);
     }
     int absoluteBlockletId = Integer.parseInt(blockletId);
-    DataMapRow safeRow = memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), absoluteBlockletId)
-        .convertToSafeRow();
+    DataMapRow row =
+        memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), absoluteBlockletId);
+    DataMapRow safeRow = row.convertToSafeRow(FILE_PATH_INDEX, 0);
+    safeRow.setInt(row.getInt(ROW_COUNT_INDEX), ROW_COUNT_INDEX);
     short relativeBlockletId = safeRow.getShort(BLOCKLET_ID_INDEX);
     String filePath = getFilePath();
     return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath, -1),

@@ -482,16 +482,18 @@ public class BlockDataMap extends CoarseGrainDataMap
     CarbonRowSchema[] minSchemas =
         ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
     DataMapRow row = new DataMapRowImpl(minSchemas);
-    int ordinal = 0;
-    // min value adding
-    for (int i = 0; i < minValues.length; i++) {
-      row.setByteArray(minValues[i], ordinal++);
+    if (minValues.length != 0) {
+      int ordinal = 0;
+      // min value adding
+      for (int i = 0; i < minValues.length; i++) {
+        row.setByteArray(minValues[i], ordinal++);
+      }
+      // max value adding
+      for (int i = 0; i < maxValues.length; i++) {
+        row.setByteArray(maxValues[i], ordinal++);
+      }
+      row.setByteArray(minMaxFlag, ordinal);
     }
-    // max value adding
-    for (int i = 0; i < maxValues.length; i++) {
-      row.setByteArray(maxValues[i], ordinal++);
-    }
-    row.setByteArray(minMaxFlag, ordinal);
     return row;
   }
 
@@ -523,15 +525,17 @@ public class BlockDataMap extends CoarseGrainDataMap
       updatedMaxValues =
           compareAndUpdateMinMax(maxValue, details.maxVals, false);
     }
-    int minMaxOrdinal = 0;
-    // min/max value adding
-    for (int i = 0; i < updatedMinValues.length; i++) {
-      row.setByteArray(updatedMinValues[i], minMaxOrdinal++);
+    if (minValue.length != 0) {
+      int minMaxOrdinal = 0;
+      // min/max value adding
+      for (int i = 0; i < updatedMinValues.length; i++) {
+        row.setByteArray(updatedMinValues[i], minMaxOrdinal++);
+      }
+      for (int i = 0; i < updatedMaxValues.length; i++) {
+        row.setByteArray(updatedMaxValues[i], minMaxOrdinal++);
+      }
+      row.setByteArray(flags, minMaxOrdinal);
     }
-    for (int i = 0; i < updatedMaxValues.length; i++) {
-      row.setByteArray(updatedMaxValues[i], minMaxOrdinal++);
-    }
-    row.setByteArray(flags, minMaxOrdinal);
     taskMinMaxRow.setRow(row, ordinal);
   }
 
@@ -644,7 +648,9 @@ public class BlockDataMap extends CoarseGrainDataMap
     int hitBlocklets = 0;
     if (filterExp == null) {
       for (int i = 0; i < numEntries; i++) {
-        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, i).convertToSafeRow();
+        DataMapRow row = memoryDMStore.getDataMapRow(schema, i);
+        DataMapRow safeRow = row.convertToSafeRow(FILE_PATH_INDEX, 0);
+        safeRow.setInt(row.getInt(ROW_COUNT_INDEX), ROW_COUNT_INDEX);
         blocklets.add(createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath, -1),
             getBlockletId(safeRow), false));
       }
@@ -669,7 +675,9 @@ public class BlockDataMap extends CoarseGrainDataMap
             addBlockBasedOnMinMaxValue(filterExecuter, minMaxRow.maxVals, minMaxRow.minVals,
                 minMaxRow.flags, fileName, blockletId);
         if (isValid) {
-          blocklets.add(createBlocklet(unSafeRow.convertToSafeRow(), fileName, blockletId,
+          DataMapRow row = unSafeRow.convertToSafeRow(LOCATIONS, unSafeRow.getCurrentPointer());
+          row.setInt(unSafeRow.getInt(ROW_COUNT_INDEX), ROW_COUNT_INDEX);
+          blocklets.add(createBlocklet(row, fileName, blockletId,
               useMinMaxForPruning));
           hitBlocklets += getBlockletNumOfEntry(entryIndex);
         }
@@ -839,8 +847,9 @@ public class BlockDataMap extends CoarseGrainDataMap
         rowIndex++;
       }
     }
-    DataMapRow safeRow =
-        memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), rowIndex).convertToSafeRow();
+    DataMapRow unsafeRow = memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), rowIndex);
+    DataMapRow safeRow = unsafeRow.convertToSafeRow(FILE_PATH_INDEX, 0);
+    safeRow.setInt(unsafeRow.getInt(ROW_COUNT_INDEX), ROW_COUNT_INDEX);
     String filePath = getFilePath();
     return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath, -1),
         relativeBlockletId,
@@ -872,7 +881,7 @@ public class BlockDataMap extends CoarseGrainDataMap
 
   private DataMapRowImpl getRow(DataMapRow row, int index, int position) {
     DataMapRow minMaxRow = row.getRow(index, position);
-    DataMapRowImpl safeRow = (DataMapRowImpl)minMaxRow.convertToSafeRow();
+    DataMapRowImpl safeRow = (DataMapRowImpl)minMaxRow.convertToSafeRow(0, 0);
     safeRow.setTotalLengthInBytes(minMaxRow.getPosition() + safeRow.getTotalSizeInBytes());
     return safeRow;
   }
@@ -882,17 +891,19 @@ public class BlockDataMap extends CoarseGrainDataMap
     byte[][] min = new byte[size][];
     byte[][] max = new byte[size][];
     boolean[] flags = new boolean[size];
-    int l = 0;
-    for (int i = 0; i < size; i++) {
-      min[i] = safeRow.getByteArray(l++);
-    }
-    for (int i = 0; i < size; i++) {
-      max[i] = safeRow.getByteArray(l++);
-    }
-    byte[] byteArray = safeRow.getByteArray(l);
+    if (size > 0) {
+      int l = 0;
+      for (int i = 0; i < size; i++) {
+        min[i] = safeRow.getByteArray(l++);
+      }
+      for (int i = 0; i < size; i++) {
+        max[i] = safeRow.getByteArray(l++);
+      }
+      byte[] byteArray = safeRow.getByteArray(l);
 
-    for (int i = 0; i < byteArray.length; i++) {
-      flags[i] = byteArray[i] == 1;
+      for (int i = 0; i < byteArray.length; i++) {
+        flags[i] = byteArray[i] == 1;
+      }
     }
     return new DataMapMinMaxDetails(min, max, flags);
   }

@@ -39,6 +39,8 @@ public class UnsafeDataMapRow extends DataMapRow {
 
   private int pointer;
 
+  private int currentPointer;
+
   public UnsafeDataMapRow(CarbonRowSchema[] schemas, MemoryBlock block, int pointer) {
     super(schemas);
     this.block = block;
@@ -71,6 +73,7 @@ public class UnsafeDataMapRow extends DataMapRow {
     byte[] data = new byte[length];
     getUnsafe().copyMemory(block.getBaseObject(), block.getBaseOffset() + pointer + position, data,
         BYTE_ARRAY_OFFSET, data.length);
+    currentPointer += position + data.length;
     return data;
   }
 
@@ -200,71 +203,82 @@ public class UnsafeDataMapRow extends DataMapRow {
    *
    * @return
    */
-  public DataMapRow convertToSafeRow() {
+  public DataMapRow convertToSafeRow(int ordinal, int position) {
     DataMapRowImpl row = new DataMapRowImpl(schemas);
     int runningLength = 0;
-    for (int i = 0; i < schemas.length; i++) {
+    int i = 0;
+    if (position > 0) {
+      runningLength = position;
+      i = ordinal;
+    }
+    for (; i < schemas.length; i++) {
       CarbonRowSchema schema = schemas[i];
+      boolean readData = i >= ordinal;
       switch (schema.getSchemaType()) {
         case FIXED:
           DataType dataType = schema.getDataType();
           if (dataType == DataTypes.BYTE) {
-            row.setByte(
-                getUnsafe().getByte(
-                    block.getBaseObject(),
-                    block.getBaseOffset() + pointer + runningLength),
-                i);
+            if (readData) {
+              row.setByte(getUnsafe()
+                      .getByte(block.getBaseObject(),
+                          block.getBaseOffset() + pointer + runningLength),
+                  i);
+            }
             runningLength += schema.getLength();
           } else if (dataType == DataTypes.BOOLEAN) {
-            row.setBoolean(
-                getUnsafe().getBoolean(
-                    block.getBaseObject(),
-                    block.getBaseOffset() + pointer + runningLength),
-                i);
+            if (readData) {
+              row.setBoolean(getUnsafe().getBoolean(block.getBaseObject(),
+                  block.getBaseOffset() + pointer + runningLength), i);
+            }
             runningLength += schema.getLength();
           } else if (dataType == DataTypes.SHORT) {
-            row.setShort(
-                getUnsafe().getShort(
-                    block.getBaseObject(),
-                    block.getBaseOffset() + pointer + runningLength),
-                i);
+            if (readData) {
+              row.setShort(getUnsafe()
+                      .getShort(block.getBaseObject(),
+                          block.getBaseOffset() + pointer + runningLength),
+                  i);
+            }
             runningLength += schema.getLength();
           } else if (dataType == DataTypes.INT) {
-            row.setInt(
-                getUnsafe().getInt(
-                    block.getBaseObject(),
-                    block.getBaseOffset() + pointer + runningLength),
-                i);
+            if (readData) {
+              row.setInt(getUnsafe()
+                      .getInt(block.getBaseObject(),
+                          block.getBaseOffset() + pointer + runningLength),
+                  i);
+            }
             runningLength += schema.getLength();
           } else if (dataType == DataTypes.LONG) {
-            row.setLong(
-                getUnsafe().getLong(
-                    block.getBaseObject(),
-                    block.getBaseOffset() + pointer + runningLength),
-                i);
+            if (readData) {
+              row.setLong(getUnsafe()
+                      .getLong(block.getBaseObject(),
+                          block.getBaseOffset() + pointer + runningLength),
+                  i);
+            }
             runningLength += schema.getLength();
           } else if (dataType == DataTypes.FLOAT) {
-            row.setFloat(
-                getUnsafe().getFloat(block.getBaseObject(),
-                    block.getBaseOffset() + pointer + runningLength),
-                i);
+            if (readData) {
+              row.setFloat(getUnsafe()
+                      .getFloat(block.getBaseObject(),
+                          block.getBaseOffset() + pointer + runningLength),
+                  i);
+            }
             runningLength += schema.getLength();
           } else if (dataType == DataTypes.DOUBLE) {
-            row.setDouble(
-                getUnsafe().getDouble(block.getBaseObject(),
-                    block.getBaseOffset() + pointer + runningLength),
-                i);
+            if (readData) {
+              row.setDouble(getUnsafe().getDouble(block.getBaseObject(),
+                  block.getBaseOffset() + pointer + runningLength), i);
+            }
             runningLength += schema.getLength();
           } else if (dataType == DataTypes.BYTE_ARRAY) {
-            byte[] data = new byte[schema.getLength()];
-            getUnsafe().copyMemory(
-                block.getBaseObject(),
-                block.getBaseOffset() + pointer + runningLength,
-                data,
-                BYTE_ARRAY_OFFSET,
-                data.length);
-            row.setByteArray(data, i);
-            runningLength += data.length;
+            int len = schema.getLength();
+            if (readData) {
+              byte[] data = new byte[len];
+              getUnsafe().copyMemory(block.getBaseObject(),
+                  block.getBaseOffset() + pointer + runningLength, data, BYTE_ARRAY_OFFSET,
+                  data.length);
+              row.setByteArray(data, i);
+            }
+            runningLength += len;
           } else {
             throw new UnsupportedOperationException(
                 "unsupported data type for unsafe storage: " + schema.getDataType());
@@ -274,28 +288,37 @@ public class UnsafeDataMapRow extends DataMapRow {
           int length = getUnsafe()
               .getShort(block.getBaseObject(), block.getBaseOffset() + pointer + runningLength);
           runningLength += 2;
-          byte[] data = new byte[length];
-          getUnsafe().copyMemory(block.getBaseObject(),
-              block.getBaseOffset() + pointer + runningLength,
-              data, BYTE_ARRAY_OFFSET, data.length);
-          runningLength += data.length;
-          row.setByteArray(data, i);
+          if (readData) {
+            byte[] data = new byte[length];
+            getUnsafe()
+                .copyMemory(block.getBaseObject(), block.getBaseOffset() + pointer + runningLength,
+                    data, BYTE_ARRAY_OFFSET, data.length);
+            row.setByteArray(data, i);
+          }
+          runningLength += length;
           break;
         case VARIABLE_INT:
           int length2 = getUnsafe()
               .getInt(block.getBaseObject(), block.getBaseOffset() + pointer + runningLength);
           runningLength += 4;
-          byte[] data2 = new byte[length2];
-          getUnsafe().copyMemory(block.getBaseObject(),
-              block.getBaseOffset() + pointer + runningLength,
-              data2, BYTE_ARRAY_OFFSET, data2.length);
-          runningLength += data2.length;
-          row.setByteArray(data2, i);
+          if (readData) {
+            byte[] data2 = new byte[length2];
+            getUnsafe()
+                .copyMemory(block.getBaseObject(), block.getBaseOffset() + pointer + runningLength,
+                    data2, BYTE_ARRAY_OFFSET, data2.length);
+            row.setByteArray(data2, i);
+          }
+          runningLength += length2;
           break;
         case STRUCT:
-          DataMapRow structRow = ((UnsafeDataMapRow) getRow(i)).convertToSafeRow();
-          row.setRow(structRow, i);
-          runningLength += structRow.getTotalSizeInBytes();
+          DataMapRow mapRow = getRow(i, runningLength);
+          if (readData) {
+            DataMapRow structRow = mapRow.convertToSafeRow(0, 0);
+            row.setRow(structRow, i);
+            runningLength += structRow.getTotalSizeInBytes();
+          } else {
+            runningLength += mapRow.getTotalSizeInBytes();
+          }
           break;
         default:
           throw new UnsupportedOperationException(
@@ -332,5 +355,9 @@ public class UnsafeDataMapRow extends DataMapRow {
 
   @Override public int getPosition() {
     return pointer;
+  }
+
+  public int getCurrentPointer() {
+    return currentPointer;
   }
 }
