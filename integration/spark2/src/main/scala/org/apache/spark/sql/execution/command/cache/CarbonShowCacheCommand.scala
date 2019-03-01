@@ -32,8 +32,10 @@ import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
+import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
 /**
  * SHOW CACHE
@@ -41,18 +43,19 @@ import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
 case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
   extends DataCommand {
 
-  override def output = {
-    if(tableIdentifier.isEmpty) {
+  override def output: Seq[AttributeReference] = {
+    if (tableIdentifier.isEmpty) {
       Seq(
         AttributeReference("Database", StringType, nullable = false)(),
         AttributeReference("Table", StringType, nullable = false)(),
-        AttributeReference("Index size", LongType, nullable = false)(),
-        AttributeReference("Datamap size", LongType, nullable = false)(),
-        AttributeReference("Dictionary size", LongType, nullable = false)())
+        AttributeReference("Index size", StringType, nullable = false)(),
+        AttributeReference("Datamap size", StringType, nullable = false)(),
+        AttributeReference("Dictionary size", StringType, nullable = false)())
     } else {
       Seq(
         AttributeReference("Field", StringType, nullable = false)(),
-        AttributeReference("Size", StringType, nullable = false)())
+        AttributeReference("Size", StringType, nullable = false)(),
+        AttributeReference("Comment", StringType, nullable = false)())
     }
   }
 
@@ -129,7 +132,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           val tablePath = tablePaths.find(path => shardPath.contains(path._1))
           if (tablePath.isDefined) {
             dbDatamapSize = dbDatamapSize + cache.getMemorySize
-            val memorySize = tableMapIndexSize.get(tablePath.get._2)
+            val memorySize = tableMapDatamapSize.get(tablePath.get._2)
             if (memorySize.isEmpty) {
               tableMapDatamapSize.put(tablePath.get._2, cache.getMemorySize)
             } else {
@@ -152,8 +155,10 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
         }
       }
       if (tableMapIndexSize.isEmpty && tableMapDatamapSize.isEmpty && tableMapDictSize.isEmpty) {
-        Seq(Row("ALL", "ALL", allIndexSize, allDatamapSize, allDictSize),
-          Row(currentDatabase, "ALL", 0L, 0L, 0L))
+        Seq(
+          Row("ALL", "ALL", humanReadableFormat(allIndexSize),
+            humanReadableFormat(allDatamapSize), humanReadableFormat(allDictSize)),
+          Row(currentDatabase, "ALL", "0", "0", "0"))
       } else {
         val tableList = tableMapIndexSize
           .map(_._1)
@@ -166,11 +171,16 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
             val indexSize = tableMapIndexSize.getOrElse(uniqueName, 0L)
             val datamapSize = tableMapDatamapSize.getOrElse(uniqueName, 0L)
             val dictSize = tableMapDictSize.getOrElse(uniqueName, 0L)
-            Row(values(0), values(1), indexSize, datamapSize, dictSize)
+            Row(values(0), values(1), humanReadableFormat(indexSize),
+              humanReadableFormat(datamapSize), humanReadableFormat(dictSize))
           }
 
-        Seq(Row("ALL", "ALL", allIndexSize, allDatamapSize, allDictSize),
-          Row(currentDatabase, "ALL", dbIndexSize, dbDatamapSize, dbDictSize)) ++ tableList
+        Seq(
+          Row("ALL", "ALL", humanReadableFormat(allIndexSize),
+            humanReadableFormat(allDatamapSize), humanReadableFormat(allDictSize)),
+          Row(currentDatabase, "ALL", humanReadableFormat(dbIndexSize),
+            humanReadableFormat(dbDatamapSize), humanReadableFormat(dbDictSize))
+        ) ++ tableList
       }
     }
   }
@@ -189,6 +199,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
         .replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR)
       val tablePath = dbLocation + CarbonCommonConstants.FILE_SEPARATOR +
                       tableIdent.table + CarbonCommonConstants.FILE_SEPARATOR
+      var numIndexFilesCached = 0
 
       // Path -> Name, Type
       val datamapName = mutable.Map[String, (String, String)]()
@@ -207,7 +218,8 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
         datamapSize.put(path, 0)
       }
       // index schemas
-      for( schema <- DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable).asScala) {
+      for (schema <- DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+        .asScala) {
         val path = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableIdent.table +
                    CarbonCommonConstants.FILE_SEPARATOR + schema.getDataMapName +
                    CarbonCommonConstants.FILE_SEPARATOR
@@ -237,11 +249,13 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           // index
           val indexPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
             CarbonCommonConstants.FILE_SEPARATOR)
-
           val pathEntry = datamapSize.filter(entry => indexPath.startsWith(entry._1))
           if(pathEntry.nonEmpty) {
             val (path, size) = pathEntry.iterator.next()
             datamapSize.put(path, size + cache.getMemorySize)
+          }
+          if(indexPath.startsWith(tablePath)) {
+            numIndexFilesCached += 1
           }
         } else if (cache.isInstanceOf[BloomCacheKeyValue.CacheValue]) {
           // bloom datamap
@@ -261,14 +275,25 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
         }
       }
 
+      // get all index files
+      val absoluteTableIdentifier = AbsoluteTableIdentifier.from(tablePath)
+      val numIndexFilesAll = CarbonDataMergerUtil.getValidSegmentList(absoluteTableIdentifier)
+        .asScala.map {
+          segment =>
+            segment.getCommittedIndexFile
+        }.flatMap {
+        indexFilesMap => indexFilesMap.keySet().toArray
+      }.size
+
       var result = Seq(
-        Row("Index", humanReadableFormat(datamapSize.get(tablePath).get)),
-        Row("Dictionary", humanReadableFormat(dictSize))
+        Row("Index", humanReadableFormat(datamapSize.get(tablePath).get),
+          numIndexFilesCached + "/" + numIndexFilesAll + " index files cached"),
+        Row("Dictionary", humanReadableFormat(dictSize), "")
       )
-      for((path, size) <- datamapSize) {
-        if(path != tablePath) {
+      for ((path, size) <- datamapSize) {
+        if (path != tablePath) {
           val (dmName, dmType) = datamapName.get(path).get
-          result = result :+ Row(dmName + " (" + dmType + ")", humanReadableFormat(size))
+          result = result :+ Row(dmName, humanReadableFormat(size), dmType)
         }
       }
       result
@@ -290,22 +315,26 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
   }
 
   def humanReadableFormat(size: Long): String = {
+    if (size == 0) {
+      return "0"
+    }
+
+    if (size < 1024) {
+      return size + " Bytes"
+    }
+
     var sizeDouble: Double = size
-    if(sizeDouble < 1024) {
-      return sizeDouble + " Bytes"
+    sizeDouble /= 1024
+    if (sizeDouble < 1024) {
+      return "%.2f KB".format(sizeDouble)
     }
 
     sizeDouble /= 1024
-    if(sizeDouble < 1024) {
-      return sizeDouble + " KB"
+    if (sizeDouble < 1024) {
+      return "%.2f MB".format(sizeDouble)
     }
 
     sizeDouble /= 1024
-    if(sizeDouble < 1024) {
-      return sizeDouble + " MB"
-    }
-
-    sizeDouble /= 1024
-    sizeDouble + " GB"
+    "%.2f GB".format(sizeDouble)
   }
 }
