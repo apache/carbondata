@@ -216,12 +216,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         TableIdentifier(tableName, dbName)
     }
 
-  protected lazy val forTable: Parser[TableIdentifier] =
-    FOR ~> TABLE ~>  (ident <~ ".").? ~ ident ^^ {
-      case dbName ~ tableName =>
-        TableIdentifier(tableName, dbName)
-    }
-
   /**
    * The below syntax is used to drop the datamap.
    * DROP DATAMAP IF EXISTS datamapName ON TABLE tablename
@@ -504,7 +498,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val showCache: Parser[LogicalPlan] =
-    SHOW ~> METACACHE ~> opt(forTable) <~ opt(";") ^^ {
+    SHOW ~> METACACHE ~> opt(ontable) <~ opt(";") ^^ {
       case table =>
         CarbonShowCacheCommand(table)
     }
