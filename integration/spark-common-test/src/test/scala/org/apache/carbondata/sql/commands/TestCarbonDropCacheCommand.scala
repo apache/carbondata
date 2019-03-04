@@ -53,15 +53,18 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterEach with 
   test("Test dictionary") {
     val tableName = "t1"
 
-    sql(s"CREATE TABLE $tableName(age int, name string) stored by 'carbondata' " +
-        s"TBLPROPERTIES('DICTIONARY_INCLUDE'='age, name')")
-    sql(s"LOAD DATA INPATH '/home/root1/Desktop/CSVs/age_name.csv' INTO TABLE $tableName")
-    sql(s"LOAD DATA INPATH '/home/root1/Desktop/CSVs/age_name.csv' INTO TABLE $tableName")
+    sql(s"CREATE TABLE $tableName(empno int, empname String, designation String, " +
+        s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
+        s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
+        s"attendance int,utilization int, salary int) stored by 'carbondata' " +
+        s"TBLPROPERTIES('DICTIONARY_INCLUDE'='designation, workgroupcategoryname')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
     sql(s"SELECT * FROM $tableName").collect()
 
     val droppedCacheKeys = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
 
-    sql(s"DROP METACACHE FOR TABLE $tableName")
+    sql(s"DROP METACACHE ON TABLE $tableName")
 
     val cacheAfterDrop = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
     droppedCacheKeys.removeAll(cacheAfterDrop)
@@ -98,16 +101,20 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterEach with 
   test("Test preaggregate datamap") {
     val tableName = "t2"
 
-    sql(s"CREATE TABLE $tableName(age int, name string) stored by 'carbondata'")
+    sql(s"CREATE TABLE $tableName(empno int, empname String, designation String, " +
+        s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
+        s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
+        s"attendance int, utilization int, salary int) stored by 'carbondata'")
     sql(s"CREATE DATAMAP dpagg ON TABLE $tableName USING 'preaggregate' AS " +
-        s"SELECT AVG(age), name from $tableName GROUP BY name")
-    sql(s"LOAD DATA INPATH '/home/root1/Desktop/CSVs/age_name.csv' INTO TABLE $tableName")
+        s"SELECT AVG(salary), workgroupcategoryname from $tableName GROUP BY workgroupcategoryname")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
     sql(s"SELECT * FROM $tableName").collect()
-    sql(s"SELECT AVG(age), name from $tableName GROUP BY name").collect()
+    sql(s"SELECT AVG(salary), workgroupcategoryname from $tableName " +
+        s"GROUP BY workgroupcategoryname").collect()
 
     val droppedCacheKeys = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
 
-    sql(s"DROP METACACHE FOR TABLE $tableName")
+    sql(s"DROP METACACHE ON TABLE $tableName")
 
     val cacheAfterDrop = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
     droppedCacheKeys.removeAll(cacheAfterDrop)
@@ -143,16 +150,19 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterEach with 
   test("Test bloom filter") {
     val tableName = "t3"
 
-    sql(s"CREATE TABLE $tableName(age int, name string) stored by 'carbondata'")
+    sql(s"CREATE TABLE $tableName(empno int, empname String, designation String, " +
+        s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
+        s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
+        s"attendance int, utilization int, salary int) stored by 'carbondata'")
     sql(s"CREATE DATAMAP dblom ON TABLE $tableName USING 'bloomfilter' " +
-        "DMPROPERTIES('INDEX_COLUMNS'='age')")
-    sql(s"LOAD DATA INPATH '/home/root1/Desktop/CSVs/age_name.csv' INTO TABLE $tableName")
+        "DMPROPERTIES('INDEX_COLUMNS'='deptno')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
     sql(s"SELECT * FROM $tableName").collect()
-    sql(s"SELECT * FROM $tableName WHERE age=25").collect()
+    sql(s"SELECT * FROM $tableName WHERE deptno=10").collect()
 
     val droppedCacheKeys = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
 
-    sql(s"DROP METACACHE FOR TABLE $tableName")
+    sql(s"DROP METACACHE ON TABLE $tableName")
 
     val cacheAfterDrop = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
     droppedCacheKeys.removeAll(cacheAfterDrop)
