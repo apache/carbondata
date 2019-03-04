@@ -21,18 +21,20 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.execution.command.DataCommand
+import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
 
-case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends DataCommand {
+case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends MetadataCommand {
 
-  def clearCache(sparkSession: SparkSession, tableIdentifier: TableIdentifier): Unit = {
+  def clearCache(sparkSession: SparkSession, carbonTable: CarbonTable): Unit = {
+    val tableName = carbonTable.getTableName
+    val databaseName = carbonTable.getDatabaseName
     val cache = CacheProvider.getInstance().getCarbonCache
     if (cache != null) {
       val dbLocation = CarbonEnv
@@ -40,17 +42,11 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends Data
           .getOrElse(sparkSession.catalog.currentDatabase), sparkSession)
         .replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
           CarbonCommonConstants.FILE_SEPARATOR)
-      val carbonTable = CarbonEnv
-        .getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
-
-      if (carbonTable.isChildDataMap) {
-        throw new UnsupportedOperationException("Operation not allowed on child table.")
-      }
 
       // If table has children tables as well, add them to tablePathsBuffer
       val tablePathsBuffer = scala.collection.mutable.ArrayBuffer.empty[String]
       tablePathsBuffer += dbLocation + CarbonCommonConstants.FILE_SEPARATOR +
-                          tableIdentifier.table + CarbonCommonConstants.FILE_SEPARATOR
+                          tableName + CarbonCommonConstants.FILE_SEPARATOR
       if (carbonTable.hasDataMapSchema) {
         val childrenSchemas = carbonTable.getTableInfo.getDataMapSchemaList.asScala
           .filter(_.getRelationIdentifier != null)
@@ -102,14 +98,13 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends Data
     }
   }
 
-  override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val dbName = CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession)
-    val table = sparkSession.sessionState.catalog.listTables(dbName)
-      .find(_.table.equalsIgnoreCase(tableIdentifier.table))
-    if (table.isEmpty) {
-      throw new NoSuchTableException(dbName, tableIdentifier.table)
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
+    if (carbonTable.isChildDataMap) {
+      throw new UnsupportedOperationException("Operation not allowed on child table.")
     }
-    clearCache(sparkSession, tableIdentifier)
+
+    clearCache(sparkSession, carbonTable)
     Seq.empty
   }
 
