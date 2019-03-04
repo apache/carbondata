@@ -1110,3 +1110,12 @@ Users can specify which columns to include and exclude for local dictionary gene
   its dictionary files, its datamaps and children tables.
   
   This command is not allowed on child tables.
+
+  ```sql
+    DROP METADATA ON TABLE tableName
+   ```
+    
+  This clears any entry in cache by the table `tableName`, its carbonindex files, 
+  its dictionary files, its datamaps and children tables.
+    
+  This command is not allowed on child tables.
