@@ -40,6 +40,7 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   override protected def afterAll(): Unit = {
+    sql(s"use default")
     sql(s"DROP DATABASE $dbName CASCADE")
   }
 
