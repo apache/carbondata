@@ -25,12 +25,11 @@ import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-
+import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
-class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
+class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
 
   val dbName = "cache_db"
 
@@ -42,11 +41,6 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterEach with 
 
   override protected def afterAll(): Unit = {
     sql(s"DROP DATABASE $dbName CASCADE")
-  }
-
-  override protected def beforeEach(): Unit = {
-    sql("DROP TABLE IF EXISTS t1")
-    sql("DROP TABLE IF EXISTS t2")
   }
 
 
@@ -70,11 +64,6 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterEach with 
     droppedCacheKeys.removeAll(cacheAfterDrop)
 
     val tableIdentifier = new TableIdentifier(tableName, Some(dbName))
-    val table = sqlContext.sparkSession.sessionState.catalog.listTables(dbName)
-      .find(_.table.equalsIgnoreCase(tableName))
-    if (table.isEmpty) {
-      fail("Table does not exists")
-    }
     val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
     val tablePath = carbonTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
     val dictIds = carbonTable.getAllDimensions.asScala.filter(_.isGlobalDictionaryEncoding)
@@ -111,7 +100,6 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterEach with 
     sql(s"SELECT * FROM $tableName").collect()
     sql(s"SELECT AVG(salary), workgroupcategoryname from $tableName " +
         s"GROUP BY workgroupcategoryname").collect()
-
     val droppedCacheKeys = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
 
     sql(s"DROP METACACHE ON TABLE $tableName")
@@ -120,11 +108,6 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterEach with 
     droppedCacheKeys.removeAll(cacheAfterDrop)
 
     val tableIdentifier = new TableIdentifier(tableName, Some(dbName))
-    val table = sqlContext.sparkSession.sessionState.catalog.listTables(dbName)
-      .find(_.table.equalsIgnoreCase(tableName))
-    if (table.isEmpty) {
-      fail("Table does not exists")
-    }
     val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
     val dbPath = CarbonEnv
       .getDatabaseLocation(tableIdentifier.database.get, sqlContext.sparkSession)
@@ -168,11 +151,6 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterEach with 
     droppedCacheKeys.removeAll(cacheAfterDrop)
 
     val tableIdentifier = new TableIdentifier(tableName, Some(dbName))
-    val table = sqlContext.sparkSession.sessionState.catalog.listTables(dbName)
-      .find(_.table.equalsIgnoreCase(tableName))
-    if (table.isEmpty) {
-      fail("Table does not exists")
-    }
     val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
     val tablePath = carbonTable.getTablePath
     val bloomPath = tablePath + CarbonCommonConstants.FILE_SEPARATOR + "dblom" +
