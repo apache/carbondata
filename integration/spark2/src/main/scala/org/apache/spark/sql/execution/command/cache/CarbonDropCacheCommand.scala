@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command.cache
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -63,6 +64,7 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends Meta
         .map(_.getColumnId).toArray
 
       // Remove elements from cache
+      val keysToRemove = ListBuffer[String]()
       val cacheIterator = cache.getCacheMap.entrySet().iterator()
       while (cacheIterator.hasNext) {
         val entry = cacheIterator.next()
@@ -74,8 +76,7 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends Meta
             CarbonCommonConstants.FILE_SEPARATOR)
           val validTablePath = tablePaths.find(tablePath => indexPath.startsWith(tablePath))
           if (validTablePath.isDefined) {
-            cache.invalidate()
-            cacheIterator.remove()
+            keysToRemove += entry.getKey
           }
         } else if (cache.isInstanceOf[BloomCacheKeyValue.CacheValue]) {
           // bloom datamap
@@ -83,18 +84,17 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends Meta
             CarbonCommonConstants.FILE_SEPARATOR)
           val validTablePath = tablePaths.find(tablePath => shardPath.contains(tablePath))
           if (validTablePath.isDefined) {
-            cache.invalidate()
-            cacheIterator.remove()
+            keysToRemove += entry.getKey
           }
         } else if (cache.isInstanceOf[AbstractColumnDictionaryInfo]) {
           // dictionary
           val dictId = dictIds.find(id => entry.getKey.startsWith(id))
           if (dictId.isDefined) {
-            cache.invalidate()
-            cacheIterator.remove()
+            keysToRemove += entry.getKey
           }
         }
       }
+      cache.removeAll(keysToRemove.asJava)
     }
   }
 

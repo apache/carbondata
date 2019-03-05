@@ -149,6 +149,17 @@ public final class CarbonLRUCache {
   }
 
   /**
+   * @param keys
+   */
+  public void removeAll(List<String> keys) {
+    synchronized (lruCacheMap) {
+      for (String key : keys) {
+        removeKey(key);
+      }
+    }
+  }
+
+  /**
    * This method will remove the key from lru cache
    *
    * @param key
