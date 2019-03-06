@@ -37,8 +37,6 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -252,12 +250,9 @@ public class CarbonTable implements Serializable {
       String tableName,
       Configuration configuration) throws IOException {
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
-    CarbonFile carbonFile = getLatestIndexFile(FileFactory.getCarbonFile(tablePath, configuration));
-    if (carbonFile == null) {
-      throw new RuntimeException("Carbon index file not exists.");
-    }
-    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
-        .inferSchemaFromIndexFile(carbonFile.getPath(), tableName);
+    // InferSchema from data file
+    org.apache.carbondata.format.TableInfo tableInfo =
+        CarbonUtil.inferSchema(tablePath, tableName, false, configuration);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
         .getFact_table().getTable_columns()) {
@@ -268,38 +263,6 @@ public class CarbonTable implements Serializable {
       columnSchemaList.add(columnSchema);
     }
     tableInfoInfer.getFactTable().setListOfColumns(columnSchemaList);
-    return CarbonTable.buildFromTableInfo(tableInfoInfer);
-  }
-
-  private static CarbonFile getLatestIndexFile(CarbonFile tablePath) {
-    CarbonFile[] carbonFiles = tablePath.listFiles();
-    CarbonFile latestCarbonIndexFile = null;
-    long latestIndexFileTimestamp = 0L;
-    for (CarbonFile carbonFile : carbonFiles) {
-      if (carbonFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)
-          && carbonFile.getLastModifiedTime() > latestIndexFileTimestamp) {
-        latestCarbonIndexFile = carbonFile;
-        latestIndexFileTimestamp = carbonFile.getLastModifiedTime();
-      } else if (carbonFile.isDirectory()) {
-        // if the list has directories that doesn't contain index files,
-        // continue checking other files/directories in the list.
-        if (getLatestIndexFile(carbonFile) == null) {
-          continue;
-        } else {
-          return getLatestIndexFile(carbonFile);
-        }
-      }
-    }
-    if (latestCarbonIndexFile != null) {
-      return latestCarbonIndexFile;
-    } else {
-      // returning null only if the path doesn't have index files.
-      return null;
-    }
-  }
-
-  public static CarbonTable buildDummyTable(String tablePath) throws IOException {
-    TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
     return CarbonTable.buildFromTableInfo(tableInfoInfer);
   }
 

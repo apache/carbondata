@@ -77,9 +77,14 @@ public class CarbonReader<T> {
         // no more readers
         return false;
       } else {
-        index++;
         // current reader is closed
         currentReader.close();
+        // no need to keep a reference to CarbonVectorizedRecordReader,
+        // until all the readers are processed.
+        // If readers count is very high,
+        // we get OOM as GC not happened for any of the content in CarbonVectorizedRecordReader
+        readers.set(index,null);
+        index++;
         currentReader = readers.get(index);
         return currentReader.nextKeyValue();
       }
