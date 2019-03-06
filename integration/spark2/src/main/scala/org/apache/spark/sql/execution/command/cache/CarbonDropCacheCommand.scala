@@ -32,19 +32,24 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
 import org.apache.carbondata.events.{DropCacheEvent, OperationContext, OperationListenerBus}
 
-case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall: Boolean)
+case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall: Boolean = false)
   extends MetadataCommand {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
-    if (carbonTable.isChildDataMap && !internalCall) {
-      throw new UnsupportedOperationException("Operation not allowed on child table.")
-    }
     clearCache(carbonTable, sparkSession)
     Seq.empty
   }
 
   def clearCache(carbonTable: CarbonTable, sparkSession: SparkSession): Unit = {
+    val dropCacheEvent = DropCacheEvent(
+      carbonTable,
+      sparkSession,
+      internalCall
+    )
+    val operationContext = new OperationContext
+    OperationListenerBus.getInstance.fireEvent(dropCacheEvent, operationContext)
+
     val cache = CacheProvider.getInstance().getCarbonCache
     if (cache != null) {
       val dbLocation = CarbonEnv
@@ -88,13 +93,6 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
         }
       }
       cache.removeAll(keysToRemove.asJava)
-
-      val dropCacheEvent = DropCacheEvent(
-        carbonTable,
-        sparkSession
-      )
-      val operationContext = new OperationContext
-      OperationListenerBus.getInstance.fireEvent(dropCacheEvent, operationContext)
     }
   }
 

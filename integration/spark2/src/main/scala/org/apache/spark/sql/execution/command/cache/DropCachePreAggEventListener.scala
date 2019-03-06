@@ -44,6 +44,10 @@ object DropCachePreAggEventListener extends OperationEventListener {
       case dropCacheEvent: DropCacheEvent =>
         val carbonTable = dropCacheEvent.carbonTable
         val sparkSession = dropCacheEvent.sparkSession
+        val internalCall = dropCacheEvent.internalCall
+        if (carbonTable.isChildDataMap && !internalCall) {
+          throw new UnsupportedOperationException("Operation not allowed on child table.")
+        }
 
         if (carbonTable.hasDataMapSchema) {
           val childrenSchemas = carbonTable.getTableInfo.getDataMapSchemaList.asScala
@@ -53,8 +57,10 @@ object DropCachePreAggEventListener extends OperationEventListener {
               CarbonEnv.getCarbonTable(
                 TableIdentifier(childSchema.getRelationIdentifier.getTableName,
                   Some(childSchema.getRelationIdentifier.getDatabaseName)))(sparkSession)
-            val dropCacheCommandForChildTable = CarbonDropCacheCommand(TableIdentifier(childTable
-              .getTableName, Some(childTable.getDatabaseName)), true)
+            val dropCacheCommandForChildTable =
+              CarbonDropCacheCommand(
+                TableIdentifier(childTable.getTableName, Some(childTable.getDatabaseName)),
+                internalCall = true)
             dropCacheCommandForChildTable.processMetadata(sparkSession)
           }
         }

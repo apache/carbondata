@@ -506,7 +506,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val dropCache: Parser[LogicalPlan] =
     DROP ~> METACACHE ~> ontable <~ opt(";") ^^ {
       case table =>
-        CarbonDropCacheCommand(table, internalCall = false)
+        CarbonDropCacheCommand(table)
     }
 
   protected lazy val cli: Parser[LogicalPlan] =
