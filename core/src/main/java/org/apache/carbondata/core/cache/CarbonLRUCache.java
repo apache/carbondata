@@ -65,6 +65,9 @@ public final class CarbonLRUCache {
       lruCacheMemorySize = Long
           .parseLong(CarbonProperties.getInstance().getProperty(propertyName, defaultPropertyName));
     } catch (NumberFormatException e) {
+      LOGGER.error(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE
+          + " is not in a valid format. Falling back to default value: "
+          + CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
       lruCacheMemorySize = Long.parseLong(defaultPropertyName);
     }
     initCache();
