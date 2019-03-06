@@ -170,6 +170,28 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
     assert(!cacheAfterDrop.asScala.exists(key => key.contains(bloomPath)))
   }
 
+
+  test("Test preaggregate datamap fail") {
+    val tableName = "t4"
+
+    sql(s"CREATE TABLE $tableName(empno int, empname String, designation String, " +
+        s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
+        s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
+        s"attendance int, utilization int, salary int) stored by 'carbondata'")
+    sql(s"CREATE DATAMAP dpagg ON TABLE $tableName USING 'preaggregate' AS " +
+        s"SELECT AVG(salary), workgroupcategoryname from $tableName GROUP BY workgroupcategoryname")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
+    sql(s"SELECT * FROM $tableName").collect()
+    sql(s"SELECT AVG(salary), workgroupcategoryname from $tableName " +
+        s"GROUP BY workgroupcategoryname").collect()
+
+    val fail_message = intercept[UnsupportedOperationException] {
+      sql(s"DROP METACACHE ON TABLE ${tableName}_dpagg")
+    }.getMessage
+    assert(fail_message.contains("Operation not allowed on child table."))
+  }
+
+
   def clone(oldSet: util.Set[String]): util.HashSet[String] = {
     val newSet = new util.HashSet[String]
     newSet.addAll(oldSet)

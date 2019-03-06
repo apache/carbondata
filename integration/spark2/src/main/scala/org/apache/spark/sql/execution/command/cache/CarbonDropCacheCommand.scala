@@ -30,12 +30,21 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
+import org.apache.carbondata.events.{DropCacheEvent, OperationContext, OperationListenerBus}
 
-case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends MetadataCommand {
+case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall: Boolean)
+  extends MetadataCommand {
 
-  def clearCache(sparkSession: SparkSession, carbonTable: CarbonTable): Unit = {
-    val tableName = carbonTable.getTableName
-    val databaseName = carbonTable.getDatabaseName
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
+    if (carbonTable.isChildDataMap && !internalCall) {
+      throw new UnsupportedOperationException("Operation not allowed on child table.")
+    }
+    clearCache(carbonTable, sparkSession)
+    Seq.empty
+  }
+
+  def clearCache(carbonTable: CarbonTable, sparkSession: SparkSession): Unit = {
     val cache = CacheProvider.getInstance().getCarbonCache
     if (cache != null) {
       val dbLocation = CarbonEnv
@@ -43,21 +52,7 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends Meta
           .getOrElse(sparkSession.catalog.currentDatabase), sparkSession)
         .replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
           CarbonCommonConstants.FILE_SEPARATOR)
-
-      // If table has children tables as well, add them to tablePathsBuffer
-      val tablePathsBuffer = scala.collection.mutable.ArrayBuffer.empty[String]
-      tablePathsBuffer += dbLocation + CarbonCommonConstants.FILE_SEPARATOR +
-                          tableName + CarbonCommonConstants.FILE_SEPARATOR
-      if (carbonTable.hasDataMapSchema) {
-        val childrenSchemas = carbonTable.getTableInfo.getDataMapSchemaList.asScala
-          .filter(_.getRelationIdentifier != null)
-        for (childSchema <- childrenSchemas) {
-          tablePathsBuffer += dbLocation + CarbonCommonConstants.FILE_SEPARATOR +
-                              childSchema.getRelationIdentifier.getTableName +
-                              CarbonCommonConstants.FILE_SEPARATOR
-        }
-      }
-      val tablePaths = tablePathsBuffer.toArray
+      val tablePath = carbonTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
 
       // Dictionary IDs
       val dictIds = carbonTable.getAllDimensions.asScala.filter(_.isGlobalDictionaryEncoding)
@@ -74,16 +69,14 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends Meta
           // index
           val indexPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
             CarbonCommonConstants.FILE_SEPARATOR)
-          val validTablePath = tablePaths.find(tablePath => indexPath.startsWith(tablePath))
-          if (validTablePath.isDefined) {
+          if (indexPath.startsWith(tablePath)) {
             keysToRemove += entry.getKey
           }
         } else if (cache.isInstanceOf[BloomCacheKeyValue.CacheValue]) {
           // bloom datamap
           val shardPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
             CarbonCommonConstants.FILE_SEPARATOR)
-          val validTablePath = tablePaths.find(tablePath => shardPath.contains(tablePath))
-          if (validTablePath.isDefined) {
+          if (shardPath.contains(tablePath)) {
             keysToRemove += entry.getKey
           }
         } else if (cache.isInstanceOf[AbstractColumnDictionaryInfo]) {
@@ -95,17 +88,14 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier) extends Meta
         }
       }
       cache.removeAll(keysToRemove.asJava)
-    }
-  }
 
-  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
-    if (carbonTable.isChildDataMap) {
-      throw new UnsupportedOperationException("Operation not allowed on child table.")
+      val dropCacheEvent = DropCacheEvent(
+        carbonTable,
+        sparkSession
+      )
+      val operationContext = new OperationContext
+      OperationListenerBus.getInstance.fireEvent(dropCacheEvent, operationContext)
     }
-
-    clearCache(sparkSession, carbonTable)
-    Seq.empty
   }
 
   override protected def opName: String = "DROP CACHE"
