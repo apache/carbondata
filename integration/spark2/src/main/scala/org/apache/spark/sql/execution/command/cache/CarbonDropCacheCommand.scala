@@ -24,6 +24,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.MetadataCommand
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -35,6 +36,8 @@ import org.apache.carbondata.events.{DropCacheEvent, OperationContext, Operation
 case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall: Boolean = false)
   extends MetadataCommand {
 
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
     clearCache(carbonTable, sparkSession)
@@ -42,6 +45,8 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
   }
 
   def clearCache(carbonTable: CarbonTable, sparkSession: SparkSession): Unit = {
+    LOGGER.info("Drop cache request received for table " + carbonTable.getTableName)
+
     val dropCacheEvent = DropCacheEvent(
       carbonTable,
       sparkSession,
@@ -52,11 +57,6 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
 
     val cache = CacheProvider.getInstance().getCarbonCache
     if (cache != null) {
-      val dbLocation = CarbonEnv
-        .getDatabaseLocation(tableIdentifier.database
-          .getOrElse(sparkSession.catalog.currentDatabase), sparkSession)
-        .replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
-          CarbonCommonConstants.FILE_SEPARATOR)
       val tablePath = carbonTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
 
       // Dictionary IDs
@@ -94,6 +94,8 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
       }
       cache.removeAll(keysToRemove.asJava)
     }
+
+    LOGGER.info("Drop cache request received for table " + carbonTable.getTableName)
   }
 
   override protected def opName: String = "DROP CACHE"

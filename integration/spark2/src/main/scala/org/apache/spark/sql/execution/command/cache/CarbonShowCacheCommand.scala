@@ -73,9 +73,6 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
           byteCountToDisplaySize(0L), byteCountToDisplaySize(0L)))
     } else {
       val tableIdents = sparkSession.sessionState.catalog.listTables(currentDatabase).toArray
-      val dbLocation = CarbonEnv.getDatabaseLocation(currentDatabase, sparkSession)
-      val tempLocation = dbLocation.replace(
-        CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR)
       val tablePaths = tableIdents.map { tableIdent =>
         (CarbonEnv.getCarbonTable(tableIdent)(sparkSession).getTablePath +
          CarbonCommonConstants.FILE_SEPARATOR,
@@ -190,15 +187,10 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
   }
 
   def showTableCache(sparkSession: SparkSession, carbonTable: CarbonTable): Seq[Row] = {
-    val tableName = carbonTable.getTableName
-    val databaseName = carbonTable.getDatabaseName
     val cache = CacheProvider.getInstance().getCarbonCache()
     if (cache == null) {
       Seq.empty
     } else {
-      val dbLocation = CarbonEnv
-        .getDatabaseLocation(databaseName, sparkSession)
-        .replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR)
       val tablePath = carbonTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
       var numIndexFilesCached = 0
 
