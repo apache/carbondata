@@ -38,7 +38,6 @@ import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -252,12 +251,13 @@ public class CarbonTable implements Serializable {
       String tableName,
       Configuration configuration) throws IOException {
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
-    CarbonFile carbonFile = getLatestIndexFile(FileFactory.getCarbonFile(tablePath, configuration));
-    if (carbonFile == null) {
-      throw new RuntimeException("Carbon index file not exists.");
-    }
-    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
-        .inferSchemaFromIndexFile(carbonFile.getPath(), tableName);
+    // CarbonFile carbonFile =
+    //                      getLatestIndexFile(FileFactory.getCarbonFile(tablePath, configuration));
+    // if (carbonFile == null) {
+    //  throw new RuntimeException("Carbon index file not exists.");
+    // }
+    org.apache.carbondata.format.TableInfo tableInfo =
+        CarbonUtil.inferSchema(tablePath, tableName, false, configuration);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
         .getFact_table().getTable_columns()) {
