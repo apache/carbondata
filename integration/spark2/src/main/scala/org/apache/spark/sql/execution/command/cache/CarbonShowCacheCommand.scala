@@ -72,23 +72,18 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
         Row(currentDatabase, "ALL", byteCountToDisplaySize(0L),
           byteCountToDisplaySize(0L), byteCountToDisplaySize(0L)))
     } else {
-      val tableIdents = sparkSession.sessionState.catalog.listTables(currentDatabase).toArray
-      val tablePaths = tableIdents.map { tableIdent =>
-        (CarbonEnv.getCarbonTable(tableIdent)(sparkSession).getTablePath +
-         CarbonCommonConstants.FILE_SEPARATOR,
-          CarbonEnv.getDatabaseName(tableIdent.database)(sparkSession) + "." + tableIdent.table)
+      val carbonTables = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+        .listAllTables(sparkSession)
+        .filter { table =>
+        table.getDatabaseName.equalsIgnoreCase(currentDatabase)
+      }
+      val tablePaths = carbonTables
+        .map { table =>
+          (table.getTablePath + CarbonCommonConstants.FILE_SEPARATOR,
+            table.getDatabaseName + "." + table.getTableName)
       }
 
-      val dictIds = tableIdents
-        .map { tableIdent =>
-          var table: CarbonTable = null
-          try {
-            table = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
-          } catch {
-            case _ =>
-          }
-          table
-        }
+      val dictIds = carbonTables
         .filter(_ != null)
         .flatMap { table =>
           table
@@ -159,7 +154,8 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
         Seq(
           Row("ALL", "ALL", byteCountToDisplaySize(allIndexSize),
             byteCountToDisplaySize(allDatamapSize), byteCountToDisplaySize(allDictSize)),
-          Row(currentDatabase, "ALL", "0", "0", "0"))
+          Row(currentDatabase, "ALL", byteCountToDisplaySize(0),
+            byteCountToDisplaySize(0), byteCountToDisplaySize(0)))
       } else {
         val tableList = tableMapIndexSize
           .map(_._1)
