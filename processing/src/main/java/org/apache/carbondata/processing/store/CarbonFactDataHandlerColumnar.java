@@ -195,7 +195,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @param row
    * @throws CarbonDataWriterException
    */
-  public synchronized void addDataToStore(CarbonRow row) throws CarbonDataWriterException {
+  public void addDataToStore(CarbonRow row) throws CarbonDataWriterException {
     dataRows.add(row);
     this.entryCount++;
     // if entry count reaches to leaf node size then we are ready to write

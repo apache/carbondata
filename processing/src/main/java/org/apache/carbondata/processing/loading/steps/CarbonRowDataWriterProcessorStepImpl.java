@@ -85,6 +85,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private ExecutorService executorService = null;
 
+  private static final Object lock = new Object();
+
   public CarbonRowDataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
@@ -128,8 +130,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
       String[] storeLocation = getStoreLocation();
       DataMapWriterListener listener = getDataMapWriterListener(0);
-      CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
-          configuration, storeLocation, 0, 0, listener);
+      CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
+          .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, 0, listener);
       model.setColumnLocalDictGenMap(localDictionaryGeneratorMap);
       dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(model);
       dataHandler.initialise();
@@ -163,7 +165,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     return null;
   }
 
-  private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex, CarbonFactHandler dataHandler) throws IOException {
+  private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex,
+      CarbonFactHandler dataHandler) throws IOException {
     boolean rowsNotExist = true;
     while (iterator.hasNext()) {
       if (rowsNotExist) {
@@ -295,7 +298,9 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       while (batch.hasNext()) {
         CarbonRow row = batch.next();
         CarbonRow converted = convertRow(row);
-        dataHandler.addDataToStore(converted);
+        synchronized (lock) {
+          dataHandler.addDataToStore(converted);
+        }
         readCounter[iteratorIndex]++;
       }
       writeCounter[iteratorIndex] += batch.getSize();
@@ -311,7 +316,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     private int iteratorIndex = 0;
     private CarbonFactHandler dataHandler = null;
 
-    DataWriterRunnable(Iterator<CarbonRowBatch> iterator, int iteratorIndex, CarbonFactHandler dataHandler) {
+    DataWriterRunnable(Iterator<CarbonRowBatch> iterator, int iteratorIndex,
+        CarbonFactHandler dataHandler) {
       this.iterator = iterator;
       this.iteratorIndex = iteratorIndex;
       this.dataHandler = dataHandler;
