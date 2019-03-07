@@ -152,6 +152,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
         }
       }
       finish(dataHandler, 0);
+      dataHandler = null;
     } catch (CarbonDataWriterException e) {
       LOGGER.error("Failed for table: " + tableName + " in DataWriterProcessorStepImpl", e);
       throw new CarbonDataLoadingException(
@@ -185,7 +186,6 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   private void finish(CarbonFactHandler dataHandler, int iteratorIndex) {
     CarbonDataWriterException exception = null;
     try {
-      dataHandler = null;
       dataHandler.finish();
     } catch (Exception e) {
       // if throw exception from here dataHandler will not be closed.
