@@ -128,6 +128,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
           .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
               System.currentTimeMillis());
 
+      //Creating a Instance of CarbonFacthandler that will be passed to all the threads
       String[] storeLocation = getStoreLocation();
       DataMapWriterListener listener = getDataMapWriterListener(0);
       CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
@@ -184,6 +185,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   private void finish(CarbonFactHandler dataHandler, int iteratorIndex) {
     CarbonDataWriterException exception = null;
     try {
+      dataHandler = null;
       dataHandler.finish();
     } catch (Exception e) {
       // if throw exception from here dataHandler will not be closed.
