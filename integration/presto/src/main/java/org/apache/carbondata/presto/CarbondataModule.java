@@ -31,6 +31,7 @@ import com.facebook.presto.hive.HadoopDirectoryLister;
 import com.facebook.presto.hive.HdfsConfiguration;
 import com.facebook.presto.hive.HdfsConfigurationUpdater;
 import com.facebook.presto.hive.HdfsEnvironment;
+import com.facebook.presto.hive.HiveAnalyzeProperties;
 import com.facebook.presto.hive.HiveClientConfig;
 import com.facebook.presto.hive.HiveClientModule;
 import com.facebook.presto.hive.HiveCoercionPolicy;
@@ -55,6 +56,7 @@ import com.facebook.presto.hive.LocationService;
 import com.facebook.presto.hive.NamenodeStats;
 import com.facebook.presto.hive.OrcFileWriterConfig;
 import com.facebook.presto.hive.OrcFileWriterFactory;
+import com.facebook.presto.hive.ParquetFileWriterConfig;
 import com.facebook.presto.hive.PartitionUpdate;
 import com.facebook.presto.hive.RcFileFileWriterFactory;
 import com.facebook.presto.hive.TableParameterCodec;
@@ -63,7 +65,6 @@ import com.facebook.presto.hive.TypeTranslator;
 import com.facebook.presto.hive.orc.DwrfPageSourceFactory;
 import com.facebook.presto.hive.orc.OrcPageSourceFactory;
 import com.facebook.presto.hive.parquet.ParquetPageSourceFactory;
-import com.facebook.presto.hive.parquet.ParquetRecordCursorProvider;
 import com.facebook.presto.hive.rcfile.RcFilePageSourceFactory;
 import com.facebook.presto.spi.connector.ConnectorNodePartitioningProvider;
 import com.facebook.presto.spi.connector.ConnectorPageSinkProvider;
@@ -107,6 +108,7 @@ public class CarbondataModule extends HiveClientModule {
 
     binder.bind(HiveSessionProperties.class).in(Scopes.SINGLETON);
     binder.bind(HiveTableProperties.class).in(Scopes.SINGLETON);
+    binder.bind(HiveAnalyzeProperties.class).in(Scopes.SINGLETON);
 
     binder.bind(NamenodeStats.class).in(Scopes.SINGLETON);
     newExporter(binder).export(NamenodeStats.class)
@@ -114,8 +116,6 @@ public class CarbondataModule extends HiveClientModule {
 
     Multibinder<HiveRecordCursorProvider> recordCursorProviderBinder =
         newSetBinder(binder, HiveRecordCursorProvider.class);
-    recordCursorProviderBinder.addBinding().to(ParquetRecordCursorProvider.class)
-        .in(Scopes.SINGLETON);
     recordCursorProviderBinder.addBinding().to(GenericHiveRecordCursorProvider.class)
         .in(Scopes.SINGLETON);
 
@@ -164,6 +164,8 @@ public class CarbondataModule extends HiveClientModule {
     fileWriterFactoryBinder.addBinding().to(OrcFileWriterFactory.class).in(Scopes.SINGLETON);
     fileWriterFactoryBinder.addBinding().to(RcFileFileWriterFactory.class).in(Scopes.SINGLETON);
     binder.bind(CarbonTableReader.class).in(Scopes.SINGLETON);
+
+    configBinder(binder).bindConfig(ParquetFileWriterConfig.class);
   }
 
 }
