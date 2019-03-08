@@ -93,6 +93,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
   val metadata = MetaData(new ArrayBuffer[CarbonTable]())
 
+  var isDropAllowed = true
 
   /**
    * Create spark session from paramters.
@@ -192,9 +193,20 @@ class CarbonFileMetastore extends CarbonMetaStore {
    * @return
    */
   def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable] = {
-    metadata.carbonTables
-      .find(table => table.getDatabaseName.equalsIgnoreCase(database) &&
-        table.getTableName.equalsIgnoreCase(tableName))
+    isDropAllowed = false
+    var carbonTable: Option[CarbonTable] = null
+    try {
+      carbonTable =
+        metadata.carbonTables
+          .find(table => table.getDatabaseName.equalsIgnoreCase(database) &&
+            table.getTableName.equalsIgnoreCase(tableName))
+    } catch {
+      case ex: Exception =>
+        throw ex
+    } finally {
+      isDropAllowed = true
+    }
+    carbonTable
   }
 
   def tableExists(
@@ -424,16 +436,21 @@ class CarbonFileMetastore extends CarbonMetaStore {
    * @param tableName
    */
   def removeTableFromMetadata(dbName: String, tableName: String): Unit = {
-    val carbonTableToBeRemoved: Option[CarbonTable] = getTableFromMetadataCache(dbName, tableName)
-    carbonTableToBeRemoved match {
-      case Some(carbonTable) =>
-        metadata.carbonTables -= carbonTable
-      case None =>
-        if (LOGGER.isDebugEnabled) {
-          LOGGER.debug(s"No entry for table $tableName in database $dbName")
-        }
+    if (isDropAllowed) {
+      val carbonTableToBeRemoved: Option[CarbonTable] = getTableFromMetadataCache(dbName, tableName)
+      carbonTableToBeRemoved match {
+        case Some(carbonTable) =>
+          metadata.carbonTables -= carbonTable
+        case None =>
+          if (LOGGER.isDebugEnabled) {
+            LOGGER.debug(s"No entry for table $tableName in database $dbName")
+          }
+      }
+      CarbonMetadata.getInstance.removeTable(dbName, tableName)
+    } else {
+      Thread.sleep(250)
+      removeTableFromMetadata(dbName, tableName)
     }
-    CarbonMetadata.getInstance.removeTable(dbName, tableName)
   }
 
   private def updateMetadataByWrapperTable(
