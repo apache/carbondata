@@ -21,8 +21,15 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
-case class DropCacheEvent(
+case class DropTableCacheEvent(
     carbonTable: CarbonTable,
     sparkSession: SparkSession,
     internalCall: Boolean)
-  extends Event with DropCacheEventInfo
+  extends Event with DropTableCacheEventInfo
+
+
+case class ShowTableCacheEvent(
+    carbonTable: CarbonTable,
+    sparkSession: SparkSession,
+    internalCall: Boolean)
+  extends Event with ShowTableCacheEventInfo

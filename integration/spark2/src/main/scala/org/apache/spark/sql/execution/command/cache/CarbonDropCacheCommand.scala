@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution.command.cache
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -26,12 +25,8 @@ import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
-import org.apache.carbondata.events.{DropCacheEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{DropTableCacheEvent, OperationContext, OperationListenerBus}
 
 case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall: Boolean = false)
   extends MetadataCommand {
@@ -45,59 +40,27 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
   }
 
   def clearCache(carbonTable: CarbonTable, sparkSession: SparkSession): Unit = {
-    LOGGER.info("Drop cache request received for table " + carbonTable.getTableName)
+    LOGGER.info("Drop cache request received for table " + carbonTable.getTableUniqueName)
 
-    val dropCacheEvent = DropCacheEvent(
-      carbonTable,
-      sparkSession,
-      internalCall
-    )
+    val dropCacheEvent = DropTableCacheEvent(carbonTable, sparkSession, internalCall)
     val operationContext = new OperationContext
     OperationListenerBus.getInstance.fireEvent(dropCacheEvent, operationContext)
 
     val cache = CacheProvider.getInstance().getCarbonCache
     if (cache != null) {
-      val tablePath = carbonTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
 
-      // Dictionary IDs
-      val dictIds = carbonTable.getAllDimensions.asScala.filter(_.isGlobalDictionaryEncoding)
-        .map(_.getColumnId).toArray
+      // Get all Index files for the specified table.
+      val allIndexFiles = CacheUtil.getAllIndexFiles(carbonTable)
+
+      // Extract dictionary keys for the table and create cache keys from those
+      val dictKeys: List[String] = CacheUtil.getAllDictCacheKeys(carbonTable)
 
       // Remove elements from cache
-      val keysToRemove = ListBuffer[String]()
-      val cacheIterator = cache.getCacheMap.entrySet().iterator()
-      while (cacheIterator.hasNext) {
-        val entry = cacheIterator.next()
-        val cache = entry.getValue
-
-        if (cache.isInstanceOf[BlockletDataMapIndexWrapper]) {
-          // index
-          val indexPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
-            CarbonCommonConstants.FILE_SEPARATOR)
-          if (indexPath.startsWith(tablePath)) {
-            keysToRemove += entry.getKey
-          }
-        } else if (cache.isInstanceOf[BloomCacheKeyValue.CacheValue]) {
-          // bloom datamap
-          val shardPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
-            CarbonCommonConstants.FILE_SEPARATOR)
-          if (shardPath.contains(tablePath)) {
-            keysToRemove += entry.getKey
-          }
-        } else if (cache.isInstanceOf[AbstractColumnDictionaryInfo]) {
-          // dictionary
-          val dictId = dictIds.find(id => entry.getKey.startsWith(id))
-          if (dictId.isDefined) {
-            keysToRemove += entry.getKey
-          }
-        }
-      }
+      val keysToRemove = allIndexFiles ++ dictKeys
       cache.removeAll(keysToRemove.asJava)
     }
-
-    LOGGER.info("Drop cache request received for table " + carbonTable.getTableName)
+    LOGGER.info("Drop cache request served for table " + carbonTable.getTableUniqueName)
   }
 
-  override protected def opName: String = "DROP CACHE"
-
+  override protected def opName: String = "DROP METACACHE"
 }

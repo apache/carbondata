@@ -35,7 +35,7 @@ public class BloomCacheKeyValue {
     private String shardPath;
     private String indexColumn;
 
-    CacheKey(String shardPath, String indexColumn) {
+    public CacheKey(String shardPath, String indexColumn) {
       this.shardPath = shardPath;
       this.indexColumn = indexColumn;
     }

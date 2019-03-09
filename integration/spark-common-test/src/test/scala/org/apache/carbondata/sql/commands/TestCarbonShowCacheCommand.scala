@@ -17,9 +17,13 @@
 
 package org.apache.carbondata.sql.commands
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
+import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 
 class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
@@ -133,6 +137,28 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
   }
 
+  test("test external table show cache") {
+    sql(s"CREATE TABLE employeeTable(empno int, empname String, designation String, " +
+        s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
+        s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
+        s"attendance int, utilization int, salary int) stored by 'carbondata'")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE employeeTable")
+    val table = CarbonEnv.getCarbonTable(Some("default"), "employeeTable")(sqlContext.sparkSession)
+    val location = FileFactory
+      .getUpdatedFilePath(
+        table.getTablePath + CarbonCommonConstants.FILE_SEPARATOR + "/Fact/Part0/Segment_0")
+    sql(s"CREATE EXTERNAL TABLE extTable stored as carbondata LOCATION '${location}'")
+    sql("select * from extTable").show()
+    val rows = sql("SHOW METACACHE ON TABLE extTable").collect()
+    var isPresent = false
+    rows.foreach(row => {
+      if (row.getString(2).equalsIgnoreCase("1/1 index files cached (external table)")){
+        isPresent = true
+      }
+    })
+    Assert.assertTrue(isPresent)
+  }
+
   override protected def afterAll(): Unit = {
     sql("use default").collect()
     dropTable
@@ -145,42 +171,63 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS default.cache_4")
     sql("DROP TABLE IF EXISTS default.cache_5")
     sql("DROP TABLE IF EXISTS empTable")
+    sql("DROP TABLE IF EXISTS employeeTable")
+    sql("DROP TABLE IF EXISTS extTable")
   }
 
   test("show cache") {
+
+    // Empty database
     sql("use cache_empty_db").collect()
     val result1 = sql("show metacache").collect()
     assertResult(2)(result1.length)
     assertResult(Row("cache_empty_db", "ALL", "0 B", "0 B", "0 B"))(result1(1))
 
+    // Database with 3 tables but only 2 are in cache
     sql("use cache_db").collect()
     val result2 = sql("show metacache").collect()
     assertResult(4)(result2.length)
 
+    // Make sure PreAgg tables are not in SHOW METADATA
     sql("use default").collect()
     val result3 = sql("show metacache").collect()
     val dataMapCacheInfo = result3
       .map(row => row.getString(1))
       .filter(table => table.equals("cache_4_cache_4_count"))
-    assertResult(1)(dataMapCacheInfo.length)
+    assertResult(0)(dataMapCacheInfo.length)
   }
 
   test("show metacache on table") {
     sql("use cache_db").collect()
+
+    // Table with Index, Dictionary & Bloom filter
     val result1 = sql("show metacache on table cache_1").collect()
     assertResult(3)(result1.length)
+    assertResult("1/1 index files cached")(result1(0).getString(2))
+    assertResult("bloomfilter")(result1(2).getString(2))
 
+    // Table with Index and Dictionary
     val result2 = sql("show metacache on table cache_db.cache_2").collect()
     assertResult(2)(result2.length)
+    assertResult("2/2 index files cached")(result2(0).getString(2))
+    assertResult("0 B")(result2(1).getString(1))
 
+    // Table not in cache
     checkAnswer(sql("show metacache on table cache_db.cache_3"),
       Seq(Row("Index", "0 B", "0/1 index files cached"), Row("Dictionary", "0 B", "")))
 
+    // Table with Index, Dictionary & PreAgg child table
     val result4 = sql("show metacache on table default.cache_4").collect()
     assertResult(3)(result4.length)
+    assertResult("1/1 index files cached")(result4(0).getString(2))
+    assertResult("0 B")(result4(1).getString(1))
+    assertResult("preaggregate")(result4(2).getString(2))
 
     sql("use default").collect()
+
+    // Table with 5 index files
     val result5 = sql("show metacache on table cache_5").collect()
     assertResult(2)(result5.length)
+    assertResult("5/5 index files cached")(result5(0).getString(2))
   }
 }

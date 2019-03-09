@@ -63,9 +63,16 @@ trait DropTableEventInfo {
 }
 
 /**
+ * event for show cache
+ */
+trait ShowTableCacheEventInfo {
+  val carbonTable: CarbonTable
+}
+
+/**
  * event for drop cache
  */
-trait DropCacheEventInfo {
+trait DropTableCacheEventInfo {
   val carbonTable: CarbonTable
 }
 
