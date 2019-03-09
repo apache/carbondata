@@ -227,7 +227,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
    * returns all shard directories of bloom index files for query
    * if bloom index files are merged we should get only one shard path
    */
-  private Set<String> getAllShardPaths(String tablePath, String segmentId) {
+  public static Set<String> getAllShardPaths(String tablePath, String segmentId,
+      String dataMapName) {
     String dataMapStorePath = CarbonTablePath.getDataMapStorePath(
         tablePath, segmentId, dataMapName);
     CarbonFile[] carbonFiles = FileFactory.getCarbonFile(dataMapStorePath).listFiles();
@@ -257,7 +258,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     try {
       Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
       if (shardPaths == null) {
-        shardPaths = getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo());
+        shardPaths =
+            getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
         segmentMap.put(segment.getSegmentNo(), shardPaths);
       }
       Set<String> filteredShards = segment.getFilteredIndexShardNames();
@@ -299,7 +301,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<DataMapDistributable> dataMapDistributableList = new ArrayList<>();
     Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
     if (shardPaths == null) {
-      shardPaths = getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo());
+      shardPaths =
+          getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
       segmentMap.put(segment.getSegmentNo(), shardPaths);
     }
     Set<String> filteredShards = segment.getFilteredIndexShardNames();

@@ -20,27 +20,28 @@ package org.apache.spark.sql.execution.command.cache
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.mapred.JobConf
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.execution.command.MetadataCommand
 import org.apache.spark.sql.types.StringType
 
-import org.apache.carbondata.core.cache.CacheProvider
+import org.apache.carbondata.core.cache.{CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
 import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus, ShowTableCacheEvent}
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 import org.apache.carbondata.spark.util.CommonUtil.bytesToDisplaySize
 
-/**
- * SHOW CACHE
- */
-case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
+
+case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
+    internalCall: Boolean = false)
   extends MetadataCommand {
 
   override def output: Seq[AttributeReference] = {
@@ -61,241 +62,147 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
 
   override protected def opName: String = "SHOW CACHE"
 
-  def showAllTablesCache(sparkSession: SparkSession): Seq[Row] = {
+  def getAllTablesCache(sparkSession: SparkSession): Seq[Row] = {
     val currentDatabase = sparkSession.sessionState.catalog.getCurrentDatabase
     val cache = CacheProvider.getInstance().getCarbonCache()
     if (cache == null) {
       Seq(
-        Row("ALL", "ALL", bytesToDisplaySize(0L),
-          bytesToDisplaySize(0L), bytesToDisplaySize(0L)),
-        Row(currentDatabase, "ALL", bytesToDisplaySize(0L),
-          bytesToDisplaySize(0L), bytesToDisplaySize(0L)))
+        Row("ALL", "ALL", 0L, 0L, 0L),
+        Row(currentDatabase, "ALL", 0L, 0L, 0L))
     } else {
       val carbonTables = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-        .listAllTables(sparkSession)
-        .filter { table =>
-        table.getDatabaseName.equalsIgnoreCase(currentDatabase)
-      }
-      val tablePaths = carbonTables
-        .map { table =>
-          (table.getTablePath + CarbonCommonConstants.FILE_SEPARATOR,
-            table.getDatabaseName + "." + table.getTableName)
+        .listAllTables(sparkSession).filter {
+        carbonTable =>
+          carbonTable.getDatabaseName.equalsIgnoreCase(currentDatabase) &&
+          !carbonTable.isChildDataMap
       }
 
-      val dictIds = carbonTables
-        .filter(_ != null)
-        .flatMap { table =>
-          table
-            .getAllDimensions
-            .asScala
-            .filter(_.isGlobalDictionaryEncoding)
-            .toArray
-            .map(dim => (dim.getColumnId, table.getDatabaseName + "." + table.getTableName))
-        }
-
-      // all databases
-      var (allIndexSize, allDatamapSize, allDictSize) = (0L, 0L, 0L)
-      // current database
+      // All tables of current database
       var (dbIndexSize, dbDatamapSize, dbDictSize) = (0L, 0L, 0L)
-      val tableMapIndexSize = mutable.HashMap[String, Long]()
-      val tableMapDatamapSize = mutable.HashMap[String, Long]()
-      val tableMapDictSize = mutable.HashMap[String, Long]()
-      val cacheIterator = cache.getCacheMap.entrySet().iterator()
-      while (cacheIterator.hasNext) {
-        val entry = cacheIterator.next()
-        val cache = entry.getValue
-        if (cache.isInstanceOf[BlockletDataMapIndexWrapper]) {
-          // index
-          allIndexSize = allIndexSize + cache.getMemorySize
-          val indexPath = entry.getKey.replace(
-            CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR)
-          val tablePath = tablePaths.find(path => indexPath.startsWith(path._1))
-          if (tablePath.isDefined) {
-            dbIndexSize = dbIndexSize + cache.getMemorySize
-            val memorySize = tableMapIndexSize.get(tablePath.get._2)
-            if (memorySize.isEmpty) {
-              tableMapIndexSize.put(tablePath.get._2, cache.getMemorySize)
-            } else {
-              tableMapIndexSize.put(tablePath.get._2, memorySize.get + cache.getMemorySize)
-            }
+      val tableList: Seq[Row] = carbonTables.map {
+        carbonTable =>
+          val tableResult = getTableCache(sparkSession, carbonTable)
+          var (indexSize, datamapSize) = (tableResult(0).getLong(1), 0L)
+          tableResult.drop(2).foreach {
+            row =>
+              indexSize += row.getLong(1)
+              datamapSize += row.getLong(2)
           }
-        } else if (cache.isInstanceOf[BloomCacheKeyValue.CacheValue]) {
-          // bloom datamap
-          allDatamapSize = allDatamapSize + cache.getMemorySize
-          val shardPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
-            CarbonCommonConstants.FILE_SEPARATOR)
-          val tablePath = tablePaths.find(path => shardPath.contains(path._1))
-          if (tablePath.isDefined) {
-            dbDatamapSize = dbDatamapSize + cache.getMemorySize
-            val memorySize = tableMapDatamapSize.get(tablePath.get._2)
-            if (memorySize.isEmpty) {
-              tableMapDatamapSize.put(tablePath.get._2, cache.getMemorySize)
-            } else {
-              tableMapDatamapSize.put(tablePath.get._2, memorySize.get + cache.getMemorySize)
-            }
-          }
-        } else if (cache.isInstanceOf[AbstractColumnDictionaryInfo]) {
-          // dictionary
-          allDictSize = allDictSize + cache.getMemorySize
-          val dictId = dictIds.find(id => entry.getKey.startsWith(id._1))
-          if (dictId.isDefined) {
-            dbDictSize = dbDictSize + cache.getMemorySize
-            val memorySize = tableMapDictSize.get(dictId.get._2)
-            if (memorySize.isEmpty) {
-              tableMapDictSize.put(dictId.get._2, cache.getMemorySize)
-            } else {
-              tableMapDictSize.put(dictId.get._2, memorySize.get + cache.getMemorySize)
-            }
-          }
-        }
-      }
-      if (tableMapIndexSize.isEmpty && tableMapDatamapSize.isEmpty && tableMapDictSize.isEmpty) {
-        Seq(
-          Row("ALL", "ALL", bytesToDisplaySize(allIndexSize),
-            bytesToDisplaySize(allDatamapSize), bytesToDisplaySize(allDictSize)),
-          Row(currentDatabase, "ALL", bytesToDisplaySize(0),
-            bytesToDisplaySize(0), bytesToDisplaySize(0)))
-      } else {
-        val tableList = tableMapIndexSize
-          .map(_._1)
-          .toSeq
-          .union(tableMapDictSize.map(_._1).toSeq)
-          .distinct
-          .sorted
-          .map { uniqueName =>
-            val values = uniqueName.split("\\.")
-            val indexSize = tableMapIndexSize.getOrElse(uniqueName, 0L)
-            val datamapSize = tableMapDatamapSize.getOrElse(uniqueName, 0L)
-            val dictSize = tableMapDictSize.getOrElse(uniqueName, 0L)
-            Row(values(0), values(1), bytesToDisplaySize(indexSize),
-              bytesToDisplaySize(datamapSize), bytesToDisplaySize(dictSize))
-          }
+          val dictSize = tableResult(1).getLong(1)
 
-        Seq(
-          Row("ALL", "ALL", bytesToDisplaySize(allIndexSize),
-            bytesToDisplaySize(allDatamapSize), bytesToDisplaySize(allDictSize)),
-          Row(currentDatabase, "ALL", bytesToDisplaySize(dbIndexSize),
-            bytesToDisplaySize(dbDatamapSize), bytesToDisplaySize(dbDictSize))
-        ) ++ tableList
+          dbIndexSize += indexSize
+          dbDictSize += dictSize
+          dbDatamapSize += datamapSize
+
+          val tableName = if (!carbonTable.isTransactionalTable) {
+            carbonTable.getTableName + " (external table)"
+          }
+          else {
+            carbonTable.getTableName
+          }
+          (currentDatabase, tableName, indexSize, datamapSize, dictSize)
+      }.collect {
+        case (db, table, indexSize, datamapSize, dictSize) if !((indexSize == 0) &&
+                                                                (datamapSize == 0) &&
+                                                                (dictSize == 0)) =>
+          Row(db, table, indexSize, datamapSize, dictSize)
       }
+
+      // Scan whole cache and fill the entries for All-Database-All-Tables
+      var (allIndexSize, allDatamapSize, allDictSize) = (0L, 0L, 0L)
+      cache.getCacheMap.asScala.foreach {
+        case (_, cacheable) =>
+          cacheable match {
+            case _: BlockletDataMapIndexWrapper =>
+              allIndexSize += cacheable.getMemorySize
+            case _: BloomCacheKeyValue.CacheValue =>
+              allDatamapSize += cacheable.getMemorySize
+            case _: AbstractColumnDictionaryInfo =>
+              allDictSize += cacheable.getMemorySize
+          }
+      }
+
+      Seq(
+        Row("ALL", "ALL", allIndexSize, allDatamapSize, allDictSize),
+        Row(currentDatabase, "ALL", dbIndexSize, dbDatamapSize, dbDictSize)
+      ) ++ tableList
     }
   }
 
-  def showTableCache(sparkSession: SparkSession, carbonTable: CarbonTable): Seq[Row] = {
-    val cache = CacheProvider.getInstance().getCarbonCache()
-    if (cache == null) {
-      Seq.empty
-    } else {
-      val tablePath = carbonTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
-      var numIndexFilesCached = 0
+  def getTableCache(sparkSession: SparkSession, carbonTable: CarbonTable): Seq[Row] = {
+    val cache = CacheProvider.getInstance().getCarbonCache
+    val showTableCacheEvent = ShowTableCacheEvent(carbonTable, sparkSession, internalCall)
+    val operationContext = new OperationContext
+    // datamapName -> (datamapProviderName, indexSize, datamapSize)
+    val currentTableSizeMap = scala.collection.mutable.Map[String, (String, String, Long, Long)]()
+    operationContext.setProperty(carbonTable.getTableUniqueName, currentTableSizeMap)
+    OperationListenerBus.getInstance.fireEvent(showTableCacheEvent, operationContext)
 
-      // Path -> Name, Type
-      val datamapName = mutable.Map[String, (String, String)]()
-      // Path -> Size
-      val datamapSize = mutable.Map[String, Long]()
-      // parent table
-      datamapName.put(tablePath, ("", ""))
-      datamapSize.put(tablePath, 0)
-      // children tables
-      for( schema <- carbonTable.getTableInfo.getDataMapSchemaList.asScala ) {
-        val childTableName = carbonTable.getTableName + "_" + schema.getDataMapName
-        val childTable = CarbonEnv
-          .getCarbonTable(Some(carbonTable.getDatabaseName), childTableName)(sparkSession)
-        val path = childTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
-        val name = schema.getDataMapName
-        val dmType = schema.getProviderName
-        datamapName.put(path, (name, dmType))
-        datamapSize.put(path, 0)
-      }
-      // index schemas
-      for (schema <- DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-        .asScala) {
-        val path = tablePath + schema.getDataMapName + CarbonCommonConstants.FILE_SEPARATOR
-        val name = schema.getDataMapName
-        val dmType = schema.getProviderName
-        datamapName.put(path, (name, dmType))
-        datamapSize.put(path, 0)
-      }
-
-      var dictSize = 0L
-
-      // dictionary column ids
-      val dictIds = carbonTable
-        .getAllDimensions
-        .asScala
-        .filter(_.isGlobalDictionaryEncoding)
-        .map(_.getColumnId)
-        .toArray
-
-      val cacheIterator = cache.getCacheMap.entrySet().iterator()
-      while (cacheIterator.hasNext) {
-        val entry = cacheIterator.next()
-        val cache = entry.getValue
-
-        if (cache.isInstanceOf[BlockletDataMapIndexWrapper]) {
-          // index
-          val indexPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
-            CarbonCommonConstants.FILE_SEPARATOR)
-          val pathEntry = datamapSize.filter(entry => indexPath.startsWith(entry._1))
-          if(pathEntry.nonEmpty) {
-            val (path, size) = pathEntry.iterator.next()
-            datamapSize.put(path, size + cache.getMemorySize)
-          }
-          if(indexPath.startsWith(tablePath)) {
-            numIndexFilesCached += 1
-          }
-        } else if (cache.isInstanceOf[BloomCacheKeyValue.CacheValue]) {
-          // bloom datamap
-          val shardPath = entry.getKey.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
-            CarbonCommonConstants.FILE_SEPARATOR)
-          val pathEntry = datamapSize.filter(entry => shardPath.contains(entry._1))
-          if(pathEntry.nonEmpty) {
-            val (path, size) = pathEntry.iterator.next()
-            datamapSize.put(path, size + cache.getMemorySize)
-          }
-        } else if (cache.isInstanceOf[AbstractColumnDictionaryInfo]) {
-          // dictionary
-          val dictId = dictIds.find(id => entry.getKey.startsWith(id))
-          if (dictId.isDefined) {
-            dictSize = dictSize + cache.getMemorySize
-          }
-        }
-      }
-
-      // get all index files
-      val absoluteTableIdentifier = AbsoluteTableIdentifier.from(tablePath)
-      val numIndexFilesAll = CarbonDataMergerUtil.getValidSegmentList(absoluteTableIdentifier)
-        .asScala.map {
-          segment =>
-            segment.getCommittedIndexFile
-        }.flatMap {
-        indexFilesMap => indexFilesMap.keySet().toArray
-      }.size
-
-      var result = Seq(
-        Row("Index", bytesToDisplaySize(datamapSize.get(tablePath).get),
-          numIndexFilesCached + "/" + numIndexFilesAll + " index files cached"),
-        Row("Dictionary", bytesToDisplaySize(dictSize), "")
-      )
-      for ((path, size) <- datamapSize) {
-        if (path != tablePath) {
-          val (dmName, dmType) = datamapName.get(path).get
-          result = result :+ Row(dmName, bytesToDisplaySize(size), dmType)
-        }
-      }
-      result
+    // Get all Index files for the specified table.
+    val allIndexFiles: List[String] = CacheUtil.getAllIndexFiles(carbonTable)
+    val indexFilesInCache: List[String] = allIndexFiles.filter {
+      indexFile =>
+        cache.get(indexFile) != null
     }
+    val sizeOfIndexFilesInCache: Long = indexFilesInCache.map {
+      indexFile =>
+        cache.get(indexFile).getMemorySize
+    }.sum
+
+    // Extract dictionary keys for the table and create cache keys from those
+    val dictKeys = CacheUtil.getAllDictCacheKeys(carbonTable)
+    val sizeOfDictInCache = dictKeys.collect {
+      case dictKey if cache.get(dictKey) != null =>
+        cache.get(dictKey).getMemorySize
+    }.sum
+
+    // Assemble result for all the datamaps for the table
+    val otherDatamaps = operationContext.getProperty(carbonTable.getTableUniqueName)
+      .asInstanceOf[mutable.Map[String, (String, Long, Long)]]
+    val otherDatamapsResults: Seq[Row] = otherDatamaps.map {
+      case (name, (provider, indexSize, dmSize)) =>
+        Row(name, indexSize, dmSize, provider)
+    }.toSeq
+
+    var comments = indexFilesInCache.size + "/" + allIndexFiles.size + " index files cached"
+    if (!carbonTable.isTransactionalTable) {
+      comments += " (external table)"
+    }
+    Seq(
+      Row("Index", sizeOfIndexFilesInCache, comments),
+      Row("Dictionary", sizeOfDictInCache, "")
+    ) ++ otherDatamapsResults
   }
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     if (tableIdentifier.isEmpty) {
-      showAllTablesCache(sparkSession)
-    } else {
-      val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier.get)(sparkSession)
-      if (carbonTable.isChildDataMap) {
-        throw new UnsupportedOperationException("Operation not allowed on child table.")
+      /**
+       * Assemble result for database
+       */
+      val result = getAllTablesCache(sparkSession)
+      result.map {
+        row =>
+          Row(row.get(0), row.get(1), bytesToDisplaySize(row.getLong(2)),
+            bytesToDisplaySize(row.getLong(3)), bytesToDisplaySize(row.getLong(4)))
       }
-      showTableCache(sparkSession, carbonTable)
+    } else {
+      /**
+       * Assemble result for table
+       */
+      val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier.get)(sparkSession)
+      if (CacheProvider.getInstance().getCarbonCache == null) {
+        return Seq.empty
+      }
+      val rawResult = getTableCache(sparkSession, carbonTable)
+      val result = rawResult.slice(0, 2) ++
+                   rawResult.drop(2).map {
+                     row =>
+                       Row(row.get(0), row.getLong(1) + row.getLong(2), row.get(3))
+                   }
+      result.map {
+        row =>
+          Row(row.get(0), bytesToDisplaySize(row.getLong(1)), row.get(2))
+      }
     }
   }
 }

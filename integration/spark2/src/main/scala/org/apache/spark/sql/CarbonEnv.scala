@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
-import org.apache.spark.sql.execution.command.cache.DropCachePreAggEventListener
+import org.apache.spark.sql.execution.command.cache._
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
@@ -186,7 +186,10 @@ object CarbonEnv {
       .addListener(classOf[AlterTableCompactionPostEvent], new MergeIndexEventListener)
       .addListener(classOf[AlterTableMergeIndexEvent], new MergeIndexEventListener)
       .addListener(classOf[BuildDataMapPostExecutionEvent], new MergeBloomIndexEventListener)
-      .addListener(classOf[DropCacheEvent], DropCachePreAggEventListener)
+      .addListener(classOf[DropTableCacheEvent], DropCachePreAggEventListener)
+      .addListener(classOf[DropTableCacheEvent], DropCacheBloomEventListener)
+      .addListener(classOf[ShowTableCacheEvent], ShowCachePreAggEventListener)
+      .addListener(classOf[ShowTableCacheEvent], ShowCacheBloomEventListener)
   }
 
   /**
