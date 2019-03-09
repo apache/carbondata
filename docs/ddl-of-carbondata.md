@@ -1119,3 +1119,16 @@ Users can specify which columns to include and exclude for local dictionary gene
   its dictionary files, its datamaps and children tables.
     
   This command is not allowed on child tables.
+
+### Important points
+
+  1. Cache information is updated only after the select query is executed. 
+  
+  2. In case of alter table the already loaded cache is invalidated when any subsequent select query
+  is fired.
+
+  3. Dictionary is loaded in cache only when the dictionary columns are queried upon. If we don't do
+  direct query on dictionary column, cache will not be loaded.
+  If we do `SELECT * FROM t1`, and even though for this case dictionary is loaded, it is loaded in
+  executor and not on driver, and the final result rows are returned back to driver, and thus will
+  produce no trace on driver cache if we do `SHOW METACACHE` or `SHOW METACACHE ON TABLE t1`.
