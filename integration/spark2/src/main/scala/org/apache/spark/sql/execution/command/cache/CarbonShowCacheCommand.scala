@@ -20,13 +20,11 @@ package org.apache.spark.sql.execution.command.cache
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 
-import org.apache.commons.io.FileUtils.byteCountToDisplaySize
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.execution.command.MetadataCommand
-import org.apache.spark.sql.types.{LongType, StringType}
+import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
@@ -37,6 +35,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
+import org.apache.carbondata.spark.util.CommonUtil.bytesToDisplaySize
 
 /**
  * SHOW CACHE
@@ -67,10 +66,10 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
     val cache = CacheProvider.getInstance().getCarbonCache()
     if (cache == null) {
       Seq(
-        Row("ALL", "ALL", byteCountToDisplaySize(0L),
-          byteCountToDisplaySize(0L), byteCountToDisplaySize(0L)),
-        Row(currentDatabase, "ALL", byteCountToDisplaySize(0L),
-          byteCountToDisplaySize(0L), byteCountToDisplaySize(0L)))
+        Row("ALL", "ALL", bytesToDisplaySize(0L),
+          bytesToDisplaySize(0L), bytesToDisplaySize(0L)),
+        Row(currentDatabase, "ALL", bytesToDisplaySize(0L),
+          bytesToDisplaySize(0L), bytesToDisplaySize(0L)))
     } else {
       val carbonTables = CarbonEnv.getInstance(sparkSession).carbonMetaStore
         .listAllTables(sparkSession)
@@ -152,10 +151,10 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
       }
       if (tableMapIndexSize.isEmpty && tableMapDatamapSize.isEmpty && tableMapDictSize.isEmpty) {
         Seq(
-          Row("ALL", "ALL", byteCountToDisplaySize(allIndexSize),
-            byteCountToDisplaySize(allDatamapSize), byteCountToDisplaySize(allDictSize)),
-          Row(currentDatabase, "ALL", byteCountToDisplaySize(0),
-            byteCountToDisplaySize(0), byteCountToDisplaySize(0)))
+          Row("ALL", "ALL", bytesToDisplaySize(allIndexSize),
+            bytesToDisplaySize(allDatamapSize), bytesToDisplaySize(allDictSize)),
+          Row(currentDatabase, "ALL", bytesToDisplaySize(0),
+            bytesToDisplaySize(0), bytesToDisplaySize(0)))
       } else {
         val tableList = tableMapIndexSize
           .map(_._1)
@@ -168,15 +167,15 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
             val indexSize = tableMapIndexSize.getOrElse(uniqueName, 0L)
             val datamapSize = tableMapDatamapSize.getOrElse(uniqueName, 0L)
             val dictSize = tableMapDictSize.getOrElse(uniqueName, 0L)
-            Row(values(0), values(1), byteCountToDisplaySize(indexSize),
-              byteCountToDisplaySize(datamapSize), byteCountToDisplaySize(dictSize))
+            Row(values(0), values(1), bytesToDisplaySize(indexSize),
+              bytesToDisplaySize(datamapSize), bytesToDisplaySize(dictSize))
           }
 
         Seq(
-          Row("ALL", "ALL", byteCountToDisplaySize(allIndexSize),
-            byteCountToDisplaySize(allDatamapSize), byteCountToDisplaySize(allDictSize)),
-          Row(currentDatabase, "ALL", byteCountToDisplaySize(dbIndexSize),
-            byteCountToDisplaySize(dbDatamapSize), byteCountToDisplaySize(dbDictSize))
+          Row("ALL", "ALL", bytesToDisplaySize(allIndexSize),
+            bytesToDisplaySize(allDatamapSize), bytesToDisplaySize(allDictSize)),
+          Row(currentDatabase, "ALL", bytesToDisplaySize(dbIndexSize),
+            bytesToDisplaySize(dbDatamapSize), bytesToDisplaySize(dbDictSize))
         ) ++ tableList
       }
     }
@@ -274,14 +273,14 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier])
       }.size
 
       var result = Seq(
-        Row("Index", byteCountToDisplaySize(datamapSize.get(tablePath).get),
+        Row("Index", bytesToDisplaySize(datamapSize.get(tablePath).get),
           numIndexFilesCached + "/" + numIndexFilesAll + " index files cached"),
-        Row("Dictionary", byteCountToDisplaySize(dictSize), "")
+        Row("Dictionary", bytesToDisplaySize(dictSize), "")
       )
       for ((path, size) <- datamapSize) {
         if (path != tablePath) {
           val (dmName, dmType) = datamapName.get(path).get
-          result = result :+ Row(dmName, byteCountToDisplaySize(size), dmType)
+          result = result :+ Row(dmName, bytesToDisplaySize(size), dmType)
         }
       }
       result
