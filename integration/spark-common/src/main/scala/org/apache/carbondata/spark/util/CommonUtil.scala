@@ -19,13 +19,14 @@ package org.apache.carbondata.spark.util
 
 
 import java.io.File
+import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
-import scala.util.Random
+import scala.math.BigDecimal.RoundingMode
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
@@ -61,6 +62,19 @@ object CommonUtil {
 
   val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
   val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
+
+  val ONE_KB: Long = 1024L
+  val ONE_KB_BI: BigDecimal = BigDecimal.valueOf(ONE_KB)
+  val ONE_MB: Long = ONE_KB * ONE_KB
+  val ONE_MB_BI: BigDecimal = BigDecimal.valueOf(ONE_MB)
+  val ONE_GB: Long = ONE_KB * ONE_MB
+  val ONE_GB_BI: BigDecimal = BigDecimal.valueOf(ONE_GB)
+  val ONE_TB: Long = ONE_KB * ONE_GB
+  val ONE_TB_BI: BigDecimal = BigDecimal.valueOf(ONE_TB)
+  val ONE_PB: Long = ONE_KB * ONE_TB
+  val ONE_PB_BI: BigDecimal = BigDecimal.valueOf(ONE_PB)
+  val ONE_EB: Long = ONE_KB * ONE_PB
+  val ONE_EB_BI: BigDecimal = BigDecimal.valueOf(ONE_EB)
 
   def getColumnProperties(column: String,
       tableProperties: Map[String, String]): Option[util.List[ColumnProperty]] = {
@@ -861,5 +875,28 @@ object CommonUtil {
         tableProperties.put(propertyName, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)
       }
     }
+  }
+
+  def bytesToDisplaySize(size: Long): String = bytesToDisplaySize(BigDecimal.valueOf(size))
+
+  // This method converts the bytes count to display size upto 2 decimal places
+  def bytesToDisplaySize(size: BigDecimal): String = {
+    var displaySize: String = null
+    if (size.divideToIntegralValue(ONE_EB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_EB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " EB"
+    } else if (size.divideToIntegralValue(ONE_PB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_PB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " PB"
+    } else if (size.divideToIntegralValue(ONE_TB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_TB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " TB"
+    } else if (size.divideToIntegralValue(ONE_GB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_GB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " GB"
+    } else if (size.divideToIntegralValue(ONE_MB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_MB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " MB"
+    } else if (size.divideToIntegralValue(ONE_KB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_KB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " KB"
+    } else {
+      displaySize = size + " B"
+    }
+    displaySize
   }
 }
