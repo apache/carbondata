@@ -110,6 +110,28 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("select workgroupcategoryname,count(empname) as count from cache_4 group by workgroupcategoryname").collect()
   }
 
+  test("test drop cache invalidation in case of invalid segments"){
+    sql(s"CREATE TABLE empTable(empno int, empname String, designation String, " +
+        s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
+        s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
+        s"attendance int, utilization int, salary int) stored by 'carbondata'")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE empTable")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE empTable")
+    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE empTable")
+    sql("select count(*) from empTable").show()
+    var showCache = sql("SHOW METACACHE on table empTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("3/3 index files cached"))
+    sql("delete from table empTable where segment.id in(0)").show()
+    // check whether count(*) query invalidates the cache for the invalid segments
+    sql("select count(*) from empTable").show()
+    showCache = sql("SHOW METACACHE on table empTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/2 index files cached"))
+    sql("delete from table empTable where segment.id in(1)").show()
+    // check whether select * query invalidates the cache for the invalid segments
+    sql("select * from empTable").show()
+    showCache = sql("SHOW METACACHE on table empTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
+  }
 
   override protected def afterAll(): Unit = {
     sql("use default").collect()
@@ -122,6 +144,7 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS cache_db.cache_3")
     sql("DROP TABLE IF EXISTS default.cache_4")
     sql("DROP TABLE IF EXISTS default.cache_5")
+    sql("DROP TABLE IF EXISTS empTable")
   }
 
   test("show cache") {

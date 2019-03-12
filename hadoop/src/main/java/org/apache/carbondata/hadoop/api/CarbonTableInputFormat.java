@@ -617,6 +617,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         toBeCleanedSegments.add(eachSegment);
       }
     }
+    // remove entry in the segment index if there are invalid segments
+    toBeCleanedSegments.addAll(allSegments.getInvalidSegments());
     if (toBeCleanedSegments.size() > 0) {
       DataMapStoreManager.getInstance()
           .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
