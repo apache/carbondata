@@ -208,6 +208,13 @@ public class RangeExpressionEvaluator {
     return filterExpressionMap;
   }
 
+  private void evaluateOrExpression(Expression currentNode, Expression orExpChild) {
+    Map<String, List<FilterModificationNode>> filterExpressionMapNew =
+        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    fillExpressionMap(filterExpressionMapNew, orExpChild, currentNode);
+    replaceWithRangeExpression(filterExpressionMapNew);
+    filterExpressionMapNew.clear();
+  }
 
   private void fillExpressionMap(Map<String, List<FilterModificationNode>> filterExpressionMap,
       Expression currentNode, Expression parentNode) {
@@ -222,13 +229,22 @@ public class RangeExpressionEvaluator {
         && eligibleForRangeExpConv(currentNode))) {
       addFilterExpressionMap(filterExpressionMap, currentNode, parentNode);
     }
-
-    for (Expression exp : currentNode.getChildren()) {
-      if (null != exp) {
-        fillExpressionMap(filterExpressionMap, exp, currentNode);
-        if (exp instanceof OrExpression) {
-          replaceWithRangeExpression(filterExpressionMap);
-          filterExpressionMap.clear();
+    // In case of Or Exp we have to evaluate both the subtrees of expression separately
+    // else it will combine the results of both the subtrees into one expression
+    // which wont give us correct result
+    if (currentNode instanceof OrExpression) {
+      Expression leftChild = ((OrExpression) currentNode).left;
+      Expression rightChild = ((OrExpression) currentNode).right;
+      if (null != leftChild) {
+        evaluateOrExpression(currentNode, leftChild);
+      }
+      if (null != rightChild) {
+        evaluateOrExpression(currentNode, rightChild);
+      }
+    } else {
+      for (Expression exp : currentNode.getChildren()) {
+        if (null != exp) {
+          fillExpressionMap(filterExpressionMap, exp, currentNode);
         }
       }
     }
