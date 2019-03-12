@@ -39,6 +39,20 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists DICTIONARY_CARBON_6")
     sql("drop table if exists NO_DICTIONARY_CARBON_7")
     sql("drop table if exists NO_DICTIONARY_HIVE_8")
+    sql("drop table if exists carbontest")
+    sql("drop table if exists carbontest_hive")
+    sql(
+      "create table carbontest(c1 string, c2 string, c3 int) stored by 'carbondata' tblproperties" +
+      "('sort_columns'='c3')")
+    (0 to 10).foreach { index =>
+      sql(s"insert into carbontest select '$index','$index',$index")
+    }
+    sql(
+      "create table carbontest_hive(c1 string, c2 string, c3 int) row format delimited fields " +
+      "terminated by ',' tblproperties('sort_columns'='c3')")
+    (0 to 10).foreach { index =>
+      sql(s"insert into carbontest_hive select '$index','$index',$index")
+    }
 
     sql("CREATE TABLE NO_DICTIONARY_HIVE_1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION " +
         "string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint," +
@@ -587,7 +601,31 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select empname from NO_DICTIONARY_HIVE_8 where empname <= '107'"))
   }
 
+  test("Range filter with two between clauses") {
+
+    checkAnswer(sql("select * from carbontest where c3 between 2 and 3 or c3 between 3 and 4"),
+      sql("select * from carbontest_hive where c3 between 2 and 3 or c3 between 3 and 4"))
+
+    checkAnswer(sql("select * from carbontest where c3 >= 2 and c3 <= 3 or c3 >= 3 and c3 <= 4"),
+      sql("select * from carbontest_hive where c3 >= 2 and c3 <= 3 or c3 >= 3 and c3 <= 4"))
+
+    checkAnswer(sql(
+      "select * from carbontest where (c3 between 2 and 3 or c3 between 3 and 4) and (c3 between " +
+      "2 and 4 or c3 between 4 and 5)"),
+      sql(
+        "select * from carbontest_hive where (c3 between 2 and 3 or c3 between 3 and 4) and (c3 " +
+        "between 2 and 4 or c3 between 4 and 5)"))
+
+    checkAnswer(sql(
+      "select * from carbontest where c3 >= 2 and c3 <= 5 and (c3 between 1 and 3 or c3 between 3" +
+      " and 6)"),
+      sql("select * from carbontest_hive where c3 >= 2 and c3 <= 5 and (c3 between 1 and 3 or c3 " +
+        "between 3 and 6)"))
+  }
+
   override def afterAll {
+    sql("drop table if exists carbontest")
+    sql("drop table if exists carbontest_hive")
     sql("drop table if exists filtertestTable")
     sql("drop table if exists NO_DICTIONARY_HIVE_1")
     sql("drop table if exists NO_DICTIONARY_CARBON_1")
