@@ -20,7 +20,9 @@ package org.apache.carbondata.sdk.file;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -35,10 +37,12 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
@@ -57,6 +61,7 @@ public class CarbonReaderBuilder {
   private String tableName;
   private Configuration hadoopConf;
   private boolean useVectorReader = true;
+  private InputSplit inputSplit;
   private boolean useArrowReader;
 
   /**
@@ -71,6 +76,10 @@ public class CarbonReaderBuilder {
     ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
   }
 
+  CarbonReaderBuilder(InputSplit inputSplit) {
+    this.inputSplit = inputSplit;
+    ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
+  }
 
   /**
    * Configure the projection column names of carbon reader
@@ -147,7 +156,6 @@ public class CarbonReaderBuilder {
   public CarbonReaderBuilder withHadoopConf(String key, String value) {
     if (this.hadoopConf == null) {
       this.hadoopConf = new Configuration();
-
     }
     this.hadoopConf.set(key, value);
     return this;
@@ -175,6 +183,75 @@ public class CarbonReaderBuilder {
     return (ArrowCarbonReader<T>) this.build();
   }
 
+  private CarbonFileInputFormat prepareFileInputFormat(Job job, boolean enableBlockletDistribution,
+      boolean disableLoadBlockDataMap) throws IOException {
+    if (inputSplit != null && inputSplit instanceof CarbonInputSplit) {
+      tablePath =
+          ((CarbonInputSplit) inputSplit).getSegment().getReadCommittedScope().getFilePath();
+      tableName = "UnknownTable" + UUID.randomUUID();
+    }
+    CarbonTable table = CarbonTable.buildTable(tablePath, tableName, hadoopConf);
+    if (enableBlockletDistribution) {
+      // set cache level to blocklet level
+      Map<String, String> tableProperties =
+          table.getTableInfo().getFactTable().getTableProperties();
+      tableProperties.put(CarbonCommonConstants.CACHE_LEVEL,"BLOCKLET");
+      table.getTableInfo().getFactTable().setTableProperties(tableProperties);
+    }
+    final CarbonFileInputFormat format = new CarbonFileInputFormat();
+    format.setTableInfo(job.getConfiguration(), table.getTableInfo());
+    format.setTablePath(job.getConfiguration(), table.getTablePath());
+    format.setTableName(job.getConfiguration(), table.getTableName());
+    format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
+    if (filterExpression != null) {
+      format.setFilterPredicates(job.getConfiguration(), filterExpression);
+    }
+    if (projectionColumns != null) {
+      // set the user projection
+      int len = projectionColumns.length;
+      for (int i = 0; i < len; i++) {
+        if (projectionColumns[i].contains(".")) {
+          throw new UnsupportedOperationException(
+              "Complex child columns projection NOT supported through CarbonReader");
+        }
+      }
+      format.setColumnProjection(job.getConfiguration(), projectionColumns);
+    }
+    if ((disableLoadBlockDataMap) && (filterExpression == null)) {
+      job.getConfiguration().set("filter_blocks", "false");
+    }
+    return format;
+  }
+
+  private <T> RecordReader getRecordReader(Job job, CarbonFileInputFormat format,
+      List<RecordReader<Void, T>> readers, InputSplit split)
+      throws IOException, InterruptedException {
+    TaskAttemptContextImpl attempt =
+        new TaskAttemptContextImpl(job.getConfiguration(), new TaskAttemptID());
+    RecordReader reader;
+    QueryModel queryModel = format.createQueryModel(split, attempt);
+    boolean hasComplex = false;
+    for (ProjectionDimension projectionDimension : queryModel.getProjectionDimensions()) {
+      if (projectionDimension.getDimension().isComplex()) {
+        hasComplex = true;
+        break;
+      }
+    }
+    if (useVectorReader && !hasComplex) {
+      queryModel.setDirectVectorFill(filterExpression == null);
+      reader = new CarbonVectorizedRecordReader(queryModel);
+    } else {
+      reader = format.createRecordReader(split, attempt);
+    }
+    try {
+      reader.initialize(split, attempt);
+    } catch (Exception e) {
+      CarbonUtil.closeStreams(readers.toArray(new RecordReader[0]));
+      throw e;
+    }
+    return reader;
+  }
+
   /**
    * Build CarbonReader
    *
@@ -185,68 +262,21 @@ public class CarbonReaderBuilder {
    */
   public <T> CarbonReader<T> build()
       throws IOException, InterruptedException {
+    if (inputSplit != null) {
+      return buildWithSplits(inputSplit);
+    }
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }
-    CarbonTable table;
-    // now always infer schema. TODO:Refactor in next version.
-    table = CarbonTable.buildTable(tablePath, tableName, hadoopConf);
-    final CarbonFileInputFormat format = new CarbonFileInputFormat();
-    final Job job = new Job(hadoopConf);
-    format.setTableInfo(job.getConfiguration(), table.getTableInfo());
-    format.setTablePath(job.getConfiguration(), table.getTablePath());
-    format.setTableName(job.getConfiguration(), table.getTableName());
-    format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
-    if (filterExpression != null) {
-      format.setFilterPredicates(job.getConfiguration(), filterExpression);
-    }
-
-    if (projectionColumns != null) {
-      // set the user projection
-      int len = projectionColumns.length;
-      //      TODO : Handle projection of complex child columns
-      for (int i = 0; i < len; i++) {
-        if (projectionColumns[i].contains(".")) {
-          throw new UnsupportedOperationException(
-              "Complex child columns projection NOT supported through CarbonReader");
-        }
-      }
-      format.setColumnProjection(job.getConfiguration(), projectionColumns);
-    }
-
+    final Job job = new Job(new JobConf(hadoopConf));
+    CarbonFileInputFormat format = prepareFileInputFormat(job, false, true);
     try {
-
-      if (filterExpression == null) {
-        job.getConfiguration().set("filter_blocks", "false");
-      }
       List<InputSplit> splits =
           format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
       List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
       for (InputSplit split : splits) {
-        TaskAttemptContextImpl attempt =
-            new TaskAttemptContextImpl(job.getConfiguration(), new TaskAttemptID());
-        RecordReader reader;
-        QueryModel queryModel = format.createQueryModel(split, attempt);
-        boolean hasComplex = false;
-        for (ProjectionDimension projectionDimension : queryModel.getProjectionDimensions()) {
-          if (projectionDimension.getDimension().isComplex()) {
-            hasComplex = true;
-            break;
-          }
-        }
-        if (useVectorReader && !hasComplex) {
-          queryModel.setDirectVectorFill(filterExpression == null);
-          reader = new CarbonVectorizedRecordReader(queryModel);
-        } else {
-          reader = format.createRecordReader(split, attempt);
-        }
-        try {
-          reader.initialize(split, attempt);
-          readers.add(reader);
-        } catch (Exception e) {
-          CarbonUtil.closeStreams(readers.toArray(new RecordReader[0]));
-          throw e;
-        }
+        RecordReader reader = getRecordReader(job, format, readers, split);
+        readers.add(reader);
       }
       if (useArrowReader) {
         return new ArrowCarbonReader<>(readers);
@@ -256,9 +286,54 @@ public class CarbonReaderBuilder {
     } catch (Exception ex) {
       // Clear the datamap cache as it can get added in getSplits() method
       DataMapStoreManager.getInstance()
-          .clearDataMaps(table.getAbsoluteTableIdentifier());
+          .clearDataMaps(format.getAbsoluteTableIdentifier(hadoopConf));
       throw ex;
     }
   }
 
+
+  private  <T> CarbonReader<T> buildWithSplits(InputSplit inputSplit)
+      throws IOException, InterruptedException {
+    if (hadoopConf == null) {
+      hadoopConf = FileFactory.getConfiguration();
+    }
+    final Job job = new Job(new JobConf(hadoopConf));
+    CarbonFileInputFormat format = prepareFileInputFormat(job, false, true);
+    try {
+      List<RecordReader<Void, T>> readers = new ArrayList<>(1);
+      RecordReader reader = getRecordReader(job, format, readers, inputSplit);
+      readers.add(reader);
+      if (useArrowReader) {
+        return new ArrowCarbonReader<>(readers);
+      } else {
+        return new CarbonReader<>(readers);
+      }
+    } catch (Exception ex) {
+      // Clear the datamap cache as it can get added in getSplits() method
+      DataMapStoreManager.getInstance()
+          .clearDataMaps(format.getAbsoluteTableIdentifier(hadoopConf));
+      throw ex;
+    }
+  }
+
+  /**
+   * Gets an array of CarbonInputSplits.
+   * In carbondata, splits can be block level or blocklet level.
+   * by default splits are block level.
+   *
+   * @param enableBlockletDistribution, returns blocklet level splits if set to true,
+   *                                    else block level splits.
+   * @return
+   * @throws IOException
+   */
+  public InputSplit[] getSplits(boolean enableBlockletDistribution) throws IOException {
+    if (hadoopConf == null) {
+      hadoopConf = FileFactory.getConfiguration();
+    }
+    final Job job = new Job(new JobConf(hadoopConf));
+    CarbonFileInputFormat format = prepareFileInputFormat(job, enableBlockletDistribution, false);
+    List<InputSplit> splits =
+        format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
+    return splits.toArray(new InputSplit[splits.size()]);
+  }
 }

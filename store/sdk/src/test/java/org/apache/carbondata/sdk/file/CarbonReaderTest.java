@@ -27,6 +27,7 @@ import org.apache.arrow.vector.Float4Vector;
 import org.apache.arrow.vector.SmallIntVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.avro.generic.GenericData;
+import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.log4j.Logger;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
@@ -2553,4 +2554,36 @@ public class CarbonReaderTest extends TestCase {
     }
   }
 
+
+  @Test
+  public void testReadBlocklet() throws IOException, InterruptedException {
+    String path = "./testWriteFiles/" + System.nanoTime();
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, 1, 100);
+
+    InputSplit[] splits = CarbonReader.builder(path).getSplits(true);
+    // check for 3 blocklet count (as only one carbon file will be created)
+    Assert.assertEquals(splits.length, 3);
+
+    int totalCount = 0;
+    for (int k = 0; k < splits.length; k++) {
+      CarbonReader reader = CarbonReader
+          .builder(splits[k])
+          .build();
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] row = (Object[]) reader.readNextRow();
+        i++;
+      }
+      totalCount += i;
+      reader.close();
+    }
+    Assert.assertEquals(totalCount, 1000000);
+    FileUtils.deleteDirectory(new File(path));
+  }
 }

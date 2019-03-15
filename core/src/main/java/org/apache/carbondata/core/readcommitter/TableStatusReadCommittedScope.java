@@ -112,4 +112,8 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
   @Override public void setConfiguration(Configuration configuration) {
     this.configuration = configuration;
   }
+
+  @Override public String getFilePath() {
+    return identifier.getTablePath();
+  }
 }

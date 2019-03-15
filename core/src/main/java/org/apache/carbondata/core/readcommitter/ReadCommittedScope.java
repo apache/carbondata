@@ -54,4 +54,12 @@ import org.apache.hadoop.conf.Configuration;
   Configuration getConfiguration();
 
   void setConfiguration(Configuration configuration);
+
+  /**
+   * get table path if ReadCommittedScope is TableStatusReadCommittedScope
+   * get file path if ReadCommittedScope is LatestFilesReadCommittedScope
+   *
+   * @return
+   */
+  String getFilePath();
 }
