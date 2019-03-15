@@ -104,7 +104,7 @@ object DeleteExecution {
         CarbonFilters.getPartitions(
           Seq.empty,
           sparkSession,
-          TableIdentifier(tableName, databaseNameOp)).map(_.asJava).orNull)
+          TableIdentifier(tableName, databaseNameOp)).map(_.asJava).orNull, true)
     val segmentUpdateStatusMngr = new SegmentUpdateStatusManager(carbonTable)
     CarbonUpdateUtil
       .createBlockDetailsMap(blockMappingVO, segmentUpdateStatusMngr)

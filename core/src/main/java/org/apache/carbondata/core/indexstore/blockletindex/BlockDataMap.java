@@ -23,10 +23,13 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -217,6 +220,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     boolean[] minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
     Arrays.fill(minMaxFlag, true);
+    long totalRowCount = 0;
     for (DataFileFooter fileFooter : indexInfo) {
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
       BlockMetaInfo blockMetaInfo =
@@ -241,11 +245,14 @@ public class BlockDataMap extends CoarseGrainDataMap
         summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, fileFooter, segmentProperties,
             getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
             blockMetaInfo, updatedMinValues, updatedMaxValues, minMaxFlag);
+        totalRowCount += fileFooter.getNumberOfRows();
       }
     }
     List<Short> blockletCountList = new ArrayList<>();
     blockletCountList.add((short) 0);
     byte[] blockletCount = convertRowCountFromShortToByteArray(blockletCountList);
+    // set the total row count
+    summaryRow.setLong(totalRowCount, TASK_ROW_COUNT);
     summaryRow.setByteArray(blockletCount, taskSummarySchema.length - 1);
     setMinMaxFlagForTaskSummary(summaryRow, taskSummarySchema, segmentProperties, minMaxFlag);
     return summaryRow;
@@ -289,6 +296,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     // min max flag for task summary
     boolean[] taskSummaryMinMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
     Arrays.fill(taskSummaryMinMaxFlag, true);
+    long totalRowCount = 0;
     for (DataFileFooter fileFooter : indexInfo) {
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
       BlockMetaInfo blockMetaInfo =
@@ -331,6 +339,7 @@ public class BlockDataMap extends CoarseGrainDataMap
               summaryRow,
               blockletDataMapInfo.getBlockMetaInfoMap().get(previousBlockInfo.getFilePath()),
               blockMinValues, blockMaxValues, minMaxFlag);
+          totalRowCount += previousDataFileFooter.getNumberOfRows();
           minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
           Arrays.fill(minMaxFlag, true);
           // flag to check whether last file footer entry is different from previous entry.
@@ -361,9 +370,12 @@ public class BlockDataMap extends CoarseGrainDataMap
               blockletDataMapInfo.getBlockMetaInfoMap()
                   .get(previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath()),
               blockMinValues, blockMaxValues, minMaxFlag);
+      totalRowCount += previousDataFileFooter.getNumberOfRows();
       blockletCountInEachBlock.add(totalBlockletsInOneBlock);
     }
     byte[] blockletCount = convertRowCountFromShortToByteArray(blockletCountInEachBlock);
+    // set the total row count
+    summaryRow.setLong(totalRowCount, TASK_ROW_COUNT);
     // blocklet count index is the last index
     summaryRow.setByteArray(blockletCount, taskSummarySchema.length - 1);
     setMinMaxFlagForTaskSummary(summaryRow, taskSummarySchema, segmentProperties,
@@ -409,7 +421,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     }
     DataMapRow row = new DataMapRowImpl(schema);
     int ordinal = 0;
-    int taskMinMaxOrdinal = 0;
+    int taskMinMaxOrdinal = 1;
     // get min max values for columns to be cached
     byte[][] minValuesForColumnsToBeCached = BlockletDataMapUtil
         .getMinMaxForColumnsToBeCached(segmentProperties, minMaxCacheColumns, minValues);
@@ -646,6 +658,49 @@ public class BlockDataMap extends CoarseGrainDataMap
       sum += byteBuffer.getShort();
     }
     return sum;
+  }
+
+  @Override
+  public long getRowCount(Segment segment, List<PartitionSpec> partitions) {
+    long totalRowCount =
+        taskSummaryDMStore.getDataMapRow(getTaskSummarySchema(), 0).getLong(TASK_ROW_COUNT);
+    if (totalRowCount == 0) {
+      Map<String, Long> blockletToRowCountMap = new HashMap<>();
+      getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
+      for (long blockletRowCount : blockletToRowCountMap.values()) {
+        totalRowCount += blockletRowCount;
+      }
+    } else {
+      if (taskSummaryDMStore.getRowCount() == 0) {
+        return 0L;
+      }
+    }
+    return totalRowCount;
+  }
+
+  public Map<String, Long> getRowCountForEachBlock(Segment segment, List<PartitionSpec> partitions,
+      Map<String, Long> blockletToRowCountMap) {
+    if (memoryDMStore.getRowCount() == 0) {
+      return new HashMap<>();
+    }
+    // if it has partitioned datamap but there is no partitioned information stored, it means
+    // partitions are dropped so return empty list.
+    if (partitions != null) {
+      if (!validatePartitionInfo(partitions)) {
+        return new HashMap<>();
+      }
+    }
+    CarbonRowSchema[] schema = getFileFooterEntrySchema();
+    int numEntries = memoryDMStore.getRowCount();
+    for (int i = 0; i < numEntries; i++) {
+      DataMapRow dataMapRow = memoryDMStore.getDataMapRow(schema, i);
+      String fileName = new String(dataMapRow.getByteArray(FILE_PATH_INDEX),
+          CarbonCommonConstants.DEFAULT_CHARSET_CLASS) + CarbonTablePath.getCarbonDataExtension();
+      int rowCount = dataMapRow.getInt(ROW_COUNT_INDEX);
+      // prepend segment number with the blocklet file path
+      blockletToRowCountMap.put((segment.getSegmentNo() + "," + fileName), (long) rowCount);
+    }
+    return blockletToRowCountMap;
   }
 
   private List<Blocklet> prune(FilterResolverIntf filterExp) {

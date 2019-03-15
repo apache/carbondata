@@ -28,11 +28,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -58,7 +58,6 @@ import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.stream.StreamFile;
 import org.apache.carbondata.core.stream.StreamPruner;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import org.apache.hadoop.conf.Configuration;
@@ -576,7 +575,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * Get the row count of the Block and mapping of segment and Block count.
    */
   public BlockMappingVO getBlockRowCount(Job job, CarbonTable table,
-      List<PartitionSpec> partitions) throws IOException {
+      List<PartitionSpec> partitions, boolean isUpdateFlow) throws IOException {
     // Normal query flow goes to CarbonInputFormat#getPrunedBlocklets and initialize the
     // pruning info for table we queried. But here count star query without filter uses a different
     // query plan, and no pruning info is initialized. When it calls default data map to
@@ -586,7 +585,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     ExplainCollector.remove();
 
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
-    TableDataMap blockletMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);
+    TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);
 
     ReadCommittedScope readCommittedScope = getReadCommitted(job, identifier);
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
@@ -602,6 +601,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     // TODO: currently only batch segment is supported, add support for streaming table
     List<Segment> filteredSegment =
         getFilteredSegment(job, allSegments.getValidSegments(), false, readCommittedScope);
+    boolean isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
     /* In the select * flow, getSplits() method was clearing the segmentMap if,
     segment needs refreshing. same thing need for select count(*) flow also.
     For NonTransactional table, one of the reason for a segment refresh is below scenario.
@@ -624,36 +624,40 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
               toBeCleanedSegments);
     }
-    List<ExtendedBlocklet> blocklets =
-        blockletMap.prune(filteredSegment, (FilterResolverIntf) null, partitions);
-    for (ExtendedBlocklet blocklet : blocklets) {
-      String blockName = blocklet.getPath();
-      blockName = CarbonTablePath.getCarbonDataFileName(blockName);
-      blockName = blockName + CarbonTablePath.getCarbonDataExtension();
+    if (isIUDTable || isUpdateFlow) {
+      Map<String, Long> blockletToRowCountMap =
+          defaultDataMap.getBlockRowCount(filteredSegment, partitions, defaultDataMap);
+      // key is the (segmentId","+blockletPath) and key is the row count of that blocklet
+      for (Map.Entry<String, Long> eachBlocklet : blockletToRowCountMap.entrySet()) {
+        String[] segmentIdAndPath = eachBlocklet.getKey().split(",", 2);
+        String segmentId = segmentIdAndPath[0];
+        String blockName = segmentIdAndPath[1];
 
-      long rowCount = blocklet.getDetailInfo().getRowCount();
+        long rowCount = eachBlocklet.getValue();
 
-      String segmentId = Segment.toSegment(blocklet.getSegmentId()).getSegmentNo();
-      String key = CarbonUpdateUtil.getSegmentBlockNameKey(segmentId, blockName);
+        String key = CarbonUpdateUtil.getSegmentBlockNameKey(segmentId, blockName);
 
-      // if block is invalid then don't add the count
-      SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
+        // if block is invalid then don't add the count
+        SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
 
-      if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus())) {
-        Long blockCount = blockRowCountMapping.get(key);
-        if (blockCount == null) {
-          blockCount = 0L;
-          Long count = segmentAndBlockCountMapping.get(segmentId);
-          if (count == null) {
-            count = 0L;
+        if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus())) {
+          Long blockCount = blockRowCountMapping.get(key);
+          if (blockCount == null) {
+            blockCount = 0L;
+            Long count = segmentAndBlockCountMapping.get(segmentId);
+            if (count == null) {
+              count = 0L;
+            }
+            segmentAndBlockCountMapping.put(segmentId, count + 1);
           }
-          segmentAndBlockCountMapping.put(segmentId, count + 1);
+          blockCount += rowCount;
+          blockRowCountMapping.put(key, blockCount);
         }
-        blockCount += rowCount;
-        blockRowCountMapping.put(key, blockCount);
       }
+    } else {
+      long totalRowCount = defaultDataMap.getRowCount(filteredSegment, partitions, defaultDataMap);
+      blockRowCountMapping.put(CarbonCommonConstantsInternal.ROW_COUNT, totalRowCount);
     }
-
     return new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
   }
 
