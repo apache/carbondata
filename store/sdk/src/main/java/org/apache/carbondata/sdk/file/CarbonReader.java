@@ -29,6 +29,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
+import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 
 
@@ -145,6 +146,16 @@ public class CarbonReader<T> {
    */
   public static CarbonReaderBuilder builder(String tablePath, String tableName) {
     return new CarbonReaderBuilder(tablePath, tableName);
+  }
+
+  /**
+   * Return a new {@link CarbonReaderBuilder} instance
+   *
+   * @param inputSplit CarbonInputSplit Object
+   * @return CarbonReaderBuilder object
+   */
+  public static CarbonReaderBuilder builder(InputSplit inputSplit) {
+    return new CarbonReaderBuilder(inputSplit);
   }
 
   /**
