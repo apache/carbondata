@@ -235,6 +235,11 @@ def make_reader(dataset_url,
                          reader_engine)
 
 def make_carbon_reader(dataset_url,
+                key=None,
+                secret=None,
+                endpoint=None,
+                proxy=None,
+                proxy_port=None,
                 schema_fields=None,
                 reader_pool_type='thread', workers_count=10, pyarrow_serialize=False, results_queue_size=100,
                 shuffle_row_groups=True, shuffle_row_drop_partitions=1,
@@ -258,6 +263,11 @@ def make_carbon_reader(dataset_url,
     :param dataset_url: an filepath or a url to a parquet directory,
         e.g. ``'hdfs://some_hdfs_cluster/user/yevgeni/parquet8'``, or ``'file:///tmp/mydataset'``
         or ``'s3://bucket/mydataset'``.
+    :param key: access key
+    :param secret: secret key
+    :param endpoint: endpoint_url
+    :param proxy: proxy
+    :param proxy_port:  proxy_port
     :param schema_fields: Can be: a list of unischema fields and/or regex pattern strings; ``None`` to read all fields;
             an NGram object, then it will return an NGram of the specified fields.
     :param reader_pool_type: A string denoting the reader pool type. Should be one of ['thread', 'process', 'dummy']
@@ -310,9 +320,16 @@ def make_carbon_reader(dataset_url,
     dataset_url = dataset_url[:-1] if dataset_url[-1] == '/' else dataset_url
     logger.debug('dataset_url: %s', dataset_url)
 
-    resolver = FilesystemResolver(dataset_url, hdfs_driver=hdfs_driver)
+    resolver = FilesystemResolver(dataset_url,
+                                  key=key,
+                                  secret=secret,
+                                  endpoint=endpoint,
+                                  proxy=proxy,
+                                  proxy_port=proxy_port,
+                                  hdfs_driver=hdfs_driver)
     filesystem = resolver.filesystem()
-    dataset_path = resolver.get_dataset_path()
+    #dataset_path = resolver.get_dataset_path()
+
     if cache_type is None or cache_type == 'null':
         cache = NullCache()
     elif cache_type == 'local-disk':
@@ -325,7 +342,13 @@ def make_carbon_reader(dataset_url,
     # row by row basis. ArrowReaderWorker (used by make_batch_reader) is much more efficient in these cases.
     try:
         # dataset_metadata.get_schema_from_dataset_url(dataset_url, hdfs_driver=hdfs_driver)
-        infer_or_load_unischema_carbon(CarbonDataset(dataset_path))
+        infer_or_load_unischema_carbon(CarbonDataset(dataset_url,
+                                                     key=key,
+                                                     secret=secret,
+                                                     endpoint=endpoint,
+                                                     proxy=proxy,
+                                                     proxy_port=proxy_port,
+                                                     filesystem=filesystem))
     except PetastormMetadataError:
         raise RuntimeError('Currently make_reader supports reading only Petastorm datasets. '
                            'To read from a non-Petastorm Parquet store use make_batch_reader')
@@ -346,6 +369,11 @@ def make_carbon_reader(dataset_url,
 
         # Create a dictionary with all ReaderV2 parameters, so we can merge with reader_engine_params if specified
         kwargs = {
+            'key': key,
+            'secret': secret,
+            'endpoint': endpoint,
+            'proxy': proxy,
+            'proxy_port': proxy_port,
             'schema_fields': schema_fields,
             'reader_pool': reader_pool,
             'shuffle_row_groups': shuffle_row_groups,
@@ -363,7 +391,7 @@ def make_carbon_reader(dataset_url,
             kwargs.update(reader_engine_params)
 
         try:
-            return CarbonReader(filesystem, dataset_path,
+            return CarbonReader(filesystem, dataset_url,
                           worker_class=PyDictCarbonReaderWorker,
                           **kwargs)
         except PetastormMetadataError as e:
@@ -521,6 +549,11 @@ def make_batch_reader(dataset_url,
 
 
 def make_batch_carbon_reader(dataset_url,
+                      key=None,
+                      secret=None,
+                      endpoint=None,
+                      proxy=None,
+                      proxy_port=None,
                       schema_fields=None,
                       reader_pool_type='thread', workers_count=10,
                       shuffle_row_groups=True, shuffle_row_drop_partitions=1,
@@ -544,6 +577,11 @@ def make_batch_carbon_reader(dataset_url,
     :param dataset_url: an filepath or a url to a parquet directory,
         e.g. ``'hdfs://some_hdfs_cluster/user/yevgeni/parquet8'``, or ``'file:///tmp/mydataset'``
         or ``'s3://bucket/mydataset'``.
+    :param key: access key
+    :param secret: secret key
+    :param endpoint: endpoint_url
+    :param proxy: proxy
+    :param proxy_port:  proxy_port
     :param schema_fields: A list of regex pattern strings. Only columns matching at least one of the
         patterns in the list will be loaded.
     :param reader_pool_type: A string denoting the reader pool type. Should be one of ['thread', 'process', 'dummy']
@@ -588,9 +626,15 @@ def make_batch_carbon_reader(dataset_url,
     dataset_url = dataset_url[:-1] if dataset_url[-1] == '/' else dataset_url
     logger.debug('dataset_url: %s', dataset_url)
 
-    resolver = FilesystemResolver(dataset_url, hdfs_driver=hdfs_driver)
+    resolver = FilesystemResolver(dataset_url,
+                                  key=key,
+                                  secret=secret,
+                                  endpoint=endpoint,
+                                  proxy=proxy,
+                                  proxy_port=proxy_port,
+                                  hdfs_driver=hdfs_driver)
     filesystem = resolver.filesystem()
-    dataset_path = resolver.get_dataset_path()
+    #dataset_path = resolver.get_dataset_path()
 
     if cache_type is None or cache_type == 'null':
         cache = NullCache()
@@ -610,7 +654,9 @@ def make_batch_carbon_reader(dataset_url,
     else:
         raise ValueError('Unknown reader_pool_type: {}'.format(reader_pool_type))
 
-    return CarbonReader(filesystem, dataset_path,
+    return CarbonReader(filesystem, dataset_url,
+                  key=key, secret=secret, endpoint=endpoint,
+                  proxy=proxy, proxy_port=proxy_port,
                   schema_fields=schema_fields,
                   worker_class=ArrowCarbonReaderWorker,
                   reader_pool=reader_pool,
@@ -911,7 +957,10 @@ class CarbonReader(object):
     :ivar last_row_consumed: True if the last row was already returned by the Reader.
     """
 
-    def __init__(self, pyarrow_filesystem, dataset_path, schema_fields=None,
+    def __init__(self, pyarrow_filesystem, dataset_path,
+                 key=None, secret=None, endpoint=None,
+                 proxy=None, proxy_port=None,
+                 schema_fields=None,
                  shuffle_row_groups=True, shuffle_row_drop_partitions=1,
                  predicate=None, rowgroup_selector=None, reader_pool=None, num_epochs=1,
                  cur_shard=None, shard_count=None, cache=None, worker_class=None,
@@ -925,6 +974,11 @@ class CarbonReader(object):
             ``pyarrow_filesystem=pyarrow.hdfs.connect('hdfs:///some/path', driver='libhdfs')``.
         :param dataset_path: filepath to a parquet directory on the specified filesystem.
             e.g. ``'/user/yevgeni/parquet8'``, or ``'/tmp/mydataset'``.
+        :param key: access key
+        :param secret: secret key
+        :param endpoint: endpoint_url
+        :param proxy: proxy
+        :param proxy_port:  proxy_port
         :param schema_fields: Either list of unischema fields to subset, or ``None`` to read all fields.
             OR an NGram object, then it will return an NGram of the specified properties.
         :param shuffle_row_groups: Whether to shuffle row groups (the order in which full row groups are read)
@@ -984,7 +1038,13 @@ class CarbonReader(object):
         # 1. Resolve dataset path (hdfs://, file://) and open the parquet storage (dataset)
         # self.dataset = pq.ParquetDataset(dataset_path, filesystem=pyarrow_filesystem,
         #                                  validate_schema=False)
-        self.carbon_dataset = CarbonDataset(dataset_path)
+        self.carbon_dataset = CarbonDataset(dataset_path,
+                                            key=key,
+                                            secret=secret,
+                                            endpoint=endpoint,
+                                            proxy=proxy,
+                                            proxy_port=proxy_port,
+                                            filesystem=pyarrow_filesystem)
         stored_schema = infer_or_load_unischema_carbon(self.carbon_dataset)
 
         # Make a schema view (a view is a Unischema containing only a subset of fields

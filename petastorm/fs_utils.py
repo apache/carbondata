@@ -22,7 +22,7 @@ from petastorm.hdfs.namenode import HdfsNamenodeResolver, HdfsConnector
 class FilesystemResolver(object):
     """Resolves a dataset URL, makes a connection via pyarrow, and provides a filesystem object."""
 
-    def __init__(self, dataset_url, hadoop_configuration=None, connector=HdfsConnector, hdfs_driver='libhdfs3'):
+    def __init__(self, dataset_url, key=None, secret=None, endpoint=None, proxy=None, proxy_port=None, hadoop_configuration=None, connector=HdfsConnector, hdfs_driver='libhdfs3'):
         """
         Given a dataset URL and an optional hadoop configuration, parse and interpret the URL to
         instantiate a pyarrow filesystem.
@@ -39,6 +39,11 @@ class FilesystemResolver(object):
         6. Fail otherwise.
 
         :param dataset_url: The hdfs URL or absolute path to the dataset
+        :param key: access key of obs
+        :param secret: secret key of obs
+        :param endpoint: endpoint of obs
+        :param proxy: proxy
+        :param proxy_port:  proxy_port
         :param hadoop_configuration: an optional hadoop configuration
         :param connector: the HDFS connector object to use (ONLY override for testing purposes)
         :param hdfs_driver: A string denoting the hdfs driver to use (if using a dataset on hdfs). Current choices are
@@ -96,7 +101,7 @@ class FilesystemResolver(object):
             else:
                 self._filesystem = connector.hdfs_connect_namenode(self._parsed_dataset_url, hdfs_driver)
 
-        elif self._parsed_dataset_url.scheme == 's3':
+        elif self._parsed_dataset_url.scheme == 's3' or self._parsed_dataset_url.scheme == "s3a":
             # Case 5
             # S3 support requires s3fs to be installed
             try:
@@ -108,7 +113,23 @@ class FilesystemResolver(object):
             if not self._parsed_dataset_url.netloc:
                 raise ValueError('URLs must be of the form s3://bucket/path')
 
-            fs = s3fs.S3FileSystem()
+            if key is None or secret is None or endpoint is None:
+                raise  ValueError('key, secret, endpoint should not be None')
+
+            http_proxy = 'http://' + proxy + ':' + str(proxy_port) if (
+                    proxy is not None and proxy_port is not None) else None
+
+            https_proxy = 'https://' + proxy + ':' + str(proxy_port) if (
+                    proxy is not None and proxy_port is not None) else None
+
+            config_kwargs = {'proxies': {'http': http_proxy, 'https': https_proxy}} if (
+                    http_proxy is not None) else None
+
+            fs = s3fs.S3FileSystem(key=key,
+                                   secret=secret,
+                                   client_kwargs={'endpoint_url': endpoint},
+                                   config_kwargs=config_kwargs)
+
             self._filesystem = pyarrow.filesystem.S3FSWrapper(fs)
 
         else:
