@@ -146,6 +146,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         relativeBlockletId += fileFooter.getBlockletList().size();
       }
     }
+    summaryRow.setLong(0L, TASK_ROW_COUNT);
     setMinMaxFlagForTaskSummary(summaryRow, taskSummarySchema, segmentProperties,
         summaryRowMinMaxFlag);
     return summaryRow;
@@ -163,7 +164,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     for (int index = 0; index < blockletList.size(); index++) {
       DataMapRow row = new DataMapRowImpl(schema);
       int ordinal = 0;
-      int taskMinMaxOrdinal = 0;
+      int taskMinMaxOrdinal = 1;
       BlockletInfo blockletInfo = blockletList.get(index);
       blockletInfo.setSorted(fileFooter.isSorted());
       BlockletMinMaxIndex minMaxIndex = blockletInfo.getBlockletIndex().getMinMaxIndex();

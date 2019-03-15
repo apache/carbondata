@@ -113,6 +113,8 @@ public class SchemaGenerator {
       List<CarbonColumn> minMaxCacheColumns,
       boolean storeBlockletCount, boolean filePathToBeStored) throws MemoryException {
     List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>();
+    // for number of rows.
+    taskMinMaxSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
     // get MinMax Schema
     getMinMaxSchema(segmentProperties, taskMinMaxSchemas, minMaxCacheColumns);
     // for storing file name
