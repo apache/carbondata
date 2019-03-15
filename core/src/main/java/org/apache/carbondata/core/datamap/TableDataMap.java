@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datamap;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -34,6 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -499,4 +501,46 @@ public final class TableDataMap extends OperationEventListener {
     }
     return prunedSegments;
   }
+
+  /**
+   * Prune the datamap of the given segments and return the Map of blocklet path and row count
+   *
+   * @param segments
+   * @param partitions
+   * @return
+   * @throws IOException
+   */
+  public Map<String, Long> getBlockRowCount(List<Segment> segments,
+      final List<PartitionSpec> partitions, TableDataMap defaultDataMap)
+      throws IOException {
+    Map<String, Long> blockletToRowCountMap = new HashMap<>();
+    for (Segment segment : segments) {
+      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getDataMapFactory().getDataMaps(segment);
+      for (CoarseGrainDataMap dataMap : dataMaps) {
+        dataMap.getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
+      }
+    }
+    return blockletToRowCountMap;
+  }
+
+  /**
+   * Prune the datamap of the given segments and return the Map of blocklet path and row count
+   *
+   * @param segments
+   * @param partitions
+   * @return
+   * @throws IOException
+   */
+  public long getRowCount(List<Segment> segments, final List<PartitionSpec> partitions,
+      TableDataMap defaultDataMap) throws IOException {
+    long totalRowCount = 0L;
+    for (Segment segment : segments) {
+      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getDataMapFactory().getDataMaps(segment);
+      for (CoarseGrainDataMap dataMap : dataMaps) {
+        totalRowCount += dataMap.getRowCount(segment, partitions);
+      }
+    }
+    return totalRowCount;
+  }
+
 }
