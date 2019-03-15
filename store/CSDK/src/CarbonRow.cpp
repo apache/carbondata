@@ -87,8 +87,15 @@ CarbonRow::CarbonRow(JNIEnv *env) {
     if (getArrayId == NULL) {
         throw std::runtime_error("Can't find the method in java: getArray");
     }
+
     if (jniEnv->ExceptionCheck()) {
         throw jniEnv->ExceptionOccurred();
+    }
+
+    getLengthId = jniEnv->GetStaticMethodID(rowUtilClass, "getLength",
+        "([Ljava/lang/Object;)I");
+    if (getLengthId == NULL) {
+        throw std::runtime_error("Can't find the method in java: getLength");
     }
 }
 
@@ -250,4 +257,11 @@ jobjectArray CarbonRow::getArray(int ordinal) {
 void CarbonRow::close() {
     jniEnv->DeleteLocalRef(rowUtilClass);
     jniEnv->DeleteLocalRef(carbonRow);
+}
+
+int CarbonRow::getLength() {
+    checkCarbonRow();
+    jvalue args[1];
+    args[0].l = carbonRow;
+    return jniEnv->CallStaticIntMethodA(rowUtilClass, getLengthId, args);
 }

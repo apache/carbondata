@@ -148,4 +148,14 @@ public class RowUtil implements Serializable {
     return ((BigDecimal) data[ordinal]).toString();
   }
 
+  /**
+   * get length of data
+   *
+   * @param data carbon row data
+   * @return data length
+   */
+  public static int getLength(Object[] data) {
+    return data.length;
+  }
+
 }

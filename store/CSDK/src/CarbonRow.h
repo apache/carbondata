@@ -29,6 +29,7 @@ private:
     jmethodID getDecimalId = NULL;
     jmethodID getVarcharId = NULL;
     jmethodID getArrayId = NULL;
+    jmethodID getLengthId = NULL;
 
     /**
      * RowUtil Class for read data from Carbon Row
@@ -160,4 +161,12 @@ public:
      * @return
      */
     void close();
+
+    /*
+     * get length of data
+     *
+     * @param data carbon row data
+     * @return data length
+     */
+    int getLength();
 };

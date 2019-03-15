@@ -160,6 +160,7 @@ void printResult(JNIEnv *env, CarbonReader reader) {
             printBoolean(carbonRow.getBoolean(9));
             printf("%s\t", carbonRow.getDecimal(10));
             printf("%f\t", carbonRow.getFloat(11));
+            printf("%d\t", carbonRow.getLength());
             printf("\n");
             env->DeleteLocalRef(row);
         }
