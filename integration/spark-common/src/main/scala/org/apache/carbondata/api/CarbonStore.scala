@@ -111,7 +111,6 @@ object CarbonStore {
             } else {
               (-1L, -1L)
             }
-            
           } else {
             // for batch segment, we can get the data size from table status file directly
             (if (load.getDataSize == null) -1L else load.getDataSize.toLong,
