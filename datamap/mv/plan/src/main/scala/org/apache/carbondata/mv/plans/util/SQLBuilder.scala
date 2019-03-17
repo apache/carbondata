@@ -220,15 +220,6 @@ class SQLBuilder private(
       }
     }
   }
-
-  object RemoveCasts extends Rule[ModularPlan] {
-    def apply(tree: ModularPlan): ModularPlan = {
-      tree transformAllExpressions {
-        case Cast(e, dataType, _) => e
-      }
-    }
-  }
-
 }
 
 object SQLBuilder {

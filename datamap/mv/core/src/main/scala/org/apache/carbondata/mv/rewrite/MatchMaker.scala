@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.internal.Logging
+import org.apache.spark.Logging
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 abstract class MatchPattern[MatchingPlan <: TreeNode[MatchingPlan]] extends Logging {

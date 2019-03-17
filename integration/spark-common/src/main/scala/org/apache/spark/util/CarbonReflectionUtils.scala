@@ -320,6 +320,13 @@ object CarbonReflectionUtils {
       ._1.asInstanceOf[RunnableCommand]
   }
 
+  def createSingleObject(className: String): Any = {
+    val classMirror = universe.runtimeMirror(getClass.getClassLoader)
+    val classTest = classMirror.staticModule(className)
+    val methods = classMirror.reflectModule(classTest)
+    methods.instance
+  }
+
   def createObject(className: String, conArgs: Object*): (Any, Class[_]) = {
     val clazz = Utils.classForName(className)
     val ctor = clazz.getConstructors.head

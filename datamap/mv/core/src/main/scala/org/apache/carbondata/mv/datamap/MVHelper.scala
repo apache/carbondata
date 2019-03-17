@@ -547,7 +547,7 @@ object MVHelper {
                 relation,
                 aliasMap,
                 keepAlias = false)
-            SortOrder(expressions.head, s.direction, s.sameOrderExpressions)
+            SortOrder(expressions.head, s.direction)
           }
         // In case of limit it goes to other.
         case other => other

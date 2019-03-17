@@ -17,15 +17,16 @@
 
 package org.apache.carbondata.mv.plans.util
 
-import org.apache.spark.sql.catalyst.catalog._
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference,
-  AttributeSet, Expression, NamedExpression, PredicateHelper}
+import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, NamedExpression, PredicateHelper}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.mv.plans.modular.Flags._
 import org.apache.carbondata.mv.plans.modular.JoinEdge
+
+
 
 /**
  * SelectModule is extracted from logical plan of SPJG query.  All join conditions
@@ -335,13 +336,13 @@ object ExtractTableModule extends PredicateHelper {
   def unapply(plan: LogicalPlan): Option[ReturnType] = {
     plan match {
       // uncomment for cloudera1 version
-//      case m: CatalogRelation =>
-//        Some(m.tableMeta.database, m.tableMeta.identifier.table, m.output, Nil, NoFlags,
-//          Seq.empty)
-//       uncomment for apache version
+      //      case m: CatalogRelation =>
+      //        Some(m.tableMeta.database, m.tableMeta.identifier.table, m.output, Nil, NoFlags,
+      //          Seq.empty)
+      //       uncomment for apache version
       case m: HiveTableRelation =>
-            Some(m.tableMeta.database, m.tableMeta.identifier.table, m.output, Nil, NoFlags,
-              Seq.empty)
+        Some(m.tableMeta.database, m.tableMeta.identifier.table, m.output, Nil, NoFlags,
+          Seq.empty)
       case l: LogicalRelation =>
         val tableIdentifier = l.catalogTable.map(_.identifier)
         val database = tableIdentifier.map(_.database).flatten.getOrElse(null)

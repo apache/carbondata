@@ -20,8 +20,8 @@ package org.apache.carbondata.mv.rewrite
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.hive.CarbonSessionCatalog
 import org.scalatest.BeforeAndAfter
-
 import org.apache.carbondata.mv.testutil.ModularPlanTest
+import org.apache.spark.sql.util.SparkSQLUtil
 //import org.apache.spark.sql.catalyst.SQLBuilder
 import java.io.{File, PrintWriter}
 
@@ -31,7 +31,7 @@ class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
-  val hiveClient = spark.sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].getClient()
+  val hiveClient = SparkSQLUtil.sessionState(spark.sparkSession).catalog.asInstanceOf[CarbonSessionCatalog].getClient()
 
   test("test using tpc-ds queries") {
 

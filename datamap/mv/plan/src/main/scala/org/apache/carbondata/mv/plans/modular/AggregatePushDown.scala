@@ -19,7 +19,8 @@ package org.apache.carbondata.mv.plans.modular
 
 import scala.collection._
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Divide, ExprId, Literal, NamedExpression}
+import org.apache.spark.sql.CarbonExpressions.MatchCast
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Divide, ExprId, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 
 trait AggregatePushDown { // self: ModularPlan =>
@@ -106,12 +107,11 @@ trait AggregatePushDown { // self: ModularPlan =>
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
-      case sum@AggregateExpression(Sum(Cast(expr, dataType, timeZoneId)), _, false, _)
-        if expr.isInstanceOf[Attribute] =>
+      case sum@AggregateExpression(Sum(cast@MatchCast(expr, dataType)), _, false, _) =>
         val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
-          val sum1 = AggregateExpression(Sum(Cast(tAttr, dataType, timeZoneId)), sum.mode, false)
+          val sum1 = AggregateExpression(Sum(cast), sum.mode, false)
           val alias = Alias(sum1, sum1.toString)()
           val tSum = AggregateExpression(Sum(alias.toAttribute), sum.mode, false, sum.resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))

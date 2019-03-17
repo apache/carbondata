@@ -19,9 +19,9 @@ package org.apache.carbondata.mv.plans
 
 import org.apache.spark.sql.hive.CarbonSessionCatalog
 import org.scalatest.BeforeAndAfter
-
 import org.apache.carbondata.mv.dsl.Plans._
 import org.apache.carbondata.mv.testutil.ModularPlanTest
+import org.apache.spark.sql.util.SparkSQLUtil
 
 class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
 
@@ -29,7 +29,7 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
-  val hiveClient = spark.sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].getClient()
+  val hiveClient = SparkSQLUtil.sessionState(spark.sparkSession).catalog.asInstanceOf[CarbonSessionCatalog].getClient()
   
   ignore("convert modular plans to sqls") {
     

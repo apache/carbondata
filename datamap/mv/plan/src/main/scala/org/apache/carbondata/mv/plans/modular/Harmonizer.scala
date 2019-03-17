@@ -20,7 +20,7 @@ package org.apache.carbondata.mv.plans.modular
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.rules._
-import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.SQLConf
 
 import org.apache.carbondata.mv.plans
 import org.apache.carbondata.mv.plans._
