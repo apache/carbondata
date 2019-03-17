@@ -241,7 +241,9 @@ mv carbondata.tar.gz carbonlib/
 --executor-cores 2
 ```
 
-**NOTE**: Make sure you have permissions for CarbonData JARs and files through which driver and executor will start.
+**NOTE**:
+ - Make sure you have permissions for CarbonData JARs and files through which driver and executor will start.
+ - If use Spark + Hive 1.1.X, it needs to add carbondata assembly jar and carbondata-hive jar into parameter 'spark.sql.hive.metastore.jars' in spark-default.conf file.
 
 
 
