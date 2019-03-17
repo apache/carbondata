@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.mv.plans.util
 
-import org.apache.spark.internal.Logging
+import org.apache.spark.Logging
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 case class Signature(groupby: Boolean = true, datasets: Set[String] = Set.empty)

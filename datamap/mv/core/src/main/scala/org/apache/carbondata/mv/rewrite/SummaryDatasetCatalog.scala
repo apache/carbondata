@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.FindDataSourceTable
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.core.datamap.DataMapCatalog
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
@@ -33,6 +34,7 @@ import org.apache.carbondata.mv.datamap.MVHelper
 import org.apache.carbondata.mv.plans.modular.{Flags, ModularPlan, ModularRelation, Select}
 import org.apache.carbondata.mv.plans.util.Signature
 import org.apache.carbondata.mv.session.MVSession
+
 
 /** Holds a summary logical plan */
 private[mv] case class SummaryDataset(signature: Option[Signature],
@@ -114,7 +116,8 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
           mvSession.sessionState.optimizer.execute(planToRegister)).next().semiHarmonized
       val signature = modularPlan.signature
       val identifier = dataMapSchema.getRelationIdentifier
-      val output = new FindDataSourceTable(sparkSession).apply(sparkSession.sessionState.catalog
+      val output = new FindDataSourceTable(sparkSession)
+        .apply(SparkSQLUtil.sessionState(sparkSession).catalog
         .lookupRelation(TableIdentifier(identifier.getTableName, Some(identifier.getDatabaseName))))
         .output
       val relation = ModularRelation(identifier.getDatabaseName,

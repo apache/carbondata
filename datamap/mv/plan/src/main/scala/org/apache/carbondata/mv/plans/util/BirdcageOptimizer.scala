@@ -23,13 +23,13 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.optimizer._
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.{RuleExecutor, _}
-import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.SQLConf
 import org.apache.spark.sql.util.SparkSQLUtil
 
 object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
 
   val conf = new SQLConf()
-    .copy(SQLConf.CASE_SENSITIVE -> true, SQLConf.STARSCHEMA_DETECTION -> true)
+
   protected val fixedPoint = FixedPoint(conf.optimizerMaxIterations)
 
   def batches: Seq[Batch] = {
@@ -40,7 +40,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     Batch(
       "Finish Analysis", Once,
       EliminateSubqueryAliases,
-      EliminateView,
+      SparkSQLUtil.getEliminateViewObj(conf),
       ReplaceExpressions,
       ComputeCurrentTime,
       //      GetCurrentDatabase(sessionCatalog),
@@ -59,7 +59,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
       CombineUnions) ::
     Batch(
       "Pullup Correlated Expressions", Once,
-      PullupCorrelatedPredicates) ::
+      SparkSQLUtil.getPullupCorrelatedPredicatesObj(conf)) ::
     Batch(
       "Subquery", Once,
       OptimizeSubqueries) ::
@@ -107,7 +107,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         SimplifyCaseConversionExpressions,
         RewriteCorrelatedScalarSubquery,
         EliminateSerialization,
-        RemoveRedundantAliases,
+        SparkSQLUtil.getRemoveRedundantAliasesObj(conf),
         RemoveRedundantProject,
         SimplifyCreateStructOps,
         SimplifyCreateArrayOps,

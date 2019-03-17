@@ -842,14 +842,14 @@ object Tpcds_1_4_Tables {
        |STORED AS parquet
           """.stripMargin.trim,
     s"""
-       | CREATE TABLE fact_table1 (empname String, designation String, doj Timestamp,
+       | CREATE TABLE IF NOT EXISTS fact_table1 (empname String, designation String, doj Timestamp,
        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
        |  utilization int,salary int)
        |STORED AS parquet
           """.stripMargin.trim,
     s"""
-       | CREATE TABLE fact_table2 (empname String, designation String, doj Timestamp,
+       | CREATE TABLE IF NOT EXISTS fact_table2 (empname String, designation String, doj Timestamp,
        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
        |  utilization int,salary int)

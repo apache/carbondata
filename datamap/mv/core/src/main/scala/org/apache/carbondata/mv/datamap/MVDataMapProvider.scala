@@ -81,7 +81,7 @@ class MVDataMapProvider(
       val identifier = dataMapSchema.getRelationIdentifier
       val logicalPlan =
         new FindDataSourceTable(sparkSession).apply(
-          sparkSession.sessionState.catalog.lookupRelation(
+          SparkSQLUtil.sessionState(sparkSession).catalog.lookupRelation(
           TableIdentifier(identifier.getTableName,
             Some(identifier.getDatabaseName)))) match {
           case s: SubqueryAlias => s.child

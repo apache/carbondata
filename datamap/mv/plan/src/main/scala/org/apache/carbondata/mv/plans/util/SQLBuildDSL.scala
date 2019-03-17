@@ -398,11 +398,12 @@ trait SQLBuildDSL {
               // it back.
               case ar: AttributeReference if ar == gid => GroupingID(Nil)
               case ar: AttributeReference if groupByAttrMap.contains(ar) => groupByAttrMap(ar)
-              case a@Cast(
-              BitwiseAnd(
-              ShiftRight(ar: AttributeReference, Literal(value: Any, IntegerType)),
-              Literal(1, IntegerType)), ByteType, None) if ar == gid =>
+              case a : Cast if a.dataType.isInstanceOf[ByteType] &&
+                a.child.isInstanceOf[BitwiseAnd] &&
+                a.child.asInstanceOf[BitwiseAnd].left.isInstanceOf[ShiftRight] &&
+                a.child.asInstanceOf[BitwiseAnd].right.isInstanceOf[Literal] =>
                 // for converting an expression to its original SQL format grouping(col)
+                val value = a.child.asInstanceOf[BitwiseAnd].left.asInstanceOf[ShiftRight].right
                 val idx = groupByExprs.length - 1 - value.asInstanceOf[Int]
                 groupByExprs.lift(idx).map(Grouping).getOrElse(a)
             }

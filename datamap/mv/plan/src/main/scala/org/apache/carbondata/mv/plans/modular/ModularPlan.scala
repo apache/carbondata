@@ -20,13 +20,13 @@ package org.apache.carbondata.mv.plans.modular
 import scala.collection._
 import scala.collection.mutable.{HashMap, MultiMap}
 
-import org.apache.spark.internal.Logging
+import org.apache.spark.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, PredicateHelper}
 import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan}
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.catalyst.trees.TreeNode
-import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.SQLConf
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.mv.plans._
@@ -44,6 +44,10 @@ abstract class ModularPlan
    */
 
   lazy val resolved: Boolean = expressions.forall(_.resolved) && childrenResolved
+
+  def canonicalizedDef: ModularPlan = {
+    canonicalized
+  }
 
   def childrenResolved: Boolean = children.forall(_.resolved)
 

@@ -106,12 +106,14 @@ trait AggregatePushDown { // self: ModularPlan =>
         } else {
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
-      case sum@AggregateExpression(Sum(Cast(expr, dataType, timeZoneId)), _, false, _)
-        if expr.isInstanceOf[Attribute] =>
-        val tAttr = selAliasMap.get(expr.asInstanceOf[Attribute]).getOrElse(expr)
+      case sum@AggregateExpression(Sum(child), _, false, _)
+        if child.isInstanceOf[Cast] && child.asInstanceOf[Cast].child.isInstanceOf[Attribute] =>
+        val tAttr = selAliasMap.get(child.asInstanceOf[Cast].
+          child.asInstanceOf[Attribute]).getOrElse(child.asInstanceOf[Cast].child)
           .asInstanceOf[Attribute]
         if (fact.outputSet.contains(tAttr)) {
-          val sum1 = AggregateExpression(Sum(Cast(tAttr, dataType, timeZoneId)), sum.mode, false)
+          val sum1 = AggregateExpression(Sum(child.asInstanceOf[Cast].copy(child = tAttr))
+            , sum.mode, false)
           val alias = Alias(sum1, sum1.toString)()
           val tSum = AggregateExpression(Sum(alias.toAttribute), sum.mode, false, sum.resultId)
           val (name, id) = aliasInfo.getOrElse(("", NamedExpression.newExprId))

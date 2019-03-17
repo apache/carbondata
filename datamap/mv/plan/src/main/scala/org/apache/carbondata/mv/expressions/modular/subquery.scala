@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.mv.expressions.modular
 
-import org.apache.spark.sql.catalyst.expressions.{AttributeSeq, AttributeSet, Expression, ExprId, LeafExpression, NamedExpression, OuterReference, PlanExpression, Predicate, Unevaluable}
-import org.apache.spark.sql.catalyst.plans.QueryPlan
+import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.mv.plans.modular.ModularPlan
 
@@ -53,7 +53,8 @@ abstract class ModularSubquery(
   def canonicalize(attrs: AttributeSeq): ModularSubquery = {
     // Normalize the outer references in the subquery plan.
     val normalizedPlan = plan.transformAllExpressions {
-      case OuterReference(r) => OuterReference(QueryPlan.normalizeExprId(r, attrs))
+      case OuterReference(r) => OuterReference(SparkSQLUtil.
+        invokeQueryPlannormalizeExprId(r, attrs))
     }
     withNewPlan(normalizedPlan).canonicalized.asInstanceOf[ModularSubquery]
   }
@@ -80,7 +81,7 @@ case class ScalarModularSubquery(
 
   override lazy val canonicalized: Expression = {
     ScalarModularSubquery(
-      plan.canonicalized,
+      plan.canonicalizedDef,
       children.map(_.canonicalized),
       ExprId(0))
   }
@@ -122,7 +123,7 @@ case class ModularListQuery(
 
   override lazy val canonicalized: Expression = {
     ModularListQuery(
-      plan.canonicalized,
+      plan.canonicalizedDef,
       children.map(_.canonicalized),
       ExprId(0))
   }
@@ -153,7 +154,7 @@ case class ModularExists(
 
   override lazy val canonicalized: Expression = {
     ModularExists(
-      plan.canonicalized,
+      plan.canonicalizedDef,
       children.map(_.canonicalized),
       ExprId(0))
   }
