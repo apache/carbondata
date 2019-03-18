@@ -21,12 +21,12 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
 
 /**
  *
  */
-class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
+class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
 
   def getMdtFileAndType() = {
     // if mdt file path is configured then take configured path else take default path
@@ -40,13 +40,14 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  override def beforeAll {
+  override def beforeEach {
     sql("drop database if exists carbon cascade")
+    sql("drop database if exists carbon1 cascade")
+    sql("drop database if exists carbon2 cascade")
   }
 
   //TODO fix this test case
   test("Update operation on carbon table with insert into") {
-    sql("drop database if exists carbon2 cascade")
     sql(s"create database carbon2 location '$dblocation'")
     sql("use carbon2")
     sql("""create table carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -78,7 +79,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("create table and load data") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -87,7 +87,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("create table and insert data") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -97,7 +96,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("create table and 2 times data load") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -109,7 +107,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   test("Update operation on carbon table") {
-    sql("drop database if exists carbon1 cascade")
     sql(s"create database carbon1 location '$dblocation'")
     sql("use carbon1")
     sql(
@@ -129,7 +126,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Delete operation on carbon table") {
-    sql("drop database if exists carbon1 cascade")
     sql(s"create database carbon1 location '$dblocation'")
     sql("use carbon1")
     sql("""create table carbon1.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -145,7 +141,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Alter table add column test") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -161,7 +156,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Alter table change column datatype test") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -176,7 +170,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Alter table change dataType with sort column after adding measure column test"){
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql(
@@ -196,7 +189,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Alter table change dataType with sort column after adding date datatype with default value test"){
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql(
@@ -216,7 +208,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Alter table change dataType with sort column after adding dimension column with default value test"){
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql(
@@ -236,7 +227,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Alter table change dataType with sort column after rename test"){
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql(
@@ -258,7 +248,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Alter table drop column test") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -273,7 +262,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mdt file path with configured paths") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     CarbonProperties.getInstance()
@@ -298,11 +286,13 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
            CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore)
   }
 
-  override def afterAll {
+  override def afterEach {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
         CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT)
     sql("use default")
     sql("drop database if exists carbon cascade")
+    sql("drop database if exists carbon1 cascade")
+    sql("drop database if exists carbon2 cascade")
   }
 }
