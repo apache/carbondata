@@ -1601,4 +1601,47 @@ public final class CarbonProperties {
       }
     }
   }
+
+  public String getIndexServerPolicy() {
+    String indexServerPolicy =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_POLICY);
+    if (indexServerPolicy != null) {
+      return validateServerPolicy(indexServerPolicy);
+    } else {
+      return CarbonCommonConstants.CARBON_EMBEDDED_PRUNE_POLICY;
+    }
+  }
+
+  private String validateServerPolicy(String indexServerPolicy) {
+    if (indexServerPolicy.equalsIgnoreCase(CarbonCommonConstants.CARBON_DISTRIBUTED_PRUNE_POLICY)
+        || indexServerPolicy.equalsIgnoreCase(CarbonCommonConstants.CARBON_EMBEDDED_PRUNE_POLICY)
+        || indexServerPolicy.equalsIgnoreCase(CarbonCommonConstants.CARBON_DRIVER_PRUNE_POLICY)) {
+      LOGGER.info("The prune policy set for pruning is: " + indexServerPolicy);
+      return indexServerPolicy;
+    } else {
+      LOGGER.info("The configured value for " + CarbonCommonConstants.CARBON_INDEX_SERVER_POLICY
+          + " is not valid, therefore taking " + CarbonCommonConstants.CARBON_EMBEDDED_PRUNE_POLICY
+          + " as the index server prune policy");
+      return CarbonCommonConstants.CARBON_EMBEDDED_PRUNE_POLICY;
+    }
+  }
+
+  public String getIndexServerIP() {
+    return carbonProperties.getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_IP, "");
+  }
+
+  public int getIndexServerPort() {
+    String configuredPort =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_PORT,
+            CarbonCommonConstants.CARBON_INDEX_SERVER_PORT_DEFAULT);
+    try {
+      return Integer.parseInt(configuredPort);
+    } catch (NumberFormatException e) {
+      LOGGER.info("Configured port for index server is not a valid number, using "
+          + CarbonCommonConstants.CARBON_INDEX_SERVER_PORT_DEFAULT + " as the default value");
+      return Integer.parseInt(CarbonCommonConstants.CARBON_INDEX_SERVER_PORT_DEFAULT);
+    }
+  }
+
+
 }

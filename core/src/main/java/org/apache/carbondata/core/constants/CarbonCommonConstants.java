@@ -2104,4 +2104,17 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL = "512";
 
+  public static final String CARBON_INDEX_SERVER_POLICY = "carbon.index.server.policy";
+
+  public static final String CARBON_DISTRIBUTED_PRUNE_POLICY = "distributed";
+
+  public static final String CARBON_EMBEDDED_PRUNE_POLICY = "embedded";
+
+  public static final String CARBON_DRIVER_PRUNE_POLICY = "driver";
+
+  public static final String CARBON_INDEX_SERVER_IP = "carbon.index.server.ip";
+
+  public static final String CARBON_INDEX_SERVER_PORT = "carbon.index.server.port";
+
+  public static final String CARBON_INDEX_SERVER_PORT_DEFAULT = "8990";
 }
