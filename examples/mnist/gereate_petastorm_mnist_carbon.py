@@ -39,6 +39,8 @@ from examples.mnist.schema import MnistSchema
 from petastorm.etl.dataset_metadata import materialize_dataset_carbon
 from petastorm.unischema import dict_to_spark_row
 
+os.environ['PYSPARK_PYTHON']='/usr/local/bin/python3.6'
+os.environ['PYSPARK_DRIVER_PYTHON']='/usr/local/bin/python3.6'
 
 def _arg_parser():
     parser = argparse.ArgumentParser(description=__doc__, add_help=True,
@@ -136,7 +138,7 @@ if __name__ == '__main__':
     # os.environ['JAVA_HOME'] = '/usr/lib/jvm/jdk1.8.0_181'
     #TODO: fill this in argument
     jnius_config.set_classpath(
-        "/home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/carbondata-sdk.jar")
+        "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/carbondata-sdk.jar")
     args = _arg_parser().parse_args()
     if args.download_dir is None:
         # Make a temp dir that we'll clean up afterward

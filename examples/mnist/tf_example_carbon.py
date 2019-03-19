@@ -113,7 +113,7 @@ def main():
     # os.environ['JAVA_HOME'] = '/usr/lib/jvm/jdk1.8.0_181'
     # TODO: fill this in argument
     jnius_config.set_classpath(
-        "/home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/carbondata-sdk.jar")
+        "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/carbondata-sdk.jar")
     print("Start")
     start = time.time()
     # Training settings

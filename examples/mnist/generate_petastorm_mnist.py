@@ -37,6 +37,9 @@ from examples.mnist.schema import MnistSchema
 from petastorm.etl.dataset_metadata import materialize_dataset
 from petastorm.unischema import dict_to_spark_row
 
+os.environ['PYSPARK_PYTHON'] = '/usr/local/bin/python3.6'
+os.environ['PYSPARK_DRIVER_PYTHON'] = '/usr/local/bin/python3.6'
+
 
 def _arg_parser():
     parser = argparse.ArgumentParser(description=__doc__, add_help=True,

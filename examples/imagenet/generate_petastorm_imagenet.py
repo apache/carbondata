@@ -38,6 +38,9 @@ from petastorm.etl.dataset_metadata import materialize_dataset
 from petastorm.unischema import dict_to_spark_row
 
 
+os.environ['PYSPARK_PYTHON']='/usr/local/bin/python3.6'
+os.environ['PYSPARK_DRIVER_PYTHON']='/usr/local/bin/python3.6'
+
 def _arg_parser():
     parser = argparse.ArgumentParser(description=__doc__, add_help=False,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -74,11 +77,11 @@ def imagenet_directory_to_petastorm_dataset(imagenet_path, output_url, spark_mas
 
     Expected directory format is:
 
-    >>> nXXXXXXXX/
-    >>>    *.JPEG
-
-    >>> nZZZZZZZZ/
-    >>>    *.JPEG
+    # >>> nXXXXXXXX/
+    # >>>    *.JPEG
+    #
+    # >>> nZZZZZZZZ/
+    # >>>    *.JPEG
 
     :param imagenet_path: a path to the directory containing ``n*/`` subdirectories. If you are running this script on
       a Spark cluster, you should have this file be mounted and accessible to executors.

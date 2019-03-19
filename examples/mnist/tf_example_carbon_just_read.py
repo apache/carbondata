@@ -49,13 +49,13 @@ def main():
     # os.environ['JAVA_HOME'] = '/usr/lib/jvm/jdk1.8.0_181'
     # TODO: fill this in argument
     jnius_config.set_classpath(
-        "/home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/carbondata-sdk.jar")
+        "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/carbondata-sdk.jar")
     jnius_config.add_options('-Xrs', '-Xmx6096m')
     # jnius_config.add_options('-Xrs', '-Xmx6096m', '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5555')
     print("Start")
     start = time.time()
 
-    just_read("file:///home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/voc/")
+    just_read("file:///tmp/mnistcarbon/train")
     # just_read_batch("file:///home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/voc/")
 
     end = time.time()

@@ -93,7 +93,7 @@ class CarbonDataset(object):
         self.number_of_splits = len(self.pieces)
         self.schema = self.getArrowSchema()
         # TODO add mechanism to get the file path based on file filter
-        self.common_metadata_path = path + '/_common_metadata'
+        self.common_metadata_path = self.url_path.path + '/_common_metadata'
         self.common_metadata = None
         try:
             if self.fs.exists(self.common_metadata_path):
@@ -153,7 +153,7 @@ class CarbonDatasetPiece(object):
             carbon_reader_builder = carbon_reader_builder.projection(columns)
             updatedSchema = carbon_schema_reader.reorderSchemaBasedOnProjection(columns, self.carbon_schema)
         else:
-            # TODO Currenlty when projection is not added in carbon reader
+            # TODO Currently when projection is not added in carbon reader
             # carbon returns record in dimensions+measures,but here we need based on actual schema order
             # so for handling this adding projection columns based on schema
             updatedSchema = self.carbon_schema
