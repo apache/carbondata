@@ -23,7 +23,8 @@ import java.util.{Date, Random}
 
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.RandomStringUtils
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.apache.spark.sql.common.util.DataSourceTestUtil._
 import org.apache.spark.util.SparkUtil
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -37,8 +38,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 
-class CreateTableUsingSparkCarbonFileFormatTestCase extends QueryTest with BeforeAndAfterAll {
-
+class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with BeforeAndAfterAll {
+  import spark._
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
