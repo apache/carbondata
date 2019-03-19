@@ -10697,8 +10697,8 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
   //PushUP_FILTER_test_boundary_TC194
   test("PushUP_FILTER_test_boundary_TC194", Include) {
 
-    checkAnswer(s"""select min(c2_Bigint),max(c2_Bigint),sum(c2_Bigint),avg(c2_Bigint) , count(c2_Bigint), variance(c2_Bigint) from (select c2_Bigint from Test_Boundary where sin(c1_int)=0.18796200317975467 or sin(c1_int)=-0.18796200317975467 order by c2_Bigint""",
-      s"""select min(c2_Bigint),max(c2_Bigint),sum(c2_Bigint),avg(c2_Bigint) , count(c2_Bigint), variance(c2_Bigint) from (select c2_Bigint from Test_Boundary_hive where sin(c1_int)=0.18796200317975467 or sin(c1_int)=-0.18796200317975467 order by c2_Bigint""", "QueriesBVATestCase_PushUP_FILTER_test_boundary_TC194")
+    checkAnswer(s"""select min(c2_Bigint),max(c2_Bigint),sum(c2_Bigint),avg(c2_Bigint) , count(c2_Bigint), variance(c2_Bigint) from (select c2_Bigint from Test_Boundary where sin(c1_int)=0.18796200317975467 or sin(c1_int)=-0.18796200317975467 order by c2_Bigint)""",
+      s"""select min(c2_Bigint),max(c2_Bigint),sum(c2_Bigint),avg(c2_Bigint) , count(c2_Bigint), variance(c2_Bigint) from (select c2_Bigint from Test_Boundary_hive where sin(c1_int)=0.18796200317975467 or sin(c1_int)=-0.18796200317975467 order by c2_Bigint)""", "QueriesBVATestCase_PushUP_FILTER_test_boundary_TC194")
 
   }
 
