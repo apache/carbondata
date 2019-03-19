@@ -383,7 +383,7 @@ class SparkCarbonFileFormat extends FileFormat
 
       if (file.filePath.endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
         val split = new CarbonInputSplit("null",
-          new Path(new URI(file.filePath)),
+          new Path(new URI(file.filePath)).toString,
           file.start,
           file.length,
           file.locations,
@@ -394,10 +394,10 @@ class SparkCarbonFileFormat extends FileFormat
         split.setDetailInfo(info)
         info.setBlockSize(file.length)
         // Read the footer offset and set.
-        val reader = FileFactory.getFileHolder(FileFactory.getFileType(split.getPath.toString),
+        val reader = FileFactory.getFileHolder(FileFactory.getFileType(split.getFilePath),
           broadcastedHadoopConf.value.value)
         val buffer = reader
-          .readByteBuffer(FileFactory.getUpdatedFilePath(split.getPath.toString),
+          .readByteBuffer(FileFactory.getUpdatedFilePath(split.getFilePath),
             file.length - 8,
             8)
         info.setBlockFooterOffset(buffer.getLong)

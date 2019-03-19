@@ -81,19 +81,46 @@ public final class FileFactory {
   }
 
   public static FileType getFileType(String path) {
-    String lowerPath = path.toLowerCase();
-    if (lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
-      return FileType.HDFS;
-    } else if (lowerPath.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
-      return FileType.ALLUXIO;
-    } else if (lowerPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
-      return FileType.VIEWFS;
-    } else if (lowerPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
-        lowerPath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
-        lowerPath.startsWith(CarbonCommonConstants.S3_PREFIX)) {
-      return FileType.S3;
+    FileType fileType = getFileTypeWithActualPath(path);
+    if (fileType != null) {
+      return fileType;
+    }
+    fileType = getFileTypeWithLowerCase(path);
+    if (fileType != null) {
+      return fileType;
     }
     return FileType.LOCAL;
+  }
+
+  private static FileType getFileTypeWithLowerCase(String path) {
+    String lowerCase = path.toLowerCase();
+    if (lowerCase.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
+      return FileType.HDFS;
+    } else if (lowerCase.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+      return FileType.ALLUXIO;
+    } else if (lowerCase.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+      return FileType.VIEWFS;
+    } else if (lowerCase.startsWith(CarbonCommonConstants.S3N_PREFIX) || lowerCase
+        .startsWith(CarbonCommonConstants.S3A_PREFIX) || lowerCase
+        .startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      return FileType.S3;
+    }
+    return null;
+  }
+
+  private static FileType getFileTypeWithActualPath(String path) {
+    if (path.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
+      return FileType.HDFS;
+    } else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+      return FileType.ALLUXIO;
+    } else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+      return FileType.VIEWFS;
+    } else if (path.startsWith(CarbonCommonConstants.S3N_PREFIX) || path
+        .startsWith(CarbonCommonConstants.S3A_PREFIX) || path
+        .startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      return FileType.S3;
+    }
+    return null;
   }
 
   public static CarbonFile getCarbonFile(String path) {

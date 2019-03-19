@@ -62,6 +62,8 @@ public class Segment implements Serializable {
    */
   private LoadMetadataDetails loadMetadataDetails;
 
+  private String segmentString;
+
   public Segment(String segmentNo) {
     this.segmentNo = segmentNo;
   }
@@ -69,6 +71,7 @@ public class Segment implements Serializable {
   public Segment(String segmentNo, ReadCommittedScope readCommittedScope) {
     this.segmentNo = segmentNo;
     this.readCommittedScope = readCommittedScope;
+    segmentString = segmentNo;
   }
 
   /**
@@ -82,6 +85,11 @@ public class Segment implements Serializable {
     this.segmentNo = segmentNo;
     this.segmentFileName = segmentFileName;
     this.readCommittedScope = null;
+    if (segmentFileName != null) {
+      segmentString = segmentNo + "#" + segmentFileName;
+    } else {
+      segmentString = segmentNo;
+    }
   }
 
   /**
@@ -94,6 +102,11 @@ public class Segment implements Serializable {
     this.segmentNo = segmentNo;
     this.segmentFileName = segmentFileName;
     this.readCommittedScope = readCommittedScope;
+    if (segmentFileName != null) {
+      segmentString = segmentNo + "#" + segmentFileName;
+    } else {
+      segmentString = segmentNo;
+    }
   }
 
   /**
@@ -107,6 +120,11 @@ public class Segment implements Serializable {
     this.segmentFileName = segmentFileName;
     this.readCommittedScope = readCommittedScope;
     this.loadMetadataDetails = loadMetadataDetails;
+    if (segmentFileName != null) {
+      segmentString = segmentNo + "#" + segmentFileName;
+    } else {
+      segmentString = segmentNo;
+    }
   }
 
   /**
@@ -233,11 +251,7 @@ public class Segment implements Serializable {
   }
 
   @Override public String toString() {
-    if (segmentFileName != null) {
-      return segmentNo + "#" + segmentFileName;
-    } else {
-      return segmentNo;
-    }
+    return segmentString;
   }
 
   public LoadMetadataDetails getLoadMetadataDetails() {

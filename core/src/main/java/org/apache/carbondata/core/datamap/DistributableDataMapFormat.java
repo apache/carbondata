@@ -110,6 +110,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
                 distributable.getDistributable(),
                 dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions);
         for (ExtendedBlocklet blocklet : blocklets) {
+          blocklet.getDetailInfo();
           blocklet.setDataMapUniqueId(distributable.getUniqueId());
         }
         blockletIterator = blocklets.iterator();

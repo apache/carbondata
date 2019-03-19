@@ -48,7 +48,6 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 
@@ -167,7 +166,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
           // Segment id is set to null because SDK does not write carbondata files with respect
           // to segments. So no specific name is present for this load.
           CarbonInputSplit split =
-              new CarbonInputSplit("null", new Path(carbonFile.getAbsolutePath()), 0,
+              new CarbonInputSplit("null", carbonFile.getAbsolutePath(), 0,
                   carbonFile.getLength(), carbonFile.getLocations(), FileFormat.COLUMNAR_V3);
           split.setVersion(ColumnarFormatVersion.V3);
           BlockletDetailInfo info = new BlockletDetailInfo();
@@ -179,7 +178,8 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         }
         Collections.sort(splits, new Comparator<InputSplit>() {
           @Override public int compare(InputSplit o1, InputSplit o2) {
-            return ((CarbonInputSplit) o1).getPath().compareTo(((CarbonInputSplit) o2).getPath());
+            return ((CarbonInputSplit) o1).getFilePath()
+                .compareTo(((CarbonInputSplit) o2).getFilePath());
           }
         });
       }

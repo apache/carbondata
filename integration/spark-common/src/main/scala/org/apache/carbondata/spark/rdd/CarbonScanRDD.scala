@@ -344,13 +344,12 @@ class CarbonScanRDD[T: ClassTag](
           closePartition()
         } else {
           // Use block distribution
-          splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).groupBy { f =>
-            f.getSegmentId.concat(f.getBlockPath)
-          }.values.zipWithIndex.foreach { splitWithIndex =>
+          splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).zipWithIndex.foreach {
+            splitWithIndex =>
             val multiBlockSplit =
               new CarbonMultiBlockSplit(
-                splitWithIndex._1.asJava,
-                splitWithIndex._1.flatMap(f => f.getLocations).distinct.toArray)
+                Seq(splitWithIndex._1).asJava,
+                null)
             val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
             result.add(partition)
           }
@@ -704,7 +703,7 @@ class CarbonScanRDD[T: ClassTag](
             }.asInstanceOf[java.util.List[CarbonInputSplit]]
             // for each split and given block path set all the valid blocklet ids
             splitList.asScala.map { split =>
-              val uniqueBlockPath = split.getPath.toString
+              val uniqueBlockPath = split.getFilePath
               val shortBlockPath = CarbonTablePath
                 .getShortBlockId(uniqueBlockPath
                   .substring(uniqueBlockPath.lastIndexOf("/Part") + 1))

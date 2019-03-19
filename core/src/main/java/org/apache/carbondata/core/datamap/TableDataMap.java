@@ -127,7 +127,7 @@ public final class TableDataMap extends OperationEventListener {
       }
       blocklets.addAll(addSegmentId(
           blockletDetailsFetcher.getExtendedBlocklets(pruneBlocklets, segment),
-          segment.toString()));
+          segment));
     }
     return blocklets;
   }
@@ -148,15 +148,11 @@ public final class TableDataMap extends OperationEventListener {
     final List<ExtendedBlocklet> blocklets = new ArrayList<>();
     final Map<Segment, List<DataMap>> dataMaps = dataMapFactory.getDataMaps(segments);
     // for non-filter queries
-    if (filterExp == null) {
-      // if filter is not passed, then return all the blocklets.
-      return pruneWithoutFilter(segments, partitions, blocklets);
-    }
     // for filter queries
     int totalFiles = 0;
     int datamapsCount = 0;
     for (Segment segment : segments) {
-      for (DataMap dataMap : dataMaps.get(segment)) {
+      for (DataMap dataMap: dataMaps.get(segment)) {
         totalFiles += dataMap.getNumberOfEntries();
         datamapsCount++;
       }
@@ -168,11 +164,16 @@ public final class TableDataMap extends OperationEventListener {
       // As 0.1 million files block pruning can take only 1 second.
       // Doing multi-thread for smaller values is not recommended as
       // driver should have minimum threads opened to support multiple concurrent queries.
+      if (filterExp == null) {
+        // if filter is not passed, then return all the blocklets.
+        return pruneWithoutFilter(segments, partitions, blocklets);
+      }
       return pruneWithFilter(segments, filterExp, partitions, blocklets, dataMaps);
     }
     // handle by multi-thread
-    return pruneWithFilterMultiThread(segments, filterExp, partitions, blocklets, dataMaps,
-        totalFiles);
+    List<ExtendedBlocklet> extendedBlocklets =
+        pruneMultiThread(segments, filterExp, partitions, blocklets, dataMaps, totalFiles);
+    return extendedBlocklets;
   }
 
   private List<ExtendedBlocklet> pruneWithoutFilter(List<Segment> segments,
@@ -181,7 +182,7 @@ public final class TableDataMap extends OperationEventListener {
       List<Blocklet> allBlocklets = blockletDetailsFetcher.getAllBlocklets(segment, partitions);
       blocklets.addAll(
           addSegmentId(blockletDetailsFetcher.getExtendedBlocklets(allBlocklets, segment),
-              segment.toString()));
+              segment));
     }
     return blocklets;
   }
@@ -197,12 +198,12 @@ public final class TableDataMap extends OperationEventListener {
       }
       blocklets.addAll(
           addSegmentId(blockletDetailsFetcher.getExtendedBlocklets(pruneBlocklets, segment),
-              segment.toString()));
+              segment));
     }
     return blocklets;
   }
 
-  private List<ExtendedBlocklet> pruneWithFilterMultiThread(List<Segment> segments,
+  private List<ExtendedBlocklet> pruneMultiThread(List<Segment> segments,
       final FilterResolverIntf filterExp, final List<PartitionSpec> partitions,
       List<ExtendedBlocklet> blocklets, final Map<Segment, List<DataMap>> dataMaps,
       int totalFiles) {
@@ -279,7 +280,8 @@ public final class TableDataMap extends OperationEventListener {
       throw new RuntimeException(" not all the files processed ");
     }
     List<Future<Void>> results = new ArrayList<>(numOfThreadsForPruning);
-    final Map<Segment, List<Blocklet>> prunedBlockletMap = new ConcurrentHashMap<>(segments.size());
+    final Map<Segment, List<ExtendedBlocklet>> prunedBlockletMap =
+        new ConcurrentHashMap<>(segments.size());
     final ExecutorService executorService = Executors.newFixedThreadPool(numOfThreadsForPruning);
     final String threadName = Thread.currentThread().getName();
     for (int i = 0; i < numOfThreadsForPruning; i++) {
@@ -288,16 +290,22 @@ public final class TableDataMap extends OperationEventListener {
         @Override public Void call() throws IOException {
           Thread.currentThread().setName(threadName);
           for (SegmentDataMapGroup segmentDataMapGroup : segmentDataMapGroups) {
-            List<Blocklet> pruneBlocklets = new ArrayList<>();
+            List<ExtendedBlocklet> pruneBlocklets = new ArrayList<>();
             List<DataMap> dataMapList = dataMaps.get(segmentDataMapGroup.getSegment());
+            SegmentProperties segmentProperties =
+                segmentPropertiesFetcher.getSegmentPropertiesFromDataMap(dataMapList.get(0));
+            Segment segment = segmentDataMapGroup.getSegment();
             for (int i = segmentDataMapGroup.getFromIndex();
                  i <= segmentDataMapGroup.getToIndex(); i++) {
-              pruneBlocklets.addAll(dataMapList.get(i).prune(filterExp,
-                  segmentPropertiesFetcher.getSegmentProperties(segmentDataMapGroup.getSegment()),
-                  partitions));
+              List<Blocklet> dmPruneBlocklets  = dataMapList.get(i).prune(filterExp,
+                  segmentProperties,
+                  partitions);
+              pruneBlocklets.addAll(addSegmentId(blockletDetailsFetcher
+                      .getExtendedBlocklets(dmPruneBlocklets, segment),
+                  segment));
             }
             synchronized (prunedBlockletMap) {
-              List<Blocklet> pruneBlockletsExisting =
+              List<ExtendedBlocklet> pruneBlockletsExisting =
                   prunedBlockletMap.get(segmentDataMapGroup.getSegment());
               if (pruneBlockletsExisting != null) {
                 pruneBlockletsExisting.addAll(pruneBlocklets);
@@ -324,14 +332,8 @@ public final class TableDataMap extends OperationEventListener {
         throw new RuntimeException(e);
       }
     }
-    for (Map.Entry<Segment, List<Blocklet>> entry : prunedBlockletMap.entrySet()) {
-      try {
-        blocklets.addAll(addSegmentId(
-            blockletDetailsFetcher.getExtendedBlocklets(entry.getValue(), entry.getKey()),
-            entry.getKey().toString()));
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+    for (Map.Entry<Segment, List<ExtendedBlocklet>> entry : prunedBlockletMap.entrySet()) {
+      blocklets.addAll(entry.getValue());
     }
     return blocklets;
   }
@@ -353,9 +355,9 @@ public final class TableDataMap extends OperationEventListener {
   }
 
   private List<ExtendedBlocklet> addSegmentId(List<ExtendedBlocklet> pruneBlocklets,
-      String segmentId) {
+      Segment segment) {
     for (ExtendedBlocklet blocklet : pruneBlocklets) {
-      blocklet.setSegmentId(segmentId);
+      blocklet.setSegment(segment);
     }
     return pruneBlocklets;
   }
@@ -425,7 +427,7 @@ public final class TableDataMap extends OperationEventListener {
         detailedBlocklet.setDataMapWriterPath(blockletwritePath);
         serializer.serializeBlocklet((FineGrainBlocklet) blocklet, blockletwritePath);
       }
-      detailedBlocklet.setSegmentId(distributable.getSegment().toString());
+      detailedBlocklet.setSegment(distributable.getSegment());
       detailedBlocklets.add(detailedBlocklet);
     }
     return detailedBlocklets;

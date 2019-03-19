@@ -30,12 +30,12 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
-import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
@@ -232,11 +232,10 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       return super.getDetailedBlocklet(blockletId);
     }
     int absoluteBlockletId = Integer.parseInt(blockletId);
-    DataMapRow safeRow = memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), absoluteBlockletId)
-        .convertToSafeRow();
-    short relativeBlockletId = safeRow.getShort(BLOCKLET_ID_INDEX);
+    DataMapRow row = memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), absoluteBlockletId);
+    short relativeBlockletId = row.getShort(BLOCKLET_ID_INDEX);
     String filePath = getFilePath();
-    return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath), relativeBlockletId,
+    return createBlocklet(row, getFileNameWithFilePath(row, filePath), relativeBlockletId,
         false);
   }
 
@@ -262,13 +261,15 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     if (isLegacyStore) {
       return super.createBlocklet(row, fileName, blockletId, useMinMaxForPruning);
     }
-    ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "");
-    BlockletDetailInfo detailInfo = getBlockletDetailInfo(row, blockletId, blocklet);
-    detailInfo.setColumnSchemas(getColumnSchema());
-    detailInfo.setBlockletInfoBinary(row.getByteArray(BLOCKLET_INFO_INDEX));
-    detailInfo.setPagesCount(row.getShort(BLOCKLET_PAGE_COUNT_INDEX));
-    detailInfo.setUseMinMaxForPruning(useMinMaxForPruning);
-    blocklet.setDetailInfo(detailInfo);
+    short versionNumber = row.getShort(VERSION_INDEX);
+    ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "",
+        ColumnarFormatVersion.valueOf(versionNumber));
+    blocklet.setColumnSchema(getColumnSchema());
+    blocklet.setUseMinMaxForPruning(useMinMaxForPruning);
+    blocklet.setIsBlockCache(false);
+    blocklet.setColumnCardinality(getColumnCardinality());
+    blocklet.setLegacyStore(isLegacyStore);
+    blocklet.setDataMapRow(row);
     return blocklet;
   }
 

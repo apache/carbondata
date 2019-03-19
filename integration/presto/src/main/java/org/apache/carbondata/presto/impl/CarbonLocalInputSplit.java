@@ -29,8 +29,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
 
-import org.apache.hadoop.fs.Path;
-
 /**
  * CarbonLocalInputSplit represents a block, it contains a set of blocklet.
  */
@@ -136,7 +134,7 @@ public class CarbonLocalInputSplit {
 
   public static CarbonInputSplit convertSplit(CarbonLocalInputSplit carbonLocalInputSplit) {
     CarbonInputSplit inputSplit = new CarbonInputSplit(carbonLocalInputSplit.getSegmentId(),
-        carbonLocalInputSplit.getBlockletId(), new Path(carbonLocalInputSplit.getPath()),
+        carbonLocalInputSplit.getBlockletId(), carbonLocalInputSplit.getPath(),
         carbonLocalInputSplit.getStart(), carbonLocalInputSplit.getLength(),
         carbonLocalInputSplit.getLocations()
             .toArray(new String[carbonLocalInputSplit.getLocations().size()]),

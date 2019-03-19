@@ -37,12 +37,15 @@ public class TableBlockIndexUniqueIdentifier implements Serializable {
 
   private String segmentId;
 
+  private String uniqueName;
+
   public TableBlockIndexUniqueIdentifier(String indexFilePath, String indexFileName,
       String mergeIndexFileName, String segmentId) {
     this.indexFilePath = indexFilePath;
     this.indexFileName = indexFileName;
     this.mergeIndexFileName = mergeIndexFileName;
     this.segmentId = segmentId;
+    this.uniqueName = indexFilePath + CarbonCommonConstants.FILE_SEPARATOR + indexFileName;
   }
 
   /**
@@ -51,7 +54,7 @@ public class TableBlockIndexUniqueIdentifier implements Serializable {
    * @return
    */
   public String getUniqueTableSegmentIdentifier() {
-    return indexFilePath + CarbonCommonConstants.FILE_SEPARATOR + indexFileName;
+    return this.uniqueName;
   }
 
   public String getIndexFilePath() {
