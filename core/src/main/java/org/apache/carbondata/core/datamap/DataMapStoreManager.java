@@ -473,6 +473,15 @@ public final class DataMapStoreManager {
    * @param identifier Table identifier
    */
   public void clearDataMaps(AbsoluteTableIdentifier identifier) {
+    clearDataMaps(identifier, true);
+  }
+
+  /**
+   * Clear the datamap/datamaps of a table from memory
+   *
+   * @param identifier Table identifier
+   */
+  public void clearDataMaps(AbsoluteTableIdentifier identifier, boolean launchJob) {
     CarbonTable carbonTable = getCarbonTable(identifier);
     String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
@@ -483,7 +492,7 @@ public final class DataMapStoreManager {
         tableIndices = allDataMaps.get(tableUniqueName);
       }
     }
-    if (null != carbonTable && tableIndices != null) {
+    if (null != carbonTable && tableIndices != null && launchJob) {
       try {
         DataMapUtil.executeDataMapJobForClearingDataMaps(carbonTable);
       } catch (IOException e) {

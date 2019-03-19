@@ -81,7 +81,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     List<CarbonInputSplit> splitList;
     if (inputSplit instanceof CarbonInputSplit) {
       splitList = new ArrayList<>(1);
-      String splitPath = ((CarbonInputSplit) inputSplit).getPath().toString();
+      String splitPath = ((CarbonInputSplit) inputSplit).getFilePath();
       // BlockFooterOffSet will be null in case of CarbonVectorizedReader as this has to be set
       // where multiple threads are able to read small set of files to calculate footer instead
       // of the main thread setting this for all the files.
@@ -162,7 +162,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     if (!skipClearDataMapAtClose) {
       // Clear the datamap cache
       DataMapStoreManager.getInstance().clearDataMaps(
-          queryModel.getTable().getAbsoluteTableIdentifier());
+          queryModel.getTable().getAbsoluteTableIdentifier(), false);
     }
     // close read support
     readSupport.close();

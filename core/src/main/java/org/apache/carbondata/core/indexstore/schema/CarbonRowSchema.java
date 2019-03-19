@@ -28,6 +28,7 @@ public abstract class CarbonRowSchema implements Serializable {
   private static final long serialVersionUID = -8061282029097686495L;
 
   protected DataType dataType;
+  private int bytePosition = -1;
 
   public CarbonRowSchema(DataType dataType) {
     this.dataType = dataType;
@@ -55,6 +56,13 @@ public abstract class CarbonRowSchema implements Serializable {
     return dataType.getSizeInBytes();
   }
 
+  public void setBytePosition(int bytePosition) {
+    this.bytePosition = bytePosition;
+  }
+
+  public int getBytePosition() {
+    return this.bytePosition;
+  }
   /**
    * schema type
    * @return

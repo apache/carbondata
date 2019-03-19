@@ -330,11 +330,11 @@ class CarbonMergerRDD[K, V](
           .filter { split => FileFormat.COLUMNAR_V3.equals(split.getFileFormat) }.toList.asJava
       }
       carbonInputSplits ++:= splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter{ entry =>
-        val blockInfo = new TableBlockInfo(entry.getPath.toString,
+        val blockInfo = new TableBlockInfo(entry.getFilePath,
           entry.getStart, entry.getSegmentId,
           entry.getLocations, entry.getLength, entry.getVersion,
           updateStatusManager.getDeleteDeltaFilePath(
-            entry.getPath.toString,
+            entry.getFilePath,
             Segment.toSegment(entry.getSegmentId).getSegmentNo)
         )
         (!updated || (updated && (!CarbonUtil

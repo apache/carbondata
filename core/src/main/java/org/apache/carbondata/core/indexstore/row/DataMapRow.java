@@ -78,6 +78,8 @@ public abstract class DataMapRow implements Serializable {
     for (int i = 0; i < schemas.length; i++) {
       len += getSizeInBytes(i);
     }
+    // for last offset in unsafe data map row
+    len += 4;
     return len;
   }
 
@@ -86,7 +88,6 @@ public abstract class DataMapRow implements Serializable {
       case FIXED:
         return schemas[ordinal].getLength();
       case VARIABLE_SHORT:
-        return getLengthInBytes(ordinal) + 2;
       case VARIABLE_INT:
         return getLengthInBytes(ordinal) + 4;
       case STRUCT:
@@ -103,15 +104,6 @@ public abstract class DataMapRow implements Serializable {
 
   public int getColumnCount() {
     return schemas.length;
-  }
-
-  /**
-   * default implementation
-   *
-   * @return
-   */
-  public DataMapRow convertToSafeRow() {
-    return this;
   }
 
   public void setSchemas(CarbonRowSchema[] schemas) {
