@@ -20,6 +20,7 @@ package org.apache.carbondata.core.indexstore;
 import java.io.IOException;
 
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 
 /**
@@ -35,4 +36,6 @@ public interface SegmentPropertiesFetcher {
    */
   SegmentProperties getSegmentProperties(Segment segment)
       throws IOException;
+
+  SegmentProperties getSegmentPropertiesFromDataMap(DataMap coarseGrainDataMap) throws IOException;
 }

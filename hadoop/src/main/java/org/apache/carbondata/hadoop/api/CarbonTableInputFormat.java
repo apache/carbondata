@@ -141,7 +141,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     SegmentUpdateStatusManager updateStatusManager =
         new SegmentUpdateStatusManager(carbonTable, loadMetadataDetails);
     List<Segment> invalidSegments = new ArrayList<>();
-    List<UpdateVO> invalidTimestampsList = new ArrayList<>();
     List<Segment> streamSegments = null;
     // get all valid segments and set them into the configuration
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier,
@@ -179,7 +178,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       }
       // remove entry in the segment index if there are invalid segments
       invalidSegments.addAll(segments.getInvalidSegments());
-      invalidTimestampsList.addAll(updateStatusManager.getInvalidTimestampRange());
       if (invalidSegments.size() > 0) {
         DataMapStoreManager.getInstance()
             .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()), invalidSegments);
@@ -219,15 +217,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     List<InputSplit> splits =
         getSplits(job, filter, filteredSegmentToAccess, matchedPartitions, partitionInfo,
             null, updateStatusManager);
-    // pass the invalid segment to task side in order to remove index entry in task side
-    if (invalidSegments.size() > 0) {
-      for (InputSplit split : splits) {
-        ((org.apache.carbondata.hadoop.CarbonInputSplit) split).setInvalidSegments(invalidSegments);
-        ((org.apache.carbondata.hadoop.CarbonInputSplit) split)
-            .setInvalidTimestampRange(invalidTimestampsList);
-      }
-    }
-
     // add all splits of streaming
     List<InputSplit> splitsOfStreaming = getSplitsOfStreaming(job, streamSegments, carbonTable);
     if (!splitsOfStreaming.isEmpty()) {
@@ -383,16 +372,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           // there is 10% slop to avoid to generate very small split in the end
           while (((double) bytesRemaining) / splitSize > 1.1) {
             int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
-            splits.add(
-                makeSplit(streamFile.getSegmentNo(), path, length - bytesRemaining,
-                    splitSize, blkLocations[blkIndex].getHosts(),
+            splits.add(makeSplit(streamFile.getSegmentNo(), streamFile.getFilePath(),
+                length - bytesRemaining, splitSize, blkLocations[blkIndex].getHosts(),
                     blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
             bytesRemaining -= splitSize;
           }
           if (bytesRemaining != 0) {
             int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
-            splits.add(makeSplit(streamFile.getSegmentNo(), path, length - bytesRemaining,
-                bytesRemaining, blkLocations[blkIndex].getHosts(),
+            splits.add(makeSplit(streamFile.getSegmentNo(), streamFile.getFilePath(),
+                length - bytesRemaining, bytesRemaining, blkLocations[blkIndex].getHosts(),
                 blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
           }
         }
@@ -401,15 +389,10 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     return splits;
   }
 
-  protected FileSplit makeSplit(String segmentId, Path file, long start, long length,
-      String[] hosts, FileFormat fileFormat) {
-    return new CarbonInputSplit(segmentId, file, start, length, hosts, fileFormat);
-  }
-
-
-  protected FileSplit makeSplit(String segmentId, Path file, long start, long length,
+  protected FileSplit makeSplit(String segmentId, String filePath, long start, long length,
       String[] hosts, String[] inMemoryHosts, FileFormat fileFormat) {
-    return new CarbonInputSplit(segmentId, file, start, length, hosts, inMemoryHosts, fileFormat);
+    return new CarbonInputSplit(segmentId, filePath, start, length, hosts, inMemoryHosts,
+        fileFormat);
   }
 
   /**
@@ -421,10 +404,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    */
   public List<InputSplit> getSplitsOfOneSegment(JobContext job, String targetSegment,
       List<Integer> oldPartitionIdList, PartitionInfo partitionInfo) {
-    List<Segment> invalidSegments = new ArrayList<>();
-    List<UpdateVO> invalidTimestampsList = new ArrayList<>();
-
-
     try {
       carbonTable = getOrCreateCarbonTable(job.getConfiguration());
       ReadCommittedScope readCommittedScope =
@@ -464,13 +443,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       // do block filtering and get split
       List<InputSplit> splits = getSplits(job, filter, segmentList, matchedPartitions,
           partitionInfo, oldPartitionIdList, new SegmentUpdateStatusManager(carbonTable));
-      // pass the invalid segment to task side in order to remove index entry in task side
-      if (invalidSegments.size() > 0) {
-        for (InputSplit split : splits) {
-          ((CarbonInputSplit) split).setInvalidSegments(invalidSegments);
-          ((CarbonInputSplit) split).setInvalidTimestampRange(invalidTimestampsList);
-        }
-      }
       return splits;
     } catch (IOException e) {
       throw new RuntimeException("Can't get splits of the target segment ", e);
@@ -541,7 +513,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         // In case IUD is not performed in this table avoid searching for
         // invalidated blocks.
         if (CarbonUtil
-            .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getPath().toString(),
+            .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getFilePath(),
                 invalidBlockVOForSegmentId, updateStatusManager)) {
           continue;
         }

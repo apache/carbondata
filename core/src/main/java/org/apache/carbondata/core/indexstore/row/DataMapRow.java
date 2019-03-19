@@ -105,15 +105,6 @@ public abstract class DataMapRow implements Serializable {
     return schemas.length;
   }
 
-  /**
-   * default implementation
-   *
-   * @return
-   */
-  public DataMapRow convertToSafeRow() {
-    return this;
-  }
-
   public void setSchemas(CarbonRowSchema[] schemas) {
     if (null == this.schemas) {
       this.schemas = schemas;

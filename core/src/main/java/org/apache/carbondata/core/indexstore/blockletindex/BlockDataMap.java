@@ -39,7 +39,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.AbstractMemoryDMStore;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
-import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SafeMemoryDMStore;
@@ -48,6 +47,7 @@ import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
@@ -131,7 +131,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       filePath = path.getParent().toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
       isFilePathStored = true;
     }
-    byte[] fileName = path.getName().toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
+    byte[] fileName = path.getName().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     byte[] segmentId =
         blockletDataMapInfo.getSegmentId().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     if (!indexInfo.isEmpty()) {
@@ -478,6 +478,13 @@ public class BlockDataMap extends CoarseGrainDataMap
     row.setRow(minMaxFlagRow, ordinal);
   }
 
+  protected String getFileNameWithFilePath(DataMapRow dataMapRow, String filePath) {
+    String fileName = filePath + CarbonCommonConstants.FILE_SEPARATOR + new String(
+        dataMapRow.getByteArray(FILE_PATH_INDEX), CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
+        + CarbonTablePath.getCarbonDataExtension();
+    return FileFactory.getUpdatedFilePath(fileName);
+  }
+
   protected String getFileNameFromPath(String filePath) {
     return CarbonTablePath.getCarbonDataFileName(filePath);
   }
@@ -491,13 +498,6 @@ public class BlockDataMap extends CoarseGrainDataMap
         .getSegmentPropertiesWrapper(segmentPropertiesIndex).getTableIdentifier().getTablePath();
     String segmentId = getTableTaskInfo(SUMMARY_SEGMENTID);
     return CarbonTablePath.getSegmentPath(tablePath, segmentId);
-  }
-
-  protected String getFileNameWithFilePath(DataMapRow dataMapRow, String filePath) {
-    String fileName = filePath + CarbonCommonConstants.FILE_SEPARATOR + new String(
-        dataMapRow.getByteArray(FILE_PATH_INDEX), CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
-        + CarbonTablePath.getCarbonDataExtension();
-    return FileFactory.getUpdatedFilePath(fileName);
   }
 
   private void addTaskSummaryRowToUnsafeMemoryStore(CarbonRowSchema[] taskSummarySchema,
@@ -711,13 +711,16 @@ public class BlockDataMap extends CoarseGrainDataMap
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     String filePath = getFilePath();
     int numEntries = memoryDMStore.getRowCount();
-    int totalBlocklets = getTotalBlocklets();
+    int totalBlocklets = 0;
+    if (ExplainCollector.enabled()) {
+      totalBlocklets = getTotalBlocklets();
+    }
     int hitBlocklets = 0;
     if (filterExp == null) {
       for (int i = 0; i < numEntries; i++) {
-        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, i).convertToSafeRow();
-        blocklets.add(createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath),
-            getBlockletId(safeRow), false));
+        DataMapRow dataMapRow = memoryDMStore.getDataMapRow(schema, i);
+        blocklets.add(createBlocklet(dataMapRow, getFileNameWithFilePath(dataMapRow, filePath),
+            getBlockletId(dataMapRow), false));
       }
       hitBlocklets = totalBlocklets;
     } else {
@@ -730,28 +733,31 @@ public class BlockDataMap extends CoarseGrainDataMap
       boolean useMinMaxForPruning = useMinMaxForExecutorPruning(filterExp);
       // min and max for executor pruning
       while (entryIndex < numEntries) {
-        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, entryIndex).convertToSafeRow();
-        boolean[] minMaxFlag = getMinMaxFlag(safeRow, BLOCK_MIN_MAX_FLAG);
-        String fileName = getFileNameWithFilePath(safeRow, filePath);
-        short blockletId = getBlockletId(safeRow);
+        DataMapRow row = memoryDMStore.getDataMapRow(schema, entryIndex);
+        boolean[] minMaxFlag = getMinMaxFlag(row, BLOCK_MIN_MAX_FLAG);
+        String fileName = getFileNameWithFilePath(row, filePath);
+        short blockletId = getBlockletId(row);
         boolean isValid =
-            addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(safeRow, MAX_VALUES_INDEX),
-                getMinMaxValue(safeRow, MIN_VALUES_INDEX), minMaxFlag, fileName, blockletId);
+            addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(row, MAX_VALUES_INDEX),
+                getMinMaxValue(row, MIN_VALUES_INDEX), minMaxFlag, fileName, blockletId);
         if (isValid) {
-          blocklets.add(createBlocklet(safeRow, fileName, blockletId, useMinMaxForPruning));
-          hitBlocklets += getBlockletNumOfEntry(entryIndex);
+          blocklets.add(createBlocklet(row, fileName, blockletId, useMinMaxForPruning));
+          if (ExplainCollector.enabled()) {
+            hitBlocklets += getBlockletNumOfEntry(entryIndex);
+          }
         }
         entryIndex++;
       }
     }
-
-    if (isLegacyStore) {
-      ExplainCollector.setShowPruningInfo(false);
-    } else {
-      ExplainCollector.setShowPruningInfo(true);
-      ExplainCollector.addTotalBlocklets(totalBlocklets);
-      ExplainCollector.addTotalBlocks(getTotalBlocks());
-      ExplainCollector.addDefaultDataMapPruningHit(hitBlocklets);
+    if (ExplainCollector.enabled()) {
+      if (isLegacyStore) {
+        ExplainCollector.setShowPruningInfo(false);
+      } else {
+        ExplainCollector.setShowPruningInfo(true);
+        ExplainCollector.addTotalBlocklets(totalBlocklets);
+        ExplainCollector.addTotalBlocks(getTotalBlocks());
+        ExplainCollector.addDefaultDataMapPruningHit(hitBlocklets);
+      }
     }
     return blocklets;
   }
@@ -907,10 +913,10 @@ public class BlockDataMap extends CoarseGrainDataMap
         rowIndex++;
       }
     }
-    DataMapRow safeRow =
-        memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), rowIndex).convertToSafeRow();
+    DataMapRow row =
+        memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), rowIndex);
     String filePath = getFilePath();
-    return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath), relativeBlockletId,
+    return createBlocklet(row, getFileNameWithFilePath(row, filePath), relativeBlockletId,
         false);
   }
 
@@ -961,32 +967,14 @@ public class BlockDataMap extends CoarseGrainDataMap
 
   protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId,
       boolean useMinMaxForPruning) {
-    ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "", false);
-    BlockletDetailInfo detailInfo = getBlockletDetailInfo(row, blockletId, blocklet);
-    detailInfo.setBlockletInfoBinary(new byte[0]);
-    blocklet.setDetailInfo(detailInfo);
+    short versionNumber = row.getShort(VERSION_INDEX);
+    ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "", false,
+        ColumnarFormatVersion.valueOf(versionNumber));
+    blocklet.setDataMapRow(row);
+    blocklet.setColumnCardinality(getColumnCardinality());
+    blocklet.setLegacyStore(isLegacyStore);
+    blocklet.setUseMinMaxForPruning(useMinMaxForPruning);
     return blocklet;
-  }
-
-  protected BlockletDetailInfo getBlockletDetailInfo(DataMapRow row, short blockletId,
-      ExtendedBlocklet blocklet) {
-    BlockletDetailInfo detailInfo = new BlockletDetailInfo();
-    detailInfo.setRowCount(row.getInt(ROW_COUNT_INDEX));
-    detailInfo.setVersionNumber(row.getShort(VERSION_INDEX));
-    detailInfo.setBlockletId(blockletId);
-    detailInfo.setDimLens(getColumnCardinality());
-    detailInfo.setSchemaUpdatedTimeStamp(row.getLong(SCHEMA_UPADATED_TIME_INDEX));
-    try {
-      blocklet.setLocation(
-          new String(row.getByteArray(LOCATIONS), CarbonCommonConstants.DEFAULT_CHARSET)
-              .split(","));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    detailInfo.setBlockFooterOffset(row.getLong(BLOCK_FOOTER_OFFSET));
-    detailInfo.setBlockSize(row.getLong(BLOCK_LENGTH));
-    detailInfo.setLegacyStore(isLegacyStore);
-    return detailInfo;
   }
 
   private String[] getFileDetails() {

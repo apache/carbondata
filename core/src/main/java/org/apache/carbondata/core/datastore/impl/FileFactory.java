@@ -81,16 +81,30 @@ public final class FileFactory {
   }
 
   public static FileType getFileType(String path) {
-    String lowerPath = path.toLowerCase();
-    if (lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
+    if (path.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || path.toLowerCase()
+        .startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
       return FileType.HDFS;
-    } else if (lowerPath.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+    } else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX) || path.toLowerCase()
+        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
       return FileType.ALLUXIO;
-    } else if (lowerPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+    } else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || path.toLowerCase()
+        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
       return FileType.VIEWFS;
-    } else if (lowerPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
-        lowerPath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
-        lowerPath.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+    } else if (path.startsWith(CarbonCommonConstants.S3N_PREFIX) || path
+        .startsWith(CarbonCommonConstants.S3A_PREFIX) || path
+        .startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      return FileType.S3;
+    }
+    String lowerCase = path.toLowerCase();
+    if (lowerCase.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
+      return FileType.HDFS;
+    } else if (lowerCase.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+      return FileType.ALLUXIO;
+    } else if (lowerCase.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+      return FileType.VIEWFS;
+    } else if (lowerCase.startsWith(CarbonCommonConstants.S3N_PREFIX) || lowerCase
+        .startsWith(CarbonCommonConstants.S3A_PREFIX) || lowerCase
+        .startsWith(CarbonCommonConstants.S3_PREFIX)) {
       return FileType.S3;
     }
     return FileType.LOCAL;
