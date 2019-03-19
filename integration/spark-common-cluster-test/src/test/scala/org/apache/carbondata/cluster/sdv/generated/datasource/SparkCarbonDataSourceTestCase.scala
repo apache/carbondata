@@ -25,10 +25,10 @@ import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, Encoder}
 import org.apache.spark.sql.{AnalysisException, Row}
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.DataSourceTestUtil._
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.junit.Assert
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll,FunSuite}
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -37,7 +37,8 @@ import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
 import org.apache.carbondata.hadoop.testutil.StoreCreator
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 
-class SparkCarbonDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
+class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
+  import spark._
 
   val warehouse1 = s"${TestQueryExecutor.projectPath}/integration/spark-datasource/target/warehouse"
 
@@ -616,7 +617,7 @@ class SparkCarbonDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
       "double, HQ_DEPOSIT double) row format delimited fields terminated by ',' collection items " +
       "terminated by '$'")
     val sourceFile = FileFactory
-      .getPath(s"$resourcesPath" + "../../../../../spark-datasource/src/test/resources/Array.csv")
+      .getPath(s"$resource" + "../../../../../spark-datasource/src/test/resources/Array.csv")
       .toString
     sql(s"load data local inpath '$sourceFile' into table array_com_hive")
     sql(
@@ -643,7 +644,7 @@ class SparkCarbonDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
       "terminated by '$' map keys terminated by '&'")
     val sourceFile = FileFactory
       .getPath(
-        s"$resourcesPath" + "../../../../../spark-datasource/src/test/resources/structofarray.csv")
+        s"$resource" + "../../../../../spark-datasource/src/test/resources/structofarray.csv")
       .toString
     sql(s"load data local inpath '$sourceFile' into table STRUCT_OF_ARRAY_com_hive")
     sql(
@@ -890,7 +891,7 @@ class SparkCarbonDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
 
       var i = 0
       while (i < 11) {
-        val array = Array[String](s"name$i", s"$i" + "$" + s"$i.${ i }12")
+        val array = Array[String](s"name$i", s"$i" + "\001" + s"$i.${ i }12")
         writer.write(array)
         i += 1
       }
@@ -992,8 +993,8 @@ class SparkCarbonDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
       var i = 0
       while (i < 10) {
         val array = Array[String](s"name$i",
-          s"$i" + "$" + s"${ i * 2 }",
-          s"${ i / 2 }" + "$" + s"${ i / 3 }")
+          s"$i" + "\001" + s"${ i * 2 }",
+          s"${ i / 2 }" + "\001" + s"${ i / 3 }")
         writer.write(array)
         i += 1
       }
@@ -1273,7 +1274,7 @@ class SparkCarbonDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
       " Timestamp,deliveryDate timestamp,deliverycharge double)row format delimited FIELDS " +
       "terminated by ',' LINES terminated by '\n' stored as textfile")
     val sourceFile = FileFactory
-      .getPath(s"$resourcesPath" +
+      .getPath(s"$resource" +
                "../../../../../spark-datasource/src/test/resources/vardhandaterestruct.csv")
       .toString
     sql(s"load data local inpath '$sourceFile' into table fileformat_drop_hive")
