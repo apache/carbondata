@@ -33,6 +33,8 @@ class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAnd
   val testData = s"$resourcesPath/sample.csv"
 
   override def beforeAll(): Unit = {
+    sql("drop database if exists partition_preaggregate cascade")
+    sql("create database partition_preaggregate")
     sql("use partition_preaggregate")
     sql(
       """
