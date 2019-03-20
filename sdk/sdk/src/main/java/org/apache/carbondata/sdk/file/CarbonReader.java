@@ -57,19 +57,23 @@ public class CarbonReader<T> {
    * Call {@link #builder(String)} to construct an instance
    */
   CarbonReader(List<RecordReader<Void, T>> readers) {
-    if (readers.size() == 0) {
-      throw new IllegalArgumentException("no reader");
-    }
     this.initialise = true;
     this.readers = readers;
     this.index = 0;
-    this.currentReader = readers.get(0);
+    if (0 == readers.size()) {
+      this.currentReader = null;
+    } else {
+      this.currentReader = readers.get(0);
+    }
   }
 
   /**
    * Return true if has next row
    */
   public boolean hasNext() throws IOException, InterruptedException {
+    if (0 == readers.size() || currentReader == null) {
+      return false;
+    }
     validateReader();
     if (currentReader.nextKeyValue()) {
       return true;
@@ -87,9 +91,13 @@ public class CarbonReader<T> {
         readers.set(index, null);
         index++;
         currentReader = readers.get(index);
-        return currentReader.nextKeyValue();
+        boolean hasNext = currentReader.nextKeyValue();
+        if (hasNext) {
+          return true;
+        }
       }
     }
+    return false;
   }
 
   /**
@@ -242,7 +250,9 @@ public class CarbonReader<T> {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
             String.valueOf(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT));
-    this.currentReader.close();
+    if (null != this.currentReader) {
+      this.currentReader.close();
+    }
     this.initialise = false;
   }
 
