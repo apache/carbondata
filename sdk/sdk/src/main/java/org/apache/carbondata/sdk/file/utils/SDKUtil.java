@@ -26,8 +26,8 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.hadoop.conf.Configuration;
 
 public class SDKUtil {
-  public static ArrayList listFiles(String sourceImageFolder, final String suf) {
-    return listFiles(sourceImageFolder, suf, new Configuration(true));
+  public static ArrayList listFiles(String sourceFolder, final String suf) {
+    return listFiles(sourceFolder, suf, new Configuration(true));
   }
 
   public static ArrayList listFiles(String sourceImageFolder,
