@@ -2418,4 +2418,39 @@ public class CarbonReaderTest extends TestCase {
       }
     }
   }
+
+  @Test
+  public void testReadWithFilterNonResult() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+    DataMapStoreManager.getInstance()
+        .clearDataMaps(AbsoluteTableIdentifier.from(path), false);
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
+
+    ColumnExpression columnExpression = new ColumnExpression("age", DataTypes.INT);
+
+    EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
+        new LiteralExpression("-11", DataTypes.INT));
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .projection(new String[]{"name", "age"})
+        .filter(equalToExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Assert.assertTrue(false);
+      i++;
+    }
+    Assert.assertEquals(i, 0);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
 }
