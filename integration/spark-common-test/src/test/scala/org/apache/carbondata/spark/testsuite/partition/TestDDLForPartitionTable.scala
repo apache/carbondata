@@ -380,9 +380,19 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           |  'RANGE_INFO'='2017-06-11 00:00:02')
         """.stripMargin)
     }
-
     assert(exceptionMessage.getMessage
       .contains("Range info must define a valid range.Please check again!"))
+  }
+
+  test("test number of partitions for default partition") {
+    sql("drop table if exists desc")
+    sql("create table desc(name string) partitioned by (num int) stored by 'carbondata'")
+    sql("insert into desc select 'abc',3")
+    sql("insert into desc select 'abc',5")
+    val descFormatted1 = sql("describe formatted desc").collect
+    descFormatted1.find(_.get(0).toString.contains("Number of Partitions")) match {
+      case Some(row) => assert(row.get(1).toString.contains("2"))
+    }
   }
 
   override def afterAll = {
@@ -390,6 +400,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
   }
 
   def dropTable = {
+    sql("drop table if exists desc")
     sql("drop table if exists hashTable")
     sql("drop table if exists rangeTable")
     sql("drop table if exists listTable")
