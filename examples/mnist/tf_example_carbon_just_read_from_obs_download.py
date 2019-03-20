@@ -22,6 +22,7 @@ from __future__ import division, print_function
 import os
 import shutil
 import time
+from multiprocessing.pool import ThreadPool
 
 import jnius_config
 
@@ -39,7 +40,7 @@ from petastorm import make_carbon_reader, make_batch_carbon_reader
 
 
 def just_read_batch_obs(key, secret, endpoint, bucketname , prefix, download_path):
-    path = 'file://'+ download_files_from_obs(key, secret, endpoint, bucketname, prefix, download_path)
+    path = 'file://'+ download_files_from_obs_concurrently(key, secret, endpoint, bucketname, prefix, download_path)
 
     with make_batch_carbon_reader(path, key=key, secret=secret, endpoint=endpoint, num_epochs=1, workers_count=16) as train_reader:
         i = 0
@@ -65,6 +66,27 @@ def download_files_from_obs(access_key, secret_key, end_point, bucket_name, pref
         obsClient.getObject(bucket_name, file, download_path + file)
     obsClient.close()
     return 'file://'+ download_path + prefix
+
+def download_files_from_obs_concurrently(access_key, secret_key, end_point, bucket_name, prefix, download_path):
+    obsClient = ObsClient(
+        access_key_id=access_key,
+        secret_access_key=secret_key,
+        server=end_point,
+        long_conn_mode=True
+    )
+    files = list_obs_files(obsClient, bucket_name, prefix)
+    numOfFiles = len(files)
+
+    def download(file):
+        i = 0
+        obsClient.getObject(bucket_name, file, download_path + file)
+
+    pool = ThreadPool(numOfFiles)
+    results = pool.map(download, files)
+    pool.close()
+    obsClient.close()
+    return 'file://'+ download_path + prefix
+
 
 def list_obs_files(obs_client, bucket_name, prefix):
     files = []
