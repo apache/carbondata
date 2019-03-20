@@ -128,6 +128,9 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     if (iterator.hasNext()) {
       iterator.processNextBatch(carbonColumnarBatch);
       numBatched = carbonColumnarBatch.getActualSize();
+      if (numBatched == 0) {
+        return nextBatch();
+      }
       batchIdx = 0;
       return true;
     }
