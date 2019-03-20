@@ -478,13 +478,6 @@ public class BlockDataMap extends CoarseGrainDataMap
     row.setRow(minMaxFlagRow, ordinal);
   }
 
-  protected String getFileNameWithFilePath(DataMapRow dataMapRow, String filePath) {
-    String fileName = filePath + CarbonCommonConstants.FILE_SEPARATOR + new String(
-        dataMapRow.getByteArray(FILE_PATH_INDEX), CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
-        + CarbonTablePath.getCarbonDataExtension();
-    return FileFactory.getUpdatedFilePath(fileName);
-  }
-
   protected String getFileNameFromPath(String filePath) {
     return CarbonTablePath.getCarbonDataFileName(filePath);
   }
@@ -498,6 +491,13 @@ public class BlockDataMap extends CoarseGrainDataMap
         .getSegmentPropertiesWrapper(segmentPropertiesIndex).getTableIdentifier().getTablePath();
     String segmentId = getTableTaskInfo(SUMMARY_SEGMENTID);
     return CarbonTablePath.getSegmentPath(tablePath, segmentId);
+  }
+
+  protected String getFileNameWithFilePath(DataMapRow dataMapRow, String filePath) {
+    String fileName = filePath + CarbonCommonConstants.FILE_SEPARATOR + new String(
+        dataMapRow.getByteArray(FILE_PATH_INDEX), CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
+        + CarbonTablePath.getCarbonDataExtension();
+    return FileFactory.getUpdatedFilePath(fileName);
   }
 
   private void addTaskSummaryRowToUnsafeMemoryStore(CarbonRowSchema[] taskSummarySchema,

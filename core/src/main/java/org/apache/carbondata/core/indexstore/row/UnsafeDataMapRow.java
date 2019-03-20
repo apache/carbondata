@@ -45,7 +45,7 @@ public class UnsafeDataMapRow extends DataMapRow {
 
   @Override public byte[] getByteArray(int ordinal) {
     int length;
-    int currentOffset = 0;
+    int currentOffset;
     switch (schemas[ordinal].getSchemaType()) {
       case VARIABLE_SHORT:
       case VARIABLE_INT:

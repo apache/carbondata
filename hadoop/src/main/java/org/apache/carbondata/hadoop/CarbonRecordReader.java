@@ -162,7 +162,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     if (!skipClearDataMapAtClose) {
       // Clear the datamap cache
       DataMapStoreManager.getInstance().clearDataMaps(
-          queryModel.getTable().getAbsoluteTableIdentifier());
+          queryModel.getTable().getAbsoluteTableIdentifier(), false);
     }
     // close read support
     readSupport.close();

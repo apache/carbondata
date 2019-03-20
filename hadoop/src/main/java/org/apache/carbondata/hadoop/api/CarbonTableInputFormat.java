@@ -309,13 +309,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           }
         }
       }
-      if (filteredSegmentToAccess.size() != segmentToAccessSet.size() && !validationRequired) {
-        for (Segment segment : segmentToAccessSet) {
-          if (!filteredSegmentToAccess.contains(segment)) {
-            filteredSegmentToAccess.add(segment);
-          }
-        }
-      }
       if (!filteredSegmentToAccess.containsAll(segmentToAccessSet)) {
         List<Segment> filteredSegmentToAccessTemp = new ArrayList<>(filteredSegmentToAccess);
         filteredSegmentToAccessTemp.removeAll(segmentToAccessSet);
