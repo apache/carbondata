@@ -32,6 +32,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -185,7 +186,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
         ("Partition Columns",
           partitionInfo.getColumnSchemaList.asScala.map {
             col => s"${col.getColumnName}:${col.getDataType.getName}"}.mkString(", "), ""),
-        ("Number of Partitions", partitionInfo.getNumPartitions.toString, ""),
+        ("Number of Partitions", getNumberOfPartitions(carbonTable, sparkSession), ""),
         ("Partitions Ids", partitionInfo.getPartitionIds.asScala.mkString(","), "")
       )
       if (partitionInfo.getPartitionType == PartitionType.RANGE) {
@@ -237,6 +238,23 @@ private[sql] case class CarbonDescribeFormattedCommand(
     }
 
     results.map{case (c1, c2, c3) => Row(c1, c2, c3)}
+  }
+
+  /**
+   * This method returns the number of partitions based on the partition type
+   */
+  private def getNumberOfPartitions(carbonTable: CarbonTable,
+      sparkSession: SparkSession): String = {
+    val numberOfPartitions = carbonTable.getPartitionInfo.getNumPartitions
+    val partitionType = carbonTable.getPartitionInfo.getPartitionType
+    partitionType match {
+      case PartitionType.NATIVE_HIVE =>
+        sparkSession.sessionState.catalog
+          .listPartitions(new TableIdentifier(carbonTable.getTableName,
+            Some(carbonTable.getDatabaseName))).size.toString
+      case _ =>
+        numberOfPartitions.toString
+    }
   }
 
   private def getLocalDictDesc(
