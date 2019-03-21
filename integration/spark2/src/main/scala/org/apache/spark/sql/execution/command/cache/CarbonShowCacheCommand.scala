@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 import org.apache.hadoop.mapred.JobConf
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.execution.command.MetadataCommand
 import org.apache.spark.sql.types.StringType
@@ -74,6 +75,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
         .listAllTables(sparkSession).filter {
         carbonTable =>
           carbonTable.getDatabaseName.equalsIgnoreCase(currentDatabase) &&
+          isValidTable(carbonTable, sparkSession) &&
           !carbonTable.isChildDataMap
       }
 
@@ -190,6 +192,9 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
        * Assemble result for table
        */
       val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier.get)(sparkSession)
+      if (!isValidTable(carbonTable, sparkSession)) {
+        throw new NoSuchTableException(carbonTable.getDatabaseName, carbonTable.getTableName)
+      }
       if (CacheProvider.getInstance().getCarbonCache == null) {
         return Seq.empty
       }
@@ -204,5 +209,10 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
           Row(row.get(0), bytesToDisplaySize(row.getLong(1)), row.get(2))
       }
     }
+  }
+
+  def isValidTable(carbonTable: CarbonTable, sparkSession: SparkSession): Boolean = {
+    CarbonEnv.getInstance(sparkSession).carbonMetaStore.tableExists(carbonTable.getTableName,
+      Some(carbonTable.getDatabaseName))(sparkSession)
   }
 }
