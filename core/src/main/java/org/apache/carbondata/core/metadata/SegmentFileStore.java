@@ -859,7 +859,11 @@ public class SegmentFileStore {
   }
 
   /**
-   * This method deletes the directories recursively if there are no files under that folder
+   * This method deletes the directories recursively if there are no files under corresponding
+   * folder.
+   * Ex: If partition folder is year=2015, month=2,day=5 and drop partition is day=5, it will delete
+   * till year partition folder if there are no other folder or files present under each folder till
+   * year partition
    */
   private static void deleteEmptyPartitionFolders(CarbonFile path) {
     if (path != null && path.listFiles().length == 0) {

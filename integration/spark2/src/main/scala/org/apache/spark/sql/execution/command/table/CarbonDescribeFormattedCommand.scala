@@ -245,7 +245,6 @@ private[sql] case class CarbonDescribeFormattedCommand(
    */
   private def getNumberOfPartitions(carbonTable: CarbonTable,
       sparkSession: SparkSession): String = {
-    val numberOfPartitions = carbonTable.getPartitionInfo.getNumPartitions
     val partitionType = carbonTable.getPartitionInfo.getPartitionType
     partitionType match {
       case PartitionType.NATIVE_HIVE =>
@@ -253,7 +252,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
           .listPartitions(new TableIdentifier(carbonTable.getTableName,
             Some(carbonTable.getDatabaseName))).size.toString
       case _ =>
-        numberOfPartitions.toString
+        carbonTable.getPartitionInfo.getNumPartitions.toString
     }
   }
 
