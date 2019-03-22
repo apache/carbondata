@@ -21,6 +21,8 @@ from __future__ import division, print_function
 
 import os
 import time
+import numpy as np
+import cv2 as cv
 
 import jnius_config
 
@@ -28,7 +30,7 @@ from petastorm import make_carbon_reader, make_batch_carbon_reader
 
 
 def just_read(dataset_url):
-    with make_carbon_reader(dataset_url, num_epochs=1, workers_count=1) as train_reader:
+    with make_carbon_reader(dataset_url, num_epochs=1, workers_count=1, reader_pool_type='process') as train_reader:
         i = 0
         start = time.time()
         for schema_view in train_reader:
@@ -41,8 +43,10 @@ def just_read(dataset_url):
                 start = end
         print(i)
 
+
 def just_read_batch(dataset_url):
-    with make_batch_carbon_reader(dataset_url, num_epochs=1, workers_count=1) as train_reader:
+    with make_batch_carbon_reader(dataset_url, num_epochs=1, workers_count=1,
+                                  reader_pool_type='thread') as train_reader:
         i = 0
         start = time.time()
         for schema_view in train_reader:
@@ -71,8 +75,22 @@ def main():
     start = time.time()
 
     # just_read("file:///tmp/mnistcarbon/train")
-    just_read_batch("file:///home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/voc/")
+    path = "/Users/xubo/Desktop/xubo/data/VOCdevkit/carbon/voc"
 
+    # path = "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers"
+    reader = make_batch_carbon_reader("file://" + path, reader_pool_type='thread')
+    # just_read_batch("file:///home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/voc/")
+    i = 0
+    for schema_view in reader:
+        # print(schema_view.imagebinary)
+        for binary in schema_view.imagebinary:
+            nparr = np.fromstring(binary, np.uint8)
+            img_np = cv.imdecode(nparr, cv.IMWRITE_PAM_FORMAT_RGB)
+
+            cv.imshow("Image", img_np)
+            cv.waitKey(0)
+            # i += len(schema_view.idx)
+    print(i)
     end = time.time()
     print("all time: " + str(end - start))
     print("Finish")

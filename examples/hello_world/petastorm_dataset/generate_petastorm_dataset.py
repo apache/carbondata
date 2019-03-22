@@ -16,6 +16,7 @@
 This is a minimal example of how to generate a petastorm dataset. Generates a
 sample dataset with some random data.
 """
+import os
 
 import numpy as np
 from pyspark.sql import SparkSession
@@ -24,6 +25,10 @@ from pyspark.sql.types import IntegerType
 from petastorm.codecs import ScalarCodec, CompressedImageCodec, NdarrayCodec
 from petastorm.etl.dataset_metadata import materialize_dataset
 from petastorm.unischema import dict_to_spark_row, Unischema, UnischemaField
+
+os.environ['PYSPARK_PYTHON'] = '/usr/local/bin/python3.6'
+os.environ['PYSPARK_DRIVER_PYTHON'] = '/usr/local/bin/python3.6'
+
 
 # The schema defines how the dataset schema looks like
 HelloWorldSchema = Unischema('HelloWorldSchema', [

@@ -34,7 +34,7 @@ def just_read(dataset_url):
         print(i)
 
 def just_read_batch(dataset_url):
-    with make_batch_reader(dataset_url, num_epochs=1, workers_count=1) as train_reader:
+    with make_batch_reader(dataset_url, num_epochs=1, workers_count=10,reader_pool_type='process') as train_reader:
         i = 0
         start = time.time()
         for schema_view in train_reader:
@@ -48,6 +48,7 @@ def just_read_batch(dataset_url):
                     print("time is " + str(end - start))
                     start = end
 
+            i += len(schema_view.idx)
         print(i)
 
 def main():
@@ -59,7 +60,8 @@ def main():
     start = time.time()
 
     # just_read("file:///home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/voc/")
-    just_read_batch("file:///home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/voc/")
+    just_read_batch("file:///tmp/mnist/train/")
+    # just_read_batch("file:///home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/voc/")
 
     end = time.time()
     print("all time: " + str(end - start))

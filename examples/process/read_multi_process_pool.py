@@ -5,9 +5,10 @@ from pycarbon.CarbonReader import CarbonReader
 
 start = time.time()
 
-process_num = 16
+process_num = 8
 
-CARBON_DIR = "/Users/panfengfeng/Dataset/imageNet/carbon/dataset_small_new"
+# CARBON_DIR = "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/flowers"
+CARBON_DIR = "/Users/xubo/Desktop/xubo/data/VOCdevkit/carbon"
 
 carbon_files = []
 def addImages():
@@ -46,7 +47,7 @@ def consumer(idx):
 if __name__=="__main__":
     import jnius_config
 
-    jnius_config.set_classpath('../../jars/carbondata-sdk.jar')
+    jnius_config.set_classpath('/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/carbondata-sdk.jar')
     jnius_config.add_options('-Xrs', '-Xmx6096m')
 
     print("START")

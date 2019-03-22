@@ -170,5 +170,5 @@ if __name__ == '__main__':
     # TODO: fill this in argument
     import jnius_config
     jnius_config.set_classpath(
-        "/Users/panfengfeng/Github/historm/store/sdk/target/carbondata-sdk.jar")
+        "/Users/xubo/Desktop/xubo/git/carbondata1/store/sdk/target/carbondata-sdk.jar")
     main()
