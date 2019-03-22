@@ -56,8 +56,6 @@ case class CarbonDatasourceHadoopRelation(
     paths.head,
     CarbonEnv.getDatabaseName(caseInsensitiveMap.get("dbname"))(sparkSession),
     caseInsensitiveMap("tablename"))
-  lazy val databaseName: String = carbonTable.getDatabaseName
-  lazy val tableName: String = carbonTable.getTableName
   CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
 
   @transient lazy val carbonRelation: CarbonRelation =
@@ -198,8 +196,8 @@ case class CarbonDatasourceHadoopRelation(
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)
 
   override def toString: String = {
-    "CarbonDatasourceHadoopRelation [ " + "Database name :" + databaseName +
-    ", " + "Table name :" + tableName + ", Schema :" + tableSchema + " ]"
+    "CarbonDatasourceHadoopRelation [ " + "Database name :" + identifier.getDatabaseName +
+    ", " + "Table name :" + identifier.getTableName + ", Schema :" + tableSchema + " ]"
   }
 
   override def sizeInBytes: Long = carbonRelation.sizeInBytes
