@@ -21,41 +21,28 @@ from __future__ import division, print_function
 
 import os
 import time
+import cProfile
 
 import jnius_config
 
 from petastorm import make_carbon_reader, make_batch_carbon_reader
 
+dataset_url = ""
 
-def just_read(dataset_url):
+def just_read():
     with make_carbon_reader(dataset_url, num_epochs=1, workers_count=1) as train_reader:
         i = 0
-        start = time.time()
         for schema_view in train_reader:
             # print(schema_view.imagename)
-            schema_view.imagebinary
-            i += 1
-            if i % 1281167 == 0:
-                end = time.time()
-                print("time is " + str(end - start))
-                start = end
+            i = i + 1
         print(i)
 
-def just_read_batch(dataset_url):
+def just_read_batch():
     with make_batch_carbon_reader(dataset_url, num_epochs=1, workers_count=1) as train_reader:
         i = 0
-        start = time.time()
         for schema_view in train_reader:
             # print(schema_view.imagename)
-            # i += len(schema_view.imagename)
-            for j in range(len(schema_view.imagename)):
-                schema_view.imagebinary[j]
-                i += 1
-                if i % 1281167 == 0:
-                    end = time.time()
-                    print("time is " + str(end - start))
-                    start = end
-
+            i += len(schema_view.imagename)
         print(i)
 
 def main():
@@ -70,8 +57,8 @@ def main():
     print("Start")
     start = time.time()
 
-    # just_read("file:///tmp/mnistcarbon/train")
-    just_read_batch("file:///home/root1/Documents/ab/workspace/historm_xubo/historm/store/sdk/target/voc/")
+    #cProfile.run("just_read()", filename="profile_read", sort="cumulative")
+    cProfile.run("just_read_batch()", filename="profile_batch_read", sort="cumulative")
 
     end = time.time()
     print("all time: " + str(end - start))

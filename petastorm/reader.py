@@ -27,6 +27,7 @@ from petastorm.etl.dataset_metadata import PetastormMetadataError, infer_or_load
 from petastorm.fs_utils import FilesystemResolver
 from petastorm.local_disk_arrow_table_cache import LocalDiskArrowTableCache
 from petastorm.local_disk_cache import LocalDiskCache
+from petastorm.local_memory_cache import LocalMemoryCache
 from petastorm.ngram import NGram
 from petastorm.predicates import PredicateBase
 from petastorm.py_dict_reader_worker import PyDictReaderWorker, PyDictCarbonReaderWorker
@@ -137,6 +138,8 @@ def make_reader(dataset_url,
         cache = NullCache()
     elif cache_type == 'local-disk':
         cache = LocalDiskCache(cache_location, cache_size_limit, cache_row_size_estimate, **cache_extra_settings or {})
+    elif cache_type == 'memory-cache':
+        cache = LocalMemoryCache(cache_size_limit)
     else:
         raise ValueError('Unknown cache_type: {}'.format(cache_type))
 
@@ -334,6 +337,8 @@ def make_carbon_reader(dataset_url,
         cache = NullCache()
     elif cache_type == 'local-disk':
         cache = LocalDiskCache(cache_location, cache_size_limit, cache_row_size_estimate, **cache_extra_settings or {})
+    elif cache_type == 'memory-cache':
+        cache = LocalMemoryCache(cache_size_limit)
     else:
         raise ValueError('Unknown cache_type: {}'.format(cache_type))
 
@@ -454,7 +459,8 @@ def make_batch_reader(dataset_url,
                       cache_type='null', cache_location=None, cache_size_limit=None,
                       cache_row_size_estimate=None, cache_extra_settings=None,
                       hdfs_driver='libhdfs3',
-                      transform_spec=None):
+                      transform_spec=None,
+                      to_pandas_ahead=False):
     """
     Creates an instance of Reader for reading batches out of a non-Petastorm Parquet store.
 
@@ -520,6 +526,8 @@ def make_batch_reader(dataset_url,
     elif cache_type == 'local-disk':
         cache = LocalDiskArrowTableCache(cache_location, cache_size_limit, cache_row_size_estimate,
                                          **cache_extra_settings or {})
+    elif cache_type == 'memory-cache':
+        cache = LocalMemoryCache(cache_size_limit)
     else:
         raise ValueError('Unknown cache_type: {}'.format(cache_type))
 
@@ -545,7 +553,8 @@ def make_batch_reader(dataset_url,
                   cur_shard=cur_shard,
                   shard_count=shard_count,
                   cache=cache,
-                  transform_spec=transform_spec)
+                  transform_spec=transform_spec,
+                  to_pandas_ahead=to_pandas_ahead)
 
 
 def make_batch_carbon_reader(dataset_url,
@@ -564,7 +573,8 @@ def make_batch_carbon_reader(dataset_url,
                       cache_type='null', cache_location=None, cache_size_limit=None,
                       cache_row_size_estimate=None, cache_extra_settings=None,
                       hdfs_driver='libhdfs3',
-                      transform_spec=None):
+                      transform_spec=None,
+                      to_pandas_ahead=False):
     """
     Creates an instance of Reader for reading batches out of a non-Petastorm Parquet store.
 
@@ -641,6 +651,8 @@ def make_batch_carbon_reader(dataset_url,
     elif cache_type == 'local-disk':
         cache = LocalDiskArrowTableCache(cache_location, cache_size_limit, cache_row_size_estimate,
                                          **cache_extra_settings or {})
+    elif cache_type == 'memory-cache':
+        cache = LocalMemoryCache(cache_size_limit)
     else:
         raise ValueError('Unknown cache_type: {}'.format(cache_type))
 
@@ -668,7 +680,8 @@ def make_batch_carbon_reader(dataset_url,
                   cur_shard=cur_shard,
                   shard_count=shard_count,
                   cache=cache,
-                  transform_spec=transform_spec)
+                  transform_spec=transform_spec,
+                  to_pandas_ahead=to_pandas_ahead)
 
 
 class Reader(object):
@@ -681,7 +694,8 @@ class Reader(object):
                  shuffle_row_groups=True, shuffle_row_drop_partitions=1,
                  predicate=None, rowgroup_selector=None, reader_pool=None, num_epochs=1,
                  cur_shard=None, shard_count=None, cache=None, worker_class=None,
-                 transform_spec=None):
+                 transform_spec=None,
+                 to_pandas_ahead=False):
         """Initializes a reader object.
 
         :param pyarrow_filesystem: An instance of ``pyarrow.FileSystem`` that will be used. If not specified,
@@ -746,6 +760,8 @@ class Reader(object):
 
         cache = cache or NullCache()
 
+        self.to_pandas_ahead = to_pandas_ahead
+
         self._workers_pool = reader_pool or ThreadPool(10)
         # 1. Resolve dataset path (hdfs://, file://) and open the parquet storage (dataset)
         self.dataset = pq.ParquetDataset(dataset_path, filesystem=pyarrow_filesystem,
@@ -778,7 +794,7 @@ class Reader(object):
 
         # 5. Start workers pool
         self._workers_pool.start(worker_class, (pyarrow_filesystem, dataset_path, storage_schema, self.ngram,
-                                                row_groups, cache, transform_spec),
+                                                row_groups, cache, transform_spec, to_pandas_ahead),
                                  ventilator=ventilator)
         logger.debug('Workers pool started')
 
@@ -935,7 +951,7 @@ class Reader(object):
 
     def __next__(self):
         try:
-            return self._results_queue_reader.read_next(self._workers_pool, self.schema, self.ngram)
+            return self._results_queue_reader.read_next(self._workers_pool, self.schema, self.ngram, to_pandas_ahead=self.to_pandas_ahead)
         except StopIteration:
             self.last_row_consumed = True
             raise
@@ -964,7 +980,8 @@ class CarbonReader(object):
                  shuffle_row_groups=True, shuffle_row_drop_partitions=1,
                  predicate=None, rowgroup_selector=None, reader_pool=None, num_epochs=1,
                  cur_shard=None, shard_count=None, cache=None, worker_class=None,
-                 transform_spec=None):
+                 transform_spec=None,
+                 to_pandas_ahead=False):
         """Initializes a reader object.
 
         :param pyarrow_filesystem: An instance of ``pyarrow.FileSystem`` that will be used. If not specified,
@@ -1034,6 +1051,8 @@ class CarbonReader(object):
 
         cache = cache or NullCache()
 
+        self.to_pandas_ahead = to_pandas_ahead
+
         self._workers_pool = reader_pool or ThreadPool(10)
         # 1. Resolve dataset path (hdfs://, file://) and open the parquet storage (dataset)
         # self.dataset = pq.ParquetDataset(dataset_path, filesystem=pyarrow_filesystem,
@@ -1075,7 +1094,7 @@ class CarbonReader(object):
 
         # 5. Start workers pool
         self._workers_pool.start(worker_class, (pyarrow_filesystem, dataset_path, storage_schema, self.ngram,
-                                                self.carbon_dataset.pieces, cache, transform_spec),
+                                                self.carbon_dataset.pieces, cache, transform_spec, to_pandas_ahead),
                                  ventilator=ventilator)
         logger.debug('Workers pool started')
 
@@ -1240,7 +1259,7 @@ class CarbonReader(object):
 
     def __next__(self):
         try:
-            return self._results_queue_reader.read_next(self._workers_pool, self.schema, self.ngram)
+            return self._results_queue_reader.read_next(self._workers_pool, self.schema, self.ngram, to_pandas_ahead=self.to_pandas_ahead)
         except StopIteration:
             self.last_row_consumed = True
             raise

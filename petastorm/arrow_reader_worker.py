@@ -35,35 +35,39 @@ class ArrowReaderWorkerResultsQueueReader(object):
     def batched_output(self):
         return True
 
-    def read_next(self, workers_pool, schema, ngram):
+    def read_next(self, workers_pool, schema, ngram, to_pandas_ahead=False):
         try:
             assert not ngram, 'ArrowReader does not support ngrams for now'
 
             result_table = workers_pool.get_results()
-            assert 1 == result_table.column(0).data.num_chunks
+            if to_pandas_ahead is False:
+                assert 1 == result_table.column(0).data.num_chunks
 
-            # Convert arrow table columns into numpy. Strings are handled differently since to_pandas() returns
-            # numpy array of dtype=object.
-            result_dict = dict()
-            for column in result_table.columns:
-                # Assume we get only one chunk since reader worker reads one rowgroup at a time
-                assert len(column.data.chunks) == 1
-                if pa.types.is_string(column.type):
-                    result_dict[column.name] = column.data.chunks[0].to_pandas().astype(np.unicode_)
-                elif pa.types.is_list(column.type):
-                    # Assuming all lists are of the same length, hence we can collate them into a matrix
-                    list_of_lists = column.data.chunks[0].to_pandas()
-                    try:
-                        result_dict[column.name] = np.vstack(list_of_lists.tolist())
-                    except ValueError:
-                        raise RuntimeError('Length of all values in column \'%s\' are expected to be the same length. '
-                                           'Got the following set of lengths: \'%s\'',
-                                           column.name,
-                                           ', '.join({value.shape[0] for value in list_of_lists}))
-                else:
-                    result_dict[column.name] = column.data.chunks[0].to_pandas()
+                # Convert arrow table columns into numpy. Strings are handled differently since to_pandas() returns
+                # numpy array of dtype=object.
+                result_dict = dict()
+                for column in result_table.columns:
+                    # Assume we get only one chunk since reader worker reads one rowgroup at a time
+                    assert len(column.data.chunks) == 1
+                    if pa.types.is_string(column.type):
+                        result_dict[column.name] = column.data.chunks[0].to_pandas().astype(np.unicode_)
+                    elif pa.types.is_list(column.type):
+                        # Assuming all lists are of the same length, hence we can collate them into a matrix
+                        list_of_lists = column.data.chunks[0].to_pandas()
+                        try:
+                            result_dict[column.name] = np.vstack(list_of_lists.tolist())
+                        except ValueError:
+                            raise RuntimeError('Length of all values in column \'%s\' are expected to be the same length. '
+                                               'Got the following set of lengths: \'%s\'',
+                                               column.name,
+                                               ', '.join({value.shape[0] for value in list_of_lists}))
+                    else:
+                        result_dict[column.name] = column.data.chunks[0].to_pandas()
 
-            return schema.make_namedtuple(**result_dict)
+                return schema.make_namedtuple(**result_dict)
+
+            else:
+                return result_table
 
         except EmptyResultError:
             raise StopIteration
@@ -80,6 +84,7 @@ class ArrowReaderWorker(WorkerBase):
         self._split_pieces = args[4]
         self._local_cache = args[5]
         self._transform_spec = args[6]
+        self._to_pandas_ahead = args[7]
 
         if self._ngram:
             raise NotImplementedError('ngrams are not supported by ArrowReaderWorker')
@@ -138,7 +143,35 @@ class ArrowReaderWorker(WorkerBase):
                                              lambda: self._load_rows(parquet_file, piece, shuffle_row_drop_partition))
 
         if all_cols:
-            self.publish_func(all_cols)
+            if self._to_pandas_ahead is False:
+                self.publish_func(all_cols)
+            else:
+                assert 1 == all_cols.column(0).data.num_chunks
+
+                # Convert arrow table columns into numpy. Strings are handled differently since to_pandas() returns
+                # numpy array of dtype=object.
+                result_dict = dict()
+                for column in all_cols.columns:
+                    # Assume we get only one chunk since reader worker reads one rowgroup at a time
+                    assert len(column.data.chunks) == 1
+                    if pa.types.is_string(column.type):
+                        result_dict[column.name] = column.data.chunks[0].to_pandas().astype(np.unicode_)
+                    elif pa.types.is_list(column.type):
+                        # Assuming all lists are of the same length, hence we can collate them into a matrix
+                        list_of_lists = column.data.chunks[0].to_pandas()
+                        try:
+                            result_dict[column.name] = np.vstack(list_of_lists.tolist())
+                        except ValueError:
+                            raise RuntimeError(
+                                'Length of all values in column \'%s\' are expected to be the same length. '
+                                'Got the following set of lengths: \'%s\'',
+                                column.name,
+                                ', '.join({value.shape[0] for value in list_of_lists}))
+                    else:
+                        result_dict[column.name] = column.data.chunks[0].to_pandas()
+
+                result_table = self._schema.make_namedtuple(**result_dict)
+                self.publish_func(result_table)
 
     def _load_rows(self, pq_file, piece, shuffle_row_drop_range):
         """Loads all rows from a piece"""
@@ -248,6 +281,7 @@ class ArrowCarbonReaderWorker(WorkerBase):
         self._split_pieces = args[4]
         self._local_cache = args[5]
         self._transform_spec = args[6]
+        self._to_pandas_ahead = args[7]
 
         if self._ngram:
             raise NotImplementedError('ngrams are not supported by ArrowReaderWorker')
@@ -306,7 +340,36 @@ class ArrowCarbonReaderWorker(WorkerBase):
                                              lambda: self._load_rows(piece, shuffle_row_drop_partition))
 
         if all_cols:
-            self.publish_func(all_cols)
+            if self._to_pandas_ahead is False:
+                self.publish_func(all_cols)
+            else:
+                assert 1 == all_cols.column(0).data.num_chunks
+
+                # Convert arrow table columns into numpy. Strings are handled differently since to_pandas() returns
+                # numpy array of dtype=object.
+                result_dict = dict()
+                for column in all_cols.columns:
+                    # Assume we get only one chunk since reader worker reads one rowgroup at a time
+                    assert len(column.data.chunks) == 1
+                    if pa.types.is_string(column.type):
+                        result_dict[column.name] = column.data.chunks[0].to_pandas().astype(np.unicode_)
+                    elif pa.types.is_list(column.type):
+                        # Assuming all lists are of the same length, hence we can collate them into a matrix
+                        list_of_lists = column.data.chunks[0].to_pandas()
+                        try:
+                            result_dict[column.name] = np.vstack(list_of_lists.tolist())
+                        except ValueError:
+                            raise RuntimeError(
+                                'Length of all values in column \'%s\' are expected to be the same length. '
+                                'Got the following set of lengths: \'%s\'',
+                                column.name,
+                                ', '.join({value.shape[0] for value in list_of_lists}))
+                    else:
+                        result_dict[column.name] = column.data.chunks[0].to_pandas()
+
+                result_table = self._schema.make_namedtuple(**result_dict)
+                self.publish_func(result_table)
+
 
     def _load_rows(self, piece, shuffle_row_drop_range):
         """Loads all rows from a piece"""

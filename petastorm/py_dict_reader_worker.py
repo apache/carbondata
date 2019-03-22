@@ -51,7 +51,7 @@ class PyDictReaderWorkerResultsQueueReader(object):
     def batched_output(self):
         return False
 
-    def read_next(self, workers_pool, schema, ngram):
+    def read_next(self, workers_pool, schema, ngram, to_pandas_ahead=False):
         try:
             # We are receiving decoded rows from the worker in chunks. We store the list internally
             # and return a single item upon each consequent call to __next__
