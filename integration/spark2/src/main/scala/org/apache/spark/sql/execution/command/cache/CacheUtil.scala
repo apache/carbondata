@@ -44,6 +44,9 @@ object CacheUtil {
       CarbonDataMergerUtil.getValidSegmentList(absoluteTableIdentifier).asScala.flatMap {
         segment =>
           segment.getCommittedIndexFile.keySet().asScala
+      }.map { indexFile =>
+        indexFile.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
+          CarbonCommonConstants.FILE_SEPARATOR)
       }.toList
     } else {
       val tablePath = carbonTable.getTablePath
@@ -53,6 +56,9 @@ object CacheUtil {
         load =>
           val seg = new Segment(load.getLoadName, null, readCommittedScope)
           seg.getCommittedIndexFile.keySet().asScala
+      }.map { indexFile =>
+        indexFile.replace(CarbonCommonConstants.WINDOWS_FILE_SEPARATOR,
+          CarbonCommonConstants.FILE_SEPARATOR)
       }.toList
     }
   }
