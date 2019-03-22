@@ -25,7 +25,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import org.apache.spark.sql.execution.command.MetadataCommand
+import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
 import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.core.cache.{CacheProvider, CacheType}
@@ -65,7 +65,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
 
   def getAllTablesCache(sparkSession: SparkSession): Seq[Row] = {
     val currentDatabase = sparkSession.sessionState.catalog.getCurrentDatabase
-    val cache = CacheProvider.getInstance().getCarbonCache()
+    val cache = CacheProvider.getInstance().getCarbonCache
     if (cache == null) {
       Seq(
         Row("ALL", "ALL", 0L, 0L, 0L),
@@ -133,6 +133,18 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
 
   def getTableCache(sparkSession: SparkSession, carbonTable: CarbonTable): Seq[Row] = {
     val cache = CacheProvider.getInstance().getCarbonCache
+    val allIndexFiles: List[String] = CacheUtil.getAllIndexFiles(carbonTable)
+    if (cache == null) {
+      var comments = 0 + "/" + allIndexFiles.size + " index files cached"
+      if (!carbonTable.isTransactionalTable) {
+        comments += " (external table)"
+      }
+      return Seq(
+        Row("Index", 0L, comments),
+        Row("Dictionary", 0L, "")
+      )
+    }
+
     val showTableCacheEvent = ShowTableCacheEvent(carbonTable, sparkSession, internalCall)
     val operationContext = new OperationContext
     // datamapName -> (datamapProviderName, indexSize, datamapSize)
@@ -140,8 +152,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
     operationContext.setProperty(carbonTable.getTableUniqueName, currentTableSizeMap)
     OperationListenerBus.getInstance.fireEvent(showTableCacheEvent, operationContext)
 
-    // Get all Index files for the specified table.
-    val allIndexFiles: List[String] = CacheUtil.getAllIndexFiles(carbonTable)
+    // Get all Index files for the specified table in cache
     val indexFilesInCache: List[String] = allIndexFiles.filter {
       indexFile =>
         cache.get(indexFile) != null
@@ -192,12 +203,8 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
        * Assemble result for table
        */
       val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier.get)(sparkSession)
-      if (!isValidTable(carbonTable, sparkSession)) {
-        throw new NoSuchTableException(carbonTable.getDatabaseName, carbonTable.getTableName)
-      }
-      if (CacheProvider.getInstance().getCarbonCache == null) {
-        return Seq.empty
-      }
+      Checker
+        .validateTableExists(tableIdentifier.get.database, tableIdentifier.get.table, sparkSession)
       val rawResult = getTableCache(sparkSession, carbonTable)
       val result = rawResult.slice(0, 2) ++
                    rawResult.drop(2).map {
