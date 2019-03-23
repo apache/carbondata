@@ -40,9 +40,8 @@ CarbonData DML statements are documented here,which includes:
   OPTIONS(property_name=property_value, ...)
   ```
   **NOTE**:
-   - If run the sql on cluster mode, please upload all input files to HDFS or S3 and so on.
-   - If run the sql on local mode with HDFS, please upload all input files to HDFS.
-   - If run the sql on local mode with local file system, it just supports to read input files from local file system.
+    * Use 'file://' prefix to indicate local input files path, but it just supports local mode.
+    * If run on cluster mode, please upload all input files to distributed file system, for example 'hdfs://' for hdfs.
 
   **Supported Properties:**
 
@@ -358,7 +357,7 @@ CarbonData DML statements are documented here,which includes:
   INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
   OPTIONS(property_name=property_value, ...)
 
-  INSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) <SELECT STATEMENT>
+  INSERT INTO TABLE [db_name.]table_name PARTITION (partition_spec) <SELECT STATEMENT>
   ```
 
   Example:
