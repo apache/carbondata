@@ -96,7 +96,7 @@ public class CarbonInputSplit extends FileSplit
 
   private transient List<ColumnSchema> columnSchema;
 
-  private transient boolean useMinMaxForPruning;
+  private boolean useMinMaxForPruning = true;
 
   private boolean isBlockCache = true;
 
@@ -534,7 +534,7 @@ public class CarbonInputSplit extends FileSplit
       out.writeInt(blockletInfoBinary.length);
       out.write(blockletInfoBinary);
     }
-    out.writeLong(this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_LENGTH));
+    out.writeLong(getLength());
     out.writeBoolean(this.isLegacyStore);
     out.writeBoolean(this.useMinMaxForPruning);
   }
@@ -553,7 +553,7 @@ public class CarbonInputSplit extends FileSplit
       detailInfo.setBlockFooterOffset(
           this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_FOOTER_OFFSET));
       detailInfo
-          .setBlockSize(this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_LENGTH));
+          .setBlockSize(getLength());
       detailInfo.setLegacyStore(isLegacyStore);
       detailInfo.setUseMinMaxForPruning(useMinMaxForPruning);
       if (!this.isBlockCache) {
@@ -602,7 +602,16 @@ public class CarbonInputSplit extends FileSplit
   public long getStart() { return start; }
 
   @Override
-  public long getLength() { return length; }
+  public long getLength() {
+    if (length == -1) {
+      if (null != dataMapRow) {
+        length = this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_LENGTH);
+      } else if (null != detailInfo) {
+        length = detailInfo.getBlockSize();
+      }
+    }
+    return length;
+  }
 
   @Override
   public String toString() { return filePath + ":" + start + "+" + length; }
