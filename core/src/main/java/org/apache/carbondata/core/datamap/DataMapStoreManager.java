@@ -482,7 +482,6 @@ public final class DataMapStoreManager {
    * @param identifier Table identifier
    */
   public void clearDataMaps(AbsoluteTableIdentifier identifier, boolean launchJob) {
-    CarbonTable carbonTable = getCarbonTable(identifier);
     String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
     if (tableIndices == null) {
@@ -492,12 +491,15 @@ public final class DataMapStoreManager {
         tableIndices = allDataMaps.get(tableUniqueName);
       }
     }
-    if (null != carbonTable && tableIndices != null && launchJob) {
-      try {
-        DataMapUtil.executeDataMapJobForClearingDataMaps(carbonTable);
-      } catch (IOException e) {
-        LOGGER.error("clear dataMap job failed", e);
-        // ignoring the exception
+    if (launchJob && tableIndices != null) {
+      CarbonTable carbonTable = getCarbonTable(identifier);
+      if (null != carbonTable) {
+        try {
+          DataMapUtil.executeDataMapJobForClearingDataMaps(carbonTable);
+        } catch (IOException e) {
+          LOGGER.error("clear dataMap job failed", e);
+          // ignoring the exception
+        }
       }
     }
     segmentRefreshMap.remove(identifier.uniqueName());
