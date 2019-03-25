@@ -27,26 +27,37 @@ This tutorial provides a quick introduction to using current integration/presto 
 ## Presto Multinode Cluster Setup for Carbondata
 ### Installing Presto
 
-  1. Download the 0.210 version of Presto using:
+To know about which version of presto is supported by this version of carbon, visit 
+https://github.com/apache/carbondata/blob/master/integration/presto/pom.xml
+and look for ```<presto.version>```
+
+_Example:_ 
+  `<presto.version>0.217</presto.version>`
+This means current version of carbon supports presto 0.217 version.   
+
+_Note:_
+Currently carbondata supports only one version of presto, cannot handle multiple versions at same time. If user wish to use older version of presto, then need to use older version of carbon (other old branches, say branch-1.5 and check the supported presto version in it's pom.xml file in integration/presto/)
+
+  1. Download that version of Presto (say 0.217) using below command:
   ```
-  wget https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.210/presto-server-0.210.tar.gz
+  wget https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.217/presto-server-0.217.tar.gz
   ```
 
-  2. Extract Presto tar file: `tar zxvf presto-server-0.210.tar.gz`.
+  2. Extract Presto tar file: `tar zxvf presto-server-0.217.tar.gz`.
 
-  3. Download the Presto CLI for the coordinator and name it presto.
+  3. Download the Presto CLI of the same presto server version (say 0.217) for the coordinator and name it presto.
 
   ```
-    wget https://repo1.maven.org/maven2/com/facebook/presto/presto-cli/0.210/presto-cli-0.210-executable.jar
+    wget https://repo1.maven.org/maven2/com/facebook/presto/presto-cli/0.217/presto-cli-0.217-executable.jar
 
-    mv presto-cli-0.210-executable.jar presto
+    mv presto-cli-0.217-executable.jar presto
 
     chmod +x presto
   ```
 
  ### Create Configuration Files
 
-  1. Create `etc` folder in presto-server-0.210 directory.
+  1. Create `etc` folder in presto-server-0.217 directory.
   2. Create `config.properties`, `jvm.config`, `log.properties`, and `node.properties` files.
   3. Install uuid to generate a node.id.
 
@@ -137,12 +148,12 @@ Then, `query.max-memory=<30GB * number of nodes>`.
 ### Start Presto Server on all nodes
 
 ```
-./presto-server-0.210/bin/launcher start
+./presto-server-0.217/bin/launcher start
 ```
 To run it as a background process.
 
 ```
-./presto-server-0.210/bin/launcher run
+./presto-server-0.217/bin/launcher run
 ```
 To run it in foreground.
 
@@ -165,7 +176,7 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
 ## Presto Single Node Setup for Carbondata
 
 ### Config presto server
-* Download presto server (0.210 is suggested and supported) : https://repo1.maven.org/maven2/com/facebook/presto/presto-server/
+* Download presto server (0.217 is suggested and supported) : https://repo1.maven.org/maven2/com/facebook/presto/presto-server/
 * Finish presto configuration following https://prestodb.io/docs/current/installation/deployment.html.
   A configuration example:
   
@@ -271,7 +282,7 @@ Load data statement in Spark can be used to create carbondata tables. And then y
 carbondata files.
 
 ### Query carbondata in CLI of presto
-* Download presto cli client of version 0.210 : https://repo1.maven.org/maven2/com/facebook/presto/presto-cli
+* Download presto cli client of version 0.217 : https://repo1.maven.org/maven2/com/facebook/presto/presto-cli
 
 * Start CLI:
   
