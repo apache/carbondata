@@ -38,7 +38,7 @@ public class ExtendedBlocklet extends Blocklet {
       boolean compareBlockletIdForObjectMatching, ColumnarFormatVersion version) {
     super(filePath, blockletId, compareBlockletIdForObjectMatching);
     try {
-      this.inputSplit = CarbonInputSplit.from(null, blockletId, filePath, 0, 0, version, null);
+      this.inputSplit = CarbonInputSplit.from(null, blockletId, filePath, 0, -1, version, null);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

@@ -304,7 +304,7 @@ class CarbonScanRDD[T: ClassTag](
           val blockSplits = splits
             .asScala
             .map(_.asInstanceOf[CarbonInputSplit])
-            .groupBy(f => f.getBlockPath)
+            .groupBy(f => f.getFilePath)
             .map { blockSplitEntry =>
               new CarbonMultiBlockSplit(
                 blockSplitEntry._2.asJava,
