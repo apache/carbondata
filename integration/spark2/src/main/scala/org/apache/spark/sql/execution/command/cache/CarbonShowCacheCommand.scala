@@ -20,24 +20,18 @@ package org.apache.spark.sql.execution.command.cache
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.mapred.JobConf
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
 import org.apache.spark.sql.types.StringType
 
-import org.apache.carbondata.core.cache.{CacheProvider, CacheType}
+import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
 import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, ShowTableCacheEvent}
-import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 import org.apache.carbondata.spark.util.CommonUtil.bytesToDisplaySize
 
 
@@ -71,38 +65,40 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
         Row("ALL", "ALL", 0L, 0L, 0L),
         Row(currentDatabase, "ALL", 0L, 0L, 0L))
     } else {
-      val carbonTables = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-        .listAllTables(sparkSession).filter {
-        carbonTable =>
-          carbonTable.getDatabaseName.equalsIgnoreCase(currentDatabase) &&
-          isValidTable(carbonTable, sparkSession) &&
-          !carbonTable.isChildDataMap
+      val carbonTables = sparkSession.sessionState.catalog.listTables(currentDatabase).collect {
+        case tableIdent if CarbonEnv.getInstance(sparkSession).carbonMetaStore
+          .tableExists(tableIdent)(sparkSession) =>
+          CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
       }
 
       // All tables of current database
-      var (dbIndexSize, dbDatamapSize, dbDictSize) = (0L, 0L, 0L)
-      val tableList: Seq[Row] = carbonTables.map {
+      var (dbDatamapSize, dbDictSize) = (0L, 0L)
+      val tableList = carbonTables.flatMap {
         carbonTable =>
-          val tableResult = getTableCache(sparkSession, carbonTable)
-          var (indexSize, datamapSize) = (tableResult(0).getLong(1), 0L)
-          tableResult.drop(2).foreach {
-            row =>
-              indexSize += row.getLong(1)
-              datamapSize += row.getLong(2)
-          }
-          val dictSize = tableResult(1).getLong(1)
+          try {
+            val tableResult = getTableCache(sparkSession, carbonTable)
+            var (indexSize, datamapSize) = (tableResult(0).getLong(1), 0L)
+            tableResult.drop(2).foreach {
+              row =>
+                indexSize += row.getLong(1)
+                datamapSize += row.getLong(2)
+            }
+            val dictSize = tableResult(1).getLong(1)
 
-          dbIndexSize += indexSize
-          dbDictSize += dictSize
-          dbDatamapSize += datamapSize
+            dbDictSize += dictSize
+            dbDatamapSize += datamapSize
 
-          val tableName = if (!carbonTable.isTransactionalTable) {
-            carbonTable.getTableName + " (external table)"
+            val tableName = if (!carbonTable.isTransactionalTable) {
+              carbonTable.getTableName + " (external table)"
+            }
+            else {
+              carbonTable.getTableName
+            }
+            Seq((currentDatabase, tableName, indexSize, datamapSize, dictSize))
+          } catch {
+            case ex: UnsupportedOperationException =>
+              Seq.empty
           }
-          else {
-            carbonTable.getTableName
-          }
-          (currentDatabase, tableName, indexSize, datamapSize, dictSize)
       }.collect {
         case (db, table, indexSize, datamapSize, dictSize) if !((indexSize == 0) &&
                                                                 (datamapSize == 0) &&
@@ -110,13 +106,27 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
           Row(db, table, indexSize, datamapSize, dictSize)
       }
 
+      val tablePaths = carbonTables.map {
+        carbonTable =>
+          carbonTable.getTablePath
+      }
+
       // Scan whole cache and fill the entries for All-Database-All-Tables
+      // and Current-Database-All-Tables
       var (allIndexSize, allDatamapSize, allDictSize) = (0L, 0L, 0L)
+      var dbIndexSize = 0L
       cache.getCacheMap.asScala.foreach {
-        case (_, cacheable) =>
+        case (key, cacheable) =>
           cacheable match {
             case _: BlockletDataMapIndexWrapper =>
               allIndexSize += cacheable.getMemorySize
+              val tablePath = tablePaths.find {
+                path =>
+                  key.startsWith(path)
+              }
+              if(tablePath.isDefined) {
+                dbIndexSize += cacheable.getMemorySize
+              }
             case _: BloomCacheKeyValue.CacheValue =>
               allDatamapSize += cacheable.getMemorySize
             case _: AbstractColumnDictionaryInfo =>
@@ -216,10 +226,5 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
           Row(row.get(0), bytesToDisplaySize(row.getLong(1)), row.get(2))
       }
     }
-  }
-
-  def isValidTable(carbonTable: CarbonTable, sparkSession: SparkSession): Boolean = {
-    CarbonEnv.getInstance(sparkSession).carbonMetaStore.tableExists(carbonTable.getTableName,
-      Some(carbonTable.getDatabaseName))(sparkSession)
   }
 }
