@@ -22,7 +22,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -393,12 +392,14 @@ public class TablePage {
   private EncodedColumnPage[] encodeAndCompressDimensions()
       throws KeyGenException, IOException, MemoryException {
     List<EncodedColumnPage> encodedDimensions = new ArrayList<>();
-    List<EncodedColumnPage> encodedComplexDimensions = new ArrayList<>();
+    EncodedColumnPage[][] complexColumnPages =
+        new EncodedColumnPage[complexDimensionPages.length][];
     TableSpec tableSpec = model.getTableSpec();
     int dictIndex = 0;
     int noDictIndex = 0;
     int complexDimIndex = 0;
     int numDimensions = tableSpec.getNumDimensions();
+    int totalComplexColumnSize = 0;
     for (int i = 0; i < numDimensions; i++) {
       ColumnPageEncoder columnPageEncoder;
       EncodedColumnPage encodedPage;
@@ -434,17 +435,51 @@ public class TablePage {
           break;
         case COMPLEX:
           EncodedColumnPage[] encodedPages = ColumnPageEncoder.encodeComplexColumn(
-              complexDimensionPages[complexDimIndex++]);
-          encodedComplexDimensions.addAll(Arrays.asList(encodedPages));
+              complexDimensionPages[complexDimIndex]);
+          complexColumnPages[complexDimIndex] = encodedPages;
+          totalComplexColumnSize += encodedPages.length;
+          complexDimIndex++;
           break;
         default:
           throw new IllegalArgumentException("unsupported dimension type:" + spec
               .getColumnType());
       }
     }
-
-    encodedDimensions.addAll(encodedComplexDimensions);
-    return encodedDimensions.toArray(new EncodedColumnPage[encodedDimensions.size()]);
+    // below code is to combine the list based on actual order present in carbon table
+    // in case of older version(eg:1.1) alter add column was supported only with sort columns
+    // and sort step will return the data based on sort column order(sort columns first)
+    // so arranging the column pages based on schema is required otherwise query will
+    // either give wrong result(for string columns) or throw exception in case of non string
+    // column as reading is based on schema order
+    int complexEncodedPageIndex = 0;
+    int normalEncodedPageIndex  = 0;
+    int currentPosition = 0;
+    EncodedColumnPage[] combinedList =
+        new EncodedColumnPage[encodedDimensions.size() + totalComplexColumnSize];
+    for (int i = 0; i < numDimensions; i++) {
+      TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
+      switch (spec.getColumnType()) {
+        case GLOBAL_DICTIONARY:
+        case DIRECT_DICTIONARY:
+        case PLAIN_VALUE:
+          // add the dimension based on actual postion
+          // current position is considered as complex column will have multiple children
+          combinedList[currentPosition + spec.getActualPostion()] =
+              encodedDimensions.get(normalEncodedPageIndex++);
+          break;
+        case COMPLEX:
+          EncodedColumnPage[] complexColumnPage = complexColumnPages[complexEncodedPageIndex++];
+          for (int j = 0; j < complexColumnPage.length; j++) {
+            combinedList[currentPosition + spec.getActualPostion() + j] = complexColumnPage[j];
+          }
+          // as for complex type 1 position is already considered, so subtract -1
+          currentPosition += complexColumnPage.length - 1;
+          break;
+        default:
+          throw new IllegalArgumentException("unsupported dimension type:" + spec.getColumnType());
+      }
+    }
+    return combinedList;
   }
 
   /**
