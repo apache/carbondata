@@ -71,30 +71,52 @@ public class TableSpec {
   }
 
   private void addDimensions(List<CarbonDimension> dimensions) {
-    int dimIndex = 0;
+    List<DimensionSpec> sortDimSpec = new ArrayList<>();
+    List<DimensionSpec> noSortDimSpec = new ArrayList<>();
+    List<DimensionSpec> noSortNoDictDimSpec = new ArrayList<>();
+    List<DimensionSpec> sortNoDictDimSpec = new ArrayList<>();
+    DimensionSpec spec;
+    short actualPosition = 0;
+    // sort step's output is based on sort column order i.e sort columns data will be present
+    // ahead of non sort columns, so table spec also need to add dimension spec in same manner
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
       if (dimension.isComplex()) {
-        DimensionSpec spec = new DimensionSpec(ColumnType.COMPLEX, dimension);
-        dimensionSpec[dimIndex++] = spec;
-        noDictionaryDimensionSpec.add(spec);
+        spec = new DimensionSpec(ColumnType.COMPLEX, dimension, actualPosition++);
       } else if (dimension.getDataType() == DataTypes.TIMESTAMP && !dimension
           .isDirectDictionaryEncoding()) {
-        DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
-        dimensionSpec[dimIndex++] = spec;
-        noDictionaryDimensionSpec.add(spec);
+        spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, actualPosition++);
       } else if (dimension.isDirectDictionaryEncoding()) {
-        DimensionSpec spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension);
-        dimensionSpec[dimIndex++] = spec;
+        spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension, actualPosition++);
       } else if (dimension.isGlobalDictionaryEncoding()) {
-        DimensionSpec spec = new DimensionSpec(ColumnType.GLOBAL_DICTIONARY, dimension);
-        dimensionSpec[dimIndex++] = spec;
+        spec = new DimensionSpec(ColumnType.GLOBAL_DICTIONARY, dimension, actualPosition++);
       } else {
-        DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
-        dimensionSpec[dimIndex++] = spec;
-        noDictionaryDimensionSpec.add(spec);
+        spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, actualPosition++);
+      }
+      if (dimension.isSortColumn()) {
+        sortDimSpec.add(spec);
+        if (!dimension.isDirectDictionaryEncoding() && !dimension.isGlobalDictionaryEncoding()
+            || spec.getColumnType() == ColumnType.COMPLEX) {
+          sortNoDictDimSpec.add(spec);
+        }
+      } else {
+        noSortDimSpec.add(spec);
+        if (!dimension.isDirectDictionaryEncoding() && !dimension.isGlobalDictionaryEncoding()
+            || spec.getColumnType() == ColumnType.COMPLEX) {
+          noSortNoDictDimSpec.add(spec);
+        }
       }
     }
+    // combine the result
+    final DimensionSpec[] sortDimensionSpecs =
+        sortDimSpec.toArray(new DimensionSpec[sortDimSpec.size()]);
+    final DimensionSpec[] noSortDimensionSpecs =
+        noSortDimSpec.toArray(new DimensionSpec[noSortDimSpec.size()]);
+    System.arraycopy(sortDimensionSpecs, 0, dimensionSpec, 0, sortDimensionSpecs.length);
+    System.arraycopy(noSortDimensionSpecs, 0, dimensionSpec, sortDimensionSpecs.length,
+        noSortDimensionSpecs.length);
+    noDictionaryDimensionSpec.addAll(sortNoDictDimSpec);
+    noDictionaryDimensionSpec.addAll(noSortNoDictDimSpec);
   }
 
   private void addMeasures(List<CarbonMeasure> measures) {
@@ -255,10 +277,13 @@ public class TableSpec {
     // indicate whether this dimension need to do inverted index
     private boolean doInvertedIndex;
 
-    DimensionSpec(ColumnType columnType, CarbonDimension dimension) {
+    // indicate the actual postion in blocklet
+    private short actualPostion;
+    DimensionSpec(ColumnType columnType, CarbonDimension dimension, short actualPostion) {
       super(dimension.getColName(), dimension.getDataType(), columnType);
       this.inSortColumns = dimension.isSortColumn();
       this.doInvertedIndex = dimension.isUseInvertedIndex();
+      this.actualPostion = actualPostion;
     }
 
     public boolean isInSortColumns() {
@@ -269,6 +294,9 @@ public class TableSpec {
       return doInvertedIndex;
     }
 
+    public short getActualPostion() {
+      return actualPostion;
+    }
     @Override
     public void write(DataOutput out) throws IOException {
       super.write(out);
