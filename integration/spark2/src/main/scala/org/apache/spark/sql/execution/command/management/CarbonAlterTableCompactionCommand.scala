@@ -288,31 +288,38 @@ case class CarbonAlterTableCompactionCommand(
       val lock = CarbonLockFactory.getCarbonLockObj(
         carbonTable.getAbsoluteTableIdentifier,
         LockUsage.COMPACTION_LOCK)
-
-      if (lock.lockWithRetries()) {
-        LOGGER.info("Acquired the compaction lock for table" +
-                    s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-        try {
-          CarbonDataRDDFactory.startCompactionThreads(
-            sqlContext,
-            carbonLoadModel,
-            storeLocation,
-            compactionModel,
-            lock,
-            compactedSegments,
-            operationContext
-          )
-        } catch {
-          case e: Exception =>
-            LOGGER.error(s"Exception in start compaction thread. ${ e.getMessage }")
-            lock.unlock()
-            throw e
+      val updateLock = CarbonLockFactory.getCarbonLockObj(carbonTable
+        .getAbsoluteTableIdentifier, LockUsage.UPDATE_LOCK)
+      try {
+        if (updateLock.lockWithRetries()) {
+          if (lock.lockWithRetries()) {
+            LOGGER.info("Acquired the compaction lock for table" +
+                        s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+            CarbonDataRDDFactory.startCompactionThreads(
+              sqlContext,
+              carbonLoadModel,
+              storeLocation,
+              compactionModel,
+              lock,
+              compactedSegments,
+              operationContext
+            )
+          } else {
+            LOGGER.error(s"Not able to acquire the compaction lock for table" +
+                         s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+            CarbonException.analysisException(
+              "Table is already locked for compaction. Please try after some time.")
+          }
+        } else {
+          throw new ConcurrentOperationException(carbonTable, "update", "compaction")
         }
-      } else {
-        LOGGER.error(s"Not able to acquire the compaction lock for table" +
-                     s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-        CarbonException.analysisException(
-          "Table is already locked for compaction. Please try after some time.")
+      } catch {
+        case e: Exception =>
+          LOGGER.error(s"Exception in start compaction thread.", e)
+          lock.unlock()
+          throw e
+      } finally {
+        updateLock.unlock()
       }
     }
   }

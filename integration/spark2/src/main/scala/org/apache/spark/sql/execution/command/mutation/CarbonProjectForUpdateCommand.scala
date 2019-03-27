@@ -79,9 +79,6 @@ private[sql] case class CarbonProjectForUpdateCommand(
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    if (SegmentStatusManager.isCompactionInProgress(carbonTable)) {
-      throw new ConcurrentOperationException(carbonTable, "compaction", "data update")
-    }
     if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "loading", "data update")
     }
@@ -99,6 +96,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
     val metadataLock = CarbonLockFactory
       .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
         LockUsage.METADATA_LOCK)
+    val compactionLock = CarbonLockFactory.getCarbonLockObj(carbonTable
+      .getAbsoluteTableIdentifier, LockUsage.COMPACTION_LOCK)
     var lockStatus = false
     // get the current time stamp which should be same for delete and update.
     val currentTime = CarbonUpdateUtil.readCurrentTime
@@ -113,45 +112,47 @@ private[sql] case class CarbonProjectForUpdateCommand(
       else {
         throw new Exception("Table is locked for updation. Please try after some time")
       }
-      // Get RDD.
 
-      dataSet = if (isPersistEnabled) {
-        Dataset.ofRows(sparkSession, plan).persist(StorageLevel.fromString(
-          CarbonProperties.getInstance.getUpdateDatasetStorageLevel()))
-      }
-      else {
-        Dataset.ofRows(sparkSession, plan)
-      }
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
+      if (compactionLock.lockWithRetries()) {
+        // Get RDD.
+        dataSet = if (isPersistEnabled) {
+          Dataset.ofRows(sparkSession, plan).persist(StorageLevel.fromString(
+            CarbonProperties.getInstance.getUpdateDatasetStorageLevel()))
+        }
+        else {
+          Dataset.ofRows(sparkSession, plan)
+        }
 
+        // handle the clean up of IUD.
+        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
-      // handle the clean up of IUD.
-      CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
+        // do delete operation.
+        val segmentsToBeDeleted = DeleteExecution.deleteDeltaExecution(
+          databaseNameOp,
+          tableName,
+          sparkSession,
+          dataSet.rdd,
+          currentTime + "",
+          isUpdateOperation = true,
+          executionErrors)
 
-      // do delete operation.
-      val segmentsToBeDeleted = DeleteExecution.deleteDeltaExecution(
-        databaseNameOp,
-        tableName,
-        sparkSession,
-        dataSet.rdd,
-        currentTime + "",
-        isUpdateOperation = true,
-        executionErrors)
+        if (executionErrors.failureCauses != FailureCauses.NONE) {
+          throw new Exception(executionErrors.errorMsg)
+        }
 
-      if (executionErrors.failureCauses != FailureCauses.NONE) {
-        throw new Exception(executionErrors.errorMsg)
+        // do update operation.
+        performUpdate(dataSet,
+          databaseNameOp,
+          tableName,
+          plan,
+          sparkSession,
+          currentTime,
+          executionErrors,
+          segmentsToBeDeleted)
+      } else {
+        throw new ConcurrentOperationException(carbonTable, "compaction", "update")
       }
-
-      // do update operation.
-      performUpdate(dataSet,
-        databaseNameOp,
-        tableName,
-        plan,
-        sparkSession,
-        currentTime,
-        executionErrors,
-        segmentsToBeDeleted)
-
       if (executionErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executionErrors.errorMsg)
       }
@@ -185,11 +186,11 @@ private[sql] case class CarbonProjectForUpdateCommand(
           sys.error("Update operation failed. " + e.getCause.getMessage)
         }
         sys.error("Update operation failed. please check logs.")
-    }
-    finally {
+    } finally {
       if (null != dataSet && isPersistEnabled) {
         dataSet.unpersist()
       }
+      compactionLock.unlock()
       if (lockStatus) {
         CarbonLockUtil.fileUnlock(metadataLock, LockUsage.METADATA_LOCK)
       }
