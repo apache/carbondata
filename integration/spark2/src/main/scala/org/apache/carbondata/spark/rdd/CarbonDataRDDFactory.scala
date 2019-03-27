@@ -54,6 +54,7 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
+import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion, SegmentFileStore}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
@@ -867,27 +868,34 @@ object CarbonDataRDDFactory {
         val lock = CarbonLockFactory.getCarbonLockObj(
           carbonTable.getAbsoluteTableIdentifier,
           LockUsage.COMPACTION_LOCK)
-
-        if (lock.lockWithRetries()) {
-          LOGGER.info("Acquired the compaction lock.")
-          try {
-            startCompactionThreads(sqlContext,
-              carbonLoadModel,
-              storeLocation,
-              compactionModel,
-              lock,
-              compactedSegments,
-              operationContext
-            )
-          } catch {
-            case e: Exception =>
-              LOGGER.error(s"Exception in start compaction thread. ${ e.getMessage }")
-              lock.unlock()
-              throw e
+        val updateLock = CarbonLockFactory.getCarbonLockObj(carbonTable
+          .getAbsoluteTableIdentifier, LockUsage.UPDATE_LOCK)
+        try {
+          if (updateLock.lockWithRetries(3, 3)) {
+            if (lock.lockWithRetries()) {
+              LOGGER.info("Acquired the compaction lock.")
+              startCompactionThreads(sqlContext,
+                carbonLoadModel,
+                storeLocation,
+                compactionModel,
+                lock,
+                compactedSegments,
+                operationContext
+              )
+            } else {
+              LOGGER.error("Not able to acquire the compaction lock for table " +
+                           s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName}")
+            }
+          } else {
+            throw new ConcurrentOperationException(carbonTable, "update", "compaction")
           }
-        } else {
-          LOGGER.error("Not able to acquire the compaction lock for table " +
-                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName}")
+        } catch {
+          case e: Exception =>
+            LOGGER.error(s"Exception in start compaction thread.", e)
+            lock.unlock()
+            throw e
+        } finally {
+          updateLock.unlock()
         }
       }
     }
