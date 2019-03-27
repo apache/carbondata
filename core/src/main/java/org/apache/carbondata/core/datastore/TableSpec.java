@@ -95,12 +95,14 @@ public class TableSpec {
       }
       if (dimension.isSortColumn()) {
         sortDimSpec.add(spec);
-        if (!dimension.isDirectDictionaryEncoding() && !dimension.isGlobalDictionaryEncoding()) {
+        if (!dimension.isDirectDictionaryEncoding() && !dimension.isGlobalDictionaryEncoding()
+            || spec.getColumnType() == ColumnType.COMPLEX) {
           sortNoDictDimSpec.add(spec);
         }
       } else {
         noSortDimSpec.add(spec);
-        if (!dimension.isDirectDictionaryEncoding() && !dimension.isGlobalDictionaryEncoding()) {
+        if (!dimension.isDirectDictionaryEncoding() && !dimension.isGlobalDictionaryEncoding()
+            || spec.getColumnType() == ColumnType.COMPLEX) {
           noSortNoDictDimSpec.add(spec);
         }
       }
