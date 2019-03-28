@@ -496,6 +496,13 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
   }
 
+  test("test number of segment files should not be more than 1 per segment") {
+    sql("drop table if exists new_par")
+    sql("create table new_par(a string) partitioned by ( b int) stored by 'carbondata'")
+    sql("insert into new_par select 'k',1")
+    assert(new File(s"$storeLocation/new_par/Metadata/segments/").listFiles().size == 1)
+  }
+
 
 
   def restoreData(dblocation: String, tableName: String) = {
@@ -556,6 +563,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists emp1")
     sql("drop table if exists restorepartition")
     sql("drop table if exists casesensitivepartition")
+    sql("drop table if exists new_par")
   }
 
 }
