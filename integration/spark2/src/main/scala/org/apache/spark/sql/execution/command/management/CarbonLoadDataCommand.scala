@@ -805,6 +805,8 @@ case class CarbonLoadDataCommand(
       }
       if (updateModel.isDefined) {
         carbonLoadModel.setFactTimeStamp(updateModel.get.updatedTimeStamp)
+      } else if (carbonLoadModel.getFactTimeStamp == 0L) {
+        carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
       }
       // Create and ddd the segment to the tablestatus.
       CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
@@ -869,7 +871,6 @@ case class CarbonLoadDataCommand(
       }
     }
     try {
-      carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
       val compactedSegments = new util.ArrayList[String]()
       // Trigger auto compaction
       CarbonDataRDDFactory.handleSegmentMerging(
