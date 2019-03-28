@@ -120,11 +120,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
           cacheable match {
             case _: BlockletDataMapIndexWrapper =>
               allIndexSize += cacheable.getMemorySize
-              val tablePath = tablePaths.find {
-                path =>
-                  key.startsWith(path)
-              }
-              if(tablePath.isDefined) {
+              if (tablePaths.exists { path => key.startsWith(path) }) {
                 dbIndexSize += cacheable.getMemorySize
               }
             case _: BloomCacheKeyValue.CacheValue =>
