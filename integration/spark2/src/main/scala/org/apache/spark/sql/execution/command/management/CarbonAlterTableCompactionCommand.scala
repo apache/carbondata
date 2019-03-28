@@ -291,7 +291,7 @@ case class CarbonAlterTableCompactionCommand(
       val updateLock = CarbonLockFactory.getCarbonLockObj(carbonTable
         .getAbsoluteTableIdentifier, LockUsage.UPDATE_LOCK)
       try {
-        if (updateLock.lockWithRetries()) {
+        if (updateLock.lockWithRetries(3, 3)) {
           if (lock.lockWithRetries()) {
             LOGGER.info("Acquired the compaction lock for table" +
                         s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")

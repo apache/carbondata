@@ -98,6 +98,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
         LockUsage.METADATA_LOCK)
     val compactionLock = CarbonLockFactory.getCarbonLockObj(carbonTable
       .getAbsoluteTableIdentifier, LockUsage.COMPACTION_LOCK)
+    val updateLock = CarbonLockFactory.getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
+      LockUsage.UPDATE_LOCK)
     var lockStatus = false
     // get the current time stamp which should be same for delete and update.
     val currentTime = CarbonUpdateUtil.readCurrentTime
@@ -114,44 +116,48 @@ private[sql] case class CarbonProjectForUpdateCommand(
       }
 
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
-      if (compactionLock.lockWithRetries()) {
-        // Get RDD.
-        dataSet = if (isPersistEnabled) {
-          Dataset.ofRows(sparkSession, plan).persist(StorageLevel.fromString(
-            CarbonProperties.getInstance.getUpdateDatasetStorageLevel()))
+      if (updateLock.lockWithRetries(3, 3)) {
+        if (compactionLock.lockWithRetries(3, 3)) {
+          // Get RDD.
+          dataSet = if (isPersistEnabled) {
+            Dataset.ofRows(sparkSession, plan).persist(StorageLevel.fromString(
+              CarbonProperties.getInstance.getUpdateDatasetStorageLevel()))
+          }
+          else {
+            Dataset.ofRows(sparkSession, plan)
+          }
+
+          // handle the clean up of IUD.
+          CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
+
+          // do delete operation.
+          val segmentsToBeDeleted = DeleteExecution.deleteDeltaExecution(
+            databaseNameOp,
+            tableName,
+            sparkSession,
+            dataSet.rdd,
+            currentTime + "",
+            isUpdateOperation = true,
+            executionErrors)
+
+          if (executionErrors.failureCauses != FailureCauses.NONE) {
+            throw new Exception(executionErrors.errorMsg)
+          }
+
+          // do update operation.
+          performUpdate(dataSet,
+            databaseNameOp,
+            tableName,
+            plan,
+            sparkSession,
+            currentTime,
+            executionErrors,
+            segmentsToBeDeleted)
+        } else {
+          throw new ConcurrentOperationException(carbonTable, "compaction", "update")
         }
-        else {
-          Dataset.ofRows(sparkSession, plan)
-        }
-
-        // handle the clean up of IUD.
-        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
-
-        // do delete operation.
-        val segmentsToBeDeleted = DeleteExecution.deleteDeltaExecution(
-          databaseNameOp,
-          tableName,
-          sparkSession,
-          dataSet.rdd,
-          currentTime + "",
-          isUpdateOperation = true,
-          executionErrors)
-
-        if (executionErrors.failureCauses != FailureCauses.NONE) {
-          throw new Exception(executionErrors.errorMsg)
-        }
-
-        // do update operation.
-        performUpdate(dataSet,
-          databaseNameOp,
-          tableName,
-          plan,
-          sparkSession,
-          currentTime,
-          executionErrors,
-          segmentsToBeDeleted)
       } else {
-        throw new ConcurrentOperationException(carbonTable, "compaction", "update")
+        throw new ConcurrentOperationException(carbonTable, "update/delete", "update")
       }
       if (executionErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executionErrors.errorMsg)
@@ -190,6 +196,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       if (null != dataSet && isPersistEnabled) {
         dataSet.unpersist()
       }
+      updateLock.unlock()
       compactionLock.unlock()
       if (lockStatus) {
         CarbonLockUtil.fileUnlock(metadataLock, LockUsage.METADATA_LOCK)
