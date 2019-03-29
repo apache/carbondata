@@ -24,6 +24,9 @@ import java.util.Objects;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.processing.sort.DummyRowUpdater;
+import org.apache.carbondata.processing.sort.SchemaBasedRowUpdater;
+import org.apache.carbondata.processing.sort.SortTempRowUpdater;
 
 /**
  * This class is used to hold field information for a table during data loading. These information
@@ -65,6 +68,8 @@ public class TableFieldStat implements Serializable {
   private int [] complexDimIdx;
   // indices for measure columns
   private int[] measureIdx;
+
+  private SortTempRowUpdater sortTempRowUpdater;
 
   public TableFieldStat(SortParameters sortParameters) {
     int noDictDimCnt = sortParameters.getNoDictionaryCount();
@@ -140,6 +145,13 @@ public class TableFieldStat implements Serializable {
     // indices for measure columns
     for (int i = 0; i < measureCnt; i++) {
       measureIdx[i] = base + i;
+    }
+    if (sortParameters.isUpdateDictDims() || sortParameters.isUpdateNonDictDims()) {
+      this.sortTempRowUpdater = new SchemaBasedRowUpdater(sortParameters.getDictDimActualPosition(),
+          sortParameters.getNoDictActualPosition(), sortParameters.isUpdateDictDims(),
+          sortParameters.isUpdateNonDictDims());
+    } else {
+      this.sortTempRowUpdater = new DummyRowUpdater();
     }
   }
 
@@ -240,5 +252,9 @@ public class TableFieldStat implements Serializable {
 
   public DataType[] getNoDictDataType() {
     return noDictDataType;
+  }
+
+  public SortTempRowUpdater getSortTempRowUpdater() {
+    return sortTempRowUpdater;
   }
 }
