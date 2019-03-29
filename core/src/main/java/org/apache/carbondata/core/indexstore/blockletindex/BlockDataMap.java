@@ -460,7 +460,9 @@ public class BlockDataMap extends CoarseGrainDataMap
       addMinMaxFlagValues(row, schema[ordinal], minMaxFlagValuesForColumnsToBeCached, ordinal);
       memoryDMStore.addIndexRow(schema, row);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      String message = "Load to unsafe failed for block: " + filePath;
+      LOGGER.error(message, e);
+      throw new RuntimeException(message, e);
     }
     return summaryRow;
   }
