@@ -336,7 +336,8 @@ public class SegmentPropertiesAndSchemaHolder {
       }
       SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper other =
           (SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper) obj;
-      return carbonTable.getAbsoluteTableIdentifier().equals(other.carbonTable.getAbsoluteTableIdentifier()) && checkColumnSchemaEquality(
+      return carbonTable.getAbsoluteTableIdentifier()
+          .equals(other.carbonTable.getAbsoluteTableIdentifier()) && checkColumnSchemaEquality(
           columnsInTable, other.columnsInTable) && Arrays
           .equals(columnCardinality, other.columnCardinality);
     }
@@ -400,8 +401,8 @@ public class SegmentPropertiesAndSchemaHolder {
         synchronized (taskSchemaLock) {
           if (null == taskSummarySchemaForBlock) {
             taskSummarySchemaForBlock = SchemaGenerator
-                .createTaskSummarySchema(segmentProperties, getMinMaxCacheColumns(), storeBlockletCount,
-                    filePathToBeStored);
+                .createTaskSummarySchema(segmentProperties, getMinMaxCacheColumns(),
+                    storeBlockletCount, filePathToBeStored);
           }
         }
       }
