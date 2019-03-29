@@ -28,6 +28,7 @@ import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
 import org.apache.carbondata.core.util.ReUsableByteArrayDataOutputStream;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
+import org.apache.carbondata.processing.sort.SortTempRowUpdater;
 import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 
 /**
@@ -50,6 +51,8 @@ public class UnsafeCarbonRowPage {
   private SortStepRowHandler sortStepRowHandler;
   private boolean convertNoSortFields;
 
+  private SortTempRowUpdater sortTempRowUpdater;
+
   public UnsafeCarbonRowPage(TableFieldStat tableFieldStat, MemoryBlock memoryBlock,
       String taskId) {
     this.tableFieldStat = tableFieldStat;
@@ -60,6 +63,7 @@ public class UnsafeCarbonRowPage {
     // TODO Only using 98% of space for safe side.May be we can have different logic.
     sizeToBeUsed = dataBlock.size() - (dataBlock.size() * 5) / 100;
     this.managerType = MemoryManagerType.UNSAFE_MEMORY_MANAGER;
+    this.sortTempRowUpdater = tableFieldStat.getSortTempRowUpdater();
   }
 
   public int addRow(Object[] row,
@@ -93,8 +97,10 @@ public class UnsafeCarbonRowPage {
    */
   public IntermediateSortTempRow getRow(long address) {
     if (convertNoSortFields) {
-      return sortStepRowHandler
+      IntermediateSortTempRow intermediateSortTempRow = sortStepRowHandler
           .readRowFromMemoryWithNoSortFieldConvert(dataBlock.getBaseObject(), address);
+      this.sortTempRowUpdater.updateSortTempRow(intermediateSortTempRow);
+      return intermediateSortTempRow;
     } else {
       return sortStepRowHandler
           .readFromMemoryWithoutNoSortFieldConvert(dataBlock.getBaseObject(), address);

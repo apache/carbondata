@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -144,6 +145,14 @@ public class SortParameters implements Serializable {
    */
   private CarbonTable carbonTable;
 
+  private boolean isUpdateDictDims;
+
+  private boolean isUpdateNonDictDims;
+
+  private int[] dictDimActualPosition;
+
+  private int[] noDictActualPosition;
+
   public SortParameters getCopy() {
     SortParameters parameters = new SortParameters();
     parameters.tempFileLocation = tempFileLocation;
@@ -178,6 +187,10 @@ public class SortParameters implements Serializable {
     parameters.batchSortSizeinMb = batchSortSizeinMb;
     parameters.rangeId = rangeId;
     parameters.carbonTable = carbonTable;
+    parameters.isUpdateDictDims = isUpdateDictDims;
+    parameters.isUpdateNonDictDims = isUpdateNonDictDims;
+    parameters.dictDimActualPosition = dictDimActualPosition;
+    parameters.noDictActualPosition = noDictActualPosition;
     return parameters;
   }
 
@@ -473,6 +486,10 @@ public class SortParameters implements Serializable {
         .getNoDictSortAndNoSortDataTypes(configuration.getTableSpec().getCarbonTable());
     parameters.setNoDictSortDataType(noDictSortAndNoSortDataTypes.get("noDictSortDataTypes"));
     parameters.setNoDictNoSortDataType(noDictSortAndNoSortDataTypes.get("noDictNoSortDataTypes"));
+    parameters.setNoDictActualPosition(configuration.getTableSpec().getNoDictDimActualPosition());
+    parameters.setDictDimActualPosition(configuration.getTableSpec().getDictDimActualPosition());
+    parameters.setUpdateDictDims(configuration.getTableSpec().isUpdateDictDim());
+    parameters.setUpdateNonDictDims(configuration.getTableSpec().isUpdateNoDictDims());
     return parameters;
   }
 
@@ -556,6 +573,11 @@ public class SortParameters implements Serializable {
     parameters.setNoDictNoSortDataType(noDictSortAndNoSortDataTypes.get("noDictNoSortDataTypes"));
     parameters.setNoDictionarySortColumn(CarbonDataProcessorUtil
         .getNoDictSortColMapping(parameters.getCarbonTable()));
+    TableSpec tableSpec = new TableSpec(carbonTable);
+    parameters.setNoDictActualPosition(tableSpec.getNoDictDimActualPosition());
+    parameters.setDictDimActualPosition(tableSpec.getDictDimActualPosition());
+    parameters.setUpdateDictDims(tableSpec.isUpdateDictDim());
+    parameters.setUpdateNonDictDims(tableSpec.isUpdateNoDictDims());
     return parameters;
   }
 
@@ -589,5 +611,37 @@ public class SortParameters implements Serializable {
 
   public void setSortColumn(boolean[] sortColumn) {
     this.sortColumn = sortColumn;
+  }
+
+  public boolean isUpdateDictDims() {
+    return isUpdateDictDims;
+  }
+
+  public void setUpdateDictDims(boolean updateDictDims) {
+    isUpdateDictDims = updateDictDims;
+  }
+
+  public boolean isUpdateNonDictDims() {
+    return isUpdateNonDictDims;
+  }
+
+  public void setUpdateNonDictDims(boolean updateNonDictDims) {
+    isUpdateNonDictDims = updateNonDictDims;
+  }
+
+  public int[] getDictDimActualPosition() {
+    return dictDimActualPosition;
+  }
+
+  public void setDictDimActualPosition(int[] dictDimActualPosition) {
+    this.dictDimActualPosition = dictDimActualPosition;
+  }
+
+  public int[] getNoDictActualPosition() {
+    return noDictActualPosition;
+  }
+
+  public void setNoDictActualPosition(int[] noDictActualPosition) {
+    this.noDictActualPosition = noDictActualPosition;
   }
 }
