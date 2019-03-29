@@ -34,6 +34,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
+import org.apache.carbondata.processing.sort.SortTempRowUpdater;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.IntermediateSortTempRowComparator;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
@@ -98,6 +99,8 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
   private SortStepRowHandler sortStepRowHandler;
   private Comparator<IntermediateSortTempRow> comparator;
   private boolean convertNoSortFields;
+
+  private SortTempRowUpdater sortTempRowUpdater;
   /**
    * Constructor to initialize
    */
@@ -113,6 +116,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     comparator = new IntermediateSortTempRowComparator(parameters.getNoDictionarySortColumn(),
         parameters.getNoDictDataType());
     this.convertNoSortFields = convertNoSortFields;
+    this.sortTempRowUpdater = tableFieldStat.getSortTempRowUpdater();
     initialize();
   }
 
@@ -168,7 +172,11 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     } else {
       try {
         if (convertNoSortFields) {
-          this.returnRow = sortStepRowHandler.readWithNoSortFieldConvert(stream);
+          IntermediateSortTempRow intermediateSortTempRow =
+              sortStepRowHandler.readWithNoSortFieldConvert(stream);
+          sortTempRowUpdater
+              .updateSortTempRow(intermediateSortTempRow);
+          this.returnRow = intermediateSortTempRow;
         } else {
           this.returnRow = sortStepRowHandler.readWithoutNoSortFieldConvert(stream);
         }
@@ -220,7 +228,11 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     IntermediateSortTempRow[] holders = new IntermediateSortTempRow[expected];
     for (int i = 0; i < expected; i++) {
       if (convertNoSortFields) {
-        holders[i] = sortStepRowHandler.readWithNoSortFieldConvert(stream);
+        IntermediateSortTempRow intermediateSortTempRow =
+            sortStepRowHandler.readWithNoSortFieldConvert(stream);
+        sortTempRowUpdater
+            .updateSortTempRow(intermediateSortTempRow);
+        holders[i] = intermediateSortTempRow;
       } else {
         holders[i] = sortStepRowHandler.readWithoutNoSortFieldConvert(stream);
       }
