@@ -85,19 +85,19 @@ public class TableSpec {
     int dimIndex = 0;
     DimensionSpec spec;
     short dictActualPosition = 0;
-    short noDimActualPosition = 0;
+    short noDictActualPosition = 0;
     // sort step's output is based on sort column order i.e sort columns data will be present
     // ahead of non sort columns, so table spec also need to add dimension spec in same manner
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
       if (dimension.isComplex()) {
-        spec = new DimensionSpec(ColumnType.COMPLEX, dimension, (short) 0);
+        spec = new DimensionSpec(ColumnType.COMPLEX, dimension, noDictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
         noDictionaryDimensionSpec.add(spec);
         noSortNoDictDimSpec.add(spec);
       } else if (dimension.getDataType() == DataTypes.TIMESTAMP && !dimension
           .isDirectDictionaryEncoding()) {
-        spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, noDimActualPosition++);
+        spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, noDictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
         noDictionaryDimensionSpec.add(spec);
         if (dimension.isSortColumn()) {
@@ -124,7 +124,7 @@ public class TableSpec {
           noSortDictDimSpec.add(spec);
         }
       } else {
-        spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, noDimActualPosition++);
+        spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, noDictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
         noDictionaryDimensionSpec.add(spec);
         if (dimension.isSortColumn()) {
