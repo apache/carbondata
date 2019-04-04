@@ -261,7 +261,12 @@ public class ColumnPageWrapper implements DimensionColumnPage {
       // if the compare value is null and the data is also null we can directly return 0
       return 0;
     } else {
-      byte[] chunkData = this.getChunkDataInBytes(rowId);
+      byte[] chunkData;
+      if (nullBitSet != null && nullBitSet.length == 0) {
+        chunkData = nullBitSet;
+      } else {
+        chunkData = this.getChunkDataInBytes(rowId);
+      }
       return ByteUtil.UnsafeComparer.INSTANCE.compareTo(chunkData, compareValue);
     }
   }

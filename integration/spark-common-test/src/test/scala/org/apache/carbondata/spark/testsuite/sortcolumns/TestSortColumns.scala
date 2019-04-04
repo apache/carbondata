@@ -385,6 +385,17 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
         "sort_columns is unsupported for double datatype column: empno"))
   }
 
+  test("test if equal to 0 filter on sort column gives correct result") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
+      "true")
+    sql("create table test1(a bigint) stored by 'carbondata' TBLPROPERTIES('sort_columns'='a')")
+    sql("insert into test1 select 'k'")
+    sql("insert into test1 select '1'")
+    assert(sql("select * from test1 where a = 1 or a = 0").count() == 1)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
+      CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT)
+  }
+
   override def afterAll = {
     dropTestTables
     CarbonProperties.getInstance().addProperty(
@@ -392,9 +403,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
         CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
+      CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT)
   }
 
   def dropTestTables = {
+    sql("drop table if exists test1")
     sql("drop table if exists sortint")
     sql("drop table if exists sortint1")
     sql("drop table if exists sortlong")
