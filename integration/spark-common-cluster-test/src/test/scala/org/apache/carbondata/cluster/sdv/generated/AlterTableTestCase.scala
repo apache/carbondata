@@ -29,6 +29,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
+
 /**
  * Test Class for AlterTableTestCase to verify all scenerios
  */
@@ -1022,6 +1024,16 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
       sql("alter table alter_hive add columns(add string)")
       sql("insert into alter_hive select 'abc','banglore'")
     }
+  }
+
+  test("Test drop columns not present in the table") {
+    sql("drop table if exists test1")
+    sql("create table test1(col1 int) stored by 'carbondata'")
+    val exception = intercept[ProcessMetaDataException] {
+      sql("alter table test1 drop columns(name)")
+    }
+    assert(exception.getMessage.contains("Column name does not exists in the table default.test1"))
+    sql("drop table if exists test1")
   }
 
   val prop = CarbonProperties.getInstance()

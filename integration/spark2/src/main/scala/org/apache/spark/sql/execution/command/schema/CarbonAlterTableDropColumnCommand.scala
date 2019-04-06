@@ -76,15 +76,6 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         }
       }
 
-      // Check if column to be dropped is of complex dataType
-      alterTableDropColumnModel.columns.foreach { column =>
-        if (carbonTable.getColumnByName(alterTableDropColumnModel.tableName, column).getDataType
-          .isComplexType) {
-          val errMsg = "Complex column cannot be dropped"
-          throw new MalformedCarbonCommandException(errMsg)
-        }
-      }
-
       val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
       var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
       .ColumnSchema]()
@@ -98,6 +89,11 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
               if (tableColumn.hasEncoding(Encoding.DICTIONARY)) {
                 dictionaryColumns ++= Seq(tableColumn.getColumnSchema)
               }
+            }
+            // Check if column to be dropped is of complex dataType
+            if (tableColumn.getDataType.isComplexType) {
+              val errMsg = "Complex column cannot be dropped"
+              throw new MalformedCarbonCommandException(errMsg)
             }
             columnExist = true
           }
