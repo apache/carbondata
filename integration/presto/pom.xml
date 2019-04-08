@@ -35,6 +35,7 @@
     <httpcore.version>4.4.9</httpcore.version>
     <dev.path>${basedir}/../../dev</dev.path>
     <jacoco.append>true</jacoco.append>
+    <maven.test.skip>true</maven.test.skip>
   </properties>
 
   <dependencies>

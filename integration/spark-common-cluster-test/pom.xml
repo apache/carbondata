@@ -37,13 +37,13 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark-datasource</artifactId>
+      <artifactId>carbondata-spark-datasource-${spark.version}</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark-common</artifactId>
+      <artifactId>carbondata-spark-common-${spark.version}</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
@@ -70,7 +70,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark2</artifactId>
+      <artifactId>carbondata-spark2-${spark.version}</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

@@ -26,12 +26,13 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-spark-datasource</artifactId>
+  <artifactId>carbondata-spark-datasource-${spark.version}</artifactId>
   <name>Apache CarbonData :: Spark Datasource</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
     <jacoco.append>true</jacoco.append>
+    <maven.test.skip>true</maven.test.skip>
   </properties>
 
   <dependencies>

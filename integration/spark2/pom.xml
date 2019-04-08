@@ -26,18 +26,19 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-spark2</artifactId>
+  <artifactId>carbondata-spark2-${spark.version}</artifactId>
   <name>Apache CarbonData :: Spark2</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
     <jacoco.append>true</jacoco.append>
+    <maven.test.skip>true</maven.test.skip>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark-common</artifactId>
+      <artifactId>carbondata-spark-common-${spark.version}</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

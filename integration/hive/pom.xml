@@ -33,6 +33,7 @@
         <hive.version>1.2.1</hive.version>
         <dev.path>${basedir}/../../dev</dev.path>
         <jacoco.append>true</jacoco.append>
+        <maven.test.skip>true</maven.test.skip>
     </properties>
 
     <dependencies>
@@ -66,7 +67,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.carbondata</groupId>
-            <artifactId>carbondata-spark2</artifactId>
+            <artifactId>carbondata-spark2-${spark.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
