@@ -41,7 +41,6 @@ import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
@@ -132,6 +131,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   * */
   private Map<Integer, GenericDataType> complexIndexMapCopy = null;
 
+  /* configured page size in MB*/
+  private int configuredPageSizeInBytes = 0;
+
   /**
    * CarbonFactDataHandler constructor
    */
@@ -152,6 +154,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.complexIndexMapCopy = new HashMap<>();
     for (Map.Entry<Integer, GenericDataType> entry: model.getComplexIndexMap().entrySet()) {
       this.complexIndexMapCopy.put(entry.getKey(), entry.getValue().deepCopy());
+    }
+    String pageSizeStrInBytes =
+        model.getTableSpec().getCarbonTable().getTableInfo().getFactTable().getTableProperties()
+            .get(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB);
+    if (pageSizeStrInBytes != null) {
+      configuredPageSizeInBytes = Integer.parseInt(pageSizeStrInBytes) * 1024 * 1024;
     }
   }
 
@@ -274,15 +282,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     if (totalNoDictPageCount > 0) {
       int currentElementLength;
       int bucketCounter = 0;
-      int configuredPageSizeInBytes;
-      String configuredPageSizeStrInBytes =
-          model.getTableSpec().getCarbonTable().getTableInfo().getFactTable().getTableProperties()
-              .get(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB);
-      if (configuredPageSizeStrInBytes != null) {
-        configuredPageSizeInBytes = Integer.parseInt(configuredPageSizeStrInBytes) * 1024 * 1024;
-      } else {
-        // Set the default 1 MB page size if not configured from 1.6 version.
-        // If set now, it will impact forward compatibility between 1.5.x versions.
+      if (configuredPageSizeInBytes == 0) {
+        // no need to cut the page
         // use default value
         /*configuredPageSizeInBytes =
             CarbonCommonConstants.TABLE_PAGE_SIZE_INMB_DEFAULT * 1024 * 1024;*/
@@ -298,7 +299,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           // If current page size is more than configured page size, cut the page here.
           if (noDictColumnPageSize[bucketCounter] + dataRows.size() * 4
               >= configuredPageSizeInBytes) {
-            LOGGER.debug("cutting the page. Rows count in this page: " + dataRows.size());
+            if (LOGGER.isDebugEnabled()) {
+              LOGGER.debug("cutting the page. Rows count in this page: " + dataRows.size());
+            }
             // re-init for next page
             noDictColumnPageSize = new int[totalNoDictPageCount];
             return true;
@@ -308,9 +311,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           // this is for depth of each complex column, model is having only total depth.
           GenericDataType genericDataType = complexIndexMapCopy
               .get(i - model.getNoDictionaryCount() + model.getPrimitiveDimLens().length);
-          int depth = calculateDepth(genericDataType);
-          List<ArrayList<byte[]>> flatComplexColumnList =
-              row.getComplexFlatByteArrayMap().get(genericDataType.getName());
+          int depth = genericDataType.getDepth();
+          List<ArrayList<byte[]>> flatComplexColumnList = (List<ArrayList<byte[]>>) nonDictArray[i];
           for (int k = 0; k < depth; k++) {
             ArrayList<byte[]> children = flatComplexColumnList.get(k);
             // Add child element from inner list.
@@ -338,7 +340,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private int setFlatCarbonRowForComplex(CarbonRow row) {
     int noDictTotalComplexChildDepth = 0;
-    Map<String, List<ArrayList<byte[]>>> complexFlatByteArrayMap = new HashMap<>();
     Object[] noDictAndComplexDimension = WriteStepRowUtil.getNoDictAndComplexDimension(row);
     for (int i = 0; i < noDictAndComplexDimension.length; i++) {
       // complex types starts after no dictionary dimensions
@@ -347,7 +348,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         // this is for depth of each complex column, model is having only total depth.
         GenericDataType genericDataType = complexIndexMapCopy
             .get(i - model.getNoDictionaryCount() + model.getPrimitiveDimLens().length);
-        int depth = calculateDepth(genericDataType);
+        int depth = genericDataType.getDepth();
         // initialize flatComplexColumnList
         List<ArrayList<byte[]>> flatComplexColumnList = new ArrayList<>(depth);
         for (int k = 0; k < depth; k++) {
@@ -367,19 +368,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           throw new CarbonDataWriterException("Problem in splitting and writing complex data", e);
         }
         noDictTotalComplexChildDepth += flatComplexColumnList.size();
-        complexFlatByteArrayMap.put(genericDataType.getName(), flatComplexColumnList);
+        // update the complex column data with the flat data
+        noDictAndComplexDimension[i] = flatComplexColumnList;
       }
     }
-    if (complexFlatByteArrayMap.size() > 0) {
-      row.setComplexFlatByteArrayMap(complexFlatByteArrayMap);
-    }
     return noDictTotalComplexChildDepth;
-  }
-
-  private int calculateDepth(GenericDataType complexDataType) {
-    List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();
-    complexDataType.getComplexColumnInfo(complexColumnInfoList);
-    return complexColumnInfoList.size();
   }
 
   private void canSnappyHandleThisRow(int currentRowSize) {

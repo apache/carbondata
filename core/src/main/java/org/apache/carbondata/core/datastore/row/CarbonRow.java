@@ -18,10 +18,7 @@
 package org.apache.carbondata.core.datastore.row;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This row class is used to transfer the row data from one step to other step
@@ -33,9 +30,6 @@ public class CarbonRow implements Serializable {
   private Object[] rawData;
 
   private short rangeId;
-
-  /* key is complex column name, val is it's flat byte array */
-  private Map<String, List<ArrayList<byte[]>>> complexFlatByteArrayMap;
 
   public CarbonRow(Object[] data) {
     this.data = data;
@@ -93,19 +87,5 @@ public class CarbonRow implements Serializable {
 
   public void clearData() {
     this.data = null;
-    this.complexFlatByteArrayMap = null;
-  }
-
-  public Map<String, List<ArrayList<byte[]>>> getComplexFlatByteArrayMap() {
-    return complexFlatByteArrayMap;
-  }
-
-  public void setComplexFlatByteArrayMap(
-      Map<String, List<ArrayList<byte[]>>> complexFlatByteArrayMap) {
-    this.complexFlatByteArrayMap = complexFlatByteArrayMap;
-  }
-
-  public void clearComplexFlatByteArrayMap() {
-    this.complexFlatByteArrayMap = null;
   }
 }

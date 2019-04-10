@@ -581,4 +581,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
             name, !isDictionary));
   }
 
+  @Override
+  public int getDepth() {
+    // primitive type has no children
+    return 1;
+  }
+
 }

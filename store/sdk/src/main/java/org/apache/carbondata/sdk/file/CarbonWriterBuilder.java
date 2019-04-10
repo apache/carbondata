@@ -270,7 +270,7 @@ public class CarbonWriterBuilder {
    *                           default value is null.
    * l. inverted_index -- comma separated string columns for which inverted index needs to be
    *                      generated
-   * m. table_page_size_inmb -- [1-1755] MB. Default value is 1 MB.
+   * m. table_page_size_inmb -- [1-1755] MB.
    *
    * @return updated CarbonWriterBuilder
    */
@@ -453,7 +453,7 @@ public class CarbonWriterBuilder {
    * To set the blocklet size of CarbonData file
    *
    * @param pageSizeInMb is page size in MB
-   *                     default value is 1 MB.
+   *
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withPageSizeInMb(int pageSizeInMb) {

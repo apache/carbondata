@@ -249,11 +249,10 @@ public class TablePage {
           }
         } else {
           // complex columns
-          addComplexColumn(i - noDictionaryCount, rowId, row);
+          addComplexColumn(i - noDictionaryCount, rowId,
+              (List<ArrayList<byte[]>>) noDictAndComplex[i]);
         }
       }
-      // clear if complex flat map is present. No use of this map after this step
-      row.clearComplexFlatByteArrayMap();
     }
     // 3. convert measure columns
     Object[] measureColumns = WriteStepRowUtil.getMeasure(row);
@@ -276,11 +275,12 @@ public class TablePage {
    *
    * @param index          index of the complexDimensionPage
    * @param rowId          Id of the input row
-   * @param row            carbonRow which has flat map of child complex columns
+   * @param encodedComplexColumnar flatten data of complex column
    */
   // TODO: this function should be refactoried, ColumnPage should support complex type encoding
   // directly instead of doing it here
-  private void addComplexColumn(int index, int rowId, CarbonRow row) {
+  private void addComplexColumn(int index, int rowId,
+      List<ArrayList<byte[]>> encodedComplexColumnar) {
     GenericDataType complexDataType = complexIndexMap.get(
         index + model.getPrimitiveDimLens().length);
     // initialize the page if first row
@@ -296,8 +296,6 @@ public class TablePage {
       }
     }
     int depthInComplexColumn = complexDimensionPages[index].getComplexColumnIndex();
-    List<ArrayList<byte[]>> encodedComplexColumnar =
-        row.getComplexFlatByteArrayMap().get(complexDataType.getName());
     for (int depth = 0; depth < depthInComplexColumn; depth++) {
       complexDimensionPages[index].putComplexData(depth, encodedComplexColumnar.get(depth));
     }

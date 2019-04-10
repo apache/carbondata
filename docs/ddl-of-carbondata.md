@@ -94,7 +94,7 @@ CarbonData DDL statements are documented here,which includes:
 | [SORT_SCOPE](#sort-scope-configuration)                      | Sort scope of the load.Options include no sort, local sort ,batch sort and global sort |
 | [TABLE_BLOCKSIZE](#table-block-size-configuration)           | Size of blocks to write onto hdfs                            |
 | [TABLE_BLOCKLET_SIZE](#table-blocklet-size-configuration)    | Size of blocklet to write in the file                        |
-| [TABLE_PAGE_SIZE_INMB](#table-page-size-configuration)       | Size of page to write in the file; if page size crosses this value before 32000 rows, page will be cut to that may rows. Helps in keeping page size to fit cpu cache size|
+| [TABLE_PAGE_SIZE_INMB](#table-page-size-configuration)       | Size of page in MB; if page size crosses this value before 32000 rows, page will be cut to this many rows and remaining rows are processed in the subsequent pages. This helps in keeping page size to fit in cpu cache size|
 | [MAJOR_COMPACTION_SIZE](#table-compaction-configuration)     | Size upto which the segments can be combined into one        |
 | [AUTO_LOAD_MERGE](#table-compaction-configuration)           | Whether to auto compact the segments                         |
 | [COMPACTION_LEVEL_THRESHOLD](#table-compaction-configuration) | Number of segments to compact into one segment               |
@@ -286,9 +286,9 @@ CarbonData DDL statements are documented here,which includes:
 
    - ##### Table page Size Configuration
 
-     This property is for setting page size in the carbondata file, the default value is 1 MB.
-     And supports a range of 1 MB to 1755 MB.
-     If page size crosses this value before 32000 rows, page will be cut to that may rows. 
+     This property is for setting page size in the carbondata file 
+     and supports a range of 1 MB to 1755 MB.
+     If page size crosses this value before 32000 rows, page will be cut to that many rows. 
      Helps in keeping page size to fit cpu cache size.
 
      Example usage:
