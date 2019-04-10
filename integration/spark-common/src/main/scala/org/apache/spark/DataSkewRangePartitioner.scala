@@ -40,7 +40,7 @@ import org.apache.spark.util.{CollectionsUtils, Utils}
  * the rangeBounds are also the distinct values, but it calculates the skew weight.
  * So some rangeBounds maybe have more than one partitions.
  *
- * for example, split following CSV file to 5 partitions:
+ * for example, split following CSV file to 5 partitions by col2:
  * ---------------
  * col1,col2
  * 1,
@@ -77,6 +77,7 @@ import org.apache.spark.util.{CollectionsUtils, Utils}
  * --------------------------------------------------------------
  * The skew weight of range bound "null" is 2.
  * So it will start two tasks for range bound "null" to create two partitions.
+ * For a range bound, the number of final partitions is the same as the skew weight.
  */
 class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
     partitions: Int,
