@@ -67,7 +67,6 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -219,7 +218,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     DataMapRowImpl summaryRow = null;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     boolean[] minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
-    Arrays.fill(minMaxFlag, true);
+    FilterUtil.setMinMaxFlagForLegacyStore(minMaxFlag, segmentProperties);
     long totalRowCount = 0;
     for (DataFileFooter fileFooter : indexInfo) {
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
@@ -232,19 +231,9 @@ public class BlockDataMap extends CoarseGrainDataMap
       if (null != blockMetaInfo) {
         BlockletIndex blockletIndex = fileFooter.getBlockletIndex();
         BlockletMinMaxIndex minMaxIndex = blockletIndex.getMinMaxIndex();
-        byte[][] minValues =
-            BlockletDataMapUtil.updateMinValues(segmentProperties, minMaxIndex.getMinValues());
-        byte[][] maxValues =
-            BlockletDataMapUtil.updateMaxValues(segmentProperties, minMaxIndex.getMaxValues());
-        // update min max values in case of old store for measures as measure min/max in
-        // old stores in written opposite
-        byte[][] updatedMinValues =
-            CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, true);
-        byte[][] updatedMaxValues =
-            CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
         summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, fileFooter, segmentProperties,
             getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
-            blockMetaInfo, updatedMinValues, updatedMaxValues, minMaxFlag);
+            blockMetaInfo, minMaxIndex.getMinValues(), minMaxIndex.getMaxValues(), minMaxFlag);
         totalRowCount += fileFooter.getNumberOfRows();
       }
     }
