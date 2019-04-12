@@ -122,9 +122,13 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     byte[] maxValue = null;
     if (isMeasurePresentInCurrentBlock[0] || isDimensionPresentInCurrentBlock[0]) {
       if (isMeasurePresentInCurrentBlock[0]) {
-        maxValue = blockMaxValue[measureChunkIndex[0]];
-        isScanRequired =
-            isScanRequired(maxValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
+        if (isMinMaxSet[measureChunkIndex[0]]) {
+          maxValue = blockMaxValue[measureChunkIndex[0]];
+          isScanRequired = isScanRequired(maxValue, msrFilterRangeValues,
+              msrColEvalutorInfoList.get(0).getType());
+        } else {
+          isScanRequired = true;
+        }
       } else {
         maxValue = blockMaxValue[dimensionChunkIndex[0]];
         DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();

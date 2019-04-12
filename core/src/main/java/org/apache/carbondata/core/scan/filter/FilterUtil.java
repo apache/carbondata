@@ -2326,4 +2326,12 @@ public final class FilterUtil {
     return defaultValue;
   }
 
+  public static void setMinMaxFlagForLegacyStore(boolean[] minMaxFlag,
+      SegmentProperties segmentProperties) {
+    int index = segmentProperties.getEachDimColumnValueSize().length + segmentProperties
+        .getEachComplexDimColumnValueSize().length;
+    Arrays.fill(minMaxFlag, 0, index, true);
+    Arrays.fill(minMaxFlag, index, minMaxFlag.length, false);
+  }
+
 }
