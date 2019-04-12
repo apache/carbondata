@@ -238,6 +238,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           LOGGER.warn("Skipping Direct Vector Filling as it is not Supported "
               + "for Legacy store prior to V3 store");
           queryModel.setDirectVectorFill(false);
+          // Skip minmax based pruning for measure column in case of legacy store
+          boolean[] minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
+          FilterUtil.setMinMaxFlagForLegacyStore(minMaxFlag, segmentProperties);
+          for (BlockletInfo blockletInfo : fileFooter.getBlockletList()) {
+            blockletInfo.getBlockletIndex().getMinMaxIndex().setIsMinMaxSet(minMaxFlag);
+          }
         }
         readAndFillBlockletInfo(tableBlockInfos, blockInfo,
             blockletDetailInfo, fileFooter, segmentProperties);
@@ -386,15 +392,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     byte[][] maxValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues();
     byte[][] minValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues();
     if (blockletDetailInfo.isLegacyStore()) {
-      minValues = BlockletDataMapUtil.updateMinValues(segmentProperties,
-          blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues());
-      maxValues = BlockletDataMapUtil.updateMaxValues(segmentProperties,
-          blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues());
-      // update min and max values in case of old store for measures as min and max is written
-      // opposite for measures in old store ( store <= 1.1 version)
-      byte[][] tempMaxValues = maxValues;
-      maxValues = CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
-      minValues = CarbonUtil.updateMinMaxValues(fileFooter, tempMaxValues, minValues, true);
       info.setDataBlockFromOldStore(true);
     }
     blockletInfo.getBlockletIndex().getMinMaxIndex().setMaxValues(maxValues);
