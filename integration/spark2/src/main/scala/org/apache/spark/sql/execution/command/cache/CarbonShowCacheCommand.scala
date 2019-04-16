@@ -22,10 +22,12 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
 import org.apache.spark.sql.types.StringType
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
@@ -38,6 +40,8 @@ import org.apache.carbondata.spark.util.CommonUtil.bytesToDisplaySize
 case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
     internalCall: Boolean = false)
   extends MetadataCommand {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   override def output: Seq[AttributeReference] = {
     if (tableIdentifier.isEmpty) {
@@ -74,7 +78,8 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
               carbonTables += carbonTable
             }
           } catch {
-            case ex: NoSuchElementException =>
+            case ex: NoSuchTableException =>
+              LOGGER.debug("Ignoring non-carbon table " + tableIdent.table)
           }
       }
 
