@@ -47,7 +47,6 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.events.Event;
@@ -100,38 +99,6 @@ public final class TableDataMap extends OperationEventListener {
     return blockletDetailsFetcher;
   }
 
-
-  /**
-   * Pass the valid segments and prune the datamap using filter expression
-   *
-   * @param segments
-   * @param filterExp
-   * @return
-   */
-  public List<ExtendedBlocklet> prune(List<Segment> segments, Expression filterExp,
-      List<PartitionSpec> partitions) throws IOException {
-    List<ExtendedBlocklet> blocklets = new ArrayList<>();
-    SegmentProperties segmentProperties;
-    Map<Segment, List<DataMap>> dataMaps = dataMapFactory.getDataMaps(segments);
-    for (Segment segment : segments) {
-      List<Blocklet> pruneBlocklets = new ArrayList<>();
-      // if filter is not passed then return all the blocklets
-      if (filterExp == null) {
-        pruneBlocklets = blockletDetailsFetcher.getAllBlocklets(segment, partitions);
-      } else {
-        segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment);
-        for (DataMap dataMap : dataMaps.get(segment)) {
-          pruneBlocklets.addAll(dataMap
-              .prune(filterExp, segmentProperties, partitions, table));
-        }
-      }
-      blocklets.addAll(addSegmentId(
-          blockletDetailsFetcher.getExtendedBlocklets(pruneBlocklets, segment),
-          segment));
-    }
-    return blocklets;
-  }
-
   public CarbonTable getTable() {
     return table;
   }
@@ -140,10 +107,10 @@ public final class TableDataMap extends OperationEventListener {
    * Pass the valid segments and prune the datamap using filter expression
    *
    * @param segments
-   * @param filterExp
+   * @param filter
    * @return
    */
-  public List<ExtendedBlocklet> prune(List<Segment> segments, final FilterResolverIntf filterExp,
+  public List<ExtendedBlocklet> prune(List<Segment> segments, final DataMapFilter filter,
       final List<PartitionSpec> partitions) throws IOException {
     final List<ExtendedBlocklet> blocklets = new ArrayList<>();
     final Map<Segment, List<DataMap>> dataMaps = dataMapFactory.getDataMaps(segments);
@@ -164,15 +131,15 @@ public final class TableDataMap extends OperationEventListener {
       // As 0.1 million files block pruning can take only 1 second.
       // Doing multi-thread for smaller values is not recommended as
       // driver should have minimum threads opened to support multiple concurrent queries.
-      if (filterExp == null) {
+      if (filter.isEmpty()) {
         // if filter is not passed, then return all the blocklets.
         return pruneWithoutFilter(segments, partitions, blocklets);
       }
-      return pruneWithFilter(segments, filterExp, partitions, blocklets, dataMaps);
+      return pruneWithFilter(segments, filter, partitions, blocklets, dataMaps);
     }
     // handle by multi-thread
-    List<ExtendedBlocklet> extendedBlocklets =
-        pruneMultiThread(segments, filterExp, partitions, blocklets, dataMaps, totalFiles);
+    List<ExtendedBlocklet> extendedBlocklets = pruneMultiThread(
+        segments, filter, partitions, blocklets, dataMaps, totalFiles);
     return extendedBlocklets;
   }
 
@@ -187,14 +154,22 @@ public final class TableDataMap extends OperationEventListener {
     return blocklets;
   }
 
-  private List<ExtendedBlocklet> pruneWithFilter(List<Segment> segments,
-      FilterResolverIntf filterExp, List<PartitionSpec> partitions,
-      List<ExtendedBlocklet> blocklets, Map<Segment, List<DataMap>> dataMaps) throws IOException {
+  private List<ExtendedBlocklet> pruneWithFilter(List<Segment> segments, DataMapFilter filter,
+      List<PartitionSpec> partitions, List<ExtendedBlocklet> blocklets,
+      Map<Segment, List<DataMap>> dataMaps) throws IOException {
     for (Segment segment : segments) {
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       SegmentProperties segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment);
-      for (DataMap dataMap : dataMaps.get(segment)) {
-        pruneBlocklets.addAll(dataMap.prune(filterExp, segmentProperties, partitions));
+      if (filter.isResolvedOnSegment(segmentProperties)) {
+        for (DataMap dataMap : dataMaps.get(segment)) {
+          pruneBlocklets.addAll(
+              dataMap.prune(filter.getResolver(), segmentProperties, partitions));
+        }
+      } else {
+        for (DataMap dataMap : dataMaps.get(segment)) {
+          pruneBlocklets.addAll(
+              dataMap.prune(filter.getExpression(), segmentProperties, partitions, table));
+        }
       }
       blocklets.addAll(
           addSegmentId(blockletDetailsFetcher.getExtendedBlocklets(pruneBlocklets, segment),
@@ -204,7 +179,7 @@ public final class TableDataMap extends OperationEventListener {
   }
 
   private List<ExtendedBlocklet> pruneMultiThread(List<Segment> segments,
-      final FilterResolverIntf filterExp, final List<PartitionSpec> partitions,
+      final DataMapFilter filter, final List<PartitionSpec> partitions,
       List<ExtendedBlocklet> blocklets, final Map<Segment, List<DataMap>> dataMaps,
       int totalFiles) {
     /*
@@ -295,14 +270,24 @@ public final class TableDataMap extends OperationEventListener {
             SegmentProperties segmentProperties =
                 segmentPropertiesFetcher.getSegmentPropertiesFromDataMap(dataMapList.get(0));
             Segment segment = segmentDataMapGroup.getSegment();
-            for (int i = segmentDataMapGroup.getFromIndex();
-                 i <= segmentDataMapGroup.getToIndex(); i++) {
-              List<Blocklet> dmPruneBlocklets  = dataMapList.get(i).prune(filterExp,
-                  segmentProperties,
-                  partitions);
-              pruneBlocklets.addAll(addSegmentId(blockletDetailsFetcher
-                      .getExtendedBlocklets(dmPruneBlocklets, segment),
-                  segment));
+            if (filter.isResolvedOnSegment(segmentProperties)) {
+              for (int i = segmentDataMapGroup.getFromIndex();
+                   i <= segmentDataMapGroup.getToIndex(); i++) {
+                List<Blocklet> dmPruneBlocklets = dataMapList.get(i).prune(
+                    filter.getResolver(), segmentProperties, partitions);
+                pruneBlocklets.addAll(addSegmentId(
+                    blockletDetailsFetcher.getExtendedBlocklets(dmPruneBlocklets, segment),
+                    segment));
+              }
+            } else {
+              for (int i = segmentDataMapGroup.getFromIndex();
+                   i <= segmentDataMapGroup.getToIndex(); i++) {
+                List<Blocklet> dmPruneBlocklets = dataMapList.get(i).prune(
+                    filter.getExpression(), segmentProperties, partitions, table);
+                pruneBlocklets.addAll(addSegmentId(
+                    blockletDetailsFetcher.getExtendedBlocklets(dmPruneBlocklets, segment),
+                    segment));
+              }
             }
             synchronized (prunedBlockletMap) {
               List<ExtendedBlocklet> pruneBlockletsExisting =

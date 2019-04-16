@@ -312,7 +312,7 @@ public class QueryModelBuilder {
     queryModel.setReadPageByPage(readPageByPage);
     queryModel.setProjection(projection);
 
-    if (table.isTransactionalTable()) {
+    if (table.isTransactionalTable() && !table.hasColumnDrift()) {
       // set the filter to the query model in order to filter blocklet before scan
       boolean[] isFilterDimensions = new boolean[table.getDimensionOrdinalMax()];
       boolean[] isFilterMeasures = new boolean[table.getAllMeasures().size()];
