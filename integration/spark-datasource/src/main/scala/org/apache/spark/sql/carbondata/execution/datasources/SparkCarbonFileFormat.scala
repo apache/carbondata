@@ -219,6 +219,8 @@ class SparkCarbonFileFormat extends FileFormat
           fieldTypes(i).dataType match {
             case StringType =>
               data(i) = row.getString(i)
+            case BinaryType =>
+              data(i) = row.getBinary(i)
             case d: DecimalType =>
               data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
             case s: StructType =>

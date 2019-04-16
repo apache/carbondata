@@ -113,6 +113,7 @@ public class CarbonWriterBuilder {
 
   /**
    * sets the list of columns for which inverted index needs to generated
+   *
    * @param invertedIndexColumns is a string array of columns for which inverted index needs to
    * generated.
    * If it is null or an empty array, inverted index will be generated for none of the columns
@@ -156,30 +157,30 @@ public class CarbonWriterBuilder {
 
   /**
    * To support the load options for sdk writer
+   *
    * @param options key,value pair of load options.
-   * supported keys values are
-   * a. bad_records_logger_enable -- true (write into separate logs), false
-   * b. bad_records_action -- FAIL, FORCE, IGNORE, REDIRECT
-   * c. bad_record_path -- path
-   * d. dateformat -- same as JAVA SimpleDateFormat
-   * e. timestampformat -- same as JAVA SimpleDateFormat
-   * f. complex_delimiter_level_1 -- value to Split the complexTypeData
-   * g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
-   * h. quotechar
-   * i. escapechar
-   *
-   * Default values are as follows.
-   *
-   * a. bad_records_logger_enable -- "false"
-   * b. bad_records_action -- "FAIL"
-   * c. bad_record_path -- ""
-   * d. dateformat -- "" , uses from carbon.properties file
-   * e. timestampformat -- "", uses from carbon.properties file
-   * f. complex_delimiter_level_1 -- "\001"
-   * g. complex_delimiter_level_2 -- "\002"
-   * h. quotechar -- "\""
-   * i. escapechar -- "\\"
-   *
+   *                supported keys values are
+   *                a. bad_records_logger_enable -- true (write into separate logs), false
+   *                b. bad_records_action -- FAIL, FORCE, IGNORE, REDIRECT
+   *                c. bad_record_path -- path
+   *                d. dateformat -- same as JAVA SimpleDateFormat
+   *                e. timestampformat -- same as JAVA SimpleDateFormat
+   *                f. complex_delimiter_level_1 -- value to Split the complexTypeData
+   *                g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
+   *                h. quotechar
+   *                i. escapechar
+   *                <p>
+   *                Default values are as follows.
+   *                <p>
+   *                a. bad_records_logger_enable -- "false"
+   *                b. bad_records_action -- "FAIL"
+   *                c. bad_record_path -- ""
+   *                d. dateformat -- "" , uses from carbon.properties file
+   *                e. timestampformat -- "", uses from carbon.properties file
+   *                f. complex_delimiter_level_1 -- "\001"
+   *                g. complex_delimiter_level_2 -- "\002"
+   *                h. quotechar -- "\""
+   *                i. escapechar -- "\\"
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withLoadOptions(Map<String, String> options) {
@@ -279,7 +280,7 @@ public class CarbonWriterBuilder {
     Set<String> supportedOptions = new HashSet<>(Arrays
         .asList("table_blocksize", "table_blocklet_size", "local_dictionary_threshold",
             "local_dictionary_enable", "sort_columns", "sort_scope", "long_string_columns",
-            "inverted_index","table_page_size_inmb"));
+            "inverted_index", "table_page_size_inmb"));
 
     for (String key : options.keySet()) {
       if (!supportedOptions.contains(key.toLowerCase())) {
@@ -613,11 +614,11 @@ public class CarbonWriterBuilder {
 
   private void validateLongStringColumns(Schema carbonSchema, Set<String> longStringColumns) {
     // long string columns must be string or varchar type
-    for (Field field :carbonSchema.getFields()) {
+    for (Field field : carbonSchema.getFields()) {
       if (longStringColumns.contains(field.getFieldName().toLowerCase()) && (
           (field.getDataType() != DataTypes.STRING) && field.getDataType() != DataTypes.VARCHAR)) {
         throw new RuntimeException(
-            "long string column : " + field.getFieldName() + "is not supported for data type: "
+            "long string column : " + field.getFieldName() + " is not supported for data type: "
                 + field.getDataType());
       }
     }
@@ -662,7 +663,7 @@ public class CarbonWriterBuilder {
       for (Field field : schema.getFields()) {
         if (null != field) {
           if (field.getDataType() == DataTypes.STRING ||
-              field.getDataType() == DataTypes.DATE  ||
+              field.getDataType() == DataTypes.DATE ||
               field.getDataType() == DataTypes.TIMESTAMP) {
             sortColumnsList.add(field.getFieldName());
           }
@@ -704,7 +705,7 @@ public class CarbonWriterBuilder {
     // differentiated to any level
     AtomicInteger valIndex = new AtomicInteger(0);
     // Check if any of the columns specified in sort columns are missing from schema.
-    for (String sortColumn: sortColumnsList) {
+    for (String sortColumn : sortColumnsList) {
       boolean exists = false;
       for (Field field : fields) {
         if (field.getFieldName().equalsIgnoreCase(sortColumn)) {
@@ -718,7 +719,7 @@ public class CarbonWriterBuilder {
       }
     }
     // Check if any of the columns specified in inverted index are missing from schema.
-    for (String invertedIdxColumn: invertedIdxColumnsList) {
+    for (String invertedIdxColumn : invertedIdxColumnsList) {
       boolean exists = false;
       for (Field field : fields) {
         if (field.getFieldName().equalsIgnoreCase(invertedIdxColumn)) {
@@ -744,10 +745,11 @@ public class CarbonWriterBuilder {
           // unsupported types for ("array", "struct", "double", "float", "decimal")
           if (field.getDataType() == DataTypes.DOUBLE || field.getDataType() == DataTypes.FLOAT
               || DataTypes.isDecimal(field.getDataType()) || field.getDataType().isComplexType()
-              || field.getDataType() == DataTypes.VARCHAR) {
+              || field.getDataType() == DataTypes.VARCHAR
+              || field.getDataType() == DataTypes.BINARY) {
             String errorMsg =
-                "sort columns not supported for array, struct, map, double, float, decimal,"
-                    + "varchar";
+                "sort columns not supported for array, struct, map, double, float, decimal, "
+                    + "varchar, binary";
             throw new RuntimeException(errorMsg);
           }
         }
@@ -814,7 +816,7 @@ public class CarbonWriterBuilder {
     if (schema == null) {
       return null;
     }
-    Field[] fields =  schema.getFields();
+    Field[] fields = schema.getFields();
     for (int i = 0; i < fields.length; i++) {
       if (fields[i] != null) {
         if (longStringColumns != null) {

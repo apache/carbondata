@@ -7,5 +7,6 @@
 	"boolField": false,
 	"dateField": "2019-03-02",
 	"timeField": "2019-02-12 03:03:34",
-	"decimalField" : 55.35
+	"decimalField" : 55.35,
+	"binaryField" : "abc"
 }

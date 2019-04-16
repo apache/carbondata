@@ -648,12 +648,21 @@ object CarbonScalaUtil {
                      !x.dataType.get.equalsIgnoreCase("STRUCT") &&
                      !x.dataType.get.equalsIgnoreCase("MAP") &&
                      !x.dataType.get.equalsIgnoreCase("ARRAY"))) {
-        val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
-                       dictColm.trim +
-                       " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_COLUMN" +
-                       " should be no dictionary string/complex/varchar datatype column." +
-                       "Please check the DDL."
-        throw new MalformedCarbonCommandException(errorMsg)
+        if (fields.exists(x => x.column.equalsIgnoreCase(dictColm)
+                && x.dataType.get.equalsIgnoreCase("BINARY"))
+                && tableProperties.get("local_dictionary_exclude").nonEmpty
+                && tableProperties.get("local_dictionary_exclude").get.contains(dictColm)
+                && (tableProperties.get("local_dictionary_include").isEmpty
+                || (!tableProperties.get("local_dictionary_include").get.contains(dictColm)))) {
+          LOGGER.info("Local_dictionary_exclude supports binary")
+        } else {
+          val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
+                  dictColm.trim +
+                  " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_COLUMN" +
+                  " should be no dictionary string/complex/varchar datatype column." +
+                  "Please check the DDL."
+          throw new MalformedCarbonCommandException(errorMsg)
+        }
       }
     }
 

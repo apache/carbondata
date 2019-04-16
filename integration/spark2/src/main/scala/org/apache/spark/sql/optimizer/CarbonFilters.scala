@@ -167,7 +167,13 @@ object CarbonFilters {
       } else {
         dataTypeOfAttribute
       }
-      new CarbonLiteralExpression(value, dataType)
+      val dataValue = if (dataTypeOfAttribute.equals(CarbonDataTypes.BINARY)
+              && Option(value).isDefined) {
+        new String(value.asInstanceOf[Array[Byte]])
+      } else {
+        value
+      }
+      new CarbonLiteralExpression(dataValue, dataType)
     }
 
     createFilter(predicate)

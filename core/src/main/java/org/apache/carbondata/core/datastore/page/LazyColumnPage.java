@@ -86,6 +86,8 @@ public class LazyColumnPage extends ColumnPage {
       return converter.decodeDouble(columnPage.getFloat(rowId));
     } else if (dataType == DataTypes.DOUBLE) {
       return columnPage.getDouble(rowId);
+    } else if (dataType == DataTypes.BINARY) {
+      return converter.decodeDouble(columnPage.getByte(rowId));
     } else {
       throw new RuntimeException("internal error: " + this.toString());
     }

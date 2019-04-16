@@ -93,12 +93,14 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
   private def writeCarbonFileFromJsonRowInput(jsonRow: String,
       carbonSchema: Schema) = {
     try {
-      var options: util.Map[String, String] = Map("bAd_RECords_action" -> "FAIL", "quotechar" -> "\"").asJava
+      val options: util.Map[String, String] = Map("bAd_RECords_action" -> "FAIL", "quotechar" -> "\"").asJava
       val writer = CarbonWriter.builder
-        .outputPath(writerPath)
-        .uniqueIdentifier(System.currentTimeMillis())
-        .withLoadOptions(options)
-        .withJsonInput(carbonSchema).writtenBy("TestNonTransactionalCarbonTableJsonWriter").build()
+              .outputPath(writerPath)
+              .uniqueIdentifier(System.currentTimeMillis())
+              .withLoadOptions(options)
+              .withJsonInput(carbonSchema)
+              .writtenBy("TestNonTransactionalCarbonTableJsonWriter")
+              .build()
       writer.write(jsonRow)
       writer.close()
     }
@@ -342,6 +344,31 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"),
       Seq(Row("ajantha\"bhat\"", 26)))
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).listFiles().length > 0)
+    FileUtils.deleteDirectory(new File(writerPath))
+  }
+
+  // test : Schema length is lesser than array length
+  test("Read Json for binary") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    var dataPath: String = null
+    dataPath = resourcesPath + "/jsonFiles/data/allPrimitiveType.json"
+    val fields = new Array[Field](3)
+    fields(0) = new Field("stringField", DataTypes.STRING)
+    fields(1) = new Field("intField", DataTypes.INT)
+    fields(2) = new Field("binaryField", DataTypes.BINARY)
+    val jsonRow = readFromFile(dataPath)
+    writeCarbonFileFromJsonRowInput(jsonRow, new Schema(fields))
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    sql("select * from sdkOutputTable").show()
+    checkAnswer(sql("select * from sdkOutputTable"),
+      Seq(Row("ajantha\"bhat\"", 26, "abc".getBytes())))
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(writerPath).listFiles().length > 0)
