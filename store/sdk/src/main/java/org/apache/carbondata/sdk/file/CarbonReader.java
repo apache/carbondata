@@ -144,7 +144,6 @@ public class CarbonReader<T> {
 
   /**
    * Return a new {@link CarbonReaderBuilder} instance
-   * Default value of table name is table + tablePath + time
    *
    * @param tablePath table path
    * @return CarbonReaderBuilder object

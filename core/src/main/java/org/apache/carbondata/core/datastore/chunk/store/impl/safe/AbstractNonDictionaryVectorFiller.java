@@ -52,7 +52,7 @@ class NonDictionaryVectorFillerFactory {
       } else {
         return new StringVectorFiller(numberOfRows, actualDataLength);
       }
-    } else if (type == DataTypes.VARCHAR) {
+    } else if (type == DataTypes.VARCHAR || type == DataTypes.BINARY) {
       return new LongStringVectorFiller(numberOfRows, actualDataLength);
     } else if (type == DataTypes.TIMESTAMP) {
       return new TimeStampVectorFiller(numberOfRows);

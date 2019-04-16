@@ -17,8 +17,6 @@
 package org.apache.carbondata.spark.testsuite.allqueries
 
 
-import java.util
-
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration

@@ -97,7 +97,7 @@ public class DataType implements Serializable {
       return TIMESTAMP_CHAR;
     } else if (dataType == DataTypes.DATE) {
       return DATE_CHAR;
-    } else if (dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.BYTE_ARRAY || dataType == DataTypes.BINARY) {
       return BYTE_ARRAY_CHAR;
     } else {
       throw new RuntimeException("Unexpected type: " + dataType);

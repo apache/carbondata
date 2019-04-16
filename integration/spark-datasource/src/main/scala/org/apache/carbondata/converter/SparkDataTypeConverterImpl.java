@@ -132,6 +132,8 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
       return DataTypes.TimestampType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
       return DataTypes.DateType;
+    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BINARY) {
+      return DataTypes.BinaryType;
     } else {
       return null;
     }
@@ -167,7 +169,8 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
         if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BOOLEAN
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.INT
-            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG) {
+            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG
+            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BINARY) {
           fields[i] = new StructField(carbonColumn.getColName(),
               convertCarbonToSparkDataType(dataType), true, null);
         } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(dataType)) {

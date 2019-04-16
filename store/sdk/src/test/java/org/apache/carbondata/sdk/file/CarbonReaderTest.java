@@ -23,8 +23,9 @@ import java.sql.Timestamp;
 import java.util.*;
 
 import org.apache.avro.generic.GenericData;
-import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.log4j.Logger;
+
+import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
@@ -553,27 +554,27 @@ public class CarbonReaderTest extends TestCase {
     CarbonWriter carbonWriter = null;
     try {
       carbonWriter = builder.outputPath(path1).uniqueIdentifier(12345)
-  .withCsvInput(schema).writtenBy("CarbonReaderTest").build();
+          .withCsvInput(schema).writtenBy("CarbonReaderTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
     }
-    carbonWriter.write(new String[] { "MNO", "100" });
+    carbonWriter.write(new String[]{"MNO", "100"});
     carbonWriter.close();
 
-    Field[] fields1 = new Field[] { new Field("p1", "string"),
-         new Field("p2", "int") };
+    Field[] fields1 = new Field[]{new Field("p1", "string"),
+        new Field("p2", "int")};
     Schema schema1 = new Schema(fields1);
     CarbonWriterBuilder builder1 = CarbonWriter.builder();
     CarbonWriter carbonWriter1 = null;
     try {
       carbonWriter1 = builder1.outputPath(path2).uniqueIdentifier(12345)
-   .withCsvInput(schema1).writtenBy("CarbonReaderTest").build();
+          .withCsvInput(schema1).writtenBy("CarbonReaderTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
     }
-    carbonWriter1.write(new String[] { "PQR", "200" });
+    carbonWriter1.write(new String[]{"PQR", "200"});
     carbonWriter1.close();
 
     try {
@@ -592,9 +593,9 @@ public class CarbonReaderTest extends TestCase {
             .build();
 
     while (reader1.hasNext()) {
-       Object[] row1 = (Object[]) reader1.readNextRow();
-       System.out.println(row1[0]);
-       System.out.println(row1[1]);
+      Object[] row1 = (Object[]) reader1.readNextRow();
+      System.out.println(row1[0]);
+      System.out.println(row1[1]);
     }
     reader1.close();
 
@@ -785,7 +786,8 @@ public class CarbonReaderTest extends TestCase {
     TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
 
     File[] dataFiles = new File(path).listFiles(new FilenameFilter() {
-      @Override public boolean accept(File dir, String name) {
+      @Override
+      public boolean accept(File dir, String name) {
         return name.endsWith("carbondata");
       }
     });
@@ -1020,7 +1022,8 @@ public class CarbonReaderTest extends TestCase {
     }
 
     File[] dataFiles2 = new File(path).listFiles(new FilenameFilter() {
-      @Override public boolean accept(File dir, String name) {
+      @Override
+      public boolean accept(File dir, String name) {
         return name.endsWith("carbondata");
       }
     });
@@ -1131,7 +1134,8 @@ public class CarbonReaderTest extends TestCase {
     }
 
     File[] dataFiles1 = new File(path).listFiles(new FilenameFilter() {
-      @Override public boolean accept(File dir, String name) {
+      @Override
+      public boolean accept(File dir, String name) {
         return name.endsWith("carbondata");
       }
     });
@@ -1139,7 +1143,8 @@ public class CarbonReaderTest extends TestCase {
     assertTrue(versionDetails.contains("SDK_1.0.0 in version: "));
 
     File[] dataFiles2 = new File(path).listFiles(new FilenameFilter() {
-      @Override public boolean accept(File dir, String name) {
+      @Override
+      public boolean accept(File dir, String name) {
         return name.endsWith("carbonindex");
       }
     });
@@ -1357,26 +1362,26 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
 
     String mySchema =
-        "{ "+
-            "  \"name\": \"address\", "+
-            "  \"type\": \"record\", "+
-            "  \"fields\": [ "+
-            "    { "+
-            "      \"name\": \"name\", "+
-            "      \"type\": \"string\" "+
-            "    }, "+
-            "    { "+
-            "      \"name\": \"age\", "+
-            "      \"type\": \"int\" "+
-            "    }, "+
-            "    { "+
-            "      \"name\": \"mapRecord\", "+
-            "      \"type\": { "+
-            "        \"type\": \"map\", "+
-            "        \"values\": \"string\" "+
-            "      } "+
-            "    } "+
-            "  ] "+
+        "{ " +
+            "  \"name\": \"address\", " +
+            "  \"type\": \"record\", " +
+            "  \"fields\": [ " +
+            "    { " +
+            "      \"name\": \"name\", " +
+            "      \"type\": \"string\" " +
+            "    }, " +
+            "    { " +
+            "      \"name\": \"age\", " +
+            "      \"type\": \"int\" " +
+            "    }, " +
+            "    { " +
+            "      \"name\": \"mapRecord\", " +
+            "      \"type\": { " +
+            "        \"type\": \"map\", " +
+            "        \"values\": \"string\" " +
+            "      } " +
+            "    } " +
+            "  ] " +
             "} ";
 
     String json =
@@ -1400,8 +1405,8 @@ public class CarbonReaderTest extends TestCase {
     String name = "bob";
     int age = 10;
     Object[] mapKeValue = new Object[2];
-    mapKeValue[0] = new Object[] { "city", "street" };
-    mapKeValue[1] = new Object[] { "bangalore", "k-lane" };
+    mapKeValue[0] = new Object[]{"city", "street"};
+    mapKeValue[1] = new Object[]{"bangalore", "k-lane"};
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
@@ -1416,9 +1421,9 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadWithFilterOfnonTransactionalwithsubfolders() throws IOException, InterruptedException {
-    String path1 = "./testWriteFiles/1/"+System.nanoTime();
-    String path2 = "./testWriteFiles/2/"+System.nanoTime();
-    String path3 = "./testWriteFiles/3/"+System.nanoTime();
+    String path1 = "./testWriteFiles/1/" + System.nanoTime();
+    String path2 = "./testWriteFiles/2/" + System.nanoTime();
+    String path3 = "./testWriteFiles/3/" + System.nanoTime();
     FileUtils.deleteDirectory(new File("./testWriteFiles"));
 
     Field[] fields = new Field[2];
@@ -1543,7 +1548,7 @@ public class CarbonReaderTest extends TestCase {
     }
   }
 
-   @Test
+  @Test
   public void testReadNextRowWithRowUtil() {
     String path = "./carbondata";
     try {
@@ -1661,7 +1666,7 @@ public class CarbonReaderTest extends TestCase {
         Assert.fail(e.getMessage());
       }
     }
-   }
+  }
 
   @Test
   public void testReadNextRowWithProjectionAndRowUtil() {
@@ -1737,7 +1742,7 @@ public class CarbonReaderTest extends TestCase {
         assertEquals(RowUtil.getFloat(data, 11), (float) 1.23);
         i++;
       }
-      assert  (i == 10);
+      assert (i == 10);
       reader.close();
     } catch (Throwable e) {
       e.printStackTrace();
@@ -1821,7 +1826,7 @@ public class CarbonReaderTest extends TestCase {
         assertEquals(RowUtil.getFloat(data, 11), new Float("1.23"));
         i++;
       }
-      assert(i==10);
+      assert (i == 10);
       reader.close();
     } catch (Throwable e) {
       e.printStackTrace();
@@ -2076,7 +2081,7 @@ public class CarbonReaderTest extends TestCase {
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL");
 
     String path = "./testSdkWriteWhenArrayOfStringIsEmpty";
-    String[] rec = { "aaa", "bbb", "aaa@cdf.com", "", "", "mmm", "" };
+    String[] rec = {"aaa", "bbb", "aaa@cdf.com", "", "", "mmm", ""};
     Field[] fields = new Field[7];
     fields[0] = new Field("stringField", DataTypes.STRING);
     fields[1] = new Field("varcharField", DataTypes.VARCHAR);
@@ -2318,6 +2323,99 @@ public class CarbonReaderTest extends TestCase {
       Assert.fail(e.getMessage());
     } finally {
       FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testWriteWithDifferentDataType() {
+    String path = "./carbondata";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+
+      Field[] fields = new Field[13];
+      fields[0] = new Field("stringField", DataTypes.STRING);
+      fields[1] = new Field("shortField", DataTypes.SHORT);
+      fields[2] = new Field("intField", DataTypes.INT);
+      fields[3] = new Field("longField", DataTypes.LONG);
+      fields[4] = new Field("doubleField", DataTypes.DOUBLE);
+      fields[5] = new Field("boolField", DataTypes.BOOLEAN);
+      fields[6] = new Field("dateField", DataTypes.DATE);
+      fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
+      fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
+      fields[9] = new Field("varcharField", DataTypes.VARCHAR);
+      fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
+      fields[11] = new Field("floatField", DataTypes.FLOAT);
+      fields[12] = new Field("binaryField", DataTypes.BINARY);
+      Map<String, String> map = new HashMap<>();
+      map.put("complex_delimiter_level_1", "#");
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("CarbonReaderTest")
+          .build();
+      byte[] value = "Binary".getBytes();
+      for (int i = 0; i < 10; i++) {
+        Object[] row2 = new Object[]{
+            "robot" + (i % 10),
+            i % 10000,
+            i,
+            (Long.MAX_VALUE - i),
+            ((double) i / 2),
+            (true),
+            "2019-03-02",
+            "2019-02-12 03:03:34",
+            12.345,
+            "varchar",
+            "Hello#World#From#Carbon",
+            1.23,
+            value
+        };
+        writer.write(row2);
+      }
+      writer.close();
+
+      // Read data
+      CarbonReader reader = CarbonReader
+          .builder(path, "_temp")
+          .withRowRecordReader()
+          .build();
+
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] data = (Object[]) reader.readNextRow();
+
+        assert (RowUtil.getString(data, 0).equals("robot" + i));
+        assertEquals(RowUtil.getInt(data, 1), 17957);
+        Assert.assertEquals(new String(value), new String(RowUtil.getBinary(data, 3)));
+        assert (RowUtil.getVarchar(data, 4).equals("varchar"));
+        Object[] arr = RowUtil.getArray(data, 5);
+        assert (arr[0].equals("Hello"));
+        assert (arr[1].equals("World"));
+        assert (arr[2].equals("From"));
+        assert (arr[3].equals("Carbon"));
+        assertEquals(RowUtil.getShort(data, 6), i);
+        assertEquals(RowUtil.getInt(data, 7), i);
+        assertEquals(RowUtil.getLong(data, 8), Long.MAX_VALUE - i);
+        assertEquals(RowUtil.getDouble(data, 9), ((double) i) / 2);
+        assert (RowUtil.getBoolean(data, 10));
+        assert (RowUtil.getDecimal(data, 11).equals("12.35"));
+        assertEquals(RowUtil.getFloat(data, 12), (float) 1.23);
+
+        i++;
+      }
+      assert (i == 10);
+      reader.close();
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    } finally {
+      try {
+        FileUtils.deleteDirectory(new File(path));
+      } catch (IOException e) {
+        e.printStackTrace();
+        Assert.fail(e.getMessage());
+      }
     }
   }
 }
