@@ -195,6 +195,7 @@ Each of SQL data types and Avro Data Types are mapped into data types of SDK. Fo
 | BIGINT | LONG | DataTypes.LONG |
 | DOUBLE | DOUBLE | DataTypes.DOUBLE |
 | VARCHAR |  -  | DataTypes.STRING |
+| BINARY |  -  | DataTypes.BINARY |
 | FLOAT | FLOAT | DataTypes.FLOAT |
 | BYTE |  -  | DataTypes.BYTE |
 | DATE | DATE | DataTypes.DATE |

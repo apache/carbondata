@@ -148,4 +148,15 @@ public class RowUtil implements Serializable {
     return ((BigDecimal) data[ordinal]).toString();
   }
 
+  /**
+   * get binary data type data by ordinal
+   *
+   * @param data carbon row data
+   * @param ordinal the data index of Row
+   * @return byte data type data
+   */
+  public static byte[] getBinary(Object[] data, int ordinal) {
+    return (byte[]) data[ordinal];
+  }
+
 }

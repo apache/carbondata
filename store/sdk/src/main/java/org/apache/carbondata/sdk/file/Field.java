@@ -78,6 +78,8 @@ public class Field {
       this.type = DataTypes.FLOAT;
     } else if (type.equalsIgnoreCase("double")) {
       this.type = DataTypes.DOUBLE;
+    } else if (type.equalsIgnoreCase("binary")) {
+      this.type = DataTypes.BINARY;
     } else if (type.equalsIgnoreCase("array")) {
       this.type = DataTypes.createDefaultArrayType();
     } else if (type.equalsIgnoreCase("struct")) {
@@ -114,6 +116,8 @@ public class Field {
       this.type = DataTypes.FLOAT;
     } else if (type.equalsIgnoreCase("double")) {
       this.type = DataTypes.DOUBLE;
+    } else if (type.equalsIgnoreCase("binary")) {
+      this.type = DataTypes.BINARY;
     } else if (type.equalsIgnoreCase("array")) {
       this.type = DataTypes.createArrayType(fields.get(0).getDataType());
     } else if (type.equalsIgnoreCase("struct")) {

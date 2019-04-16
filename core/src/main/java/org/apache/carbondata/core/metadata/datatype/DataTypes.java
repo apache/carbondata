@@ -37,6 +37,7 @@ public class DataTypes {
   public static final DataType DOUBLE = DoubleType.DOUBLE;
   public static final DataType NULL = NullType.NULL;
   public static final DataType BYTE = ByteType.BYTE;
+  public static final DataType BINARY = BinaryType.BINARY;
 
   // internal use only, for variable length data type
   public static final DataType BYTE_ARRAY = ByteArrayType.BYTE_ARRAY;
@@ -69,6 +70,7 @@ public class DataTypes {
   public static final int STRUCT_TYPE_ID = 12;
   public static final int MAP_TYPE_ID = 13;
   public static final int VARCHAR_TYPE_ID = 18;
+  public static final int BINARY_TYPE_ID = 19;
 
   /**
    * create a DataType instance from uniqueId of the DataType
@@ -102,6 +104,8 @@ public class DataTypes {
       return NULL;
     } else if (id == DECIMAL_TYPE_ID) {
       return createDefaultDecimalType();
+    } else if (id == BINARY.getId()) {
+      return BINARY;
     } else if (id == ARRAY_TYPE_ID) {
       return createDefaultArrayType();
     } else if (id == STRUCT_TYPE_ID) {

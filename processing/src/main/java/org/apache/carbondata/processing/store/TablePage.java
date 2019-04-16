@@ -121,6 +121,8 @@ public class TablePage {
         DataType dataType = DataTypes.STRING;
         if (DataTypes.VARCHAR == spec.getSchemaDataType()) {
           dataType = DataTypes.VARCHAR;
+        } else if (DataTypes.BINARY == spec.getSchemaDataType()) {
+          dataType = DataTypes.BINARY;
         }
         ColumnPageEncoderMeta columnPageEncoderMeta =
             new ColumnPageEncoderMeta(spec, dataType, columnCompressor);
@@ -147,7 +149,7 @@ public class TablePage {
           }
         }
         // set the stats collector according to the data type of the columns
-        if (DataTypes.VARCHAR == dataType) {
+        if (DataTypes.VARCHAR == dataType || DataTypes.BINARY == dataType) {
           page.setStatsCollector(LVLongStringStatsCollector.newInstance());
         } else if (DataTypeUtil.isPrimitiveColumn(spec.getSchemaDataType())) {
           if (spec.getSchemaDataType() == DataTypes.TIMESTAMP) {
@@ -216,7 +218,7 @@ public class TablePage {
       dictDimensionPages[i].putData(rowId, keys[i]);
     }
 
-    // 2. convert noDictionary columns and complex columns and varchar columns.
+    // 2. convert noDictionary columns and complex columns and varchar, binary columns.
     int noDictionaryCount = noDictDimensionPages.length;
     int complexColumnCount = complexDimensionPages.length;
     if (noDictionaryCount > 0 || complexColumnCount > 0) {
@@ -225,8 +227,8 @@ public class TablePage {
           tableSpec.getNoDictionaryDimensionSpec();
       Object[] noDictAndComplex = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < noDictAndComplex.length; i++) {
-        if (noDictionaryDimensionSpec.get(i).getSchemaDataType()
-            == DataTypes.VARCHAR) {
+        if (noDictionaryDimensionSpec.get(i).getSchemaDataType() == DataTypes.VARCHAR
+            || noDictionaryDimensionSpec.get(i).getSchemaDataType() == DataTypes.BINARY) {
           byte[] valueWithLength = addIntLengthToByteArray((byte[]) noDictAndComplex[i]);
           noDictDimensionPages[i].putData(rowId, valueWithLength);
         } else if (i < noDictionaryCount) {

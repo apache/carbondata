@@ -292,7 +292,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       Object[] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < noDictDataTypesList.size(); i++) {
         DataType columnType = noDictDataTypesList.get(i);
-        if ((columnType == DataTypes.STRING) || (columnType == DataTypes.VARCHAR)) {
+        if ((columnType == DataTypes.STRING) || (columnType == DataTypes.VARCHAR) || (columnType
+            == DataTypes.BINARY)) {
           currentElementLength = ((byte[]) nonDictArray[i]).length;
           noDictColumnPageSize[bucketCounter] += currentElementLength;
           canSnappyHandleThisRow(noDictColumnPageSize[bucketCounter]);

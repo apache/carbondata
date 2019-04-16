@@ -14,6 +14,7 @@
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
+    <dep.jackson.version>2.6.5</dep.jackson.version>
   </properties>
 
   <dependencies>
@@ -74,7 +75,7 @@
                 <exclude>META-INF/*.DSA</exclude>
                 <exclude>META-INF/*.RSA</exclude>
                 <exclude>META-INF/vfs-providers.xml</exclude>
-                <exclude>io/netty/**</exclude>
+                <!--<exclude>io/netty/**</exclude>-->
               </excludes>
             </filter>
           </filters>

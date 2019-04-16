@@ -119,6 +119,8 @@ public class FieldEncoderFactory {
         return new ComplexFieldConverterImpl(
             createComplexDataType(dataField, absoluteTableIdentifier,
                 client, useOnePass, localCache, index, nullFormat, isEmptyBadRecord), index);
+      } else if (dataField.getColumn().getDataType() == DataTypes.BINARY) {
+        return new BinaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
       } else {
         // if the no dictionary column is a numeric column and no need to convert to binary
         // then treat it is as measure col

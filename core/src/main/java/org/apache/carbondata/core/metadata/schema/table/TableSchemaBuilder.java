@@ -186,6 +186,7 @@ public class TableSchemaBuilder {
         field.getDataType() == DataTypes.VARCHAR ||
         field.getDataType() == DataTypes.DATE ||
         field.getDataType() == DataTypes.TIMESTAMP ||
+        field.getDataType() == DataTypes.BINARY ||
         field.getDataType().isComplexType() ||
         (isComplexChild))  {
       newColumn.setDimensionColumn(true);

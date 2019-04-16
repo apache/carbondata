@@ -82,6 +82,7 @@ private[spark] object SparkTypeConverter {
         case CarbonDataTypes.DOUBLE => DoubleType
         case CarbonDataTypes.FLOAT => FloatType
         case CarbonDataTypes.BYTE => ByteType
+        case CarbonDataTypes.BINARY => BinaryType
         case CarbonDataTypes.BOOLEAN => BooleanType
         case CarbonDataTypes.TIMESTAMP => TimestampType
         case CarbonDataTypes.DATE => DateType
