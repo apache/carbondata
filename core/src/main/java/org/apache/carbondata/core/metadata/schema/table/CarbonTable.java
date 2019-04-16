@@ -121,6 +121,11 @@ public class CarbonTable implements Serializable {
   private List<CarbonMeasure> allMeasures;
 
   /**
+   * list of column drift
+   */
+  private List<CarbonDimension> columnDrift;
+
+  /**
    * table bucket map.
    */
   private Map<String, BucketingInfo> tableBucketMap;
@@ -189,6 +194,7 @@ public class CarbonTable implements Serializable {
     this.tablePartitionMap = new HashMap<>();
     this.createOrderColumn = new HashMap<String, List<CarbonColumn>>();
     this.tablePrimitiveDimensionsMap = new HashMap<String, List<CarbonDimension>>();
+    this.columnDrift = new ArrayList<CarbonDimension>();
   }
 
   /**
@@ -898,6 +904,12 @@ public class CarbonTable implements Serializable {
     for (CarbonDimension dimension : allDimensions) {
       if (!dimension.isInvisible()) {
         visibleDimensions.add(dimension);
+        Map<String, String> columnProperties = dimension.getColumnProperties();
+        if (columnProperties != null) {
+          if (columnProperties.get(CarbonCommonConstants.COLUMN_DRIFT) != null) {
+            columnDrift.add(dimension);
+          }
+        }
       }
     }
     tableDimensionsMap.put(tableName, visibleDimensions);
@@ -910,6 +922,14 @@ public class CarbonTable implements Serializable {
    */
   public List<CarbonMeasure> getAllMeasures() {
     return allMeasures;
+  }
+
+  public List<CarbonDimension> getColumnDrift() {
+    return columnDrift;
+  }
+
+  public boolean hasColumnDrift() {
+    return tableInfo.hasColumnDrift();
   }
 
   /**

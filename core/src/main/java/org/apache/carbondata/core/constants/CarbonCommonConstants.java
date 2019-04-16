@@ -478,6 +478,11 @@ public final class CarbonCommonConstants {
    */
   public static final String CACHE_LEVEL_DEFAULT_VALUE = "BLOCK";
 
+  /**
+   * column level property: the measure is changed to the dimension
+   */
+  public static final String COLUMN_DRIFT = "column_drift";
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Data loading parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////

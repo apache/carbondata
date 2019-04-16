@@ -232,7 +232,11 @@ class CarbonScanRDD[T: ClassTag](
       statistic.addStatistics(QueryStatisticsConstants.BLOCK_ALLOCATION, System.currentTimeMillis)
       statisticRecorder.recordStatisticsForDriver(statistic, queryId)
       statistic = new QueryStatistic()
-      val carbonDistribution = if (directFill) {
+      // When the table has column drift, it means different blocks maybe have different schemas.
+      // the query doesn't support to scan the blocks with different schemas in a task.
+      // So if the table has the column drift, CARBON_TASK_DISTRIBUTION_MERGE_FILES and
+      // CARBON_TASK_DISTRIBUTION_CUSTOM can't work.
+      val carbonDistribution = if (directFill && !tableInfo.hasColumnDrift) {
         CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_MERGE_FILES
       } else {
         CarbonProperties.getInstance().getProperty(
@@ -260,7 +264,7 @@ class CarbonScanRDD[T: ClassTag](
             CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
             "false").toBoolean ||
           carbonDistribution.equalsIgnoreCase(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_CUSTOM)
-        if (useCustomDistribution) {
+        if (useCustomDistribution && !tableInfo.hasColumnDrift) {
           // create a list of block based on split
           val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
 
@@ -297,7 +301,7 @@ class CarbonScanRDD[T: ClassTag](
             val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
             result.add(partition)
           }
-        } else if (carbonDistribution.equalsIgnoreCase(
+        } else if (!tableInfo.hasColumnDrift && carbonDistribution.equalsIgnoreCase(
             CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_MERGE_FILES)) {
 
           // sort blocks in reverse order of length

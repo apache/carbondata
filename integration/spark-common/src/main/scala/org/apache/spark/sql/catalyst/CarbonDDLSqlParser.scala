@@ -760,32 +760,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     var sortKeyDimsTmp: Seq[String] = Seq[String]()
     if (!sortKeyString.isEmpty) {
       val sortKey = sortKeyString.split(',').map(_.trim)
-      if (sortKey.diff(sortKey.distinct).length > 0 ||
-          (sortKey.length > 1 && sortKey.contains(""))) {
-        throw new MalformedCarbonCommandException(
-          "SORT_COLUMNS Either having duplicate columns : " +
-          sortKey.diff(sortKey.distinct).mkString(",") + " or it contains illegal argumnet.")
-      }
-
-      sortKey.foreach { column =>
-        if (!fields.exists(x => x.column.equalsIgnoreCase(column))) {
-          val errorMsg = "sort_columns: " + column +
-            " does not exist in table. Please check the create table statement."
-          throw new MalformedCarbonCommandException(errorMsg)
-        } else {
-          val dataType = fields.find(x =>
-            x.column.equalsIgnoreCase(column)).get.dataType.get
-          if (isDataTypeSupportedForSortColumn(dataType)) {
-            val errorMsg = s"sort_columns is unsupported for $dataType datatype column: " + column
-            throw new MalformedCarbonCommandException(errorMsg)
-          }
-          if (varcharCols.exists(x => x.equalsIgnoreCase(column))) {
-            throw new MalformedCarbonCommandException(
-              s"sort_columns is unsupported for long string datatype column: $column")
-          }
-        }
-      }
-
+      CommonUtil.validateSortColumns(
+        sortKey,
+        fields.map { field => (field.column, field.dataType.get) },
+        varcharCols
+      )
       sortKey.foreach { dimension =>
         if (!sortKeyDimsTmp.exists(dimension.equalsIgnoreCase)) {
           fields.foreach { field =>
