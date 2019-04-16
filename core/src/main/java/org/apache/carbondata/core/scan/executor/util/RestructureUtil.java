@@ -65,11 +65,14 @@ public class RestructureUtil {
   public static List<ProjectionDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
       BlockExecutionInfo blockExecutionInfo, List<ProjectionDimension> queryDimensions,
       List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension,
-      int measureCount, boolean isTransactionalTable) {
+      List<CarbonMeasure> tableBlockMeasures, int measureCount, boolean isTransactionalTable) {
+    // if the measure became to the dimension, move it out from the dimension projection
+    List<ProjectionDimension> updatedQueryDimensions =
+        updateProjectionDimensions(queryDimensions, tableBlockMeasures, isTransactionalTable);
     List<ProjectionDimension> presentDimension =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    boolean[] isDimensionExists = new boolean[queryDimensions.size()];
-    Object[] defaultValues = new Object[queryDimensions.size()];
+    boolean[] isDimensionExists = new boolean[updatedQueryDimensions.size()];
+    Object[] defaultValues = new Object[updatedQueryDimensions.size()];
     // create dimension information instance
     DimensionInfo dimensionInfo = new DimensionInfo(isDimensionExists, defaultValues);
     dimensionInfo.dataType = new DataType[queryDimensions.size() + measureCount];
@@ -77,7 +80,7 @@ public class RestructureUtil {
     int newNoDictionaryColumnCount = 0;
     // selecting only those dimension which is present in the query
     int dimIndex = 0;
-    for (ProjectionDimension queryDimension : queryDimensions) {
+    for (ProjectionDimension queryDimension : updatedQueryDimensions) {
       if (queryDimension.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         presentDimension.add(queryDimension);
         isDimensionExists[dimIndex] = true;
@@ -412,16 +415,21 @@ public class RestructureUtil {
    * @return measures present in the block
    */
   public static List<ProjectionMeasure> createMeasureInfoAndGetCurrentBlockQueryMeasures(
-      BlockExecutionInfo blockExecutionInfo, List<ProjectionMeasure> queryMeasures,
-      List<CarbonMeasure> currentBlockMeasures, boolean isTransactionalTable) {
+      BlockExecutionInfo blockExecutionInfo, List<ProjectionDimension> queryDimensions,
+      List<ProjectionMeasure> queryMeasures, List<CarbonMeasure> currentBlockMeasures,
+      boolean isTransactionalTable) {
+    // if the measure became the dimension, add it into the measure projection
+    List<ProjectionMeasure> updatedQueryMeasures = updateProjectionMeasures(queryDimensions,
+        queryMeasures, currentBlockMeasures, isTransactionalTable);
     MeasureInfo measureInfo = new MeasureInfo();
-    List<ProjectionMeasure> presentMeasure = new ArrayList<>(queryMeasures.size());
-    int numberOfMeasureInQuery = queryMeasures.size();
+    List<ProjectionMeasure> presentMeasure = new ArrayList<>(updatedQueryMeasures.size());
+    int numberOfMeasureInQuery = updatedQueryMeasures.size();
     List<Integer> measureOrdinalList = new ArrayList<>(numberOfMeasureInQuery);
     Object[] defaultValues = new Object[numberOfMeasureInQuery];
     boolean[] measureExistsInCurrentBlock = new boolean[numberOfMeasureInQuery];
+    DataType[] measureDataTypes = new DataType[numberOfMeasureInQuery];
     int index = 0;
-    for (ProjectionMeasure queryMeasure : queryMeasures) {
+    for (ProjectionMeasure queryMeasure : updatedQueryMeasures) {
       // if query measure exists in current dimension measures
       // then setting measure exists is true
       // otherwise adding a default value of a measure
@@ -437,6 +445,7 @@ public class RestructureUtil {
           presentMeasure.add(currentBlockMeasure);
           measureOrdinalList.add(carbonMeasure.getOrdinal());
           measureExistsInCurrentBlock[index] = true;
+          measureDataTypes[index] = carbonMeasure.getDataType();
           break;
         }
       }
@@ -452,7 +461,52 @@ public class RestructureUtil {
     measureInfo.setDefaultValues(defaultValues);
     measureInfo.setMeasureOrdinals(measureOrdinals);
     measureInfo.setMeasureExists(measureExistsInCurrentBlock);
+    measureInfo.setMeasureDataTypes(measureDataTypes);
     blockExecutionInfo.setMeasureInfo(measureInfo);
     return presentMeasure;
+  }
+
+  private static List<ProjectionDimension> updateProjectionDimensions(
+      List<ProjectionDimension> projectionDimensions, List<CarbonMeasure> tableBlockMeasures,
+      boolean isTransactionalTable) {
+    List<ProjectionDimension> updatedProjection = new ArrayList<>(projectionDimensions.size());
+    for (ProjectionDimension projectionDimension : projectionDimensions) {
+      boolean isNotInMeasures = true;
+      for (CarbonMeasure tableBlockMeasure : tableBlockMeasures) {
+        if (isColumnMatches(isTransactionalTable, projectionDimension.getDimension(),
+            tableBlockMeasure)) {
+          isNotInMeasures = false;
+          break;
+        }
+      }
+      if (isNotInMeasures) {
+        updatedProjection.add(projectionDimension);
+      }
+    }
+    return updatedProjection;
+  }
+
+  private static List<ProjectionMeasure> updateProjectionMeasures(
+      List<ProjectionDimension> projectionDimensions, List<ProjectionMeasure> projectionMeasures,
+      List<CarbonMeasure> tableBlockMeasures, boolean isTransactionalTable) {
+    List<ProjectionMeasure> updatedProjection =
+        new ArrayList<>(projectionMeasures.size() + tableBlockMeasures.size());
+    updatedProjection.addAll(projectionMeasures);
+    for (ProjectionDimension projectionDimension : projectionDimensions) {
+      CarbonMeasure carbonMeasure = null;
+      for (CarbonMeasure tableBlockMeasure : tableBlockMeasures) {
+        if (isColumnMatches(isTransactionalTable, projectionDimension.getDimension(),
+            tableBlockMeasure)) {
+          carbonMeasure = tableBlockMeasure;
+          break;
+        }
+      }
+      if (carbonMeasure != null) {
+        ProjectionMeasure projectionMeasure = new ProjectionMeasure(carbonMeasure);
+        projectionMeasure.setOrdinal(projectionDimension.getOrdinal());
+        updatedProjection.add(projectionMeasure);
+      }
+    }
+    return updatedProjection;
   }
 }

@@ -92,7 +92,8 @@ public class RestructureUtilTest {
     List<ProjectionDimension> result = null;
     result = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo, queryDimensions,
-            tableBlockDimensions, tableComplexDimensions, queryMeasures.size(), true);
+            tableBlockDimensions, tableComplexDimensions, new ArrayList<CarbonMeasure>(0),
+            queryMeasures.size(), true);
     List<CarbonDimension> resultDimension = new ArrayList<>(result.size());
     for (ProjectionDimension queryDimension : result) {
       resultDimension.add(queryDimension.getDimension());
@@ -126,8 +127,8 @@ public class RestructureUtilTest {
     ProjectionMeasure queryMeasure3 = new ProjectionMeasure(carbonMeasure3);
     List<ProjectionMeasure> queryMeasures = Arrays.asList(queryMeasure1, queryMeasure2, queryMeasure3);
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
-    RestructureUtil.createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo, queryMeasures,
-        currentBlockMeasures, true);
+    RestructureUtil.createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,
+        new ArrayList<ProjectionDimension>(0), queryMeasures, currentBlockMeasures, true);
     MeasureInfo measureInfo = blockExecutionInfo.getMeasureInfo();
     boolean[] measuresExist = { true, true, false };
     assertThat(measureInfo.getMeasureExists(), is(equalTo(measuresExist)));

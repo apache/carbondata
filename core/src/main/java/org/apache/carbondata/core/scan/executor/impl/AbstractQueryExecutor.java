@@ -461,14 +461,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
-    List<CarbonDimension> tableBlockDimensions = segmentProperties.getDimensions();
 
     // below is to get only those dimension in query which is present in the
     // table block
     List<ProjectionDimension> projectDimensions = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
-            queryModel.getProjectionDimensions(), tableBlockDimensions,
-            segmentProperties.getComplexDimensions(), queryModel.getProjectionMeasures().size(),
+            queryModel.getProjectionDimensions(), segmentProperties.getDimensions(),
+            segmentProperties.getComplexDimensions(), segmentProperties.getMeasures(),
+            queryModel.getProjectionMeasures().size(),
             queryModel.getTable().getTableInfo().isTransactionalTable());
     boolean isStandardTable = CarbonUtil.isStandardCarbonTable(queryModel.getTable());
     String blockId = CarbonUtil
@@ -486,10 +486,13 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setProjectionDimensions(projectDimensions
         .toArray(new ProjectionDimension[projectDimensions.size()]));
     // get measures present in the current block
-    List<ProjectionMeasure> currentBlockQueryMeasures =
-        getCurrentBlockQueryMeasures(blockExecutionInfo, queryModel, blockIndex);
+    List<ProjectionMeasure> projectionMeasures = RestructureUtil
+        .createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,
+            queryModel.getProjectionDimensions(), queryModel.getProjectionMeasures(),
+            segmentProperties.getMeasures(),
+            queryModel.getTable().getTableInfo().isTransactionalTable());
     blockExecutionInfo.setProjectionMeasures(
-        currentBlockQueryMeasures.toArray(new ProjectionMeasure[currentBlockQueryMeasures.size()]));
+        projectionMeasures.toArray(new ProjectionMeasure[projectionMeasures.size()]));
     blockExecutionInfo.setDataBlock(blockIndex);
     // setting whether raw record query or not
     blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());
@@ -581,7 +584,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // list of measures to be projected
     List<Integer> allProjectionListMeasureIndexes = new ArrayList<>();
     int[] measureChunkIndexes = QueryUtil.getMeasureChunkIndexes(
-        currentBlockQueryMeasures, expressionMeasures,
+        projectionMeasures, expressionMeasures,
         segmentProperties.getMeasuresOrdinalToChunkMapping(), filterMeasures,
         allProjectionListMeasureIndexes);
     reusableBufferSize = Math.max(segmentProperties.getMeasuresOrdinalToChunkMapping().size(),
@@ -689,28 +692,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       return keySize;
     }
     return 0;
-  }
-
-  /**
-   * Below method will be used to get the measures present in the current block
-   *
-   * @param executionInfo
-   * @param queryModel         query model
-   * @param tableBlock         table block
-   * @return
-   */
-  private List<ProjectionMeasure> getCurrentBlockQueryMeasures(BlockExecutionInfo executionInfo,
-      QueryModel queryModel, AbstractIndex tableBlock) throws QueryExecutionException {
-    // getting the measure info which will be used while filling up measure data
-    List<ProjectionMeasure> updatedQueryMeasures = RestructureUtil
-        .createMeasureInfoAndGetCurrentBlockQueryMeasures(executionInfo,
-            queryModel.getProjectionMeasures(),
-            tableBlock.getSegmentProperties().getMeasures(),
-            queryModel.getTable().getTableInfo().isTransactionalTable());
-    // setting the measure aggregator for all aggregation function selected
-    // in query
-    executionInfo.getMeasureInfo().setMeasureDataTypes(queryProperties.measureDataTypes);
-    return updatedQueryMeasures;
   }
 
   private int[] getComplexDimensionParentBlockIndexes(List<ProjectionDimension> queryDimensions) {
