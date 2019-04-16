@@ -65,10 +65,17 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
         Row("ALL", "ALL", 0L, 0L, 0L),
         Row(currentDatabase, "ALL", 0L, 0L, 0L))
     } else {
-      val carbonTables = sparkSession.sessionState.catalog.listTables(currentDatabase).collect {
-        case tableIdent if CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(tableIdent)(sparkSession) =>
-          CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
+      var carbonTables = mutable.ArrayBuffer[CarbonTable]()
+      sparkSession.sessionState.catalog.listTables(currentDatabase).foreach {
+        tableIdent =>
+          try {
+            val carbonTable = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
+            if (!carbonTable.isChildDataMap) {
+              carbonTables += carbonTable
+            }
+          } catch {
+            case ex: NoSuchElementException =>
+          }
       }
 
       // All tables of current database
