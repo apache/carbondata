@@ -106,7 +106,7 @@ public class LoadOption {
             options,
             "skip_empty_line",
             CarbonProperties.getInstance().getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_SKIP_EMPTY_LINE)));
+                    CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE)));
 
     optionsFinal.put(
         "all_dictionary_path",
