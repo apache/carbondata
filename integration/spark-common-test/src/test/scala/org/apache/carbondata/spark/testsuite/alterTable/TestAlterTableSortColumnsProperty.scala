@@ -17,18 +17,129 @@
 
 package org.apache.carbondata.spark.testsuite.alterTable
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
+    dropTable()
+    prepareTable()
+  }
+
+  override def afterAll(): Unit = {
+     dropTable()
+  }
+
+  private def prepareTable(): Unit = {
+    createTable(
+      "alter_sc_base",
+      Map("sort_scope"->"local_sort", "sort_columns"->"stringField")
+    )
+    createTable(
+      "alter_sc_base_complex",
+      Map("sort_scope"->"local_sort", "sort_columns"->"stringField"),
+      true
+    )
+    createTable(
+      "alter_sc_validate",
+      Map("dictionary_include"->"charField"),
+      true
+    )
+    createTable(
+      "alter_sc_iud",
+      Map("dictionary_include"->"charField")
+    )
+    createTable(
+      "alter_sc_iud_complex",
+      Map("dictionary_include"->"charField"),
+      true
+    )
+    createTable(
+      "alter_sc_long_string",
+      Map("LONG_STRING_COLUMNS"->"stringField"),
+      true
+    )
+    createTable(
+      "alter_sc_insert",
+      Map("sort_scope"->"local_sort", "sort_columns"->"stringField")
+    )
+    loadData("alter_sc_insert")
+    createTable(
+      "alter_sc_insert_complex",
+      Map("sort_scope"->"local_sort", "sort_columns"->"stringField"),
+      true
+    )
+    loadData("alter_sc_insert_complex")
+    createTable(
+      "alter_sc_range_column",
+      Map("sort_scope"->"local_sort", "sort_columns"->"stringField", "range_column"->"smallIntField")
+    )
+    createTable(
+      "alter_sc_range_column_base",
+      Map("sort_scope"->"local_sort", "sort_columns"->"stringField")
+    )
+
+    Array("alter_sc_add_column", "alter_sc_add_column_base").foreach { tableName =>
+      sql(
+        s"""create table $tableName(
+           | smallIntField smallInt,
+           | intField int,
+           | bigIntField bigint,
+           | floatField float,
+           | doubleField double,
+           | decimalField decimal(25, 4),
+           | timestampField timestamp,
+           | dateField date,
+           | stringField string
+           | )
+           | stored as carbondata
+      """.stripMargin)
+    }
+
 
   }
 
-  test("test NO_SORT table without SORT_COLUMNS") {
-    val tableName = "alter_sc_1"
-    sql(s"drop table if exists $tableName")
+  private def dropTable(): Unit = {
+    sql(s"drop table if exists alter_sc_base")
+    sql(s"drop table if exists alter_sc_base_complex")
+    sql(s"drop table if exists alter_sc_validate")
+    sql(s"drop table if exists alter_sc_iud")
+    sql(s"drop table if exists alter_sc_iud_complex")
+    sql(s"drop table if exists alter_sc_long_string")
+    sql(s"drop table if exists alter_sc_insert")
+    sql(s"drop table if exists alter_sc_insert_complex")
+    sql(s"drop table if exists alter_sc_range_column")
+    sql(s"drop table if exists alter_sc_range_column_base")
+    sql(s"drop table if exists alter_sc_add_column")
+    sql(s"drop table if exists alter_sc_add_column_base")
+  }
+
+  private def createTable(
+      tableName: String,
+      tblProperties: Map[String, String] = Map.empty,
+      withComplex: Boolean = false
+  ): Unit = {
+    val complexSql =
+      if (withComplex) {
+        ", arrayField array<string>, structField struct<col1:string, col2:string, col3:string>"
+      } else {
+        ""
+      }
+    val tblPropertiesSql =
+      if (tblProperties.isEmpty) {
+        ""
+      } else {
+        val propertiesString =
+          tblProperties
+            .map { entry =>
+              s"'${ entry._1 }'='${ entry._2 }'"
+            }
+            .mkString(",")
+        s"tblproperties($propertiesString)"
+      }
+
     sql(
       s"""create table $tableName(
          | smallIntField smallInt,
@@ -41,64 +152,301 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
          | dateField date,
          | stringField string,
          | varcharField varchar(10),
-         | charField char(10),
-         | arrayField array<string>,
-         | structField struct<col1:string, col2:string, col3:string>
+         | charField char(10)
+         | $complexSql
          | )
          | stored as carbondata
+         | $tblPropertiesSql
       """.stripMargin)
-     sql(s"describe formatted $tableName").show(100, false)
+  }
 
-    // segment 0
-    sql(
-      s"""load data local inpath '$resourcesPath/alldatatypeforpartition.csv'
-         | into table $tableName
-         | options ('COMPLEX_DELIMITER_LEVEL_1'='$$', 'COMPLEX_DELIMITER_LEVEL_2'=':')
+  private def loadData(tableNames: String*): Unit = {
+    tableNames.foreach { tableName =>
+      sql(
+        s"""load data local inpath '$resourcesPath/alldatatypeforpartition.csv'
+           | into table $tableName
+           | options ('global_sort_partitions'='2', 'COMPLEX_DELIMITER_LEVEL_1'='$$', 'COMPLEX_DELIMITER_LEVEL_2'=':')
       """.stripMargin)
+    }
+  }
+
+  private def insertData(insertTable: String, tableNames: String*): Unit = {
+    tableNames.foreach { tableName =>
+      sql(
+        s"""insert into table $tableName select * from $insertTable
+      """.stripMargin)
+    }
+  }
+
+  test("validate sort_scope and sort_columns") {
+    // invalid combination
+    var ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_scope'='local_sort')")
+    }
+    assert(ex.getMessage.contains("Cannot set SORT_SCOPE as local_sort when table has no SORT_COLUMNS"))
+
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_scope'='global_sort')")
+    }
+    assert(ex.getMessage.contains("Cannot set SORT_SCOPE as global_sort when table has no SORT_COLUMNS"))
+
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_scope'='local_sort', 'sort_columns'='')")
+    }
+    assert(ex.getMessage.contains("Cannot set SORT_COLUMNS as empty when setting SORT_SCOPE as local_sort"))
+
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_scope'='global_sort', 'sort_columns'=' ')")
+    }
+    assert(ex.getMessage.contains("Cannot set SORT_COLUMNS as empty when setting SORT_SCOPE as global_sort"))
+
+    sql("alter table alter_sc_validate set tblproperties('sort_columns'='stringField', 'sort_scope'='local_sort')")
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'=' ')")
+    }
+    assert(ex.getMessage.contains("Cannot set SORT_COLUMNS as empty when SORT_SCOPE is LOCAL_SORT"))
+
+    sql("alter table alter_sc_validate set tblproperties('sort_scope'='global_sort')")
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'='')")
+    }
+    assert(ex.getMessage.contains("Cannot set SORT_COLUMNS as empty when SORT_SCOPE is GLOBAL_SORT"))
+
+    // wrong/duplicate sort_columns
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'=' stringField1 , intField')")
+    }
+    assert(ex.getMessage.contains("stringField1 does not exist in table"))
+
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'=' stringField1 , intField, stringField1')")
+    }
+    assert(ex.getMessage.contains("SORT_COLUMNS Either having duplicate columns : stringField1 or it contains illegal argumnet"))
+
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'=' stringField , intField, stringField')")
+    }
+    assert(ex.getMessage.contains("SORT_COLUMNS Either having duplicate columns : stringField or it contains illegal argumnet"))
+
+    // not supported data type
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'='decimalField')")
+    }
+    assert(ex.getMessage.contains("sort_columns is unsupported for DECIMAL data type column: decimalField"))
+
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'='doubleField')")
+    }
+    assert(ex.getMessage.contains("sort_columns is unsupported for DOUBLE data type column: doubleField"))
+
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'='arrayField')")
+    }
+    assert(ex.getMessage.contains("sort_columns is unsupported for ARRAY data type column: arrayField"))
+
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'='structField')")
+    }
+    assert(ex.getMessage.contains("sort_columns is unsupported for STRUCT data type column: structField"))
+
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'='structField.col1')")
+    }
+    assert(ex.getMessage.contains("sort_columns: structField.col1 does not exist in table"))
+  }
+
+  test("long string column") {
+    val ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_long_string set tblproperties('sort_columns'='intField, stringField')")
+    }
+    assert(ex.getMessage.contains("sort_columns is unsupported for long string data type column: stringField"))
+  }
+
+  test("describe formatted") {
+    // valid combination
+    sql("alter table alter_sc_validate set tblproperties('sort_scope'='no_sort', 'sort_columns'='')")
+    checkExistence(sql("describe formatted alter_sc_validate"), true, "NO_SORT")
+
+    sql("alter table alter_sc_validate set tblproperties('sort_scope'='no_sort', 'sort_columns'='bigIntField,stringField')")
+    checkExistence(sql("describe formatted alter_sc_validate"), true, "no_sort", "bigIntField, stringField".toLowerCase())
+
+    sql("alter table alter_sc_validate set tblproperties('sort_scope'='local_sort', 'sort_columns'='stringField,bigIntField')")
+    checkExistence(sql("describe formatted alter_sc_validate"), true, "local_sort", "stringField, bigIntField".toLowerCase())
+
+    // global dictionary or direct dictionary
+    sql("alter table alter_sc_validate set tblproperties('sort_scope'='global_sort', 'sort_columns'=' charField , bigIntField , timestampField ')")
+    checkExistence(sql("describe formatted alter_sc_validate"), true, "global_sort", "charField, bigIntField, timestampField".toLowerCase())
+
+    // supported data type
+    sql("alter table alter_sc_validate set tblproperties('sort_scope'='local_sort', 'sort_columns'='smallIntField, intField, bigIntField, timestampField, dateField, stringField, varcharField, charField')")
+    checkExistence(sql("describe formatted alter_sc_validate"), true, "local_sort", "smallIntField, intField, bigIntField, timestampField, dateField, stringField, varcharField, charField".toLowerCase())
+  }
+
+  test("IUD and Query") {
+    testIUDAndQuery("alter_sc_iud", "alter_sc_base", "alter_sc_insert")
+  }
+
+  test("IUD and Query with complex data type") {
+    testIUDAndQuery("alter_sc_iud_complex", "alter_sc_base_complex", "alter_sc_insert_complex")
+  }
+
+  private def testIUDAndQuery(tableName: String, baseTableName: String, insertTableName: String): Unit = {
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
     // alter table to local_sort with new SORT_COLUMNS
-    sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='timestampField, intField, stringField, smallIntField')").show(100, false)
-    sql(s"describe formatted $tableName").show(100, false)
-    // segment 1
-    sql(
-      s"""load data local inpath '$resourcesPath/alldatatypeforpartition.csv'
-         | into table $tableName
-         | options ('COMPLEX_DELIMITER_LEVEL_1'='$$', 'COMPLEX_DELIMITER_LEVEL_2'=':')
-      """.stripMargin)
+    sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='timestampField, intField, stringField')")
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
     // alter table to revert SORT_COLUMNS
-    sql(s"alter table $tableName set tblproperties('sort_columns'='smallIntField, stringField, intField, timestampField')").show(100, false)
-    sql(s"describe formatted $tableName").show(100, false)
-    // segment 2
-    sql(
-      s"""load data local inpath '$resourcesPath/alldatatypeforpartition.csv'
-         | into table $tableName
-         | options ('COMPLEX_DELIMITER_LEVEL_1'='$$', 'COMPLEX_DELIMITER_LEVEL_2'=':')
-      """.stripMargin)
+    sql(s"alter table $tableName set tblproperties('sort_columns'='stringField, intField, timestampField')")
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
     // alter table to change SORT_COLUMNS
-    sql(s"alter table $tableName set tblproperties('sort_columns'='stringField, intField')").show(100, false)
-    sql(s"describe formatted $tableName").show(100, false)
-    // segment 3
-    sql(
-      s"""load data local inpath '$resourcesPath/alldatatypeforpartition.csv'
-         | into table $tableName
-         | options ('COMPLEX_DELIMITER_LEVEL_1'='$$', 'COMPLEX_DELIMITER_LEVEL_2'=':')
-      """.stripMargin)
+    sql(s"alter table $tableName set tblproperties('sort_columns'='smallIntField, stringField, intField')")
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
     // alter table to change SORT_SCOPE and SORT_COLUMNS
-    sql(s"alter table $tableName set tblproperties('sort_scope'='global_sort', 'sort_columns'='charField, bigIntField, smallIntField')").show(100, false)
-    sql(s"describe formatted $tableName").show(100, false)
-    // segment 4
-    sql(
-      s"""load data local inpath '$resourcesPath/alldatatypeforpartition.csv'
-         | into table $tableName
-         | options ('COMPLEX_DELIMITER_LEVEL_1'='$$', 'COMPLEX_DELIMITER_LEVEL_2'=':')
-      """.stripMargin)
+    sql(s"alter table $tableName set tblproperties('sort_scope'='global_sort', 'sort_columns'='charField, bigIntField, smallIntField')")
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
     // alter table to change SORT_SCOPE
-    sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='charField, bigIntField, smallIntField')").show(100, false)
-    sql(s"describe formatted $tableName").show(100, false)
-    sql(s"select * from $tableName").show(100, false)
+    sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='charField, bigIntField, smallIntField')")
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
+    // query
+    checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName where intField >= 32768 order by smallIntField"), sql(s"select * from $baseTableName where intField >= 32768 order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 or intField >= 32768 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 128 or intField >= 32768 order by smallIntField"))
+
+    // set input segments
+    (0 to 5).foreach { segment =>
+      sql(s"set carbon.input.segments.default.$tableName=$segment").show(100, false)
+      sql(s"set carbon.input.segments.default.$baseTableName=$segment").show(100, false)
+      checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField"))
+    }
+    sql(s"set carbon.input.segments.default.$tableName=*").show(100, false)
+    sql(s"set carbon.input.segments.default.$baseTableName=*").show(100, false)
+
+    // delete
+    sql(s"select * from $tableName order by smallIntField").show(100, false)
+    sql(s"select * from $baseTableName order by smallIntField").show(100, false)
+    sql(s"delete from $tableName where smallIntField = 128")
+    sql(s"delete from $baseTableName where smallIntField = 128")
+    sql(s"select * from $tableName order by smallIntField").show(100, false)
+    sql(s"select * from $baseTableName order by smallIntField").show(100, false)
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
+    sql(s"delete from $tableName")
+    checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(0)))
+    sql(s"delete from $baseTableName")
+    checkAnswer(sql(s"select count(*) from $baseTableName"), Seq(Row(0)))
+
+    // insert & load data
+    sql(s"alter table $tableName set tblproperties('sort_scope'='global_sort', 'sort_columns'='timestampField')")
+    insertData(insertTableName, tableName, baseTableName)
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
+    sql(s"alter table $tableName set tblproperties('sort_scope'='no_sort', 'sort_columns'='')")
+    insertData(insertTableName, tableName, baseTableName)
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
+    sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='charField, bigIntField, smallIntField')")
+    insertData(insertTableName, tableName, baseTableName)
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
+    // update
+    sql(s"update $tableName set (smallIntField, intField, bigIntField, floatField, doubleField, decimalField) = (smallIntField - 3, intField - 3, bigIntField - 3, floatField - 3, doubleField - 3, decimalField - 3) where smallIntField = 128").show()
+    sql(s"update $baseTableName set (smallIntField, intField, bigIntField, floatField, doubleField, decimalField) = (smallIntField - 3, intField - 3, bigIntField - 3, floatField - 3, doubleField - 3, decimalField - 3) where smallIntField = 128").show()
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+
+    // query
+    checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 125 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 125 order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName where intField >= 32765 order by smallIntField"), sql(s"select * from $baseTableName where intField >= 32765 order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 125 or intField >= 32768 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 125 or intField >= 32765 order by smallIntField"))
+
+    // set input segments
+    (6 to 11).foreach { segment =>
+      sql(s"set carbon.input.segments.default.$tableName=$segment").show(100, false)
+      sql(s"set carbon.input.segments.default.$baseTableName=$segment").show(100, false)
+      checkAnswer(sql(s"select * from $tableName where smallIntField = 125 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 125 order by smallIntField"))
+    }
+    sql(s"set carbon.input.segments.default.$tableName=*").show(100, false)
+    sql(s"set carbon.input.segments.default.$baseTableName=*").show(100, false)
+
+    // compaction
+    sql(s"show segments for table $tableName").show(100, false)
+    sql(s"show segments for table $baseTableName").show(100, false)
+    sql(s"alter table $tableName compact 'minor'")
+    sql(s"alter table $baseTableName compact 'minor'")
+    sql(s"show segments for table $tableName").show(100, false)
+    sql(s"show segments for table $baseTableName").show(100, false)
+    checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 125 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 125 order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName where intField >= 32765 order by smallIntField"), sql(s"select * from $baseTableName where intField >= 32765 order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 125 or intField >= 32768 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 125 or intField >= 32765 order by smallIntField"))
+
   }
 
-  override def afterAll(): Unit = {
+  test("range column") {
+    val tableName = "alter_sc_range_column"
+    val baseTableName = "alter_sc_range_column_base"
+    loadData(tableName, baseTableName)
+    sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='smallIntField, charField')")
+    loadData(tableName, baseTableName)
+    loadData(baseTableName)
+
+    checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
+    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField"))
+  }
+
+  test("add/drop column for sort_columns") {
+    val tableName = "alter_sc_add_column"
+    val baseTableName = "alter_sc_add_column_base"
+    loadData(tableName, baseTableName)
+    sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='smallIntField, stringField')")
+    loadData(tableName, baseTableName)
+    // add column
+    sql(s"alter table $tableName add columns( varcharField varchar(10), charField char(10))")
+    sql(s"alter table $baseTableName add columns( varcharField varchar(10), charField char(10))")
+    loadData(tableName, baseTableName)
+
+    checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
+    checkAnswer(sql(s"select * from $tableName order by smallIntField, charField"), sql(s"select * from $baseTableName order by smallIntField, charField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField, charField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField, charField"))
+
+    // add new column to sort_columns
+    sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='smallIntField, charField')")
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
+    checkAnswer(sql(s"select * from $tableName order by smallIntField, charField"), sql(s"select * from $baseTableName order by smallIntField, charField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField, charField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField, charField"))
+
+    // drop column of old sort_columns
+    sql(s"alter table $tableName drop columns(stringField)")
+    sql(s"alter table $baseTableName drop columns(stringField)")
+    loadData(tableName, baseTableName)
+    checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
+    checkAnswer(sql(s"select * from $tableName order by smallIntField, charField"), sql(s"select * from $baseTableName order by smallIntField, charField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField, charField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField, charField"))
+  }
+
+  test("bloom filter") {
 
   }
 
+  test("pre-aggregate") {
+
+  }
 }

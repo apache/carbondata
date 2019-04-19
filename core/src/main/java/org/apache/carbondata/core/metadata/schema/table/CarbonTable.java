@@ -912,6 +912,10 @@ public class CarbonTable implements Serializable {
     return allMeasures;
   }
 
+  public boolean hasColumnDrift() {
+    return tableInfo.hasColumnDrift();
+  }
+
   /**
    * This method will all the visible allMeasures
    *

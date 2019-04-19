@@ -65,14 +65,11 @@ public class RestructureUtil {
   public static List<ProjectionDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
       BlockExecutionInfo blockExecutionInfo, List<ProjectionDimension> queryDimensions,
       List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension,
-      List<CarbonMeasure> tableBlockMeasures, int measureCount, boolean isTransactionalTable) {
-    // if the measure became to the dimension, move it out from the dimension projection
-    List<ProjectionDimension> updatedQueryDimensions =
-        updateProjectionDimensions(queryDimensions, tableBlockMeasures, isTransactionalTable);
+      int measureCount, boolean isTransactionalTable) {
     List<ProjectionDimension> presentDimension =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    boolean[] isDimensionExists = new boolean[updatedQueryDimensions.size()];
-    Object[] defaultValues = new Object[updatedQueryDimensions.size()];
+    boolean[] isDimensionExists = new boolean[queryDimensions.size()];
+    Object[] defaultValues = new Object[queryDimensions.size()];
     // create dimension information instance
     DimensionInfo dimensionInfo = new DimensionInfo(isDimensionExists, defaultValues);
     dimensionInfo.dataType = new DataType[queryDimensions.size() + measureCount];
@@ -80,7 +77,7 @@ public class RestructureUtil {
     int newNoDictionaryColumnCount = 0;
     // selecting only those dimension which is present in the query
     int dimIndex = 0;
-    for (ProjectionDimension queryDimension : updatedQueryDimensions) {
+    for (ProjectionDimension queryDimension : queryDimensions) {
       if (queryDimension.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         presentDimension.add(queryDimension);
         isDimensionExists[dimIndex] = true;
@@ -415,21 +412,17 @@ public class RestructureUtil {
    * @return measures present in the block
    */
   public static List<ProjectionMeasure> createMeasureInfoAndGetCurrentBlockQueryMeasures(
-      BlockExecutionInfo blockExecutionInfo, List<ProjectionDimension> queryDimensions,
-      List<ProjectionMeasure> queryMeasures, List<CarbonMeasure> currentBlockMeasures,
-      boolean isTransactionalTable) {
-    // if the measure became the dimension, add it into the measure projection
-    List<ProjectionMeasure> updatedQueryMeasures = updateProjectionMeasures(queryDimensions,
-        queryMeasures, currentBlockMeasures, isTransactionalTable);
+      BlockExecutionInfo blockExecutionInfo, List<ProjectionMeasure> queryMeasures,
+      List<CarbonMeasure> currentBlockMeasures, boolean isTransactionalTable) {
     MeasureInfo measureInfo = new MeasureInfo();
-    List<ProjectionMeasure> presentMeasure = new ArrayList<>(updatedQueryMeasures.size());
-    int numberOfMeasureInQuery = updatedQueryMeasures.size();
+    List<ProjectionMeasure> presentMeasure = new ArrayList<>(queryMeasures.size());
+    int numberOfMeasureInQuery = queryMeasures.size();
     List<Integer> measureOrdinalList = new ArrayList<>(numberOfMeasureInQuery);
     Object[] defaultValues = new Object[numberOfMeasureInQuery];
     boolean[] measureExistsInCurrentBlock = new boolean[numberOfMeasureInQuery];
     DataType[] measureDataTypes = new DataType[numberOfMeasureInQuery];
     int index = 0;
-    for (ProjectionMeasure queryMeasure : updatedQueryMeasures) {
+    for (ProjectionMeasure queryMeasure : queryMeasures) {
       // if query measure exists in current dimension measures
       // then setting measure exists is true
       // otherwise adding a default value of a measure
@@ -466,7 +459,7 @@ public class RestructureUtil {
     return presentMeasure;
   }
 
-  private static List<ProjectionDimension> updateProjectionDimensions(
+  public static List<ProjectionDimension> updateProjectionDimensions(
       List<ProjectionDimension> projectionDimensions, List<CarbonMeasure> tableBlockMeasures,
       boolean isTransactionalTable) {
     List<ProjectionDimension> updatedProjection = new ArrayList<>(projectionDimensions.size());
@@ -486,7 +479,7 @@ public class RestructureUtil {
     return updatedProjection;
   }
 
-  private static List<ProjectionMeasure> updateProjectionMeasures(
+  public static List<ProjectionMeasure> updateProjectionMeasures(
       List<ProjectionDimension> projectionDimensions, List<ProjectionMeasure> projectionMeasures,
       List<CarbonMeasure> tableBlockMeasures, boolean isTransactionalTable) {
     List<ProjectionMeasure> updatedProjection =

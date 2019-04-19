@@ -23,7 +23,6 @@ import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
@@ -39,10 +38,6 @@ public class QueryExecutorProperties {
    */
   public Map<String, Dictionary> columnToDictionaryMapping;
 
-  /**
-   * Measure datatypes
-   */
-  public DataType[] measureDataTypes;
   /**
    * all the complex dimension which is on filter
    */

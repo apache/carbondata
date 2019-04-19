@@ -113,35 +113,37 @@ object AlterTableUtil {
     val sortColumnsOption = lowerCasePropertiesMap.get(CarbonCommonConstants.SORT_COLUMNS)
     if (sortColumnsOption.isDefined) {
       val sortColumnsString = CarbonUtil.unquoteChar(sortColumnsOption.get).trim
+      val columns = thriftTable.getFact_table.getTable_columns
+      // remove old sort_columns property from ColumnSchema
+      val columnSeq =
+        columns
+          .asScala
+          .map { column =>
+            val columnProperties = column.getColumnProperties
+            if (columnProperties != null) {
+              columnProperties.remove(CarbonCommonConstants.SORT_COLUMNS)
+            }
+            column
+          }
+          .zipWithIndex
       if (!sortColumnsString.isEmpty) {
         val newSortColumns = sortColumnsString.split(',').map(_.trim)
-        val columns = thriftTable.getFact_table.getTable_columns
-        // remove sort_columns properties
-        val columnSeq =
-          columns
-            .asScala
-            .map { column =>
-              val columnProperties = column.getColumnProperties
-              if (columnProperties != null) {
-                columnProperties.remove(CarbonCommonConstants.SORT_COLUMNS)
-              }
-              column
-            }
-            .zipWithIndex
         // map sort_columns index in column list
         val sortColumnsIndexMap = newSortColumns
           .zipWithIndex
           .map { entry =>
             val column = columnSeq.find(_._1.getColumn_name.equalsIgnoreCase(entry._1)).get
-            // change SORT_COLUMNS to dimension
-            if (!column._1.isDimension) {
-              column._1.setDimension(true)
-            }
             var columnProperties = column._1.getColumnProperties
             if (columnProperties == null) {
               columnProperties = new util.HashMap[String, String]()
               column._1.setColumnProperties(columnProperties)
             }
+            // change sort_columns to dimension
+            if (!column._1.isDimension) {
+              column._1.setDimension(true)
+              columnProperties.put(CarbonCommonConstants.COLUMN_DRIFT, "true")
+            }
+            // add sort_columns property
             columnProperties.put(CarbonCommonConstants.SORT_COLUMNS, "true")
             (column._2, entry._2)
           }
@@ -166,11 +168,6 @@ object AlterTableUtil {
         // use new columns
         columns.clear()
         columns.addAll(newColumns)
-        // add schema evolution
-        val see = new org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
-        see.setTimeStamp(System.currentTimeMillis)
-        val esee = schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(see)
-        thriftTable.fact_table.schema_evolution.schema_evolution_history.add(esee)
       }
     }
   }
@@ -636,12 +633,12 @@ object AlterTableUtil {
         if (newSortColumns.isDefined) {
           if (StringUtils.isBlank(CarbonUtil.unquoteChar(newSortColumns.get))) {
             throw new InvalidConfigurationException(
-              s"Cannot set SORT_COLUMNS as empty when setting SORT_SCOPE as $newSortScope ")
+              s"Cannot set SORT_COLUMNS as empty when setting SORT_SCOPE as ${newSortScope.get} ")
           }
         } else {
           if (carbonTable.getNumberOfSortColumns == 0) {
             throw new InvalidConfigurationException(
-              s"Cannot set SORT_SCOPE as $newSortScope when table has no SORT_COLUMNS")
+              s"Cannot set SORT_SCOPE as ${newSortScope.get} when table has no SORT_COLUMNS")
           }
         }
       }
@@ -650,7 +647,7 @@ object AlterTableUtil {
       if (StringUtils.isBlank(CarbonUtil.unquoteChar(newSortColumns.get))) {
         if (!SortScope.NO_SORT.equals(carbonTable.getSortScope)) {
           throw new InvalidConfigurationException(
-            s"Cannot set SORT_COLUMNS as empty when SORT_SCOPE is ${ carbonTable.getSortScope } ")
+            s"Cannot set SORT_COLUMNS as empty when SORT_SCOPE is ${carbonTable.getSortScope} ")
         }
       }
     }
