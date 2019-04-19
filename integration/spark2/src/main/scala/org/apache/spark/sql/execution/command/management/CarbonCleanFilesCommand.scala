@@ -32,6 +32,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events._
@@ -63,6 +64,19 @@ case class CarbonCleanFilesCommand(
       "internal" -> isInternalCleanCall.toString))
     if (carbonTable.hasAggregationDataMap) {
       cleanFileCommands = carbonTable.getTableInfo.getDataMapSchemaList.asScala.map {
+        dataMapSchema =>
+          val relationIdentifier = dataMapSchema.getRelationIdentifier
+          CarbonCleanFilesCommand(
+            Some(relationIdentifier.getDatabaseName), Some(relationIdentifier.getTableName),
+            isInternalCleanCall = true)
+      }.toList
+      cleanFileCommands.foreach(_.processMetadata(sparkSession))
+    } else if (CarbonTable.hasMVDataMap(carbonTable)) {
+      val allDataMapSchemas = DataMapStoreManager.getInstance
+        .getDataMapSchemasOfTable(carbonTable).asScala
+        .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
+                                 !dataMapSchema.isIndexDataMap)
+      cleanFileCommands = allDataMapSchemas.map {
         dataMapSchema =>
           val relationIdentifier = dataMapSchema.getRelationIdentifier
           CarbonCleanFilesCommand(

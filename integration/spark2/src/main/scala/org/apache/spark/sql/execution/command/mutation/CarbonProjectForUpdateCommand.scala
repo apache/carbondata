@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.execution.command.mutation
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command._
@@ -28,7 +30,8 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
@@ -171,6 +174,13 @@ private[sql] case class CarbonProjectForUpdateCommand(
       HorizontalCompaction.tryHorizontalCompaction(
         sparkSession, carbonTable, isUpdateOperation = true)
 
+      val allDataMapSchemas = DataMapStoreManager.getInstance
+        .getDataMapSchemasOfTable(carbonTable).asScala
+        .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
+                                 !dataMapSchema.isIndexDataMap).asJava
+      if (!allDataMapSchemas.isEmpty) {
+        DataMapStatusManager.truncateDataMap(allDataMapSchemas)
+      }
       // trigger event for Update table
       val updateTablePostEvent: UpdateTablePostEvent =
         UpdateTablePostEvent(sparkSession, carbonTable)

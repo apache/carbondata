@@ -263,15 +263,26 @@ public final class CarbonLoaderUtil {
           String segmentId =
               String.valueOf(SegmentStatusManager.createNewSegmentId(listOfLoadFolderDetailsArray));
           loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
+          LoadMetadataDetails entryTobeRemoved = null;
           // Segment id would be provided in case this is compaction flow for aggregate data map.
           // If that is true then used the segment id as the load name.
           if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !loadModel
               .getSegmentId().isEmpty()) {
             newMetaEntry.setLoadName(loadModel.getSegmentId());
+          } else if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildTable()
+              && !loadModel.getSegmentId().isEmpty()) {
+            for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
+              if (entry.getLoadName().equalsIgnoreCase(loadModel.getSegmentId())) {
+                newMetaEntry.setLoadName(loadModel.getSegmentId());
+                newMetaEntry.setExtraInfo(entry.getExtraInfo());
+                entryTobeRemoved = entry;
+              }
+            }
           } else {
             newMetaEntry.setLoadName(segmentId);
             loadModel.setSegmentId(segmentId);
           }
+          listOfLoadFolderDetails.remove(entryTobeRemoved);
           // Exception should be thrown if:
           // 1. If insert overwrite is in progress and any other load or insert operation
           // is triggered
@@ -299,6 +310,7 @@ public final class CarbonLoaderUtil {
           for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
             if (entry.getLoadName().equals(newMetaEntry.getLoadName())
                 && entry.getLoadStartTime() == newMetaEntry.getLoadStartTime()) {
+              newMetaEntry.setExtraInfo(entry.getExtraInfo());
               found = true;
               break;
             }

@@ -133,6 +133,11 @@ public class LoadMetadataDetails implements Serializable {
     return partitionCount;
   }
 
+  /**
+   * extraInfo will contain segment mapping Information for datamap table
+   */
+  private String extraInfo;
+
   @Deprecated
   public void setPartitionCount(String partitionCount) {
     this.partitionCount = partitionCount;
@@ -433,5 +438,13 @@ public class LoadMetadataDetails implements Serializable {
   @Override public String toString() {
     return "LoadMetadataDetails{" + "loadStatus=" + loadStatus + ", loadName='" + loadName + '\''
         + ", loadStartTime='" + loadStartTime + '\'' + ", segmentFile='" + segmentFile + '\'' + '}';
+  }
+
+  public String getExtraInfo() {
+    return extraInfo;
+  }
+
+  public void setExtraInfo(String extraInfo) {
+    this.extraInfo = extraInfo;
   }
 }

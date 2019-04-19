@@ -1018,6 +1018,12 @@ public class CarbonTable implements Serializable, Writable {
         !tableInfo.getParentRelationIdentifiers().isEmpty();
   }
 
+  public boolean isChildTable() {
+    return null != tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.PARENT_TABLES) && !tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.PARENT_TABLES).isEmpty();
+  }
+
   /**
    * Return true if this is an external table (table with property "_external"="true", this is
    * an internal table property set during table creation)

@@ -23,6 +23,8 @@ import org.apache.spark.sql.execution.command.DataCommand
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV
+import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.events.{UpdateDataMapPostExecutionEvent, _}
@@ -50,7 +52,8 @@ case class CarbonDataMapRebuildCommand(
       }
     }
     val schema = schemaOption.get
-    if (!schema.isLazy) {
+    if (!schema.isLazy &&
+        (schema.isIndexDataMap || schema.isInstanceOf[AggregationDataMapSchema])) {
       throw new MalformedDataMapCommandException(
         s"Non-lazy datamap $dataMapName does not support rebuild")
     }

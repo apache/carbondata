@@ -2163,4 +2163,15 @@ public final class CarbonCommonConstants {
 
   public static final int CARBON_INDEX_SERVER_WORKER_THREADS_DEFAULT =
       500;
+
+  /**
+   * This property will be used to store datamap name
+   */
+  public static final String DATAMAP_NAME = "datamap_name";
+
+  /**
+   * This property will be used to store parentable name's associated with datamap
+   */
+  public static final String PARENT_TABLES = "parent_tables";
+
 }

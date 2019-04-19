@@ -35,15 +35,19 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil;
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
@@ -299,7 +303,8 @@ public final class CarbonDataMergerUtil {
    */
   public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
       String metaDataFilepath, String mergedLoadNumber, CarbonLoadModel carbonLoadModel,
-      CompactionType compactionType, String segmentFile) throws IOException {
+      CompactionType compactionType, String segmentFile) throws IOException,
+      NoSuchDataMapException {
     boolean tableStatusUpdationStatus = false;
     AbsoluteTableIdentifier identifier =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
@@ -349,6 +354,23 @@ public final class CarbonDataMergerUtil {
         // if this is a major compaction then set the segment as major compaction.
         if (CompactionType.MAJOR == compactionType) {
           loadMetadataDetails.setMajorCompacted("true");
+        }
+
+        if (carbonTable.isChildTable()) {
+          // If table is child table, then get segment mapping and set to extraInfo
+          DataMapSchema dataMapSchema = null;
+          try {
+            dataMapSchema = DataMapStatusManager.getDataMapSchema(
+                carbonTable.getTableInfo().getFactTable().getTableProperties()
+                    .get(CarbonCommonConstants.DATAMAP_NAME));
+          } catch (NoSuchDataMapException e) {
+            throw e;
+          }
+          if (null != dataMapSchema) {
+            String segmentMap = DataMapSegmentStatusUtil
+                .getUpdatedSegmentMap(mergedLoadNumber, dataMapSchema, loadDetails);
+            loadMetadataDetails.setExtraInfo(segmentMap);
+          }
         }
 
         List<LoadMetadataDetails> updatedDetailsList = new ArrayList<>(Arrays.asList(loadDetails));
