@@ -18,6 +18,7 @@
 package org.apache.carbondata.datamap;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -94,10 +95,11 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
   }
 
   @Override
-  public void rebuild() {
+  public boolean rebuild() {
     if (helper != null) {
       helper.initData(sparkSession);
     }
+    return true;
   }
 
   @Override
@@ -107,6 +109,11 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
 
   @Override
   public boolean supportRebuild() {
+    return false;
+  }
+
+  @Override
+  public boolean rebuildInternal(String newLoadName, Map<String, List<String>> segmentMap) {
     return false;
   }
 }

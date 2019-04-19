@@ -31,6 +31,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.dev.DataMapSyncStatus;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
@@ -114,6 +115,12 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
       locked = carbonTableStatusLock.lockWithRetries();
       if (locked) {
         LOG.info("Datamap status lock has been successfully acquired.");
+        if (dataMapStatus == DataMapStatus.ENABLED && !dataMapSchemas.get(0).isIndexDataMap()) {
+          // Enable datamap only if datamap tables and main table are in sync
+          if (!DataMapSyncStatus.canDataMapBeEnabled(dataMapSchemas.get(0))) {
+            return;
+          }
+        }
         DataMapStatusDetail[] dataMapStatusDetails = getDataMapStatusDetails();
         List<DataMapStatusDetail> dataMapStatusList = Arrays.asList(dataMapStatusDetails);
         dataMapStatusList = new ArrayList<>(dataMapStatusList);

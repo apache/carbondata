@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
 import org.apache.spark.sql.execution.command.cache._
+import org.apache.spark.sql.execution.command.mv.{AlterDataMaptableCompactionPostListener, LoadPostDataMapListener}
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
@@ -37,7 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.datamap.{TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
@@ -173,6 +174,8 @@ object CarbonEnv {
       .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
       .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
         AlterPreAggregateTableCompactionPostListener)
+      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
+        AlterDataMaptableCompactionPostListener)
       .addListener(classOf[LoadMetadataEvent], LoadProcessMetaListener)
       .addListener(classOf[LoadMetadataEvent], CompactionProcessMetaListener)
       .addListener(classOf[LoadTablePostStatusUpdateEvent], CommitPreAggregateListener)
@@ -183,6 +186,9 @@ object CarbonEnv {
         AlterTableDropPartitionPostStatusListener)
       .addListener(classOf[AlterTableDropPartitionMetaEvent], AlterTableDropPartitionMetaListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new MergeIndexEventListener)
+      .addListener(classOf[LoadTablePostExecutionEvent], LoadPostDataMapListener)
+      .addListener(classOf[UpdateTablePostEvent], LoadPostDataMapListener )
+      .addListener(classOf[DeleteFromTablePostEvent], LoadPostDataMapListener )
       .addListener(classOf[AlterTableMergeIndexEvent], new MergeIndexEventListener)
       .addListener(classOf[BuildDataMapPostExecutionEvent], new MergeBloomIndexEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCachePreAggEventListener)

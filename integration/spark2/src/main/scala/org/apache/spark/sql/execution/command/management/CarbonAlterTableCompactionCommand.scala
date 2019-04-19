@@ -34,6 +34,8 @@ import org.apache.spark.util.AlterTableUtil
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapUtil
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
@@ -320,6 +322,7 @@ case class CarbonAlterTableCompactionCommand(
           throw e
       } finally {
         updateLock.unlock()
+        DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
       }
     }
   }

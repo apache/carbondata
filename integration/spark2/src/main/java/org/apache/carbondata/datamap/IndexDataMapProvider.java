@@ -20,6 +20,7 @@ package org.apache.carbondata.datamap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
@@ -98,8 +99,9 @@ public class IndexDataMapProvider extends DataMapProvider {
   }
 
   @Override
-  public void rebuild() {
+  public boolean rebuild() {
     IndexDataMapRebuildRDD.rebuildDataMap(sparkSession, getMainTable(), getDataMapSchema());
+    return true;
   }
 
   private DataMapFactory<? extends DataMap> createDataMapFactory()
@@ -131,5 +133,10 @@ public class IndexDataMapProvider extends DataMapProvider {
   @Override
   public boolean supportRebuild() {
     return dataMapFactory.supportRebuild();
+  }
+
+  @Override
+  public boolean rebuildInternal(String newLoadName, Map<String, List<String>> segmentMap) {
+    return false;
   }
 }

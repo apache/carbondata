@@ -87,13 +87,6 @@ case class CarbonCreateDataMapCommand(
 
     val property = dmProperties.map(x => (x._1.trim, x._2.trim)).asJava
     val javaMap = new java.util.HashMap[String, String](property)
-    // for MV, it is deferred rebuild by default and cannot be non-deferred rebuild
-    if (dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.MV.getShortName)) {
-      if (!deferredRebuild) {
-        LOGGER.warn(s"DEFERRED REBUILD is enabled by default for MV datamap $dataMapName")
-      }
-      deferredRebuild = true
-    }
     javaMap.put(DataMapProperty.DEFERRED_REBUILD, deferredRebuild.toString)
     dataMapSchema.setProperties(javaMap)
 
@@ -179,6 +172,10 @@ case class CarbonCreateDataMapCommand(
           OperationListenerBus.getInstance().fireEvent(updateDataMapPostExecutionEvent,
             operationContext)
         }
+      }
+      if (null != dataMapSchema.getRelationIdentifier && !dataMapSchema.isIndexDataMap &&
+          !dataMapSchema.isLazy) {
+        DataMapStatusManager.enableDataMap(dataMapName)
       }
     }
     Seq.empty

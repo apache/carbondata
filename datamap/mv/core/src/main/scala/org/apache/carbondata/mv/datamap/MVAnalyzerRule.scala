@@ -27,9 +27,11 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.mv.rewrite.{SummaryDataset, SummaryDatasetCatalog}
 
@@ -88,7 +90,8 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
     if (!plan.isInstanceOf[Command]  && !plan.isInstanceOf[DeserializeToObject]) {
       val catalogs = extractCatalogs(plan)
       !isDataMapReplaced(catalog.listAllValidSchema(), catalogs) &&
-      isDataMapExists(catalog.listAllValidSchema(), catalogs)
+      isDataMapExists(catalog.listAllValidSchema(), catalogs) &&
+      !isSegmentSetForMainTable(catalogs)
     } else {
       false
     }
@@ -136,4 +139,29 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
     }
     catalogs
   }
+
+  /**
+   * Check if any segments are set for main table for Query. If any segments are set, then
+   * skip mv datamap table for query
+   */
+  def isSegmentSetForMainTable(catalogs: Seq[Option[CatalogTable]]): Boolean = {
+    catalogs.foreach { c =>
+      val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+      if (carbonSessionInfo != null) {
+        val segmentsToQuery = carbonSessionInfo.getSessionParams
+          .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+                       c.get.identifier.database.get + "." +
+                       c.get.identifier.table, "")
+        if (segmentsToQuery.isEmpty || segmentsToQuery.equalsIgnoreCase("*")) {
+          return false
+        } else {
+          return true
+        }
+      } else {
+        return false
+      }
+    }
+    false
+  }
+
 }

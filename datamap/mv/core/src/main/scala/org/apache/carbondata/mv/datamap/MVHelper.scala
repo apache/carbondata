@@ -27,14 +27,17 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Expression, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Join, LogicalPlan, Project}
 import org.apache.spark.sql.execution.command.{Field, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, RelationIdentifier}
 import org.apache.carbondata.datamap.DataMapManager
@@ -81,6 +84,7 @@ object MVHelper {
     dmProperties.foreach(t => tableProperties.put(t._1, t._2))
 
     val selectTables = getTables(logicalPlan)
+    val parentTables = new util.ArrayList[String]()
     selectTables.foreach { selectTable =>
       val mainCarbonTable = try {
         Some(CarbonEnv.getCarbonTable(selectTable.identifier.database,
@@ -89,12 +93,14 @@ object MVHelper {
         // Exception handling if it's not a CarbonTable
         case ex : Exception => None
       }
-
+      parentTables.add(mainCarbonTable.get.getTableName)
       if (!mainCarbonTable.isEmpty && mainCarbonTable.get.isStreamingSink) {
         throw new MalformedCarbonCommandException(
           s"Streaming table does not support creating MV datamap")
       }
     }
+    tableProperties.put(CarbonCommonConstants.DATAMAP_NAME, dataMapSchema.getDataMapName)
+    tableProperties.put(CarbonCommonConstants.PARENT_TABLES, parentTables.asScala.mkString(","))
 
     // TODO inherit the table properties like sort order, sort scope and block size from parent
     // tables to mv datamap table
@@ -127,14 +133,20 @@ object MVHelper {
     dataMapSchema
       .setRelationIdentifier(new RelationIdentifier(tableIdentifier.database.get,
         tableIdentifier.table,
-        ""))
+        CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession).getTableId))
 
     val parentIdents = selectTables.map { table =>
-      new RelationIdentifier(table.database, table.identifier.table, "")
+      val relationIdentifier = new RelationIdentifier(table.database, table.identifier.table, "")
+      relationIdentifier.setTablePath(FileFactory.getUpdatedFilePath(table.location.toString))
+      relationIdentifier
     }
+    dataMapSchema.getRelationIdentifier.setTablePath(tablePath)
     dataMapSchema.setParentTables(new util.ArrayList[RelationIdentifier](parentIdents.asJava))
     dataMapSchema.getProperties.put("full_refresh", fullRebuild.toString)
     DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema)
+    if (dataMapSchema.isLazy) {
+      DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
+    }
   }
 
   private def validateMVQuery(sparkSession: SparkSession,
@@ -240,6 +252,12 @@ object MVHelper {
           case _ => false
         }.isDefined || isFullReload
         exp
+    }
+    // TODO:- Remove this case when incremental datalaoding is supported for multiple tables
+    logicalPlan.transformDown {
+      case join@Join(l1, l2, jointype, condition) =>
+        isFullReload = true
+        join
     }
     isFullReload
   }

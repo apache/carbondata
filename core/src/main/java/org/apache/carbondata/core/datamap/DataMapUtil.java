@@ -30,7 +30,9 @@ import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
@@ -250,4 +252,22 @@ public class DataMapUtil {
     return ssm.getValidAndInvalidSegments();
   }
 
+  /**
+   * Returns valid segment list for a given RelationIdentifier
+   *
+   * @param relationIdentifier get list of segments for relation identifier
+   * @return list of valid segment id's
+   * @throws IOException
+   */
+  public static List<String> getMainTableValidSegmentList(RelationIdentifier relationIdentifier)
+      throws IOException {
+    List<String> segmentList = new ArrayList<>();
+    List<Segment> validSegments = new SegmentStatusManager(AbsoluteTableIdentifier
+        .from(relationIdentifier.getTablePath(), relationIdentifier.getDatabaseName(),
+            relationIdentifier.getTableName())).getValidAndInvalidSegments().getValidSegments();
+    for (Segment segment : validSegments) {
+      segmentList.add(segment.getSegmentNo());
+    }
+    return segmentList;
+  }
 }

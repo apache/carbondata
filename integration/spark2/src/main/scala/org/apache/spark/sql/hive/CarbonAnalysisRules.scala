@@ -35,7 +35,9 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, DataMapUtil}
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
@@ -69,9 +71,21 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
             "Update operation is not supported for pre-aggregate table")
         }
         val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-        if (!indexSchemas.isEmpty) {
+        if (CarbonTable.hasMVDataMap(carbonTable)) {
+          val allDataMapSchemas = DataMapStoreManager.getInstance
+            .getDataMapSchemasOfTable(carbonTable).asScala
+            .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
+                                     !dataMapSchema.isIndexDataMap).asJava
+          allDataMapSchemas.asScala.foreach { dataMapSchema =>
+            DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
+          }
+        } else if (!indexSchemas.isEmpty) {
           throw new UnsupportedOperationException(
             "Update operation is not supported for table which has index datamaps")
+        }
+        if (carbonTable.isChildTable) {
+          throw new UnsupportedOperationException(
+            "Update operation is not supported for mv datamap table")
         }
       }
       val tableRelation = if (SparkUtil.isSparkVersionEqualTo("2.1")) {
@@ -200,7 +214,15 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
               "Delete operation is not supported for pre-aggregate table")
           }
           val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-          if (!indexSchemas.isEmpty) {
+          if (CarbonTable.hasMVDataMap(carbonTable)) {
+            val allDataMapSchemas = DataMapStoreManager.getInstance
+              .getDataMapSchemasOfTable(carbonTable).asScala
+              .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
+                                       !dataMapSchema.isIndexDataMap).asJava
+            allDataMapSchemas.asScala.foreach { dataMapSchema =>
+              DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
+            }
+          } else if (!indexSchemas.isEmpty) {
             throw new UnsupportedOperationException(
               "Delete operation is not supported for table which has index datamaps")
           }

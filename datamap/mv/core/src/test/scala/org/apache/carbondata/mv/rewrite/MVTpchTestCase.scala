@@ -71,7 +71,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create datamap with tpch1") {
     sql(s"drop datamap if exists datamap1")
     sql("create datamap datamap1 using 'mv' as select l_returnflag, l_linestatus,l_shipdate, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, sum(l_extendedprice*(1-l_discount)) as sum_disc_price, sum(l_extendedprice*(1-l_discount)*(1+l_tax)) as sum_charge,count(*) as count_order from lineitem group by l_returnflag, l_linestatus,l_shipdate")
-    sql(s"rebuild datamap datamap1")
     val df = sql("select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, sum(l_extendedprice*(1-l_discount)) as sum_disc_price, sum(l_extendedprice*(1-l_discount)*(1+l_tax)) as sum_charge,count(*) as count_order from lineitem where l_shipdate <= date('1998-09-02') group by l_returnflag, l_linestatus order by l_returnflag, l_linestatus")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap1"))
@@ -82,7 +81,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create datamap with tpch1 with order") {
     sql(s"drop datamap if exists datamap2")
     sql("create datamap datamap2 using 'mv' as select l_returnflag, l_linestatus,l_shipdate, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, sum(l_extendedprice*(1-l_discount)) as sum_disc_price, sum(l_extendedprice*(1-l_discount)*(1+l_tax)) as sum_charge from lineitem group by l_returnflag, l_linestatus,l_shipdate order by l_returnflag, l_linestatus")
-    sql(s"rebuild datamap datamap2")
     val df = sql("select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, sum(l_extendedprice*(1-l_discount)) as sum_disc_price, sum(l_extendedprice*(1-l_discount)*(1+l_tax)) as sum_charge from lineitem where l_shipdate <= date('1998-09-02') group by l_returnflag, l_linestatus order by l_returnflag, l_linestatus")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap2"))
@@ -93,7 +91,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create datamap with tpch1 with sub group by") {
     sql(s"drop datamap if exists datamap3")
     sql("create datamap datamap3 using 'mv' as select l_returnflag, l_linestatus,l_shipdate, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, sum(l_extendedprice*(1-l_discount)) as sum_disc_price, sum(l_extendedprice*(1-l_discount)*(1+l_tax)) as sum_charge from lineitem group by l_returnflag, l_linestatus,l_shipdate")
-    sql(s"rebuild datamap datamap3")
     val df = sql("select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, sum(l_extendedprice*(1-l_discount)) as sum_disc_price from lineitem where l_shipdate <= date('1998-09-02') group by l_returnflag, l_linestatus order by l_returnflag, l_linestatus")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap3"))
@@ -104,7 +101,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   ignore("test create datamap with tpch3") {
     sql(s"drop datamap if exists datamap4")
     sql("create datamap datamap4 using 'mv' as select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate < date('1995-03-15') and l_shipdate > date('1995-03-15') group by l_orderkey, o_orderdate, o_shippriority")
-    sql(s"rebuild datamap datamap4")
     val df = sql("select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate < date('1995-03-15') and l_shipdate > date('1995-03-15') group by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate limit 10")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap4"))
@@ -115,7 +111,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create datamap with tpch3 with no filters on mv") {
     sql(s"drop datamap if exists datamap5")
     sql("create datamap datamap5 using 'mv' as select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority,c_mktsegment,l_shipdate from customer, orders, lineitem where c_custkey = o_custkey and l_orderkey = o_orderkey group by l_orderkey, o_orderdate, o_shippriority,c_mktsegment,l_shipdate")
-    sql(s"rebuild datamap datamap5")
     val df = sql("select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate < date('1995-03-15') and l_shipdate > date('1995-03-15') group by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate limit 10")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap5"))
@@ -126,7 +121,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   ignore("test create datamap with tpch3 with filters on mv and all filter columns on projection") {
     sql(s"drop datamap if exists datamap5")
     sql("create datamap datamap5 using 'mv' as select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority,c_mktsegment,l_shipdate from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate < date('1995-03-15') and l_shipdate > date('1995-03-15') group by l_orderkey, o_orderdate, o_shippriority,c_mktsegment,l_shipdate")
-    sql(s"rebuild datamap datamap5")
     val df = sql("select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate < date('1995-03-15') and l_shipdate > date('1995-03-15') group by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate limit 10")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap5"))
@@ -137,7 +131,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   ignore("test create datamap with tpch4 (core issue)") {
     sql(s"drop datamap if exists datamap6")
     sql("create datamap datamap6 using 'mv' as select o_orderpriority, count(*) as order_count from orders where o_orderdate >= date('1993-07-01') and o_orderdate < date('1993-10-01') and exists ( select * from lineitem where l_orderkey = o_orderkey and l_commitdate < l_receiptdate ) group by o_orderpriority order by o_orderpriority")
-    sql(s"rebuild datamap datamap6")
     val df = sql("select o_orderpriority, count(*) as order_count from orders where o_orderdate >= date('1993-07-01') and o_orderdate < date('1993-10-01') and exists ( select * from lineitem where l_orderkey = o_orderkey and l_commitdate < l_receiptdate ) group by o_orderpriority order by o_orderpriority")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap6"))
@@ -148,7 +141,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   ignore("test create datamap with tpch5") {
     sql(s"drop datamap if exists datamap7")
     sql("create datamap datamap7 using 'mv' as select n_name, sum(l_extendedprice * (1 - l_discount)) as revenue from customer, orders, lineitem, supplier, nation, region where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'ASIA' and o_orderdate >= date('1994-01-01') and o_orderdate < date('1995-01-01') group by n_name")
-    sql(s"rebuild datamap datamap7")
     val df = sql("select n_name, sum(l_extendedprice * (1 - l_discount)) as revenue from customer, orders, lineitem, supplier, nation, region where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'ASIA' and o_orderdate >= date('1994-01-01') and o_orderdate < date('1995-01-01') group by n_name order by revenue desc")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap7"))
@@ -159,7 +151,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create datamap with tpch5 with no filters on mv") {
     sql(s"drop datamap if exists datamap8")
     sql("create datamap datamap8 using 'mv' as select n_name,o_orderdate,r_name, sum(l_extendedprice * (1 - l_discount)) as revenue from customer, orders, lineitem, supplier, nation, region where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey  group by n_name,o_orderdate,r_name")
-    sql(s"rebuild datamap datamap8")
     val df = sql("select n_name, sum(l_extendedprice * (1 - l_discount)) as revenue from customer, orders, lineitem, supplier, nation, region where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'ASIA' and o_orderdate >= date('1994-01-01') and o_orderdate < date('1995-01-01') group by n_name order by revenue desc")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap8"))
@@ -170,7 +161,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create datamap with tpch6") {
     sql(s"drop datamap if exists datamap9")
     sql("create datamap datamap9 using 'mv' as select sum(l_extendedprice * l_discount) as revenue from lineitem where l_shipdate >= date('1994-01-01') and l_shipdate < date('1995-01-01') and l_discount between 0.05 and 0.07 and l_quantity < 24")
-    sql(s"rebuild datamap datamap9")
     val df = sql("select sum(l_extendedprice * l_discount) as revenue from lineitem where l_shipdate >= date('1994-01-01') and l_shipdate < date('1995-01-01') and l_discount between 0.05 and 0.07 and l_quantity < 24")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap9"))
@@ -182,7 +172,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create datamap with tpch6 with no filters on mv") {
     sql(s"drop datamap if exists datamap10")
     sql("create datamap datamap10 using 'mv' as select sum(l_extendedprice * l_discount) as revenue,l_shipdate,l_discount,l_quantity from lineitem group by l_shipdate,l_discount,l_quantity")
-    sql(s"rebuild datamap datamap10")
     val df = sql("select sum(l_extendedprice * l_discount) as revenue from lineitem where l_shipdate >= date('1994-01-01') and l_shipdate < date('1995-01-01') and l_discount between 0.05 and 0.07 and l_quantity < 24")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap10"))
@@ -194,7 +183,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create datamap with tpch7 part of query1") {
     sql(s"drop datamap if exists datamap11")
     sql("create datamap datamap11 using 'mv' as select l_shipdate,n_name , l_extendedprice , l_discount from supplier,lineitem,orders,customer,nation n1 where s_suppkey = l_suppkey and o_orderkey = l_orderkey and c_custkey = o_custkey and s_nationkey = n1.n_nationkey and c_nationkey = n1.n_nationkey")
-    sql(s"rebuild datamap datamap11")
     val df = sql("select year(l_shipdate) as l_year, l_extendedprice * (1 - l_discount) as volume from supplier,lineitem,orders,customer,nation n1 where s_suppkey = l_suppkey and o_orderkey = l_orderkey and c_custkey = o_custkey and s_nationkey = n1.n_nationkey and c_nationkey = n1.n_nationkey and ( (n1.n_name = 'FRANCE') or (n1.n_name = 'GERMANY') ) and l_shipdate between date('1995-01-01') and date('1996-12-31')")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap11"))
@@ -205,7 +193,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create datamap with tpch7 part of query2 (core issue)") {
     sql(s"drop datamap if exists datamap12")
     sql("create datamap datamap12 using 'mv' as select n1.n_name, l_shipdate, l_extendedprice ,l_discount from supplier,lineitem,orders,customer,nation n1 where s_suppkey = l_suppkey and o_orderkey = l_orderkey and c_custkey = o_custkey and s_nationkey = n1.n_nationkey and c_nationkey = n1.n_nationkey")
-    sql(s"rebuild datamap datamap12")
     val df = sql("select supp_nation, l_year, sum(volume) as revenue from ( select n1.n_name as supp_nation, year(l_shipdate) as l_year, l_extendedprice * (1 - l_discount) as volume from supplier,lineitem,orders,customer,nation n1 where s_suppkey = l_suppkey and o_orderkey = l_orderkey and c_custkey = o_custkey and s_nationkey = n1.n_nationkey and c_nationkey = n1.n_nationkey and ( (n1.n_name = 'FRANCE' ) or (n1.n_name = 'GERMANY') ) and l_shipdate between date('1995-01-01') and date('1996-12-31') ) as shipping group by supp_nation, l_year order by supp_nation, l_year")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap12"))
@@ -216,7 +203,6 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
   ignore("test create datamap with tpch7 part of query3 (self join issue)") {
     sql(s"drop datamap if exists datamap13")
     sql("create datamap datamap13 using 'mv' as select n1.n_name as supp_nation, n2.n_name as cust_nation, l_shipdate, l_extendedprice * (1 - l_discount) as volume from supplier,lineitem,orders,customer,nation n1,nation n2 where s_suppkey = l_suppkey and o_orderkey = l_orderkey and c_custkey = o_custkey and s_nationkey = n1.n_nationkey and c_nationkey = n2.n_nationkey")
-    sql(s"rebuild datamap datamap13")
     val df = sql("select supp_nation, cust_nation, l_year, sum(volume) as revenue from ( select n1.n_name as supp_nation, n2.n_name as cust_nation, year(l_shipdate) as l_year, l_extendedprice * (1 - l_discount) as volume from supplier,lineitem,orders,customer,nation n1,nation n2 where s_suppkey = l_suppkey and o_orderkey = l_orderkey and c_custkey = o_custkey and s_nationkey = n1.n_nationkey and c_nationkey = n2.n_nationkey and ( (n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY') or (n1.n_name = 'GERMANY' and n2.n_name = 'FRANCE') ) and l_shipdate between date('1995-01-01') and date('1996-12-31') ) as shipping group by supp_nation, cust_nation, l_year order by supp_nation, cust_nation, l_year")
     val analyzed = df.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap13"))
