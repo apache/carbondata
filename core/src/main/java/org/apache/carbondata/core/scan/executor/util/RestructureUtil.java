@@ -447,6 +447,7 @@ public class RestructureUtil {
       if (!measureExistsInCurrentBlock[index]) {
         defaultValues[index] = getMeasureDefaultValue(queryMeasure.getMeasure().getColumnSchema(),
             queryMeasure.getMeasure().getDefaultValue());
+        measureDataTypes[index] = queryMeasure.getMeasure().getDataType();
         blockExecutionInfo.setRestructuredBlock(true);
       }
       index++;

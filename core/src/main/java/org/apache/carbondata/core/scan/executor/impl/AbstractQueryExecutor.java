@@ -472,9 +472,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
     blockExecutionInfo.setProjectionDimensions(projectDimensions
         .toArray(new ProjectionDimension[projectDimensions.size()]));
-
-
-
     // get measures present in the current block
     List<ProjectionMeasure> projectionMeasures = RestructureUtil
         .createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,
