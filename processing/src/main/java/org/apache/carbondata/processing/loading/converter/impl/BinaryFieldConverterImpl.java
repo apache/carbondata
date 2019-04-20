@@ -57,7 +57,7 @@ public class BinaryFieldConverterImpl implements FieldConverter {
   public void convert(CarbonRow row, BadRecordLogHolder logHolder)
       throws CarbonDataLoadingException {
     if (row.getObject(index) instanceof String) {
-      row.update(((String) row.getObject(index))
+      row.update((((String) row.getObject(index)))
           .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)), index);
     } else if (row.getObject(index) instanceof byte[]) {
       row.update(row.getObject(index), index);

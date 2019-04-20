@@ -76,35 +76,36 @@ class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndA
         if (SparkUtil.isSparkVersionXandAbove("2.2")) {
             sql(s"CREATE EXTERNAL TABLE binaryCarbon STORED BY 'carbondata' LOCATION '$writerPath'")
             sql(s"CREATE TABLE binaryCarbon3 STORED BY 'carbondata' LOCATION '$outputPath'" + " AS SELECT * FROM binaryCarbon")
-        }
-        checkAnswer(sql("SELECT COUNT(*) FROM binaryCarbon"),
-            Seq(Row(3)))
-        checkAnswer(sql("SELECT COUNT(*) FROM binaryCarbon3"),
-            Seq(Row(3)))
 
-        val result = sql("desc formatted binaryCarbon").collect()
-        var flag = false
-        result.foreach { each =>
-            if ("binary".equals(each.get(1))) {
-                flag = true
+            checkAnswer(sql("SELECT COUNT(*) FROM binaryCarbon"),
+                Seq(Row(3)))
+            checkAnswer(sql("SELECT COUNT(*) FROM binaryCarbon3"),
+                Seq(Row(3)))
+
+            val result = sql("desc formatted binaryCarbon").collect()
+            var flag = false
+            result.foreach { each =>
+                if ("binary".equals(each.get(1))) {
+                    flag = true
+                }
             }
-        }
-        assert(flag)
-        val value = sql("SELECT * FROM binaryCarbon").collect()
-        assert(3 == value.length)
-        value.foreach { each =>
-            val byteArray = each.getAs[Array[Byte]](2)
-            assert(new String(byteArray).startsWith("����\u0000\u0010JFIF"))
-        }
+            assert(flag)
+            val value = sql("SELECT * FROM binaryCarbon").collect()
+            assert(3 == value.length)
+            value.foreach { each =>
+                val byteArray = each.getAs[Array[Byte]](2)
+                assert(new String(byteArray).startsWith("����\u0000\u0010JFIF"))
+            }
 
-        val value3 = sql("SELECT * FROM binaryCarbon3").collect()
-        assert(3 == value3.length)
-        value3.foreach { each =>
-            val byteArray = each.getAs[Array[Byte]](2)
-            assert(new String(byteArray).startsWith("����\u0000\u0010JFIF"))
+            val value3 = sql("SELECT * FROM binaryCarbon3").collect()
+            assert(3 == value3.length)
+            value3.foreach { each =>
+                val byteArray = each.getAs[Array[Byte]](2)
+                assert(new String(byteArray).startsWith("����\u0000\u0010JFIF"))
+            }
+            sql("DROP TABLE IF EXISTS binaryCarbon")
+            sql("DROP TABLE IF EXISTS binaryCarbon3")
         }
-        sql("DROP TABLE IF EXISTS binaryCarbon")
-        sql("DROP TABLE IF EXISTS binaryCarbon3")
     }
 
     test("Don't support insert into partition table") {
@@ -131,30 +132,31 @@ class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndA
                    |    labelName STRING,
                    |    labelContent STRING
                    |)  partitioned by ( binary BINARY) STORED BY 'carbondata'""".stripMargin)
+
+            sql("insert into binaryCarbon2 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
+            val carbonResult2 = sql("SELECT * FROM binaryCarbon2")
+
+            sql("create table binaryCarbon4 STORED BY 'carbondata' select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
+            val carbonResult4 = sql("SELECT * FROM binaryCarbon4")
+            val carbonResult = sql("SELECT * FROM binaryCarbon")
+
+            assert(3 == carbonResult.collect().length)
+            assert(1 == carbonResult4.collect().length)
+            assert(1 == carbonResult2.collect().length)
+            checkAnswer(carbonResult4, carbonResult2)
+
+            try {
+                sql("insert into binaryCarbon3 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
+                assert(false)
+            } catch {
+                case e: Exception =>
+                    e.printStackTrace()
+                    assert(true)
+            }
+            sql("DROP TABLE IF EXISTS binaryCarbon")
+            sql("DROP TABLE IF EXISTS binaryCarbon2")
+            sql("DROP TABLE IF EXISTS binaryCarbon3")
+            sql("DROP TABLE IF EXISTS binaryCarbon4")
         }
-        sql("insert into binaryCarbon2 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
-        val carbonResult2 = sql("SELECT * FROM binaryCarbon2")
-
-        sql("create table binaryCarbon4 STORED BY 'carbondata' select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
-        val carbonResult4 = sql("SELECT * FROM binaryCarbon4")
-        val carbonResult = sql("SELECT * FROM binaryCarbon")
-
-        assert(3 == carbonResult.collect().length)
-        assert(1 == carbonResult4.collect().length)
-        assert(1 == carbonResult2.collect().length)
-        checkAnswer(carbonResult4, carbonResult2)
-
-        try {
-            sql("insert into binaryCarbon3 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
-            assert(false)
-        } catch {
-            case e: Exception =>
-                e.printStackTrace()
-                assert(true)
-        }
-        sql("DROP TABLE IF EXISTS binaryCarbon")
-        sql("DROP TABLE IF EXISTS binaryCarbon2")
-        sql("DROP TABLE IF EXISTS binaryCarbon3")
-        sql("DROP TABLE IF EXISTS binaryCarbon4")
     }
 }

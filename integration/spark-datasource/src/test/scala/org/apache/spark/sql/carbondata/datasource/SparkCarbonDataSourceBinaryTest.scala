@@ -46,6 +46,7 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
 
     def buildTestBinaryData(): Any = {
         FileUtils.deleteDirectory(new File(writerPath))
+        FileUtils.deleteDirectory(new File(outputPath))
 
         val sourceImageFolder = sdkPath + "/src/test/resources/image/flowers"
         val sufAnnotation = ".txt"
@@ -84,6 +85,7 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
     test("Test read image carbon with spark carbon file format, generate by sdk, CTAS") {
         sql("DROP TABLE IF EXISTS binaryCarbon")
         sql("DROP TABLE IF EXISTS binaryCarbon3")
+        FileUtils.deleteDirectory(new File(outputPath))
         if (SparkUtil.isSparkVersionEqualTo("2.1")) {
             sql(s"CREATE TABLE binaryCarbon USING CARBON OPTIONS(PATH '$writerPath')")
             sql(s"CREATE TABLE binaryCarbon3 USING CARBON OPTIONS(PATH '$outputPath')" + " AS SELECT * FROM binaryCarbon")
@@ -97,6 +99,7 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
             Seq(Row(3)))
         sql("DROP TABLE IF EXISTS binaryCarbon")
         sql("DROP TABLE IF EXISTS binaryCarbon3")
+        FileUtils.deleteDirectory(new File(outputPath))
     }
 
     test("Don't support sort_columns") {
@@ -140,11 +143,11 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
     }
 
     test("Don't support insert into partition table") {
-        sql("DROP TABLE IF EXISTS binaryCarbon")
-        sql("DROP TABLE IF EXISTS binaryCarbon2")
-        sql("DROP TABLE IF EXISTS binaryCarbon3")
-        sql("DROP TABLE IF EXISTS binaryCarbon4")
         if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+            sql("DROP TABLE IF EXISTS binaryCarbon")
+            sql("DROP TABLE IF EXISTS binaryCarbon2")
+            sql("DROP TABLE IF EXISTS binaryCarbon3")
+            sql("DROP TABLE IF EXISTS binaryCarbon4")
             sql(s"CREATE TABLE binaryCarbon USING CARBON LOCATION '$writerPath'")
             sql(
                 s"""
@@ -165,36 +168,38 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
                    |    labelContent STRING
                    |) USING CARBON partitioned by (binary) """.stripMargin)
             sql("select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0").show()
+
+            sql("insert into binaryCarbon2 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
+            val carbonResult2 = sql("SELECT * FROM binaryCarbon2")
+
+            sql("create table binaryCarbon4 using carbon select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
+            val carbonResult4 = sql("SELECT * FROM binaryCarbon4")
+            val carbonResult = sql("SELECT * FROM binaryCarbon")
+
+            assert(3 == carbonResult.collect().length)
+            assert(1 == carbonResult4.collect().length)
+            assert(1 == carbonResult2.collect().length)
+            checkAnswer(carbonResult4, carbonResult2)
+
+            try {
+                sql("insert into binaryCarbon3 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
+                assert(false)
+            } catch {
+                case e: Exception =>
+                    e.printStackTrace()
+                    assert(true)
+            }
+            sql("DROP TABLE IF EXISTS binaryCarbon")
+            sql("DROP TABLE IF EXISTS binaryCarbon2")
+            sql("DROP TABLE IF EXISTS binaryCarbon3")
+            sql("DROP TABLE IF EXISTS binaryCarbon4")
         }
-        sql("insert into binaryCarbon2 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
-        val carbonResult2 = sql("SELECT * FROM binaryCarbon2")
-
-        sql("create table binaryCarbon4 using carbon select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
-        val carbonResult4 = sql("SELECT * FROM binaryCarbon4")
-        val carbonResult = sql("SELECT * FROM binaryCarbon")
-
-        assert(3 == carbonResult.collect().length)
-        assert(1 == carbonResult4.collect().length)
-        assert(1 == carbonResult2.collect().length)
-        checkAnswer(carbonResult4, carbonResult2)
-
-        try {
-            sql("insert into binaryCarbon3 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
-            assert(false)
-        } catch {
-            case e: Exception =>
-                e.printStackTrace()
-                assert(true)
-        }
-        sql("DROP TABLE IF EXISTS binaryCarbon")
-        sql("DROP TABLE IF EXISTS binaryCarbon2")
-        sql("DROP TABLE IF EXISTS binaryCarbon3")
-        sql("DROP TABLE IF EXISTS binaryCarbon4")
     }
 
     test("Test unsafe as false") {
         CarbonProperties.getInstance()
                 .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
+        FileUtils.deleteDirectory(new File(outputPath))
         sql("DROP TABLE IF EXISTS binaryCarbon")
         sql("DROP TABLE IF EXISTS binaryCarbon3")
         if (SparkUtil.isSparkVersionEqualTo("2.1")) {
@@ -211,6 +216,7 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
         sql("DROP TABLE IF EXISTS binaryCarbon")
         sql("DROP TABLE IF EXISTS binaryCarbon3")
 
+        FileUtils.deleteDirectory(new File(outputPath))
         CarbonProperties.getInstance()
                 .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
                     CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
@@ -281,6 +287,71 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
         assert(4 == hiveResult3.collect().length)
     }
 
+    test("insert into for parquet and carbon, CTAS") {
+        sql("DROP TABLE IF EXISTS parquetTable")
+        sql("DROP TABLE IF EXISTS carbontable")
+        sql("DROP TABLE IF EXISTS parquetTable2")
+        sql("DROP TABLE IF EXISTS carbontable2")
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS parquettable (
+               |    id int,
+               |    label boolean,
+               |    name string,
+               |    image binary,
+               |    autoLabel boolean)
+               | using parquet
+             """.stripMargin)
+        sql("insert into parquettable values(1,true,'Bob','binary',false)")
+        sql("insert into parquettable values(2,false,'Xu','test',true)")
+
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS carbontable (
+               |    id int,
+               |    label boolean,
+               |    name string,
+               |    image binary,
+               |    autoLabel boolean)
+               | using carbon
+             """.stripMargin)
+        sql("insert into carbontable values(1,true,'Bob','binary',false)")
+        sql("insert into carbontable values(2,false,'Xu','test',true)")
+        val carbonResult = sql("SELECT * FROM carbontable")
+        val parquetResult = sql("SELECT * FROM parquettable")
+
+        assert(2 == carbonResult.collect().length)
+        assert(2 == parquetResult.collect().length)
+        checkAnswer(parquetResult, carbonResult)
+        carbonResult.collect().foreach { each =>
+            if (1 == each.get(0)) {
+                assert("binary".equals(new String(each.getAs[Array[Byte]](3))))
+            } else if (2 == each.get(0)) {
+                assert("test".equals(new String(each.getAs[Array[Byte]](3))))
+            } else {
+                assert(false)
+            }
+        }
+
+        sql("CREATE TABLE parquettable2 AS SELECT * FROM carbontable")
+        sql("CREATE TABLE carbontable2  USING CARBON AS SELECT * FROM parquettable")
+        val carbonResult2 = sql("SELECT * FROM carbontable2")
+        val parquetResult2 = sql("SELECT * FROM parquettable2")
+        checkAnswer(parquetResult2, carbonResult2)
+        checkAnswer(carbonResult, carbonResult2)
+        checkAnswer(parquetResult, parquetResult2)
+        assert(2 == carbonResult2.collect().length)
+        assert(2 == parquetResult2.collect().length)
+
+        sql("INSERT INTO parquettable2 SELECT * FROM carbontable")
+        sql("INSERT INTO carbontable2 SELECT * FROM parquettable")
+        val carbonResult3 = sql("SELECT * FROM carbontable2")
+        val parquetResult3 = sql("SELECT * FROM parquettable2")
+        checkAnswer(carbonResult3, parquetResult3)
+        assert(4 == carbonResult3.collect().length)
+        assert(4 == parquetResult3.collect().length)
+    }
+
     test("insert into carbon as select from hive after hive load data") {
         sql("DROP TABLE IF EXISTS hiveTable")
         sql("DROP TABLE IF EXISTS carbontable")
@@ -326,7 +397,8 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
             } else if (1 == each.get(0)) {
                 assert("\u0001education\u0002".equals(new String(each.getAs[Array[Byte]](3))))
             } else if (3 == each.get(0)) {
-                assert("\u0001biology\u0002".equals(new String(each.getAs[Array[Byte]](3))))
+                assert("".equals(new String(each.getAs[Array[Byte]](3)))
+                        || "\u0001biology\u0002".equals(new String(each.getAs[Array[Byte]](3))))
             } else {
                 assert(false)
             }
@@ -382,8 +454,8 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
         sql("insert into carbontable values(2,false,'Xu','test',true)")
 
         // filter with equal
-        val hiveResult = sql("SELECT * FROM hivetable where image='binary'")
-        val carbonResult = sql("SELECT * FROM carbontable where image='binary'")
+        val hiveResult = sql("SELECT * FROM hivetable where image=cast('binary' as binary)")
+        val carbonResult = sql("SELECT * FROM carbontable where image=cast('binary' as binary)")
 
         checkAnswer(hiveResult, carbonResult)
         assert(1 == carbonResult.collect().length)
@@ -399,8 +471,8 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
         assert(exception.getMessage.contains("cannot resolve '`binary`' given input columns"))
 
         // filter with not equal
-        val hiveResult3 = sql("SELECT * FROM hivetable where image!='binary'")
-        val carbonResult3 = sql("SELECT * FROM carbontable where image!='binary'")
+        val hiveResult3 = sql("SELECT * FROM hivetable where image!=cast('binary' as binary)")
+        val carbonResult3 = sql("SELECT * FROM carbontable where image!=cast('binary' as binary)")
         checkAnswer(hiveResult3, carbonResult3)
         assert(1 == carbonResult3.collect().length)
         carbonResult3.collect().foreach { each =>
