@@ -379,17 +379,17 @@ public class TableInfo implements Serializable, Writable {
   private void updateHasColumnDrift() {
     List<ColumnSchema> columnDrift = new ArrayList<>();
     List<ColumnSchema> listOfColumns = factTable.getListOfColumns();
-    for(ColumnSchema columnSchema: listOfColumns) {
+    for (ColumnSchema columnSchema : listOfColumns) {
       if (columnSchema.isDimensionColumn() && !columnSchema.isInvisible()) {
         Map<String, String> columnProperties = columnSchema.getColumnProperties();
         if (columnProperties != null) {
-          if(columnProperties.get(CarbonCommonConstants.COLUMN_DRIFT) != null) {
+          if (columnProperties.get(CarbonCommonConstants.COLUMN_DRIFT) != null) {
             columnDrift.add(columnSchema);
           }
         }
       }
     }
-    this.hasColumnDrift = ! columnDrift.isEmpty();
+    this.hasColumnDrift = !columnDrift.isEmpty();
   }
 
   public boolean hasColumnDrift() {

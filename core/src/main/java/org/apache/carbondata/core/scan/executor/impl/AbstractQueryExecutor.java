@@ -447,29 +447,15 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
-
-    // if the measure became to the dimension, move it out from the dimension projection
-    List<ProjectionDimension> actualQueryDimensions = queryModel.getProjectionDimensions();
-    if (queryModel.getTable().hasColumnDrift()) {
-      actualQueryDimensions = RestructureUtil
-          .updateProjectionDimensions(actualQueryDimensions, segmentProperties.getMeasures(),
-              queryModel.getTable().getTableInfo().isTransactionalTable());
-    }
-    // if the measure became the dimension, add it into the measure projection
-    List<ProjectionMeasure> actualQueryMeasures = queryModel.getProjectionMeasures();
-    if (queryModel.getTable().hasColumnDrift()) {
-      actualQueryMeasures = RestructureUtil
-          .updateProjectionMeasures(queryModel.getProjectionDimensions(),
-              queryModel.getProjectionMeasures(), segmentProperties.getMeasures(),
-              queryModel.getTable().getTableInfo().isTransactionalTable());
-    }
-
+    // set actual query dimensions and measures. It may differ in case of restructure scenarios
+    RestructureUtil.actualProjectionOfSegment(blockExecutionInfo, queryModel, segmentProperties);
     // below is to get only those dimension in query which is present in the
     // table block
     List<ProjectionDimension> projectDimensions = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
-            actualQueryDimensions, segmentProperties.getDimensions(),
-            segmentProperties.getComplexDimensions(), actualQueryMeasures.size(),
+            blockExecutionInfo.getActualQueryDimensions(), segmentProperties.getDimensions(),
+            segmentProperties.getComplexDimensions(),
+            blockExecutionInfo.getActualQueryMeasures().length,
             queryModel.getTable().getTableInfo().isTransactionalTable());
     boolean isStandardTable = CarbonUtil.isStandardCarbonTable(queryModel.getTable());
     String blockId = CarbonUtil
@@ -492,7 +478,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // get measures present in the current block
     List<ProjectionMeasure> projectionMeasures = RestructureUtil
         .createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,
-            actualQueryMeasures, segmentProperties.getMeasures(),
+            blockExecutionInfo.getActualQueryMeasures(), segmentProperties.getMeasures(),
             queryModel.getTable().getTableInfo().isTransactionalTable());
     blockExecutionInfo.setProjectionMeasures(
         projectionMeasures.toArray(new ProjectionMeasure[projectionMeasures.size()]));
@@ -643,11 +629,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setComplexColumnParentBlockIndexes(
         getComplexDimensionParentBlockIndexes(projectDimensions));
     blockExecutionInfo.setVectorBatchCollector(queryModel.isVectorReader());
-    // set actual query dimensions and measures. It may differ in case of restructure scenarios
-    blockExecutionInfo.setActualQueryDimensions(actualQueryDimensions
-        .toArray(new ProjectionDimension[actualQueryDimensions.size()]));
-    blockExecutionInfo.setActualQueryMeasures(actualQueryMeasures
-        .toArray(new ProjectionMeasure[actualQueryMeasures.size()]));
     DataTypeUtil.setDataTypeConverter(queryModel.getConverter());
     blockExecutionInfo.setRequiredRowId(queryModel.isRequiredRowId());
     return blockExecutionInfo;
