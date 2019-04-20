@@ -21,15 +21,31 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+      "yyyy-MM-dd")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      "yyyy-MM-dd HH:mm:ss")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     dropTable()
     prepareTable()
   }
 
   override def afterAll(): Unit = {
-     dropTable()
+    dropTable()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 
   private def prepareTable(): Unit = {
@@ -89,7 +105,6 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
            | bigIntField bigint,
            | floatField float,
            | doubleField double,
-           | decimalField decimal(25, 4),
            | timestampField timestamp,
            | dateField date,
            | stringField string
@@ -97,8 +112,28 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
            | stored as carbondata
       """.stripMargin)
     }
+    // decimalField decimal(25, 4),
 
-
+    createTable(
+      "alter_sc_bloom",
+      Map("sort_scope"->"local_sort", "sort_columns"->"stringField")
+    )
+    createBloomDataMap("alter_sc_bloom", "alter_sc_bloom_dm1")
+    createTable(
+      "alter_sc_bloom_base",
+      Map("sort_scope"->"local_sort", "sort_columns"->"stringField")
+    )
+    createBloomDataMap("alter_sc_bloom_base", "alter_sc_bloom_base_dm1")
+    createTable(
+      "alter_sc_agg",
+      Map("sort_scope"->"local_sort", "sort_columns"->"intField")
+    )
+    createAggDataMap("alter_sc_agg", "alter_sc_agg_dm1")
+    createTable(
+      "alter_sc_agg_base",
+      Map("sort_scope"->"local_sort", "sort_columns"->"intField")
+    )
+    createAggDataMap("alter_sc_agg_base", "alter_sc_agg_base_dm1")
   }
 
   private def dropTable(): Unit = {
@@ -114,6 +149,10 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     sql(s"drop table if exists alter_sc_range_column_base")
     sql(s"drop table if exists alter_sc_add_column")
     sql(s"drop table if exists alter_sc_add_column_base")
+    sql(s"drop table if exists alter_sc_bloom")
+    sql(s"drop table if exists alter_sc_bloom_base")
+    sql(s"drop table if exists alter_sc_agg")
+    sql(s"drop table if exists alter_sc_agg_base")
   }
 
   private def createTable(
@@ -147,7 +186,6 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
          | bigIntField bigint,
          | floatField float,
          | doubleField double,
-         | decimalField decimal(25, 4),
          | timestampField timestamp,
          | dateField date,
          | stringField string,
@@ -158,12 +196,39 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
          | stored as carbondata
          | $tblPropertiesSql
       """.stripMargin)
+    // decimalField decimal(25, 4),
+  }
+
+  private def createBloomDataMap(tableName: String, dataMapName: String): Unit = {
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $tableName
+         | USING 'bloomfilter'
+         | DMPROPERTIES(
+         | 'INDEX_COLUMNS'='smallIntField,floatField,timestampField,dateField,stringField',
+         | 'BLOOM_SIZE'='6400',
+         | 'BLOOM_FPP'='0.001',
+         | 'BLOOM_COMPRESS'='TRUE')
+       """.stripMargin)
+  }
+
+  private def createAggDataMap(tableName: String, dataMapName: String): Unit = {
+    sql(s"create datamap PreAggSum$dataMapName on table $tableName using 'preaggregate' as " +
+        s"select stringField,sum(intField) as sum from $tableName group by stringField")
+    sql(s"create datamap PreAggAvg$dataMapName on table $tableName using 'preaggregate' as " +
+        s"select stringField,avg(intField) as avg from $tableName group by stringField")
+    sql(s"create datamap PreAggCount$dataMapName on table $tableName using 'preaggregate' as " +
+        s"select stringField,count(intField) as count from $tableName group by stringField")
+    sql(s"create datamap PreAggMin$dataMapName on table $tableName using 'preaggregate' as " +
+        s"select stringField,min(intField) as min from $tableName group by stringField")
+    sql(s"create datamap PreAggMax$dataMapName on table $tableName using 'preaggregate' as " +
+        s"select stringField,max(intField) as max from $tableName group by stringField")
   }
 
   private def loadData(tableNames: String*): Unit = {
     tableNames.foreach { tableName =>
       sql(
-        s"""load data local inpath '$resourcesPath/alldatatypeforpartition.csv'
+        s"""load data local inpath '$resourcesPath/sort_columns'
            | into table $tableName
            | options ('global_sort_partitions'='2', 'COMPLEX_DELIMITER_LEVEL_1'='$$', 'COMPLEX_DELIMITER_LEVEL_2'=':')
       """.stripMargin)
@@ -229,10 +294,10 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     assert(ex.getMessage.contains("SORT_COLUMNS Either having duplicate columns : stringField or it contains illegal argumnet"))
 
     // not supported data type
-    ex = intercept[RuntimeException] {
-      sql("alter table alter_sc_validate set tblproperties('sort_columns'='decimalField')")
-    }
-    assert(ex.getMessage.contains("sort_columns is unsupported for DECIMAL data type column: decimalField"))
+//    ex = intercept[RuntimeException] {
+//      sql("alter table alter_sc_validate set tblproperties('sort_columns'='decimalField')")
+//    }
+//    assert(ex.getMessage.contains("sort_columns is unsupported for DECIMAL data type column: decimalField"))
 
     ex = intercept[RuntimeException] {
       sql("alter table alter_sc_validate set tblproperties('sort_columns'='doubleField')")
@@ -292,56 +357,52 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
 
   private def testIUDAndQuery(tableName: String, baseTableName: String, insertTableName: String): Unit = {
     loadData(tableName, baseTableName)
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     // alter table to local_sort with new SORT_COLUMNS
     sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='timestampField, intField, stringField')")
     loadData(tableName, baseTableName)
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     // alter table to revert SORT_COLUMNS
     sql(s"alter table $tableName set tblproperties('sort_columns'='stringField, intField, timestampField')")
     loadData(tableName, baseTableName)
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     // alter table to change SORT_COLUMNS
     sql(s"alter table $tableName set tblproperties('sort_columns'='smallIntField, stringField, intField')")
     loadData(tableName, baseTableName)
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     // alter table to change SORT_SCOPE and SORT_COLUMNS
     sql(s"alter table $tableName set tblproperties('sort_scope'='global_sort', 'sort_columns'='charField, bigIntField, smallIntField')")
     loadData(tableName, baseTableName)
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     // alter table to change SORT_SCOPE
     sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='charField, bigIntField, smallIntField')")
     loadData(tableName, baseTableName)
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     // query
     checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
-    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField"))
-    checkAnswer(sql(s"select * from $tableName where intField >= 32768 order by smallIntField"), sql(s"select * from $baseTableName where intField >= 32768 order by smallIntField"))
-    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 or intField >= 32768 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 128 or intField >= 32768 order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 order by floatField"))
+    checkAnswer(sql(s"select * from $tableName where intField >= 2 order by floatField"), sql(s"select * from $baseTableName where intField >= 2 order by floatField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 or intField >= 2 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 or intField >= 2 order by floatField"))
 
     // set input segments
     (0 to 5).foreach { segment =>
       sql(s"set carbon.input.segments.default.$tableName=$segment").show(100, false)
       sql(s"set carbon.input.segments.default.$baseTableName=$segment").show(100, false)
-      checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField"))
+      checkAnswer(sql(s"select * from $tableName where smallIntField = 2 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 order by floatField"))
     }
     sql(s"set carbon.input.segments.default.$tableName=*").show(100, false)
     sql(s"set carbon.input.segments.default.$baseTableName=*").show(100, false)
 
     // delete
-    sql(s"select * from $tableName order by smallIntField").show(100, false)
-    sql(s"select * from $baseTableName order by smallIntField").show(100, false)
-    sql(s"delete from $tableName where smallIntField = 128")
-    sql(s"delete from $baseTableName where smallIntField = 128")
-    sql(s"select * from $tableName order by smallIntField").show(100, false)
-    sql(s"select * from $baseTableName order by smallIntField").show(100, false)
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    sql(s"delete from $tableName where smallIntField = 2")
+    sql(s"delete from $baseTableName where smallIntField = 2")
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     sql(s"delete from $tableName")
     checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(0)))
@@ -352,34 +413,34 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     sql(s"alter table $tableName set tblproperties('sort_scope'='global_sort', 'sort_columns'='timestampField')")
     insertData(insertTableName, tableName, baseTableName)
     loadData(tableName, baseTableName)
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     sql(s"alter table $tableName set tblproperties('sort_scope'='no_sort', 'sort_columns'='')")
     insertData(insertTableName, tableName, baseTableName)
     loadData(tableName, baseTableName)
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='charField, bigIntField, smallIntField')")
     insertData(insertTableName, tableName, baseTableName)
     loadData(tableName, baseTableName)
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     // update
-    sql(s"update $tableName set (smallIntField, intField, bigIntField, floatField, doubleField, decimalField) = (smallIntField - 3, intField - 3, bigIntField - 3, floatField - 3, doubleField - 3, decimalField - 3) where smallIntField = 128").show()
-    sql(s"update $baseTableName set (smallIntField, intField, bigIntField, floatField, doubleField, decimalField) = (smallIntField - 3, intField - 3, bigIntField - 3, floatField - 3, doubleField - 3, decimalField - 3) where smallIntField = 128").show()
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
+    sql(s"update $tableName set (smallIntField, intField, bigIntField, floatField, doubleField) = (smallIntField + 3, intField + 3, bigIntField + 3, floatField + 3, doubleField + 3) where smallIntField = 2").show()
+    sql(s"update $baseTableName set (smallIntField, intField, bigIntField, floatField, doubleField) = (smallIntField + 3, intField + 3, bigIntField + 3, floatField + 3, doubleField + 3) where smallIntField = 2").show()
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
 
     // query
     checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
-    checkAnswer(sql(s"select * from $tableName where smallIntField = 125 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 125 order by smallIntField"))
-    checkAnswer(sql(s"select * from $tableName where intField >= 32765 order by smallIntField"), sql(s"select * from $baseTableName where intField >= 32765 order by smallIntField"))
-    checkAnswer(sql(s"select * from $tableName where smallIntField = 125 or intField >= 32768 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 125 or intField >= 32765 order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 order by floatField"))
+    checkAnswer(sql(s"select * from $tableName where intField >= 2 order by floatField"), sql(s"select * from $baseTableName where intField >= 2 order by floatField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 or intField >= 2 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 or intField >= 2 order by floatField"))
 
     // set input segments
     (6 to 11).foreach { segment =>
       sql(s"set carbon.input.segments.default.$tableName=$segment").show(100, false)
       sql(s"set carbon.input.segments.default.$baseTableName=$segment").show(100, false)
-      checkAnswer(sql(s"select * from $tableName where smallIntField = 125 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 125 order by smallIntField"))
+      checkAnswer(sql(s"select * from $tableName where smallIntField = 2 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 order by floatField"))
     }
     sql(s"set carbon.input.segments.default.$tableName=*").show(100, false)
     sql(s"set carbon.input.segments.default.$baseTableName=*").show(100, false)
@@ -392,10 +453,9 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     sql(s"show segments for table $tableName").show(100, false)
     sql(s"show segments for table $baseTableName").show(100, false)
     checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
-    checkAnswer(sql(s"select * from $tableName where smallIntField = 125 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 125 order by smallIntField"))
-    checkAnswer(sql(s"select * from $tableName where intField >= 32765 order by smallIntField"), sql(s"select * from $baseTableName where intField >= 32765 order by smallIntField"))
-    checkAnswer(sql(s"select * from $tableName where smallIntField = 125 or intField >= 32768 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 125 or intField >= 32765 order by smallIntField"))
-
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 order by floatField"))
+    checkAnswer(sql(s"select * from $tableName where intField >= 2 order by floatField"), sql(s"select * from $baseTableName where intField >= 2 order by floatField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 or intField >= 2 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 or intField >= 2 order by floatField"))
   }
 
   test("range column") {
@@ -404,11 +464,10 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     loadData(tableName, baseTableName)
     sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='smallIntField, charField')")
     loadData(tableName, baseTableName)
-    loadData(baseTableName)
 
     checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
-    checkAnswer(sql(s"select * from $tableName order by smallIntField"), sql(s"select * from $baseTableName order by smallIntField"))
-    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField"), sql(s"select * from $baseTableName order by floatField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 order by floatField"))
   }
 
   test("add/drop column for sort_columns") {
@@ -423,30 +482,60 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     loadData(tableName, baseTableName)
 
     checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
-    checkAnswer(sql(s"select * from $tableName order by smallIntField, charField"), sql(s"select * from $baseTableName order by smallIntField, charField"))
-    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField, charField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField, charField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField, charField"), sql(s"select * from $baseTableName order by floatField, charField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 order by floatField, charField"), sql(s"select * from $baseTableName where smallIntField = 2 order by floatField, charField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 and charField is null order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 and charField is null order by floatField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 and charField is not null order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 and charField is not null order by floatField"))
 
     // add new column to sort_columns
     sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='smallIntField, charField')")
     loadData(tableName, baseTableName)
     checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
-    checkAnswer(sql(s"select * from $tableName order by smallIntField, charField"), sql(s"select * from $baseTableName order by smallIntField, charField"))
-    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField, charField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField, charField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField, charField"), sql(s"select * from $baseTableName order by floatField, charField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 order by floatField, charField"), sql(s"select * from $baseTableName where smallIntField = 2 order by floatField, charField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 and charField is null order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 and charField is null order by floatField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 and charField is not null order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 and charField is not null order by floatField"))
 
     // drop column of old sort_columns
     sql(s"alter table $tableName drop columns(stringField)")
     sql(s"alter table $baseTableName drop columns(stringField)")
     loadData(tableName, baseTableName)
     checkAnswer(sql(s"select count(*) from $tableName"), sql(s"select count(*) from $baseTableName"))
-    checkAnswer(sql(s"select * from $tableName order by smallIntField, charField"), sql(s"select * from $baseTableName order by smallIntField, charField"))
-    checkAnswer(sql(s"select * from $tableName where smallIntField = 128 order by smallIntField, charField"), sql(s"select * from $baseTableName where smallIntField = 128 order by smallIntField, charField"))
+    checkAnswer(sql(s"select * from $tableName order by floatField, charField"), sql(s"select * from $baseTableName order by floatField, charField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 order by floatField, charField"), sql(s"select * from $baseTableName where smallIntField = 2 order by floatField, charField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 and charField is null order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 and charField is null order by floatField"))
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 2 and charField is not null order by floatField"), sql(s"select * from $baseTableName where smallIntField = 2 and charField is not null order by floatField"))
   }
 
   test("bloom filter") {
+    val tableName = "alter_sc_bloom"
+    val dataMapName = "alter_sc_bloom_dm1"
+    val baseTableName = "alter_sc_bloom_base"
+    loadData(tableName, baseTableName)
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $tableName"), true, "bloomfilter", dataMapName)
+    checkExistence(sql(s"EXPLAIN SELECT * FROM $tableName WHERE smallIntField = 3"), true, "bloomfilter", dataMapName)
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 3 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 3 order by floatField"))
 
+    sql(s"alter table $tableName set tblproperties('sort_scope'='global_sort', 'sort_columns'='smallIntField, charField')")
+    loadData(tableName, baseTableName)
+    checkExistence(sql(s"EXPLAIN SELECT * FROM $tableName WHERE smallIntField = 3"), true, "bloomfilter", dataMapName)
+    checkAnswer(sql(s"select * from $tableName where smallIntField = 3 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 3 order by floatField"))
   }
 
   test("pre-aggregate") {
+    val tableName = "alter_sc_agg"
+    val dataMapName = "alter_sc_agg_dm1"
+    val baseTableName = "alter_sc_agg_base"
+    loadData(tableName, baseTableName)
+    sql(s"SHOW DATAMAP ON TABLE $tableName").show(100, false)
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $tableName"), true, "preaggregate", dataMapName)
+    checkExistence(sql(s"EXPLAIN select stringField,sum(intField) as sum from $tableName where stringField = 'abc2' group by stringField"), true, "preaggregate", dataMapName)
+    checkAnswer(sql(s"select stringField,sum(intField) as sum from $tableName where stringField = 'abc2' group by stringField"), sql(s"select stringField,sum(intField) as sum from $baseTableName where stringField = 'abc2' group by stringField"))
 
+    sql(s"alter table $tableName set tblproperties('sort_scope'='global_sort', 'sort_columns'='smallIntField, charField')")
+    loadData(tableName, baseTableName)
+    sql(s"EXPLAIN select stringField,max(intField) as sum from $tableName where stringField = 'abc2' group by stringField").show(100, false)
+    checkExistence(sql(s"EXPLAIN select stringField,max(intField) as sum from $tableName where stringField = 'abc2' group by stringField"), true, "preaggregate", dataMapName)
+    checkAnswer(sql(s"select stringField,max(intField) as sum from $tableName where stringField = 'abc2' group by stringField"), sql(s"select stringField,max(intField) as sum from $baseTableName where stringField = 'abc2' group by stringField"))
   }
 }
