@@ -89,7 +89,18 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           .getDimensionFromCurrentBlock(this.dimColEvaluatorInfoList.get(0).getDimension());
       if (null != dimensionFromCurrentBlock) {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
-            dimensionFromCurrentBlock, segmentProperties, false);
+            dimensionFromCurrentBlock, segmentProperties, false, false);
+      } else {
+        return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(), false);
+      }
+    } else if (dimColEvaluatorInfoList.size() > 0 && null != dimColEvaluatorInfoList.get(0)
+        .getFilterValues() && dimColEvaluatorInfoList.get(0).getDimension()
+        .hasEncoding(Encoding.DICTIONARY)) {
+      CarbonDimension dimensionFromCurrentBlock = segmentProperties
+          .getDimensionFromCurrentBlock(this.dimColEvaluatorInfoList.get(0).getDimension());
+      if (null != dimensionFromCurrentBlock) {
+        return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
+            dimensionFromCurrentBlock, segmentProperties, false, true);
       } else {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(), false);
       }
@@ -249,6 +260,13 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
             } else {
               filterInfo.setFilterList(getDirectSurrogateValues(columnExpression));
             }
+          } else if (columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)
+              && !columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            if (!isIncludeFilter) {
+              filterInfo.setExcludeFilterList(getSurrogateValues());
+            } else {
+              filterInfo.setFilterList(getSurrogateValues());
+            }
           } else {
             filterInfo.setFilterListForNoDictionaryCols(getNoDictionaryRangeValues());
           }
@@ -296,6 +314,26 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
         filterValuesList.add(directDictionaryGenerator
             .generateDirectSurrogateKey(result.getString(),
                 CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+      }
+    } catch (FilterIllegalMemberException e) {
+      throw new FilterUnsupportedException(e);
+    }
+    return filterValuesList;
+  }
+
+  private List<Integer> getSurrogateValues() throws FilterUnsupportedException {
+    List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
+
+    if (this.getFilterExpression() instanceof BinaryConditionalExpression) {
+      listOfExpressionResults =
+          ((BinaryConditionalExpression) this.getFilterExpression()).getLiterals();
+    }
+    List<Integer> filterValuesList = new ArrayList<Integer>(20);
+    try {
+      // If any filter member provided by user is invalid throw error else
+      // system can display inconsistent result.
+      for (ExpressionResult result : listOfExpressionResults) {
+        filterValuesList.add(result.getInt());
       }
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);
