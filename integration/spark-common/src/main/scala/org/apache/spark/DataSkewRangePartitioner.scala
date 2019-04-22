@@ -80,7 +80,8 @@ import org.apache.spark.util.{CollectionsUtils, Utils}
  */
 class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
     partitions: Int,
-    rdd: RDD[_ <: Product2[K, V]])
+    rdd: RDD[_ <: Product2[K, V]],
+    withoutSkew: Boolean)
   extends Partitioner {
 
   // We allow partitions = 0, which happens when sorting an empty RDD under the default settings.
@@ -92,10 +93,11 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
   // dataSkewCount: how many bounds happened data skew
   // dataSkewIndex: the index of data skew bounds
   // dataSkewNum: how many partition of each data skew bound
-  private var (rangeBounds: Array[K], skewCount: Int, skewIndexes: Array[Int],
-  skewWeights: Array[Int]) = {
+  // Min and Max values of complete range
+  var (rangeBounds: Array[K], skewCount: Int, skewIndexes: Array[Int],
+  skewWeights: Array[Int], minMaxVals: Array[K]) = {
     if (partitions <= 1) {
-      (Array.empty[K], 0, Array.empty[Int], Array.empty[Int])
+      (Array.empty[K], 0, Array.empty[Int], Array.empty[Int], Array.empty[K])
     } else {
       // This is the sample size we need to have roughly balanced output partitions, capped at 1M.
       val sampleSize = math.min(20.0 * partitions, 1e6)
@@ -103,7 +105,7 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
       val sampleSizePerPartition = math.ceil(3.0 * sampleSize / rdd.partitions.length).toInt
       val (numItems, sketched) = RangePartitioner.sketch(rdd.map(_._1), sampleSizePerPartition)
       if (numItems == 0L) {
-        (Array.empty[K], 0, Array.empty[Int], Array.empty[Int])
+        (Array.empty[K], 0, Array.empty[Int], Array.empty[Int], Array.empty[K])
       } else {
         // If a partition contains much more than the average number of items, we re-sample from it
         // to ensure that enough items are collected from that partition.
@@ -129,47 +131,68 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
           val weight = (1.0 / fraction).toFloat
           candidates ++= reSampled.map(x => (x, weight))
         }
-        determineBounds(candidates, partitions)
+        // In case of compaction we do not need the skew handled ranges so we use RangePartitioner,
+        // but we require the overall minmax for creating the separate ranges.
+        // withoutSkew = true for Compaction only
+        if (withoutSkew == false) {
+          determineBounds(candidates, partitions, false)
+        } else {
+          var ranges = RangePartitioner.determineBounds(candidates, partitions)
+          var otherRangeParams = determineBounds(candidates, partitions, true)
+          (ranges, otherRangeParams._2, otherRangeParams._3,
+            otherRangeParams._4, otherRangeParams._5)
+        }
       }
     }
   }
 
   def determineBounds(
       candidates: ArrayBuffer[(K, Float)],
-      partitions: Int): (Array[K], Int, Array[Int], Array[Int]) = {
+      partitions: Int,
+      withoutSkew: Boolean): (Array[K], Int, Array[Int], Array[Int], Array[K]) = {
     val ordered = candidates.sortBy(_._1)
     val numCandidates = ordered.size
-    val sumWeights = ordered.map(_._2.toDouble).sum
-    val step = sumWeights / partitions
-    var cumWeight = 0.0
-    var target = step
-    val bounds = ArrayBuffer.empty[K]
-    var i = 0
-    var j = 0
-    var previousBound = Option.empty[K]
-    while ((i < numCandidates) && (j < partitions - 1)) {
-      val (key, weight) = ordered(i)
-      cumWeight += weight
-      if (cumWeight >= target) {
-        // Skip duplicate values.
-        if (previousBound.isEmpty || ordering.gteq(key, previousBound.get)) {
-          bounds += key
-          target += step
-          j += 1
-          previousBound = Some(key)
-        }
-      }
-      i += 1
+    var minMax = new Array[K](2)
+    if (numCandidates > 0) {
+      minMax(0) = ordered(0)._1
+      minMax(1) = ordered(numCandidates - 1)._1
     }
-
-    if (bounds.size >= 2) {
-      combineDataSkew(bounds)
+    if (withoutSkew) {
+      (Array.empty[K], 0, Array.empty[Int], Array.empty[Int], minMax)
     } else {
-      (bounds.toArray, 0, Array.empty[Int], Array.empty[Int])
+      val sumWeights = ordered.map(_._2.toDouble).sum
+      val step = sumWeights / partitions
+      var cumWeight = 0.0
+      var target = step
+      val bounds = ArrayBuffer.empty[K]
+      var i = 0
+      var j = 0
+      var previousBound = Option.empty[K]
+      while ((i < numCandidates) && (j < partitions - 1)) {
+        val (key, weight) = ordered(i)
+        cumWeight += weight
+        if (cumWeight >= target) {
+          // Skip duplicate values.
+          if (previousBound.isEmpty || ordering.gteq(key, previousBound.get)) {
+            bounds += key
+            target += step
+            j += 1
+            previousBound = Some(key)
+          }
+        }
+        i += 1
+      }
+
+      if (bounds.size >= 2) {
+        combineDataSkew(bounds, minMax)
+      } else {
+        (bounds.toArray, 0, Array.empty[Int], Array.empty[Int], minMax)
+      }
     }
   }
 
-  def combineDataSkew(bounds: ArrayBuffer[K]): (Array[K], Int, Array[Int], Array[Int]) = {
+  def combineDataSkew(bounds: ArrayBuffer[K],
+      minMax: Array[K]): (Array[K], Int, Array[Int], Array[Int], Array[K]) = {
     val finalBounds = ArrayBuffer.empty[K]
     var preBound = bounds(0)
     finalBounds += preBound
@@ -196,9 +219,10 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
       dataSkewNumTmp += dataSkewCountTmp
     }
     if (dataSkewIndexTmp.size > 0) {
-      (finalBounds.toArray, dataSkewIndexTmp.size, dataSkewIndexTmp.toArray, dataSkewNumTmp.toArray)
+      (finalBounds.toArray, dataSkewIndexTmp.size, dataSkewIndexTmp.toArray, dataSkewNumTmp
+        .toArray, minMax)
     } else {
-      (finalBounds.toArray, 0, Array.empty[Int], Array.empty[Int])
+      (finalBounds.toArray, 0, Array.empty[Int], Array.empty[Int], minMax)
     }
   }
 

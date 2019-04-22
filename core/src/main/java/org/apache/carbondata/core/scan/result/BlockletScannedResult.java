@@ -518,19 +518,11 @@ public abstract class BlockletScannedResult {
    * @param batchSize
    * @return
    */
-  protected void fillValidRowIdsBatchFilling(int rowId, int batchSize) {
-    // row id will be different for every batch so clear it before filling
-    clearValidRowIdList();
-    int startPosition = rowId;
-    for (int i = 0; i < batchSize; i++) {
-      if (!containsDeletedRow(startPosition)) {
-        validRowIds.add(startPosition);
-      }
-      startPosition++;
-    }
-  }
 
-  private void clearValidRowIdList() {
+
+  public abstract void fillValidRowIdsBatchFilling(int rowId, int batchSize);
+
+  protected void clearValidRowIdList() {
     if (null != validRowIds && !validRowIds.isEmpty()) {
       validRowIds.clear();
     }
@@ -773,7 +765,30 @@ public abstract class BlockletScannedResult {
    * @param batchSize
    * @return
    */
-  public abstract List<byte[]> getDictionaryKeyArrayBatch(int batchSize);
+  public List<byte[]> getDictionaryKeyArrayBatch(int batchSize) {
+    // rowId from where computing need to start
+    int startRowId = currentRow + 1;
+    fillValidRowIdsBatchFilling(startRowId, batchSize);
+    List<byte[]> dictionaryKeyArrayList = new ArrayList<>(validRowIds.size());
+    int[] columnDataOffsets = null;
+    byte[] completeKey = null;
+    // everyTime it is initialized new as in case of prefetch it can modify the data
+    for (int i = 0; i < validRowIds.size(); i++) {
+      completeKey = new byte[fixedLengthKeySize];
+      dictionaryKeyArrayList.add(completeKey);
+    }
+    // initialize offset array onli if data is present
+    if (this.dictionaryColumnChunkIndexes.length > 0) {
+      columnDataOffsets = new int[validRowIds.size()];
+    }
+    for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
+      for (int j = 0; j < validRowIds.size(); j++) {
+        columnDataOffsets[j] += dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter]
+            .fillRawData(validRowIds.get(j), columnDataOffsets[j], dictionaryKeyArrayList.get(j));
+      }
+    }
+    return dictionaryKeyArrayList;
+  }
 
   /**
    * Below method will be used to get the complex type key array
@@ -806,7 +821,26 @@ public abstract class BlockletScannedResult {
    *
    * @return no dictionary keys for all no dictionary dimension
    */
-  public abstract List<byte[][]> getNoDictionaryKeyArrayBatch(int batchSize);
+  public List<byte[][]> getNoDictionaryKeyArrayBatch(int batchSize) {
+    List<byte[][]> noDictionaryKeyArrayList = new ArrayList<>(validRowIds.size());
+    byte[][] noDictionaryColumnsKeys = null;
+    // everyTime it is initialized new as in case of prefetch it can modify the data
+    for (int i = 0; i < validRowIds.size(); i++) {
+      noDictionaryColumnsKeys = new byte[noDictionaryColumnChunkIndexes.length][];
+      noDictionaryKeyArrayList.add(noDictionaryColumnsKeys);
+    }
+    int columnPosition = 0;
+    for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
+      for (int j = 0; j < validRowIds.size(); j++) {
+        byte[][] noDictionaryArray = noDictionaryKeyArrayList.get(j);
+        noDictionaryArray[columnPosition] =
+            dimensionColumnPages[noDictionaryColumnChunkIndexes[i]][pageCounter]
+                .getChunkData(validRowIds.get(j));
+      }
+      columnPosition++;
+    }
+    return noDictionaryKeyArrayList;
+  }
 
   /**
    * Mark the filtered rows in columnar batch. These rows will not be added to vector batches later.

@@ -53,8 +53,17 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
     return getDictionaryKeyIntegerArray(pageFilteredRowId[pageCounter][currentRow]);
   }
 
-  @Override public List<byte[]> getDictionaryKeyArrayBatch(int batchSize) {
-    throw new UnsupportedOperationException("Operation not supported");
+  @Override public void fillValidRowIdsBatchFilling(int rowId, int batchSize) {
+    // row id will be different for every batch so clear it before filling
+    clearValidRowIdList();
+    int startPosition = rowId;
+    for (int i = 0, j = startPosition; j < pageFilteredRowId[pageCounter].length; i++) {
+      int pos = pageFilteredRowId[pageCounter][j];
+      if (!containsDeletedRow(pos)) {
+        validRowIds.add(pos);
+      }
+      j++;
+    }
   }
 
   /**
@@ -67,7 +76,7 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
   }
 
   @Override public List<byte[][]> getComplexTypeKeyArrayBatch(int batchSize) {
-    throw new UnsupportedOperationException("Operation not supported");
+    return getComplexTypeKeyArrayBatch();
   }
 
   /**
@@ -78,10 +87,6 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
    */
   @Override public byte[][] getNoDictionaryKeyArray() {
     return getNoDictionaryKeyArray(pageFilteredRowId[pageCounter][currentRow]);
-  }
-
-  @Override public List<byte[][]> getNoDictionaryKeyArrayBatch(int batchSize) {
-    throw new UnsupportedOperationException("Operation not supported");
   }
 
   /**

@@ -24,18 +24,29 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.RangeValues;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TaskBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
+import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -459,6 +470,53 @@ public class CarbonCompactionUtil {
       }
     }
     return false;
+  }
+
+  public static RangeValues[] getRangesFromVals(Object[] tempRanges, Object[] startAndEnd) {
+    RangeValues[] ranges = new RangeValues[tempRanges.length + 1];
+    Object lastStart = startAndEnd[0];
+    for (int i = 0; i < tempRanges.length; i++) {
+      ranges[i] = new RangeValues(lastStart, tempRanges[i]);
+      lastStart = tempRanges[i];
+    }
+    ranges[tempRanges.length] = new RangeValues(lastStart, startAndEnd[1]);
+    return ranges;
+  }
+
+  // This method will return an Expression(And/Or) for each range based on the datatype
+  // This Expression will be passed to each task as a Filter Query to get the data
+  public static Expression getAndExpressionForRange(String colName, int taskId, Object minVal,
+      Object maxVal, DataType dataType) {
+    Expression finalExpr;
+    Expression exp1, exp2;
+
+    // In case of null values create an OrFilter expression and
+    // for other cases create and AndFilter Expression
+    if (null == minVal) {
+      exp1 = new EqualToExpression(new ColumnExpression(colName, dataType),
+          new LiteralExpression(null, dataType), true);
+      if (null == maxVal) {
+        // If both the min/max values are null, that means, if data contains only
+        // null value then pass only one expression as a filter expression
+        finalExpr = exp1;
+      } else {
+        exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
+            new LiteralExpression(maxVal, dataType));
+        finalExpr = new OrExpression(exp1, exp2);
+      }
+    } else {
+      if (0 == taskId) {
+        exp1 = new GreaterThanEqualToExpression(new ColumnExpression(colName, dataType),
+            new LiteralExpression(minVal, dataType));
+      } else {
+        exp1 = new GreaterThanExpression(new ColumnExpression(colName, dataType),
+            new LiteralExpression(minVal, dataType));
+      }
+      exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
+          new LiteralExpression(maxVal, dataType));
+      finalExpr = new AndExpression(exp1, exp2);
+    }
+    return finalExpr;
   }
 
   /**

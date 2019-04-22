@@ -27,6 +27,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -215,12 +216,16 @@ object DataLoadProcessBuilderOnSpark {
     val keyRDD = convertRDD.keyBy(_.getObject(rangeColumnIndex))
     // range partition by key
     val numPartitions = getNumPartitions(configuration, model, convertRDD)
-    val objectOrdering: Ordering[Object] = createOrderingForColumn(model.getRangePartitionColumn)
+    val objectOrdering: Ordering[Object] = createOrderingForColumn(model.getRangePartitionColumn,
+      false)
     import scala.reflect.classTag
     val sampleRDD = getSampleRDD(sparkSession, model, hadoopConf, configuration, modelBroadcast)
     val rangeRDD = keyRDD
       .partitionBy(
-        new DataSkewRangePartitioner(numPartitions, sampleRDD)(objectOrdering, classTag[Object]))
+        new DataSkewRangePartitioner(
+          numPartitions,
+          sampleRDD,
+          false)(objectOrdering, classTag[Object]))
       .map(_._2)
 
     // 4. Sort and Write data
@@ -329,7 +334,7 @@ object DataLoadProcessBuilderOnSpark {
       .get
   }
 
-  private def createOrderingForColumn(column: CarbonColumn): Ordering[Object] = {
+  def createOrderingForColumn(column: CarbonColumn, mergerRDDFlag: Boolean): Ordering[Object] = {
     if (column.isDimension) {
       val dimension = column.asInstanceOf[CarbonDimension]
       if (dimension.isGlobalDictionaryEncoding || dimension.isDirectDictionaryEncoding) {
@@ -338,7 +343,11 @@ object DataLoadProcessBuilderOnSpark {
         if (DataTypeUtil.isPrimitiveColumn(column.getDataType)) {
           new PrimtiveOrdering(column.getDataType)
         } else {
-          new ByteArrayOrdering()
+          if (mergerRDDFlag) {
+            new StringOrdering()
+          } else {
+            new ByteArrayOrdering()
+          }
         }
       }
     } else {
@@ -369,5 +378,11 @@ class PrimtiveOrdering(dataType: DataType) extends Ordering[Object] {
 class ByteArrayOrdering() extends Ordering[Object] {
   override def compare(x: Object, y: Object): Int = {
     UnsafeComparer.INSTANCE.compareTo(x.asInstanceOf[Array[Byte]], y.asInstanceOf[Array[Byte]])
+  }
+}
+
+class StringOrdering() extends Ordering[Object] {
+  override def compare(x: Object, y: Object): Int = {
+    (x.asInstanceOf[UTF8String]).compare(y.asInstanceOf[UTF8String])
   }
 }

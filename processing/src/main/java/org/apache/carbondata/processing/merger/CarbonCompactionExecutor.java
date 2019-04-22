@@ -37,6 +37,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.scan.result.RowBatch;
@@ -108,9 +109,10 @@ public class CarbonCompactionExecutor {
    * Map has 2 elements: UNSORTED and SORTED
    * Map(UNSORTED) = List of Iterators which yield sorted data
    * Map(Sorted) = List of Iterators which yield sorted data
+   * In Range Column compaction we will have a Filter Expression to process
    */
-  public Map<String, List<RawResultIterator>> processTableBlocks(Configuration configuration)
-      throws QueryExecutionException, IOException {
+  public Map<String, List<RawResultIterator>> processTableBlocks(Configuration configuration,
+      Expression filterExpr) throws QueryExecutionException, IOException {
 
     Map<String, List<RawResultIterator>> resultList = new HashMap<>(2);
     resultList.put(CarbonCompactionUtil.UNSORTED_IDX,
@@ -119,10 +121,15 @@ public class CarbonCompactionExecutor {
         new ArrayList<RawResultIterator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
 
     List<TableBlockInfo> tableBlockInfos = null;
-    QueryModelBuilder builder = new QueryModelBuilder(carbonTable)
-        .projectAllColumns()
-        .dataConverter(dataTypeConverter)
-        .enableForcedDetailRawQuery();
+    QueryModelBuilder builder = null;
+    if (null == filterExpr) {
+      builder =
+          new QueryModelBuilder(carbonTable).projectAllColumns().dataConverter(dataTypeConverter)
+              .enableForcedDetailRawQuery();
+    } else {
+      builder = new QueryModelBuilder(carbonTable).projectAllColumns().filterExpression(filterExpr)
+          .dataConverter(dataTypeConverter).enableForcedDetailRawQuery();
+    }
     if (enablePageLevelReaderForCompaction()) {
       builder.enableReadPageByPage();
     }

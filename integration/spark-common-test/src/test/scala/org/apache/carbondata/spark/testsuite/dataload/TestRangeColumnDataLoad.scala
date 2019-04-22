@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import java.io.{File, PrintWriter}
+
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.classTag
 
@@ -38,6 +40,9 @@ import org.apache.carbondata.spark.load.PrimtiveOrdering
 
 class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   var filePath: String = s"$resourcesPath/globalsort"
+  var filePath2: String = s"$resourcesPath/range_compact_test"
+  var filePath3: String = s"$resourcesPath/range_compact_test1"
+  var filePath4: String = s"$resourcesPath/range_compact_test2"
 
   override def beforeAll(): Unit = {
     dropTable
@@ -137,9 +142,550 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_range_column4"), Seq(Row(20)))
   }
 
+  test("Test compaction for range_column - SHORT Datatype") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age SHORT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city', 'range_column'='age')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+  }
+
+  test("Test compaction for range_column - INT Datatype") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city', 'range_column'='age')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
+  test("Test compaction for range_column - 2 levels") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'SORT_COLUMNS'='age, city',
+        | 'range_column'='age')
+      """.stripMargin)
+
+    for (i <- 0 until 12) {
+      sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+          "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+    }
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MINOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
+  test("Test compaction for range_column - CUSTOM Compaction") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'SORT_COLUMNS'='age, city',
+        | 'range_column'='age')
+      """.stripMargin)
+
+    for (i <- 0 until 12) {
+      sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+          "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+    }
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'CUSTOM' WHERE SEGMENT.ID IN(3,4,5)")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
+  test("Test compaction for range_column - INT Datatype with null values") {
+    deleteFile(filePath3)
+    createFile(filePath3, 10, 3)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
+        | 'range_column'='name')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath3' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath3' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+
+    deleteFile(filePath3)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
+  test("Test compaction for range_column - BOOLEAN Datatype") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    val exception = intercept[MalformedCarbonCommandException](
+      sql(
+        """
+          | CREATE TABLE carbon_range_column1(id Boolean, name STRING, city STRING, age INT)
+          | STORED BY 'org.apache.carbondata.format'
+          | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='id, city',
+          | 'range_column'='id')
+        """.stripMargin)
+    )
+
+    assertResult("RANGE_COLUMN doesn't support boolean data type: id")(exception.getMessage)
+
+  }
+
+  test("Test compaction for range_column - DECIMAL Datatype") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    val exception = intercept[MalformedCarbonCommandException](
+      sql(
+        """
+          | CREATE TABLE carbon_range_column1(id decimal, name STRING, city STRING, age INT)
+          | STORED BY 'org.apache.carbondata.format'
+          | TBLPROPERTIES('range_column'='id')
+        """.stripMargin)
+    )
+
+    assertResult("RANGE_COLUMN doesn't support decimal data type: id")(exception.getMessage)
+
+  }
+
+  test("Test compaction for range_column - INT Datatype with no overlapping") {
+    deleteFile(filePath2)
+    createFile(filePath2, 10, 4)
+    deleteFile(filePath3)
+    createFile(filePath3, 10, 5)
+    deleteFile(filePath4)
+    createFile(filePath4, 10, 6)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='id, city',
+        | 'range_column'='id')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath3' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath4' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+
+    deleteFile(filePath2)
+    deleteFile(filePath3)
+    deleteFile(filePath4)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
+  test("Test compaction for range_column - INT Datatype with overlapping") {
+    deleteFile(filePath2)
+    createFile(filePath2, 10, 9)
+    deleteFile(filePath3)
+    createFile(filePath3, 10, 10)
+    deleteFile(filePath4)
+    createFile(filePath4, 10, 11)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='id, city',
+        | 'range_column'='id')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath3' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath4' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+
+    deleteFile(filePath2)
+    deleteFile(filePath3)
+    deleteFile(filePath4)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
+  test("Test compaction for range_column - INT Datatype with Global Dict(not supported)") {
+    deleteFile(filePath2)
+    createFile(filePath2, 10, 9)
+    deleteFile(filePath3)
+    createFile(filePath3, 10, 10)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='id, city',
+        | 'range_column'='id', 'DICTIONARY_INCLUDE'='id')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath3' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    deleteFile(filePath2)
+    deleteFile(filePath3)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
+  test("Compact range_column with data skew") {
+    sql("DROP TABLE IF EXISTS carbon_range_column4")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column4(c1 int, c2 string)
+        | STORED AS carbondata
+        | TBLPROPERTIES('sort_columns'='c1,c2', 'sort_scope'='local_sort', 'range_column'='c2')
+      """.stripMargin)
+
+    val dataSkewPath = s"$resourcesPath/range_column"
+
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$dataSkewPath'
+         | INTO TABLE carbon_range_column4
+         | OPTIONS('FILEHEADER'='c1,c2', 'global_sort_partitions'='10')
+        """.stripMargin)
+
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$dataSkewPath'
+         | INTO TABLE carbon_range_column4
+         | OPTIONS('FILEHEADER'='c1,c2', 'global_sort_partitions'='10')
+        """.stripMargin)
+
+    val res = sql("SELECT * FROM carbon_range_column4").collect()
+
+    sql("ALTER TABLE carbon_range_column4 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("SELECT * FROM carbon_range_column4"), res)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column4")
+  }
+
+  test("Test compaction for range_column - INT Datatype without SORT Column") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('range_column'='age')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+  }
+
+  test("Test compaction for range_column - INT Datatype with single value in range column") {
+    deleteFile(filePath2)
+    createFile(filePath2, 10, 8)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('range_column'='id')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+    deleteFile(filePath2)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
+  test("Test compaction for range_column - LONG Datatype") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city', 'range_column'='age')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+  }
+
+  test("Test compaction for range_column - LONG Datatype without SORT Column") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('range_column'='age')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+  }
+
+  test("Test compaction for range_column - STRING Datatype") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
+        | 'range_column'='name')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('SORT_SCOPE'='GLOBAL_SORT','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('SORT_SCOPE'='NO_SORT','GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
+  test("Test compaction for range_column - STRING Datatype minmax not stored") {
+    deleteFile(filePath2)
+    createFile(filePath2, 10, 7)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "10")
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
+        | 'range_column'='name')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT,
+        CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT)
+  }
+
+  test("Test compaction for range_column - DATE Datatype") {
+    deleteFile(filePath2)
+    createFile(filePath2, 12, 0)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age DATE)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city' ,
+        | 'range_column'='age')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        s"OPTIONS('HEADER'='false', 'GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        s"OPTIONS('HEADER'='false', 'GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+
+    deleteFile(filePath2)
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  }
+
+  test("Test compaction for range_column - TIMESTAMP Datatype") {
+    deleteFile(filePath2)
+    createFile(filePath2, 12, 1)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:SS")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age TIMESTAMP)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city' ,
+        | 'range_column'='age')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        s"OPTIONS('HEADER'='false', 'GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        s"OPTIONS('HEADER'='false', 'GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+
+    deleteFile(filePath2)
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  }
+
+  test("Test compaction for range_column - Float Datatype") {
+    deleteFile(filePath2)
+    createFile(filePath2, 12, 2)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, floatval FLOAT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('range_column'='floatval')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        s"OPTIONS('HEADER'='false', 'GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        s"OPTIONS('HEADER'='false', 'GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+
+    deleteFile(filePath2)
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  }
+
   test("DataSkewRangePartitioner.combineDataSkew") {
     val partitioner =
-      new DataSkewRangePartitioner(1, null)(new PrimtiveOrdering(DataTypes.STRING),
+      new DataSkewRangePartitioner(1, null,
+        false)(new PrimtiveOrdering(DataTypes.STRING),
         classTag[Object])
 
     testCombineDataSkew(
@@ -208,8 +754,9 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
   ): Unit = {
     val boundsBuffer = new ArrayBuffer[Object]()
     bounds.map(_.getBytes()).foreach(boundsBuffer += _)
-    val (_, actualSkewCount, actualSkewIndexes, actualSkewWeights) =
-      partitioner.combineDataSkew(boundsBuffer)
+    val minMax: Array[Object] = Array()
+    val (_, actualSkewCount, actualSkewIndexes, actualSkewWeights, newMinMax) =
+      partitioner.combineDataSkew(boundsBuffer, minMax)
     assertResult(skewCount)(actualSkewCount)
     if (skewCount > 0) {
       assertResult(skewIndexes)(actualSkewIndexes)
@@ -262,5 +809,81 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName).getIndexCarbonFiles
         .size()
     }
+  }
+
+  def createFile(fileName: String, line: Int = 10000, lastCol: Int = 0): Boolean = {
+    try {
+      val write = new PrintWriter(new File(fileName))
+      val start = 0
+      if (0 == lastCol) {
+        // Date data generation
+        for (i <- start until (start + line)) {
+          write.println(i + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i) + "-10-10")
+        }
+      } else if (1 == lastCol) {
+        // Timestamp data generation
+        for (i <- start until (start + line)) {
+          write
+            .println(i + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i) + "-10-10 " +
+                     "00:00:00")
+        }
+      } else if (2 == lastCol) {
+        // Float data generation
+        for (i <- start until (start + line)) {
+          write
+            .println(i + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i) + (i % 3.14))
+        }
+      } else if (3 == lastCol) {
+        // Null data generation
+        for (i <- start until (start + line)) {
+          write
+            .println(i + "," + "," + "c" + (i % 10000) + "," + (1990 + i))
+        }
+      } else if (4 <= lastCol && 6 >= lastCol) {
+        // No overlap data generation 1
+        for (i <- start until (start + line)) {
+          write
+            .println(
+              (100 * lastCol + i) + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i))
+        }
+      } else if (7 == lastCol) {
+        // Min/max not stored data generation
+        for (i <- start until (start + line)) {
+          write
+            .println(
+              (100 * lastCol + i) + "," + "nnnnnnnnnnnn" + i + "," + "c" + (i % 10000) + "," +
+              (1990 + i))
+        }
+      } else if (8 == lastCol) {
+        // Range values less than default parallelism (Single value)
+        for (i <- start until (start + line)) {
+          write
+            .println(
+              100 + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i))
+        }
+      } else if (9 <= lastCol) {
+        for (i <- lastCol until (lastCol + line)) {
+          write
+            .println(
+              i + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i))
+        }
+      }
+      write.close()
+    } catch {
+      case _: Exception => false
+    }
+    true
+  }
+
+  def deleteFile(fileName: String): Boolean = {
+    try {
+      val file = new File(fileName)
+      if (file.exists()) {
+        file.delete()
+      }
+    } catch {
+      case _: Exception => false
+    }
+    true
   }
 }

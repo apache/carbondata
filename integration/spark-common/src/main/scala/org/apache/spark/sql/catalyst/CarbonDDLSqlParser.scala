@@ -36,7 +36,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.InvalidConfigurationException
-import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
@@ -784,13 +784,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         throw new MalformedCarbonCommandException(errorMsg)
       }
       val rangeField = fields.find(_.column.equalsIgnoreCase(rangeColumn))
+      val dataType = rangeField.get.dataType.get
       if (rangeField.isEmpty) {
         val errorMsg = "range_column: " + rangeColumn +
                        " does not exist in table. Please check the create table statement."
         throw new MalformedCarbonCommandException(errorMsg)
-      } else if (DataTypes.BINARY.getName.equalsIgnoreCase(rangeField.get.dataType.get)) {
+      } else if (DataTypes.BINARY.getName.equalsIgnoreCase(dataType) ||
+                 DataTypes.BOOLEAN.getName.equalsIgnoreCase(dataType) ||
+                 CarbonCommonConstants.ARRAY.equalsIgnoreCase(dataType) ||
+                 CarbonCommonConstants.STRUCT.equalsIgnoreCase(dataType) ||
+                 CarbonCommonConstants.MAP.equalsIgnoreCase(dataType) ||
+                 CarbonCommonConstants.DECIMAL.equalsIgnoreCase(dataType)) {
         throw new MalformedCarbonCommandException(
-          "RANGE_COLUMN doesn't support binary data type:" + rangeColumn)
+          s"RANGE_COLUMN doesn't support $dataType data type: " + rangeColumn)
       } else {
         tableProperties.put(CarbonCommonConstants.RANGE_COLUMN, rangeField.get.column)
       }
