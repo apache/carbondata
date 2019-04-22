@@ -117,8 +117,10 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
       // add all iterators to the queue
       for (RawResultIterator leaftTupleIterator : finalIteratorList) {
-        this.recordHolderHeap.add(leaftTupleIterator);
-        index++;
+        if (leaftTupleIterator.hasNext()) {
+          this.recordHolderHeap.add(leaftTupleIterator);
+          index++;
+        }
       }
       RawResultIterator iterator = null;
       while (index > 1) {

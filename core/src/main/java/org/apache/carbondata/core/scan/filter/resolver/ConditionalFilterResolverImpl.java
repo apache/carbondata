@@ -300,7 +300,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     } else if (null != dimColResolvedFilterInfo.getFilterValues() && dimColResolvedFilterInfo
         .getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       return FilterUtil.getKeyArray(this.dimColResolvedFilterInfo.getFilterValues(),
-          this.dimColResolvedFilterInfo.getDimension(), segmentProperties, false);
+          this.dimColResolvedFilterInfo.getDimension(), segmentProperties, false, false);
     }
     return null;
   }

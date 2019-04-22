@@ -43,6 +43,7 @@ public class QueryModelBuilder {
   private DataTypeConverter dataTypeConverter;
   private boolean forcedDetailRawQuery;
   private boolean readPageByPage;
+  private boolean convertToRangeFilter = true;
   /**
    * log information
    */
@@ -301,6 +302,15 @@ public class QueryModelBuilder {
     return this;
   }
 
+  public QueryModelBuilder convertToRangeFilter(boolean convertToRangeFilter) {
+    this.convertToRangeFilter = convertToRangeFilter;
+    return this;
+  }
+
+  public boolean isConvertToRangeFilter() {
+    return this.convertToRangeFilter;
+  }
+
   public void enableReadPageByPage() {
     this.readPageByPage = true;
   }
@@ -316,7 +326,13 @@ public class QueryModelBuilder {
       // set the filter to the query model in order to filter blocklet before scan
       boolean[] isFilterDimensions = new boolean[table.getDimensionOrdinalMax()];
       boolean[] isFilterMeasures = new boolean[table.getAllMeasures().size()];
-      table.processFilterExpression(filterExpression, isFilterDimensions, isFilterMeasures);
+      // In case of Dictionary Include Range Column we donot optimize the range expression
+      if (isConvertToRangeFilter()) {
+        table.processFilterExpression(filterExpression, isFilterDimensions, isFilterMeasures);
+      } else {
+        table.processFilterExpressionWithoutRange(filterExpression, isFilterDimensions,
+            isFilterMeasures);
+      }
       queryModel.setIsFilterDimensions(isFilterDimensions);
       queryModel.setIsFilterMeasures(isFilterMeasures);
       FilterResolverIntf filterIntf =

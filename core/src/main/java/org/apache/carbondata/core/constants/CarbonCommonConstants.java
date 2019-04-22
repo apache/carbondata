@@ -1759,6 +1759,7 @@ public final class CarbonCommonConstants {
   public static final String ARRAY = "array";
   public static final String STRUCT = "struct";
   public static final String MAP = "map";
+  public static final String DECIMAL = "decimal";
   public static final String FROM = "from";
 
   /**
