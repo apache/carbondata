@@ -159,6 +159,53 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
   }
 }
 
+// This class is used to optimize the filter condition
+// If all of the conditions have alias on the aggregate expressions
+// it will be pull up and exchange the alias to match the MV
+object MVPredicateAlias extends Rule[LogicalPlan] with PredicateHelper {
+
+  def apply(plan: LogicalPlan): LogicalPlan = plan transform  {
+    case aggregate@Aggregate(_, aggregateExpressions, filter: Filter) =>
+      // The flag that all conditions are matched
+      var allMatched: Boolean = true
+      // The flag the condition has matched, it control filter pull
+      var matched: Boolean = false
+      val condition = filter.condition.transformUp {
+        case x: BinaryArithmetic => x
+        case in: In =>
+          val matchedAlias = aggregateExpressions.find {
+            case alias@Alias(_, _) if alias.child.semanticEquals(in.value) => true
+            case _ => false
+          }
+          if (matchedAlias.isDefined) {
+            matched = true
+            in.makeCopy(Array(matchedAlias.get.toAttribute, in.list))
+          } else {
+            allMatched = false
+            in
+          }
+        case binaryExp: BinaryExpression if !binaryExp.left.isInstanceOf[BinaryExpression] =>
+          val matchedAlias = aggregateExpressions.find {
+            case alias@Alias(_, _) if alias.child.semanticEquals(binaryExp.left) => true
+            case _ => false
+          }
+          if (matchedAlias.isDefined) {
+            matched = true
+            binaryExp.makeCopy(Array(matchedAlias.get.toAttribute, binaryExp.right))
+          } else {
+            allMatched = false
+            binaryExp
+          }
+      }
+      if (allMatched && matched) {
+        val newAggregate = aggregate.copy(child = filter.child)
+        Filter(condition, newAggregate)
+      } else {
+        aggregate
+      }
+  }
+}
+
 /**
  * Push Aggregate through join to fact table.
  * Pushes down [[Aggregate]] operators where the `grouping` and `aggregate` expressions can
