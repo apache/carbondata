@@ -30,6 +30,7 @@ import org.apache.spark.sql.types.StringType
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
@@ -69,18 +70,19 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
         Row("ALL", "ALL", 0L, 0L, 0L),
         Row(currentDatabase, "ALL", 0L, 0L, 0L))
     } else {
-      var carbonTables = mutable.ArrayBuffer[CarbonTable]()
+      var allCarbonTables = mutable.ArrayBuffer[CarbonTable]()
       sparkSession.sessionState.catalog.listTables(currentDatabase).foreach {
         tableIdent =>
           try {
-            val carbonTable = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
-            if (!carbonTable.isChildDataMap) {
-              carbonTables += carbonTable
-            }
+            allCarbonTables += CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
           } catch {
             case ex: NoSuchTableException =>
               LOGGER.debug("Ignoring non-carbon table " + tableIdent.table)
           }
+      }
+      val carbonTables = allCarbonTables.filter {
+        carbonTable =>
+          !carbonTable.isChildDataMap
       }
 
       // All tables of current database
@@ -118,9 +120,9 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
           Row(db, table, indexSize, datamapSize, dictSize)
       }
 
-      val tablePaths = carbonTables.map {
+      val tablePaths = allCarbonTables.map {
         carbonTable =>
-          carbonTable.getTablePath
+          carbonTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
       }
 
       // Scan whole cache and fill the entries for All-Database-All-Tables
