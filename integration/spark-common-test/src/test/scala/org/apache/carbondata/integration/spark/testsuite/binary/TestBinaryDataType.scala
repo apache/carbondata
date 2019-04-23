@@ -17,17 +17,14 @@
 package org.apache.carbondata.integration.spark.testsuite.binary
 
 import java.util.Arrays
-
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
-
-import org.apache.commons.codec.binary.Hex
+import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -52,7 +49,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
         sql(
             s"""
-               | LOAD DATA LOCAL INPATH '$resourcesPath/binarydata.csv'
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
                | INTO TABLE binaryTable
                | OPTIONS('header'='false')
              """.stripMargin)
@@ -80,7 +77,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 val bytes40 = each.getAs[Array[Byte]](3).slice(0, 40)
                 val binaryName = each(2).toString
                 val expectedBytes = Hex.encodeHex(firstBytes20.get(binaryName).get)
-                assert(Arrays.equals(String.valueOf(expectedBytes).getBytes(), bytes40), "incorrect numeric value for flattened binaryField")
+                assert(Arrays.equals(String.valueOf(expectedBytes).getBytes(), bytes40), "incorrect value for binary data")
 
                 assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
 
@@ -91,7 +88,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                     val binaryName = each(0).toString
                     val bytes40 = each.getAs[Array[Byte]](1).slice(0, 40)
                     val expectedBytes = Hex.encodeHex(firstBytes20.get(binaryName).get)
-                    assert(Arrays.equals(String.valueOf(expectedBytes).getBytes(), bytes40), "incorrect numeric value for flattened binaryField")
+                    assert(Arrays.equals(String.valueOf(expectedBytes).getBytes(), bytes40), "incorrect value for binary data")
                 }
             }
         } catch {
@@ -248,7 +245,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
         sql(
             s"""
-               | LOAD DATA LOCAL INPATH '$resourcesPath/binarydata.csv'
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
                | INTO TABLE binaryTable
                | OPTIONS('header'='false')
              """.stripMargin)
@@ -277,7 +274,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
         sql(
             s"""
-               | LOAD DATA LOCAL INPATH '$resourcesPath/binarydata.csv'
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
                | INTO TABLE binaryTable
                | OPTIONS('header'='false')
              """.stripMargin)
@@ -306,7 +303,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
         sql(
             s"""
-               | LOAD DATA LOCAL INPATH '$resourcesPath/binarydata.csv'
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
                | INTO TABLE binaryTable
                | OPTIONS('header'='false')
              """.stripMargin)
@@ -335,7 +332,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
         sql(
             s"""
-               | LOAD DATA LOCAL INPATH '$resourcesPath/binarydata.csv'
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
                | INTO TABLE binaryTable
                | OPTIONS('header'='false')
              """.stripMargin)
@@ -362,7 +359,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
         sql(
             s"""
-               | LOAD DATA LOCAL INPATH '$resourcesPath/binarydata.csv'
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
                | INTO TABLE binaryTable
                | OPTIONS('header'='false')
              """.stripMargin)
@@ -1068,7 +1065,164 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         assert(e.getMessage.contains("operation failed for default.binarytable: Alter table data type change operation failed: Given column binaryfield with data type BINARY cannot be modified. Only Int and Decimal data types are allowed for modification"))
     }
 
-    ignore("Create table and load data with binary column for hive: test encode without \u0001") {
+    test("Create table and load data with binary column for hive: test encode with base64") {
+        sql("DROP TABLE IF EXISTS hivetable")
+        sql("DROP TABLE IF EXISTS carbontable")
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS hivetable (
+               |    id int,
+               |    label boolean,
+               |    name string,
+               |    binaryField binary,
+               |    autoLabel boolean)
+               | row format delimited fields terminated by ','
+             """.stripMargin)
+        sql(
+            s"""
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataBase64.csv'
+               | INTO TABLE hivetable
+             """.stripMargin)
+
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS carbontable (
+               |    id int,
+               |    label boolean,
+               |    name string,
+               |    binaryField binary,
+               |    autoLabel boolean)
+               | STORED BY 'carbondata'
+             """.stripMargin)
+        sql(
+            s"""
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataBase64.csv'
+               | INTO TABLE carbontable
+               | OPTIONS('header'='false','DELIMITER'=',','binary_decoder'='baSe64')
+             """.stripMargin)
+
+        val hiveResult = sql("SELECT * FROM hivetable")
+        val carbonResult = sql("SELECT * FROM carbontable")
+        checkAnswer(hiveResult, carbonResult)
+
+        checkAnswer(sql("SELECT COUNT(*) FROM hivetable"), Seq(Row(3)))
+        try {
+            val carbonDF = carbonResult.collect()
+            assert(3 == carbonDF.length)
+            carbonDF.foreach { each =>
+                assert(5 == each.length)
+
+                assert(Integer.valueOf(each(0).toString) > 0)
+                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(2).toString.contains(".png"))
+
+                val value = each.getAs[Array[Byte]](3).slice(0, 10)
+                assert(new String(Base64.encodeBase64(value)).equals("iVBORw0KGgoAAA=="))
+                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+            }
+
+            val df = hiveResult.collect()
+            assert(3 == df.length)
+            df.foreach { each =>
+                assert(5 == each.length)
+
+                assert(Integer.valueOf(each(0).toString) > 0)
+                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(2).toString.contains(".png"))
+
+
+                val value = each.getAs[Array[Byte]](3).slice(0, 10)
+                assert(new String(Base64.encodeBase64(value)).equals("iVBORw0KGgoAAA=="))
+                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+            }
+        } catch {
+            case e: Exception =>
+                e.printStackTrace()
+                assert(false)
+        }
+    }
+
+    test("Create table and load data with binary column for hive: test encode with base64 and streaming = true") {
+        sql("DROP TABLE IF EXISTS hivetable")
+        sql("DROP TABLE IF EXISTS carbontable")
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS hivetable (
+               |    id int,
+               |    label boolean,
+               |    name string,
+               |    binaryField binary,
+               |    autoLabel boolean)
+               | row format delimited fields terminated by ','
+             """.stripMargin)
+        sql(
+            s"""
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataBase64.csv'
+               | INTO TABLE hivetable
+             """.stripMargin)
+
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS carbontable (
+               |    id int,
+               |    label boolean,
+               |    name string,
+               |    binaryField binary,
+               |    autoLabel boolean)
+               | STORED BY 'carbondata'
+               | tblproperties('streaming'='true')
+             """.stripMargin)
+        sql(
+            s"""
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataBase64.csv'
+               | INTO TABLE carbontable
+               | OPTIONS('header'='false','DELIMITER'=',','binary_decoder'='baSe64')
+             """.stripMargin)
+
+        val hiveResult = sql("SELECT * FROM hivetable")
+        val carbonResult = sql("SELECT * FROM carbontable")
+        checkAnswer(hiveResult, carbonResult)
+
+        checkAnswer(sql("SELECT COUNT(*) FROM hivetable"), Seq(Row(3)))
+        try {
+            val carbonDF = carbonResult.collect()
+            assert(3 == carbonDF.length)
+            carbonDF.foreach { each =>
+                assert(5 == each.length)
+
+                assert(Integer.valueOf(each(0).toString) > 0)
+                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(2).toString.contains(".png"))
+
+                val value = each.getAs[Array[Byte]](3).slice(0, 10)
+                assert(new String(Base64.encodeBase64(value)).equals("iVBORw0KGgoAAA=="))
+                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+            }
+
+            val df = hiveResult.collect()
+            assert(3 == df.length)
+            df.foreach { each =>
+                assert(5 == each.length)
+
+                assert(Integer.valueOf(each(0).toString) > 0)
+                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
+                assert(each(2).toString.contains(".png"))
+
+
+                val value = each.getAs[Array[Byte]](3).slice(0, 10)
+                assert(new String(Base64.encodeBase64(value)).equals("iVBORw0KGgoAAA=="))
+                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+            }
+        } catch {
+            case e: Exception =>
+                e.printStackTrace()
+                assert(false)
+        }
+    }
+
+    test("Create table and load data with binary column for hive: test encode without \u0001 and not base64") {
+        // Carbon will throw exception if the data is not base64 when carbon set binary_decoder is base64
+        // hive will save as original data if the data is not base64
         sql("DROP TABLE IF EXISTS hivetable")
         sql("DROP TABLE IF EXISTS carbontable")
         sql(
@@ -1097,35 +1251,49 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    autoLabel boolean)
                | STORED BY 'carbondata'
              """.stripMargin)
+        val e = intercept[Exception] {
+            sql(
+                s"""
+                   | LOAD DATA LOCAL INPATH '$resourcesPath/binarystringdata2.csv'
+                   | INTO TABLE carbontable
+                   | OPTIONS('header'='false','DELIMITER'='|','binary_decoder'='baSe64')
+             """.stripMargin)
+        }
+        assert(e.getMessage.contains("Binary decoder is base64, but data is not base64"))
+    }
+
+    test("Create table and load data with binary column with Hex decode") {
+        sql("DROP TABLE IF EXISTS binaryTable")
         sql(
             s"""
-               | LOAD DATA LOCAL INPATH '$resourcesPath/binarystringdata2.csv'
-               | INTO TABLE carbontable
-               | OPTIONS('header'='false','DELIMITER'='|')
+               | CREATE TABLE IF NOT EXISTS binaryTable (
+               |    id int,
+               |    label boolean,
+               |    name string,
+               |    binaryField binary,
+               |    autoLabel boolean)
+               | STORED BY 'carbondata'
+               | TBLPROPERTIES('SORT_COLUMNS'='')
+             """.stripMargin)
+        sql(
+            s"""
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
+               | INTO TABLE binaryTable
+               | OPTIONS('header'='false','binary_decoder'='hex')
              """.stripMargin)
 
-        val hiveResult = sql("SELECT * FROM hivetable")
-        val carbonResult = sql("SELECT * FROM carbontable")
-        // TODO
-        checkAnswer(hiveResult, carbonResult)
-
-        checkAnswer(sql("SELECT COUNT(*) FROM hivetable"), Seq(Row(3)))
-        try {
-            val carbonDF = carbonResult.collect()
-            assert(3 == carbonDF.length)
-            carbonDF.foreach { each =>
-                assert(5 == each.length)
-
-                assert(Integer.valueOf(each(0).toString) > 0)
-                assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
-                assert(each(2).toString.contains(".png"))
-
-                val value = new String(each.getAs[Array[Byte]](3))
-                // assert("\u0001history\u0002".equals(value) || "\u0001biology\u0002".equals(value) || "\u0001education\u0002".equals(value))
-                assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+        val result = sql("desc formatted binaryTable").collect()
+        var flag = false
+        result.foreach { each =>
+            if ("binary".equals(each.get(1))) {
+                flag = true
             }
+        }
+        assert(flag)
 
-            val df = hiveResult.collect()
+        checkAnswer(sql("SELECT COUNT(*) FROM binaryTable"), Seq(Row(3)))
+        try {
+            val df = sql("SELECT * FROM binaryTable").collect()
             assert(3 == df.length)
             df.foreach { each =>
                 assert(5 == each.length)
@@ -1134,16 +1302,51 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 assert(each(1).toString.equalsIgnoreCase("false") || (each(1).toString.equalsIgnoreCase("true")))
                 assert(each(2).toString.contains(".png"))
 
+                val bytes20 = each.getAs[Array[Byte]](3).slice(0, 20)
+                val binaryName = each(2).toString
+                assert(Arrays.equals(firstBytes20.get(binaryName).get, bytes20), "incorrect value for binary data")
 
-                val value = new String(each.getAs[Array[Byte]](3))
-                // assert("\u0001history\u0002".equals(value) || "\u0001biology\u0002".equals(value) || "\u0001education\u0002".equals(value))
                 assert(each(4).toString.equalsIgnoreCase("false") || (each(4).toString.equalsIgnoreCase("true")))
+
+                val df = sql("SELECT name,binaryField FROM binaryTable").collect()
+                assert(3 == df.length)
+                df.foreach { each =>
+                    assert(2 == each.length)
+                    val binaryName = each(0).toString
+                    val bytes20 = each.getAs[Array[Byte]](1).slice(0, 20)
+                    assert(Arrays.equals(firstBytes20.get(binaryName).get, bytes20), "incorrect value for binary data")
+                }
             }
         } catch {
             case e: Exception =>
                 e.printStackTrace()
                 assert(false)
         }
+    }
+
+    test("Create table and load data with binary column with invalid value") {
+        sql("DROP TABLE IF EXISTS binaryTable")
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS binaryTable (
+               |    id int,
+               |    label boolean,
+               |    name string,
+               |    binaryField binary,
+               |    autoLabel boolean)
+               | STORED BY 'carbondata'
+               | TBLPROPERTIES('SORT_COLUMNS'='')
+             """.stripMargin)
+        val e = intercept[Exception] {
+            sql(
+                s"""
+                   | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
+                   | INTO TABLE binaryTable
+                   | OPTIONS('header'='false','binary_decoder'='he')
+             """.stripMargin)
+        }
+        assert(e.getMessage().contains(
+            "Binary decoder only support Base64, Hex or no decode for string, don't support he"))
     }
 
     override def afterAll: Unit = {

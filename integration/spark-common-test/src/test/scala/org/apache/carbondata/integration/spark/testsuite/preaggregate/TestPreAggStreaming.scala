@@ -39,12 +39,22 @@ class TestPreAggStreaming extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table mainTableStreamingOne")
     sql("CREATE TABLE origin(id int, name string, city string, age string) STORED BY 'org.apache.carbondata.format' tblproperties('streaming'='true')")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table origin")
+    sql("CREATE TABLE binary_stream(id int, label boolean, name string,image binary,autoLabel boolean) STORED BY 'org.apache.carbondata.format' tblproperties('streaming'='true')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataBase64.csv' into table binary_stream OPTIONS('header'='false','DELIMITER'=',','binary_decoder'='baSe64')")
+    sql("create datamap agg0 on table binary_stream using 'preaggregate' as select name from binary_stream group by name")
   }
 
   test("Test Pre Agg Streaming with project column and group by") {
     val df = sql("select name from maintable group by name")
     assert(validateStreamingTablePlan(df.queryExecution.analyzed))
     checkAnswer(df, sql("select name from origin group by name"))
+  }
+
+  test("Test binary with stream and preaggregate") {
+    val df = sql("select name from binary_stream group by name")
+    df.collect()
+    assert(validateStreamingTablePlan(df.queryExecution.analyzed))
+    checkAnswer(df, sql("select name from binary_stream group by name"))
   }
 
   test("Test Pre Agg Streaming table Agg Sum Aggregation") {
@@ -124,6 +134,7 @@ class TestPreAggStreaming extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists mainTable")
     sql("drop table if exists mainTableStreamingOne")
     sql("drop table if exists origin")
+    sql("drop table if exists binary_stream")
   }
 
   override def afterAll: Unit = {

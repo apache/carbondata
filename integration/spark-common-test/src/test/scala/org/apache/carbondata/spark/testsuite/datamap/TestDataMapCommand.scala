@@ -26,7 +26,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
-import org.apache.carbondata.common.exceptions.sql.{MalformedDataMapCommandException, NoSuchDataMapException}
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException, NoSuchDataMapException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -266,18 +266,248 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     sql(s"drop table if exists $tableName")
   }
 
-  test("test if preaggregate load is successfull for hivemetastore") {
-    try {
-      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE, "true")
-      sql("DROP TABLE IF EXISTS maintable")
-      sql(
-        """
-          | CREATE TABLE maintable(id int, name string, city string, age int)
-          | STORED BY 'org.apache.carbondata.format'
-        """.stripMargin)
-      sql(
-        s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id,sum(age) from maintable group by id"""
+    test("test support bloomFilter on binary data type") {
+        val tableName = "datamapshowtest"
+        val datamapName = "bloomdatamap"
+        val datamapName2 = "bloomdatamap2"
+        sql(s"drop table if exists $tableName")
+        // for index datamap
+        sql(s"create table $tableName (a string, b string, c string, d binary, e binary) stored by 'carbondata'")
+
+        sql(s"insert into $tableName  values('a1','b1','c1','d1','e1')")
+        sql(s"insert into $tableName  values('a1','b2','c2','d1','e2')")
+        sql(s"insert into $tableName  values('a3','b3','c1','d2','e2')")
+        sql(
+            s"""
+               | create datamap $datamapName on table $tableName using 'bloomfilter'
+               | DMPROPERTIES ('index_columns'='d', 'bloom_size'='32000', 'bloom_fpp'='0.001')
+       """.stripMargin)
+        sql(
+            s"""
+               | create datamap $datamapName2 on table $tableName using 'bloomfilter'
+               | DMPROPERTIES ('index_columns'='e')
+       """.stripMargin)
+        var bloom1 = sql(s"select * from $tableName where d=cast('d1' as binary)")
+        assert(2 == bloom1.collect().length)
+        bloom1.collect().foreach { each =>
+            assert(5 == each.length)
+            assert("a1".equals(each.get(0)))
+            assert("d1".equals(new String(each.getAs[Array[Byte]](3))))
+            if ("b1".equals(each.get(1))) {
+                assert("c1".equals(each.get(2)))
+                assert("e1".equals(new String(each.getAs[Array[Byte]](4))))
+            } else if ("b2".equals(each.get(1))) {
+                assert("c2".equals(each.get(2)))
+                assert("e2".equals(new String(each.getAs[Array[Byte]](4))))
+            } else {
+                assert(false)
+            }
+        }
+
+        bloom1 = sql(s"select * from $tableName where d=cast('d1' as binary) and e=cast('e1' as binary)")
+        assert(1 == bloom1.collect().length)
+        bloom1.collect().foreach { each =>
+            assert(5 == each.length)
+            assert("a1".equals(each.get(0)))
+            assert("d1".equals(new String(each.getAs[Array[Byte]](3))))
+            if ("b1".equals(each.get(1))) {
+                assert("c1".equals(each.get(2)))
+                assert("e1".equals(new String(each.getAs[Array[Byte]](4))))
+            } else {
+                assert(false)
+            }
+        }
+
+        val result = sql(s"show datamap on table $tableName").cache()
+        checkAnswer(sql(s"show datamap on table $tableName"),
+            Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'bloom_fpp'='0.001', 'bloom_size'='32000', 'index_columns'='d'"),
+                Row(datamapName2, "bloomfilter", s"default.$tableName", "'index_columns'='e'")))
+        result.unpersist()
+        sql(s"drop table if exists $tableName")
+    }
+
+    test("test don't support timeseries on binary data type") {
+        val tableName = "datamapshowtest"
+        sql(s"drop table if exists $tableName")
+
+        // for timeseries datamap
+        sql(s"CREATE TABLE $tableName(mytime timestamp, name string, age int, image binary) STORED BY 'org.apache.carbondata.format'")
+        val e = intercept[MalformedCarbonCommandException] {
+            sql(
+                s"""
+                   | CREATE DATAMAP agg0_hour ON TABLE $tableName
+                   | USING 'timeSeries'
+                   | DMPROPERTIES (
+                   | 'EVENT_TIME'='image',
+                   | 'HOUR_GRANULARITY'='1')
+                   | AS SELECT image, SUM(age) FROM $tableName
+                   | GROUP BY image
+                """.stripMargin)
+        }
+        assert(e.getMessage.contains("Timeseries event time is only supported on Timestamp column"))
+    }
+
+    test("test support preaggregate on binary data type") {
+        val tableName = "datamapshowtest"
+        sql(s"drop table if exists $tableName")
+
+        // for preaggreate datamap, the property is empty
+        sql(s"CREATE TABLE $tableName(id int, name string, city string, age string, image binary)" +
+                s" STORED BY 'org.apache.carbondata.format'")
+
+        sql(s"insert into $tableName  values(1,'a3','b3','c1','image2')")
+        sql(s"insert into $tableName  values(2,'a3','b2','c2','image2')")
+        sql(s"insert into $tableName  values(3,'a1','b2','c1','image3')")
+        sql(
+            s"""
+               | CREATE DATAMAP agg0 ON TABLE $tableName USING 'preaggregate' AS
+               | SELECT name, image,
+               | count(age)
+               | FROM $tableName GROUP BY name,image
+               | """.stripMargin)
+        checkAnswer(sql(s"show datamap on table $tableName"),
+            Seq(Row("agg0", "preaggregate", s"default.${tableName}_agg0", "")))
+        val pre = sql(
+            s"""
+               | select name, image, count(age)
+               | from $tableName
+               | where name = 'a3' and image=cast('image2' as binary)
+               | GROUP BY name,image
+             """.stripMargin)
+        assert(1 == pre.collect().length)
+        pre.collect().foreach { each =>
+            assert(3 == each.length)
+            assert("a3".equals(each.get(0)))
+            assert("image2".equals(new String(each.getAs[Array[Byte]](1))))
+            assert(2 == each.get(2))
+        }
+
+        val preExplain = sql(
+            s"""
+               | explain extended select name, image, count(age)
+               | from $tableName
+               | where name = 'a3' and image=cast('image2' as binary)
+               | GROUP BY name,image
+             """.stripMargin)
+        assert(preExplain.collect()(0).getString(0).contains("datamapshowtest_agg0"))
+        sql(s"drop table if exists $tableName")
+    }
+
+    test("Create table and preaggregate and load data with binary column for hive: test encode with base64") {
+        val tableName = "carbontable"
+        sql(s"drop table if exists $tableName")
+
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS $tableName (
+               |    id int,
+               |    label boolean,
+               |    name string,
+               |    binaryField binary,
+               |    image boolean)
+               | STORED BY 'carbondata'
+             """.stripMargin)
+        sql(
+            s"""
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataBase64.csv'
+               | INTO TABLE $tableName
+               | OPTIONS('header'='false','DELIMITER'=',','binary_decoder'='baSe64')
+             """.stripMargin)
+
+        sql(
+            s"""
+               | CREATE DATAMAP agg0 ON TABLE $tableName USING 'preaggregate' AS
+               | SELECT name, binaryField,
+               | count(id)
+               | FROM $tableName GROUP BY name,binaryField
+               | """.stripMargin)
+        checkAnswer(sql(s"show datamap on table $tableName"),
+            Seq(Row("agg0", "preaggregate", s"default.${tableName}_agg0", "")))
+        val pre = sql(
+            s"""
+               | select name, binaryField, count(id)
+               | from $tableName
+               | where name = '2.png'
+               | GROUP BY name,binaryField
+             """.stripMargin)
+        assert(1 == pre.collect().length)
+        pre.collect().foreach { each =>
+            assert(3 == each.length)
+            assert("2.png".equals(each.get(0)))
+            assert((new String(each.getAs[Array[Byte]](1))).startsWith("�PNG"))
+            assert(1 == each.get(2))
+        }
+
+        val preExplain = sql(
+            s"""
+               | explain extended select name, binaryField, count(id)
+               | from $tableName
+               | where name = '2.png'
+               | GROUP BY name,binaryField
+             """.stripMargin)
+        assert(preExplain.collect()(0).getString(0).contains("carbontable_agg0"))
+    }
+
+    test("test don't support lucene on binary data type") {
+        val tableName = "datamapshowtest"
+        sql(s"drop table if exists $tableName")
+
+        sql(s"CREATE TABLE $tableName(id int, name string, city string, age string, image binary)" +
+                s" STORED BY 'org.apache.carbondata.format'")
+
+        sql(s"insert into $tableName  values(1,'a3','b3','c1','image2')")
+        sql(s"insert into $tableName  values(2,'a3','b2','c2','image2')")
+        sql(s"insert into $tableName  values(3,'a1','b2','c1','image3')")
+        sql(
+            s"""
+               | CREATE DATAMAP agg0 ON TABLE $tableName USING 'lucene'
+               | DMProperties('INDEX_COLUMNS'='name')
+               | """.stripMargin)
+
+        checkAnswer(sql(s"show datamap on table $tableName"),
+            Seq(Row("agg0", "lucene", s"default.${tableName}", "'index_columns'='name'")))
+
+        val e = intercept[MalformedDataMapCommandException] {
+            sql(
+                s"""
+                   | CREATE DATAMAP agg1 ON TABLE $tableName USING 'lucene'
+                   | DMProperties('INDEX_COLUMNS'='image')
+                   | """.stripMargin)
+        }
+        assert(e.getMessage.contains("Only String column is supported, column 'image' is BINARY type."))
+        checkAnswer(sql(s"show datamap on table $tableName"),
+            Seq(Row("agg0", "lucene", s"default.${tableName}", "'index_columns'='name'")))
+
+        val pre = sql(
+            s"""
+               | select name,image, id
+               | from $tableName
+               | where name = 'a3'
+             """.stripMargin)
+
+        assert(2 == pre.collect().length)
+        pre.collect().foreach { each =>
+            assert(3 == each.length)
+            assert("a3".equals(each.get(0)))
+            assert("image2".equals(new String(each.getAs[Array[Byte]](1))))
+            assert(2 == each.get(2) || 1 == each.get(2))
+        }
+
+        sql(s"drop table if exists $tableName")
+    }
+
+    test("test if preaggregate load is successfull for hivemetastore") {
+        try {
+            CarbonProperties.getInstance()
+                    .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE, "true")
+            sql("DROP TABLE IF EXISTS maintable")
+            sql(
+                """
+                  | CREATE TABLE maintable(id int, name string, city string, age int)
+                  | STORED BY 'org.apache.carbondata.format'
+                """.stripMargin)
+            sql(
+                s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id,sum(age) from maintable group by id"""
 
           .stripMargin)
       sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")

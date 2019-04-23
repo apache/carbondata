@@ -1130,6 +1130,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "SORT_COLUMN_BOUNDS",
       "LOAD_MIN_SIZE_INMB",
       "SCALE_FACTOR",
+      "BINARY_DECODER",
       "SORT_SCOPE"
     )
     var isSupported = true

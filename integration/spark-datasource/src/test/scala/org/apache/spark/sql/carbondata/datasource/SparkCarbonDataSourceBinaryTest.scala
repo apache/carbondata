@@ -105,7 +105,7 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
     test("Don't support sort_columns") {
         import spark._
         sql("DROP TABLE IF EXISTS binaryTable")
-        val exception = intercept[Exception] {
+        var exception = intercept[Exception] {
             sql(
                 s"""
                    | CREATE TABLE binaryTable (
@@ -116,7 +116,40 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
                    |    autoLabel BOOLEAN)
                    | using carbon
                    | options('SORT_COLUMNS'='image')
-       """.stripMargin)
+            """.stripMargin)
+            // TODO: it should throw exception when create table
+            sql("SELECT COUNT(*) FROM binaryTable").show()
+        }
+        assert(exception.getCause.getMessage.contains("sort columns not supported for array, struct, map, double, float, decimal, varchar, binary"))
+
+        sql("DROP TABLE IF EXISTS binaryTable")
+        exception = intercept[Exception] {
+            sql(
+                s"""
+                   | CREATE TABLE binaryTable
+                   | using carbon
+                   | options('SORT_COLUMNS'='image')
+                   | LOCATION '$writerPath'
+                """.stripMargin)
+            sql("SELECT COUNT(*) FROM binaryTable").show()
+        }
+        assert(exception.getMessage.contains("Cannot use sort columns during infer schema"))
+
+
+        sql("DROP TABLE IF EXISTS binaryTable")
+        exception = intercept[Exception] {
+            sql(
+                s"""
+                   | CREATE TABLE binaryTable (
+                   |    id DOUBLE,
+                   |    label BOOLEAN,
+                   |    name STRING,
+                   |    image BINARY,
+                   |    autoLabel BOOLEAN)
+                   | using carbon
+                   | options('SORT_COLUMNS'='image')
+                   | LOCATION '$writerPath'
+                 """.stripMargin)
             sql("SELECT COUNT(*) FROM binaryTable").show()
         }
         assert(exception.getCause.getMessage.contains("sort columns not supported for array, struct, map, double, float, decimal, varchar, binary"))

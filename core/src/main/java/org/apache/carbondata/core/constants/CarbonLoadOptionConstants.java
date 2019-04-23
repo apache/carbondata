@@ -172,4 +172,17 @@ public final class CarbonLoadOptionConstants {
 
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
 
+
+  /**
+   * carbon binary decoder when writing string data to binary, like decode base64, Hex
+   */
+  @CarbonProperty
+  public static final String CARBON_OPTIONS_BINARY_DECODER = "carbon.binary.decoder";
+
+  public static final String CARBON_OPTIONS_BINARY_DECODER_DEFAULT = "";
+
+  public static final String CARBON_OPTIONS_BINARY_DECODER_BASE64 = "base64";
+
+  public static final String CARBON_OPTIONS_BINARY_DECODER_HEX = "hex";
+
 }

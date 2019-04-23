@@ -31,6 +31,7 @@ import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -109,6 +110,7 @@ public class CarbonLoadModelBuilder {
       throw new InvalidLoadOptionException(e.getMessage());
     }
     validateAndSetColumnCompressor(model);
+    validateAndSetBinaryDecoder(model);
     return model;
   }
 
@@ -224,6 +226,8 @@ public class CarbonLoadModelBuilder {
       }
     }
 
+    String binaryDecoder = options.get("binary_decoder");
+    carbonLoadModel.setBinaryDecoder(binaryDecoder);
     carbonLoadModel.setTimestampformat(timestampformat);
     carbonLoadModel.setDateFormat(dateFormat);
     carbonLoadModel.setDefaultTimestampFormat(
@@ -300,6 +304,7 @@ public class CarbonLoadModelBuilder {
     validateAndSetLoadMinSize(carbonLoadModel);
 
     validateAndSetColumnCompressor(carbonLoadModel);
+    validateAndSetBinaryDecoder(carbonLoadModel);
 
     validateRangeColumn(optionsFinal, carbonLoadModel);
   }
@@ -423,6 +428,24 @@ public class CarbonLoadModelBuilder {
     } catch (Exception e) {
       LOGGER.error(e.getMessage(), e);
       throw new InvalidLoadOptionException("Failed to load the compressor");
+    }
+  }
+
+
+  private void validateAndSetBinaryDecoder(CarbonLoadModel carbonLoadModel)
+      throws InvalidLoadOptionException {
+    try {
+      String binaryDecoder = carbonLoadModel.getBinaryDecoder();
+      if (StringUtils.isBlank(binaryDecoder)) {
+        binaryDecoder = CarbonProperties.getInstance().getProperty(
+            CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER,
+            CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_DEFAULT);
+      }
+      // check and load binary decoder
+      carbonLoadModel.setBinaryDecoder(binaryDecoder);
+    } catch (Exception e) {
+      LOGGER.error(e.getMessage(), e);
+      throw new InvalidLoadOptionException("Failed to load the binary decoder");
     }
   }
 

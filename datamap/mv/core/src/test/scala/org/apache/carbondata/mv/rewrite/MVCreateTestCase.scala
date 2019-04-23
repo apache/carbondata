@@ -970,6 +970,58 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test binary on mv") {
+    val querySQL = "select x19,x20,sum(x18) from all_table group by x19, x20"
+    val querySQL2 = "select x19,x20,sum(x18) from all_table where x20=cast('binary2' as binary ) group by x19, x20"
+
+    sql("drop datamap if exists all_table_mv")
+    sql("drop table if exists all_table")
+
+    sql(
+      """
+        | create table all_table(x1 bigint,x2 bigint,
+        | x3 string,x4 bigint,x5 bigint,x6 int,x7 string,x8 int, x9 int,x10 bigint,
+        | x11 bigint, x12 bigint,x13 bigint,x14 bigint,x15 bigint,x16 bigint,
+        | x17 bigint,x18 bigint,x19 bigint,x20 binary) stored by 'carbondata'""".stripMargin)
+    sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,1,1,'binary1'")
+    sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,12,2,'binary2'")
+    sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,1,2,'binary2'")
+
+    sql("create datamap all_table_mv on table all_table using 'mv' as " + querySQL)
+    sql("rebuild datamap all_table_mv")
+
+    var frame = sql(querySQL)
+    var analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "all_table_mv"))
+    assert(2 == frame.collect().size)
+    frame.collect().foreach { each =>
+      if (1 == each.get(0)) {
+        assert("binary1".equals(new String(each.getAs[Array[Byte]](1))))
+        assert(1 == each.get(2))
+      } else if (2 == each.get(0)) {
+        assert("binary2".equals(new String(each.getAs[Array[Byte]](1))))
+        assert(13 == each.get(2))
+      } else {
+        assert(false)
+      }
+    }
+
+    frame = sql(querySQL2)
+    analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "all_table_mv"))
+    assert(1 == frame.collect().size)
+    frame.collect().foreach { each =>
+      if (2 == each.get(0)) {
+        assert("binary2".equals(new String(each.getAs[Array[Byte]](1))))
+        assert(13 == each.get(2))
+      } else {
+        assert(false)
+      }
+    }
+
+    sql("drop table if exists all_table")
+  }
+
   def drop(): Unit = {
     sql("drop table IF EXISTS fact_table1")
     sql("drop table IF EXISTS fact_table2")

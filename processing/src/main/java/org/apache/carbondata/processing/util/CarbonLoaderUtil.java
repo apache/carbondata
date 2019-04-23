@@ -35,6 +35,7 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -422,6 +423,14 @@ public final class CarbonLoaderUtil {
         escapeChar.equalsIgnoreCase(CARRIAGE_RETURN.getName()) ||
         escapeChar.equalsIgnoreCase(TAB.getName()) ||
         escapeChar.equalsIgnoreCase(BACKSPACE.getName());
+  }
+
+  public static boolean isValidBinaryDecoder(String binaryDecoderChar) {
+    return binaryDecoderChar.equalsIgnoreCase(
+        CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_BASE64) ||
+        binaryDecoderChar.equalsIgnoreCase(
+            CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_HEX) ||
+        StringUtils.isBlank(binaryDecoderChar);
   }
 
   public static String getEscapeChar(String escapeCharacter) {

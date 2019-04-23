@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -76,6 +77,35 @@ public class FieldEncoderFactory {
       DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
       boolean isEmptyBadRecord, String parentTablePath, boolean isConvertToBinary)
       throws IOException {
+    return createFieldEncoder(dataField, absoluteTableIdentifier, index, nullFormat, client,
+        useOnePass, localCache, isEmptyBadRecord, parentTablePath, isConvertToBinary,
+        CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_DEFAULT);
+  }
+
+
+  /**
+   * Creates the FieldConverter for all dimensions, for measures return null.
+   *
+   * @param dataField               column schema
+   * @param absoluteTableIdentifier table identifier
+   * @param index                   index of column in the row
+   * @param nullFormat              null format of the field
+   * @param client                  Dictionary Client
+   * @param useOnePass              whether use OnePass
+   * @param localCache              local Cache
+   * @param isEmptyBadRecord        whether is Empty BadRecord
+   * @param parentTablePath         parent tabel path
+   * @param isConvertToBinary       whether the no dictionary field to be converted to binary or not
+   * @param binaryDecoder           carbon binary decoder for loading data
+   * @return
+   * @throws IOException
+   */
+  public FieldConverter createFieldEncoder(DataField dataField,
+      AbsoluteTableIdentifier absoluteTableIdentifier, int index, String nullFormat,
+      DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
+      boolean isEmptyBadRecord, String parentTablePath,
+      boolean isConvertToBinary, String binaryDecoder)
+      throws IOException {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimension()) {
       if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&
@@ -120,7 +150,8 @@ public class FieldEncoderFactory {
             createComplexDataType(dataField, absoluteTableIdentifier,
                 client, useOnePass, localCache, index, nullFormat, isEmptyBadRecord), index);
       } else if (dataField.getColumn().getDataType() == DataTypes.BINARY) {
-        return new BinaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
+        return new BinaryFieldConverterImpl(dataField, nullFormat,
+            index, isEmptyBadRecord, binaryDecoder);
       } else {
         // if the no dictionary column is a numeric column and no need to convert to binary
         // then treat it is as measure col
