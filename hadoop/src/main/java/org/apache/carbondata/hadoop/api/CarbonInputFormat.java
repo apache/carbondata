@@ -487,8 +487,8 @@ m filterExpression
     List<ExtendedBlocklet> prunedBlocklets = null;
     // This is to log the event, so user will know what is happening by seeing logs.
     LOG.info("Started block pruning ...");
-    if (carbonTable.isTransactionalTable() && !carbonTable.hasColumnDrift()) {
-      prunedBlocklets = defaultDataMap.prune(segmentIds, resolver, partitionsToPrune);
+    if (carbonTable.isTransactionalTable()) {
+      prunedBlocklets = defaultDataMap.prune(segmentIds, expression, resolver, partitionsToPrune);
     } else {
       prunedBlocklets = defaultDataMap.prune(segmentIds, expression, partitionsToPrune);
     }

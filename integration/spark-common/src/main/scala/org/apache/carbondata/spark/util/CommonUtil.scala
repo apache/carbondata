@@ -794,9 +794,6 @@ object CommonUtil {
     storeLocation
   }
 
-
-
-
   /**
    * This method will validate the cache level
    *
@@ -928,13 +925,45 @@ object CommonUtil {
     }
   }
 
+  def validateSortColumns(
+      sortKey: Array[String],
+      fields: Seq[(String, String)],
+      varcharCols: Seq[String]
+  ): Unit = {
+    if (sortKey.diff(sortKey.distinct).length > 0 ||
+        (sortKey.length > 1 && sortKey.contains(""))) {
+      throw new MalformedCarbonCommandException(
+        "SORT_COLUMNS Either having duplicate columns : " +
+        sortKey.diff(sortKey.distinct).mkString(",") + " or it contains illegal argumnet.")
+    }
+
+    sortKey.foreach { column =>
+      if (!fields.exists(x => x._1.equalsIgnoreCase(column))) {
+        val errorMsg = "sort_columns: " + column +
+                       " does not exist in table. Please check the create table statement."
+        throw new MalformedCarbonCommandException(errorMsg)
+      } else {
+        val dataType = fields.find(x =>
+          x._1.equalsIgnoreCase(column)).get._2
+        if (isDataTypeSupportedForSortColumn(dataType)) {
+          val errorMsg = s"sort_columns is unsupported for $dataType datatype column: " + column
+          throw new MalformedCarbonCommandException(errorMsg)
+        }
+        if (varcharCols.exists(x => x.equalsIgnoreCase(column))) {
+          throw new MalformedCarbonCommandException(
+            s"sort_columns is unsupported for long string datatype column: $column")
+        }
+      }
+    }
+  }
+
   def validateSortColumns(carbonTable: CarbonTable, newProperties: Map[String, String]): Unit = {
     val fields = carbonTable.getCreateOrderColumn(carbonTable.getTableName).asScala
     val tableProperties = carbonTable.getTableInfo.getFactTable.getTableProperties
     var sortKeyOption = newProperties.get(CarbonCommonConstants.SORT_COLUMNS)
     val varcharColsString = tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS)
-    val varcharCols = if (varcharColsString == null) {
-      Array.empty[String]
+    val varcharCols: Seq[String] = if (varcharColsString == null) {
+      Seq.empty[String]
     } else {
       varcharColsString.split(",").map(_.trim)
     }
@@ -946,31 +975,11 @@ object CommonUtil {
     val sortKeyString = CarbonUtil.unquoteChar(sortKeyOption.get).trim
     if (!sortKeyString.isEmpty) {
       val sortKey = sortKeyString.split(',').map(_.trim)
-      if (sortKey.diff(sortKey.distinct).length > 0 ||
-          (sortKey.length > 1 && sortKey.contains(""))) {
-        throw new MalformedCarbonCommandException(
-          "SORT_COLUMNS Either having duplicate columns : " +
-          sortKey.diff(sortKey.distinct).mkString(",") + " or it contains illegal argumnet.")
-      }
-
-      sortKey.foreach { column =>
-        if (!fields.exists(x => x.getColName.equalsIgnoreCase(column))) {
-          val errorMsg = "sort_columns: " + column +
-                         " does not exist in table. Please check the create table statement."
-          throw new MalformedCarbonCommandException(errorMsg)
-        } else {
-          val dataType = fields.find(x =>
-            x.getColName.equalsIgnoreCase(column)).get.getDataType.getName
-          if (isDataTypeSupportedForSortColumn(dataType)) {
-            val errorMsg = s"sort_columns is unsupported for $dataType data type column: " + column
-            throw new MalformedCarbonCommandException(errorMsg)
-          }
-          if (varcharCols.exists(x => x.equalsIgnoreCase(column))) {
-            throw new MalformedCarbonCommandException(
-              s"sort_columns is unsupported for long string data type column: $column")
-          }
-        }
-      }
+      validateSortColumns(
+        sortKey,
+        fields.map { field => (field.getColName, field.getDataType.getName) },
+        varcharCols
+      )
     }
   }
 

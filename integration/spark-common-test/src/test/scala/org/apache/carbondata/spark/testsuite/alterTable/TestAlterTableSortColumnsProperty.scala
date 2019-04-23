@@ -302,17 +302,17 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     ex = intercept[RuntimeException] {
       sql("alter table alter_sc_validate set tblproperties('sort_columns'='doubleField')")
     }
-    assert(ex.getMessage.contains("sort_columns is unsupported for DOUBLE data type column: doubleField"))
+    assert(ex.getMessage.contains("sort_columns is unsupported for DOUBLE datatype column: doubleField"))
 
     ex = intercept[RuntimeException] {
       sql("alter table alter_sc_validate set tblproperties('sort_columns'='arrayField')")
     }
-    assert(ex.getMessage.contains("sort_columns is unsupported for ARRAY data type column: arrayField"))
+    assert(ex.getMessage.contains("sort_columns is unsupported for ARRAY datatype column: arrayField"))
 
     ex = intercept[RuntimeException] {
       sql("alter table alter_sc_validate set tblproperties('sort_columns'='structField')")
     }
-    assert(ex.getMessage.contains("sort_columns is unsupported for STRUCT data type column: structField"))
+    assert(ex.getMessage.contains("sort_columns is unsupported for STRUCT datatype column: structField"))
 
     ex = intercept[RuntimeException] {
       sql("alter table alter_sc_validate set tblproperties('sort_columns'='structField.col1')")
@@ -324,7 +324,7 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     val ex = intercept[RuntimeException] {
       sql("alter table alter_sc_long_string set tblproperties('sort_columns'='intField, stringField')")
     }
-    assert(ex.getMessage.contains("sort_columns is unsupported for long string data type column: stringField"))
+    assert(ex.getMessage.contains("sort_columns is unsupported for long string datatype column: stringField"))
   }
 
   test("describe formatted") {

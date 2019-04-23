@@ -232,6 +232,10 @@ class CarbonScanRDD[T: ClassTag](
       statistic.addStatistics(QueryStatisticsConstants.BLOCK_ALLOCATION, System.currentTimeMillis)
       statisticRecorder.recordStatisticsForDriver(statistic, queryId)
       statistic = new QueryStatistic()
+      // When the table has column drift, it means different blocks maybe have different schemas.
+      // the query doesn't support to scan the blocks with different schemas in a task.
+      // So if the table has the column drift, CARBON_TASK_DISTRIBUTION_MERGE_FILES and
+      // CARBON_TASK_DISTRIBUTION_CUSTOM can't work.
       val carbonDistribution = if (directFill && !tableInfo.hasColumnDrift) {
         CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_MERGE_FILES
       } else {

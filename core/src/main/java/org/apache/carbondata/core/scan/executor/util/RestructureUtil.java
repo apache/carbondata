@@ -504,4 +504,16 @@ public class RestructureUtil {
           projectionMeasures.toArray(new ProjectionMeasure[projectionMeasures.size()]));
     }
   }
+
+  public static boolean hasColumnDriftOnSegment(CarbonTable table,
+      SegmentProperties segmentProperties) {
+    for (CarbonDimension queryColumn : table.getColumnDrift()) {
+      for (CarbonMeasure tableColumn : segmentProperties.getMeasures()) {
+        if (isColumnMatches(table.isTransactionalTable(), queryColumn, tableColumn)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 }
