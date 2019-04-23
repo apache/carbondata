@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.sdk.file.arrow;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.util.TimeZone;
@@ -34,7 +33,7 @@ public class ArrowConverter {
   private VectorSchemaRoot root;
   private ArrowWriter arrowWriter;
   private org.apache.arrow.vector.types.pojo.Schema arrowSchema;
-  private ByteArrayOutputStream out;
+  private ExtendedByteArrayOutputStream out;
   private ArrowFileWriter writer;
 
   public ArrowConverter(Schema schema, int initalSize) {
@@ -43,7 +42,7 @@ public class ArrowConverter {
         ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", initalSize, Long.MAX_VALUE);
     this.root = VectorSchemaRoot.create(arrowSchema, allocator);
     this.arrowWriter = ArrowWriter.create(root);
-    this.out = new ByteArrayOutputStream();
+    this.out = new ExtendedByteArrayOutputStream(32 * 1024 * 1024);
     this.writer = new ArrowFileWriter(root, null, Channels.newChannel(out));
   }
 
@@ -62,7 +61,18 @@ public class ArrowConverter {
     arrowWriter.reset();
     writer.close();
     this.root.close();
-    return out.toByteArray();
+    final byte[] bytes = out.toByteArray();
+    return bytes;
+  }
+
+  public long copySerializeArrayToOffheap() throws IOException {
+    arrowWriter.finish();
+    writer.writeBatch();
+    this.writer.close();
+    arrowWriter.reset();
+    writer.close();
+    this.root.close();
+    return out.copyToAddress();
   }
 
   public void close() {

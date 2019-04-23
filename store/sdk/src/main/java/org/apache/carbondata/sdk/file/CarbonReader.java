@@ -25,6 +25,7 @@ import java.util.UUID;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
@@ -100,9 +101,16 @@ public class CarbonReader<T> {
     while (hasNext()) {
       arrowConverter.addToArrowBuffer(readNextBatchRow());
     }
-    final byte[] bytes = arrowConverter.toSerializeArray();
     arrowConverter.close();
-    return bytes;
+    return arrowConverter.toSerializeArray();
+  }
+
+  public long readArrowBatchAddress(Schema carbonSchema) throws Exception {
+    ArrowConverter arrowConverter = new ArrowConverter(carbonSchema, 10000);
+    while (hasNext()) {
+      arrowConverter.addToArrowBuffer(readNextBatchRow());
+    }
+    return arrowConverter.copySerializeArrayToOffheap();
   }
   /**
    * Read and return next batch row objects
@@ -237,5 +245,9 @@ public class CarbonReader<T> {
       throw new RuntimeException(this.getClass().getSimpleName() +
           " not initialise, please create it first.");
     }
+  }
+
+  public void freeMemory(long address) {
+    CarbonUnsafe.getUnsafe().freeMemory(address);
   }
 }
