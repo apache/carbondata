@@ -23,9 +23,9 @@ object TestSQLBatch {
   val sampleTestCases = Seq(
     ("case_1",
      s"""
-        |SELECT i_item_id
+        |SELECT i_item_id, i_item_sk
         |FROM Item
-        |WHERE i_item_sk = 1
+        |WHERE i_item_sk = 2
      """.stripMargin.trim,
      s"""
         |SELECT i_item_id, i_item_sk

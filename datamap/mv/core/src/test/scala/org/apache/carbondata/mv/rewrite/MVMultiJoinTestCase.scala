@@ -48,8 +48,9 @@ class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
          |inner join areas as c on c.pid=p.aid
          |where p.title = 'hebei'
        """.stripMargin
-    sql("create datamap table_mv using 'mv' as " + mvSQL)
-    sql("rebuild datamap table_mv")
+    sql("create datamap table_mv using 'mv' as " +
+        "select p.title,c.title,c.pid,p.aid from areas as p inner join areas as c on " +
+        "c.pid=p.aid where p.title = 'hebei'")
     val frame = sql(mvSQL)
     assert(verifyMVDataMap(frame.queryExecution.analyzed, "table_mv"))
     checkAnswer(frame, Seq(Row("hebei","shijiazhuang"), Row("hebei","handan")))
@@ -70,8 +71,7 @@ class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
          | left join dim_table dim_other on sdr.name = dim_other.name
          | group by sdr.name,dim.age,dim_other.height
        """.stripMargin
-    sql("create datamap table_mv using 'mv' as " + mvSQL)
-    sql("rebuild datamap table_mv")
+    sql("create datamap table_mv using 'mv' as " + "select sdr.name,sum(sdr.score),dim.age,dim_other.height,count(dim.name) as c1, count(dim_other.name) as c2 from sdr_table sdr left join dim_table dim on sdr.name = dim.name left join dim_table dim_other on sdr.name = dim_other.name group by sdr.name,dim.age,dim_other.height")
     val frame = sql(mvSQL)
     assert(verifyMVDataMap(frame.queryExecution.analyzed, "table_mv"))
     checkAnswer(frame, Seq(Row("lily",80,30,160),Row("tom",120,20,170)))

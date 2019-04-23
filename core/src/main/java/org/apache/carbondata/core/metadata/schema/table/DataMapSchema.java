@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
@@ -79,6 +80,11 @@ public class DataMapSchema implements Serializable, Writable {
    * child table schema
    */
   protected TableSchema childSchema;
+
+  /**
+   * main table column list mapped to datamap table
+   */
+  private Map<String, Set<String>> mainTableColumnList;
 
   public DataMapSchema(String dataMapName, String providerName) {
     this.dataMapName = dataMapName;
@@ -249,5 +255,13 @@ public class DataMapSchema implements Serializable, Writable {
 
   @Override public int hashCode() {
     return Objects.hash(dataMapName);
+  }
+
+  public Map<String, Set<String>> getMainTableColumnList() {
+    return mainTableColumnList;
+  }
+
+  public void setMainTableColumnList(Map<String, Set<String>> mainTableColumnList) {
+    this.mainTableColumnList = mainTableColumnList;
   }
 }

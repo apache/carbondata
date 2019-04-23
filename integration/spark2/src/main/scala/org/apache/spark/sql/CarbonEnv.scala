@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
 import org.apache.spark.sql.execution.command.cache._
-import org.apache.spark.sql.execution.command.mv.{AlterDataMaptableCompactionPostListener, LoadPostDataMapListener}
+import org.apache.spark.sql.execution.command.mv._
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
@@ -195,6 +195,13 @@ object CarbonEnv {
       .addListener(classOf[DropTableCacheEvent], DropCacheBloomEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCachePreAggEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCacheBloomEventListener)
+      .addListener(classOf[DeleteSegmentByIdPreEvent], DataMapDeleteSegmentPreListener)
+      .addListener(classOf[DeleteSegmentByDatePreEvent], DataMapDeleteSegmentPreListener)
+      .addListener(classOf[AlterTableDropColumnPreEvent], DataMapDropColumnPreListener)
+      .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
+        DataMapChangeDataTypeorRenameColumnPreListener)
+      .addListener(classOf[AlterTableAddColumnPreEvent], DataMapAddColumnsPreListener)
+
   }
 
   /**

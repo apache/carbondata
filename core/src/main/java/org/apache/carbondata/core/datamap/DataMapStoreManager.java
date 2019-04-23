@@ -281,19 +281,22 @@ public final class DataMapStoreManager {
       dataMapCatalogs = new ConcurrentHashMap<>();
       List<DataMapSchema> dataMapSchemas = getAllDataMapSchemas();
       for (DataMapSchema schema : dataMapSchemas) {
-        DataMapCatalog dataMapCatalog = dataMapCatalogs.get(schema.getProviderName());
-        if (dataMapCatalog == null) {
-          dataMapCatalog = dataMapProvider.createDataMapCatalog();
-          if (null == dataMapCatalog) {
-            throw new RuntimeException("Internal Error.");
+        if (schema.getProviderName()
+            .equalsIgnoreCase(dataMapProvider.getDataMapSchema().getProviderName())) {
+          DataMapCatalog dataMapCatalog = dataMapCatalogs.get(schema.getProviderName());
+          if (dataMapCatalog == null) {
+            dataMapCatalog = dataMapProvider.createDataMapCatalog();
+            if (null == dataMapCatalog) {
+              throw new RuntimeException("Internal Error.");
+            }
+            dataMapCatalogs.put(schema.getProviderName(), dataMapCatalog);
           }
-          dataMapCatalogs.put(schema.getProviderName(), dataMapCatalog);
-        }
-        try {
-          dataMapCatalog.registerSchema(schema);
-        } catch (Exception e) {
-          // Ignore the schema
-          LOGGER.error("Error while registering schema", e);
+          try {
+            dataMapCatalog.registerSchema(schema);
+          } catch (Exception e) {
+            // Ignore the schema
+            LOGGER.error("Error while registering schema", e);
+          }
         }
       }
     }

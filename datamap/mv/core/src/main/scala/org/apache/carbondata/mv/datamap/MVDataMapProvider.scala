@@ -58,7 +58,21 @@ class MVDataMapProvider(
         "select statement is mandatory")
     }
     MVHelper.createMVDataMap(sparkSession, dataMapSchema, ctasSqlStatement, true)
-    DataMapStoreManager.getInstance.registerDataMapCatalog(this, dataMapSchema)
+    try {
+      DataMapStoreManager.getInstance.registerDataMapCatalog(this, dataMapSchema)
+      if (dataMapSchema.isLazy) {
+        DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
+      }
+    } catch {
+      case exception: Exception =>
+        dropTableCommand = new CarbonDropTableCommand(true,
+          new Some[String](dataMapSchema.getRelationIdentifier.getDatabaseName),
+          dataMapSchema.getRelationIdentifier.getTableName,
+          true)
+        dropTableCommand.run(sparkSession)
+        DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName)
+        throw exception
+    }
   }
 
   override def initData(): Unit = {
@@ -141,7 +155,8 @@ class MVDataMapProvider(
         dataFrame = Some(queryPlan),
         updateModel = None,
         tableInfoOp = None,
-        internalOptions = Map("mergedSegmentName" -> newLoadName),
+        internalOptions = Map("mergedSegmentName" -> newLoadName,
+          CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true"),
         partition = Map.empty)
 
       try {

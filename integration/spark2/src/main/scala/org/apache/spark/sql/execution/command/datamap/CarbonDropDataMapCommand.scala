@@ -122,6 +122,15 @@ case class CarbonDropDataMapCommand(
             dropDataMapFromSystemFolder(sparkSession)
             return Seq.empty
           }
+        } else if (mainTable != null) {
+          // If table is defined and datamap is MV datamap, then drop the datamap
+          val dmSchema = DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala
+            .filter(dataMapSchema => dataMapSchema.getDataMapName.equalsIgnoreCase(dataMapName))
+          if (dmSchema.nonEmpty && (!dmSchema.head.isIndexDataMap &&
+                                    null != dmSchema.head.getRelationIdentifier)) {
+            dropDataMapFromSystemFolder(sparkSession)
+            return Seq.empty
+          }
         }
 
         // drop preaggregate datamap.

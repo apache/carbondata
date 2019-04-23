@@ -211,7 +211,7 @@ class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with Be
         .stripMargin)
     assert(intercept[RuntimeException] {
       sql(s"insert into maintable_preagg_sum values(1, 30)")
-    }.getMessage.equalsIgnoreCase("Cannot insert/load data directly into pre-aggregate table"))
+    }.getMessage.equalsIgnoreCase("Cannot insert/load data directly into pre-aggregate/child table"))
   }
 
   test("test whether all segments are loaded into pre-aggregate table if segments are set on main table") {

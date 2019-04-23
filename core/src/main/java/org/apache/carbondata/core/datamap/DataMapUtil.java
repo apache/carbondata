@@ -270,4 +270,5 @@ public class DataMapUtil {
     }
     return segmentList;
   }
+
 }

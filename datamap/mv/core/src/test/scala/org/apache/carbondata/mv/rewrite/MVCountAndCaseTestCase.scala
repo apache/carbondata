@@ -47,8 +47,6 @@ class MVCountAndCaseTestCase  extends QueryTest with BeforeAndAfterAll{
            | FROM data_table
            | GROUP BY STARTTIME,LAYER4ID""".stripMargin)
 
-    sql("rebuild datamap data_table_mv")
-
     var frame = sql(s"""SELECT  MT.`3600` AS `3600`,
                        | MT.`2250410101` AS `2250410101`,
                        | count(1) over() as countNum,

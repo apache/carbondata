@@ -71,7 +71,7 @@ class TestTimeSeriesUnsupportedSuite extends QueryTest with BeforeAndAfterAll wi
       sql(s"INSERT INTO maintable_agg1_minute VALUES('2016-02-23 09:01:00.0', 60)")
     }
     assert(e.getMessage.equalsIgnoreCase(
-      "Cannot insert/load data directly into pre-aggregate table"))
+      "Cannot insert/load data directly into pre-aggregate/child table"))
 
     // check value after inserting
     checkAnswer(sql("SELECT * FROM maintable_agg1_minute"),
@@ -94,7 +94,7 @@ class TestTimeSeriesUnsupportedSuite extends QueryTest with BeforeAndAfterAll wi
       sql(s"INSERT INTO maintable_agg1_minute VALUES('2016-02-23 09:01:00.0', 60)")
     }
     assert(e.getMessage.equalsIgnoreCase(
-      "Cannot insert/load data directly into pre-aggregate table"))
+      "Cannot insert/load data directly into pre-aggregate/child table"))
   }
 
   test("test timeseries unsupported 3: don't support insert") {
@@ -118,7 +118,7 @@ class TestTimeSeriesUnsupportedSuite extends QueryTest with BeforeAndAfterAll wi
       sql(s"INSERT INTO maintable_agg1_minute VALUES('2016-02-23 09:01:00.0', 'hello', 60)")
     }
     assert(e.getMessage.equalsIgnoreCase(
-      "Cannot insert/load data directly into pre-aggregate table"))
+      "Cannot insert/load data directly into pre-aggregate/child table"))
   }
 
   test("test timeseries unsupported 4: don't support load") {
@@ -147,7 +147,7 @@ class TestTimeSeriesUnsupportedSuite extends QueryTest with BeforeAndAfterAll wi
          """.stripMargin)
     }
     assert(e.getMessage.equalsIgnoreCase(
-      "Cannot insert/load data directly into pre-aggregate table"))
+      "Cannot insert/load data directly into pre-aggregate/child table"))
   }
 
   test("test timeseries unsupported 5: don't support update") {

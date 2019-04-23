@@ -18,21 +18,31 @@
 package org.apache.spark.sql.execution.command.mv
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.AlterTableModel
 import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
+import org.apache.spark.util.DataMapUtil
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.datamap.DataMapManager
-import org.apache.carbondata.events.{
-  AlterTableCompactionPreStatusUpdateEvent,
-  DeleteFromTablePostEvent, Event, OperationContext, OperationEventListener, UpdateTablePostEvent
-}
+import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePostExecutionEvent
 import org.apache.carbondata.processing.merger.CompactionType
+
+
+object DataMapListeners {
+  def getDataMapTableColumns(dataMapSchema: DataMapSchema,
+      carbonTable: CarbonTable): mutable.Buffer[String] = {
+    val listOfColumns: mutable.Buffer[String] = new mutable.ArrayBuffer[String]()
+    listOfColumns.asJava
+      .addAll(dataMapSchema.getMainTableColumnList.get(carbonTable.getTableName))
+    listOfColumns
+  }
+}
 
 /**
  * Listener to trigger compaction on mv datamap after main table compaction
@@ -136,6 +146,132 @@ object LoadPostDataMapListener extends OperationEventListener {
           }
         }
       }
+    }
+  }
+}
+
+/**
+ * Listeners to block operations like delete segment on id or by date on tables
+ * having an mv datamap or on mv datamap tables
+ */
+object DataMapDeleteSegmentPreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val carbonTable = event match {
+      case e: DeleteSegmentByIdPreEvent =>
+        e.asInstanceOf[DeleteSegmentByIdPreEvent].carbonTable
+      case e: DeleteSegmentByDatePreEvent =>
+        e.asInstanceOf[DeleteSegmentByDatePreEvent].carbonTable
+    }
+    if (null != carbonTable) {
+      if (DataMapUtil.hasMVDataMap(carbonTable)) {
+        throw new UnsupportedOperationException(
+          "Delete segment operation is not supported on tables having child datamap")
+      }
+      if (carbonTable.isChildTable) {
+        throw new UnsupportedOperationException(
+          "Delete segment operation is not supported on datamap table")
+      }
+    }
+  }
+}
+
+object DataMapAddColumnsPreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val dataTypeChangePreListener = event.asInstanceOf[AlterTableAddColumnPreEvent]
+    val carbonTable = dataTypeChangePreListener.carbonTable
+    if (carbonTable.isChildTable) {
+      throw new UnsupportedOperationException(
+        s"Cannot add columns in a DataMap table " +
+        s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
+    }
+  }
+}
+
+
+object DataMapDropColumnPreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val dropColumnChangePreListener = event.asInstanceOf[AlterTableDropColumnPreEvent]
+    val carbonTable = dropColumnChangePreListener.carbonTable
+    val alterTableDropColumnModel = dropColumnChangePreListener.alterTableDropColumnModel
+    val columnsToBeDropped = alterTableDropColumnModel.columns
+    if (DataMapUtil.hasMVDataMap(carbonTable)) {
+      val dataMapSchemaList = DataMapStoreManager.getInstance
+        .getDataMapSchemasOfTable(carbonTable).asScala
+      for (dataMapSchema <- dataMapSchemaList) {
+        if (null != dataMapSchema && !dataMapSchema.isIndexDataMap) {
+          val listOfColumns = DataMapListeners.getDataMapTableColumns(dataMapSchema, carbonTable)
+          val columnExistsInChild = listOfColumns.collectFirst {
+            case parentColumnName if columnsToBeDropped.contains(parentColumnName) =>
+              parentColumnName
+          }
+          if (columnExistsInChild.isDefined) {
+            throw new UnsupportedOperationException(
+              s"Column ${ columnExistsInChild.head } cannot be dropped because it exists " +
+              s"in " + dataMapSchema.getProviderName + " datamap:" +
+              s"${ dataMapSchema.getDataMapName }")
+          }
+        }
+      }
+    }
+    if (carbonTable.isChildTable) {
+      throw new UnsupportedOperationException(
+        s"Cannot drop columns present in a datamap table ${ carbonTable.getDatabaseName }." +
+        s"${ carbonTable.getTableName }")
+    }
+  }
+}
+
+object DataMapChangeDataTypeorRenameColumnPreListener
+  extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val colRenameDataTypeChangePreListener = event
+      .asInstanceOf[AlterTableColRenameAndDataTypeChangePreEvent]
+    val carbonTable = colRenameDataTypeChangePreListener.carbonTable
+    val alterTableDataTypeChangeModel = colRenameDataTypeChangePreListener
+      .alterTableDataTypeChangeModel
+    val columnToBeAltered: String = alterTableDataTypeChangeModel.columnName
+    if (DataMapUtil.hasMVDataMap(carbonTable)) {
+      val dataMapSchemaList = DataMapStoreManager.getInstance
+        .getDataMapSchemasOfTable(carbonTable).asScala
+      for (dataMapSchema <- dataMapSchemaList) {
+        if (null != dataMapSchema && !dataMapSchema.isIndexDataMap) {
+          val listOfColumns = DataMapListeners.getDataMapTableColumns(dataMapSchema, carbonTable)
+          if (listOfColumns.contains(columnToBeAltered)) {
+            throw new UnsupportedOperationException(
+              s"Column $columnToBeAltered exists in a " + dataMapSchema.getProviderName +
+              " datamap. Drop " + dataMapSchema.getProviderName + "  datamap to continue")
+          }
+        }
+      }
+    }
+    if (carbonTable.isChildTable) {
+      throw new UnsupportedOperationException(
+        s"Cannot change data type or rename column for columns present in mv datamap table " +
+        s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
     }
   }
 }

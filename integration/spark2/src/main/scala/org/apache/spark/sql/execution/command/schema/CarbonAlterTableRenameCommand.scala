@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
-import org.apache.spark.util.AlterTableUtil
+import org.apache.spark.util.{AlterTableUtil, DataMapUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -81,8 +81,9 @@ private[sql] case class CarbonAlterTableRenameCommand(
       throw new MalformedCarbonCommandException("alter rename is not supported for index datamap")
     }
     // if table have create mv datamap, not support table rename
-    if (CarbonTable.hasMVDataMap(oldCarbonTable)) {
-      throw new MalformedCarbonCommandException("alter rename is not supported for mv datamap")
+    if (DataMapUtil.hasMVDataMap(oldCarbonTable) || oldCarbonTable.isChildTable) {
+      throw new MalformedCarbonCommandException(
+        "alter rename is not supported for datamap table or for tables which have child datamap")
     }
 
     var timeStamp = 0L
