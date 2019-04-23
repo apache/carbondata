@@ -32,7 +32,7 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, DataMapUtil, Segment}
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock}
@@ -717,9 +717,9 @@ object LoadPreAggregateTablePreListener extends OperationEventListener {
     val carbonLoadModel = loadEvent.getCarbonLoadModel
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val isInternalLoadCall = carbonLoadModel.isAggLoadRequest
-    if (table.isChildDataMap && !isInternalLoadCall) {
+    if ((table.isChildDataMap || table.isChildTable) && !isInternalLoadCall) {
       throw new UnsupportedOperationException(
-        "Cannot insert/load data directly into pre-aggregate table")
+        "Cannot insert/load data directly into pre-aggregate/child table")
     }
   }
 }

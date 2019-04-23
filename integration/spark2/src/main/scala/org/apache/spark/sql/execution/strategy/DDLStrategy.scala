@@ -33,7 +33,7 @@ import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable
 import org.apache.spark.sql.hive.{CarbonRelation, CreateCarbonSourceTableAsSelectCommand}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.types.StructField
-import org.apache.spark.util.{CarbonReflectionUtils, FileUtils, SparkUtil}
+import org.apache.spark.util.{CarbonReflectionUtils, DataMapUtil, FileUtils, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -322,7 +322,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
               throw new MalformedCarbonCommandException(
                 "Streaming property value is incorrect")
             }
-            if (CarbonTable.hasMVDataMap(carbonTable)) {
+            if (DataMapUtil.hasMVDataMap(carbonTable)) {
               throw new MalformedCarbonCommandException(
                 "The table which has MV datamap does not support set streaming property")
             }

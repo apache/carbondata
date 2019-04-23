@@ -63,7 +63,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
-import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
 import com.google.common.collect.Lists;
@@ -1318,22 +1317,6 @@ public class CarbonTable implements Serializable, Writable {
       }
     }
     return minMaxCachedColsList;
-  }
-
-  /**
-   * Return true if MV datamap present in the specified table
-   * @param carbonTable
-   * @return timeseries data map present
-   */
-  public static boolean hasMVDataMap(CarbonTable carbonTable) throws IOException {
-    List<DataMapSchema> dataMapSchemaList = DataMapStoreManager.getInstance()
-        .getDataMapSchemasOfTable(carbonTable);
-    for (DataMapSchema dataMapSchema : dataMapSchemaList) {
-      if (dataMapSchema.getProviderName().equalsIgnoreCase(MV.toString())) {
-        return true;
-      }
-    }
-    return false;
   }
 
   /**

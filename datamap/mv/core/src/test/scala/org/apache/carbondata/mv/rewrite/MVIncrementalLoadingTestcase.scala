@@ -182,7 +182,6 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql(s"rebuild datamap datamap1")
     loadDataToFactTable("test_table")
     sql(s"rebuild datamap datamap1")
-    checkExistence(sql("show segments for table datamap1_table"), false, "0.1")
     sql("alter datamap datamap1 compact 'major'")
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,

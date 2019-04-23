@@ -26,8 +26,9 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AtomicRunnableCommand}
-import org.apache.spark.util.AlterTableUtil
+import org.apache.spark.util.{AlterTableUtil, DataMapUtil}
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -69,6 +70,10 @@ case class CarbonAlterTableDropHivePartitionCommand(
     table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
     setAuditTable(table)
     setAuditInfo(Map("partition" -> specs.mkString(",")))
+    if (DataMapUtil.hasMVDataMap(table) || table.isChildTable) {
+      throw new MalformedCarbonCommandException(
+        "Drop Partition is not supported for datamap table or for tables which have child datamap")
+    }
     if (table.isHivePartitionTable) {
       var locks = List.empty[ICarbonLock]
       try {
