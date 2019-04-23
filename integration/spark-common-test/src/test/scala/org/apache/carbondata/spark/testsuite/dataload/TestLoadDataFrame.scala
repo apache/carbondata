@@ -392,6 +392,48 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("test load data with binary_decoder in df") {
+    val spark = sqlContext.sparkSession
+    try {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      val rdd = spark.sparkContext.parallelize(1 to 3)
+              .map(x => Row("a" + x % 10, "b", x, "YWJj".getBytes()))
+      val customSchema = StructType(Array(
+        StructField("c1", StringType),
+        StructField("c2", StringType),
+        StructField("number", IntegerType),
+        StructField("c4", BinaryType)))
+
+      val df = spark.createDataFrame(rdd, customSchema);
+      // Saves dataFrame to carbondata file
+      df.write.format("carbondata")
+              .option("binary_decoder", "base64")
+              .option("tableName", "carbon_table")
+              .save()
+
+      val carbonDF = spark.read
+              .format("carbondata")
+              .option("tableName", "carbon_table")
+              .schema(customSchema)
+              .load()
+
+      assert(carbonDF.schema.map(_.name) === Seq("c1", "c2", "number", "c4"))
+      // "YWJj" is base64 decode data of "abc"
+      checkAnswer(carbonDF, Seq(Row("a1", "b", 1, "abc".getBytes()),
+        Row("a2", "b", 2, "abc".getBytes()),
+        Row("a3", "b", 3, "abc".getBytes())))
+
+      val carbonDF2 = carbonDF.drop("c1")
+      assert(carbonDF2.schema.map(_.name) === Seq("c2", "number", "c4"))
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        assert(false)
+    } finally {
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
   override def afterAll {
     dropTable
   }

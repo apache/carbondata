@@ -16,16 +16,14 @@
  */
 package org.apache.carbondata.processing.loading.converter.impl;
 
-import java.nio.charset.Charset;
-
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.FieldConverter;
+import org.apache.carbondata.processing.loading.converter.impl.binary.BinaryDecoder;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
 import org.apache.log4j.Logger;
@@ -43,33 +41,35 @@ public class BinaryFieldConverterImpl implements FieldConverter {
   private String nullformat;
   private boolean isEmptyBadRecord;
   private DataField dataField;
+  private BinaryDecoder binaryDecoder;
   public BinaryFieldConverterImpl(DataField dataField, String nullformat, int index,
-      boolean isEmptyBadRecord) {
+      boolean isEmptyBadRecord,BinaryDecoder binaryDecoder) {
     this.dataType = dataField.getColumn().getDataType();
     this.dimension = (CarbonDimension) dataField.getColumn();
     this.nullformat = nullformat;
     this.index = index;
     this.isEmptyBadRecord = isEmptyBadRecord;
     this.dataField = dataField;
+    this.binaryDecoder = binaryDecoder;
   }
 
   @Override
   public void convert(CarbonRow row, BadRecordLogHolder logHolder)
       throws CarbonDataLoadingException {
-    if (row.getObject(index) instanceof String) {
-      row.update((((String) row.getObject(index)))
-          .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)), index);
-    } else if (row.getObject(index) instanceof byte[]) {
-      row.update(row.getObject(index), index);
-    } else {
-      throw new CarbonDataLoadingException("Binary only support String and byte[] data type");
-    }
+    row.update(convert(row.getObject(index), logHolder), index);
   }
 
   @Override
   public Object convert(Object value, BadRecordLogHolder logHolder)
       throws RuntimeException {
-    return null;
+    if (value instanceof String) {
+      return binaryDecoder.decode((String) value);
+    } else if (value instanceof byte[]) {
+      return value;
+    } else {
+      throw new CarbonDataLoadingException("Binary only support String and byte[] data type," +
+          " binary decoder only support Base64, Hex or no decode for string");
+    }
   }
 
   @Override

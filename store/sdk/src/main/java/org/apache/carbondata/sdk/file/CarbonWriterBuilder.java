@@ -196,7 +196,8 @@ public class CarbonWriterBuilder {
           !option.equalsIgnoreCase("complex_delimiter_level_2") &&
           !option.equalsIgnoreCase("complex_delimiter_level_3") &&
           !option.equalsIgnoreCase("quotechar") &&
-          !option.equalsIgnoreCase("escapechar")) {
+          !option.equalsIgnoreCase("escapechar") &&
+          !option.equalsIgnoreCase("binary_decoder")) {
         throw new IllegalArgumentException("Unsupported option:" + option
             + ". Refer method header or documentation");
       }
@@ -227,6 +228,13 @@ public class CarbonWriterBuilder {
         String escapeChar = entry.getValue();
         if (escapeChar.length() > 1 && !CarbonLoaderUtil.isValidEscapeSequence(escapeChar)) {
           throw new IllegalArgumentException("ESCAPECHAR cannot be more than one character.");
+        }
+      } else if (entry.getKey().toLowerCase().equalsIgnoreCase("binary_decoder")) {
+        String binaryDecoderChar = entry.getValue();
+        if (binaryDecoderChar.length() > 1 &&
+            !CarbonLoaderUtil.isValidBinaryDecoder(binaryDecoderChar)) {
+          throw new IllegalArgumentException("Binary decoder only support Base64, " +
+              "Hex or no decode for string, don't support " + binaryDecoderChar);
         }
       }
     }

@@ -274,6 +274,10 @@ object CarbonSparkDataSourceUtil {
     }
     builder.uniqueIdentifier(System.currentTimeMillis())
     val model = builder.buildLoadModel(schema)
+    val binary_decoder = options.get("binary_decoder").map(_.toString.toLowerCase())
+    if (binary_decoder.isDefined) {
+      model.setBinaryDecoder(String.valueOf(binary_decoder.get))
+    }
     val tableInfo = model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo
     val properties =
       tableInfo.getFactTable.getTableProperties

@@ -64,13 +64,16 @@ public class ImageTest extends TestCase {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    Field[] fields = new Field[5];
+    Field[] fields = new Field[7];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("image1", DataTypes.BINARY);
     fields[3] = new Field("image2", DataTypes.BINARY);
     fields[4] = new Field("image3", DataTypes.BINARY);
-
+    fields[5] = new Field("decodeString", DataTypes.BINARY);
+    fields[6] = new Field("decodeByte", DataTypes.BINARY);
+    String[] projection = new String[]{"name", "age", "image1",
+        "image2", "image3", "decodeString", "decodeByte"};
     byte[] originBinary = null;
 
     // read and write image data
@@ -81,6 +84,7 @@ public class ImageTest extends TestCase {
           .withCsvInput(new Schema(fields))
           .writtenBy("SDKS3Example")
           .withPageSizeInMb(1)
+          .withLoadOption("binary_decoder", "base64")
           .build();
 
       for (int i = 0; i < rows; i++) {
@@ -90,7 +94,8 @@ public class ImageTest extends TestCase {
         while ((bis.read(originBinary)) != -1) {
         }
         // write data
-        writer.write(new Object[]{"robot" + (i % 10), i, originBinary, originBinary, originBinary});
+        writer.write(new Object[]{"robot" + (i % 10), i, originBinary,
+            originBinary, originBinary, "YWJj", "YWJj".getBytes()});
         bis.close();
       }
       writer.close();
@@ -98,6 +103,7 @@ public class ImageTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
+        .projection(projection)
         .build();
 
     System.out.println("\nData:");
@@ -105,19 +111,27 @@ public class ImageTest extends TestCase {
     while (i < 20 && reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
 
-      byte[] outputBinary = (byte[]) row[1];
-      byte[] outputBinary2 = (byte[]) row[2];
-      byte[] outputBinary3 = (byte[]) row[3];
+      byte[] outputBinary = (byte[]) row[2];
+      byte[] outputBinary2 = (byte[]) row[3];
+      byte[] outputBinary3 = (byte[]) row[4];
+      String stringValue = new String((byte[]) row[5]);
+      String byteValue = new String((byte[]) row[6]);
+      // when input is string, it will be decoded by base64.
+      Assert.assertTrue("abc".equals(stringValue));
+      // when input is byte[], it will be not decoded by base64.
+      Assert.assertTrue("YWJj".equals(byteValue));
       System.out.println(row[0] + " " + row[1] + " image1 size:" + outputBinary.length
-          + " image2 size:" + outputBinary2.length + " image3 size:" + outputBinary3.length);
+          + " image2 size:" + outputBinary2.length + " image3 size:" + outputBinary3.length
+          + "\t" + stringValue + "\t" + byteValue);
 
       for (int k = 0; k < 3; k++) {
 
-        byte[] originBinaryTemp = (byte[]) row[1 + k];
+        byte[] originBinaryTemp = (byte[]) row[2 + k];
         // validate output binary data and origin binary data
         assert (originBinaryTemp.length == outputBinary.length);
         for (int j = 0; j < originBinaryTemp.length; j++) {
           assert (originBinaryTemp[j] == outputBinary[j]);
+          assert (originBinary[j] == outputBinary[j]);
         }
 
         // save image, user can compare the save image and original image
@@ -655,6 +669,84 @@ public class ImageTest extends TestCase {
     String sourceImageFolder = "./src/test/resources/image/flowers";
     List result = listFiles(sourceImageFolder, ".jpg");
     assertEquals(3, result.size());
+  }
+
+  @Test
+  public void testWriteNonBase64WithBase64Decoder() throws IOException, InvalidLoadOptionException, InterruptedException {
+    String imagePath = "./src/test/resources/image/carbondatalogo.jpg";
+    int num = 1;
+    int rows = 10;
+    String path = "./target/binary";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    Field[] fields = new Field[7];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("image1", DataTypes.BINARY);
+    fields[3] = new Field("image2", DataTypes.BINARY);
+    fields[4] = new Field("image3", DataTypes.BINARY);
+    fields[5] = new Field("decodeString", DataTypes.BINARY);
+    fields[6] = new Field("decodeByte", DataTypes.BINARY);
+    byte[] originBinary = null;
+
+    // read and write image data
+    for (int j = 0; j < num; j++) {
+      CarbonWriter writer = CarbonWriter
+          .builder()
+          .outputPath(path)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("SDKS3Example")
+          .withPageSizeInMb(1)
+          .withLoadOption("binary_decoder", "base64")
+          .build();
+
+      for (int i = 0; i < rows; i++) {
+        // read image and encode to Hex
+        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(imagePath));
+        originBinary = new byte[bis.available()];
+        while ((bis.read(originBinary)) != -1) {
+        }
+        // write data
+        writer.write(new Object[]{"robot" + (i % 10), i, originBinary,
+            originBinary, originBinary, "^YWJj", "^YWJj".getBytes()});
+        bis.close();
+      }
+      try {
+        writer.close();
+        Assert.assertTrue(false);
+      } catch (Exception e) {
+        Assert.assertTrue(e.getMessage().contains("Binary decoder is base64, but data is not base64"));
+      }
+    }
+  }
+
+  public void testInvalidValueForBinaryDecoder() throws IOException, InvalidLoadOptionException {
+    String path = "./target/binary";
+    Field[] fields = new Field[7];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("image1", DataTypes.BINARY);
+    fields[3] = new Field("image2", DataTypes.BINARY);
+    fields[4] = new Field("image3", DataTypes.BINARY);
+    fields[5] = new Field("decodeString", DataTypes.BINARY);
+    fields[6] = new Field("decodeByte", DataTypes.BINARY);
+    try {
+      CarbonWriter
+          .builder()
+          .outputPath(path)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("SDKS3Example")
+          .withPageSizeInMb(1)
+          .withLoadOption("binary_decoder", "base")
+          .build();
+      Assert.assertTrue(false);
+    } catch (IllegalArgumentException e) {
+      Assert.assertTrue(e.getMessage().contains(
+          "Binary decoder only support Base64, Hex or no decode for string, don't support base"));
+    }
   }
 
   public void binaryToCarbonWithHWD(String sourceImageFolder, String outputPath, String preDestPath,

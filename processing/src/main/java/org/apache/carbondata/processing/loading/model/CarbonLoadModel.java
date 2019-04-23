@@ -235,6 +235,11 @@ public class CarbonLoadModel implements Serializable {
   private String columnCompressor;
 
   /**
+   * carbon binary decoder for loading data
+   */
+  private String binaryDecoder;
+
+  /**
    * the total size of loading data
    */
   private long totalSize;
@@ -488,6 +493,7 @@ public class CarbonLoadModel implements Serializable {
     copy.parentTablePath = parentTablePath;
     copy.sdkWriterCores = sdkWriterCores;
     copy.columnCompressor = columnCompressor;
+    copy.binaryDecoder = binaryDecoder;
     copy.rangePartitionColumn = rangePartitionColumn;
     copy.scaleFactor = scaleFactor;
     copy.totalSize = totalSize;
@@ -547,6 +553,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.parentTablePath = parentTablePath;
     copyObj.sdkWriterCores = sdkWriterCores;
     copyObj.columnCompressor = columnCompressor;
+    copyObj.binaryDecoder = binaryDecoder;
     copyObj.rangePartitionColumn = rangePartitionColumn;
     copyObj.scaleFactor = scaleFactor;
     copyObj.totalSize = totalSize;
@@ -958,6 +965,14 @@ public class CarbonLoadModel implements Serializable {
 
   public void setColumnCompressor(String columnCompressor) {
     this.columnCompressor = columnCompressor;
+  }
+
+  public String getBinaryDecoder() {
+    return binaryDecoder;
+  }
+
+  public void setBinaryDecoder(String binaryDecoder) {
+    this.binaryDecoder = binaryDecoder;
   }
 
   public CarbonColumn getRangePartitionColumn() {
