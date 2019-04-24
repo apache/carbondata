@@ -291,7 +291,12 @@ public class CarbonTableReader {
         // Use block distribution
         List<List<CarbonLocalInputSplit>> inputSplits = new ArrayList(
             result.stream().map(x -> (CarbonLocalInputSplit) x).collect(Collectors.groupingBy(
-                carbonInput -> carbonInput.getSegmentId().concat(carbonInput.getPath()))).values());
+                carbonInput -> {
+                  if (FileFormat.ROW_V1.equals(carbonInput.getFileFormat())){
+                    return carbonInput.getSegmentId().concat(carbonInput.getPath()).concat(carbonInput.getStart() + "");
+                  }
+                  return carbonInput.getSegmentId().concat(carbonInput.getPath());
+                })).values());
         if (inputSplits != null) {
           for (int j = 0; j < inputSplits.size(); j++) {
             multiBlockSplitList.add(new CarbonLocalMultiBlockSplit(inputSplits.get(j),
