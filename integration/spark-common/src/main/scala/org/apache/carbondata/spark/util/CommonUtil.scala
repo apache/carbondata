@@ -910,7 +910,7 @@ object CommonUtil {
   }
 
   def isDataTypeSupportedForSortColumn(columnDataType: String): Boolean = {
-    val dataTypes = Array("array", "struct", "map", "double", "float", "decimal")
+    val dataTypes = Array("array", "struct", "map", "double", "float", "decimal", "binary")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
