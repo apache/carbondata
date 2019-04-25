@@ -46,9 +46,9 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -293,8 +293,9 @@ public class CarbonTableReader {
         List<List<CarbonLocalInputSplit>> inputSplits = new ArrayList(
             result.stream().map(x -> (CarbonLocalInputSplit) x).collect(Collectors.groupingBy(
                 carbonInput -> {
-                  if (FileFormat.ROW_V1.equals(carbonInput.getFileFormat())){
-                    return carbonInput.getSegmentId().concat(carbonInput.getPath()).concat(carbonInput.getStart() + "");
+                  if (FileFormat.ROW_V1.equals(carbonInput.getFileFormat())) {
+                    return carbonInput.getSegmentId().concat(carbonInput.getPath())
+                      .concat(carbonInput.getStart() + "");
                   }
                   return carbonInput.getSegmentId().concat(carbonInput.getPath());
                 })).values());
