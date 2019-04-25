@@ -344,6 +344,23 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists test_dm_index")
   }
 
+  test("test delete on table with decimal column") {
+    sql("drop table if exists decimal_table")
+    sql(
+      s"""create table decimal_table(smallIntField smallInt,intField int,bigIntField bigint,floatField float,
+          doubleField double,decimalField decimal(25, 4),timestampField timestamp,dateField date,stringField string,
+          varcharField varchar(10),charField char(10))stored as carbondata
+      """.stripMargin)
+    sql(s"load data local inpath '$resourcesPath/decimalData.csv' into table decimal_table")
+    val frame = sql("select decimalfield from decimal_table where smallIntField = -1 or smallIntField = 3")
+    sql(s"delete from decimal_table where smallIntField = 2")
+    checkAnswer(frame, Seq(
+      Row(-1.1234),
+      Row(3.1234)
+    ))
+    sql("drop table if exists decimal_table")
+  }
+
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud_db cascade")
