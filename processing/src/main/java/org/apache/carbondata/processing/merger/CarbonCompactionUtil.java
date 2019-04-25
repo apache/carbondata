@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -464,12 +465,44 @@ public class CarbonCompactionUtil {
    * Returns if the DataFileFooter containing carbondata file contains
    * sorted data or not.
    *
+   * @param table
    * @param footer
    * @return
-   * @throws IOException
    */
-  public static boolean isSorted(DataFileFooter footer) throws IOException {
-    return footer.isSorted();
+  public static boolean isSortedByCurrentSortColumns(CarbonTable table, DataFileFooter footer) {
+    if (footer.isSorted()) {
+      // When sort_columns is modified, it will be consider as no_sort also.
+      List<CarbonDimension> sortColumnsOfSegment = new ArrayList<>();
+      for (ColumnSchema column : footer.getColumnInTable()) {
+        if (column.isDimensionColumn() && column.isSortColumn()) {
+          sortColumnsOfSegment.add(new CarbonDimension(column, -1, -1, -1));
+        }
+      }
+      if (sortColumnsOfSegment.size() < table.getNumberOfSortColumns()) {
+        return false;
+      }
+      List<CarbonDimension> sortColumnsOfTable = new ArrayList<>();
+      for (CarbonDimension dimension : table.getDimensions()) {
+        if (dimension.isSortColumn()) {
+          sortColumnsOfTable.add(dimension);
+        }
+      }
+      int sortColumnNums = sortColumnsOfTable.size();
+      if (sortColumnsOfSegment.size() < sortColumnNums) {
+        return false;
+      }
+      // compare sort_columns
+      for (int i = 0; i < sortColumnNums; i++) {
+        if (!RestructureUtil
+            .isColumnMatches(table.isTransactionalTable(), sortColumnsOfTable.get(i),
+                sortColumnsOfSegment.get(i))) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return false;
+    }
   }
 
 }
