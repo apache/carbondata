@@ -136,8 +136,7 @@ public class CarbonCompactionExecutor {
       Set<String> taskBlockListMapping = taskBlockInfo.getTaskSet();
       // Check if block needs sorting or not
       boolean sortingRequired =
-          CarbonCompactionUtil.isRestructured(listMetadata, carbonTable.getTableLastUpdatedTime())
-              || !CarbonCompactionUtil.isSorted(listMetadata.get(0));
+          !CarbonCompactionUtil.isSortedByCurrentSortColumns(carbonTable, listMetadata.get(0));
       for (String task : taskBlockListMapping) {
         tableBlockInfos = taskBlockInfo.getTableBlockInfoList(task);
         // during update there may be a chance that the cardinality may change within the segment

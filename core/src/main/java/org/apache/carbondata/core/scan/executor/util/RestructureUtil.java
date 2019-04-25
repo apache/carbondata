@@ -160,7 +160,7 @@ public class RestructureUtil {
    * @param tableColumn
    * @return
    */
-  private static boolean isColumnMatches(boolean isTransactionalTable,
+  public static boolean isColumnMatches(boolean isTransactionalTable,
       CarbonColumn queryColumn, CarbonColumn tableColumn) {
     // If it is non transactional table just check the column names, no need to validate
     // column id as multiple sdk's output placed in a single folder doesn't have same
