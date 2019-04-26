@@ -673,7 +673,8 @@ public class CarbonUpdateUtil {
   private static boolean compareTimestampsAndDelete(
       CarbonFile invalidFile,
       boolean forceDelete, boolean isUpdateStatusFile) {
-    long fileTimestamp = 0L;
+    boolean isDeleted = false;
+    Long fileTimestamp;
 
     if (isUpdateStatusFile) {
       fileTimestamp = CarbonUpdateUtil.getTimeStampAsLong(invalidFile.getName()
@@ -683,21 +684,43 @@ public class CarbonUpdateUtil {
               CarbonTablePath.DataFileUtil.getTimeStampFromFileName(invalidFile.getName()));
     }
 
-    // if the timestamp of the file is more than the current time by query execution timeout.
-    // then delete that file.
-    if (CarbonUpdateUtil.isMaxQueryTimeoutExceeded(fileTimestamp) || forceDelete) {
-      // delete the files.
-      try {
-        LOGGER.info("deleting the invalid file : " + invalidFile.getName());
-        CarbonUtil.deleteFoldersAndFiles(invalidFile);
-        return true;
-      } catch (IOException e) {
-        LOGGER.error("error in clean up of compacted files." + e.getMessage(), e);
-      } catch (InterruptedException e) {
-        LOGGER.error("error in clean up of compacted files." + e.getMessage(), e);
+    // This check is because, when there are some invalid files like tableStatusUpdate.write files
+    // present in store [[which can happen during delete or update if the disk is full or hdfs quota
+    // is finished]] then fileTimestamp will be null, in that case check for max query out and
+    // delete the .write file after timeout
+    if (fileTimestamp == null) {
+      String tableUpdateStatusFilename = invalidFile.getName();
+      if (tableUpdateStatusFilename.endsWith(".write")) {
+        long tableUpdateStatusFileTimeStamp = Long.parseLong(
+            CarbonTablePath.DataFileUtil.getTimeStampFromFileName(tableUpdateStatusFilename));
+        if (isMaxQueryTimeoutExceeded(tableUpdateStatusFileTimeStamp)) {
+          isDeleted = deleteInvalidFiles(invalidFile);
+        }
+      }
+    } else {
+      // if the timestamp of the file is more than the current time by query execution timeout.
+      // then delete that file.
+      if (CarbonUpdateUtil.isMaxQueryTimeoutExceeded(fileTimestamp) || forceDelete) {
+        isDeleted = deleteInvalidFiles(invalidFile);
       }
     }
-    return false;
+    return isDeleted;
+  }
+
+  private static boolean deleteInvalidFiles(CarbonFile invalidFile) {
+    boolean isDeleted;
+    try {
+      LOGGER.info("deleting the invalid file : " + invalidFile.getName());
+      CarbonUtil.deleteFoldersAndFiles(invalidFile);
+      isDeleted = true;
+    } catch (IOException e) {
+      LOGGER.error("error in clean up of invalid files." + e.getMessage(), e);
+      isDeleted = false;
+    } catch (InterruptedException e) {
+      LOGGER.error("error in clean up of invalid files." + e.getMessage(), e);
+      isDeleted = false;
+    }
+    return isDeleted;
   }
 
   public static boolean isBlockInvalid(SegmentStatus blockStatus) {
