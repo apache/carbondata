@@ -91,8 +91,10 @@ public class CarbonHiveInputSplit extends FileSplit
   }
 
   public CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
-      String[] locations, int numberOfBlocklets, ColumnarFormatVersion version) {
+      String[] locations, int numberOfBlocklets, ColumnarFormatVersion version,
+      BlockletDetailInfo detailInfo) {
     this(segmentId, path, start, length, locations, version);
+    this.detailInfo = detailInfo;
     this.numberOfBlocklets = numberOfBlocklets;
   }
 
@@ -110,8 +112,8 @@ public class CarbonHiveInputSplit extends FileSplit
    */
   public CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
       String[] locations, int numberOfBlocklets, ColumnarFormatVersion version,
-      Map<String, String> blockStorageIdMap) {
-    this(segmentId, path, start, length, locations, numberOfBlocklets, version);
+      Map<String, String> blockStorageIdMap, BlockletDetailInfo detailInfo) {
+    this(segmentId, path, start, length, locations, numberOfBlocklets, version, detailInfo);
     this.blockStorageIdMap = blockStorageIdMap;
   }
 

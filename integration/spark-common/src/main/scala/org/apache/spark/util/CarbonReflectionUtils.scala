@@ -40,7 +40,7 @@ import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.hadoop.api.{CarbonTableInputFormat, CarbonTableOutputFormat}
+import org.apache.carbondata.hive.{CarbonHiveSerDe, MapredCarbonInputFormat, MapredCarbonOutputFormat}
 
 /**
  * Reflection APIs
@@ -350,14 +350,17 @@ object CarbonReflectionUtils {
         val updatedSerdeMap =
           serdeMap ++ Map[String, HiveSerDe](
             ("org.apache.spark.sql.carbonsource", HiveSerDe(Some(
-              classOf[CarbonTableInputFormat[_]].getName),
-              Some(classOf[CarbonTableOutputFormat].getName))),
+              classOf[MapredCarbonInputFormat].getName),
+              Some(classOf[MapredCarbonOutputFormat[_]].getName),
+              Some(classOf[CarbonHiveSerDe].getName))),
             ("carbon", HiveSerDe(Some(
-              classOf[CarbonTableInputFormat[_]].getName),
-              Some(classOf[CarbonTableOutputFormat].getName))),
+              classOf[MapredCarbonInputFormat].getName),
+              Some(classOf[MapredCarbonOutputFormat[_]].getName),
+              Some(classOf[CarbonHiveSerDe].getName))),
             ("carbondata", HiveSerDe(Some(
-              classOf[CarbonTableInputFormat[_]].getName),
-              Some(classOf[CarbonTableOutputFormat].getName))))
+              classOf[MapredCarbonInputFormat].getName),
+              Some(classOf[MapredCarbonOutputFormat[_]].getName),
+              Some(classOf[CarbonHiveSerDe].getName))))
         instanceMirror.reflectField(field.asTerm).set(updatedSerdeMap)
       case _ =>
     }

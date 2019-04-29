@@ -37,6 +37,11 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-hive</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-streaming</artifactId>
       <version>${project.version}</version>
     </dependency>
