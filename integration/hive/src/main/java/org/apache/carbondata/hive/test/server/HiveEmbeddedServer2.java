@@ -15,15 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.hive.server;
+package org.apache.carbondata.hive.test.server;
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -48,20 +46,22 @@ import org.apache.log4j.Logger;
  * a child JVM (which Hive calls local) or external.
  */
 public class HiveEmbeddedServer2 {
-  private static final String SCRATCH_DIR = "/tmp/hive";
+  private String SCRATCH_DIR = "";
   private static final Logger log = LogServiceFactory.getLogService(Hive.class.getName());
   private HiveServer2 hiveServer;
   private HiveConf config;
   private int port;
-  private static Random secureRandom = new SecureRandom();
 
-  public void start() throws Exception {
+  public void start(String storePath) throws Exception {
     log.info("Starting Hive Local/Embedded Server...");
+    SCRATCH_DIR = storePath;
     if (hiveServer == null) {
       config = configure();
       hiveServer = new HiveServer2();
       port = MetaStoreUtils.findFreePort();
       config.setIntVar(ConfVars.HIVE_SERVER2_THRIFT_PORT, port);
+      config.setBoolVar(ConfVars.HADOOPMAPREDINPUTDIRRECURSIVE, true);
+      config.setBoolVar(ConfVars.HIVE_HADOOP_SUPPORTS_SUBDIRECTORIES, true);
       hiveServer.init(config);
       hiveServer.start();
       waitForStartup();
@@ -126,14 +126,12 @@ public class HiveEmbeddedServer2 {
       }
     }
 
-    int random = secureRandom.nextInt();
-
-    conf.set("hive.metastore.warehouse.dir", scratchDir + "/warehouse" + random);
-    conf.set("hive.metastore.metadb.dir", scratchDir + "/metastore_db" + random);
+    conf.set("hive.metastore.warehouse.dir", scratchDir + "/warehouse");
+    conf.set("hive.metastore.metadb.dir", scratchDir + "/metastore_db");
     conf.set("hive.exec.scratchdir", scratchDir);
     conf.set("fs.permissions.umask-mode", "022");
     conf.set("javax.jdo.option.ConnectionURL",
-        "jdbc:derby:;databaseName=" + scratchDir + "/metastore_db" + random + ";create=true");
+        "jdbc:derby:;databaseName=" + scratchDir + "/metastore_db" + ";create=true");
     conf.set("hive.metastore.local", "true");
     conf.set("hive.aux.jars.path", "");
     conf.set("hive.added.jars.path", "");

@@ -19,26 +19,34 @@ package org.apache.carbondata.hive;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator;
 import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordWriter;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.Progressable;
 
 /**
  * TODO : To extend CarbonOutputFormat
  */
-class MapredCarbonOutputFormat<T> extends FileOutputFormat<Void, T>
+public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
     implements HiveOutputFormat<Void, T> {
 
   @Override
   public RecordWriter<Void, T> getRecordWriter(FileSystem fileSystem, JobConf jobConf, String s,
       Progressable progressable) throws IOException {
     return null;
+  }
+
+  @Override public void checkOutputSpecs(FileSystem fileSystem, JobConf jobConf)
+      throws IOException {
+    org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
+    super.checkOutputSpecs(jobContext);
   }
 
   @Override public FileSinkOperator.RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath,

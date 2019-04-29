@@ -58,7 +58,7 @@ import org.apache.hadoop.io.Writable;
  * It transparently passes the object to/from the Carbon file reader/writer.
  */
 @SerDeSpec(schemaProps = { serdeConstants.LIST_COLUMNS, serdeConstants.LIST_COLUMN_TYPES })
-class CarbonHiveSerDe extends AbstractSerDe {
+public class CarbonHiveSerDe extends AbstractSerDe {
   private final SerDeStats stats;
   private ObjectInspector objInspector;
 

@@ -101,6 +101,7 @@
     <module>hadoop</module>
     <module>integration/spark-common</module>
     <module>integration/spark-common-test</module>
+    <module>integration/hive</module>
     <module>datamap/examples</module>
     <module>store/sdk</module>
     <module>assembly</module>

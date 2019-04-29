@@ -24,7 +24,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hive.MapredCarbonInputFormat
 
 class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
 
@@ -57,7 +57,7 @@ class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
       if (SparkUtil.isSparkVersionEqualTo("2.2")) {
         assertResult(table.storage.locationUri.get)(new Path(s"file:$storeLocation/source").toUri)
       }
-      assertResult(table.storage.inputFormat.get)(classOf[CarbonTableInputFormat[_]].getName)
+      assertResult(table.storage.inputFormat.get)(classOf[MapredCarbonInputFormat].getName)
     }
   }
 

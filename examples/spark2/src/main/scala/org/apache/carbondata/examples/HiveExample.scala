@@ -19,33 +19,36 @@ package org.apache.carbondata.examples
 import java.io.File
 import java.sql.{DriverManager, ResultSet, Statement}
 
-import org.apache.spark.sql.SparkSession
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.examples.util.ExampleUtils
-import org.apache.carbondata.hive.server.HiveEmbeddedServer2
+import org.apache.carbondata.hive.test.server.HiveEmbeddedServer2
 
 // scalastyle:off println
 object HiveExample {
 
   private val driverName: String = "org.apache.hive.jdbc.HiveDriver"
 
-  def main(args: Array[String]) {
-    val carbonSession = ExampleUtils.createCarbonSession("HiveExample")
-    exampleBody(carbonSession, CarbonProperties.getStorePath
-      + CarbonCommonConstants.FILE_SEPARATOR
-      + CarbonCommonConstants.DATABASE_DEFAULT_NAME)
-    carbonSession.stop()
+  val rootPath = new File(this.getClass.getResource("/").getPath
+                          + "../../../..").getCanonicalPath
+  private val targetLoc = s"$rootPath/examples/spark2/target"
+  val metaStoreLoc = s"$targetLoc/metastore_db"
+  val storeLocation = s"$targetLoc/store"
+  val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
+
+  def main(args: Array[String]) {
+    createCarbonTable(storeLocation)
+    readFromHive
     System.exit(0)
   }
 
-  def exampleBody(carbonSession: SparkSession, store: String): Unit = {
-    val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+  def createCarbonTable(store: String): Unit = {
+
+    val carbonSession = ExampleUtils.createCarbonSession("HiveExample")
 
     carbonSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
 
@@ -56,14 +59,44 @@ object HiveExample {
          | STORED BY 'carbondata'
        """.stripMargin)
 
+    val inputPath = FileFactory
+      .getUpdatedFilePath(s"$rootPath/examples/spark2/src/main/resources/sample.csv")
+
     carbonSession.sql(
       s"""
-         | LOAD DATA LOCAL INPATH '$rootPath/examples/spark2/src/main/resources/sample.csv'
+         | LOAD DATA LOCAL INPATH '$inputPath'
+         | INTO TABLE HIVE_CARBON_EXAMPLE
+       """.stripMargin)
+
+    carbonSession.sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$inputPath'
          | INTO TABLE HIVE_CARBON_EXAMPLE
        """.stripMargin)
 
     carbonSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
 
+    carbonSession.close()
+
+    // delete the already existing lock on metastore so that new derby instance
+    // for HiveServer can run on the same metastore
+    checkAndDeleteDBLock
+
+  }
+
+  def checkAndDeleteDBLock: Unit = {
+    val dbLockPath = FileFactory.getUpdatedFilePath(s"$metaStoreLoc/db.lck")
+    val dbexLockPath = FileFactory.getUpdatedFilePath(s"$metaStoreLoc/dbex.lck")
+    if(FileFactory.isFileExist(dbLockPath)) {
+      FileFactory.deleteFile(dbLockPath, FileFactory.getFileType(dbLockPath))
+    }
+    if(FileFactory.isFileExist(dbexLockPath)) {
+      FileFactory.deleteFile(dbexLockPath, FileFactory.getFileType(dbexLockPath))
+    }
+  }
+
+
+  def readFromHive: Unit = {
     try {
       Class.forName(driverName)
     }
@@ -72,36 +105,18 @@ object HiveExample {
         classNotFoundException.printStackTrace()
     }
 
+    // make HDFS writable
+    val path = new Path(targetLoc)
+    val fileSys = path.getFileSystem(FileFactory.getConfiguration)
+    fileSys.setPermission(path, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+
     val hiveEmbeddedServer2 = new HiveEmbeddedServer2()
-    hiveEmbeddedServer2.start()
+    hiveEmbeddedServer2.start(targetLoc)
     val port = hiveEmbeddedServer2.getFreePort
     val connection = DriverManager.getConnection(s"jdbc:hive2://localhost:$port/default", "", "")
     val statement: Statement = connection.createStatement
 
     logger.info(s"============HIVE CLI IS STARTED ON PORT $port ==============")
-
-    statement.execute(
-      s"""
-         | CREATE TABLE IF NOT EXISTS HIVE_CARBON_EXAMPLE
-         | (ID int, NAME string,SALARY double)
-         | ROW FORMAT SERDE 'org.apache.carbondata.hive.CarbonHiveSerDe'
-         | WITH SERDEPROPERTIES ('mapreduce.input.carboninputformat.databaseName'='default',
-         | 'mapreduce.input.carboninputformat.tableName'='HIVE_CARBON_EXAMPLE')
-       """.stripMargin)
-
-    statement.execute(
-      s"""
-         | ALTER TABLE HIVE_CARBON_EXAMPLE
-         | SET FILEFORMAT
-         | INPUTFORMAT \"org.apache.carbondata.hive.MapredCarbonInputFormat\"
-         | OUTPUTFORMAT \"org.apache.carbondata.hive.MapredCarbonOutputFormat\"
-         | SERDE \"org.apache.carbondata.hive.CarbonHiveSerDe\"
-       """.stripMargin)
-
-    statement
-      .execute(
-        "ALTER TABLE HIVE_CARBON_EXAMPLE SET LOCATION " +
-          s"'file:///$store/hive_carbon_example' ")
 
     val resultSet: ResultSet = statement.executeQuery("SELECT * FROM HIVE_CARBON_EXAMPLE")
 
@@ -135,7 +150,7 @@ object HiveExample {
       rowsFetched = rowsFetched + 1
     }
     println(s"******Total Number Of Rows Fetched ****** $rowsFetched")
-    assert(rowsFetched == 2)
+    assert(rowsFetched == 4)
 
     logger.info("Fetching the Individual Columns ")
 
@@ -166,7 +181,7 @@ object HiveExample {
     }
     println(" ********** Total Rows Fetched When Quering The Individual Columns **********" +
       s"$individualColRowsFetched")
-    assert(individualColRowsFetched == 2)
+    assert(individualColRowsFetched == 4)
 
     logger.info("Fetching the Out Of Order Columns ")
 
@@ -200,7 +215,7 @@ object HiveExample {
     }
     println(" ********** Total Rows Fetched When Quering The Out Of Order Columns **********" +
       s"$outOfOrderColFetched")
-    assert(outOfOrderColFetched == 2)
+    assert(outOfOrderColFetched == 4)
 
     hiveEmbeddedServer2.stop()
   }

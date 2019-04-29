@@ -78,6 +78,7 @@ class DictionaryLRUCacheTestCase extends Spark2QueryTest with BeforeAndAfterAll 
 
     path = s"$resourcesPath/restructure/data_2000.csv"
 
+    sql("use default")
     sql("drop table if exists carbon_new1")
     sql("drop table if exists carbon_new2")
     sql("drop table if exists carbon_new3")

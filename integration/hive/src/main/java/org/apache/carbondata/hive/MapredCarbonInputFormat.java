@@ -19,10 +19,11 @@ package org.apache.carbondata.hive;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
-import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -72,7 +73,8 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     } else {
       if (paths != null) {
         for (String inputPath : inputPaths) {
-          if (paths.startsWith(inputPath.replace("file:", ""))) {
+          inputPath = inputPath.replace("file:", "");
+          if (FileFactory.isFileExist(inputPath)) {
             validInputPath = inputPath;
             break;
           }
@@ -101,8 +103,12 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
   }
 
   @Override public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
+    jobConf.set(DATABASE_NAME, "_dummyDb_" + UUID.randomUUID().toString());
+    jobConf.set(TABLE_NAME, "_dummyTable_" + UUID.randomUUID().toString());
     org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
-    List<org.apache.hadoop.mapreduce.InputSplit> splitList = super.getSplits(jobContext);
+    CarbonTableInputFormat carbonTableInputFormat = new CarbonTableInputFormat();
+    List<org.apache.hadoop.mapreduce.InputSplit> splitList =
+        carbonTableInputFormat.getSplits(jobContext);
     InputSplit[] splits = new InputSplit[splitList.size()];
     CarbonInputSplit split;
     for (int i = 0; i < splitList.size(); i++) {
@@ -110,13 +116,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
       CarbonHiveInputSplit inputSplit = new CarbonHiveInputSplit(split.getSegmentId(),
               split.getPath(), split.getStart(), split.getLength(),
               split.getLocations(), split.getNumberOfBlocklets(),
-              split.getVersion(), split.getBlockStorageIdMap());
-      BlockletDetailInfo info = new BlockletDetailInfo();
-      info.setBlockSize(split.getLength());
-      info.setBlockFooterOffset(split.getDetailInfo().getBlockFooterOffset());
-      info.setVersionNumber(split.getVersion().number());
-      info.setUseMinMaxForPruning(false);
-      inputSplit.setDetailInfo(info);
+              split.getVersion(), split.getBlockStorageIdMap(), split.getDetailInfo());
       splits[i] = inputSplit;
     }
     return splits;
