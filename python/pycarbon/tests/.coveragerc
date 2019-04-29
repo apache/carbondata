@@ -1,0 +1,6 @@
+[run]
+omit = 
+    pycarbon/tests/*
+    pycarbon/*/__init__.py
+    pycarbon/__init__.py
+
