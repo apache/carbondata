@@ -37,10 +37,9 @@ import org.apache.arrow.vector.types.TimeUnit;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.FieldType;
 
-//TODO check with ravi
 public class ArrowUtils {
 
-  public static RootAllocator rootAllocator = new RootAllocator(Long.MAX_VALUE);
+  public static final RootAllocator rootAllocator = new RootAllocator(Long.MAX_VALUE);
 
   public static ArrowType toArrowType(DataType carbonDataType, String timeZoneId) {
     if (carbonDataType == DataTypes.STRING) {
@@ -59,7 +58,8 @@ public class ArrowUtils {
       return new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE);
     } else if (carbonDataType == DataTypes.BOOLEAN) {
       return ArrowType.Bool.INSTANCE;
-    } else if (DataTypes.isDecimal(carbonDataType)) {
+    } else if (carbonDataType instanceof DecimalType) {
+      // instance of check is for findbugs, instead of datatypes check
       DecimalType decimal = (DecimalType) carbonDataType;
       return new ArrowType.Decimal(decimal.getPrecision(), decimal.getScale());
     } else if (carbonDataType == DataTypes.TIMESTAMP) {
@@ -75,15 +75,16 @@ public class ArrowUtils {
 
   public static org.apache.arrow.vector.types.pojo.Field toArrowField(String name,
       DataType dataType, String timeZoneId) {
-    if (DataTypes.isArrayType(dataType)) {
+    if (dataType instanceof ArrayType) {
+      // instance of check is for findbugs, instead of datatypes check
       FieldType fieldType = new FieldType(true, ArrowType.List.INSTANCE, null);
       List<org.apache.arrow.vector.types.pojo.Field> structFields = new ArrayList<>();
-      structFields
-          .add(toArrowField("element", ((ArrayType) dataType).getElementType(), timeZoneId));
+      DataType elementType = ((ArrayType) dataType).getElementType();
+      structFields.add(toArrowField("element", elementType, timeZoneId));
       return new org.apache.arrow.vector.types.pojo.Field(name, fieldType, structFields);
-      // TODO check with RAVI
-    } else if (DataTypes.isStructType(dataType)) {
-      final StructType dataType1 = (StructType) dataType;
+    } else if (dataType instanceof StructType) {
+      // instance of check is for findbugs, instead of datatypes check
+      StructType dataType1 = (StructType) dataType;
       FieldType fieldType = new FieldType(true, ArrowType.Struct.INSTANCE, null);
       List<StructField> fields = dataType1.getFields();
       List<org.apache.arrow.vector.types.pojo.Field> structFields = new ArrayList<>();

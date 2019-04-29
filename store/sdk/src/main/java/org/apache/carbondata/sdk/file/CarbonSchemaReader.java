@@ -117,7 +117,7 @@ public class CarbonSchemaReader {
   }
 
   public static byte[] getSchemaAsBytes(String path) throws IOException {
-    Schema schema = CarbonSchemaReader.readSchema(path);
+    Schema schema = CarbonSchemaReader.readSchema(path).asOriginOrder();
     ArrowConverter arrowConverter = new ArrowConverter(schema, 1);
     final byte[] bytes = arrowConverter.toSerializeArray();
     arrowConverter.close();

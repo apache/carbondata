@@ -18,6 +18,9 @@ package org.apache.carbondata.sdk.file.arrow;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.BitVector;
@@ -199,9 +202,9 @@ class StringWriter extends ArrowFieldWriter {
   }
 
   @Override public void setValue(Object data, int ordinal) {
-    //TODO check if it works with JAVA String object intead of utf8 String
-    byte[] bytes = ((String) data).getBytes();
-    ByteBuffer byteBuffer = ByteBuffer.wrap(((String) data).getBytes());
+    byte[] bytes =
+        (String.valueOf(data)).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
     this.varCharVector.setSafe(count, byteBuffer, byteBuffer.position(), bytes.length);
   }
 }
