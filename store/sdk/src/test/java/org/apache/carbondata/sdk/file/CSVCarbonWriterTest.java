@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -104,6 +105,71 @@ public class CSVCarbonWriterTest {
     TestUtil.writeFilesAndVerify(Schema.parseJson(schema), path);
 
     FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testWriteJsonSchemaWithDefaultDecimal() {
+    String jsonSchema = new StringBuilder()
+        .append("[ \n")
+        .append("   {\"name\":\"string\"},\n")
+        .append("   {\"age\":\"int\"},\n")
+        .append("   {\"height\":\"double\"},\n")
+        .append("   {\"decimalField\":\"decimal\"}\n")
+        .append("]")
+        .toString();
+    Schema schema = Schema.parseJson(jsonSchema);
+    assert (10 == ((DecimalType) schema.getFields()[3].getDataType()).getPrecision());
+    assert (2 == ((DecimalType) schema.getFields()[3].getDataType()).getScale());
+  }
+
+  @Test
+  public void testWriteJsonSchemaWithCustomDecimal() {
+    String jsonSchema = new StringBuilder()
+        .append("[ \n")
+        .append("   {\"name\":\"string\"},\n")
+        .append("   {\"age\":\"int\"},\n")
+        .append("   {\"height\":\"double\"},\n")
+        .append("   {\"decimalField\":\"decimal(17,3)\"}\n")
+        .append("]")
+        .toString();
+    Schema schema = Schema.parseJson(jsonSchema);
+    assert (17 == ((DecimalType) schema.getFields()[3].getDataType()).getPrecision());
+    assert (3 == ((DecimalType) schema.getFields()[3].getDataType()).getScale());
+  }
+
+  @Test
+  public void testWriteJsonSchemaWithCustomDecimalAndSpace() {
+    String jsonSchema = new StringBuilder()
+        .append("[ \n")
+        .append("   {\"name\":\"string\"},\n")
+        .append("   {\"age\":\"int\"},\n")
+        .append("   {\"height\":\"double\"},\n")
+        .append("   {\"decimalField\":\"decimal( 17, 3)\"}\n")
+        .append("]")
+        .toString();
+    Schema schema = Schema.parseJson(jsonSchema);
+    assert (17 == ((DecimalType) schema.getFields()[3].getDataType()).getPrecision());
+    assert (3 == ((DecimalType) schema.getFields()[3].getDataType()).getScale());
+  }
+
+  @Test
+  public void testWriteJsonSchemaWithImproperDecimal() {
+    String jsonSchema = new StringBuilder()
+        .append("[ \n")
+        .append("   {\"name\":\"string\"},\n")
+        .append("   {\"age\":\"int\"},\n")
+        .append("   {\"height\":\"double\"},\n")
+        .append("   {\"decimalField\":\"decimal( 17, )\"}\n")
+        .append("]")
+        .toString();
+    try {
+      Schema.parseJson(jsonSchema);
+      assert (false);
+    } catch (Exception e) {
+      assert (e.getMessage().contains("unsupported data type: decimal( 17, ). " +
+          "Please use decimal or decimal(precision,scale), " +
+          "precision can be 10 and scale can be 2"));
+    }
   }
 
   @Test
