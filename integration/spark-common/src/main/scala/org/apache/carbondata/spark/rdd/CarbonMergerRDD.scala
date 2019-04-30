@@ -449,7 +449,7 @@ class CarbonMergerRDD[K, V](
           if (null == expressionMapForRangeCol.get(i)) {
             // Creating FilterExpression for the range column
             val filterExpr = CarbonCompactionUtil
-              .getAndExpressionForRange(rangeColumn.getColName, i,
+              .getFilterExpressionForRange(rangeColumn, i,
                 allRanges(i).getMinVal, allRanges(i).getMaxVal, dataType)
             expressionMapForRangeCol.put(i, filterExpr)
           }

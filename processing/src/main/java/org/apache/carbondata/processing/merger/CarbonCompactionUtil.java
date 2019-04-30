@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -485,10 +486,11 @@ public class CarbonCompactionUtil {
 
   // This method will return an Expression(And/Or) for each range based on the datatype
   // This Expression will be passed to each task as a Filter Query to get the data
-  public static Expression getAndExpressionForRange(String colName, int taskId, Object minVal,
-      Object maxVal, DataType dataType) {
+  public static Expression getFilterExpressionForRange(CarbonColumn rangeColumn, int taskId,
+      Object minVal, Object maxVal, DataType dataType) {
     Expression finalExpr;
     Expression exp1, exp2;
+    String colName = rangeColumn.getColName();
 
     // In case of null values create an OrFilter expression and
     // for other cases create and AndFilter Expression
@@ -502,6 +504,10 @@ public class CarbonCompactionUtil {
       } else {
         exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
             new LiteralExpression(maxVal, dataType));
+        if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
+          exp2.setAlreadyResolved(true);
+          exp1.setAlreadyResolved(true);
+        }
         finalExpr = new OrExpression(exp1, exp2);
       }
     } else {
@@ -514,6 +520,10 @@ public class CarbonCompactionUtil {
       }
       exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
           new LiteralExpression(maxVal, dataType));
+      if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
+        exp2.setAlreadyResolved(true);
+        exp1.setAlreadyResolved(true);
+      }
       finalExpr = new AndExpression(exp1, exp2);
     }
     return finalExpr;

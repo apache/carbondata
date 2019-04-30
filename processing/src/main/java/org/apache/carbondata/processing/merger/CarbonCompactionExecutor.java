@@ -128,7 +128,8 @@ public class CarbonCompactionExecutor {
               .enableForcedDetailRawQuery();
     } else {
       builder = new QueryModelBuilder(carbonTable).projectAllColumns().filterExpression(filterExpr)
-          .dataConverter(dataTypeConverter).enableForcedDetailRawQuery();
+          .dataConverter(dataTypeConverter).enableForcedDetailRawQuery()
+          .convertToRangeFilter(false);
     }
     if (enablePageLevelReaderForCompaction()) {
       builder.enableReadPageByPage();

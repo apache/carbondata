@@ -33,6 +33,8 @@ public abstract class Expression implements Serializable {
   protected List<Expression> children =
       new ArrayList<Expression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
+  protected boolean isAlreadyResolved;
+
   public abstract ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException;
 
@@ -52,4 +54,12 @@ public abstract class Expression implements Serializable {
   public abstract String getString();
 
   public abstract String getStatement();
+
+  public boolean isAlreadyResolved() {
+    return isAlreadyResolved;
+  }
+
+  public void setAlreadyResolved(boolean alreadyResolved) {
+    isAlreadyResolved = alreadyResolved;
+  }
 }

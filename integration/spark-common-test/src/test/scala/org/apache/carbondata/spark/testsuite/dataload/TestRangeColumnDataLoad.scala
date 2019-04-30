@@ -368,7 +368,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql("DROP TABLE IF EXISTS carbon_range_column1")
   }
 
-  test("Test compaction for range_column - INT Datatype with Global Dict(not supported)") {
+  test("Test compaction for range_column - INT Datatype with Global Dict") {
     deleteFile(filePath2)
     createFile(filePath2, 10, 9)
     deleteFile(filePath3)
@@ -391,6 +391,8 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     var res = sql("select * from carbon_range_column1").collect()
 
     sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
 
     deleteFile(filePath2)
     deleteFile(filePath3)

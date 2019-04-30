@@ -1081,20 +1081,24 @@ public class CarbonTable implements Serializable {
     return dataSize + indexSize;
   }
 
-  public void processFilterExpression(Expression filterExpression,
+  public void processFilterExpression(Expression filterExpression, boolean[] isFilterDimensions,
+      boolean[] isFilterMeasures) {
+    processFilterExpressionWithoutRange(filterExpression, isFilterDimensions, isFilterMeasures);
+    if (null != filterExpression) {
+      // Optimize Filter Expression and fit RANGE filters is conditions apply.
+      FilterOptimizer rangeFilterOptimizer = new RangeFilterOptmizer(filterExpression);
+      rangeFilterOptimizer.optimizeFilter();
+    }
+  }
+
+  public void processFilterExpressionWithoutRange(Expression filterExpression,
       boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
     QueryModel.FilterProcessVO processVO =
         new QueryModel.FilterProcessVO(getDimensionByTableName(getTableName()),
             getMeasureByTableName(getTableName()), getImplicitDimensionByTableName(getTableName()));
-    QueryModel.processFilterExpression(processVO, filterExpression, isFilterDimensions,
-        isFilterMeasures, this);
-
-    if (null != filterExpression) {
-      // Optimize Filter Expression and fit RANGE filters is conditions apply.
-      FilterOptimizer rangeFilterOptimizer =
-          new RangeFilterOptmizer(filterExpression);
-      rangeFilterOptimizer.optimizeFilter();
-    }
+    QueryModel
+        .processFilterExpression(processVO, filterExpression, isFilterDimensions, isFilterMeasures,
+            this);
   }
 
   /**
