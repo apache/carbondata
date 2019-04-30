@@ -1,37 +1,37 @@
-# Petastorm Tensorflow and Pytorch Example
+# Pycarbon Tensorflow and Pytorch Example
 
 ## Setup
 ```bash
-PYTHONPATH=~/dev/petastorm  # replace with your petastorm install path
+PYTHONPATH=~/dev/pycarbon  # replace with your pycarbon install path
 ```
 
-## Generating a Petastorm Dataset from MNIST Data
+## Generating a Pycarbon Dataset from MNIST Data
 
-This creates both a `train` and `test` petastorm datasets in `/tmp/mnist`:
+This creates both a `train` and `test` pycarbon datasets in `/tmp/mnist`:
 
 ```bash
-python generate_petastorm_mnist.py
+python generate_pycarbon_mnist.py
 ```
 
-## Pytorch training using the Petastormed MNIST Dataset
+## Pytorch training using the Pycarboned MNIST Dataset
 
-This will invoke a 10-epoch training run using MNIST data in petastorm form,
+This will invoke a 10-epoch training run using MNIST data in pycarbon form,
 stored by default in `/tmp/mnist`, and show accuracy against the test set:
 
 ```bash
-python pytorch_example.py
+python pytorch_example_carbon.py
 ```
 
 ```
-usage: pytorch_example.py [-h] [--dataset-url S] [--batch-size N] [--test-batch-size N]
+usage: pytorch_example_carbon.py [-h] [--dataset-url S] [--batch-size N] [--test-batch-size N]
                [--epochs N] [--all-epochs] [--lr LR] [--momentum M]
                [--no-cuda] [--seed S] [--log-interval N]
 
-Petastorm MNIST Example
+Pycarbon Pytorch MNIST Example
 
 optional arguments:
   -h, --help           show this help message and exit
-  --dataset-url S      hdfs:// or file:/// URL to the MNIST petastorm dataset
+  --dataset-url S      hdfs:// or file:/// URL to the MNIST pycarbon dataset
                        (default: file:///tmp/mnist)
   --batch-size N       input batch size for training (default: 64)
   --test-batch-size N  input batch size for testing (default: 1000)
@@ -44,25 +44,25 @@ optional arguments:
   --log-interval N     how many batches to wait before logging training status
 ```
 
-## Tensorflow training using the Petastormed MNIST Dataset
+## Tensorflow training using the Pycarboned MNIST Dataset
 
-This will invoke a training run using MNIST data in petastorm form,
+This will invoke a training run using MNIST data in pycarbon form,
 for 100 epochs, using a batch size of 100, and log every 10 intervals.
 
 ```bash
-python tf_example.py
+python tf_example_carbon.py
 ```
 
 ```
-python tf_example.py -h
-usage: tf_example.py [-h] [--dataset-url S] [--training-iterations N]
+python tf_example_carbon.py -h
+usage: tf_example_carbon.py [-h] [--dataset-url S] [--training-iterations N]
                      [--batch-size N] [--evaluation-interval N]
 
-Petastorm Tensorflow MNIST Example
+Pycarbon Tensorflow MNIST Example
 
 optional arguments:
   -h, --help            show this help message and exit
-  --dataset-url S       hdfs:// or file:/// URL to the MNIST petastorm
+  --dataset-url S       hdfs:// or file:/// URL to the MNIST pycarbon
                         dataset(default: file:///tmp/mnist)
   --training-iterations N
                         number of training iterations to train (default: 100)

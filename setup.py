@@ -1,4 +1,4 @@
-#  Copyright (c) 2017-2018 Uber Technologies, Inc.
+#  Copyright (c) 2018-2019 Huawei Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,17 +19,18 @@ import re
 import setuptools
 from setuptools import setup
 
-PACKAGE_NAME = 'petastorm'
+PACKAGE_NAME = 'pycarbon'
 
-with open('README.rst') as f:
+with open('README.md') as f:
     long_description = f.read()
 
-with io.open('petastorm/__init__.py', 'rt', encoding='utf8') as f:
+with io.open('pycarbon/__init__.py', 'rt', encoding='utf8') as f:
     version = re.search(r'__version__ = \'(.*?)\'', f.read()).group(1)
     if version is None:
-        raise ImportError('Could not find __version__ in petastorm/__init__.py')
+        raise ImportError('Could not find __version__ in pycarbon/__init__.py')
 
 REQUIRED_PACKAGES = [
+    'petastorm==0.7.2',
     'dill>=0.2.1',
     'diskcache>=3.0.0',
     'numpy>=1.13.3',
@@ -39,7 +40,7 @@ REQUIRED_PACKAGES = [
     'pyzmq>=14.0.0',
     'pyarrow>=0.10',
     'six>=1.5.0',
-    'futures>=2.0; python_version == "2.7"',  # TODO(yevgeni): check if 2.0 is the minimum
+    'futures>=2.0; python_version == "2.7"',
 ]
 
 EXTRA_REQUIRE = {
@@ -78,21 +79,16 @@ setup(
     version=version,
     install_requires=REQUIRED_PACKAGES,
     packages=packages,
-    description='Petastorm is a library enabling the use of Parquet storage from Tensorflow, Pytorch, and'
-                ' other Python-based ML training frameworks.',
+    description='Pycarbon is a library that optimizes data access for AI based on CarbonData files, '
+                ' and it is based on Petastorm.',
     long_description=long_description,
-    long_description_content_type="text/x-rst",
+    long_description_content_type="text/markdown", 
     license='Apache License, Version 2.0',
     extras_require=EXTRA_REQUIRE,
     entry_points={
-        'console_scripts': [
-            'petastorm-copy-dataset.py=petastorm.tools.copy_dataset:main',
-            'petastorm-generate-metadata.py=petastorm.etl.petastorm_generate_metadata:main',
-            'petastorm-throughput.py=petastorm.benchmark.cli:main',
-        ],
     },
-    url='https://github.com/uber/petastorm',
-    author='Uber Technologies, Inc.',
+    url='https://github.com/HuaweiBigData/pycarbon',
+    author='Huawei Technologies, Inc.',
     classifiers=[
         'Environment :: Console',
         'Environment :: Web Environment',

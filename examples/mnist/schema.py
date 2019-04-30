@@ -1,4 +1,4 @@
-#  Copyright (c) 2017-2018 Uber Technologies, Inc.
+#  Copyright (c) 2018-2019 Huawei Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ from petastorm.codecs import ScalarCodec, NdarrayCodec
 from petastorm.unischema import Unischema, UnischemaField
 
 MnistSchema = Unischema('MnistSchema', [
-    UnischemaField('idx', np.int_, (), ScalarCodec(IntegerType()), False),
-    UnischemaField('digit', np.int_, (), ScalarCodec(IntegerType()), False),
-    UnischemaField('image', np.uint8, (28, 28), NdarrayCodec(), False),
+  UnischemaField('idx', np.int_, (), ScalarCodec(IntegerType()), False),
+  UnischemaField('digit', np.int_, (), ScalarCodec(IntegerType()), False),
+  UnischemaField('image', np.uint8, (28, 28), NdarrayCodec(), False),
 ])

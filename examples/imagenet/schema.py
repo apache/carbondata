@@ -1,4 +1,4 @@
-#  Copyright (c) 2017-2018 Uber Technologies, Inc.
+#  Copyright (c) 2018-2019 Huawei Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ from petastorm.codecs import ScalarCodec, CompressedImageCodec
 from petastorm.unischema import Unischema, UnischemaField
 
 ImagenetSchema = Unischema('ImagenetSchema', [
-    UnischemaField('noun_id', np.string_, (), ScalarCodec(StringType()), False),
-    UnischemaField('text', np.string_, (), ScalarCodec(StringType()), False),
-    UnischemaField('image', np.uint8, (None, None, 3), CompressedImageCodec('png'), False),
+  UnischemaField('noun_id', np.string_, (), ScalarCodec(StringType()), False),
+  UnischemaField('text', np.string_, (), ScalarCodec(StringType()), False),
+  UnischemaField('image', np.uint8, (None, None, 3), CompressedImageCodec('png'), False),
 ])
