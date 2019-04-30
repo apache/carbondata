@@ -26,15 +26,15 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.hadoop.conf.Configuration;
 
 public class SDKUtil {
-  public static ArrayList listFiles(String sourceImageFolder, final String suf) throws Exception {
-    return listFiles(sourceImageFolder, suf, new Configuration(true));
+  public static ArrayList listFiles(String sourceFolder, final String suf) throws Exception {
+    return listFiles(sourceFolder, suf, new Configuration(true));
   }
 
-  public static ArrayList listFiles(String sourceImageFolder,
+  public static ArrayList listFiles(String sourceFolder,
                                     final String suf, Configuration conf) throws Exception {
     final String sufImageFinal = suf;
     ArrayList result = new ArrayList();
-    CarbonFile[] fileList = FileFactory.getCarbonFile(sourceImageFolder).listFiles();
+    CarbonFile[] fileList = FileFactory.getCarbonFile(sourceFolder).listFiles();
     for (int i = 0; i < fileList.length; i++) {
       if (fileList[i].isDirectory()) {
         result.addAll(listFiles(fileList[i].getCanonicalPath(), sufImageFinal, conf));
@@ -47,7 +47,7 @@ public class SDKUtil {
 
 
   public static Object[] getSplitList(String path, String suf,
-                                      int numOfSplit, Configuration conf) throws Exception {
+      int numOfSplit, Configuration conf) throws Exception {
     List fileList = listFiles(path, suf, conf);
     List splitList = new ArrayList<List>();
     if (numOfSplit < fileList.size()) {
