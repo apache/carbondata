@@ -972,7 +972,7 @@ public class ImageTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder()
-        .withFileLists(fileLists)
+        .withFileLists(fileLists.subList(0,2))
         .projection(projectionLists)
         .build();
 
@@ -992,7 +992,7 @@ public class ImageTest extends TestCase {
       bos.close();
       i++;
     }
-    assert (9 == i);
+    assert (6 == i);
     System.out.println("\nFinished");
     reader.close();
 
