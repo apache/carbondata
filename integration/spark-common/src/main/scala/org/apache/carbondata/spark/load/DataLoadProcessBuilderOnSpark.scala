@@ -33,6 +33,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util._
@@ -311,21 +312,27 @@ object DataLoadProcessBuilderOnSpark {
         // better to generate a CarbonData file for each partition
         val totalSize = model.getTotalSize.toDouble
         val table = model.getCarbonDataLoadSchema.getCarbonTable
-        val blockSize = 1024L * 1024 * table.getBlockSizeInMB
-        val blockletSize = 1024L * 1024 * table.getBlockletSizeInMB
-        val scaleFactor = if (model.getScaleFactor == 0) {
-          // use system properties
-          CarbonProperties.getInstance().getRangeColumnScaleFactor
-        } else {
-          model.getScaleFactor
-        }
-        // For Range_Column, it will try to generate one big file for each partition.
-        // And the size of the big file is about TABLE_BLOCKSIZE of this table.
-        val splitSize = Math.max(blockletSize, (blockSize - blockletSize)) * scaleFactor
-        numPartitions = Math.ceil(totalSize / splitSize).toInt
+        numPartitions = getNumPatitionsBasedOnSize(totalSize, table, model)
       }
     }
     numPartitions
+  }
+
+  def getNumPatitionsBasedOnSize(totalSize: Double,
+      table: CarbonTable,
+      model: CarbonLoadModel): Int = {
+    val blockSize = 1024L * 1024 * table.getBlockSizeInMB
+    val blockletSize = 1024L * 1024 * table.getBlockletSizeInMB
+    val scaleFactor = if (model.getScaleFactor == 0) {
+      // use system properties
+      CarbonProperties.getInstance().getRangeColumnScaleFactor
+    } else {
+      model.getScaleFactor
+    }
+    // For Range_Column, it will try to generate one big file for each partition.
+    // And the size of the big file is about TABLE_BLOCKSIZE of this table.
+    val splitSize = Math.max(blockletSize, (blockSize - blockletSize)) * scaleFactor
+    Math.ceil(totalSize / splitSize).toInt
   }
 
   private def indexOfColumn(column: CarbonColumn, fields: Array[DataField]): Int = {

@@ -47,15 +47,15 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
-import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.mutate.UpdateVO
 import org.apache.carbondata.core.scan.expression
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
-import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentUpdateStatusManager}
+import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatusManager, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
@@ -332,8 +332,25 @@ class CarbonMergerRDD[K, V](
     val taskIdMapping: java.util.Map[String, java.util.List[CarbonInputSplit]] = new
         java.util.HashMap[String, java.util.List[CarbonInputSplit]]
 
+    var totalSize: Double = 0
+    var loadMetadataDetails: Array[LoadMetadataDetails] = null
+
+    // Only for range column get the details for the size of segments
+    if (null != rangeColumn) {
+      loadMetadataDetails = SegmentStatusManager
+        .readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath))
+    }
+
     // for each valid segment.
     for (eachSeg <- carbonMergerMapping.validSegments) {
+      // In case of range column get the size for calculation of number of ranges
+      if (null != rangeColumn) {
+        for (details <- loadMetadataDetails) {
+          if (details.getLoadName == eachSeg.getSegmentNo) {
+            totalSize = totalSize + (details.getDataSize.toDouble)
+          }
+        }
+      }
 
       // map for keeping the relation of a task and its blocks.
       job.getConfiguration.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, eachSeg.getSegmentNo)
@@ -371,12 +388,16 @@ class CarbonMergerRDD[K, V](
     }
 
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    var allRanges: Array[RangeValues] = new Array[RangeValues](defaultParallelism)
+    var allRanges: Array[RangeValues] = new Array[RangeValues](0)
     if (rangeColumn != null) {
+      // To calculate the number of ranges to be made, min 2 ranges/tasks to be made in any case
+      val numOfPartitions = Math
+        .max(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL.toInt, DataLoadProcessBuilderOnSpark
+          .getNumPatitionsBasedOnSize(totalSize, carbonTable, carbonLoadModel))
       LOGGER.info(s"Compacting on range column: $rangeColumn")
       allRanges = getRangesFromRDD(rangeColumn,
         carbonTable,
-        defaultParallelism,
+        numOfPartitions,
         allSplits,
         dataType)
     }
