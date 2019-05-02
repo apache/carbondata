@@ -42,7 +42,7 @@ public class ArrowUtils {
   public static final RootAllocator rootAllocator = new RootAllocator(Long.MAX_VALUE);
 
   public static ArrowType toArrowType(DataType carbonDataType, String timeZoneId) {
-    if (carbonDataType == DataTypes.STRING) {
+    if (carbonDataType == DataTypes.STRING || carbonDataType == DataTypes.VARCHAR) {
       return ArrowType.Utf8.INSTANCE;
     } else if (carbonDataType == DataTypes.BYTE) {
       return new ArrowType.Int(8, true);

@@ -116,11 +116,18 @@ public class CarbonSchemaReader {
     return readSchema(path, false, conf);
   }
 
-  public static byte[] getSchemaAsBytes(String path) throws IOException {
+  /**
+   * Converting carbon schema to arrow schema in byte[],
+   * this schema can be used for reading arrow vector
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public static byte[] getArrowSchemaAsBytes(String path) throws IOException {
     Schema schema = CarbonSchemaReader.readSchema(path).asOriginOrder();
     ArrowConverter arrowConverter = new ArrowConverter(schema, 1);
     final byte[] bytes = arrowConverter.toSerializeArray();
-    arrowConverter.close();
     return bytes;
   }
 

@@ -24,8 +24,12 @@ import java.util.TimeZone;
 import org.apache.carbondata.sdk.file.Schema;
 
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.VectorLoader;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.VectorUnloader;
+import org.apache.arrow.vector.ipc.ArrowFileReader;
 import org.apache.arrow.vector.ipc.ArrowFileWriter;
+import org.apache.arrow.vector.util.ByteArrayReadableSeekableByteChannel;
 
 public class ArrowConverter {
 
@@ -75,9 +79,20 @@ public class ArrowConverter {
     return out.copyToAddress();
   }
 
-  public void close() {
-    //    this.root.close();
-    //    this.arrowWriter.finish();
-    //    this.allocator.close();
+  public VectorSchemaRoot byteArrayToVector(byte[] batchBytes) throws IOException {
+    ByteArrayReadableSeekableByteChannel in = new ByteArrayReadableSeekableByteChannel(batchBytes);
+    ArrowFileReader reader = new ArrowFileReader(in, allocator);
+    try {
+      VectorSchemaRoot root = reader.getVectorSchemaRoot();
+      VectorUnloader unloader = new VectorUnloader(root);
+      reader.loadNextBatch();
+      VectorSchemaRoot arrowRoot = VectorSchemaRoot.create(arrowSchema, allocator);
+      VectorLoader vectorLoader = new VectorLoader(arrowRoot);
+      vectorLoader.load(unloader.getRecordBatch());
+      return arrowRoot;
+    } catch (IOException e) {
+      reader.close();
+    }
+    return null;
   }
 }

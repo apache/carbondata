@@ -23,12 +23,14 @@ import org.apache.carbondata.sdk.file.Schema;
 
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.BitVector;
+import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.DecimalVector;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.Float4Vector;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.SmallIntVector;
+import org.apache.arrow.vector.TimeStampMicroTZVector;
 import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
@@ -130,6 +132,10 @@ public class ArrowWriter {
           arrowFieldWriters.toArray(new ArrowFieldWriter[arrowFieldWriters.size()]));
     } else if (valueVector instanceof VarBinaryVector) {
       return new BinaryWriter((VarBinaryVector) valueVector);
+    } else if (valueVector instanceof DateDayVector) {
+      return new DateWriter((DateDayVector) valueVector);
+    } else if (valueVector instanceof TimeStampMicroTZVector) {
+      return new TimeStampWriter((TimeStampMicroTZVector) valueVector);
     } else {
       throw new UnsupportedOperationException("Invalid data type");
     }

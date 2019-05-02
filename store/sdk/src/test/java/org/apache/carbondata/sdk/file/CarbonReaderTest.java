@@ -22,6 +22,10 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.*;
 
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.Float4Vector;
+import org.apache.arrow.vector.SmallIntVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.avro.generic.GenericData;
 import org.apache.log4j.Logger;
 
@@ -38,6 +42,7 @@ import org.apache.carbondata.core.scan.expression.conditional.*;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 
 import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
@@ -2418,4 +2423,87 @@ public class CarbonReaderTest extends TestCase {
       }
     }
   }
+
+  @Test
+  public void testArrowReader() {
+    String path = "./carbondata";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+
+      Field[] fields = new Field[13];
+      fields[0] = new Field("stringField", DataTypes.STRING);
+      fields[1] = new Field("shortField", DataTypes.SHORT);
+      fields[2] = new Field("intField", DataTypes.INT);
+      fields[3] = new Field("longField", DataTypes.LONG);
+      fields[4] = new Field("doubleField", DataTypes.DOUBLE);
+      fields[5] = new Field("boolField", DataTypes.BOOLEAN);
+      fields[6] = new Field("dateField", DataTypes.DATE);
+      fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
+      fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
+      fields[9] = new Field("varcharField", DataTypes.VARCHAR);
+      fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
+      fields[11] = new Field("floatField", DataTypes.FLOAT);
+      fields[12] = new Field("binaryField", DataTypes.BINARY);
+      Map<String, String> map = new HashMap<>();
+      map.put("complex_delimiter_level_1", "#");
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("CarbonReaderTest")
+          .build();
+      byte[] value = "Binary".getBytes();
+      for (int i = 0; i < 10; i++) {
+        Object[] row2 = new Object[]{
+            "robot" + (i % 10),
+            i % 10000,
+            i,
+            (Long.MAX_VALUE - i),
+            ((double) i / 2),
+            (true),
+            "2019-03-02",
+            "2019-02-12 03:03:34",
+            12.345,
+            "varchar",
+            "Hello#World#From#Carbon",
+            1.23,
+            value
+        };
+        writer.write(row2);
+      }
+      writer.close();
+      // Read data
+      CarbonReader reader = CarbonReader
+          .builder(path, "_temp")
+          .withRowRecordReader()
+          .build();
+      Schema carbonSchema = CarbonSchemaReader.readSchema(path);
+      byte[] data = reader.readArrowBatch(carbonSchema);
+      ArrowConverter arrowConverter = new ArrowConverter(carbonSchema,1000);
+      VectorSchemaRoot vectorSchemaRoot = arrowConverter.byteArrayToVector(data);
+      // check for 10 rows
+      assertEquals(vectorSchemaRoot.getRowCount(), 10);
+      List<FieldVector> fieldVectors = vectorSchemaRoot.getFieldVectors();
+      // validate short column
+      for (int i = 0; i < vectorSchemaRoot.getRowCount(); i++) {
+        assertEquals(((SmallIntVector)fieldVectors.get(6)).get(i), i);
+      }
+      // validate float column
+      for (int i = 0; i < vectorSchemaRoot.getRowCount(); i++) {
+        assertEquals(((Float4Vector)fieldVectors.get(12)).get(i), (float) 1.23);
+      }
+      reader.close();
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    } finally {
+      try {
+        FileUtils.deleteDirectory(new File(path));
+      } catch (IOException e) {
+        e.printStackTrace();
+        Assert.fail(e.getMessage());
+      }
+    }
+  }
+
 }
