@@ -473,14 +473,14 @@ public class CarbonCompactionUtil {
     return false;
   }
 
-  public static RangeValues[] getRangesFromVals(Object[] tempRanges, Object[] startAndEnd) {
+  public static RangeValues[] getRangesFromVals(Object[] tempRanges, Object start, Object end) {
     RangeValues[] ranges = new RangeValues[tempRanges.length + 1];
-    Object lastStart = startAndEnd[0];
+    Object lastStart = start;
     for (int i = 0; i < tempRanges.length; i++) {
       ranges[i] = new RangeValues(lastStart, tempRanges[i]);
       lastStart = tempRanges[i];
     }
-    ranges[tempRanges.length] = new RangeValues(lastStart, startAndEnd[1]);
+    ranges[tempRanges.length] = new RangeValues(lastStart, end);
     return ranges;
   }
 

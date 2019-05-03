@@ -57,7 +57,8 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
     // row id will be different for every batch so clear it before filling
     clearValidRowIdList();
     int startPosition = rowId;
-    for (int i = 0, j = startPosition; j < pageFilteredRowId[pageCounter].length; i++) {
+    int minSize = Math.min(batchSize, pageFilteredRowId[pageCounter].length);
+    for (int j = startPosition; j < startPosition + minSize; ) {
       int pos = pageFilteredRowId[pageCounter][j];
       if (!containsDeletedRow(pos)) {
         validRowIds.add(pos);

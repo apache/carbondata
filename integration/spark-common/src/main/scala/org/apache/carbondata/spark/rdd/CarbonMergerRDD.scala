@@ -44,17 +44,19 @@ import org.apache.carbondata.core.datastore.RangeValues
 import org.apache.carbondata.core.datastore.block._
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.mutate.UpdateVO
 import org.apache.carbondata.core.scan.expression
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatusManager, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{ByteUtil, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
@@ -303,6 +305,9 @@ class CarbonMergerRDD[K, V](
     } else {
       null
     }
+
+    val isRangeColSortCol = rangeColumn != null && rangeColumn.isDimension &&
+                            rangeColumn.asInstanceOf[CarbonDimension].isSortColumn
     val updateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
       carbonTable)
     val jobConf: JobConf = new JobConf(getConf)
@@ -363,7 +368,6 @@ class CarbonMergerRDD[K, V](
       // get splits
       val splits = format.getSplits(job)
 
-      allSplits.addAll(splits)
       // keep on assigning till last one is reached.
       if (null != splits && splits.size > 0) {
         splitsOfLastSegment = splits.asScala
@@ -390,6 +394,10 @@ class CarbonMergerRDD[K, V](
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     var allRanges: Array[RangeValues] = new Array[RangeValues](0)
     if (rangeColumn != null) {
+      // Get the overall min/max for all segments
+      var (minVal, maxVal): (Object, Object) = getOverallMinMax(carbonInputSplits,
+        rangeColumn,
+        isRangeColSortCol)
       // To calculate the number of ranges to be made, min 2 ranges/tasks to be made in any case
       val numOfPartitions = Math
         .max(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL.toInt, DataLoadProcessBuilderOnSpark
@@ -399,7 +407,9 @@ class CarbonMergerRDD[K, V](
         carbonTable,
         numOfPartitions,
         allSplits,
-        dataType)
+        dataType,
+        minVal,
+        maxVal)
     }
 
     // prepare the details required to extract the segment properties using last segment.
@@ -569,7 +579,9 @@ class CarbonMergerRDD[K, V](
       carbonTable: CarbonTable,
       defaultParallelism: Int,
       allSplits: java.util.ArrayList[InputSplit],
-      dataType: DataType): Array[RangeValues] = {
+      dataType: DataType,
+      minVal: Object,
+      maxVal: Object): Array[RangeValues] = {
     val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     val projection = new CarbonProjection
     projection.addColumn(rangeColumn.getColName)
@@ -589,9 +601,91 @@ class CarbonMergerRDD[K, V](
     // Change string type to support all types
     val sampleRdd = scanRdd
       .map(row => (row.get(0, sparkDataType), null))
+    val sortedRdd = sampleRdd.sortBy(_._1, true)(objectOrdering, classTag[AnyRef])
     val value = new DataSkewRangePartitioner(
-      defaultParallelism, sampleRdd, true)(objectOrdering, classTag[Object])
-    CarbonCompactionUtil.getRangesFromVals(value.rangeBounds, value.minMaxVals)
+      defaultParallelism, sortedRdd, true)(objectOrdering, classTag[Object])
+    if(minVal == null && maxVal == null) {
+      CarbonCompactionUtil
+        .getRangesFromVals(value.rangeBounds, value.rangeBounds(0), value.rangeBounds(1))
+    } else {
+      CarbonCompactionUtil.getRangesFromVals(value.rangeBounds, minVal, maxVal)
+    }
+  }
+
+  def getOverallMinMax(carbonInputSplits: mutable.Seq[CarbonInputSplit],
+      rangeCol: CarbonColumn, isSortCol: Boolean): (Object, Object) = {
+    var minVal: Array[Byte] = null
+    var maxVal: Array[Byte] = null
+    var dictMinVal: Int = Integer.MAX_VALUE
+    var dictMaxVal: Int = Integer.MIN_VALUE
+    var idx: Int = -1
+    val dataType = rangeCol.getDataType
+    val isDictEncode = rangeCol.hasEncoding(Encoding.DICTIONARY) &&
+                       !rangeCol.hasEncoding(Encoding.DIRECT_DICTIONARY)
+    carbonInputSplits.foreach { split =>
+      var dataFileFooter: DataFileFooter = null
+      dataFileFooter = CarbonUtil.readMetadataFile(
+        CarbonInputSplit.getTableBlockInfo(split), true)
+      if (-1 == idx) {
+        val allColumns = dataFileFooter.getColumnInTable
+        for (i <- 0 until allColumns.size()) {
+          if (allColumns.get(i).getColumnName.equalsIgnoreCase(rangeCol.getColName)) {
+            idx = i
+          }
+        }
+      }
+      if(isDictEncode) {
+        var tempMin = dataFileFooter.getBlockletIndex.getMinMaxIndex.getMinValues.apply(idx)
+        var tempMinVal = CarbonUtil.getSurrogateInternal(tempMin, 0, tempMin.length)
+        var tempMax = dataFileFooter.getBlockletIndex.getMinMaxIndex.getMaxValues.apply(idx)
+        var tempMaxVal = CarbonUtil.getSurrogateInternal(tempMax, 0, tempMax.length)
+        if (dictMinVal > tempMinVal) {
+          dictMinVal = tempMinVal
+        }
+        if (dictMaxVal < tempMaxVal) {
+          dictMaxVal = tempMaxVal
+        }
+      } else {
+        if (null == minVal) {
+          minVal = dataFileFooter.getBlockletIndex.getMinMaxIndex.getMinValues.apply(idx)
+          maxVal = dataFileFooter.getBlockletIndex.getMinMaxIndex.getMaxValues.apply(idx)
+        } else {
+          val tempMin = dataFileFooter.getBlockletIndex.getMinMaxIndex.getMinValues.apply(idx)
+          val tempMax = dataFileFooter.getBlockletIndex.getMinMaxIndex.getMaxValues.apply(idx)
+          if (ByteUtil.compare(tempMin, minVal) <= 0) {
+            minVal = tempMin
+          }
+          if (ByteUtil.compare(tempMax, maxVal) >= 0) {
+            maxVal = tempMax
+          }
+        }
+      }
+    }
+    // Based on how min/max value is stored in the footer we change the data
+
+    if (isDictEncode) {
+      (dictMinVal.asInstanceOf[AnyRef], dictMaxVal.asInstanceOf[AnyRef])
+    } else {
+      if (!isSortCol && (dataType == DataTypes.INT || dataType == DataTypes.LONG)) {
+        (ByteUtil.toLong(minVal, 0, minVal.length).asInstanceOf[AnyRef],
+          ByteUtil.toLong(maxVal, 0, maxVal.length).asInstanceOf[AnyRef])
+      } else if (dataType == DataTypes.DATE) {
+        (new DateDirectDictionaryGenerator(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)).
+          getValueFromSurrogate(ByteUtil.toInt(minVal, 0, minVal.length)),
+          new DateDirectDictionaryGenerator(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)).
+            getValueFromSurrogate(ByteUtil.toInt(maxVal, 0, maxVal.length)))
+      } else if (dataType == DataTypes.DOUBLE) {
+        (ByteUtil.toDouble(minVal, 0, minVal.length).asInstanceOf[AnyRef],
+          ByteUtil.toDouble(maxVal, 0, maxVal.length).asInstanceOf[AnyRef])
+      } else {
+        (DataTypeUtil.
+          getDataBasedOnDataTypeForNoDictionaryColumn(minVal, dataType, true),
+          DataTypeUtil.
+            getDataBasedOnDataTypeForNoDictionaryColumn(maxVal, dataType, true))
+      }
+    }
   }
 
   private def getTaskNo(

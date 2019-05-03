@@ -235,7 +235,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
 
   test("Test compaction for range_column - INT Datatype with null values") {
     deleteFile(filePath3)
-    createFile(filePath3, 10, 3)
+    createFile(filePath3, 1000, 3)
     sql("DROP TABLE IF EXISTS carbon_range_column1")
     sql(
       """
@@ -274,7 +274,6 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     )
 
     assertResult("RANGE_COLUMN doesn't support boolean data type: id")(exception.getMessage)
-
   }
 
   test("Test compaction for range_column - DECIMAL Datatype") {
@@ -289,16 +288,15 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     )
 
     assertResult("RANGE_COLUMN doesn't support decimal data type: id")(exception.getMessage)
-
   }
 
   test("Test compaction for range_column - INT Datatype with no overlapping") {
     deleteFile(filePath2)
-    createFile(filePath2, 10, 4)
+    createFile(filePath2, 1000, 4)
     deleteFile(filePath3)
-    createFile(filePath3, 10, 5)
+    createFile(filePath3, 1000, 5)
     deleteFile(filePath4)
-    createFile(filePath4, 10, 6)
+    createFile(filePath4, 1000, 6)
     sql("DROP TABLE IF EXISTS carbon_range_column1")
     sql(
       """
@@ -309,10 +307,10 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
-        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='1')")
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath3' INTO TABLE carbon_range_column1 " +
-        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='2')")
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath4' INTO TABLE carbon_range_column1 " +
         "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
@@ -378,8 +376,40 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='id, city',
-        | 'range_column'='id', 'DICTIONARY_INCLUDE'='id')
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
+        | 'range_column'='name', 'DICTIONARY_INCLUDE'='name')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath3' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+
+    deleteFile(filePath2)
+    deleteFile(filePath3)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
+  test("Test compaction for range_column - STRING Datatype with Global Dict") {
+    deleteFile(filePath2)
+    createFile(filePath2, 1000, 9)
+    deleteFile(filePath3)
+    createFile(filePath3, 10, 10)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
+        | 'range_column'='name', 'DICTIONARY_INCLUDE'='name')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
@@ -551,7 +581,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
 
   test("Test compaction for range_column - STRING Datatype minmax not stored") {
     deleteFile(filePath2)
-    createFile(filePath2, 10, 7)
+    createFile(filePath2, 100000, 7)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "10")
     sql("DROP TABLE IF EXISTS carbon_range_column1")
@@ -569,11 +599,11 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
         "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
 
-    var res = sql("select * from carbon_range_column1").collect()
+    var res = sql("select name from carbon_range_column1 order by name").collect()
 
     sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
 
-    checkAnswer(sql("select * from carbon_range_column1"), res)
+    checkAnswer(sql("select name from carbon_range_column1 order by name"), res)
 
     sql("DROP TABLE IF EXISTS carbon_range_column1")
 
@@ -679,9 +709,6 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
 
     deleteFile(filePath2)
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   }
 
   test("DataSkewRangePartitioner.combineDataSkew") {
@@ -846,7 +873,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
         for (i <- start until (start + line)) {
           write
             .println(
-              (100 * lastCol + i) + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i))
+              (line * lastCol + i) + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i))
         }
       } else if (7 == lastCol) {
         // Min/max not stored data generation
