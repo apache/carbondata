@@ -50,8 +50,7 @@ class CarbonDataset(object):
         raise ValueError('key, secret, endpoint should not be None')
 
       if proxy is None and proxy_port is None:
-        carbon_splits = CarbonReader().builder() \
-          .withFolder(self.path) \
+        carbon_splits = CarbonReader().builder(self.path) \
           .withHadoopConf("fs.s3a.access.key", key) \
           .withHadoopConf("fs.s3a.secret.key", secret) \
           .withHadoopConf("fs.s3a.endpoint", endpoint) \
@@ -65,8 +64,7 @@ class CarbonDataset(object):
         self.configuration = configuration
 
       elif proxy is not None and proxy_port is not None:
-        carbon_splits = CarbonReader().builder() \
-          .withFolder(self.path) \
+        carbon_splits = CarbonReader().builder(self.path) \
           .withHadoopConf("fs.s3a.access.key", key) \
           .withHadoopConf("fs.s3a.secret.key", secret) \
           .withHadoopConf("fs.s3a.endpoint", endpoint) \
@@ -94,8 +92,7 @@ class CarbonDataset(object):
                                               proxy=proxy, proxy_port=proxy_port))
 
     else:
-      carbon_splits = CarbonReader().builder() \
-        .withFolder(self.path) \
+      carbon_splits = CarbonReader().builder(self.path) \
         .getSplits()
 
       carbon_schema = CarbonSchemaReader().readSchema(self.path)
@@ -162,7 +159,7 @@ class CarbonDatasetPiece(object):
 
   def read_all(self, columns):
     # rebuilding the reader as need to read specific columns
-    carbon_reader_builder = CarbonReader().builder().withFolder(self.path)
+    carbon_reader_builder = CarbonReader().builder(self.path)
     carbon_schema_reader = CarbonSchemaReader()
     if columns is not None:
       carbon_reader_builder = carbon_reader_builder.projection(columns)

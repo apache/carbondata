@@ -6,7 +6,7 @@ class CarbonSchemaReader(object):
 
     def readSchema(self, path, getAsBuffer=False, *para):
         if (getAsBuffer == True):
-            return self.carbonSchemaReader.getSchemaAsBytes(path)
+            return self.carbonSchemaReader.getArrowSchemaAsBytes(path)
         if (len(para) == 0):
             schema = self.carbonSchemaReader.readSchema(path)
             newSchema = schema.asOriginOrder()
