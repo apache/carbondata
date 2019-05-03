@@ -579,12 +579,12 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql("DROP TABLE IF EXISTS carbon_range_column1")
   }
 
-  test("Test compaction for range_column - STRING Datatype minmax not stored") {
+  test("Test compaction for range_column - STRING Datatype min/max not stored") {
     deleteFile(filePath2)
-    createFile(filePath2, 100000, 7)
+    createFile(filePath2, 1000, 7)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "10")
-    sql("DROP TABLE IF EXISTS carbon_range_column1")
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
@@ -610,6 +610,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT,
         CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT)
+    deleteFile(filePath2)
   }
 
   test("Test compaction for range_column - DATE Datatype") {
@@ -783,9 +784,8 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
   ): Unit = {
     val boundsBuffer = new ArrayBuffer[Object]()
     bounds.map(_.getBytes()).foreach(boundsBuffer += _)
-    val minMax: Array[Object] = Array()
-    val (_, actualSkewCount, actualSkewIndexes, actualSkewWeights, newMinMax) =
-      partitioner.combineDataSkew(boundsBuffer, minMax)
+    val (_, actualSkewCount, actualSkewIndexes, actualSkewWeights) =
+      partitioner.combineDataSkew(boundsBuffer)
     assertResult(skewCount)(actualSkewCount)
     if (skewCount > 0) {
       assertResult(skewIndexes)(actualSkewIndexes)

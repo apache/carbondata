@@ -95,9 +95,9 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
   // dataSkewNum: how many partition of each data skew bound
   // Min and Max values of complete range
   var (rangeBounds: Array[K], skewCount: Int, skewIndexes: Array[Int],
-  skewWeights: Array[Int], minMaxVals: Array[K]) = {
+  skewWeights: Array[Int]) = {
     if (partitions <= 1) {
-      (Array.empty[K], 0, Array.empty[Int], Array.empty[Int], Array.empty[K])
+      (Array.empty[K], 0, Array.empty[Int], Array.empty[Int])
     } else {
       // This is the sample size we need to have roughly balanced output partitions, capped at 1M.
       val sampleSize = math.min(20.0 * partitions, 1e6)
@@ -140,7 +140,7 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
           var ranges = RangePartitioner.determineBounds(candidates, partitions)
           var otherRangeParams = determineBounds(candidates, partitions, true)
           (ranges, otherRangeParams._2, otherRangeParams._3,
-            otherRangeParams._4, otherRangeParams._5)
+            otherRangeParams._4)
         }
       }
     }
@@ -149,50 +149,40 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
   def determineBounds(
       candidates: ArrayBuffer[(K, Float)],
       partitions: Int,
-      withoutSkew: Boolean): (Array[K], Int, Array[Int], Array[Int], Array[K]) = {
+      withoutSkew: Boolean): (Array[K], Int, Array[Int], Array[Int]) = {
     val ordered = candidates.sortBy(_._1)
     val numCandidates = ordered.size
-    var minMax = new Array[K](2)
-    if (numCandidates > 0) {
-      minMax(0) = ordered(0)._1
-      minMax(1) = ordered(numCandidates - 1)._1
-    }
-    if (withoutSkew) {
-      (Array.empty[K], 0, Array.empty[Int], Array.empty[Int], minMax)
-    } else {
-      val sumWeights = ordered.map(_._2.toDouble).sum
-      val step = sumWeights / partitions
-      var cumWeight = 0.0
-      var target = step
-      val bounds = ArrayBuffer.empty[K]
-      var i = 0
-      var j = 0
-      var previousBound = Option.empty[K]
-      while ((i < numCandidates) && (j < partitions - 1)) {
-        val (key, weight) = ordered(i)
-        cumWeight += weight
-        if (cumWeight >= target) {
-          // Skip duplicate values.
-          if (previousBound.isEmpty || ordering.gteq(key, previousBound.get)) {
-            bounds += key
-            target += step
-            j += 1
-            previousBound = Some(key)
-          }
+    val sumWeights = ordered.map(_._2.toDouble).sum
+    val step = sumWeights / partitions
+    var cumWeight = 0.0
+    var target = step
+    val bounds = ArrayBuffer.empty[K]
+    var i = 0
+    var j = 0
+    var previousBound = Option.empty[K]
+    while ((i < numCandidates) && (j < partitions - 1)) {
+      val (key, weight) = ordered(i)
+      cumWeight += weight
+      if (cumWeight >= target) {
+        // Skip duplicate values.
+        if (previousBound.isEmpty || ordering.gteq(key, previousBound.get)) {
+          bounds += key
+          target += step
+          j += 1
+          previousBound = Some(key)
         }
-        i += 1
       }
+      i += 1
+    }
 
-      if (bounds.size >= 2) {
-        combineDataSkew(bounds, minMax)
-      } else {
-        (bounds.toArray, 0, Array.empty[Int], Array.empty[Int], minMax)
-      }
+    if (bounds.size >= 2) {
+      combineDataSkew(bounds)
+    } else {
+      (bounds.toArray, 0, Array.empty[Int], Array.empty[Int])
     }
   }
 
-  def combineDataSkew(bounds: ArrayBuffer[K],
-      minMax: Array[K]): (Array[K], Int, Array[Int], Array[Int], Array[K]) = {
+  def combineDataSkew(bounds: ArrayBuffer[K]): (Array[K], Int, Array[Int], Array[Int]) = {
     val finalBounds = ArrayBuffer.empty[K]
     var preBound = bounds(0)
     finalBounds += preBound
@@ -220,9 +210,9 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
     }
     if (dataSkewIndexTmp.size > 0) {
       (finalBounds.toArray, dataSkewIndexTmp.size, dataSkewIndexTmp.toArray, dataSkewNumTmp
-        .toArray, minMax)
+        .toArray)
     } else {
-      (finalBounds.toArray, 0, Array.empty[Int], Array.empty[Int], minMax)
+      (finalBounds.toArray, 0, Array.empty[Int], Array.empty[Int])
     }
   }
 

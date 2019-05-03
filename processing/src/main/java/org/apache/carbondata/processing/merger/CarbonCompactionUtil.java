@@ -24,7 +24,6 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.RangeValues;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TaskBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -43,7 +42,6 @@ import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
-import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
 import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
@@ -473,21 +471,10 @@ public class CarbonCompactionUtil {
     return false;
   }
 
-  public static RangeValues[] getRangesFromVals(Object[] tempRanges, Object start, Object end) {
-    RangeValues[] ranges = new RangeValues[tempRanges.length + 1];
-    Object lastStart = start;
-    for (int i = 0; i < tempRanges.length; i++) {
-      ranges[i] = new RangeValues(lastStart, tempRanges[i]);
-      lastStart = tempRanges[i];
-    }
-    ranges[tempRanges.length] = new RangeValues(lastStart, end);
-    return ranges;
-  }
-
   // This method will return an Expression(And/Or) for each range based on the datatype
   // This Expression will be passed to each task as a Filter Query to get the data
-  public static Expression getFilterExpressionForRange(CarbonColumn rangeColumn, int taskId,
-      Object minVal, Object maxVal, DataType dataType) {
+  public static Expression getFilterExpressionForRange(CarbonColumn rangeColumn, Object minVal,
+      Object maxVal, DataType dataType) {
     Expression finalExpr;
     Expression exp1, exp2;
     String colName = rangeColumn.getColName();
@@ -495,6 +482,7 @@ public class CarbonCompactionUtil {
     // In case of null values create an OrFilter expression and
     // for other cases create and AndFilter Expression
     if (null == minVal) {
+      // First task
       exp1 = new EqualToExpression(new ColumnExpression(colName, dataType),
           new LiteralExpression(null, dataType), true);
       if (null == maxVal) {
@@ -510,14 +498,17 @@ public class CarbonCompactionUtil {
         }
         finalExpr = new OrExpression(exp1, exp2);
       }
-    } else {
-      if (0 == taskId) {
-        exp1 = new GreaterThanEqualToExpression(new ColumnExpression(colName, dataType),
-            new LiteralExpression(minVal, dataType));
-      } else {
-        exp1 = new GreaterThanExpression(new ColumnExpression(colName, dataType),
-            new LiteralExpression(minVal, dataType));
+    } else if (null == maxVal) {
+      // Last task
+      finalExpr = new GreaterThanExpression(new ColumnExpression(colName, dataType),
+          new LiteralExpression(minVal, dataType));
+      if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
+        finalExpr.setAlreadyResolved(true);
       }
+    } else {
+      // Remaining all intermediate ranges
+      exp1 = new GreaterThanExpression(new ColumnExpression(colName, dataType),
+          new LiteralExpression(minVal, dataType));
       exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
           new LiteralExpression(maxVal, dataType));
       if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
