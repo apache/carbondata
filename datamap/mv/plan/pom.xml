@@ -123,6 +123,7 @@
       <plugin>
         <groupId>com.ning.maven.plugins</groupId>
         <artifactId>maven-duplicate-finder-plugin</artifactId>
+        <version>1.0.9</version>
         <configuration>
           <skip>true</skip>
         </configuration>
