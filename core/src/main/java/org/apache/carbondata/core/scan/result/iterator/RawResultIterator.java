@@ -41,9 +41,9 @@ import org.apache.log4j.Logger;
  */
 public class RawResultIterator extends CarbonIterator<Object[]> {
 
-  private final SegmentProperties sourceSegProperties;
+  protected final SegmentProperties sourceSegProperties;
 
-  private final SegmentProperties destinationSegProperties;
+  protected final SegmentProperties destinationSegProperties;
   /**
    * Iterator of the Batch raw result.
    */
@@ -66,18 +66,18 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
 
   public RawResultIterator(CarbonIterator<RowBatch> detailRawQueryResultIterator,
       SegmentProperties sourceSegProperties, SegmentProperties destinationSegProperties,
-      boolean isStreamingHandoff) {
+      boolean init) {
     this.detailRawQueryResultIterator = detailRawQueryResultIterator;
     this.sourceSegProperties = sourceSegProperties;
     this.destinationSegProperties = destinationSegProperties;
     this.executorService = Executors.newFixedThreadPool(1);
 
-    if (!isStreamingHandoff) {
+    if (init) {
       init();
     }
   }
 
-  private void init() {
+  protected void init() {
     this.prefetchEnabled = CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE,
         CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT).equalsIgnoreCase("true");
@@ -193,7 +193,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     return this.currentRawRow;
   }
 
-  private Object[] convertRow(Object[] rawRow) throws KeyGenException {
+  protected Object[] convertRow(Object[] rawRow) throws KeyGenException {
     byte[] dims = ((ByteArrayWrapper) rawRow[0]).getDictionaryKey();
     long[] keyArray = sourceSegProperties.getDimensionKeyGenerator().getKeyArray(dims);
     byte[] covertedBytes =

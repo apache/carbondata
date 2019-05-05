@@ -605,7 +605,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // setting the size of fixed key column (dictionary column)
     blockExecutionInfo
         .setFixedLengthKeySize(getKeySize(projectDimensions, segmentProperties));
-    Set<Integer> dictionaryColumnChunkIndex = new HashSet<Integer>();
+    List<Integer> dictionaryColumnChunkIndex = new ArrayList<Integer>();
     List<Integer> noDictionaryColumnChunkIndex = new ArrayList<Integer>();
     // get the block index to be read from file for query dimension
     // for both dictionary columns and no dictionary columns
@@ -616,7 +616,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         dictionaryColumnChunkIndex.toArray(new Integer[dictionaryColumnChunkIndex.size()]));
     // need to sort the dictionary column as for all dimension
     // column key will be filled based on key order
-    Arrays.sort(queryDictionaryColumnChunkIndexes);
+    if (!queryModel.isForcedDetailRawQuery()) {
+      Arrays.sort(queryDictionaryColumnChunkIndexes);
+    }
     blockExecutionInfo.setDictionaryColumnChunkIndex(queryDictionaryColumnChunkIndexes);
     // setting the no dictionary column block indexes
     blockExecutionInfo.setNoDictionaryColumnChunkIndexes(ArrayUtils.toPrimitive(

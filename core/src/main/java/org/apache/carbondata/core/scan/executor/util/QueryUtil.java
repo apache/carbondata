@@ -509,7 +509,7 @@ public class QueryUtil {
   public static void fillQueryDimensionChunkIndexes(
       List<ProjectionDimension> projectDimensions,
       Map<Integer, Integer> columnOrdinalToChunkIndexMapping,
-      Set<Integer> dictionaryDimensionChunkIndex,
+      List<Integer> dictionaryDimensionChunkIndex,
       List<Integer> noDictionaryDimensionChunkIndex) {
     for (ProjectionDimension queryDimension : projectDimensions) {
       if (CarbonUtil.hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DICTIONARY)
