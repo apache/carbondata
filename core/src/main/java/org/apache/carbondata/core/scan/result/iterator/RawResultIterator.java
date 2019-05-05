@@ -64,13 +64,13 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   private Object[] currentRawRow = null;
   private boolean isBackupFilled = false;
 
-  // column reorder
+  // column reorder for no-dictionary column
   private int noDictCount;
   private int[] noDictMap;
-  private final int measureCount;
   // column drift
   private final boolean hasColumnDrift;
   private boolean[] isColumnDrift;
+  private final int measureCount;
   private DataType[] measureDataTypes;
 
   /**
@@ -93,7 +93,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     }
   }
 
-  private void initForColumnReorder() {
+  private void initForColumnDrift() {
     List<CarbonDimension> noDictDims =
         new ArrayList<>(destinationSegProperties.getDimensions().size());
     for (CarbonDimension dimension : destinationSegProperties.getDimensions()) {
@@ -122,8 +122,9 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
       }
     }
     int noDictIndex = 0;
+    // the column drift are at the end of measures
     int measureIndex = measureCount + 1;
-    for(int i = 0; i< noDictCount; i++) {
+    for (int i = 0; i < noDictCount; i++) {
       if (isColumnDrift[i]) {
         noDictMap[i] = measureIndex++;
       } else {
@@ -133,7 +134,9 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   }
 
   private void init() {
-    initForColumnReorder();
+    if (hasColumnDrift) {
+      initForColumnDrift();
+    }
     this.prefetchEnabled = CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE,
         CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT).equalsIgnoreCase("true");
@@ -257,12 +260,13 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
         destinationSegProperties.getDimensionKeyGenerator().generateKey(keyArray);
     dimObject.setDictionaryKey(covertedBytes);
     if (hasColumnDrift) {
+      // need move measure to dimension and return new row by current schema
       byte[][] noDicts = dimObject.getNoDictionaryKeys();
       byte[][] newNoDicts = new byte[noDictCount][];
-      for(int i = 0; i < noDictCount; i++) {
+      for (int i = 0; i < noDictCount; i++) {
         if (isColumnDrift[i]) {
-          newNoDicts[i] = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(
-              rawRow[noDictMap[i]], measureDataTypes[i]);
+          newNoDicts[i] = DataTypeUtil
+              .getBytesDataDataTypeForNoDictionaryColumn(rawRow[noDictMap[i]], measureDataTypes[i]);
         } else {
           newNoDicts[i] = noDicts[noDictMap[i]];
         }
