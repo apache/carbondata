@@ -218,4 +218,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     this.implicitColumnByteArray = implicitColumnByteArray;
   }
 
+  public byte[] getImplicitColumnByteArray() {
+    return implicitColumnByteArray;
+  }
 }

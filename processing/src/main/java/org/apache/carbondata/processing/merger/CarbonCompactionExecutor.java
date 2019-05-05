@@ -37,10 +37,12 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.scan.result.RowBatch;
+import org.apache.carbondata.core.scan.result.iterator.ColumnDriftRawResultIterator;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.IntArrayWrapper;
 import org.apache.carbondata.core.stats.QueryStatistic;
@@ -175,11 +177,19 @@ public class CarbonCompactionExecutor {
   private RawResultIterator getRawResultIterator(Configuration configuration, String segmentId,
       String task, List<TableBlockInfo> tableBlockInfoList)
       throws QueryExecutionException, IOException {
-    return new RawResultIterator(
-        executeBlockList(tableBlockInfoList, segmentId, task, configuration),
-        getSourceSegmentProperties(
-            Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter())),
-        destinationSegProperties, false);
+    SegmentProperties sourceSegmentProperties = getSourceSegmentProperties(
+        Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter()));
+    boolean hasColumnDrift = carbonTable.hasColumnDrift() &&
+        RestructureUtil.hasColumnDriftOnSegment(carbonTable, sourceSegmentProperties);
+    if (hasColumnDrift) {
+      return new ColumnDriftRawResultIterator(
+          executeBlockList(tableBlockInfoList, segmentId, task, configuration),
+          sourceSegmentProperties, destinationSegProperties);
+    } else {
+      return new RawResultIterator(
+          executeBlockList(tableBlockInfoList, segmentId, task, configuration),
+          sourceSegmentProperties, destinationSegProperties, true);
+    }
   }
 
   /**
