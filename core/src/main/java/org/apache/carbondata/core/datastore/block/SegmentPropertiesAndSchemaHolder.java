@@ -346,15 +346,9 @@ public class SegmentPropertiesAndSchemaHolder {
       if (obj1 == null || obj2 == null || (obj1.size() != obj2.size())) {
         return false;
       }
-      List<ColumnSchema> clonedObj1 = new ArrayList<>(obj1);
-      List<ColumnSchema> clonedObj2 = new ArrayList<>(obj2);
-      clonedObj1.addAll(obj1);
-      clonedObj2.addAll(obj2);
-      sortList(clonedObj1);
-      sortList(clonedObj2);
       boolean exists = true;
       for (int i = 0; i < obj1.size(); i++) {
-        if (!clonedObj1.get(i).equalsWithStrictCheck(clonedObj2.get(i))) {
+        if (!obj1.get(i).equalsWithStrictCheck(obj2.get(i))) {
           exists = false;
           break;
         }
@@ -372,11 +366,14 @@ public class SegmentPropertiesAndSchemaHolder {
 
     @Override public int hashCode() {
       int allColumnsHashCode = 0;
+      // check column order
+      StringBuilder builder = new StringBuilder();
       for (ColumnSchema columnSchema: columnsInTable) {
         allColumnsHashCode = allColumnsHashCode + columnSchema.strictHashCode();
+        builder.append(columnSchema.getColumnUniqueId()).append(",");
       }
       return carbonTable.getAbsoluteTableIdentifier().hashCode() + allColumnsHashCode + Arrays
-          .hashCode(columnCardinality);
+          .hashCode(columnCardinality) + builder.toString().hashCode();
     }
 
     public AbsoluteTableIdentifier getTableIdentifier() {

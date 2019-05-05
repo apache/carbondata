@@ -37,6 +37,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
@@ -175,11 +176,13 @@ public class CarbonCompactionExecutor {
   private RawResultIterator getRawResultIterator(Configuration configuration, String segmentId,
       String task, List<TableBlockInfo> tableBlockInfoList)
       throws QueryExecutionException, IOException {
+    SegmentProperties sourceSegmentProperties = getSourceSegmentProperties(
+        Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter()));
+    boolean hasColumnDrift = carbonTable.hasColumnDrift() &&
+        RestructureUtil.hasColumnDriftOnSegment(carbonTable, sourceSegmentProperties);
     return new RawResultIterator(
         executeBlockList(tableBlockInfoList, segmentId, task, configuration),
-        getSourceSegmentProperties(
-            Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter())),
-        destinationSegProperties, false);
+        sourceSegmentProperties, destinationSegProperties, false, hasColumnDrift);
   }
 
   /**

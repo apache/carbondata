@@ -28,9 +28,15 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.log4j.Logger;
 
@@ -58,6 +64,15 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   private Object[] currentRawRow = null;
   private boolean isBackupFilled = false;
 
+  // column reorder
+  private int noDictCount;
+  private int[] noDictMap;
+  private final int measureCount;
+  // column drift
+  private final boolean hasColumnDrift;
+  private boolean[] isColumnDrift;
+  private DataType[] measureDataTypes;
+
   /**
    * LOGGER
    */
@@ -66,18 +81,59 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
 
   public RawResultIterator(CarbonIterator<RowBatch> detailRawQueryResultIterator,
       SegmentProperties sourceSegProperties, SegmentProperties destinationSegProperties,
-      boolean isStreamingHandoff) {
+      boolean isStreamingHandoff, boolean hasColumnDrift) {
     this.detailRawQueryResultIterator = detailRawQueryResultIterator;
     this.sourceSegProperties = sourceSegProperties;
     this.destinationSegProperties = destinationSegProperties;
     this.executorService = Executors.newFixedThreadPool(1);
-
+    this.hasColumnDrift = hasColumnDrift;
+    this.measureCount = destinationSegProperties.getMeasures().size();
     if (!isStreamingHandoff) {
       init();
     }
   }
 
+  private void initForColumnReorder() {
+    List<CarbonDimension> noDictDims =
+        new ArrayList<>(destinationSegProperties.getDimensions().size());
+    for (CarbonDimension dimension : destinationSegProperties.getDimensions()) {
+      if (dimension.getNumberOfChild() == 0) {
+        if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
+          noDictDims.add(dimension);
+        }
+      }
+    }
+    noDictCount = noDictDims.size();
+    isColumnDrift = new boolean[noDictCount];
+    noDictMap = new int[noDictCount];
+    measureDataTypes = new DataType[noDictCount];
+    List<CarbonMeasure> sourceMeasures = sourceSegProperties.getMeasures();
+    int tableMeasureCount = sourceMeasures.size();
+    for (int i = 0; i < noDictCount; i++) {
+      for (int j = 0; j < tableMeasureCount; j++) {
+        if (RestructureUtil.isColumnMatches(true, noDictDims.get(i), sourceMeasures.get(j))) {
+          isColumnDrift[i] = true;
+          measureDataTypes[i] = sourceMeasures.get(j).getDataType();
+          break;
+        }
+      }
+      if (measureDataTypes[i] == null) {
+        isColumnDrift[i] = false;
+      }
+    }
+    int noDictIndex = 0;
+    int measureIndex = measureCount + 1;
+    for(int i = 0; i< noDictCount; i++) {
+      if (isColumnDrift[i]) {
+        noDictMap[i] = measureIndex++;
+      } else {
+        noDictMap[i] = noDictIndex++;
+      }
+    }
+  }
+
   private void init() {
+    initForColumnReorder();
     this.prefetchEnabled = CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE,
         CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT).equalsIgnoreCase("true");
@@ -194,11 +250,33 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   }
 
   private Object[] convertRow(Object[] rawRow) throws KeyGenException {
-    byte[] dims = ((ByteArrayWrapper) rawRow[0]).getDictionaryKey();
+    ByteArrayWrapper dimObject = (ByteArrayWrapper) rawRow[0];
+    byte[] dims = dimObject.getDictionaryKey();
     long[] keyArray = sourceSegProperties.getDimensionKeyGenerator().getKeyArray(dims);
     byte[] covertedBytes =
         destinationSegProperties.getDimensionKeyGenerator().generateKey(keyArray);
-    ((ByteArrayWrapper) rawRow[0]).setDictionaryKey(covertedBytes);
+    dimObject.setDictionaryKey(covertedBytes);
+    if (hasColumnDrift) {
+      byte[][] noDicts = dimObject.getNoDictionaryKeys();
+      byte[][] newNoDicts = new byte[noDictCount][];
+      for(int i = 0; i < noDictCount; i++) {
+        if (isColumnDrift[i]) {
+          newNoDicts[i] = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(
+              rawRow[noDictMap[i]], measureDataTypes[i]);
+        } else {
+          newNoDicts[i] = noDicts[noDictMap[i]];
+        }
+      }
+      ByteArrayWrapper newWrapper = new ByteArrayWrapper();
+      newWrapper.setDictionaryKey(covertedBytes);
+      newWrapper.setNoDictionaryKeys(newNoDicts);
+      newWrapper.setComplexTypesKeys(dimObject.getComplexTypesKeys());
+      newWrapper.setImplicitColumnByteArray(dimObject.getImplicitColumnByteArray());
+      Object[] finalRawRow = new Object[1 + measureCount];
+      finalRawRow[0] = newWrapper;
+      System.arraycopy(rawRow, 1, finalRawRow, 1, measureCount);
+      return finalRawRow;
+    }
     return rawRow;
   }
 
