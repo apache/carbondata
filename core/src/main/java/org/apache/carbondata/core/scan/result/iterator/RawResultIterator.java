@@ -70,7 +70,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   // column drift
   private final boolean hasColumnDrift;
   private boolean[] isColumnDrift;
-  private final int measureCount;
+  private int measureCount;
   private DataType[] measureDataTypes;
 
   /**
@@ -87,7 +87,6 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     this.destinationSegProperties = destinationSegProperties;
     this.executorService = Executors.newFixedThreadPool(1);
     this.hasColumnDrift = hasColumnDrift;
-    this.measureCount = destinationSegProperties.getMeasures().size();
     if (!isStreamingHandoff) {
       init();
     }
@@ -103,6 +102,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
         }
       }
     }
+    measureCount = destinationSegProperties.getMeasures().size();
     noDictCount = noDictDims.size();
     isColumnDrift = new boolean[noDictCount];
     noDictMap = new int[noDictCount];
