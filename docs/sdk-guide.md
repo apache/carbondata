@@ -224,7 +224,7 @@ Each of SQL data types and Avro Data Types are mapped into data types of SDK. Fo
     The timestamp-micros logical type represents an instant on the global timeline, independent of a particular time zone or calendar, with a precision of one microsecond.
     A timestamp-micros logical type annotates an Avro long, where the long stores the number of microseconds from the unix epoch, 1 January 1970 00:00:00.000000 UTC.
  d. Decimal
-    The decimal logical type represents an arbitrary-precision signed decimal number of the form unscaled × 10-scale.
+    The decimal logical type represents an arbitrary-precision signed decimal number of the form <em>unscaled &#215; 10<sup>-scale</sup></em>.
     A decimal logical type annotates Avro bytes or fixed types. The byte array must contain the two's-complement representation of the unscaled integer value in big-endian byte order. The scale is fixed, and is specified using an attribute.
  e. Time (millisecond precision)
     The time-millis logical type represents a time of day, with no reference to a particular calendar, time zone or date, with a precision of one millisecond.
