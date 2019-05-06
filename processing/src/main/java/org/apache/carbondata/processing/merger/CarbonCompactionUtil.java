@@ -31,6 +31,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -46,8 +47,11 @@ import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpress
 import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
@@ -494,7 +498,6 @@ public class CarbonCompactionUtil {
             new LiteralExpression(maxVal, dataType));
         if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
           exp2.setAlreadyResolved(true);
-          exp1.setAlreadyResolved(true);
         }
         finalExpr = new OrExpression(exp1, exp2);
       }
@@ -518,6 +521,84 @@ public class CarbonCompactionUtil {
       finalExpr = new AndExpression(exp1, exp2);
     }
     return finalExpr;
+  }
+
+  public static Object[] getOverallMinMax(CarbonInputSplit[] carbonInputSplits,
+      CarbonColumn rangeCol, boolean isSortCol) {
+    byte[] minVal = null;
+    byte[] maxVal = null;
+    int dictMinVal = Integer.MAX_VALUE;
+    int dictMaxVal = Integer.MIN_VALUE;
+    int idx = -1;
+    DataType dataType = rangeCol.getDataType();
+    Object[] minMaxVals = new Object[2];
+    boolean isDictEncode = rangeCol.hasEncoding(Encoding.DICTIONARY);
+    try {
+      for (CarbonInputSplit split : carbonInputSplits) {
+        DataFileFooter dataFileFooter = null;
+        dataFileFooter =
+            CarbonUtil.readMetadataFile(CarbonInputSplit.getTableBlockInfo(split), true);
+
+        if (-1 == idx) {
+          List<ColumnSchema> allColumns = dataFileFooter.getColumnInTable();
+          for (int i = 0; i < allColumns.size(); i++) {
+            if (allColumns.get(i).getColumnName().equalsIgnoreCase(rangeCol.getColName())) {
+              idx = i;
+              break;
+            }
+          }
+        }
+        if (isDictEncode) {
+          byte[] tempMin = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMinValues()[idx];
+          int tempMinVal = CarbonUtil.getSurrogateInternal(tempMin, 0, tempMin.length);
+          byte[] tempMax = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMaxValues()[idx];
+          int tempMaxVal = CarbonUtil.getSurrogateInternal(tempMax, 0, tempMax.length);
+          if (dictMinVal > tempMinVal) {
+            dictMinVal = tempMinVal;
+          }
+          if (dictMaxVal < tempMaxVal) {
+            dictMaxVal = tempMaxVal;
+          }
+        } else {
+          if (null == minVal) {
+            minVal = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMinValues()[idx];
+            maxVal = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMaxValues()[idx];
+          } else {
+            byte[] tempMin = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMinValues()[idx];
+            byte[] tempMax = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMaxValues()[idx];
+            if (ByteUtil.compare(tempMin, minVal) <= 0) {
+              minVal = tempMin;
+            }
+            if (ByteUtil.compare(tempMax, maxVal) >= 0) {
+              maxVal = tempMax;
+            }
+          }
+        }
+      }
+
+      // Based on how min/max value is stored in the footer we change the data
+      if (isDictEncode) {
+        minMaxVals[0] = dictMinVal;
+        minMaxVals[1] = dictMaxVal;
+      } else {
+        if (!isSortCol && (dataType == DataTypes.INT || dataType == DataTypes.LONG)) {
+          minMaxVals[0] = ByteUtil.toLong(minVal, 0, minVal.length);
+          minMaxVals[1] = ByteUtil.toLong(maxVal, 0, maxVal.length);
+        } else if (dataType == DataTypes.DOUBLE) {
+          minMaxVals[0] = ByteUtil.toDouble(minVal, 0, minVal.length);
+          minMaxVals[1] = ByteUtil.toDouble(maxVal, 0, maxVal.length);
+        } else {
+          minMaxVals[0] =
+              DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(minVal, dataType, true);
+          minMaxVals[1] =
+              DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(maxVal, dataType, true);
+        }
+      }
+
+    } catch (IOException e) {
+      LOGGER.error(e.getMessage());
+    }
+    return minMaxVals;
   }
 
   /**

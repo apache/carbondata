@@ -235,7 +235,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
 
   test("Test compaction for range_column - INT Datatype with null values") {
     deleteFile(filePath3)
-    createFile(filePath3, 1000, 3)
+    createFile(filePath3, 2000, 3)
     sql("DROP TABLE IF EXISTS carbon_range_column1")
     sql(
       """
@@ -244,6 +244,12 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
         | 'range_column'='name')
       """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath3' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath3' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath3' INTO TABLE carbon_range_column1 " +
         "OPTIONS('HEADER'='false','GLOBAL_SORT_PARTITIONS'='3')")
@@ -648,7 +654,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   }
 
-  test("Test compaction for range_column - TIMESTAMP Datatype") {
+  test("Test compaction for range_column - TIMESTAMP Datatype skewed data") {
     deleteFile(filePath2)
     createFile(filePath2, 12, 1)
     sql("DROP TABLE IF EXISTS carbon_range_column1")
@@ -658,7 +664,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age TIMESTAMP)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city' ,
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='city' ,
         | 'range_column'='age')
       """.stripMargin)
 
@@ -852,9 +858,13 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       } else if (1 == lastCol) {
         // Timestamp data generation
         for (i <- start until (start + line)) {
-          write
-            .println(i + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i) + "-10-10 " +
-                     "00:00:00")
+          if (i == start) {
+            write
+              .println(i + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i) + "-10-10 " +
+                       "00:00:00")
+          } else {
+            write.println(i + "," + "n" + i + "," + "c" + (i % 10000) + ",")
+          }
         }
       } else if (2 == lastCol) {
         // Float data generation
@@ -865,8 +875,13 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       } else if (3 == lastCol) {
         // Null data generation
         for (i <- start until (start + line)) {
-          write
-            .println(i + "," + "," + "c" + (i % 10000) + "," + (1990 + i))
+          if (i % 3 != 0) {
+            write
+              .println(i + "," + "," + "c" + (i % 10000) + "," + (1990 + i))
+          } else {
+            write
+              .println(i + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i))
+          }
         }
       } else if (4 <= lastCol && 6 >= lastCol) {
         // No overlap data generation 1
