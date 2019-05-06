@@ -19,7 +19,7 @@ package org.apache.spark.sql.hive
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.Analyzer
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
-import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{Command, DeserializeToObject, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.util.CarbonReflectionUtils
@@ -40,7 +40,7 @@ class CarbonAnalyzer(catalog: SessionCatalog,
 
   override def execute(plan: LogicalPlan): LogicalPlan = {
     var logicalPlan = analyzer.execute(plan)
-    if (!logicalPlan.isInstanceOf[Command]) {
+    if (!logicalPlan.isInstanceOf[Command] && !logicalPlan.isInstanceOf[DeserializeToObject]) {
       logicalPlan = CarbonPreAggregateDataLoadingRules(sparkSession).apply(logicalPlan)
       logicalPlan = CarbonPreAggregateQueryRules(sparkSession).apply(logicalPlan)
       if (mvPlan != null) {
