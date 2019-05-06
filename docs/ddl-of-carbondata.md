@@ -793,6 +793,27 @@ Users can specify which columns to include and exclude for local dictionary gene
        ALTER TABLE tablename UNSET TBLPROPERTIES('SORT_SCOPE')
        ```
 
+     - ##### SORT COLUMNS
+       Example to SET SORT COLUMNS:
+       ```
+       ALTER TABLE tablename SET TBLPROPERTIES('SORT_COLUMNS'='column1')
+       ```
+       After this operation, the new loading will use the new SORT_COLUMNS. The user can adjust 
+       the SORT_COLUMNS according to the query, but it will not impact the old data directly. So 
+       it will not impact the query performance of the old data segments which are not sorted by 
+       new SORT_COLUMNS.  
+       
+       UNSET is not supported, but it can set SORT_COLUMNS to empty string instead of using UNSET.
+       ```
+       ALTER TABLE tablename SET TBLPROPERTIES('SORT_COLUMNS'='')
+       ```
+
+       **NOTE:**
+        * The future version will enhance "custom" compaction to sort the old segment one by one.
+        * The streaming table is not supported for SORT_COLUMNS modification.
+        * If the inverted index columns are removed from the new SORT_COLUMNS, they will not 
+        create the inverted index. But the old configuration of INVERTED_INDEX will be kept.
+
 ### DROP TABLE
 
   This command is used to delete an existing table.
