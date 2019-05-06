@@ -793,6 +793,19 @@ Users can specify which columns to include and exclude for local dictionary gene
        ALTER TABLE tablename UNSET TBLPROPERTIES('SORT_SCOPE')
        ```
 
+     - ##### SORT COLUMNS
+       Example to SET SORT COLUMNS:
+       ```
+       ALTER TABLE tablename SET TBLPROPERTIES('SORT_COLUMNS'='column1')
+       ```
+
+       UNSET is not supported, but it can set SORT_COLUMNS to empty string instead of using UNSET.
+       ```
+       ALTER TABLE tablename SET TBLPROPERTIES('SORT_COLUMNS'='')
+       ```
+
+       **NOTE:** streaming table is not supported for SORT_COLUMNS modification.
+
 ### DROP TABLE
 
   This command is used to delete an existing table.
