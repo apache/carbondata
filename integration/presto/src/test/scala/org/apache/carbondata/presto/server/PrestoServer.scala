@@ -23,13 +23,13 @@ import java.util.{Locale, Optional, Properties}
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
-import com.facebook.presto.Session
-import com.facebook.presto.execution.QueryIdGenerator
-import com.facebook.presto.jdbc.PrestoStatement
-import com.facebook.presto.metadata.SessionPropertyManager
-import com.facebook.presto.spi.`type`.TimeZoneKey.UTC_KEY
-import com.facebook.presto.spi.security.Identity
-import com.facebook.presto.tests.DistributedQueryRunner
+import io.prestosql.Session
+import io.prestosql.execution.QueryIdGenerator
+import io.prestosql.jdbc.PrestoStatement
+import io.prestosql.metadata.SessionPropertyManager
+import io.prestosql.spi.`type`.TimeZoneKey.UTC_KEY
+import io.prestosql.spi.security.Identity
+import io.prestosql.tests.DistributedQueryRunner
 import com.google.common.collect.ImmutableMap
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -145,7 +145,7 @@ class PrestoServer {
    * @return
    */
   private def createJdbcConnection(dbName: String) = {
-    val JDBC_DRIVER = "com.facebook.presto.jdbc.PrestoDriver"
+    val JDBC_DRIVER = "io.prestosql.jdbc.PrestoDriver"
     var DB_URL : String = null
     if (dbName == null) {
       DB_URL = "jdbc:presto://localhost:8086/carbondata/default"

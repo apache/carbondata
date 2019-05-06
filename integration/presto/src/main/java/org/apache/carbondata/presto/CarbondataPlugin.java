@@ -19,9 +19,9 @@ package org.apache.carbondata.presto;
 
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
-import com.facebook.presto.spi.Plugin;
-import com.facebook.presto.spi.connector.ConnectorFactory;
 import com.google.common.collect.ImmutableList;
+import io.prestosql.spi.Plugin;
+import io.prestosql.spi.connector.ConnectorFactory;
 
 public class CarbondataPlugin implements Plugin {
 

@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.presto.readers;
 
-import com.facebook.presto.spi.block.Block;
+import io.prestosql.spi.block.Block;
 
 public interface PrestoVectorBlockBuilder {
 

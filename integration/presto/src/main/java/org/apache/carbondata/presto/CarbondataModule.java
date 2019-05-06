@@ -23,58 +23,56 @@ import static java.util.Objects.requireNonNull;
 
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 
-import com.facebook.presto.hive.CoercionPolicy;
-import com.facebook.presto.hive.DirectoryLister;
-import com.facebook.presto.hive.FileFormatDataSourceStats;
-import com.facebook.presto.hive.GenericHiveRecordCursorProvider;
-import com.facebook.presto.hive.HadoopDirectoryLister;
-import com.facebook.presto.hive.HdfsConfiguration;
-import com.facebook.presto.hive.HdfsConfigurationUpdater;
-import com.facebook.presto.hive.HdfsEnvironment;
-import com.facebook.presto.hive.HiveAnalyzeProperties;
-import com.facebook.presto.hive.HiveClientConfig;
-import com.facebook.presto.hive.HiveClientModule;
-import com.facebook.presto.hive.HiveCoercionPolicy;
-import com.facebook.presto.hive.HiveConnectorId;
-import com.facebook.presto.hive.HiveEventClient;
-import com.facebook.presto.hive.HiveFileWriterFactory;
-import com.facebook.presto.hive.HiveHdfsConfiguration;
-import com.facebook.presto.hive.HiveLocationService;
-import com.facebook.presto.hive.HiveMetadataFactory;
-import com.facebook.presto.hive.HiveNodePartitioningProvider;
-import com.facebook.presto.hive.HivePageSinkProvider;
-import com.facebook.presto.hive.HivePageSourceFactory;
-import com.facebook.presto.hive.HivePartitionManager;
-import com.facebook.presto.hive.HiveRecordCursorProvider;
-import com.facebook.presto.hive.HiveSessionProperties;
-import com.facebook.presto.hive.HiveSplitManager;
-import com.facebook.presto.hive.HiveTableProperties;
-import com.facebook.presto.hive.HiveTransactionManager;
-import com.facebook.presto.hive.HiveTypeTranslator;
-import com.facebook.presto.hive.HiveWriterStats;
-import com.facebook.presto.hive.LocationService;
-import com.facebook.presto.hive.NamenodeStats;
-import com.facebook.presto.hive.OrcFileWriterConfig;
-import com.facebook.presto.hive.OrcFileWriterFactory;
-import com.facebook.presto.hive.ParquetFileWriterConfig;
-import com.facebook.presto.hive.PartitionUpdate;
-import com.facebook.presto.hive.RcFileFileWriterFactory;
-import com.facebook.presto.hive.TableParameterCodec;
-import com.facebook.presto.hive.TransactionalMetadata;
-import com.facebook.presto.hive.TypeTranslator;
-import com.facebook.presto.hive.orc.DwrfPageSourceFactory;
-import com.facebook.presto.hive.orc.OrcPageSourceFactory;
-import com.facebook.presto.hive.parquet.ParquetPageSourceFactory;
-import com.facebook.presto.hive.rcfile.RcFilePageSourceFactory;
-import com.facebook.presto.spi.connector.ConnectorNodePartitioningProvider;
-import com.facebook.presto.spi.connector.ConnectorPageSinkProvider;
-import com.facebook.presto.spi.connector.ConnectorPageSourceProvider;
-import com.facebook.presto.spi.connector.ConnectorSplitManager;
 import com.google.inject.Binder;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import io.airlift.event.client.EventClient;
+import io.prestosql.plugin.hive.CachingDirectoryLister;
+import io.prestosql.plugin.hive.CoercionPolicy;
+import io.prestosql.plugin.hive.DirectoryLister;
+import io.prestosql.plugin.hive.DynamicConfigurationProvider;
+import io.prestosql.plugin.hive.FileFormatDataSourceStats;
+import io.prestosql.plugin.hive.GenericHiveRecordCursorProvider;
+import io.prestosql.plugin.hive.HdfsConfiguration;
+import io.prestosql.plugin.hive.HdfsConfigurationInitializer;
+import io.prestosql.plugin.hive.HdfsEnvironment;
+import io.prestosql.plugin.hive.HiveAnalyzeProperties;
+import io.prestosql.plugin.hive.HiveCoercionPolicy;
+import io.prestosql.plugin.hive.HiveConfig;
+import io.prestosql.plugin.hive.HiveEventClient;
+import io.prestosql.plugin.hive.HiveFileWriterFactory;
+import io.prestosql.plugin.hive.HiveHdfsConfiguration;
+import io.prestosql.plugin.hive.HiveLocationService;
+import io.prestosql.plugin.hive.HiveMetadataFactory;
+import io.prestosql.plugin.hive.HiveModule;
+import io.prestosql.plugin.hive.HiveNodePartitioningProvider;
+import io.prestosql.plugin.hive.HivePageSinkProvider;
+import io.prestosql.plugin.hive.HivePageSourceFactory;
+import io.prestosql.plugin.hive.HivePartitionManager;
+import io.prestosql.plugin.hive.HiveRecordCursorProvider;
+import io.prestosql.plugin.hive.HiveSessionProperties;
+import io.prestosql.plugin.hive.HiveSplitManager;
+import io.prestosql.plugin.hive.HiveTableProperties;
+import io.prestosql.plugin.hive.HiveTransactionManager;
+import io.prestosql.plugin.hive.HiveTypeTranslator;
+import io.prestosql.plugin.hive.HiveWriterStats;
+import io.prestosql.plugin.hive.LocationService;
+import io.prestosql.plugin.hive.NamenodeStats;
+import io.prestosql.plugin.hive.OrcFileWriterConfig;
+import io.prestosql.plugin.hive.OrcFileWriterFactory;
+import io.prestosql.plugin.hive.ParquetFileWriterConfig;
+import io.prestosql.plugin.hive.PartitionUpdate;
+import io.prestosql.plugin.hive.RcFileFileWriterFactory;
+import io.prestosql.plugin.hive.TransactionalMetadata;
+import io.prestosql.plugin.hive.TypeTranslator;
+import io.prestosql.plugin.hive.orc.OrcPageSourceFactory;
+import io.prestosql.plugin.hive.parquet.ParquetPageSourceFactory;
+import io.prestosql.plugin.hive.rcfile.RcFilePageSourceFactory;
+import io.prestosql.spi.connector.ConnectorNodePartitioningProvider;
+import io.prestosql.spi.connector.ConnectorPageSinkProvider;
+import io.prestosql.spi.connector.ConnectorPageSourceProvider;
+import io.prestosql.spi.connector.ConnectorSplitManager;
 
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
@@ -86,25 +84,24 @@ import static org.weakref.jmx.guice.ExportBinder.newExporter;
 /**
  * Binds all necessary classes needed for this module.
  */
-public class CarbondataModule extends HiveClientModule {
+public class CarbondataModule extends HiveModule {
 
   private final String connectorId;
 
   public CarbondataModule(String connectorId) {
-    super(connectorId);
     this.connectorId = requireNonNull(connectorId, "connector id is null");
   }
 
   @Override public void configure(Binder binder) {
-    binder.bind(HiveConnectorId.class).toInstance(new HiveConnectorId(connectorId));
     binder.bind(TypeTranslator.class).toInstance(new HiveTypeTranslator());
     binder.bind(CoercionPolicy.class).to(HiveCoercionPolicy.class).in(Scopes.SINGLETON);
 
-    binder.bind(HdfsConfigurationUpdater.class).in(Scopes.SINGLETON);
+    binder.bind(HdfsConfigurationInitializer.class).in(Scopes.SINGLETON);
+    newSetBinder(binder, DynamicConfigurationProvider.class);
     binder.bind(HdfsConfiguration.class).to(HiveHdfsConfiguration.class).in(Scopes.SINGLETON);
     binder.bind(HdfsEnvironment.class).in(Scopes.SINGLETON);
-    binder.bind(DirectoryLister.class).to(HadoopDirectoryLister.class).in(Scopes.SINGLETON);
-    configBinder(binder).bindConfig(HiveClientConfig.class);
+    binder.bind(DirectoryLister.class).to(CachingDirectoryLister.class).in(Scopes.SINGLETON);
+    configBinder(binder).bindConfig(HiveConfig.class);
 
     binder.bind(HiveSessionProperties.class).in(Scopes.SINGLETON);
     binder.bind(HiveTableProperties.class).in(Scopes.SINGLETON);
@@ -127,7 +124,6 @@ public class CarbondataModule extends HiveClientModule {
         .in(Scopes.SINGLETON);
     binder.bind(HivePartitionManager.class).in(Scopes.SINGLETON);
     binder.bind(LocationService.class).to(HiveLocationService.class).in(Scopes.SINGLETON);
-    binder.bind(TableParameterCodec.class).in(Scopes.SINGLETON);
     binder.bind(HiveMetadataFactory.class).in(Scopes.SINGLETON);
     binder.bind(new TypeLiteral<Supplier<TransactionalMetadata>>() {
     }).to(HiveMetadataFactory.class).in(Scopes.SINGLETON);
@@ -151,7 +147,6 @@ public class CarbondataModule extends HiveClientModule {
     Multibinder<HivePageSourceFactory> pageSourceFactoryBinder =
         newSetBinder(binder, HivePageSourceFactory.class);
     pageSourceFactoryBinder.addBinding().to(OrcPageSourceFactory.class).in(Scopes.SINGLETON);
-    pageSourceFactoryBinder.addBinding().to(DwrfPageSourceFactory.class).in(Scopes.SINGLETON);
     pageSourceFactoryBinder.addBinding().to(ParquetPageSourceFactory.class).in(Scopes.SINGLETON);
     pageSourceFactoryBinder.addBinding().to(RcFilePageSourceFactory.class).in(Scopes.SINGLETON);
 

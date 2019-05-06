@@ -28,20 +28,21 @@ import org.apache.carbondata.presto.impl.CarbonTableReader;
 
 import static org.apache.carbondata.presto.Types.checkType;
 
-import com.facebook.presto.hive.HdfsEnvironment;
-import com.facebook.presto.hive.HiveClientConfig;
-import com.facebook.presto.hive.HivePageSourceFactory;
-import com.facebook.presto.hive.HivePageSourceProvider;
-import com.facebook.presto.hive.HiveRecordCursorProvider;
-import com.facebook.presto.hive.HiveSplit;
-import com.facebook.presto.spi.ColumnHandle;
-import com.facebook.presto.spi.ConnectorPageSource;
-import com.facebook.presto.spi.ConnectorSession;
-import com.facebook.presto.spi.ConnectorSplit;
-import com.facebook.presto.spi.SchemaTableName;
-import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
-import com.facebook.presto.spi.type.TypeManager;
 import com.google.inject.Inject;
+import io.prestosql.plugin.hive.HdfsEnvironment;
+import io.prestosql.plugin.hive.HiveConfig;
+import io.prestosql.plugin.hive.HivePageSourceFactory;
+import io.prestosql.plugin.hive.HivePageSourceProvider;
+import io.prestosql.plugin.hive.HiveRecordCursorProvider;
+import io.prestosql.plugin.hive.HiveSplit;
+import io.prestosql.spi.connector.ColumnHandle;
+import io.prestosql.spi.connector.ConnectorPageSource;
+import io.prestosql.spi.connector.ConnectorSession;
+import io.prestosql.spi.connector.ConnectorSplit;
+import io.prestosql.spi.connector.ConnectorTableHandle;
+import io.prestosql.spi.connector.ConnectorTransactionHandle;
+import io.prestosql.spi.connector.SchemaTableName;
+import io.prestosql.spi.type.TypeManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
@@ -57,26 +58,27 @@ public class CarbondataPageSourceProvider extends HivePageSourceProvider {
   private HdfsEnvironment hdfsEnvironment;
 
   @Inject public CarbondataPageSourceProvider(
-      HiveClientConfig hiveClientConfig,
+      HiveConfig hiveConfig,
       HdfsEnvironment hdfsEnvironment,
       Set<HiveRecordCursorProvider> cursorProviders,
       Set<HivePageSourceFactory> pageSourceFactories,
       TypeManager typeManager,
       CarbonTableReader carbonTableReader) {
-    super(hiveClientConfig, hdfsEnvironment, cursorProviders, pageSourceFactories, typeManager);
+    super(hiveConfig, hdfsEnvironment, cursorProviders, pageSourceFactories, typeManager);
     this.carbonTableReader = requireNonNull(carbonTableReader, "carbonTableReader is null");
     this.hdfsEnvironment = hdfsEnvironment;
   }
 
   @Override
   public ConnectorPageSource createPageSource(ConnectorTransactionHandle transactionHandle,
-      ConnectorSession session, ConnectorSplit split, List<ColumnHandle> columns) {
+      ConnectorSession session, ConnectorSplit split, ConnectorTableHandle table,
+      List<ColumnHandle> columns) {
     HiveSplit carbonSplit =
         checkType(split, HiveSplit.class, "split is not class HiveSplit");
     this.queryId = carbonSplit.getSchema().getProperty("queryId");
     if (this.queryId == null) {
       // Fall back to hive pagesource.
-      return super.createPageSource(transactionHandle, session, split, columns);
+      return super.createPageSource(transactionHandle, session, split, table, columns);
     }
     Configuration configuration = this.hdfsEnvironment.getConfiguration(
         new HdfsEnvironment.HdfsContext(session, carbonSplit.getDatabase(), carbonSplit.getTable()),
@@ -86,7 +88,7 @@ public class CarbondataPageSourceProvider extends HivePageSourceProvider {
     boolean isDirectVectorFill = carbonTableReader.config.getPushRowFilter() == null ||
         carbonTableReader.config.getPushRowFilter().equalsIgnoreCase("false");
     return new CarbondataPageSource(
-        carbonTable, queryId, carbonSplit, columns, configuration, isDirectVectorFill);
+        carbonTable, queryId, carbonSplit, columns, table, configuration, isDirectVectorFill);
   }
 
   /**

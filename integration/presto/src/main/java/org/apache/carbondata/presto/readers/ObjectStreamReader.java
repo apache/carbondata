@@ -20,10 +20,10 @@ package org.apache.carbondata.presto.readers;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
-import com.facebook.presto.spi.block.Block;
-import com.facebook.presto.spi.block.BlockBuilder;
-import com.facebook.presto.spi.type.IntegerType;
-import com.facebook.presto.spi.type.Type;
+import io.prestosql.spi.block.Block;
+import io.prestosql.spi.block.BlockBuilder;
+import io.prestosql.spi.type.IntegerType;
+import io.prestosql.spi.type.Type;
 
 /**
  * Class to read the Object Stream

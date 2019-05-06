@@ -323,24 +323,24 @@ Once the table is created,it can be queried from Presto.**
 
 ### Installing Presto
 
-1. Download the 0.210 version of Presto using:
-`wget https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.210/presto-server-0.210.tar.gz`
+1. Download the 316 version of PrestoSQL using:
+`wget https://repo1.maven.org/maven2/io/prestosql/presto-server/316/presto-server-316.tar.gz`
 
-2. Extract Presto tar file: `tar zxvf presto-server-0.210.tar.gz`.
+2. Extract Presto tar file: `tar zxvf presto-server-316.tar.gz`.
 
 3. Download the Presto CLI for the coordinator and name it presto.
 
 ```
-wget https://repo1.maven.org/maven2/com/facebook/presto/presto-cli/0.210/presto-cli-0.210-executable.jar
+wget https://repo1.maven.org/maven2/io/prestosql/presto-cli/316/presto-cli-316-executable.jar
 
-mv presto-cli-0.210-executable.jar presto
+mv presto-cli-316-executable.jar presto
 
 chmod +x presto
 ```
 
 ### Create Configuration Files
 
-1. Create `etc` folder in presto-server-0.210 directory.
+1. Create `etc` folder in presto-server-316 directory.
 2. Create `config.properties`, `jvm.config`, `log.properties`, and `node.properties` files.
 3. Install uuid to generate a node.id.
 
@@ -375,7 +375,7 @@ node.data-dir=/home/ubuntu/data
 ##### Contents of your log.properties file
 
 ```
-com.facebook.presto=INFO
+io.prestosql=INFO
 ```
 
  The default minimum level is `INFO`. There are four levels: `DEBUG`, `INFO`, `WARN` and `ERROR`.
@@ -435,12 +435,12 @@ discovery.uri=<coordinator_ip>:8086
 ### Start Presto Server on all nodes
 
 ```
-./presto-server-0.210/bin/launcher start
+./presto-server-316/bin/launcher start
 ```
 To run it as a background process.
 
 ```
-./presto-server-0.210/bin/launcher run
+./presto-server-316/bin/launcher run
 ```
 To run it in foreground.
 

@@ -55,17 +55,19 @@ import org.apache.carbondata.presto.impl.CarbonLocalMultiBlockSplit;
 import org.apache.carbondata.presto.readers.PrestoVectorBlockBuilder;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
-import com.facebook.presto.hadoop.$internal.com.google.common.base.Throwables;
-import com.facebook.presto.hive.HiveColumnHandle;
-import com.facebook.presto.hive.HiveSplit;
-import com.facebook.presto.spi.ColumnHandle;
-import com.facebook.presto.spi.ConnectorPageSource;
-import com.facebook.presto.spi.Page;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.block.Block;
-import com.facebook.presto.spi.block.LazyBlock;
-import com.facebook.presto.spi.block.LazyBlockLoader;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import io.prestosql.plugin.hive.HiveColumnHandle;
+import io.prestosql.plugin.hive.HiveSplit;
+import io.prestosql.plugin.hive.HiveTableHandle;
+import io.prestosql.spi.Page;
+import io.prestosql.spi.PrestoException;
+import io.prestosql.spi.block.Block;
+import io.prestosql.spi.block.LazyBlock;
+import io.prestosql.spi.block.LazyBlockLoader;
+import io.prestosql.spi.connector.ColumnHandle;
+import io.prestosql.spi.connector.ConnectorPageSource;
+import io.prestosql.spi.connector.ConnectorTableHandle;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
@@ -89,6 +91,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   private Configuration hadoopConf;
   private FileFormat fileFormat;
   private List<ColumnHandle> columnHandles;
+  ConnectorTableHandle tableHandle;
   private int columnCount = 0;
   private boolean closed;
   private long sizeOfData = 0;
@@ -110,13 +113,15 @@ class CarbondataPageSource implements ConnectorPageSource {
   private boolean isFrstPage = true;
 
   CarbondataPageSource(CarbonTable carbonTable, String queryId, HiveSplit split,
-      List<ColumnHandle> columnHandles, Configuration hadoopConf, boolean isDirectVectorFill) {
+      List<ColumnHandle> columnHandles, ConnectorTableHandle tableHandle, Configuration hadoopConf,
+      boolean isDirectVectorFill) {
     this.carbonTable = carbonTable;
     this.queryId = queryId;
     this.split = split;
     this.columnHandles = columnHandles;
     this.hadoopConf = hadoopConf;
     this.isDirectVectorFill = isDirectVectorFill;
+    this.tableHandle = tableHandle;
     initialize();
   }
 
@@ -133,11 +138,12 @@ class CarbondataPageSource implements ConnectorPageSource {
 
   private void initializeForColumnar() {
     readSupport = new CarbonDictionaryDecodeReadSupport();
-    vectorReader = createReaderForColumnar(split, columnHandles, readSupport, hadoopConf);
+    vectorReader =
+        createReaderForColumnar(split, columnHandles, tableHandle, readSupport, hadoopConf);
   }
 
   private void initializeForRow() {
-    QueryModel queryModel = createQueryModel(split, columnHandles, hadoopConf);
+    QueryModel queryModel = createQueryModel(split, tableHandle, columnHandles, hadoopConf);
     rowReader = new StreamRecordReader(queryModel, false);
     List<ProjectionDimension> queryDimension = queryModel.getProjectionDimensions();
     List<ProjectionMeasure> queryMeasures = queryModel.getProjectionMeasures();
@@ -323,7 +329,8 @@ class CarbondataPageSource implements ConnectorPageSource {
       }
       nanoEnd = System.nanoTime();
     } catch (Exception e) {
-      throw Throwables.propagate(e);
+      Throwables.throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
 
   }
@@ -345,9 +352,9 @@ class CarbondataPageSource implements ConnectorPageSource {
    * Create vector reader using the split.
    */
   private PrestoCarbonVectorizedRecordReader createReaderForColumnar(HiveSplit carbonSplit,
-      List<? extends ColumnHandle> columns, CarbonDictionaryDecodeReadSupport readSupport,
-      Configuration conf) {
-    QueryModel queryModel = createQueryModel(carbonSplit, columns, conf);
+      List<? extends ColumnHandle> columns, ConnectorTableHandle tableHandle,
+      CarbonDictionaryDecodeReadSupport readSupport, Configuration conf) {
+    QueryModel queryModel = createQueryModel(carbonSplit, tableHandle, columns, conf);
     if (isDirectVectorFill) {
       queryModel.setDirectVectorFill(true);
       queryModel.setPreFetchData(false);
@@ -372,7 +379,7 @@ class CarbondataPageSource implements ConnectorPageSource {
    * @param columns
    * @return
    */
-  private QueryModel createQueryModel(HiveSplit carbondataSplit,
+  private QueryModel createQueryModel(HiveSplit carbondataSplit, ConnectorTableHandle tableHandle,
       List<? extends ColumnHandle> columns, Configuration conf) {
 
     try {
@@ -385,8 +392,9 @@ class CarbondataPageSource implements ConnectorPageSource {
       conf.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
       conf.set("query.id", queryId);
       JobConf jobConf = new JobConf(conf);
+      HiveTableHandle hiveTable = (HiveTableHandle) tableHandle;
       CarbonTableInputFormat carbonTableInputFormat = createInputFormat(jobConf, carbonTable,
-          PrestoFilterUtil.parseFilterExpression(carbondataSplit.getEffectivePredicate()),
+          PrestoFilterUtil.parseFilterExpression(hiveTable.getCompactEffectivePredicate()),
           carbonProjection);
       TaskAttemptContextImpl hadoopAttemptContext =
           new TaskAttemptContextImpl(jobConf, new TaskAttemptID("", 1, TaskType.MAP, 0, 0));

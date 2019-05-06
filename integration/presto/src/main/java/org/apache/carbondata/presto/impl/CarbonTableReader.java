@@ -56,12 +56,12 @@ import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.presto.PrestoFilterUtil;
 
-import com.facebook.presto.hadoop.$internal.com.google.gson.Gson;
-import com.facebook.presto.hadoop.$internal.org.apache.commons.collections.CollectionUtils;
-import com.facebook.presto.hive.HiveColumnHandle;
-import com.facebook.presto.spi.SchemaTableName;
-import com.facebook.presto.spi.predicate.TupleDomain;
+import com.google.gson.Gson;
 import com.google.inject.Inject;
+import io.prestosql.plugin.hive.HiveColumnHandle;
+import io.prestosql.spi.connector.SchemaTableName;
+import io.prestosql.spi.predicate.TupleDomain;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;

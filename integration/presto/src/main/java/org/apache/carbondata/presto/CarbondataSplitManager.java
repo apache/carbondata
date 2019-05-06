@@ -35,30 +35,32 @@ import org.apache.carbondata.presto.impl.CarbonLocalMultiBlockSplit;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 
-import com.facebook.presto.hive.CoercionPolicy;
-import com.facebook.presto.hive.DirectoryLister;
-import com.facebook.presto.hive.ForHiveClient;
-import com.facebook.presto.hive.HdfsEnvironment;
-import com.facebook.presto.hive.HiveClientConfig;
-import com.facebook.presto.hive.HiveColumnHandle;
-import com.facebook.presto.hive.HiveSplit;
-import com.facebook.presto.hive.HiveSplitManager;
-import com.facebook.presto.hive.HiveTableLayoutHandle;
-import com.facebook.presto.hive.HiveTransactionHandle;
-import com.facebook.presto.hive.NamenodeStats;
-import com.facebook.presto.hive.metastore.SemiTransactionalHiveMetastore;
-import com.facebook.presto.hive.metastore.Table;
-import com.facebook.presto.spi.ConnectorSession;
-import com.facebook.presto.spi.ConnectorSplit;
-import com.facebook.presto.spi.ConnectorSplitSource;
-import com.facebook.presto.spi.ConnectorTableLayoutHandle;
-import com.facebook.presto.spi.FixedSplitSource;
-import com.facebook.presto.spi.HostAddress;
-import com.facebook.presto.spi.SchemaTableName;
-import com.facebook.presto.spi.TableNotFoundException;
-import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
-import com.facebook.presto.spi.predicate.TupleDomain;
 import com.google.common.collect.ImmutableList;
+import io.prestosql.plugin.hive.CoercionPolicy;
+import io.prestosql.plugin.hive.DirectoryLister;
+import io.prestosql.plugin.hive.ForHive;
+import io.prestosql.plugin.hive.HdfsEnvironment;
+import io.prestosql.plugin.hive.HiveColumnHandle;
+import io.prestosql.plugin.hive.HiveConfig;
+import io.prestosql.plugin.hive.HivePartitionManager;
+import io.prestosql.plugin.hive.HiveSplit;
+import io.prestosql.plugin.hive.HiveSplitManager;
+import io.prestosql.plugin.hive.HiveTableHandle;
+import io.prestosql.plugin.hive.HiveTransactionHandle;
+import io.prestosql.plugin.hive.NamenodeStats;
+import io.prestosql.plugin.hive.metastore.SemiTransactionalHiveMetastore;
+import io.prestosql.plugin.hive.metastore.Table;
+import io.prestosql.spi.HostAddress;
+import io.prestosql.spi.VersionEmbedder;
+import io.prestosql.spi.connector.ConnectorSession;
+import io.prestosql.spi.connector.ConnectorSplit;
+import io.prestosql.spi.connector.ConnectorSplitSource;
+import io.prestosql.spi.connector.ConnectorTableHandle;
+import io.prestosql.spi.connector.ConnectorTransactionHandle;
+import io.prestosql.spi.connector.FixedSplitSource;
+import io.prestosql.spi.connector.SchemaTableName;
+import io.prestosql.spi.connector.TableNotFoundException;
+import io.prestosql.spi.predicate.TupleDomain;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
@@ -74,24 +76,31 @@ public class CarbondataSplitManager extends HiveSplitManager {
   private final Function<HiveTransactionHandle, SemiTransactionalHiveMetastore> metastoreProvider;
   private final HdfsEnvironment hdfsEnvironment;
 
-  @Inject public CarbondataSplitManager(HiveClientConfig hiveClientConfig,
+  @Inject public CarbondataSplitManager(
+      HiveConfig hiveConfig,
       Function<HiveTransactionHandle, SemiTransactionalHiveMetastore> metastoreProvider,
-      NamenodeStats namenodeStats, HdfsEnvironment hdfsEnvironment, DirectoryLister directoryLister,
-      @ForHiveClient ExecutorService executorService, CoercionPolicy coercionPolicy,
+      HivePartitionManager partitionManager,
+      NamenodeStats namenodeStats,
+      HdfsEnvironment hdfsEnvironment,
+      DirectoryLister directoryLister,
+      @ForHive ExecutorService executorService,
+      VersionEmbedder versionEmbedder,
+      CoercionPolicy coercionPolicy,
       CarbonTableReader reader) {
-    super(hiveClientConfig, metastoreProvider, namenodeStats, hdfsEnvironment, directoryLister,
-        executorService, coercionPolicy);
+    super(hiveConfig, metastoreProvider, partitionManager, namenodeStats, hdfsEnvironment,
+        directoryLister, executorService, versionEmbedder, coercionPolicy);
     this.carbonTableReader = requireNonNull(reader, "client is null");
     this.metastoreProvider = requireNonNull(metastoreProvider, "metastore is null");
     this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
   }
 
+  @Override
   public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle,
-      ConnectorSession session, ConnectorTableLayoutHandle layoutHandle,
+      ConnectorSession session, ConnectorTableHandle tableHandle,
       SplitSchedulingStrategy splitSchedulingStrategy) {
 
-    HiveTableLayoutHandle layout = (HiveTableLayoutHandle) layoutHandle;
-    SchemaTableName schemaTableName = layout.getSchemaTableName();
+    HiveTableHandle hiveTable = (HiveTableHandle) tableHandle;
+    SchemaTableName schemaTableName = hiveTable.getSchemaTableName();
 
     // get table metadata
     SemiTransactionalHiveMetastore metastore =
@@ -100,7 +109,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
         metastore.getTable(schemaTableName.getSchemaName(), schemaTableName.getTableName())
             .orElseThrow(() -> new TableNotFoundException(schemaTableName));
     if (!table.getStorage().getStorageFormat().getInputFormat().contains("carbon")) {
-      return super.getSplits(transactionHandle, session, layoutHandle, splitSchedulingStrategy);
+      return super.getSplits(transactionHandle, session, tableHandle, splitSchedulingStrategy);
     }
     String location = table.getStorage().getLocation();
 
@@ -113,7 +122,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
 
     carbonTableReader.setQueryId(queryId);
     TupleDomain<HiveColumnHandle> predicate =
-        (TupleDomain<HiveColumnHandle>) layout.getCompactEffectivePredicate();
+        (TupleDomain<HiveColumnHandle>) hiveTable.getCompactEffectivePredicate();
     Configuration configuration = this.hdfsEnvironment.getConfiguration(
         new HdfsEnvironment.HdfsContext(session, schemaTableName.getSchemaName(),
             schemaTableName.getTableName()), new Path(location));
@@ -141,9 +150,10 @@ public class CarbondataSplitManager extends HiveSplitManager {
         properties.setProperty("queryId", queryId);
         properties.setProperty("index", String.valueOf(index));
         cSplits.add(new HiveSplit(schemaTableName.getSchemaName(), schemaTableName.getTableName(),
-            schemaTableName.getTableName(), "", 0, 0, 0, properties, new ArrayList(),
-            getHostAddresses(split.getLocations()), OptionalInt.empty(), false, predicate,
-            new HashMap<>(), Optional.empty(), false));
+            schemaTableName.getTableName(), cache.getCarbonTable().getTablePath(), 0, 0, 0,
+            properties, new ArrayList(), getHostAddresses(split.getLocations()),
+            OptionalInt.empty(), false, new HashMap<>(),
+            Optional.empty(), false));
       }
 
       statisticRecorder.logStatisticsAsTableDriver();

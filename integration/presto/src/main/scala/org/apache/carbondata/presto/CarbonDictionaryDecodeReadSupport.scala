@@ -18,8 +18,8 @@ package org.apache.carbondata.presto
 
 import java.util.Optional
 
-import com.facebook.presto.spi.block.{Block, VariableWidthBlock}
 import io.airlift.slice.Slices._
+import io.prestosql.spi.block.{Block, VariableWidthBlock}
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryChunksWrapper, DictionaryColumnUniqueIdentifier}

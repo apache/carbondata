@@ -32,32 +32,32 @@ https://github.com/apache/carbondata/blob/master/integration/presto/pom.xml
 and look for ```<presto.version>```
 
 _Example:_ 
-  `<presto.version>0.217</presto.version>`
-This means current version of carbon supports presto 0.217 version.   
+  `<presto.version>316</presto.version>`
+This means current version of carbon supports presto 316 version.
 
 _Note:_
 Currently carbondata supports only one version of presto, cannot handle multiple versions at same time. If user wish to use older version of presto, then need to use older version of carbon (other old branches, say branch-1.5 and check the supported presto version in it's pom.xml file in integration/presto/)
 
-  1. Download that version of Presto (say 0.217) using below command:
+  1. Download that version of Presto (say 316) using below command:
   ```
-  wget https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.217/presto-server-0.217.tar.gz
+  wget https://repo1.maven.org/maven2/io/prestosql/presto-server/316/presto-server-316.tar.gz
   ```
 
-  2. Extract Presto tar file: `tar zxvf presto-server-0.217.tar.gz`.
+  2. Extract Presto tar file: `tar zxvf presto-server-316.tar.gz`.
 
-  3. Download the Presto CLI of the same presto server version (say 0.217) for the coordinator and name it presto.
+  3. Download the Presto CLI of the same presto server version (say 316) for the coordinator and name it presto.
 
   ```
-    wget https://repo1.maven.org/maven2/com/facebook/presto/presto-cli/0.217/presto-cli-0.217-executable.jar
+    wget https://repo1.maven.org/maven2/io/prestosql/presto-cli/316/presto-cli-316-executable.jar
 
-    mv presto-cli-0.217-executable.jar presto
+    mv presto-cli-316-executable.jar presto
 
     chmod +x presto
   ```
 
  ### Create Configuration Files
 
-  1. Create `etc` folder in presto-server-0.217 directory.
+  1. Create `etc` folder in presto-server-316 directory.
   2. Create `config.properties`, `jvm.config`, `log.properties`, and `node.properties` files.
   3. Install uuid to generate a node.id.
 
@@ -91,7 +91,7 @@ Currently carbondata supports only one version of presto, cannot handle multiple
 
 ##### Contents of your log.properties file
   ```
-  com.facebook.presto=INFO
+  io.prestosql=INFO
   ```
 
  The default minimum level is `INFO`. There are four levels: `DEBUG`, `INFO`, `WARN` and `ERROR`.
@@ -148,12 +148,12 @@ Then, `query.max-memory=<30GB * number of nodes>`.
 ### Start Presto Server on all nodes
 
 ```
-./presto-server-0.217/bin/launcher start
+./presto-server-316/bin/launcher start
 ```
 To run it as a background process.
 
 ```
-./presto-server-0.217/bin/launcher run
+./presto-server-316/bin/launcher run
 ```
 To run it in foreground.
 
@@ -176,8 +176,8 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
 ## Presto Single Node Setup for Carbondata
 
 ### Config presto server
-* Download presto server (0.217 is suggested and supported) : https://repo1.maven.org/maven2/com/facebook/presto/presto-server/
-* Finish presto configuration following https://prestodb.io/docs/current/installation/deployment.html.
+* Download presto server (316 is suggested and supported) : https://repo1.maven.org/maven2/io/prestosql/presto-server/
+* Finish presto configuration following https://prestosql.io/docs/current/installation/deployment.html.
   A configuration example:
   
  **config.properties**
@@ -218,8 +218,8 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
   
   **log.properties**
   ```
-  com.facebook.presto=DEBUG
-  com.facebook.presto.server.PluginManager=DEBUG
+  io.prestosql=DEBUG
+  io.prestosql.server.PluginManager=DEBUG
   ```
   
   **node.properties**
@@ -254,7 +254,7 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
   hive.metastore.uri=thrift://<host>:<port>
   ```
   Carbondata becomes one of the supported format of presto hive plugin, so the configurations and setup is similar to hive connector of presto.
-  Please refer <a>https://prestodb.io/docs/current/connector/hive.html</a> for more details.
+  Please refer <a>https://prestosql.io/docs/current/connector/hive.html</a> for more details.
   
   **Note**: Since carbon can work only with hive metastore, it is necessary that spark also connects to same metastore db for creating tables and updating tables.
   All the operations done on spark will be reflected in presto immediately. 
@@ -273,7 +273,7 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
     hive.s3.endpoint={value}
    ```
    
-   Please refer <a>https://prestodb.io/docs/current/connector/hive.html</a> for more details on S3 integration.
+   Please refer <a>https://prestosql.io/docs/current/connector/hive.html</a> for more details on S3 integration.
     
 ### Generate CarbonData file
 
@@ -282,7 +282,7 @@ Load data statement in Spark can be used to create carbondata tables. And then y
 carbondata files.
 
 ### Query carbondata in CLI of presto
-* Download presto cli client of version 0.217 : https://repo1.maven.org/maven2/com/facebook/presto/presto-cli
+* Download presto cli client of version 316 : https://repo1.maven.org/maven2/io/prestosql/presto-cli/
 
 * Start CLI:
   

@@ -24,7 +24,7 @@ import java.util.{Locale, Properties}
 import scala.collection.JavaConversions._
 import scala.util.{Failure, Success, Try}
 
-import com.facebook.presto.jdbc.{PrestoConnection, PrestoStatement}
+import io.prestosql.jdbc.{PrestoConnection, PrestoStatement}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
@@ -261,7 +261,7 @@ object QueryTest {
      * @return
      */
     private def createJdbcConnection(dbName: String, url: String) = {
-      val JDBC_DRIVER = "com.facebook.presto.jdbc.PrestoDriver"
+      val JDBC_DRIVER = "io.prestosql.jdbc.PrestoDriver"
       var DB_URL : String = null
       if (StringUtils.isEmpty(dbName)) {
         DB_URL = "jdbc:presto://"+ url + "/carbondata/default"
