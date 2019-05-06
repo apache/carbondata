@@ -35,9 +35,9 @@ import tempfile
 
 from pyspark.sql import SparkSession
 
-from examples.mnist import DEFAULT_MNIST_DATA_PATH
+from examples.mnist.pycarbon_dataset import DEFAULT_MNIST_DATA_PATH
 from examples import DEFAULT_CARBONSDK_PATH
-from examples.mnist.schema import MnistSchema
+from examples.mnist.pycarbon_dataset.schema import MnistSchema
 from petastorm.unischema import dict_to_spark_row
 
 from pycarbon.etl.carbon_dataset_metadata import materialize_dataset_carbon

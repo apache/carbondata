@@ -19,9 +19,9 @@ import torch
 
 import pytest
 
-import examples.mnist.pytorch_example_carbon as pytorch_example
-from examples.mnist.generate_pycarbon_mnist import mnist_data_to_pycarbon_dataset, download_mnist_data
-from examples.mnist.tests.conftest import SMALL_MOCK_IMAGE_COUNT
+import examples.mnist.pycarbon_dataset.pytorch_example_carbon as pytorch_example
+from examples.mnist.pycarbon_dataset.generate_pycarbon_mnist import mnist_data_to_pycarbon_dataset, download_mnist_data
+from examples.mnist.pycarbon_dataset.tests.conftest import SMALL_MOCK_IMAGE_COUNT
 
 from petastorm import TransformSpec
 

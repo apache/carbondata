@@ -28,7 +28,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import transforms
 
-from examples.mnist import DEFAULT_MNIST_DATA_PATH
+from examples.mnist.pycarbon_dataset import DEFAULT_MNIST_DATA_PATH
 from examples import DEFAULT_CARBONSDK_PATH
 
 from petastorm.pytorch import DataLoader
