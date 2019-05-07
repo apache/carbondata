@@ -78,7 +78,8 @@ class SparkCarbonFileFormat extends FileFormat
 
   /**
    * If user does not provide schema while reading the data then spark calls this method to infer
-   * schema from the carbodata files. It reads the schema present in carbondata files and return it.
+   * schema from the carbondata files.
+   * It reads the schema present in carbondata files and return it.
    */
   override def inferSchema(sparkSession: SparkSession,
       options: Map[String, String],

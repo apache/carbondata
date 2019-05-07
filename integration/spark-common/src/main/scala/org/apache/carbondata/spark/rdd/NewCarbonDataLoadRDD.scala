@@ -205,7 +205,7 @@ class NewCarbonDataLoadRDD[K, V](
        *
        * @return
        */
-      def gernerateBlocksID: String = {
+      def generateBlocksID: String = {
         carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
         UUID.randomUUID()
       }

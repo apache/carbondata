@@ -62,7 +62,7 @@ class C2DataMapFactory(
     new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema), List(ExpressionType.EQUALS).asJava)
 
   /**
-   * Get all distributable objects of a segmentid
+   * Get all distributable objects of a segmentId
    *
    * @return
    */

@@ -291,7 +291,7 @@ public class CarbonTablePath {
   }
 
   /**
-   * Return the segment path from table path and segmentid
+   * Return the segment path from table path and segmentId
    */
   public static String getSegmentPath(String tablePath, String segmentId) {
     return getPartitionDir(tablePath) + File.separator + SEGMENT_PREFIX + segmentId;

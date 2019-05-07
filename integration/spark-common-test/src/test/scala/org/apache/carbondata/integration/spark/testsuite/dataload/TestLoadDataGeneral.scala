@@ -45,9 +45,9 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
 
   private def checkSegmentExists(
       segmentId: String,
-      datbaseName: String,
+      databaseName: String,
       tableName: String): Boolean = {
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(datbaseName, tableName)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName)
     val partitionPath =
       CarbonTablePath.getPartitionDir(carbonTable.getAbsoluteTableIdentifier.getTablePath)
     val fileType: FileFactory.FileType = FileFactory.getFileType(partitionPath)

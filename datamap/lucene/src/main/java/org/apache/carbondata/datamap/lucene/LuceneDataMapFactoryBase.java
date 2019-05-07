@@ -209,7 +209,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   }
 
   /**
-   * Get all distributable objects of a segmentid
+   * Get all distributable objects of a segmentId
    */
   @Override
   public List<DataMapDistributable> toDistributable(Segment segment) {

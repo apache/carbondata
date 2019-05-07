@@ -61,7 +61,7 @@ class FGDataMapFactory(carbonTable: CarbonTable,
   }
 
   /**
-   * Get the datamap for segmentid
+   * Get the datamap for segmentId
    */
   override def getDataMaps(segment: Segment): java.util.List[FineGrainDataMap] = {
     val path = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segment.getSegmentNo)
@@ -86,7 +86,7 @@ class FGDataMapFactory(carbonTable: CarbonTable,
   }
 
   /**
-   * Get all distributable objects of a segmentid
+   * Get all distributable objects of a segmentId
    *
    * @return
    */
