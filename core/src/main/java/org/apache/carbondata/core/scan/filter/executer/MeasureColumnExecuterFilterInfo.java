@@ -16,15 +16,29 @@
  */
 package org.apache.carbondata.core.scan.filter.executer;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public class MeasureColumnExecuterFilterInfo {
 
   Object[] filterKeys;
+  Set filterKeysSet;
 
   public void setFilterKeys(Object[] filterKeys) {
     this.filterKeys = filterKeys;
   }
 
+  public void setFilterKeysSet(Object[] filterKeys) {
+    this.filterKeysSet = new HashSet<Object>(Arrays.asList(filterKeys));
+  }
+
   public Object[] getFilterKeys() {
     return filterKeys;
   }
+
+  public Set getFilterKeysSet() {
+    return filterKeysSet;
+  }
+
 }

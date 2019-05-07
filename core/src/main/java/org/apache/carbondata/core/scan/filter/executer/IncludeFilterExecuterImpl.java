@@ -18,6 +18,7 @@ package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
 import java.util.BitSet;
+import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -272,29 +273,21 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     // Get the measure values from the chunk. compare sequentially with the
     // the filter values. The one that matches sets it Bitset.
     BitSet bitSet = new BitSet(rowsInPage);
-    Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
-
-    SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
+    Set filterValuesSet = msrColumnExecutorInfo.getFilterKeysSet();
     BitSet nullBitSet = columnPage.getNullBits();
-    for (int i = 0; i < filterValues.length; i++) {
-      if (filterValues[i] == null) {
-        for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
-          bitSet.set(j);
-        }
-        continue;
-      }
-      for (int startIndex = 0; startIndex < rowsInPage; startIndex++) {
-        if (!nullBitSet.get(startIndex)) {
-          // Check if filterValue[i] matches with measure Values.
-          Object msrValue = DataTypeUtil
-              .getMeasureObjectBasedOnDataType(columnPage, startIndex,
-                  msrType, msrColumnEvaluatorInfo.getMeasure());
+    for (int startIndex = 0; startIndex < rowsInPage; startIndex++) {
+      if (!nullBitSet.get(startIndex)) {
+        // Check if filterValue[i] matches with measure Values.
+        Object msrValue = DataTypeUtil
+            .getMeasureObjectBasedOnDataType(columnPage, startIndex,
+                msrType, msrColumnEvaluatorInfo.getMeasure());
 
-          if (comparator.compare(msrValue, filterValues[i]) == 0) {
-            // This is a match.
-            bitSet.set(startIndex);
-          }
+        if (filterValuesSet.contains(msrValue)) {
+          // This is a match.
+          bitSet.set(startIndex);
         }
+      } else if (filterValuesSet.contains(null)) {
+        bitSet.set(startIndex);
       }
     }
     return bitSet;
