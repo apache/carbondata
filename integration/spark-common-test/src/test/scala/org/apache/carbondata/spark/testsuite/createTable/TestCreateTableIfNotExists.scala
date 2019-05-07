@@ -65,7 +65,7 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
     executorService.awaitTermination(30L, TimeUnit.SECONDS)
 
     futures.foreach { future =>
-      assert(future.get.toString.contains("PASS"))
+      assertResult("PASS")(future.get.toString)
     }
 
     def runAsync(): Future[String] = {

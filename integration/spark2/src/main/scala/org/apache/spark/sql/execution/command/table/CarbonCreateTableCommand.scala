@@ -182,13 +182,16 @@ case class CarbonCreateTableCommand(
 
               if (!actualPath.equalsIgnoreCase(tablePath)) {
                 LOGGER
-                  .info(
+                  .error(
                     "TableAlreadyExists with path : " + actualPath + " So, deleting " + tablePath)
                 FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(tablePath))
               }
 
               // No need to throw for create if not exists
-              if (!ifNotExistsSet) {
+              if (ifNotExistsSet) {
+                LOGGER.error(e,e)
+              }
+              else {
                 throw e
               }
             }
