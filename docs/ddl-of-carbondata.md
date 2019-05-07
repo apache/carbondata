@@ -291,6 +291,11 @@ CarbonData DDL statements are documented here,which includes:
      If page size crosses this value before 32000 rows, page will be cut to that many rows. 
      Helps in keeping page size to fit cpu cache size.
 
+     This property can be configured if the table has string, varchar, binary or complex datatype columns.
+     Because for these columns 32000 rows in one page may exceed 1755 MB and snappy compression will fail in that scenario.
+     Also if page size is huge, page cannot be fit in CPU cache. 
+     So, configuring smaller values of this property (say 1 MB) can result in better use of CPU cache for pages.
+
      Example usage:
      ```
      TBLPROPERTIES ('TABLE_PAGE_SIZE_INMB'='5')
