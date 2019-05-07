@@ -42,6 +42,7 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.scan.result.RowBatch;
+import org.apache.carbondata.core.scan.result.iterator.ColumnDriftRawResultIterator;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.IntArrayWrapper;
 import org.apache.carbondata.core.stats.QueryStatistic;
@@ -180,9 +181,15 @@ public class CarbonCompactionExecutor {
         Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter()));
     boolean hasColumnDrift = carbonTable.hasColumnDrift() &&
         RestructureUtil.hasColumnDriftOnSegment(carbonTable, sourceSegmentProperties);
-    return new RawResultIterator(
-        executeBlockList(tableBlockInfoList, segmentId, task, configuration),
-        sourceSegmentProperties, destinationSegProperties, false, hasColumnDrift);
+    if (hasColumnDrift) {
+      return new ColumnDriftRawResultIterator(
+          executeBlockList(tableBlockInfoList, segmentId, task, configuration),
+          sourceSegmentProperties, destinationSegProperties);
+    } else {
+      return new RawResultIterator(
+          executeBlockList(tableBlockInfoList, segmentId, task, configuration),
+          sourceSegmentProperties, destinationSegProperties, true);
+    }
   }
 
   /**
