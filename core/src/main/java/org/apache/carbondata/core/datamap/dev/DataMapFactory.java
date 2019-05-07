@@ -88,7 +88,7 @@ public abstract class DataMapFactory<T extends DataMap> {
   }
 
   /**
-   * Get the datamap for segmentid
+   * Get the datamap for segmentId
    */
   public abstract List<T> getDataMaps(Segment segment) throws IOException;
 
@@ -99,7 +99,7 @@ public abstract class DataMapFactory<T extends DataMap> {
       throws IOException;
 
   /**
-   * Get all distributable objects of a segmentid
+   * Get all distributable objects of a segmentId
    * @return
    */
   public abstract List<DataMapDistributable> toDistributable(Segment segment);

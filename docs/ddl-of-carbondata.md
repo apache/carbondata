@@ -157,6 +157,7 @@ CarbonData DDL statements are documented here,which includes:
       * BOOLEAN
       * FLOAT
       * BYTE
+      * Binary
    * In case of multi-level complex dataType columns, primitive string/varchar/char columns are considered for local dictionary generation.
 
    System Level Properties for Local Dictionary: 
@@ -224,7 +225,7 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Sort Columns Configuration
 
      This property is for users to specify which columns belong to the MDK(Multi-Dimensions-Key) index.
-     * If users don't specify "SORT_COLUMN" property, by default no columns are sorted 
+     * If users don't specify "SORT_COLUMNS" property, by default no columns are sorted 
      * If this property is specified but with empty argument, then the table will be loaded without sort.
      * This supports only string, date, timestamp, short, int, long, byte and boolean data types.
      Suggested use cases : Only build MDK index for required columns,it might help to improve the data loading performance.
@@ -326,7 +327,7 @@ CarbonData DDL statements are documented here,which includes:
 
    - ##### Caching Min/Max Value for Required Columns
 
-     By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. 
+     By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. This feature doesn't support binary data type.
 
       Following are the valid values for COLUMN_META_CACHE:
       * If you want no column min/max values to be cached in the driver.
@@ -514,6 +515,7 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Range Column
      This property is used to specify a column to partition the input data by range.
      Only one column can be configured. During data loading, you can use "global_sort_partitions" or "scale_factor" to avoid generating small files.
+     This feature doesn't support binary data type.
 
      ```
      TBLPROPERTIES('RANGE_COLUMN'='col1')

@@ -185,7 +185,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   }
 
   /**
-   * Get the blocklet detail information based on blockletid, blockid and segmentid. This method is
+   * Get the blocklet detail information based on blockletid, blockid and segmentId. This method is
    * exclusively for BlockletDataMapFactory as detail information is only available in this
    * default datamap.
    */
