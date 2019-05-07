@@ -31,6 +31,7 @@ import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 
+import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.hadoop.mapreduce.RecordReader;
 
 
@@ -107,11 +108,29 @@ public class CarbonReader<T> {
    * @throws Exception
    */
   public byte[] readArrowBatch(Schema carbonSchema) throws Exception {
-    ArrowConverter arrowConverter = new ArrowConverter(carbonSchema, 10000);
+    ArrowConverter arrowConverter = new ArrowConverter(carbonSchema, 0);
     while (hasNext()) {
       arrowConverter.addToArrowBuffer(readNextBatchRow());
     }
     return arrowConverter.toSerializeArray();
+  }
+
+  /**
+   * Carbon reader will fill the arrow vector after reading the carbondata files.
+   * This arrow byte[] can be used to create arrow table and used for in memory analytics
+   *
+   * Note: create a reader at blocklet level, so that arrow byte[] will not exceed INT_MAX
+   *
+   * @param carbonSchema
+   * @return
+   * @throws Exception
+   */
+  public VectorSchemaRoot readArrowVectors(Schema carbonSchema) throws Exception {
+    ArrowConverter arrowConverter = new ArrowConverter(carbonSchema, 0);
+    while (hasNext()) {
+      arrowConverter.addToArrowBuffer(readNextBatchRow());
+    }
+    return arrowConverter.getArrowVectors();
   }
 
   /**
@@ -120,18 +139,19 @@ public class CarbonReader<T> {
    * so that this address can be sent across java to python or c modules and
    * can directly read the content from this unsafe memory
    *
-   * Note: create a reader at blocklet level, so that arrow byte[] will not exceed INT_MAX
+   * Note:Create a carbon reader at blocklet level using CarbonReader.buildWithSplits(split) method,
+   * so that arrow byte[] will not exceed INT_MAX.
    *
    * @param carbonSchema
    * @return
    * @throws Exception
    */
   public long readArrowBatchAddress(Schema carbonSchema) throws Exception {
-    ArrowConverter arrowConverter = new ArrowConverter(carbonSchema, 10000);
+    ArrowConverter arrowConverter = new ArrowConverter(carbonSchema, 0);
     while (hasNext()) {
       arrowConverter.addToArrowBuffer(readNextBatchRow());
     }
-    return arrowConverter.copySerializeArrayToOffheap();
+    return arrowConverter.copySerializeArrayToOffHeap();
   }
   /**
    * Read and return next batch row objects

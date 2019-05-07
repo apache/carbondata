@@ -40,10 +40,10 @@ public class ArrowConverter {
   private ExtendedByteArrayOutputStream out;
   private ArrowFileWriter writer;
 
-  public ArrowConverter(Schema schema, int initalSize) {
+  public ArrowConverter(Schema schema, int initialSize) {
     this.arrowSchema = ArrowUtils.toArrowSchema(schema, TimeZone.getDefault().getID());
     this.allocator =
-        ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", initalSize, Long.MAX_VALUE);
+        ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", initialSize, Long.MAX_VALUE);
     this.root = VectorSchemaRoot.create(arrowSchema, allocator);
     this.arrowWriter = ArrowWriter.create(root);
     this.out = new ExtendedByteArrayOutputStream(32 * 1024 * 1024);
@@ -69,7 +69,7 @@ public class ArrowConverter {
     return bytes;
   }
 
-  public long copySerializeArrayToOffheap() throws IOException {
+  public long copySerializeArrayToOffHeap() throws IOException {
     arrowWriter.finish();
     writer.writeBatch();
     this.writer.close();
@@ -79,6 +79,13 @@ public class ArrowConverter {
     return out.copyToAddress();
   }
 
+  /**
+   * Utility API to convert back the arrow byte[] to arrow VectorSchemaRoot.
+   *
+   * @param batchBytes
+   * @return
+   * @throws IOException
+   */
   public VectorSchemaRoot byteArrayToVector(byte[] batchBytes) throws IOException {
     ByteArrayReadableSeekableByteChannel in = new ByteArrayReadableSeekableByteChannel(batchBytes);
     ArrowFileReader reader = new ArrowFileReader(in, allocator);
@@ -92,7 +99,20 @@ public class ArrowConverter {
       return arrowRoot;
     } catch (IOException e) {
       reader.close();
+      throw new IOException(e);
     }
-    return null;
+  }
+
+  /**
+   * To get the arrow vectors directly after filling from carbondata
+   *
+   * @return
+   */
+  public VectorSchemaRoot getArrowVectors() throws IOException {
+    arrowWriter.finish();
+    writer.writeBatch();
+    this.writer.close();
+    writer.close();
+    return root;
   }
 }
