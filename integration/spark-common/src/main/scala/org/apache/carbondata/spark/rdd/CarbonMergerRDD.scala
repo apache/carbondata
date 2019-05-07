@@ -302,7 +302,6 @@ class CarbonMergerRDD[K, V](
     } else {
       null
     }
-
     val isRangeColSortCol = rangeColumn != null && rangeColumn.isDimension &&
                             rangeColumn.asInstanceOf[CarbonDimension].isSortColumn
     val updateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
@@ -336,13 +335,11 @@ class CarbonMergerRDD[K, V](
 
     var totalSize: Double = 0
     var loadMetadataDetails: Array[LoadMetadataDetails] = null
-
     // Only for range column get the details for the size of segments
     if (null != rangeColumn) {
       loadMetadataDetails = SegmentStatusManager
         .readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath))
     }
-
     // for each valid segment.
     for (eachSeg <- carbonMergerMapping.validSegments) {
       // In case of range column get the size for calculation of number of ranges
@@ -387,7 +384,6 @@ class CarbonMergerRDD[K, V](
       carbonInputSplits ++:= filteredSplits
       allSplits.addAll(filteredSplits.asJava)
     }
-
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     var allRanges: Array[Object] = new Array[Object](0)
     if (rangeColumn != null) {
@@ -432,6 +428,8 @@ class CarbonMergerRDD[K, V](
     val counter = new AtomicInteger()
     var indexOfRangeColumn = -1
     var taskIdCount = 0
+    // As we are already handling null values in the filter expression separately so we
+    // can remove the null from the ranges we get, else it may lead to duplicate data
     val newRanges = allRanges.filter { range =>
       range != null
     }
@@ -606,7 +604,7 @@ class CarbonMergerRDD[K, V](
       inputMetricsStats,
       partitionNames = null,
       splits = allSplits)
-    val objectOrdering: Ordering[Object] = createOrderingForColumn(rangeColumn, true)
+    val objectOrdering: Ordering[Object] = createOrderingForColumn(rangeColumn)
     val sparkDataType = Util.convertCarbonToSparkDataType(dataType)
     // Change string type to support all types
     val sampleRdd = scanRdd
@@ -616,8 +614,7 @@ class CarbonMergerRDD[K, V](
     value.rangeBounds
   }
 
-  private def createOrderingForColumn(column: CarbonColumn,
-      mergerRDDFlag: Boolean): Ordering[Object] = {
+  private def createOrderingForColumn(column: CarbonColumn): Ordering[Object] = {
     if (column.isDimension) {
       val dimension = column.asInstanceOf[CarbonDimension]
       if ((dimension.isGlobalDictionaryEncoding || dimension.isDirectDictionaryEncoding) &&
@@ -627,11 +624,7 @@ class CarbonMergerRDD[K, V](
         if (DataTypeUtil.isPrimitiveColumn(column.getDataType)) {
           new PrimtiveOrdering(column.getDataType)
         } else {
-          if (mergerRDDFlag) {
-            new StringOrdering()
-          } else {
-            new ByteArrayOrdering()
-          }
+          new StringOrdering()
         }
       }
     } else {

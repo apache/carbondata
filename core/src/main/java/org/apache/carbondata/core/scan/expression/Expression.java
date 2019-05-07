@@ -33,6 +33,9 @@ public abstract class Expression implements Serializable {
   protected List<Expression> children =
       new ArrayList<Expression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
+  // When a filter expression already has the dictionary surrogate values in
+  // it then we set isAlreadyResolved as true so that we donot resolve the
+  // filter expression in further steps.
   protected boolean isAlreadyResolved;
 
   public abstract ExpressionResult evaluate(RowIntf value)

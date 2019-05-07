@@ -217,8 +217,7 @@ object DataLoadProcessBuilderOnSpark {
     val keyRDD = convertRDD.keyBy(_.getObject(rangeColumnIndex))
     // range partition by key
     val numPartitions = getNumPartitions(configuration, model, convertRDD)
-    val objectOrdering: Ordering[Object] = createOrderingForColumn(model.getRangePartitionColumn,
-      false)
+    val objectOrdering: Ordering[Object] = createOrderingForColumn(model.getRangePartitionColumn)
     import scala.reflect.classTag
     val sampleRDD = getSampleRDD(sparkSession, model, hadoopConf, configuration, modelBroadcast)
     val rangeRDD = keyRDD
@@ -341,7 +340,7 @@ object DataLoadProcessBuilderOnSpark {
       .get
   }
 
-  def createOrderingForColumn(column: CarbonColumn, mergerRDDFlag: Boolean): Ordering[Object] = {
+  private def createOrderingForColumn(column: CarbonColumn): Ordering[Object] = {
     if (column.isDimension) {
       val dimension = column.asInstanceOf[CarbonDimension]
       if (dimension.isGlobalDictionaryEncoding || dimension.isDirectDictionaryEncoding) {
@@ -350,11 +349,7 @@ object DataLoadProcessBuilderOnSpark {
         if (DataTypeUtil.isPrimitiveColumn(column.getDataType)) {
           new PrimtiveOrdering(column.getDataType)
         } else {
-          if (mergerRDDFlag) {
-            new StringOrdering()
-          } else {
-            new ByteArrayOrdering()
-          }
+          new ByteArrayOrdering()
         }
       }
     } else {
