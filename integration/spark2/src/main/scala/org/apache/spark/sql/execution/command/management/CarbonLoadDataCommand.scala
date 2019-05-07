@@ -1041,7 +1041,7 @@ case class CarbonLoadDataCommand(
   }
 
   /**
-   * Create the logical plan for update scenario. Here we should drop the segmentid column from the
+   * Create the logical plan for update scenario. Here we should drop the segmentId column from the
    * input rdd.
    */
   private def getLogicalQueryForUpdate(

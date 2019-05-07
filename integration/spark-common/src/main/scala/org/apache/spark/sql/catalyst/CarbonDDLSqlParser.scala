@@ -870,7 +870,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
                  !dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
         noDictionaryDims :+= field.column
         dimFields += field
-      } else if (isDetectAsDimentionDataType(field.dataType.get)) {
+      } else if (isDetectAsDimensionDataType(field.dataType.get)) {
         dimFields += field
         // consider all String and binary cols as noDicitonaryDims by default
         if ((DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) ||
@@ -934,11 +934,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * detect dimention data type
+   * detect dimension data type
    *
    * @param dimensionDatatype
    */
-  def isDetectAsDimentionDataType(dimensionDatatype: String): Boolean = {
+  def isDetectAsDimensionDataType(dimensionDatatype: String): Boolean = {
     val dimensionType = Array("string",
       "array",
       "struct",

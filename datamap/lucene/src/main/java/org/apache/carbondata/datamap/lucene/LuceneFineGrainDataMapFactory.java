@@ -47,7 +47,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
   }
 
   /**
-   * Get the datamap for segmentid
+   * Get the datamap for segmentId
    */
   @Override public List<FineGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<FineGrainDataMap> lstDataMap = new ArrayList<>();

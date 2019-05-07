@@ -189,7 +189,7 @@ public class SchemaGenerator {
     // for storing file name
     taskMinMaxSchemas
         .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
-    // for storing segmentid
+    // for storing segmentId
     taskMinMaxSchemas
         .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for storing min max flag for each column which reflects whether min max for a column is
