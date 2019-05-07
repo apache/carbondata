@@ -1496,6 +1496,7 @@ public final class FilterUtil {
         }
       }
       msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+      msrColumnExecuterInfo.setFilterKeysSet(keysBasedOnFilter);
     } else {
       if (filterValues == null) {
         dimColumnExecuterInfo.setFilterKeys(new byte[0][]);
