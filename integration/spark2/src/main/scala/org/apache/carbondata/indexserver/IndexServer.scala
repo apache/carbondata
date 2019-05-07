@@ -100,6 +100,8 @@ object IndexServer extends ServerInterface {
   }
 
   def getSplits(request: DistributableDataMapFormat): Array[ExtendedBlocklet] = doAs {
+    sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
+    sparkSession.sparkContext.setLocalProperty("spark.job.description", request.getTaskGroupDesc)
     val splits = new DistributedPruneRDD(sparkSession, request).collect()
     DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
     if (request.isJobToClearDataMaps) {
@@ -110,11 +112,15 @@ object IndexServer extends ServerInterface {
 
   override def invalidateSegmentCache(databaseName: String, tableName: String,
       segmentIds: Array[String]): Unit = doAs {
+    val jobgroup: String = " Invalided Segment Cache for " + databaseName + "." + tableName
+    sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
     new InvalidateSegmentCacheRDD(sparkSession, databaseName, tableName, segmentIds.toList)
       .collect()
   }
 
   override def showCache(tableName: String = ""): Array[String] = doAs {
+    val jobgroup: String = "Show Cache for " + tableName
+    sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
     new DistributedShowCacheRDD(sparkSession, tableName).collect()
   }
 

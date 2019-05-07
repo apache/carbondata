@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
@@ -36,6 +37,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
 import org.apache.commons.lang.StringUtils;
@@ -77,6 +80,11 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
   private String dataMapToClear = "";
 
   private ReadCommittedScope readCommittedScope;
+
+  private String taskGroupId = "";
+
+  private String taskGroupDesc = "";
+
 
   DistributableDataMapFormat() {
 
@@ -270,6 +278,8 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
       out.writeBoolean(false);
     }
     out.writeUTF(dataMapToClear);
+    out.writeUTF(taskGroupId);
+    out.writeUTF(taskGroupDesc);
   }
 
   @Override
@@ -311,6 +321,8 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
           .convertStringToObject(new String(filterResolverBytes, Charset.defaultCharset()));
     }
     this.dataMapToClear = in.readUTF();
+    this.taskGroupId = in.readUTF();
+    this.taskGroupDesc = in.readUTF();
   }
 
   private void initReadCommittedScope() throws IOException {
@@ -333,6 +345,42 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
    */
   public boolean isJobToClearDataMaps() {
     return isJobToClearDataMaps;
+  }
+
+  public String getTaskGroupId() {
+    return taskGroupId;
+  }
+
+  /* setTaskGroupId will be used for Index server to display ExecutionId*/
+  public void setTaskGroupId(String taskGroupId) {
+    this.taskGroupId = taskGroupId;
+  }
+
+  public String getTaskGroupDesc() {
+    return taskGroupDesc;
+  }
+
+  /* setTaskGroupId will be used for Index server to display Query
+  *  If Job name is >CARBON_INDEX_SERVER_JOBNAME_LENGTH
+  *  then need to cut as transferring big query to IndexServer will be costly.
+  */
+  public void setTaskGroupDesc(String taskGroupDesc) {
+    int maxJobLenth;
+    try {
+      String maxJobLenthString = CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_JOBNAME_LENGTH ,
+                      CarbonCommonConstants.CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT);
+      maxJobLenth = Integer.parseInt(maxJobLenthString);
+    } catch (Exception e) {
+      String maxJobLenthString = CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT);
+      maxJobLenth = Integer.parseInt(maxJobLenthString);
+    }
+    if (taskGroupDesc.length() > maxJobLenth) {
+      this.taskGroupDesc = taskGroupDesc.substring(0, maxJobLenth);
+    } else {
+      this.taskGroupDesc = taskGroupDesc;
+    }
   }
 
   public FilterResolverIntf getFilterResolverIntf() {

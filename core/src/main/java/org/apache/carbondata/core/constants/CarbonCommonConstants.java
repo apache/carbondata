@@ -2184,4 +2184,9 @@ public final class CarbonCommonConstants {
 
   public static final String LOAD_SYNC_TIME = "load_sync_time";
 
+  public  static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH =
+          "carbon.index.server.max.jobname.length";
+
+  public  static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT =
+          "50";
 }

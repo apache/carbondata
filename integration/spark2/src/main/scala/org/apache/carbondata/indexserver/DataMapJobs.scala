@@ -21,6 +21,7 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.log4j.Logger
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.SizeEstimator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -47,6 +48,17 @@ class DistributedDataMapJob extends AbstractDataMapJob {
       LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
     }
     val (resonse, time) = logTime {
+      val spark = SparkSQLUtil.getSparkSession
+      val taskGroupId = spark.sparkContext.getLocalProperty("spark.jobGroup.id") match {
+        case null => ""
+        case _ => spark.sparkContext.getLocalProperty("spark.jobGroup.id")
+      }
+      val taskGroupDesc = spark.sparkContext.getLocalProperty("spark.job.description") match {
+        case null => ""
+        case _ => spark.sparkContext.getLocalProperty("spark.job.description")
+      }
+      dataMapFormat.setTaskGroupId(taskGroupId)
+      dataMapFormat.setTaskGroupDesc(taskGroupDesc)
       var filterInf = dataMapFormat.getFilterResolverIntf
       val filterProcessor = new FilterExpressionProcessor
       filterInf = removeSparkUnknown(filterInf,
@@ -95,6 +107,17 @@ class DistributedDataMapJob extends AbstractDataMapJob {
 class EmbeddedDataMapJob extends AbstractDataMapJob {
 
   override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
+    val spark = SparkSQLUtil.getSparkSession
+    val taskGroupId = spark.sparkContext.getLocalProperty("spark.jobGroup.id") match {
+      case null => ""
+      case _ => spark.sparkContext.getLocalProperty("spark.jobGroup.id")
+    }
+    val taskGroupDesc = spark.sparkContext.getLocalProperty("spark.job.description") match {
+      case null => ""
+      case _ => spark.sparkContext.getLocalProperty("spark.job.description")
+    }
+    dataMapFormat.setTaskGroupId(taskGroupId)
+    dataMapFormat.setTaskGroupDesc(taskGroupDesc)
     IndexServer.getSplits(dataMapFormat).toList.asJava
   }
 
