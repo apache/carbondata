@@ -713,10 +713,7 @@ public class CarbonUpdateUtil {
       LOGGER.info("deleting the invalid file : " + invalidFile.getName());
       CarbonUtil.deleteFoldersAndFiles(invalidFile);
       isDeleted = true;
-    } catch (IOException e) {
-      LOGGER.error("error in clean up of invalid files." + e.getMessage(), e);
-      isDeleted = false;
-    } catch (InterruptedException e) {
+    } catch (IOException | InterruptedException e) {
       LOGGER.error("error in clean up of invalid files." + e.getMessage(), e);
       isDeleted = false;
     }
