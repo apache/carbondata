@@ -296,7 +296,11 @@ class CarbonMergerRDD[K, V](
       tablePath, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val rangeColumn = carbonTable.getRangeColumn
+    var rangeColumn: CarbonColumn = null
+    if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
+      // If the table is not a partition table then only we go for range column compaction flow
+      rangeColumn = carbonTable.getRangeColumn
+    }
     val dataType: DataType = if (null != rangeColumn) {
       rangeColumn.getDataType
     } else {
@@ -386,6 +390,7 @@ class CarbonMergerRDD[K, V](
     }
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     var allRanges: Array[Object] = new Array[Object](0)
+    var singleRange = false
     if (rangeColumn != null) {
       // To calculate the number of ranges to be made, min 2 ranges/tasks to be made in any case
       val numOfPartitions = Math
@@ -400,10 +405,14 @@ class CarbonMergerRDD[K, V](
         dataType)
       // If RangePartitioner does not give ranges in the case when the data is skewed with
       // a lot of null records then we take the min/max from footer and set them for tasks
-      if (null == allRanges || (allRanges.size == 1 && allRanges(0) == null)) {
+      if (null == allRanges || allRanges.size == 1) {
         allRanges = CarbonCompactionUtil.getOverallMinMax(carbonInputSplits.toList.toArray,
           rangeColumn,
           isRangeColSortCol)
+        if(allRanges(0) == allRanges(1)) {
+          // This will be true only if data has single values throughout
+          singleRange = true
+        }
       }
       LOGGER.info(s"Number of ranges:" + allRanges.size)
     }
@@ -433,75 +442,110 @@ class CarbonMergerRDD[K, V](
     val newRanges = allRanges.filter { range =>
       range != null
     }
-    carbonInputSplits.foreach { split =>
-      var dataFileFooter: DataFileFooter = null
-      if (null == rangeColumn) {
-        val taskNo = getTaskNo(split, partitionTaskMap, counter)
-        var sizeOfSplit = split.getDetailInfo.getBlockSize
-        val splitList = taskIdMapping.get(taskNo)
-        noOfBlocks += 1
-        if (null == splitList) {
-          val splitTempList = new util.ArrayList[CarbonInputSplit]()
-          splitTempList.add(split)
-          taskIdMapping.put(taskNo, splitTempList)
-        } else {
-          splitList.add(split)
+    val noOfSplitsPerTask = Math.ceil(carbonInputSplits.size / defaultParallelism)
+    var taskCount = 0
+    // In case of range column if only one data value is present then we try to
+    // divide the splits to different tasks in order to avoid single task creation
+    // and load on single executor
+    if (singleRange) {
+      carbonInputSplits.foreach { split =>
+        var dataFileFooter: DataFileFooter = null
+        try {
+          dataFileFooter = CarbonUtil.readMetadataFile(
+            CarbonInputSplit.getTableBlockInfo(split))
+        } catch {
+          case e: IOException =>
+            logError("Exception in preparing the data file footer for compaction " + e.getMessage)
+            throw e
         }
-      }
-      // Check the cardinality of each columns and set the highest.
-      try {
-        dataFileFooter = CarbonUtil.readMetadataFile(
-          CarbonInputSplit.getTableBlockInfo(split))
-      } catch {
-        case e: IOException =>
-          logError("Exception in preparing the data file footer for compaction " + e.getMessage)
-          throw e
-      }
-      // add all the column and cardinality to the map
-      CarbonCompactionUtil
-        .addColumnCardinalityToMap(columnToCardinalityMap,
-          dataFileFooter.getColumnInTable,
-          dataFileFooter.getSegmentInfo.getColumnCardinality)
+        // add all the column and cardinality to the map
+        CarbonCompactionUtil
+          .addColumnCardinalityToMap(columnToCardinalityMap,
+            dataFileFooter.getColumnInTable,
+            dataFileFooter.getSegmentInfo.getColumnCardinality)
 
-      // Create taskIdMapping here for range column by reading min/max values.
-      if (null != rangeColumn) {
-        if (null == expressionMapForRangeCol) {
-          expressionMapForRangeCol = new util.HashMap[Integer, Expression]()
+        var splitList = taskIdMapping.get(taskCount.toString)
+        if (null != splitList && splitList.size == noOfSplitsPerTask) {
+          taskCount = taskCount + 1
+          splitList = taskIdMapping.get(taskCount.toString)
         }
-        if (-1 == indexOfRangeColumn) {
-          val allColumns = dataFileFooter.getColumnInTable
-          for (i <- 0 until allColumns.size()) {
-            if (allColumns.get(i).getColumnName.equalsIgnoreCase(rangeColumn.getColName)) {
-              indexOfRangeColumn = i
-            }
-          }
+        if (null == splitList) {
+          splitList = new util.ArrayList[CarbonInputSplit]()
+          taskIdMapping.put(taskCount.toString, splitList)
         }
-        // Create ranges and add splits to the tasks
-        for (i <- 0 until (newRanges.size + 1)) {
-          if (null == expressionMapForRangeCol.get(i)) {
-            // Creating FilterExpression for the range column
-            var minVal: Object = null
-            var maxVal: Object = null
-            // For first task we will create an Or Filter and also accomodate null values
-            // For last task we will take as GreaterThan Expression of last value
-            if (i != 0) {
-              minVal = newRanges(i - 1)
-            }
-            if (i != newRanges.size) {
-              maxVal = newRanges(i)
-            }
-            val filterExpr = CarbonCompactionUtil
-              .getFilterExpressionForRange(rangeColumn,
-                minVal, maxVal, dataType)
-            expressionMapForRangeCol.put(i, filterExpr)
-          }
-          var splitList = taskIdMapping.get(i.toString)
+        splitList.add(split)
+      }
+    } else {
+      carbonInputSplits.foreach { split =>
+        var dataFileFooter: DataFileFooter = null
+        if (null == rangeColumn) {
+          val taskNo = getTaskNo(split, partitionTaskMap, counter)
+          var sizeOfSplit = split.getDetailInfo.getBlockSize
+          val splitList = taskIdMapping.get(taskNo)
           noOfBlocks += 1
           if (null == splitList) {
-            splitList = new util.ArrayList[CarbonInputSplit]()
-            taskIdMapping.put(i.toString, splitList)
+            val splitTempList = new util.ArrayList[CarbonInputSplit]()
+            splitTempList.add(split)
+            taskIdMapping.put(taskNo, splitTempList)
+          } else {
+            splitList.add(split)
           }
-          splitList.add(split)
+        }
+        // Check the cardinality of each columns and set the highest.
+        try {
+          dataFileFooter = CarbonUtil.readMetadataFile(
+            CarbonInputSplit.getTableBlockInfo(split))
+        } catch {
+          case e: IOException =>
+            logError("Exception in preparing the data file footer for compaction " + e.getMessage)
+            throw e
+        }
+        // add all the column and cardinality to the map
+        CarbonCompactionUtil
+          .addColumnCardinalityToMap(columnToCardinalityMap,
+            dataFileFooter.getColumnInTable,
+            dataFileFooter.getSegmentInfo.getColumnCardinality)
+
+        // Create taskIdMapping here for range column by reading min/max values.
+        if (null != rangeColumn) {
+          if (null == expressionMapForRangeCol) {
+            expressionMapForRangeCol = new util.HashMap[Integer, Expression]()
+          }
+          if (-1 == indexOfRangeColumn) {
+            val allColumns = dataFileFooter.getColumnInTable
+            for (i <- 0 until allColumns.size()) {
+              if (allColumns.get(i).getColumnName.equalsIgnoreCase(rangeColumn.getColName)) {
+                indexOfRangeColumn = i
+              }
+            }
+          }
+          // Create ranges and add splits to the tasks
+          for (i <- 0 until (newRanges.size + 1)) {
+            if (null == expressionMapForRangeCol.get(i)) {
+              // Creating FilterExpression for the range column
+              var minVal: Object = null
+              var maxVal: Object = null
+              // For first task we will create an Or Filter and also accomodate null values
+              // For last task we will take as GreaterThan Expression of last value
+              if (i != 0) {
+                minVal = newRanges(i - 1)
+              }
+              if (i != newRanges.size) {
+                maxVal = newRanges(i)
+              }
+              val filterExpr = CarbonCompactionUtil
+                .getFilterExpressionForRange(rangeColumn,
+                  minVal, maxVal, dataType)
+              expressionMapForRangeCol.put(i, filterExpr)
+            }
+            var splitList = taskIdMapping.get(i.toString)
+            noOfBlocks += 1
+            if (null == splitList) {
+              splitList = new util.ArrayList[CarbonInputSplit]()
+              taskIdMapping.put(i.toString, splitList)
+            }
+            splitList.add(split)
+          }
         }
       }
     }
