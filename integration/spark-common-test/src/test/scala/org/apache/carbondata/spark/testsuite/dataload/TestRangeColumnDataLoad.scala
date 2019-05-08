@@ -187,6 +187,31 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql("DROP TABLE IF EXISTS carbon_range_column1")
   }
 
+  test("Test compaction for range_column - Partition Column") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING)
+        | PARTITIONED BY (age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'SORT_COLUMNS'='age, city',
+        | 'range_column'='age')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='3')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
   test("Test compaction for range_column - 2 levels") {
     sql("DROP TABLE IF EXISTS carbon_range_column1")
     sql(
