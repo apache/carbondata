@@ -448,13 +448,6 @@ class CarbonMergerRDD[K, V](
     // divide the splits to different tasks in order to avoid single task creation
     // and load on single executor
     if (singleRange) {
-      var filterExpr = CarbonCompactionUtil
-        .getFilterExpressionForRange(rangeColumn,
-          null, allRanges(0), dataType)
-      if (null == expressionMapForRangeCol) {
-        expressionMapForRangeCol = new util.HashMap[Integer, Expression]()
-      }
-      expressionMapForRangeCol.put(taskCount, filterExpr)
       carbonInputSplits.foreach { split =>
         var dataFileFooter: DataFileFooter = null
         try {
@@ -474,7 +467,6 @@ class CarbonMergerRDD[K, V](
         var splitList = taskIdMapping.get(taskCount.toString)
         if (null != splitList && splitList.size == noOfSplitsPerTask) {
           taskCount = taskCount + 1
-          expressionMapForRangeCol.put(taskCount, filterExpr)
           splitList = taskIdMapping.get(taskCount.toString)
         }
         if (null == splitList) {
