@@ -296,7 +296,11 @@ class CarbonMergerRDD[K, V](
       tablePath, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val rangeColumn = carbonTable.getRangeColumn
+    var rangeColumn: CarbonColumn = null
+    if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
+      // If the table is not a partition table then only we go for range column compaction flow
+      rangeColumn = carbonTable.getRangeColumn
+    }
     val dataType: DataType = if (null != rangeColumn) {
       rangeColumn.getDataType
     } else {
