@@ -56,9 +56,8 @@
             <id>generate-thrift-java</id>
             <phase>generate-sources</phase>
             <configuration>
-              <generator>java</generator>
+              <generator>java:generated_annotations=suppress</generator>
               <outputDirectory>target/gen-java</outputDirectory>
-              <compileOutput>true</compileOutput>
             </configuration>
             <goals>
               <goal>compile</goal>

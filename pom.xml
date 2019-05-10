@@ -113,6 +113,7 @@
     <hadoop.version>2.7.2</hadoop.version>
     <httpclient.version>4.3.4</httpclient.version>
     <httpcore.version>4.3-alpha1</httpcore.version>
+    <java.version>1.8</java.version>
     <scala.binary.version>2.11</scala.binary.version>
     <scala.version>2.11.8</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
@@ -328,6 +329,15 @@
           <artifactId>maven-shade-plugin</artifactId>
           <version>2.4.3</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.0</version>
+          <configuration>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -436,7 +446,6 @@
               <goal>check</goal>
             </goals>
             <configuration>
-              <append>true</append>
               <excludes>
                 <exclude>**/*SparkUnknownExpression*.class</exclude>
                 <exclude>**/org/apache/carbondata/cluster/sdv/generated/*</exclude>
