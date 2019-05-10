@@ -53,7 +53,7 @@ import org.apache.carbondata.core.scan.expression
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatusManager, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
@@ -297,7 +297,8 @@ class CarbonMergerRDD[K, V](
     )
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     var rangeColumn: CarbonColumn = null
-    if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
+    if (CarbonProperties.getInstance().isRangeCompactionAllowed &&
+        !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
       // If the table is not a partition table then only we go for range column compaction flow
       rangeColumn = carbonTable.getRangeColumn
     }
@@ -395,7 +396,7 @@ class CarbonMergerRDD[K, V](
       // To calculate the number of ranges to be made, min 2 ranges/tasks to be made in any case
       val numOfPartitions = Math
         .max(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL.toInt, DataLoadProcessBuilderOnSpark
-          .getNumPatitionsBasedOnSize(totalSize, carbonTable, carbonLoadModel))
+          .getNumPatitionsBasedOnSize(totalSize, carbonTable, carbonLoadModel, true))
       val colName = rangeColumn.getColName
       LOGGER.info(s"Compacting on range column: $colName")
       allRanges = getRangesFromRDD(rangeColumn,

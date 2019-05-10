@@ -610,6 +610,34 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql("DROP TABLE IF EXISTS carbon_range_column1")
   }
 
+  test("Test compaction for range_column - STRING Datatype null values") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    deleteFile(filePath2)
+    createFile(filePath2, 20, 14)
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='city',
+        | 'range_column'='city')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('BAD_RECORDS_ACTION'='FORCE','HEADER'='false')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
+        "OPTIONS('BAD_RECORDS_ACTION'='FORCE','HEADER'='false')")
+
+    var res = sql("select * from carbon_range_column1").collect()
+
+    sql("ALTER TABLE carbon_range_column1 COMPACT 'MAJOR'")
+
+    checkAnswer(sql("select * from carbon_range_column1"), res)
+
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    deleteFile(filePath2)
+  }
+
   test("Test compaction for range_column - STRING Datatype min/max not stored") {
     deleteFile(filePath2)
     createFile(filePath2, 1000, 7)
@@ -930,11 +958,23 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
             .println(
               100 + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i))
         }
-      } else if (9 <= lastCol) {
+      } else if (9 <= lastCol && 13 >= lastCol) {
         for (i <- lastCol until (lastCol + line)) {
           write
             .println(
               i + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i))
+        }
+      } else if (14 == lastCol) {
+        // Null data generation for string col
+        for (i <- lastCol until (lastCol + line)) {
+          if (i % 3 != 0) {
+            write
+              .println(
+                i + "," + "n" + i + "," + "c" + (i % 10000) + "," + (1990 + i))
+          } else {
+            write
+              .println(i + ",")
+          }
         }
       }
       write.close()
