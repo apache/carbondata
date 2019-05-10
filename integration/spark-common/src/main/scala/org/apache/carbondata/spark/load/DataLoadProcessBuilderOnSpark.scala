@@ -385,6 +385,11 @@ class ByteArrayOrdering() extends Ordering[Object] {
 
 class StringOrdering() extends Ordering[Object] {
   override def compare(x: Object, y: Object): Int = {
-    (x.asInstanceOf[UTF8String]).compare(y.asInstanceOf[UTF8String])
+    if (x == null) {
+      return -1
+    } else if (y == null) {
+      return 1
+    }
+    return (x.asInstanceOf[UTF8String]).compare(y.asInstanceOf[UTF8String])
   }
 }
