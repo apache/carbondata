@@ -54,6 +54,7 @@ object DirectSQLExample {
         .uniqueIdentifier(System.currentTimeMillis)
         .withBlockSize(2)
         .withCsvInput(new Schema(fields))
+        .writtenBy("DirectSQLExample")
       val writer = builder.build()
       var i = 0
       while (i < num) {
@@ -86,7 +87,7 @@ object DirectSQLExample {
     println("Running SQL on carbon files directly")
     try {
       // 2. run queries directly, no need to create table first
-      sql(s"""select * FROM  carbonfile.`$readPath` limit 10""".stripMargin).show()
+      sql(s"""select * FROM carbon.`$readPath` limit 10""".stripMargin).show()
     } catch {
       case e: Exception => throw e
     } finally {
