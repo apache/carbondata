@@ -31,18 +31,56 @@ import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
  * No need to create table first
  * TODO: support more than one carbon file
  */
+// scalastyle:off println
 object DirectSQLExample {
+
+  def main(args: Array[String]) {
+    val carbonSession = ExampleUtils.createCarbonSession("DirectSQLExample")
+    exampleBody(carbonSession)
+    carbonSession.close()
+  }
+
+  def exampleBody(carbonSession : SparkSession): Unit = {
+
+    val rootPath = new File(this.getClass.getResource("/").getPath
+      + "../../../..").getCanonicalPath
+    val path = s"$rootPath/examples/spark2/target/carbonFile/"
+
+    import carbonSession._
+    // 1. generate data file
+    cleanTestData(path)
+
+    val rows = 20
+    buildTestData(path, rows)
+    val readPath = path
+
+    println("Running SQL on carbon files directly")
+    try {
+      // 2. run queries directly, no need to create table first
+      sql(s"""select * FROM carbon.`$readPath` limit 10""".stripMargin).show()
+
+      // 3. check rows count
+      val counts = sql(s"""select * FROM carbon.`$readPath`""".stripMargin).count()
+      assert(rows == counts)
+
+    } catch {
+      case e: Exception => throw e
+    } finally {
+      // 3.delete data files
+      cleanTestData(path)
+    }
+
+  }
 
   // prepare SDK writer output
   def buildTestData(
       path: String,
-      num: Int = 3,
-      sparkSession: SparkSession): Any = {
+      num: Int = 3): Unit = {
 
     // getCanonicalPath gives path with \, but the code expects /.
-    val writerPath = path.replace("\\", "/");
+    val writerPath = path.replace("\\", "/")
 
-    val fields: Array[Field] = new Array[Field](3)
+    val fields = new Array[Field](3)
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
     fields(2) = new Field("height", DataTypes.DOUBLE)
@@ -54,6 +92,7 @@ object DirectSQLExample {
         .uniqueIdentifier(System.currentTimeMillis)
         .withBlockSize(2)
         .withCsvInput(new Schema(fields))
+        .writtenBy("DirectSQLExample")
       val writer = builder.build()
       var i = 0
       while (i < num) {
@@ -70,29 +109,5 @@ object DirectSQLExample {
     FileUtils.deleteDirectory(new File(path))
   }
 
-  // scalastyle:off
-  def main(args: Array[String]) {
-    val carbonSession = ExampleUtils.createCarbonSession("DirectSQLExample")
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
-    val path = s"$rootPath/examples/spark2/target/carbonFile/"
-
-    import carbonSession._
-    // 1. generate data file
-    cleanTestData(path)
-    buildTestData(path, 20, sparkSession = carbonSession)
-    val readPath = path
-
-    println("Running SQL on carbon files directly")
-    try {
-      // 2. run queries directly, no need to create table first
-      sql(s"""select * FROM  carbonfile.`$readPath` limit 10""".stripMargin).show()
-    } catch {
-      case e: Exception => throw e
-    } finally {
-      // 3.delete data files
-      cleanTestData(path)
-    }
-  }
-  // scalastyle:on
 }
+// scalastyle:on println
