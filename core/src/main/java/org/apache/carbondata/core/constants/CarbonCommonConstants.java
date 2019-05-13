@@ -2174,4 +2174,6 @@ public final class CarbonCommonConstants {
    */
   public static final String PARENT_TABLES = "parent_tables";
 
+  public static final String LOAD_SYNC_TIME = "load_sync_time";
+
 }

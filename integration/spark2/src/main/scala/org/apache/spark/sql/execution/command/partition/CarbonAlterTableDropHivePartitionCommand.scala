@@ -70,10 +70,6 @@ case class CarbonAlterTableDropHivePartitionCommand(
     table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
     setAuditTable(table)
     setAuditInfo(Map("partition" -> specs.mkString(",")))
-    if (DataMapUtil.hasMVDataMap(table) || table.isChildTable) {
-      throw new MalformedCarbonCommandException(
-        "Drop Partition is not supported for datamap table or for tables which have child datamap")
-    }
     if (table.isHivePartitionTable) {
       var locks = List.empty[ICarbonLock]
       try {

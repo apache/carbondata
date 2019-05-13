@@ -639,6 +639,16 @@ class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAnd
     assert(!CarbonEnv.getCarbonTable(Some("partition_preaggregate"),"partitionone_p7")(sqlContext.sparkSession).isHivePartitionTable)
   }
 
+  test("test partition at last column") {
+    sql("drop table if exists partitionone")
+    sql("create table partitionone(a int,b int) partitioned by (c int) stored by 'carbondata'")
+    sql("insert into partitionone values(1,2,3)")
+    sql("drop datamap if exists dm1")
+    sql("create datamap dm1 on table partitionone using 'preaggregate' as select c,sum(b) from partitionone group by c")
+    checkAnswer(sql("select c,sum(b) from partitionone group by c"), Seq(Row(3,2)))
+    sql("drop table if exists partitionone")
+  }
+
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit = {
     var isValidPlan = false
     plan.transform {

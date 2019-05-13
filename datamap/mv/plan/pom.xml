@@ -72,7 +72,7 @@
           <systemProperties>
             <java.awt.headless>true</java.awt.headless>
           </systemProperties>
-          <testFailureIgnore>false</testFailureIgnore>
+          <!-- testFailureIgnore>false</testFailureIgnore -->
           <failIfNoTests>false</failIfNoTests>
         </configuration>
       </plugin>

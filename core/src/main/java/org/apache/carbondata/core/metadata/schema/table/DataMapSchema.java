@@ -86,6 +86,11 @@ public class DataMapSchema implements Serializable, Writable {
    */
   private Map<String, Set<String>> mainTableColumnList;
 
+  /**
+   * DataMap table column order map as per Select query
+   */
+  private Map<Integer, String> columnsOrderMap;
+
   public DataMapSchema(String dataMapName, String providerName) {
     this.dataMapName = dataMapName;
     this.providerName = providerName;
@@ -263,5 +268,13 @@ public class DataMapSchema implements Serializable, Writable {
 
   public void setMainTableColumnList(Map<String, Set<String>> mainTableColumnList) {
     this.mainTableColumnList = mainTableColumnList;
+  }
+
+  public Map<Integer, String> getColumnsOrderMap() {
+    return columnsOrderMap;
+  }
+
+  public void setColumnsOrderMap(Map<Integer, String> columnsOrderMap) {
+    this.columnsOrderMap = columnsOrderMap;
   }
 }

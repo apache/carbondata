@@ -264,23 +264,52 @@ public abstract class DataMapProvider {
     } else {
       for (RelationIdentifier relationIdentifier : relationIdentifiers) {
         List<String> dataMapTableSegmentList = new ArrayList<>();
+        // Get all segments for parent relationIdentifier
+        List<String> mainTableSegmentList =
+            DataMapUtil.getMainTableValidSegmentList(relationIdentifier);
+        boolean ifTableStatusUpdateRequired = false;
         for (LoadMetadataDetails loadMetaDetail : listOfLoadFolderDetails) {
           if (loadMetaDetail.getSegmentStatus() == SegmentStatus.SUCCESS
               || loadMetaDetail.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS) {
             Map<String, List<String>> segmentMaps =
                 DataMapSegmentStatusUtil.getSegmentMap(loadMetaDetail.getExtraInfo());
-            dataMapTableSegmentList.addAll(segmentMaps.get(
-                relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT
-                    + relationIdentifier.getTableName()));
+            String mainTableMetaDataPath =
+                CarbonTablePath.getMetadataPath(relationIdentifier.getTablePath());
+            LoadMetadataDetails[] parentTableLoadMetaDataDetails =
+                SegmentStatusManager.readLoadMetadata(mainTableMetaDataPath);
+            String table = relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT
+                + relationIdentifier.getTableName();
+            for (String segmentId : mainTableSegmentList) {
+              // In case if dataMap segment(0) is mapped to mainTable segments{0,1,2} and if
+              // {0,1,2} segments of mainTable are compacted to 0.1. Then,
+              // on next rebuild/load to dataMap, no need to load segment(0.1) again. Update the
+              // segmentMapping of dataMap segment from {0,1,2} to {0.1}
+              if (!checkIfSegmentsToBeReloaded(parentTableLoadMetaDataDetails,
+                  segmentMaps.get(table), segmentId)) {
+                ifTableStatusUpdateRequired = true;
+                // Update loadMetaDetail with updated segment info and clear old segmentMap
+                Map<String, List<String>> updatedSegmentMap = new HashMap<>();
+                List<String> segmentList = new ArrayList<>();
+                segmentList.add(segmentId);
+                updatedSegmentMap.put(table, segmentList);
+                dataMapTableSegmentList.add(segmentId);
+                loadMetaDetail.setExtraInfo(new Gson().toJson(updatedSegmentMap));
+                segmentMaps.get(table).clear();
+              }
+            }
+            dataMapTableSegmentList.addAll(segmentMaps.get(table));
           }
         }
         List<String> dataMapSegmentList = new ArrayList<>(dataMapTableSegmentList);
-        // Get all segments for parent relationIdentifier
-        List<String> mainTableSegmentList =
-            DataMapUtil.getMainTableValidSegmentList(relationIdentifier);
         dataMapTableSegmentList.removeAll(mainTableSegmentList);
         mainTableSegmentList.removeAll(dataMapSegmentList);
-        if (mainTableSegmentList.isEmpty()) {
+        if (ifTableStatusUpdateRequired && mainTableSegmentList.isEmpty()) {
+          SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath
+                  .getTableStatusFilePath(dataMapSchema.getRelationIdentifier().getTablePath()),
+              listOfLoadFolderDetails
+                  .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+          return false;
+        } else if (mainTableSegmentList.isEmpty()) {
           return false;
         }
         if (!dataMapTableSegmentList.isEmpty()) {
@@ -330,6 +359,27 @@ public abstract class DataMapProvider {
       }
     }
     return true;
+  }
+
+  /**
+   * This method checks if dataMap table segment has to be reloaded again or not
+   */
+  private boolean checkIfSegmentsToBeReloaded(LoadMetadataDetails[] loadMetaDataDetails,
+      List<String> segmentIds, String segmentId) {
+    boolean isToBeLoadedAgain = true;
+    for (String loadName : segmentIds) {
+      for (LoadMetadataDetails loadMetadataDetail : loadMetaDataDetails) {
+        if (loadMetadataDetail.getLoadName().equalsIgnoreCase(loadName)) {
+          if (null != loadMetadataDetail.getMergedLoadName() && loadMetadataDetail
+              .getMergedLoadName().equalsIgnoreCase(segmentId)) {
+            isToBeLoadedAgain = false;
+          } else {
+            return true;
+          }
+        }
+      }
+    }
+    return isToBeLoadedAgain;
   }
 
   /**

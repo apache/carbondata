@@ -186,19 +186,6 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     }.getMessage.contains("Delete segment operation is not supported on mv table")
   }
 
-  test("test partition table with mv") {
-    sql("drop table if exists par_table")
-    sql("CREATE TABLE par_table(id INT, name STRING, age INT) PARTITIONED BY(city string) STORED BY 'carbondata'")
-    sql("insert into par_table values(1,'abc',3,'def')")
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 using 'mv' WITH DEFERRED REBUILD as select city, id from par_table")
-    sql("rebuild datamap p1")
-    intercept[MalformedCarbonCommandException] {
-      sql("alter table par_table drop partition (city='def')")
-    }.getMessage.contains("Drop Partition is not supported for datamap table or for tables which have child datamap")
-    sql("drop datamap if exists p1")
-  }
-
   test("test direct load to mv datamap table") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
@@ -249,6 +236,131 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
       sql("Create datamap p using 'mv' as Select product from noncarbon")
     }.getMessage.contains("Non-Carbon table does not support creating MV datamap")
     sql("drop table if exists noncarbon")
+  }
+
+  //Test show datamap
+  test("test datamap status with single table") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm1 ")
+    sql("create datamap dm1 using 'mv' WITH DEFERRED REBUILD as select price from maintable")
+    checkExistence(sql("show datamap on table maintable"), true, "DISABLED")
+    sql("rebuild datamap dm1")
+    var result = sql("show datamap on table maintable").collectAsList()
+    assert(result.get(0).get(4).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(5).toString.contains("{\"default.maintable\":\"0\""))
+    sql("insert into table maintable select 'abc',21,2000")
+    checkExistence(sql("show datamap on table maintable"), true, "DISABLED")
+    sql("rebuild datamap dm1")
+    result = sql("show datamap on table maintable").collectAsList()
+    assert(result.get(0).get(4).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(5).toString.contains("{\"default.maintable\":\"1\""))
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test datamap status with multiple tables") {
+    sql("drop table if exists products")
+    sql("create table products (product string, amount int) stored by 'carbondata' ")
+    sql(s"load data INPATH '$resourcesPath/products.csv' into table products")
+    sql("drop table if exists sales")
+    sql("create table sales (product string, quantity int) stored by 'carbondata'")
+    sql(s"load data INPATH '$resourcesPath/sales_data.csv' into table sales")
+    sql("drop datamap if exists innerjoin")
+    sql(
+      "Create datamap innerjoin using 'mv'  with deferred rebuild as Select p.product, p.amount, " +
+      "s.quantity, s.product from " +
+      "products p, sales s where p.product=s.product")
+    checkExistence(sql("show datamap on table products"), true, "DISABLED")
+    checkExistence(sql("show datamap on table sales"), true, "DISABLED")
+    sql("rebuild datamap innerjoin")
+    var result = sql("show datamap on table products").collectAsList()
+    assert(result.get(0).get(4).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(5).toString.contains("\"default.products\":\"0\",\"default.sales\":\"0\"}"))
+    result = sql("show datamap on table sales").collectAsList()
+    assert(result.get(0).get(4).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(5).toString.contains("\"default.products\":\"0\",\"default.sales\":\"0\"}"))
+    sql(s"load data INPATH '$resourcesPath/sales_data.csv' into table sales")
+    checkExistence(sql("show datamap on table products"), true, "DISABLED")
+    checkExistence(sql("show datamap on table sales"), true, "DISABLED")
+    sql("rebuild datamap innerjoin")
+    result = sql("show datamap on table sales").collectAsList()
+    assert(result.get(0).get(4).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(5).toString.contains("\"default.products\":\"0\",\"default.sales\":\"1\"}"))
+    sql("drop table if exists products")
+    sql("drop table if exists sales")
+  }
+
+  test("directly drop datamap table") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm1 ")
+    sql("create datamap dm1 using 'mv' WITH DEFERRED REBUILD as select price from maintable")
+    intercept[ProcessMetaDataException] {
+      sql("drop table dm1_table")
+    }.getMessage.contains("Child table which is associated with datamap cannot be dropped, use DROP DATAMAP command to drop")
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("create datamap on child table") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm1 ")
+    sql("create datamap dm1 using 'mv' as select name, price from maintable")
+    intercept[Exception] {
+      sql("create datamap dm_agg on table dm1_table using 'preaggregate' as select maintable_name, sum(maintable_price) from dm1_table group by maintable_name")
+    }.getMessage.contains("Cannot create DataMap on child table default.dm1_table")
+    intercept[Exception] {
+      sql("create datamap dm_agg using 'mv' as select maintable_name, sum(maintable_price) from dm1_table group by maintable_name")
+    }.getMessage.contains("Cannot create DataMap on child table default.dm1_table")
+  }
+
+  test("create datamap if already exists") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm1 ")
+    sql("create datamap dm1 using 'mv' as select name from maintable")
+    intercept[Exception] {
+      sql("create datamap dm1 using 'mv' as select price from maintable")
+    }.getMessage.contains("DataMap with name dm1 already exists in storage")
+    checkAnswer(sql("select name from maintable"), Seq(Row("abc")))
+  }
+
+  test("test create datamap with select query having 'like' expression") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("select name from maintable where name like '%b%'").show(false)
+    sql("drop datamap if exists dm_like ")
+    sql("create datamap dm_like using 'mv' as select name from maintable where name like '%b%'")
+    checkAnswer(sql("select name from maintable where name like '%b%'"), Seq(Row("abc")))
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test datamap with streaming dmproperty") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    intercept[MalformedCarbonCommandException] {
+      sql("create datamap dm using 'mv' dmproperties('STREAMING'='true') as select name from maintable")
+    }.getMessage.contains("MV datamap does not support streaming")
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test set streaming after creating datamap table") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    sql("create datamap dm using 'mv' as select name from maintable")
+    intercept[MalformedCarbonCommandException] {
+      sql("ALTER TABLE dm_table SET TBLPROPERTIES('streaming'='true')")
+    }.getMessage.contains("Datamap table does not support set streaming property")
+    sql("drop table IF EXISTS maintable")
   }
 
 }

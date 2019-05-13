@@ -946,13 +946,21 @@ case class CarbonLoadDataCommand(
       }
     }
     // Only select the required columns
-    val output = if (partition.nonEmpty) {
+    var output = if (partition.nonEmpty) {
       val lowerCasePartition = partition.map { case (key, value) => (key.toLowerCase, value) }
       catalogTable.schema.map { attr =>
         attributes.find(_.name.equalsIgnoreCase(attr.name)).get
       }.filter(attr => lowerCasePartition.getOrElse(attr.name.toLowerCase, None).isEmpty)
     } else {
       catalogTable.schema.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get)
+    }
+    // Rearrange the partition column at the end of output list
+    if (catalogTable.partitionColumnNames.nonEmpty &&
+        (loadModel.getCarbonDataLoadSchema.getCarbonTable.isChildTable ||
+         loadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap) && output.nonEmpty) {
+      val partitionOutPut =
+        catalogTable.partitionColumnNames.map(col => output.find(_.name.equalsIgnoreCase(col)).get)
+      output = output.filterNot(partitionOutPut.contains(_)) ++ partitionOutPut
     }
     val partitionsLen = rdd.partitions.length
 
