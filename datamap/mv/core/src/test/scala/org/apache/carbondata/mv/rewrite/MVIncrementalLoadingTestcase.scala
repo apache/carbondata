@@ -544,6 +544,29 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS main_table")
   }
 
+  test("test compaction on main table and rebuild") {
+    createTableFactTable("test_table")
+    loadDataToFactTable("test_table")
+    sql("drop datamap if exists datamap1")
+    sql(
+      "create datamap datamap1 using 'mv'  with deferred rebuild  as select empname, designation " +
+      "from test_table")
+    loadDataToFactTable("test_table")
+    loadDataToFactTable("test_table")
+    sql(s"rebuild datamap datamap1")
+    sql("alter table test_table compact 'major'")
+    sql(s"rebuild datamap datamap1")
+    val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "datamap1_table")
+    val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
+    assert(loadMetadataDetails.length == 1)
+    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
+    val segmentList = new java.util.ArrayList[String]()
+    segmentList.add("0.1")
+    assert(segmentList.containsAll(segmentMap.get("default.test_table")))
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get

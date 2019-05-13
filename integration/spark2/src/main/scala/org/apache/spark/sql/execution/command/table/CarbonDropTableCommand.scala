@@ -67,6 +67,18 @@ case class CarbonDropTableCommand(
         lock => carbonLocks +=
                 CarbonLockUtil.getLockObject(identifier, lock)
       }
+      // check for directly drop datamap table
+      if (carbonTable.isChildTable && !dropChildTable) {
+        if (!ifExistsSet) {
+          throwMetadataException(dbName, tableName,
+            "Child table which is associated with datamap cannot be dropped, " +
+            "use DROP DATAMAP command to drop")
+        } else {
+          LOGGER.info("Skipping Drop table " + tableName +
+                      " because Child table which is associated with datamap cannot be dropped")
+          return Seq.empty
+        }
+      }
 
       if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
         throw new ConcurrentOperationException(carbonTable, "loading", "drop table")
@@ -198,7 +210,7 @@ case class CarbonDropTableCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     // clear driver side index and dictionary cache
-    if (carbonTable != null) {
+    if (carbonTable != null && !(carbonTable.isChildTable && !dropChildTable)) {
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
       // delete the table folder
       val tablePath = carbonTable.getTablePath

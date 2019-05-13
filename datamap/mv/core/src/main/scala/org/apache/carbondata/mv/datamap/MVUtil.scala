@@ -106,7 +106,7 @@ object MVUtil {
             arrayBuffer += relation
           }
           fieldToDataMapFieldMap +=
-          getFieldToDataMapFields(name, attr.dataType, attr.qualifier, "", arrayBuffer, "")
+          getFieldToDataMapFields(name, attr.dataType, None, "", arrayBuffer, "")
         }
     }
     fieldToDataMapFieldMap
@@ -134,6 +134,7 @@ object MVUtil {
               attr.aggregateFunction.nodeName,
               arrayBuffer,
               "")
+            aggregateType = "count"
           } else {
             aggregateType = attr.aggregateFunction.nodeName
           }

@@ -201,7 +201,10 @@ object CarbonEnv {
       .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
         DataMapChangeDataTypeorRenameColumnPreListener)
       .addListener(classOf[AlterTableAddColumnPreEvent], DataMapAddColumnsPreListener)
-
+      .addListener(classOf[AlterTableDropPartitionMetaEvent],
+        DataMapAlterTableDropPartitionMetaListener)
+      .addListener(classOf[AlterTableDropPartitionPreStatusEvent],
+        DataMapAlterTableDropPartitionPreStatusListener)
   }
 
   /**

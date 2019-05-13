@@ -20,11 +20,14 @@ package org.apache.spark.sql.execution.command.mv
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.AlterTableModel
 import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
+import org.apache.spark.sql.execution.command.partition.CarbonAlterTableDropHivePartitionCommand
 import org.apache.spark.util.DataMapUtil
 
+import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -137,12 +140,11 @@ object LoadPostDataMapListener extends OperationEventListener {
               .getDataMapProvider(carbonTable, dataMapSchema, sparkSession)
             try {
               provider.rebuild()
+              DataMapStatusManager.enableDataMap(dataMapSchema.getDataMapName)
             } catch {
               case ex: Exception =>
                 DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
-                throw ex
             }
-            DataMapStatusManager.enableDataMap(dataMapSchema.getDataMapName)
           }
         }
       }
@@ -275,3 +277,108 @@ object DataMapChangeDataTypeorRenameColumnPreListener
     }
   }
 }
+
+object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val dropPartitionEvent = event.asInstanceOf[AlterTableDropPartitionMetaEvent]
+    val parentCarbonTable = dropPartitionEvent.parentCarbonTable
+    val partitionsToBeDropped = dropPartitionEvent.specs.flatMap(_.keys)
+    if (DataMapUtil.hasMVDataMap(parentCarbonTable)) {
+      // used as a flag to block direct drop partition on datamap tables fired by the user
+      operationContext.setProperty("isInternalDropCall", "true")
+      // Filter out all the tables which don't have the partition being dropped.
+      val dataMapSchemaList = DataMapStoreManager.getInstance
+        .getDataMapSchemasOfTable(parentCarbonTable).asScala
+      val childTablesWithoutPartitionColumns =
+        dataMapSchemaList.filter { dataMapSchema =>
+          val childColumns = dataMapSchema.getMainTableColumnList
+            .get(parentCarbonTable.getTableName).asScala
+          val partitionColExists =
+            partitionsToBeDropped.forall {
+              partition =>
+                childColumns.exists { childColumn =>
+                  childColumn.equalsIgnoreCase(partition)
+                }
+            }
+          !partitionColExists
+        }
+      if (childTablesWithoutPartitionColumns.nonEmpty) {
+        throw new MetadataProcessException(s"Cannot drop partition as one of the partition is not" +
+                                           s" participating in the following datamaps ${
+                                             childTablesWithoutPartitionColumns.toList
+                                               .map(_.getRelationIdentifier.getTableName)
+                                           }. Please drop the specified child tables to " +
+                                           s"continue")
+      } else {
+        // blocked drop partition for child tables having more than one parent table
+        val nonPartitionChildTables = dataMapSchemaList.filter(_.getParentTables.size() >= 2)
+        if (nonPartitionChildTables.nonEmpty) {
+          throw new MetadataProcessException(
+            s"Cannot drop partition if child Table is mapped to more than one parent table. Drop " +
+            s"datamaps ${ nonPartitionChildTables.toList.map(_.getDataMapName) }  to continue")
+        }
+        val childDropPartitionCommands =
+          dataMapSchemaList.map { dataMapSchema =>
+            val tableIdentifier = TableIdentifier(dataMapSchema.getRelationIdentifier.getTableName,
+              Some(dataMapSchema.getRelationIdentifier.getDatabaseName))
+            if (!CarbonEnv.getCarbonTable(tableIdentifier)(SparkSession.getActiveSession.get)
+              .isHivePartitionTable) {
+              throw new MetadataProcessException(
+                "Cannot drop partition as one of the partition is not participating in the " +
+                "following datamap " + dataMapSchema.getDataMapName +
+                ". Please drop the specified datamap to continue")
+            }
+            // as the datamap table columns start with parent table name therefore the
+            // partition column also has to be updated with parent table name to generate
+            // partitionSpecs for the child table.
+            val childSpecs = dropPartitionEvent.specs.map {
+              spec =>
+                spec.map {
+                  case (key, value) => (s"${ parentCarbonTable.getTableName }_$key", value)
+                }
+            }
+            CarbonAlterTableDropHivePartitionCommand(
+              tableIdentifier,
+              childSpecs,
+              dropPartitionEvent.ifExists,
+              dropPartitionEvent.purge,
+              dropPartitionEvent.retainData,
+              operationContext)
+          }
+        operationContext.setProperty("dropPartitionCommands", childDropPartitionCommands)
+        childDropPartitionCommands.foreach(_.processMetadata(SparkSession.getActiveSession.get))
+      }
+    } else if (parentCarbonTable.isChildTable) {
+      if (operationContext.getProperty("isInternalDropCall") == null) {
+        throw new UnsupportedOperationException("Cannot drop partition directly on child table")
+      }
+    }
+  }
+}
+
+object DataMapAlterTableDropPartitionPreStatusListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override protected def onEvent(event: Event,
+      operationContext: OperationContext) = {
+    val preStatusListener = event.asInstanceOf[AlterTableDropPartitionPreStatusEvent]
+    val carbonTable = preStatusListener.carbonTable
+    val childDropPartitionCommands = operationContext.getProperty("dropPartitionCommands")
+    if (childDropPartitionCommands != null && DataMapUtil.hasMVDataMap(carbonTable)) {
+      val childCommands =
+        childDropPartitionCommands.asInstanceOf[Seq[CarbonAlterTableDropHivePartitionCommand]]
+      childCommands.foreach(_.processData(SparkSession.getActiveSession.get))
+    }
+  }
+}
+

@@ -1184,4 +1184,47 @@ public final class CarbonLoaderUtil {
       FileFactory.deleteFile(filePath, FileFactory.getFileType(filePath));
     }
   }
+
+  /**
+   * Update specified segment status for load to MarkedForDelete in case of failure
+   */
+  public static void updateTableStatusInCaseOfFailure(String loadName,
+      AbsoluteTableIdentifier absoluteTableIdentifier, String tableName, String databaseName,
+      String tablePath, String metaDataPath) throws IOException {
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
+    try {
+      if (carbonLock.lockWithRetries()) {
+        LOGGER.info("Acquired lock for table" + databaseName + "." + tableName
+            + " for table status updation");
+        LoadMetadataDetails[] loadMetadataDetails =
+            SegmentStatusManager.readLoadMetadata(metaDataPath);
+        boolean ifTableStatusUpdateRequired = false;
+        for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
+          if (loadMetadataDetail.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS && loadName
+              .equalsIgnoreCase(loadMetadataDetail.getLoadName())) {
+            loadMetadataDetail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+            ifTableStatusUpdateRequired = true;
+          }
+        }
+        if (ifTableStatusUpdateRequired) {
+          SegmentStatusManager
+              .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
+                  loadMetadataDetails);
+        }
+      } else {
+        LOGGER.error(
+            "Not able to acquire the lock for Table status updation for table " + databaseName + "."
+                + tableName);
+      }
+    } finally {
+      if (carbonLock.unlock()) {
+        LOGGER.info("Table unlocked successfully after table status updation" + databaseName + "."
+            + tableName);
+      } else {
+        LOGGER.error("Unable to unlock Table lock for table" + databaseName + "." + tableName
+            + " during table status updation");
+      }
+    }
+  }
 }

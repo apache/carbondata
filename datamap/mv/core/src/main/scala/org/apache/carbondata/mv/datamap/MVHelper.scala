@@ -28,11 +28,11 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Coalesce, Expression, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Join, LogicalPlan, Project}
-import org.apache.spark.sql.execution.command.{Field, TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.command.{Field, PartitionerField, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
-import org.apache.spark.util.DataMapUtil
+import org.apache.spark.util.{DataMapUtil, PartitionUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -98,6 +98,13 @@ object MVHelper {
           throw new MalformedCarbonCommandException(
             s"Non-Carbon table does not support creating MV datamap")
       }
+      if (!mainCarbonTable.get.getTableInfo.isTransactionalTable) {
+        throw new MalformedCarbonCommandException("Unsupported operation on NonTransactional table")
+      }
+      if (mainCarbonTable.get.isChildTable || mainCarbonTable.get.isChildDataMap) {
+        throw new MalformedCarbonCommandException(
+          "Cannot create Datamap on child table " + mainCarbonTable.get.getTableUniqueName)
+      }
       parentTables.add(mainCarbonTable.get.getTableName)
       if (!mainCarbonTable.isEmpty && mainCarbonTable.get.isStreamingSink) {
         throw new MalformedCarbonCommandException(
@@ -121,6 +128,31 @@ object MVHelper {
           tableProperties)
     }
     dmProperties.foreach(t => tableProperties.put(t._1, t._2))
+    val usePartitioning = dmProperties.getOrElse("partitioning", "true").toBoolean
+    var partitionerFields: Seq[PartitionerField] = Seq.empty
+    // Inherit partition from parent table if datamap is mapped to single parent table
+    if (parentTablesList.size() == 1) {
+      val partitionInfo = parentTablesList.get(0).getPartitionInfo
+      val parentPartitionColumns = if (!usePartitioning) {
+        Seq.empty
+      } else if (parentTablesList.get(0).isHivePartitionTable) {
+        partitionInfo.getColumnSchemaList.asScala.map(_.getColumnName)
+      } else {
+        Seq()
+      }
+      partitionerFields = PartitionUtils
+        .getPartitionerFields(parentPartitionColumns, fieldRelationMap)
+    }
+
+    var order = 0
+    val columnOrderMap = new java.util.HashMap[Integer, String]()
+    if (partitionerFields.nonEmpty) {
+      fields.foreach { field =>
+        columnOrderMap.put(order, field.column)
+        order += 1
+      }
+    }
+
     // TODO Use a proper DB
     val tableIdentifier =
     TableIdentifier(dataMapSchema.getDataMapName + "_table",
@@ -131,7 +163,7 @@ object MVHelper {
       new CarbonSpark2SqlParser().convertDbNameToLowerCase(tableIdentifier.database),
       tableIdentifier.table.toLowerCase,
       fields,
-      Seq(),
+      partitionerFields,
       tableProperties,
       None,
       isAlterFlow = false,
@@ -167,6 +199,7 @@ object MVHelper {
       }
     }
     dataMapSchema.setMainTableColumnList(mainTableToColumnsMap)
+    dataMapSchema.setColumnsOrderMap(columnOrderMap)
     dataMapSchema.setCtasQuery(updatedQueryWithDb)
     dataMapSchema
       .setRelationIdentifier(new RelationIdentifier(tableIdentifier.database.get,
@@ -519,7 +552,8 @@ object MVHelper {
       case s: Select if s.dataMapTableRelation.isDefined =>
         val relation =
           s.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
-        val mappings = s.outputList zip relation.outputList
+        val outputList = getUpdatedOutputList(relation.outputList, s.dataMapTableRelation)
+        val mappings = s.outputList zip outputList
         val oList = for ((o1, o2) <- mappings) yield {
           if (o1.name != o2.name) Alias(o2, o1.name)(exprId = o1.exprId) else o2
         }
@@ -528,7 +562,8 @@ object MVHelper {
         val relation =
           g.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
         val in = relation.asInstanceOf[Select].outputList
-        val mappings = g.outputList zip relation.outputList
+        val outputList = getUpdatedOutputList(relation.outputList, g.dataMapTableRelation)
+        val mappings = g.outputList zip outputList
         val oList = for ((left, right) <- mappings) yield {
           left match {
             case Alias(agg@AggregateExpression(fun@Sum(child), _, _, _), name) =>
@@ -579,7 +614,8 @@ object MVHelper {
               relation,
               aliasMap)
             if (isFullRefresh(g.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper])) {
-              val mappings = g.outputList zip relation.outputList
+              val outputList = getUpdatedOutputList(relation.outputList, g.dataMapTableRelation)
+              val mappings = g.outputList zip outputList
               val oList = for ((o1, o2) <- mappings) yield {
                 if (o1.name != o2.name) Alias(o2, o1.name)(exprId = o1.exprId) else o2
               }
@@ -706,6 +742,28 @@ object MVHelper {
     } else {
       rewrittenPlan
     }
+  }
+
+  private def getUpdatedOutputList(outputList: Seq[NamedExpression],
+      dataMapTableRelation: Option[ModularPlan]): Seq[NamedExpression] = {
+    dataMapTableRelation.collect {
+      case mv: MVPlanWrapper =>
+        val dataMapSchema = mv.dataMapSchema
+        val columnsOrderMap = dataMapSchema.getColumnsOrderMap
+        if (null != columnsOrderMap && !columnsOrderMap.isEmpty) {
+          val updatedOutputList = new util.ArrayList[NamedExpression]()
+          var i = 0
+          while (i < columnsOrderMap.size()) {
+            updatedOutputList
+              .add(outputList.filter(f => f.name.equalsIgnoreCase(columnsOrderMap.get(i))).head)
+            i = i + 1
+          }
+          updatedOutputList.asScala
+        } else {
+          outputList
+        }
+      case _ => outputList
+    }.get
   }
 }
 

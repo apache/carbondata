@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.mv.rewrite.{SummaryDataset, SummaryDatasetCatalog}
+import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
 @InterfaceAudience.Internal
 class MVDataMapProvider(
@@ -163,9 +164,18 @@ class MVDataMapProvider(
         SparkSQLUtil.execute(loadCommand, sparkSession)
       } catch {
         case ex: Exception =>
+          // If load to dataMap table fails, disable the dataMap and if newLoad is still
+          // in INSERT_IN_PROGRESS state, mark for delete the newLoad and update table status file
           DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
           LOGGER.error("Data Load failed for DataMap: ", ex)
-          return false
+          CarbonLoaderUtil.updateTableStatusInCaseOfFailure(
+            newLoadName,
+            dataMapTable.getAbsoluteTableIdentifier,
+            dataMapTable.getTableName,
+            dataMapTable.getDatabaseName,
+            dataMapTable.getTablePath,
+            dataMapTable.getMetadataPath)
+          throw ex
       } finally {
         unsetMainTableSegments()
       }
