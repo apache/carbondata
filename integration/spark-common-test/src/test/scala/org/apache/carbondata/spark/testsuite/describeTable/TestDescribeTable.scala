@@ -20,6 +20,9 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 /**
   * test class for describe table .
   */
@@ -65,10 +68,22 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
     assert(descPar.exists(_.toString().contains("Partition Parameters:")))
   }
 
+  test(testName = "Compressor Type update from carbon properties") {
+    sql("drop table if exists b")
+    sql(sqlText = "create table b(a int,b string) stored by 'carbondata'")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "gzip")
+    val result = sql(sqlText = "desc formatted b").collect()
+    assert(result.filter(row => row.getString(0).contains("Data File Compressor")).head.getString
+    (1).equalsIgnoreCase("gzip"))
+  }
+
   override def afterAll: Unit = {
     sql("DROP TABLE Desc1")
     sql("DROP TABLE Desc2")
     sql("drop table if exists a")
+    sql("drop table if exists b")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR,
+      CarbonCommonConstants.DEFAULT_COMPRESSOR)
   }
 
 }
