@@ -57,6 +57,7 @@ public class CarbonReaderBuilder {
   private String tableName;
   private Configuration hadoopConf;
   private boolean useVectorReader = true;
+  private boolean useArrowReader;
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -147,6 +148,15 @@ public class CarbonReaderBuilder {
   }
 
   /**
+   * Configure arrow read support.
+   *
+   */
+  public CarbonReaderBuilder withArrowReader() {
+    this.useArrowReader = true;
+    return this;
+  }
+
+  /**
    * Build CarbonReader
    *
    * @param <T>
@@ -219,7 +229,11 @@ public class CarbonReaderBuilder {
           throw e;
         }
       }
-      return new CarbonReader<>(readers);
+      if (useArrowReader) {
+        return new ArrowCarbonReader<>(readers);
+      } else {
+        return new CarbonReader<>(readers);
+      }
     } catch (Exception ex) {
       // Clear the datamap cache as it can get added in getSplits() method
       DataMapStoreManager.getInstance()

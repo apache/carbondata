@@ -2474,10 +2474,9 @@ public class CarbonReaderTest extends TestCase {
       }
       writer.close();
       // Read data
-      CarbonReader reader = CarbonReader
-          .builder(path, "_temp")
-          .withRowRecordReader()
-          .build();
+      ArrowCarbonReader reader =
+          (ArrowCarbonReader) CarbonReader.builder(path, "_temp").withRowRecordReader()
+              .withArrowReader().build();
       Schema carbonSchema = CarbonSchemaReader.readSchema(path);
       byte[] data = reader.readArrowBatch(carbonSchema);
       ArrowConverter arrowConverter = new ArrowConverter(carbonSchema,0);
@@ -2496,9 +2495,9 @@ public class CarbonReaderTest extends TestCase {
       reader.close();
 
       // Read data with address (unsafe memory)
-      CarbonReader reader1 = CarbonReader
+      ArrowCarbonReader reader1 = (ArrowCarbonReader) CarbonReader
           .builder(path, "_temp")
-          .withRowRecordReader()
+          .withRowRecordReader().withArrowReader()
           .build();
       long address = reader1.readArrowBatchAddress(carbonSchema);
       int length = CarbonUnsafe.getUnsafe().getInt(address);
@@ -2523,9 +2522,9 @@ public class CarbonReaderTest extends TestCase {
 
 
       // Read as arrow vector
-      CarbonReader reader2 = CarbonReader
+      ArrowCarbonReader reader2 = (ArrowCarbonReader) CarbonReader
           .builder(path, "_temp")
-          .withRowRecordReader()
+          .withRowRecordReader().withArrowReader()
           .build();
       VectorSchemaRoot vectorSchemaRoot2 = reader2.readArrowVectors(carbonSchema);
       // check for 10 rows

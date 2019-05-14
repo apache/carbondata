@@ -46,10 +46,16 @@ public class ArrowConverter {
         ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", initialSize, Long.MAX_VALUE);
     this.root = VectorSchemaRoot.create(arrowSchema, allocator);
     this.arrowWriter = ArrowWriter.create(root);
+    // currently blocklet level read and set initial value to 32 MB.
     this.out = new ExtendedByteArrayOutputStream(32 * 1024 * 1024);
     this.writer = new ArrowFileWriter(root, null, Channels.newChannel(out));
   }
 
+  /**
+   * write batch of row objects to Arrow vectors
+   *
+   * @param data
+   */
   public void addToArrowBuffer(Object[] data) {
     int i = 0;
     while (i < data.length) {
@@ -58,6 +64,12 @@ public class ArrowConverter {
     }
   }
 
+  /**
+   * To serialize arrow vectors to byte[]
+   *
+   * @return
+   * @throws IOException
+   */
   public byte[] toSerializeArray() throws IOException {
     arrowWriter.finish();
     writer.writeBatch();
@@ -69,6 +81,12 @@ public class ArrowConverter {
     return bytes;
   }
 
+  /**
+   * To copy arrow vectors to unsafe memory
+   *
+   * @return
+   * @throws IOException
+   */
   public long copySerializeArrayToOffHeap() throws IOException {
     arrowWriter.finish();
     writer.writeBatch();

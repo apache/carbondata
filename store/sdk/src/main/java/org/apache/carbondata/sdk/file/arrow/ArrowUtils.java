@@ -45,13 +45,13 @@ public class ArrowUtils {
     if (carbonDataType == DataTypes.STRING || carbonDataType == DataTypes.VARCHAR) {
       return ArrowType.Utf8.INSTANCE;
     } else if (carbonDataType == DataTypes.BYTE) {
-      return new ArrowType.Int(8, true);
+      return new ArrowType.Int(DataTypes.BYTE.getSizeInBytes() * 8, true);
     } else if (carbonDataType == DataTypes.SHORT) {
-      return new ArrowType.Int(8 * 2, true);
+      return new ArrowType.Int(DataTypes.SHORT.getSizeInBytes() * 8, true);
     } else if (carbonDataType == DataTypes.INT) {
-      return new ArrowType.Int(8 * 4, true);
+      return new ArrowType.Int(DataTypes.INT.getSizeInBytes() * 8, true);
     } else if (carbonDataType == DataTypes.LONG) {
-      return new ArrowType.Int(8 * 8, true);
+      return new ArrowType.Int(DataTypes.LONG.getSizeInBytes() * 8, true);
     } else if (carbonDataType == DataTypes.FLOAT) {
       return new ArrowType.FloatingPoint(FloatingPointPrecision.SINGLE);
     } else if (carbonDataType == DataTypes.DOUBLE) {
