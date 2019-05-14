@@ -596,18 +596,6 @@ object MVHelper {
         case g: GroupBy =>
           MVHelper.updateDataMap(g, rewrite)
       }
-
-      // Use coarse equal to rewrite
-      updatedDataMapTablePlan.map(plan => {
-        if (rewrittenPlan.find (
-          oriPlan => oriPlan.rewritten && (plan match {
-            case select: Select => select.coarseEqual(oriPlan)
-            case groupby: GroupBy => groupby.coarseEqual(oriPlan)
-            case _ => plan.equals(oriPlan)
-          })).isDefined) {
-          plan.setRewritten()
-        }
-      })
       updatedDataMapTablePlan
     } else {
       rewrittenPlan

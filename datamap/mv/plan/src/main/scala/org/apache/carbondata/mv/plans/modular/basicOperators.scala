@@ -40,19 +40,10 @@ case class GroupBy(
     dataMapTableRelation: Option[ModularPlan] = None) extends UnaryNode with Matchable {
   override def output: Seq[Attribute] = outputList.map(_.toAttribute)
 
-  def coarseEqual(other: Any): Boolean = {
-    if (!this.getClass.equals(other.getClass)) {
-      return false
-    }
-    val otherGroupBy = other.asInstanceOf[GroupBy]
-    if (outputList == otherGroupBy.outputList &&
-      inputList == otherGroupBy.inputList && predicateList == otherGroupBy.predicateList
-      && alias == otherGroupBy.alias && flags == otherGroupBy.flags
-      && flagSpec == otherGroupBy.flagSpec
-      && dataMapTableRelation == otherGroupBy.dataMapTableRelation) {
-      return true
-    }
-    false
+  override def makeCopy(newArgs: Array[AnyRef]): GroupBy = {
+    val groupBy = super.makeCopy(newArgs).asInstanceOf[GroupBy]
+    if (rewritten) groupBy.setRewritten()
+    groupBy
   }
 }
 
@@ -90,20 +81,10 @@ case class Select(
     predicateList.filter(p => canEvaluate(p, plan))
   }
 
-  def coarseEqual(other: Any): Boolean = {
-    if (!this.getClass.equals(other.getClass)) {
-      return false
-    }
-    val otherSelect = other.asInstanceOf[Select]
-    if (outputList == otherSelect.outputList &&
-      inputList == otherSelect.inputList && predicateList == otherSelect.predicateList
-      && aliasMap == otherSelect.aliasMap && flags == otherSelect.flags
-      && flagSpec == otherSelect.flagSpec
-      && dataMapTableRelation == otherSelect.dataMapTableRelation
-      && windowSpec == otherSelect.windowSpec && joinEdges == otherSelect.joinEdges) {
-      return true
-    }
-    false
+  override def makeCopy(newArgs: Array[AnyRef]): Select = {
+    val select = super.makeCopy(newArgs).asInstanceOf[Select]
+    if (rewritten) select.setRewritten()
+    select
   }
 }
 
