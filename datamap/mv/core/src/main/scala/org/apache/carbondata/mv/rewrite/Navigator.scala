@@ -163,8 +163,7 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
               pair._2
           }
         val nxtSubsumer = curSubsumer.transform {
-          case node: ModularRelation if node.asInstanceOf[ModularRelation].
-            fineEquals(pair._1) => mappedOperator
+          case node: ModularRelation if node.fineEquals(pair._1) => mappedOperator
           case pair._1 if !pair._1.isInstanceOf[ModularRelation] => mappedOperator
         }
 
@@ -189,10 +188,8 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
         val rtableParent = subsumer.find(p => p.children.contains(rtable)).get
         val etableParent = subsumee.find(p => p.children.contains(etable)).get
         (rtableParent, etableParent) match {
-          case _: (Select, Select) =>
-            val rJoinEdges = rtableParent.asInstanceOf[Select].joinEdges
-            val eJoinEdges = etableParent.asInstanceOf[Select].joinEdges
-            val intersetJoinEdges: Seq[JoinEdge] = rJoinEdges intersect eJoinEdges
+          case  (e: Select, r: Select) =>
+            val intersetJoinEdges = r.joinEdges intersect e.joinEdges
             if (intersetJoinEdges.nonEmpty) {
               return intersetJoinEdges.exists(j => j.left == rIndex && j.left == eIndex ||
                 j.right == rIndex && j.right == eIndex)
