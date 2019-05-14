@@ -42,7 +42,7 @@ class DistributedDataMapJob extends AbstractDataMapJob {
       LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
     }
     val (resonse, time) = logTime {
-      IndexServer.getClient.getSplits(dataMapFormat).toList.asJava
+      IndexServer.getClient.getSplits(dataMapFormat).getExtendedBlocklets
     }
     LOGGER.info(s"Time taken to get response from server: $time ms")
     resonse
@@ -56,7 +56,7 @@ class DistributedDataMapJob extends AbstractDataMapJob {
 class EmbeddedDataMapJob extends AbstractDataMapJob {
 
   override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
-    IndexServer.getSplits(dataMapFormat).toList.asJava
+    IndexServer.getSplits(dataMapFormat).getExtendedBlocklets
   }
 
 }

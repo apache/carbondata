@@ -254,6 +254,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     if (partitions == null) {
       out.writeBoolean(false);
     } else {
+      out.writeBoolean(true);
       out.writeInt(partitions.size());
       for (PartitionSpec partitionSpec : partitions) {
         partitionSpec.write(out);

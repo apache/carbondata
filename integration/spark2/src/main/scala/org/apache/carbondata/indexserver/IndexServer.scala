@@ -32,7 +32,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DistributableDataMapFormat
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.indexstore.ExtendedBlocklet
+import org.apache.carbondata.core.indexstore.ExtendedBlockletWrapper
 import org.apache.carbondata.core.util.CarbonProperties
 
 @ProtocolInfo(protocolName = "Server", protocolVersion = 1)
@@ -42,7 +42,7 @@ trait ServerInterface {
   /**
    * Used to prune and cache the datamaps for the table.
    */
-  def getSplits(request: DistributableDataMapFormat): Array[ExtendedBlocklet]
+  def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapper
 
   /**
    * Invalidate the cache for the provided table.
@@ -100,10 +100,10 @@ object IndexServer extends ServerInterface {
     })
   }
 
-  def getSplits(request: DistributableDataMapFormat): Array[ExtendedBlocklet] = doAs {
+  def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapper = doAs {
     val splits = new DistributedPruneRDD(sparkSession, request).collect()
     DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
-    splits.map(_._2)
+    new ExtendedBlockletWrapper(splits.map(_._2))
   }
 
   override def invalidateCache(request: DistributableDataMapFormat): Unit = doAs {
