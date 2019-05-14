@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Coalesce, Divide, Expression, Multiply, PredicateHelper}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Divide, Expression, Multiply, PredicateHelper}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 
 import org.apache.carbondata.mv.plans.modular
@@ -280,11 +280,6 @@ object Utils extends PredicateHelper {
         matchable = false
         other
 
-      case coalesce: Coalesce if operator_a.predicateList.size !=
-        operator_q.predicateList.size =>
-        matchable = false
-        coalesce
-
       case expr: Expression if !expr.isInstanceOf[AggregateFunction] =>
         operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
@@ -296,7 +291,7 @@ object Utils extends PredicateHelper {
                                   !alias_m(attr).child.isInstanceOf[AggregateExpression] => true
           case _ => false
         }.map(_.toAttribute)
-         .getOrElse {expr}
+         .getOrElse { expr }
     }
 
     if (matchable) {

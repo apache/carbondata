@@ -36,11 +36,27 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
     sql("drop table if exists coalesce_test_main")
   }
 
-  test("test mv table with coalesce expression less groupby cols") {
+  test("test mv table with coalesce expression on sql not on mv and less groupby cols") {
     sql("drop datamap if exists coalesce_test_main_mv")
     sql("create datamap coalesce_test_main_mv using 'mv' as " +
-      "select coalesce(sum(id),0) as sum_id,name as myname,weight from coalesce_test_main group by name,weight")
+      "select sum(id) as sum_id,name as myname,weight from coalesce_test_main group by name,weight")
     sql("rebuild datamap coalesce_test_main_mv")
+
+    val frame = sql("select coalesce(sum(id),0) as sumid,name from coalesce_test_main group by name")
+    assert(verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
+    checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
+
+    sql("drop datamap if exists coalesce_test_main_mv")
+  }
+
+  test("test mv table with coalesce expression less groupby cols") {
+    sql("drop datamap if exists coalesce_test_main_mv")
+    val exception: Exception = intercept[UnsupportedOperationException] {
+      sql("create datamap coalesce_test_main_mv using 'mv' as " +
+        "select coalesce(sum(id),0) as sum_id,name as myname,weight from coalesce_test_main group by name,weight")
+      sql("rebuild datamap coalesce_test_main_mv")
+    }
+    assert("MV doesn't support Coalesce".equals(exception.getMessage))
 
     val frame = sql("select coalesce(sum(id),0) as sumid,name from coalesce_test_main group by name")
     assert(!verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
