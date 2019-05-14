@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.mv.plans.util
 
+import org.apache.spark.sql.CarbonExpressions.MatchCastExpression
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, BitwiseAnd, Cast, Expression, Grouping, GroupingID, Literal, NamedExpression, ShiftRight}
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.types.{ByteType, IntegerType}
@@ -398,12 +399,11 @@ trait SQLBuildDSL {
               // it back.
               case ar: AttributeReference if ar == gid => GroupingID(Nil)
               case ar: AttributeReference if groupByAttrMap.contains(ar) => groupByAttrMap(ar)
-              case a : Cast if a.dataType.isInstanceOf[ByteType] &&
-                a.child.isInstanceOf[BitwiseAnd] &&
-                a.child.asInstanceOf[BitwiseAnd].left.isInstanceOf[ShiftRight] &&
-                a.child.asInstanceOf[BitwiseAnd].right.isInstanceOf[Literal] =>
+              case a@MatchCastExpression(
+              BitwiseAnd(
+              ShiftRight(ar: AttributeReference, Literal(value: Any, IntegerType)),
+              Literal(1, IntegerType)), ByteType) if ar == gid =>
                 // for converting an expression to its original SQL format grouping(col)
-                val value = a.child.asInstanceOf[BitwiseAnd].left.asInstanceOf[ShiftRight].right
                 val idx = groupByExprs.length - 1 - value.asInstanceOf[Int]
                 groupByExprs.lift(idx).map(Grouping).getOrElse(a)
             }

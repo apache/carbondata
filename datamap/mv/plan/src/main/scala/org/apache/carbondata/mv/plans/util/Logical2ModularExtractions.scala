@@ -17,13 +17,15 @@
 
 package org.apache.carbondata.mv.plans.util
 
+import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, NamedExpression, PredicateHelper}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.hive.SourceMatch
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.mv.plans.modular.Flags._
 import org.apache.carbondata.mv.plans.modular.JoinEdge
+
 
 
 /**
@@ -332,6 +334,23 @@ object ExtractTableModule extends PredicateHelper {
   type ReturnType = (String, String, Seq[NamedExpression], Seq[LogicalPlan], FlagSet, Seq[Seq[Any]])
 
   def unapply(plan: LogicalPlan): Option[ReturnType] = {
-    SourceMatch.unapply(plan)
+    plan match {
+      // uncomment for cloudera1 version
+      //      case m: CatalogRelation =>
+      //        Some(m.tableMeta.database, m.tableMeta.identifier.table, m.output, Nil, NoFlags,
+      //          Seq.empty)
+      //       uncomment for apache version
+      case m: HiveTableRelation =>
+        Some(m.tableMeta.database, m.tableMeta.identifier.table, m.output, Nil, NoFlags,
+          Seq.empty)
+      case l: LogicalRelation =>
+        val tableIdentifier = l.catalogTable.map(_.identifier)
+        val database = tableIdentifier.map(_.database).flatten.getOrElse(null)
+        val table = tableIdentifier.map(_.table).getOrElse(null)
+        Some(database, table, l.output, Nil, NoFlags, Seq.empty)
+      case l: LocalRelation => // used for unit test
+        Some(null, null, l.output, Nil, NoFlags, Seq.empty)
+      case _ => None
+    }
   }
 }

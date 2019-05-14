@@ -109,20 +109,7 @@ object SparkSQLUtil {
     }
   }
 
-  def getCastObj(child: Expression, oriCast: Cast) : Cast = {
-    val className = "org.apache.spark.sql.catalyst.expressions.Cast"
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      val timeZoneId = CarbonReflectionUtils.getField("timeZoneId",
-        oriCast).asInstanceOf[Object]
-      CarbonReflectionUtils.createObject(className, child, oriCast.dataType, timeZoneId).
-        _1.asInstanceOf[Cast]
-    } else {
-      CarbonReflectionUtils.createObject(className, child, oriCast.dataType).
-        _1.asInstanceOf[Cast]
-    }
-  }
-
-  def getEliminateViewObj(conf: SQLConf): Rule[LogicalPlan] = {
+  def getEliminateViewObj(): Rule[LogicalPlan] = {
     if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       val className = "org.apache.spark.sql.catalyst.analysis.EliminateView"
       CarbonReflectionUtils.createSingleObject(className).asInstanceOf[Rule[LogicalPlan]]
@@ -131,7 +118,7 @@ object SparkSQLUtil {
     }
   }
 
-  def getPullupCorrelatedPredicatesObj(conf: SQLConf): Rule[LogicalPlan] = {
+  def getPullupCorrelatedPredicatesObj(): Rule[LogicalPlan] = {
     if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       val className = "org.apache.spark.sql.catalyst.optimizer.PullupCorrelatedPredicates"
       CarbonReflectionUtils.createSingleObject(className).asInstanceOf[Rule[LogicalPlan]]
@@ -140,7 +127,7 @@ object SparkSQLUtil {
     }
   }
 
-  def getRemoveRedundantAliasesObj(conf: SQLConf): Rule[LogicalPlan] = {
+  def getRemoveRedundantAliasesObj(): Rule[LogicalPlan] = {
     if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       val className = "org.apache.spark.sql.catalyst.optimizer.RemoveRedundantAliases"
       CarbonReflectionUtils.createSingleObject(className).asInstanceOf[Rule[LogicalPlan]]

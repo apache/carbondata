@@ -40,7 +40,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     Batch(
       "Finish Analysis", Once,
       EliminateSubqueryAliases,
-      SparkSQLUtil.getEliminateViewObj(conf),
+      SparkSQLUtil.getEliminateViewObj(),
       ReplaceExpressions,
       ComputeCurrentTime,
       //      GetCurrentDatabase(sessionCatalog),
@@ -59,7 +59,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
       CombineUnions) ::
     Batch(
       "Pullup Correlated Expressions", Once,
-      SparkSQLUtil.getPullupCorrelatedPredicatesObj(conf)) ::
+      SparkSQLUtil.getPullupCorrelatedPredicatesObj()) ::
     Batch(
       "Subquery", Once,
       OptimizeSubqueries) ::
@@ -107,7 +107,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         SimplifyCaseConversionExpressions,
         RewriteCorrelatedScalarSubquery,
         EliminateSerialization,
-        SparkSQLUtil.getRemoveRedundantAliasesObj(conf),
+        SparkSQLUtil.getRemoveRedundantAliasesObj(),
         RemoveRedundantProject,
         SimplifyCreateStructOps,
         SimplifyCreateArrayOps,
