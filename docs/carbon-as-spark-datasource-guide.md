@@ -19,7 +19,7 @@
 
 The CarbonData fileformat is now integrated as Spark datasource for read and write operation without using CarbonSession. This is useful for users who wants to use carbondata as spark's data source. 
 
-**Note:** You can only apply the functions/features supported by spark datasource APIs, functionalities supported would be similar to Parquet. The carbon session features are not supported.
+**Note:** You can only apply the functions/features supported by spark datasource APIs, functionalities supported would be similar to Parquet. The carbon session features are not supported. The result is displayed as byte array format when select query on binary column in spark-sql.
 
 # Create Table with DDL
 
