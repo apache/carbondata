@@ -218,16 +218,21 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
       case None => ""
     }
     val (result, time) = CarbonScalaUtil.logTime {
-      IndexServer.getClient.showCache(tableUniqueName).map(_.split(":"))
-        .groupBy(_.head).map { t =>
-        var sum = 0L
-        var length = 0
-        t._2.foreach {
-          arr =>
-            sum += arr(2).toLong
-            length += arr(1).toInt
+      try {
+        IndexServer.getClient.showCache(tableUniqueName).map(_.split(":"))
+          .groupBy(_.head).map { t =>
+          var sum = 0L
+          var length = 0
+          t._2.foreach {
+            arr =>
+              sum += arr(2).toLong
+              length += arr(1).toInt
+          }
+          (t._1, length, sum)
         }
-        (t._1, length, sum)
+      } catch {
+        case e: Exception =>
+          throw new RuntimeException("Failed to get Cache Information. ", e)
       }
     }
     LOGGER.info(s"Time taken to get cache results from Index Server is $time ms")

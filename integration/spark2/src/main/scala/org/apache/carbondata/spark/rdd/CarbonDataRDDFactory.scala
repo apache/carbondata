@@ -257,8 +257,14 @@ object CarbonDataRDDFactory {
           // Remove compacted segments from executor cache.
           if (CarbonProperties.getInstance().isDistributedPruningEnabled(
               carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)) {
-            IndexServer.getClient.invalidateSegmentCache(carbonLoadModel.getDatabaseName,
-              carbonLoadModel.getTableName, compactedSegments.asScala.toArray)
+            try {
+              IndexServer.getClient.invalidateSegmentCache(carbonLoadModel.getDatabaseName,
+                carbonLoadModel.getTableName, compactedSegments.asScala.toArray)
+            } catch {
+              case ex: Exception =>
+                LOGGER.warn(s"Clear cache job has failed for ${carbonLoadModel
+                  .getDatabaseName}.${carbonLoadModel.getTableName}", ex)
+            }
           }
           // giving the user his error for telling in the beeline if his triggered table
           // compaction is failed.
