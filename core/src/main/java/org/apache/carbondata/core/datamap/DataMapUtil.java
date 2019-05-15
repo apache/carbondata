@@ -115,7 +115,15 @@ public class DataMapUtil {
     DistributableDataMapFormat dataMapFormat = new DistributableDataMapFormat(carbonTable,
         validAndInvalidSegmentsInfo.getValidSegments(), invalidSegment, true,
         dataMapToClear);
-    dataMapJob.execute(dataMapFormat);
+    try {
+      dataMapJob.execute(dataMapFormat);
+    } catch (Exception e) {
+      if (dataMapJob.getClass().getName().equalsIgnoreCase(DISTRIBUTED_JOB_NAME)) {
+        LOGGER.warn("Failed to clear distributed cache.", e);
+      } else {
+        throw e;
+      }
+    }
   }
 
   public static void executeClearDataMapJob(CarbonTable carbonTable, String jobClassName)

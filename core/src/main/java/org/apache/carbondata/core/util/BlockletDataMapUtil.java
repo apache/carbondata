@@ -228,7 +228,7 @@ public class BlockletDataMapUtil {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = new ArrayList<>();
     String mergeFilePath =
         identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-            .getMergeIndexFileName();
+            .getIndexFileName();
     segmentIndexFileStore.readMergeFile(mergeFilePath);
     List<String> indexFiles =
         segmentIndexFileStore.getCarbonMergeFileToIndexFilesMap().get(mergeFilePath);

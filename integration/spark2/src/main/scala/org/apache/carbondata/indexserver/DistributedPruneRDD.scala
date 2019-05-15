@@ -34,6 +34,7 @@ import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.datamap.DistributableDataMapFormat
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.rdd.CarbonRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -60,7 +61,11 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
   }
 
   override protected def getPreferredLocations(split: Partition): Seq[String] = {
-    split.asInstanceOf[DataMapRDDPartition].inputSplit.getLocations.toSeq
+    if (split.asInstanceOf[DataMapRDDPartition].inputSplit.getLocations != null) {
+      split.asInstanceOf[DataMapRDDPartition].inputSplit.getLocations.toSeq
+    } else {
+      Seq()
+    }
   }
 
   override def internalCompute(split: Partition,
@@ -112,7 +117,10 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
   override protected def internalGetPartitions: Array[Partition] = {
     val job = Job.getInstance(FileFactory.getConfiguration)
     val splits = dataMapFormat.getSplits(job).asScala
-    if (dataMapFormat.isFallbackJob || splits.isEmpty) {
+    val isDistributedPruningEnabled = CarbonProperties.getInstance()
+      .isDistributedPruningEnabled(dataMapFormat.getCarbonTable.getDatabaseName,
+        dataMapFormat.getCarbonTable.getTableName)
+    if (!isDistributedPruningEnabled || dataMapFormat.isFallbackJob || splits.isEmpty) {
       splits.zipWithIndex.map {
         f => new DataMapRDDPartition(id, f._2, f._1)
       }.toArray

@@ -45,11 +45,6 @@ trait ServerInterface {
   def getSplits(request: DistributableDataMapFormat): Array[ExtendedBlocklet]
 
   /**
-   * Invalidate the cache for the provided table.
-   */
-  def invalidateCache(request: DistributableDataMapFormat): Unit
-
-  /**
    * Get the cache size for the specified table.
    */
   def showCache(tableName: String) : Array[String]
@@ -85,6 +80,10 @@ object IndexServer extends ServerInterface {
 
   private val numHandlers: Int = CarbonProperties.getInstance().getNumberOfHandlersForIndexServer
 
+  private val isExecutorLRUConfigured: Boolean =
+    CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE) != null
+
   /**
    * Getting sparkSession from ActiveSession because in case of embedded mode the session would
    * have already been created whereas in case of distributed mode the session would be
@@ -103,15 +102,10 @@ object IndexServer extends ServerInterface {
   def getSplits(request: DistributableDataMapFormat): Array[ExtendedBlocklet] = doAs {
     val splits = new DistributedPruneRDD(sparkSession, request).collect()
     DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
-    splits.map(_._2)
-  }
-
-  override def invalidateCache(request: DistributableDataMapFormat): Unit = doAs {
-    val splits = new DistributedPruneRDD(sparkSession, request).collect()
-    DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
     if (request.isJobToClearDataMaps) {
       DistributedRDDUtils.invalidateCache(request.getCarbonTable.getTableUniqueName)
     }
+    splits.map(_._2)
   }
 
   override def invalidateSegmentCache(databaseName: String, tableName: String,
@@ -131,6 +125,9 @@ object IndexServer extends ServerInterface {
       throw new RuntimeException(
         s"Please set ${ CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER }" +
         s" as true to use index server")
+    } else if (!isExecutorLRUConfigured) {
+      throw new RuntimeException(s"Executor LRU cache size is not set. Please set using " +
+                                 s"${ CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE }")
     } else {
       createCarbonSession()
       LOGGER.info("Starting Index Cache Server")

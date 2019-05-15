@@ -17,9 +17,11 @@
 
 package org.apache.spark.sql.execution.command.cache
 
-import org.apache.hadoop.mapred.JobConf
 import scala.collection.JavaConverters._
 
+import org.apache.log4j.Logger
+
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
@@ -34,6 +36,8 @@ import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
 
 object CacheUtil {
+
+  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   /**
    * Given a carbonTable, returns the list of all carbonindex files
@@ -51,8 +55,13 @@ object CacheUtil {
         carbonTable.getTableName)) {
         val invalidSegmentIds = validAndInvalidSegmentsInfo.getInvalidSegments.asScala
           .map(_.getSegmentNo).toArray
-        IndexServer.getClient.invalidateSegmentCache(carbonTable.getDatabaseName, carbonTable
-          .getTableName, invalidSegmentIds)
+        try {
+          IndexServer.getClient.invalidateSegmentCache(carbonTable.getDatabaseName, carbonTable
+            .getTableName, invalidSegmentIds)
+        } catch {
+          case e: Exception =>
+            LOGGER.warn("Failed to clear cache from executors. ", e)
+        }
       }
       validAndInvalidSegmentsInfo.getValidSegments.asScala.flatMap {
         segment =>

@@ -60,21 +60,3 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
   }
 
 }
-
-class DistributedClearCacheJob extends AbstractDataMapJob {
-
-  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
-    if (LOGGER.isDebugEnabled) {
-      val messageSize = SizeEstimator.estimate(dataMapFormat)
-      LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
-    }
-    val (response, time) = logTime {
-      IndexServer.getClient.invalidateCache(dataMapFormat)
-      new util.ArrayList[ExtendedBlocklet]()
-    }
-    LOGGER.info(s"Time taken to get response from server: $time ms")
-    response
-  }
-}
