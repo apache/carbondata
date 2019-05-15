@@ -26,6 +26,7 @@ import scala.collection.mutable
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
+import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
@@ -196,6 +197,10 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
       var segmentFilesForIUDCompact = new util.ArrayList[Segment]()
       var segmentFileName: String = null
+      if (compactionType != CompactionType.IUD_DELETE_DELTA &&
+          compactionType != CompactionType.IUD_UPDDEL_DELTA) {
+        MergeIndexUtil.mergeIndexFilesOnCompaction(compactionCallableModel)
+      }
       if (carbonTable.isHivePartitionTable) {
         val readPath =
           CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
