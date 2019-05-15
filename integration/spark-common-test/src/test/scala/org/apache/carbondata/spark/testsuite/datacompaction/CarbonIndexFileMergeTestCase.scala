@@ -300,8 +300,8 @@ class CarbonIndexFileMergeTestCase
     assert(getIndexFileCount("default_nonindexmerge", "1") == 100)
     assert(getIndexFileCount("default_nonindexmerge", "2") == 100)
     assert(getIndexFileCount("default_nonindexmerge", "3") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "0.1") == 100)
-    assert(getIndexFileCount("default_nonindexmerge", "2.1") == 100)
+    assert(getIndexFileCount("default_nonindexmerge", "0.1") == 0)
+    assert(getIndexFileCount("default_nonindexmerge", "2.1") == 0)
     assert(getIndexFileCount("default_nonindexmerge", "0.2") == 0)
     checkAnswer(sql("""Select count(*) from nonindexmerge"""), rows)
   }
