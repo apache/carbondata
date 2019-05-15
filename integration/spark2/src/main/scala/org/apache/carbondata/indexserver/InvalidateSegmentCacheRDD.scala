@@ -43,12 +43,16 @@ class InvalidateSegmentCacheRDD(@transient private val ss: SparkSession, databas
   }
 
   override protected def internalGetPartitions: Array[Partition] = {
-    executorsList.zipWithIndex.map {
-      case (executor, idx) =>
-        // create a dummy split for each executor to accumulate the cache size.
-        val dummySplit = new CarbonInputSplit()
-        dummySplit.setLocation(Array(executor))
-        new DataMapRDDPartition(id, idx, dummySplit)
+    if (invalidSegmentIds.isEmpty) {
+      Array()
+    } else {
+      executorsList.zipWithIndex.map {
+        case (executor, idx) =>
+          // create a dummy split for each executor to accumulate the cache size.
+          val dummySplit = new CarbonInputSplit()
+          dummySplit.setLocation(Array(executor))
+          new DataMapRDDPartition(id, idx, dummySplit)
+      }
     }
   }
 }
