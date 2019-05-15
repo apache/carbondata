@@ -24,11 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TaskBlockInfo;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -49,13 +52,16 @@ import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpress
 import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 /**
@@ -612,6 +618,37 @@ public class CarbonCompactionUtil {
     return taskIdSet.size();
   }
 
+  private static boolean compareSortColumns(CarbonTable table, List<ColumnSchema> fileColumns) {
+    // When sort_columns is modified, it will be consider as no_sort also.
+    List<CarbonDimension> sortColumnsOfSegment = new ArrayList<>();
+    for (ColumnSchema column : fileColumns) {
+      if (column.isDimensionColumn() && column.isSortColumn()) {
+        sortColumnsOfSegment.add(new CarbonDimension(column, -1, -1, -1));
+      }
+    }
+    if (sortColumnsOfSegment.size() < table.getNumberOfSortColumns()) {
+      return false;
+    }
+    List<CarbonDimension> sortColumnsOfTable = new ArrayList<>();
+    for (CarbonDimension dimension : table.getDimensions()) {
+      if (dimension.isSortColumn()) {
+        sortColumnsOfTable.add(dimension);
+      }
+    }
+    int sortColumnNums = sortColumnsOfTable.size();
+    if (sortColumnsOfSegment.size() < sortColumnNums) {
+      return false;
+    }
+    // compare sort_columns
+    for (int i = 0; i < sortColumnNums; i++) {
+      if (!RestructureUtil.isColumnMatches(table.isTransactionalTable(), sortColumnsOfTable.get(i),
+          sortColumnsOfSegment.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /**
    * Returns if the DataFileFooter containing carbondata file contains
    * sorted data or not.
@@ -622,37 +659,82 @@ public class CarbonCompactionUtil {
    */
   public static boolean isSortedByCurrentSortColumns(CarbonTable table, DataFileFooter footer) {
     if (footer.isSorted()) {
-      // When sort_columns is modified, it will be consider as no_sort also.
-      List<CarbonDimension> sortColumnsOfSegment = new ArrayList<>();
-      for (ColumnSchema column : footer.getColumnInTable()) {
-        if (column.isDimensionColumn() && column.isSortColumn()) {
-          sortColumnsOfSegment.add(new CarbonDimension(column, -1, -1, -1));
-        }
-      }
-      if (sortColumnsOfSegment.size() < table.getNumberOfSortColumns()) {
-        return false;
-      }
-      List<CarbonDimension> sortColumnsOfTable = new ArrayList<>();
-      for (CarbonDimension dimension : table.getDimensions()) {
-        if (dimension.isSortColumn()) {
-          sortColumnsOfTable.add(dimension);
-        }
-      }
-      int sortColumnNums = sortColumnsOfTable.size();
-      if (sortColumnsOfSegment.size() < sortColumnNums) {
-        return false;
-      }
-      // compare sort_columns
-      for (int i = 0; i < sortColumnNums; i++) {
-        if (!RestructureUtil
-            .isColumnMatches(table.isTransactionalTable(), sortColumnsOfTable.get(i),
-                sortColumnsOfSegment.get(i))) {
-          return false;
-        }
-      }
-      return true;
+      return compareSortColumns(table, footer.getColumnInTable());
     } else {
       return false;
+    }
+  }
+
+  public static boolean isSortedByCurrentSortColumns(
+      CarbonTable table, LoadMetadataDetails load, Configuration hadoopConf) {
+    List<String> sortColumnList = table.getSortColumns();
+    if (sortColumnList.isEmpty()) {
+      return false;
+    }
+    // table sort_columns
+    String sortColumns = Strings.mkString(
+        sortColumnList.toArray(new String[sortColumnList.size()]), ",");
+    String segmentPath =
+        CarbonTablePath.getSegmentPath(table.getTablePath(), load.getLoadName());
+    // segment sort_columns
+    String segmentSortColumns = getSortColumnsOfSegment(segmentPath);
+    if (segmentSortColumns == null) {
+      return false;
+    } else {
+      return segmentSortColumns.equalsIgnoreCase(sortColumns);
+    }
+  }
+
+  private static String mkSortColumnsString(
+      List<org.apache.carbondata.format.ColumnSchema> columnList) {
+    StringBuilder builder = new StringBuilder();
+    for (org.apache.carbondata.format.ColumnSchema column : columnList) {
+      if (column.isDimension()) {
+        Map<String, String> properties = column.getColumnProperties();
+        if (properties != null) {
+          if (properties.get(CarbonCommonConstants.SORT_COLUMNS) != null) {
+            builder.append(column.column_name).append(",");
+          }
+        }
+      }
+    }
+    if (builder.length() > 1) {
+      return builder.substring(0, builder.length() - 1);
+    } else {
+      return null;
+    }
+  }
+
+  public static String getSortColumnsOfSegment(String segmentFolder) {
+    CarbonFile[] files = SegmentIndexFileStore.getCarbonIndexFiles(
+        segmentFolder, FileFactory.getConfiguration());
+    Set<Boolean> isSortSet = new HashSet<>();
+    Set<String> sortColumnsSet = new HashSet<>();
+    if (files != null) {
+      for (CarbonFile file : files) {
+        IndexHeader indexHeader = SegmentIndexFileStore.readIndexHeader(
+            file.getCanonicalPath(), FileFactory.getConfiguration());
+        if (indexHeader != null) {
+          if (indexHeader.isSetIs_sort()) {
+            isSortSet.add(indexHeader.is_sort);
+            if (indexHeader.is_sort) {
+              sortColumnsSet.add(mkSortColumnsString(indexHeader.getTable_columns()));
+            }
+          } else {
+            // if is_sort is not set, it will be old store and consider as local_sort by default.
+            sortColumnsSet.add(mkSortColumnsString(indexHeader.getTable_columns()));
+          }
+        }
+        if (isSortSet.size() >= 2 || sortColumnsSet.size() >= 2) {
+          break;
+        }
+      }
+    }
+    // for all index files, sort_columns should be same
+    if (isSortSet.size() <= 1 && sortColumnsSet.size() == 1) {
+      return sortColumnsSet.iterator().next();
+    } else {
+      return null;
     }
   }
 

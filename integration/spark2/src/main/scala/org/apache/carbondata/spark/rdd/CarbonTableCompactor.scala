@@ -29,13 +29,15 @@ import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCa
 import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
+import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.MergeResultImpl
 
 /**
@@ -50,6 +52,21 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     operationContext: OperationContext)
   extends Compactor(carbonLoadModel, compactionModel, executor, sqlContext, storeLocation) {
 
+  private def needSortSingleSegment(
+      loadsToMerge: java.util.List[LoadMetadataDetails]): Boolean = {
+    // support to resort old segment with old sort_columns
+    if (CompactionType.CUSTOM == compactionModel.compactionType &&
+        loadsToMerge.size() == 1 &&
+        SortScope.NO_SORT != compactionModel.carbonTable.getSortScope) {
+      !CarbonCompactionUtil.isSortedByCurrentSortColumns(
+        carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+        loadsToMerge.get(0),
+        FileFactory.getConfiguration)
+    } else {
+      false
+    }
+  }
+
   override def executeCompaction(): Unit = {
     val sortedSegments: util.List[LoadMetadataDetails] = new util.ArrayList[LoadMetadataDetails](
       carbonLoadModel.getLoadMetadataDetails
@@ -58,7 +75,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
 
     var loadsToMerge = identifySegmentsToBeMerged()
 
-    while (loadsToMerge.size() > 1 ||
+    while (loadsToMerge.size() > 1 || needSortSingleSegment(loadsToMerge) ||
            (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType &&
             loadsToMerge.size() > 0)) {
       val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
