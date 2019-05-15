@@ -5,10 +5,10 @@ import pyarrow as pa
 class CarbonReader(object):
     def __init__(self):
         from jnius import autoclass
-        self.readerClass = autoclass('org.apache.carbondata.sdk.file.CarbonReader')
+        self.readerClass = autoclass('org.apache.carbondata.sdk.file.ArrowCarbonReader')
 
-    def builder(self, path):
-        self.CarbonReaderBuilder = self.readerClass.builder(path)
+    def builder(self, input_split):
+        self.CarbonReaderBuilder = self.readerClass.builder(input_split)
         return self
 
     def projection(self, projection_list):
@@ -19,12 +19,12 @@ class CarbonReader(object):
         self.CarbonReaderBuilder.withHadoopConf(key, value)
         return self
 
-    def build_with_split(self, input_split):
-        self.reader = self.CarbonReaderBuilder.buildWithSplits(input_split)
+    def build(self):
+        self.reader = self.CarbonReaderBuilder.buildArrowReader()
         return self
 
-    def getSplits(self):
-        return self.CarbonReaderBuilder.getSplits()
+    def getSplits(self, is_blocklet_spit):
+        return self.CarbonReaderBuilder.getSplits(is_blocklet_spit)
 
     def read(self, schema):
         address = self.reader.readArrowBatchAddress(schema)

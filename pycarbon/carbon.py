@@ -54,7 +54,7 @@ class CarbonDataset(object):
           .withHadoopConf("fs.s3a.access.key", key) \
           .withHadoopConf("fs.s3a.secret.key", secret) \
           .withHadoopConf("fs.s3a.endpoint", endpoint) \
-          .getSplits()
+          .getSplits(True)
 
         configuration = Configuration()
         configuration.set("fs.s3a.access.key", key)
@@ -70,7 +70,7 @@ class CarbonDataset(object):
           .withHadoopConf("fs.s3a.endpoint", endpoint) \
           .withHadoopConf("fs.s3a.proxy.host", proxy) \
           .withHadoopConf("fs.s3a.proxy.port", proxy_port) \
-          .getSplits()
+          .getSplits(True)
 
         configuration = Configuration()
         configuration.set("fs.s3a.access.key", key)
@@ -93,7 +93,7 @@ class CarbonDataset(object):
 
     else:
       carbon_splits = CarbonReader().builder(self.path) \
-        .getSplits()
+        .getSplits(True)
 
       carbon_schema = CarbonSchemaReader().readSchema(self.path)
 
@@ -159,7 +159,7 @@ class CarbonDatasetPiece(object):
 
   def read_all(self, columns):
     # rebuilding the reader as need to read specific columns
-    carbon_reader_builder = CarbonReader().builder(self.path)
+    carbon_reader_builder = CarbonReader().builder(self.input_split)
     carbon_schema_reader = CarbonSchemaReader()
     if columns is not None:
       carbon_reader_builder = carbon_reader_builder.projection(columns)
@@ -178,7 +178,7 @@ class CarbonDatasetPiece(object):
           .withHadoopConf("fs.s3a.access.key", self.key) \
           .withHadoopConf("fs.s3a.secret.key", self.secret) \
           .withHadoopConf("fs.s3a.endpoint", self.endpoint) \
-          .build_with_split(self.input_split)
+          .build()
       else:
         carbon_reader = carbon_reader_builder \
           .withHadoopConf("fs.s3a.access.key", self.key) \
@@ -186,9 +186,9 @@ class CarbonDatasetPiece(object):
           .withHadoopConf("fs.s3a.endpoint", self.endpoint) \
           .withHadoopConf("fs.s3a.proxy.host", self.proxy) \
           .withHadoopConf("fs.s3a.proxy.port", self.proxy_port) \
-          .build_with_split(self.input_split)
+          .build()
     else:
-      carbon_reader = carbon_reader_builder.build_with_split(self.input_split)
+      carbon_reader = carbon_reader_builder.build()
 
     data = carbon_reader.read(updatedSchema)
     carbon_reader.close()
