@@ -55,7 +55,7 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
   }
 
   public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier,
-      LoadMetadataDetails[] loadMetadataDetails, Configuration configuration) throws IOException {
+      LoadMetadataDetails[] loadMetadataDetails, Configuration configuration) {
     this.identifier = identifier;
     this.configuration = configuration;
     this.loadMetadataDetails = loadMetadataDetails;
