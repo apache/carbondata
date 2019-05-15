@@ -23,20 +23,17 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.SparkContext
 import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.SegmentFileStore
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableMergeIndexEvent, Event, OperationContext, OperationEventListener}
-import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePostExecutionEvent
+import org.apache.carbondata.events._
+import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePreStatusUpdateEvent
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
 class MergeIndexEventListener extends OperationEventListener with Logging {
@@ -44,7 +41,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
 
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     event match {
-      case preStatusUpdateEvent: LoadTablePostExecutionEvent =>
+      case preStatusUpdateEvent: LoadTablePreStatusUpdateEvent =>
         LOGGER.info("Load post status event-listener called for merge index")
         val loadModel = preStatusUpdateEvent.getCarbonLoadModel
         val carbonTable = loadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -52,7 +49,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
         val sparkSession = SparkSession.getActiveSession.get
         if(!carbonTable.isStreamingSink) {
           if (null != compactedSegments && !compactedSegments.isEmpty) {
-            mergeIndexFilesForCompactedSegments(sparkSession,
+            MergeIndexUtil.mergeIndexFilesForCompactedSegments(sparkSession,
               carbonTable,
               compactedSegments)
           } else {
@@ -67,16 +64,8 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               carbonTable.getTablePath,
               carbonTable, false)
             // clear Block dataMap Cache
-            clearBlockDataMapCache(carbonTable, Seq(loadModel.getSegmentId))
+            MergeIndexUtil.clearBlockDataMapCache(carbonTable, Seq(loadModel.getSegmentId))
           }
-        }
-      case alterTableCompactionPostEvent: AlterTableCompactionPostEvent =>
-        LOGGER.info("Merge index for compaction called")
-        val carbonTable = alterTableCompactionPostEvent.carbonTable
-        val mergedLoads = alterTableCompactionPostEvent.compactedLoads
-        val sparkSession = alterTableCompactionPostEvent.sparkSession
-        if(!carbonTable.isStreamingSink) {
-          mergeIndexFilesForCompactedSegments(sparkSession, carbonTable, mergedLoads)
         }
       case alterTableMergeIndexEvent: AlterTableMergeIndexEvent =>
         val carbonMainTable = alterTableMergeIndexEvent.carbonTable
@@ -123,7 +112,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                 mergeIndexProperty = true,
                 readFileFooterFromCarbonDataFile = true)
               // clear Block dataMap Cache
-              clearBlockDataMapCache(carbonMainTable, validSegmentIds)
+              MergeIndexUtil.clearBlockDataMapCache(carbonMainTable, validSegmentIds)
               val requestMessage = "Compaction request completed for table " +
                 s"${ carbonMainTable.getDatabaseName }.${ carbonMainTable.getTableName }"
               LOGGER.info(requestMessage)
@@ -139,51 +128,6 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
             lock.unlock()
           }
         }
-    }
-  }
-
-  def mergeIndexFilesForCompactedSegments(sparkSession: SparkSession,
-    carbonTable: CarbonTable,
-    mergedLoads: util.List[String]): Unit = {
-    // get only the valid segments of the table
-    val validSegments: mutable.Buffer[Segment] = CarbonDataMergerUtil.getValidSegmentList(
-      carbonTable.getAbsoluteTableIdentifier).asScala
-    val mergedSegmentIds = new util.ArrayList[String]()
-    mergedLoads.asScala.foreach(mergedLoad => {
-      val loadName = mergedLoad
-        .substring(mergedLoad.indexOf(CarbonCommonConstants.LOAD_FOLDER) +
-                   CarbonCommonConstants.LOAD_FOLDER.length)
-      mergedSegmentIds.add(loadName)
-    })
-    val loadFolderDetailsArray = SegmentStatusManager
-      .readLoadMetadata(carbonTable.getMetadataPath)
-    val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
-    loadFolderDetailsArray.foreach(loadMetadataDetails => {
-      segmentFileNameMap
-        .put(loadMetadataDetails.getLoadName, String.valueOf(loadMetadataDetails.getLoadStartTime))
-    })
-    // filter out only the valid segments from the list of compacted segments
-    // Example: say compacted segments list contains 0.1, 3.1, 6.1, 0.2.
-    // In this list 0.1, 3.1 and 6.1 are compacted to 0.2 in the level 2 compaction.
-    // So, it is enough to do merge index only for 0.2 as it is the only valid segment in this list
-    val validMergedSegIds = validSegments
-      .filter { seg => mergedSegmentIds.contains(seg.getSegmentNo) }.map(_.getSegmentNo)
-    if (null != validMergedSegIds && validMergedSegIds.nonEmpty) {
-      CarbonMergeFilesRDD.mergeIndexFiles(sparkSession,
-          validMergedSegIds,
-          segmentFileNameMap,
-          carbonTable.getTablePath,
-          carbonTable,
-          false)
-      // clear Block dataMap Cache
-      clearBlockDataMapCache(carbonTable, validMergedSegIds)
-    }
-  }
-
-  private def clearBlockDataMapCache(carbonTable: CarbonTable, segmentIds: Seq[String]): Unit = {
-    // clear driver Block dataMap cache for each segment
-    segmentIds.foreach { segmentId =>
-      SegmentFileStore.clearBlockDataMapCache(carbonTable, segmentId)
     }
   }
 

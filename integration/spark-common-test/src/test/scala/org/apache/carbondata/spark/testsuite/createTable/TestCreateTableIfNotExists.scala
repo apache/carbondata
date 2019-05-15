@@ -78,6 +78,7 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
           } catch {
             case exception: Exception =>
               result = exception.getMessage
+              exception.printStackTrace()
           }
           result
         }

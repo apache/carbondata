@@ -191,10 +191,11 @@ case class CarbonCreateTableCommand(
               if (ifNotExistsSet) {
                 LOGGER.error(e, e)
               } else {
+                LOGGER.error(e)
                 throw e
               }
-            }
-            else {
+            } else {
+              LOGGER.error(e)
               throw e
             }
 
