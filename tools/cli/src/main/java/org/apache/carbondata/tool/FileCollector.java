@@ -21,11 +21,15 @@ import java.io.IOException;
 import java.util.*;
 
 import org.apache.carbondata.common.Strings;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletInfo3;
+import org.apache.carbondata.format.ColumnSchema;
 import org.apache.carbondata.format.FileFooter3;
+import org.apache.carbondata.format.IndexHeader;
 
 /**
  * A helper to collect all data files, schema file, table status file in a given folder
@@ -144,6 +148,58 @@ class FileCollector {
         Strings.formatSize((float) totalDataSize / numBlocklet), numRow / numBlock,
         numRow / numBlocklet);
     outPuts.add(format1);
+  }
+
+  private String makeSortColumnsString(List<ColumnSchema> columnList) {
+    StringBuilder builder = new StringBuilder();
+    for (ColumnSchema column : columnList) {
+      if (column.isDimension()) {
+        Map<String, String> properties = column.getColumnProperties();
+        if (properties != null) {
+          if (properties.get(CarbonCommonConstants.SORT_COLUMNS) != null) {
+            builder.append(column.column_name).append(",");
+          }
+        }
+      }
+    }
+    if (builder.length() > 1) {
+      return builder.substring(0, builder.length() - 1);
+    } else {
+      return "";
+    }
+  }
+
+  public void collectSortColumns(String segmentFolder) throws IOException {
+    CarbonFile[] files = SegmentIndexFileStore.getCarbonIndexFiles(
+        segmentFolder, FileFactory.getConfiguration());
+    Set<Boolean> isSortSet = new HashSet<>();
+    Set<String> sortColumnsSet = new HashSet<>();
+    if (files != null) {
+      for (CarbonFile file : files) {
+        IndexHeader indexHeader = SegmentIndexFileStore.readIndexHeader(
+            file.getCanonicalPath(), FileFactory.getConfiguration());
+        if (indexHeader != null) {
+          if (indexHeader.isSetIs_sort()) {
+            isSortSet.add(indexHeader.is_sort);
+            if (indexHeader.is_sort) {
+              sortColumnsSet.add(makeSortColumnsString(indexHeader.getTable_columns()));
+            }
+          } else {
+            // if is_sort is not set, it will be old store and consider as local_sort by default.
+            sortColumnsSet.add(makeSortColumnsString(indexHeader.getTable_columns()));
+          }
+        }
+        if (isSortSet.size() >= 2 || sortColumnsSet.size() >= 2) {
+          break;
+        }
+      }
+    }
+    // for all index files, sort_columns should be same
+    if (isSortSet.size() <= 1 && sortColumnsSet.size() == 1) {
+      outPuts.add("sorted by " + sortColumnsSet.iterator().next());
+    } else {
+      outPuts.add("unsorted");
+    }
   }
 
   public void close() throws IOException {

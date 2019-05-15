@@ -17,12 +17,15 @@
 
 package org.apache.carbondata.spark.testsuite.alterTable
 
-import org.apache.spark.sql.Row
+import java.io.{ByteArrayOutputStream, PrintStream}
+
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.tool.CarbonCli
 
 class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll {
 
@@ -134,6 +137,11 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
       Map("sort_scope"->"local_sort", "sort_columns"->"intField")
     )
     createAggDataMap("alter_sc_agg_base", "alter_sc_agg_base_dm1")
+
+    createTable(
+      "alter_sc_cli",
+      Map("dictionary_include"->"charField")
+    )
   }
 
   private def dropTable(): Unit = {
@@ -153,6 +161,7 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     sql(s"drop table if exists alter_sc_bloom_base")
     sql(s"drop table if exists alter_sc_agg")
     sql(s"drop table if exists alter_sc_agg_base")
+    sql(s"drop table if exists alter_sc_cli")
   }
 
   private def createTable(
@@ -570,4 +579,36 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     checkExistence(sql(s"EXPLAIN select stringField,max(intField) as sum from $tableName where stringField = 'abc2' group by stringField"), true, "preaggregate", dataMapName)
     checkAnswer(sql(s"select stringField,max(intField) as sum from $tableName where stringField = 'abc2' group by stringField"), sql(s"select stringField,max(intField) as sum from $baseTableName where stringField = 'abc2' group by stringField"))
   }
+
+  test("carboncli -cmd sort_columns -p <segment folder>") {
+    val tableName = "alter_sc_cli"
+    // no_sort
+    loadData(tableName)
+    sql(s"alter table $tableName set tblproperties('sort_scope'='global_sort', 'sort_columns'='charField, timestampField')")
+    // global_sort
+    loadData(tableName)
+    sql(s"alter table $tableName set tblproperties('sort_scope'='local_sort', 'sort_columns'='intField, stringField')")
+    // local_sort
+    loadData(tableName)
+    // update table to generate one more index in each segment
+    sql(s"update $tableName set (smallIntField, intField, bigIntField, floatField, doubleField) = (smallIntField + 3, intField + 3, bigIntField + 3, floatField + 3, doubleField + 3) where smallIntField = 2").collect()
+
+    val table = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
+    val tablePath = table.getTablePath
+    (0 to 2).foreach { segmentId =>
+      val segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId.toString)
+      val args: Array[String] = Array("-cmd", "sort_columns", "-p", segmentPath)
+      val out: ByteArrayOutputStream = new ByteArrayOutputStream
+      val stream: PrintStream = new PrintStream(out)
+      CarbonCli.run(args, stream)
+      CarbonCli.cleanOutPuts()
+      val output: String = new String(out.toByteArray)
+      if (segmentId == 2) {
+        assertResult(s"Input Folder: $segmentPath\nsorted by intfield,stringfield\n")(output)
+      } else {
+        assertResult(s"Input Folder: $segmentPath\nunsorted\n")(output)
+      }
+    }
+  }
+
 }

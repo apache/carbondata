@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +45,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
+import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.format.MergedBlockIndex;
 import org.apache.carbondata.format.MergedBlockIndexHeader;
 
@@ -515,4 +517,38 @@ public class SegmentIndexFileStore {
   public Map<String, List<String>> getCarbonMergeFileToIndexFilesMap() {
     return carbonMergeFileToIndexFilesMap;
   }
+
+  public static IndexHeader readIndexHeader(String indexFilePath, Configuration configuration) {
+    byte[] indexContent = null;
+    if (indexFilePath.toLowerCase().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+      SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore(configuration);
+      try {
+        indexFileStore.readMergeFile(indexFilePath);
+      } catch (IOException ex) {
+        LOGGER.error(ex);
+      }
+      Iterator<Map.Entry<String, byte[]>> iterator =
+          indexFileStore.getCarbonIndexMap().entrySet().iterator();
+      if (iterator.hasNext()) {
+        indexContent = iterator.next().getValue();
+      }
+    }
+    CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
+    IndexHeader indexHeader = null;
+    try {
+      if (indexContent == null) {
+        indexReader.openThriftReader(indexFilePath);
+      } else {
+        indexReader.openThriftReader(indexContent);
+      }
+      // get the index header
+      indexHeader = indexReader.readIndexHeader();
+    } catch (IOException ex) {
+      LOGGER.error(ex);
+    } finally {
+      indexReader.closeThriftReader();
+    }
+    return indexHeader;
+  }
+
 }

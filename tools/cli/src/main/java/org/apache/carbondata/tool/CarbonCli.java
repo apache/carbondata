@@ -51,6 +51,10 @@ public class CarbonCli {
   // by default true, and it will be set to false if the cli is trigerred via sql command
   private static boolean isPrintInConsole = true;
 
+  static class OptionsHolder {
+    static Options instance = buildOptions();
+  }
+
   private static Options buildOptions() {
     Option help = new Option("h", "help", false,"print this message");
     Option path = OptionBuilder.withArgName("path")
@@ -117,7 +121,7 @@ public class CarbonCli {
     // this boolean to check whether to print in console or not
     isPrintInConsole = false;
     outPuts = e;
-    Options options = buildOptions();
+    Options options = OptionsHolder.instance;
     CommandLineParser parser = new PosixParser();
 
     CommandLine line;
@@ -131,7 +135,7 @@ public class CarbonCli {
   }
 
   public static void run(String[] args, PrintStream out) {
-    Options options = buildOptions();
+    Options options = OptionsHolder.instance;
     CommandLineParser parser = new PosixParser();
 
     CommandLine line;
@@ -169,6 +173,18 @@ public class CarbonCli {
       command = new DataSummary(path, outPuts);
     } else if (cmd.equalsIgnoreCase("benchmark")) {
       command = new ScanBenchmark(path, outPuts);
+    } else if (cmd.equalsIgnoreCase("sort_columns")) {
+      if (line.hasOption("p")) {
+        try {
+          new FileCollector(outPuts).collectSortColumns(line.getOptionValue("p"));
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+        for (String output : outPuts) {
+          out.println(output);
+        }
+      }
+      return;
     } else {
       out.println("command " + cmd + " is not supported");
       outPuts.add("command " + cmd + " is not supported");
@@ -202,6 +218,10 @@ public class CarbonCli {
         formatter.getLeftPadding(), formatter.getDescPadding(), null, false);
     printWriter.flush();
     outPuts.add(stringWriter.toString());
+  }
+
+  public static void cleanOutPuts() {
+    outPuts = null;
   }
 
 }
