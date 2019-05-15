@@ -185,6 +185,19 @@ public class CarbonCliTest {
   }
 
   @Test
+  public void testSortColumnsOfSegmentFolder() {
+    String[] args = {"-cmd", "sort_columns", "-p", path};
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(out);
+    CarbonCli.run(args, stream);
+    String output = new String(out.toByteArray());
+    String expectedOutput = buildLines(
+        "Input Folder: ./CarbonCliTest",
+        "sorted by name");
+    Assert.assertTrue(output.contains(expectedOutput));
+  }
+
+  @Test
   public void testSummaryOutputAll() {
     String[] args = {"-cmd", "summary", "-p", path, "-a", "-c", "age"};
     ByteArrayOutputStream out = new ByteArrayOutputStream();

@@ -21,11 +21,15 @@ import java.io.IOException;
 import java.util.*;
 
 import org.apache.carbondata.common.Strings;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletInfo3;
+import org.apache.carbondata.format.ColumnSchema;
 import org.apache.carbondata.format.FileFooter3;
+import org.apache.carbondata.format.IndexHeader;
 
 /**
  * A helper to collect all data files, schema file, table status file in a given folder
@@ -144,6 +148,45 @@ class FileCollector {
         Strings.formatSize((float) totalDataSize / numBlocklet), numRow / numBlock,
         numRow / numBlocklet);
     outPuts.add(format1);
+  }
+
+  private String makeSortColumnsString(List<ColumnSchema> columnList) {
+    StringBuilder builder = new StringBuilder();
+    for (ColumnSchema column : columnList) {
+      if (column.isDimension()) {
+        Map<String, String> properties = column.getColumnProperties();
+        if (properties != null) {
+          if (properties.get(CarbonCommonConstants.SORT_COLUMNS) != null) {
+            builder.append(column.column_name).append(",");
+          }
+        }
+      }
+    }
+    if (builder.length() > 1) {
+      return builder.substring(0, builder.length() - 1);
+    } else {
+      return "";
+    }
+  }
+
+  public void collectSortColumns(String segmentFolder) throws IOException {
+    CarbonFile[] files = SegmentIndexFileStore.getCarbonIndexFiles(
+        segmentFolder, FileFactory.getConfiguration());
+    Boolean isSort = null;
+    String sortColumnsString = null;
+    if (files != null && files.length >= 1) {
+      IndexHeader indexHeader = SegmentIndexFileStore.readIndexHeader(
+          files[0].getCanonicalPath(), FileFactory.getConfiguration());
+      if (indexHeader.isSetIs_sort()) {
+        isSort = indexHeader.is_sort;
+      }
+      sortColumnsString = makeSortColumnsString(indexHeader.getTable_columns());
+    }
+    if (isSort == null || isSort) {
+      outPuts.add("sorted by " + sortColumnsString);
+    } else {
+      outPuts.add("unsorted");
+    }
   }
 
   public void close() throws IOException {
