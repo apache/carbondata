@@ -344,6 +344,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(distributable.getSegment().getSegmentNo());
     if (tableBlockIndexUniqueIdentifiers == null) {
+      tableBlockIndexUniqueIdentifiers = new HashSet<>();
       Set<String> indexFiles = distributable.getSegment().getCommittedIndexFile().keySet();
       for (String indexFile : indexFiles) {
         CarbonFile carbonFile = FileFactory.getCarbonFile(indexFile);
@@ -363,10 +364,9 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
         identifiersWrapper.add(
             new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
                 this.getCarbonTable()));
-        tableBlockIndexUniqueIdentifiers = new HashSet<>();
         tableBlockIndexUniqueIdentifiers.add(tableBlockIndexUniqueIdentifier);
-        segmentMap.put(distributable.getSegment().getSegmentNo(), tableBlockIndexUniqueIdentifiers);
       }
+      segmentMap.put(distributable.getSegment().getSegmentNo(), tableBlockIndexUniqueIdentifiers);
     } else {
       for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier :
           tableBlockIndexUniqueIdentifiers) {
