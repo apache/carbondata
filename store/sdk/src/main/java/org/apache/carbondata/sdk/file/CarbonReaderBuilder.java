@@ -148,12 +148,16 @@ public class CarbonReaderBuilder {
   }
 
   /**
-   * Configure arrow read support.
+   * build Arrow carbon reader
    *
+   * @param <T>
+   * @return ArrowCarbonReader
+   * @throws IOException
+   * @throws InterruptedException
    */
-  public CarbonReaderBuilder withArrowReader() {
-    this.useArrowReader = true;
-    return this;
+  public <T> ArrowCarbonReader<T> buildArrowReader() throws IOException, InterruptedException {
+    useArrowReader = true;
+    return (ArrowCarbonReader<T>) this.build();
   }
 
   /**
