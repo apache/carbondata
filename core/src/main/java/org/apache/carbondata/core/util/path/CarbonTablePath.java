@@ -122,6 +122,21 @@ public class CarbonTablePath {
   }
 
   /**
+   * check if it is carbon merge index file matching extension
+   *
+   * @param fileNameWithPath
+   * @return boolean
+   */
+  public static boolean isCarbonMergeIndexFile(String fileNameWithPath) {
+    int pos = fileNameWithPath.lastIndexOf('.');
+    if (pos != -1) {
+      return fileNameWithPath.substring(pos).startsWith(MERGE_INDEX_FILE_EXT);
+    }
+    return false;
+  }
+
+
+  /**
    * Return absolute path of dictionary file
    */
   public static String getDictionaryFilePath(String tablePath, String columnId) {

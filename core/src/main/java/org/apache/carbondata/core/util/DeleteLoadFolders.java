@@ -128,7 +128,8 @@ public final class DeleteLoadFolders {
 
                 @Override public boolean accept(CarbonFile file) {
                   return (CarbonTablePath.isCarbonDataFile(file.getName()) ||
-                      CarbonTablePath.isCarbonIndexFile(file.getName()));
+                      CarbonTablePath.isCarbonIndexFile(file.getName()) ||
+                      CarbonTablePath.isCarbonMergeIndexFile(file.getName()));
                 }
               });
 
