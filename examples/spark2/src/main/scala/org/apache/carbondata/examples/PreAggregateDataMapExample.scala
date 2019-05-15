@@ -36,8 +36,7 @@ object PreAggregateDataMapExample {
   }
 
   def exampleBody(spark : SparkSession): Unit = {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val testData = s"$rootPath/integration/spark-common-test/src/test/resources/sample.csv"
 
     // 1. simple usage for Pre-aggregate tables creation and query

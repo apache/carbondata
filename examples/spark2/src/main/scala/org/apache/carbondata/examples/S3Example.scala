@@ -36,8 +36,7 @@ object S3Example {
    *             "table-path on s3" "s3-endpoint" "spark-master"
    */
   def main(args: Array[String]) {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val path = s"$rootPath/examples/spark2/src/main/resources/data1.csv"
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 

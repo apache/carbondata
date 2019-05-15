@@ -470,8 +470,7 @@ object ConcurrentQueryBenchmark {
     }
     if (arr.length > 5) {
       runInLocal = if (arr(5).equalsIgnoreCase("true")) {
-        val rootPath = new File(this.getClass.getResource("/").getPath
-          + "../../../..").getCanonicalPath
+        val rootPath = System.getProperty("user.dir")
         storeLocation = s"$rootPath/examples/spark2/target/store"
         true
       } else if (arr(5).equalsIgnoreCase("false")) {

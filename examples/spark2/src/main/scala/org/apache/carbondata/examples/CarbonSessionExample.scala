@@ -29,8 +29,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object CarbonSessionExample {
 
   def main(args: Array[String]) {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     System.setProperty("path.target", s"$rootPath/examples/spark2/target")
     // print profiler log to a separated file: target/profiler.log
     PropertyConfigurator.configure(
@@ -46,8 +45,7 @@ object CarbonSessionExample {
 
   def exampleBody(spark : SparkSession): Unit = {
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
 
     spark.sql("DROP TABLE IF EXISTS source")
 

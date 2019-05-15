@@ -44,8 +44,7 @@ object HiveExample {
 
   def exampleBody(carbonSession: SparkSession, store: String): Unit = {
     val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
 
     carbonSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
 

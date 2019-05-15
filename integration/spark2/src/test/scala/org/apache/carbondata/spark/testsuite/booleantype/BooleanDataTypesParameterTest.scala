@@ -40,8 +40,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
          |""".stripMargin)
   }
 
-  val rootPath = new File(this.getClass.getResource("/").getPath
-    + "../../../..").getCanonicalPath
+  val rootPath = System.getProperty("user.dir")
 
   override def beforeAll(): Unit = {
     CarbonProperties.getInstance().

@@ -28,8 +28,7 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
   override def beforeAll(): Unit = {
     sql("drop table if exists carbon_table")
     sql("drop table if exists boolean_table")
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanOnlyBoolean.csv"
 
     sql("CREATE TABLE if not exists carbon_table(booleanField BOOLEAN) STORED BY 'carbondata'")
@@ -345,8 +344,7 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
 
   test("Filtering table: support boolean and other data type, two boolean column") {
     sql("drop table if exists boolean_table2")
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val booleanLocation2 = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
     sql(
       s"""
@@ -387,8 +385,7 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
 
   test("Filtering table: support boolean and other data type, load twice") {
     sql("drop table if exists boolean_table2")
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val booleanLocation2 = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
     sql(
       s"""

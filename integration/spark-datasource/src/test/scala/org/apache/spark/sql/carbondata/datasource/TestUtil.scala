@@ -37,8 +37,7 @@ import org.apache.carbondata.sdk.file.CarbonWriter
 
 object TestUtil {
 
-  val rootPath = new File(this.getClass.getResource("/").getPath
-                          + "../../../..").getCanonicalPath
+  val rootPath = System.getProperty("user.dir")
   val warehouse1 = FileFactory.getPath(s"$rootPath/integration/spark-datasource/target/warehouse").toString
   val resource = s"$rootPath/integration/spark-datasource/src/test/resources"
   val metaStoreDB1 = s"$rootPath/integration/spark-datasource/target"

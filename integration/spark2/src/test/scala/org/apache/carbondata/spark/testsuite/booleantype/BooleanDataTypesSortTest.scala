@@ -23,8 +23,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
-  val rootPath = new File(this.getClass.getResource("/").getPath
-    + "../../../..").getCanonicalPath
+  val rootPath = System.getProperty("user.dir")
 
   override def beforeEach(): Unit = {
     sql("drop table if exists boolean_table")

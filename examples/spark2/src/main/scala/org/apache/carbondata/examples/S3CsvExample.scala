@@ -31,8 +31,7 @@ object S3CsvExample {
    *             "s3 path to csv" "spark-master"
    */
   def main(args: Array[String]) {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
     import org.apache.spark.sql.CarbonSession._

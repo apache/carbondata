@@ -33,8 +33,7 @@ object StructuredStreamingExample {
   def main(args: Array[String]) {
 
     // setup paths
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
 
     val spark = ExampleUtils.createCarbonSession("StructuredStreamingExample", 4)
     val streamTableName = s"stream_table"

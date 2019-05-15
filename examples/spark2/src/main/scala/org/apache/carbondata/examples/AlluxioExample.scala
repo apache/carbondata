@@ -50,8 +50,7 @@ object AlluxioExample {
   }
 
   def exampleBody (spark: SparkSession, runShell: Boolean = true): Unit = {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     spark.sparkContext.hadoopConfiguration.set("fs.alluxio.impl", "alluxio.hadoop.FileSystem")
     FileFactory.getConfiguration.set("fs.alluxio.impl", "alluxio.hadoop.FileSystem")
 

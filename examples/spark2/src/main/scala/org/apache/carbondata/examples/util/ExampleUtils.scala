@@ -32,8 +32,7 @@ object ExampleUtils {
 
   def createCarbonSession (appName: String, workThreadNum: Int = 1,
       storePath: String = null): SparkSession = {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
 
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metaStoreDB = s"$rootPath/examples/spark2/target"

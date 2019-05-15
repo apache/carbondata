@@ -34,8 +34,7 @@ object CarbonSortColumnsExample {
   }
 
   def exampleBody(spark : SparkSession): Unit = {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")

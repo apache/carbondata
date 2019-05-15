@@ -26,8 +26,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
-  val rootPath = new File(this.getClass.getResource("/").getPath
-    + "../../../..").getCanonicalPath
+  val rootPath = System.getProperty("user.dir")
 
   override def beforeEach(): Unit = {
     sql("drop table if exists carbon_table")
@@ -533,8 +532,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(

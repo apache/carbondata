@@ -300,8 +300,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
   }
 
   test("Test complex json nested data with empty array of struct data") {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val resource = s"$rootPath/integration/spark-datasource/src/test/resources/test_json.json"
     val path = writerPath + "_json"
     FileUtils.deleteDirectory(new File(path))

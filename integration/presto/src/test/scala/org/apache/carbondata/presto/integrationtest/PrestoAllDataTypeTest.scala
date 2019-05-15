@@ -37,8 +37,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
   private val logger = LogServiceFactory
     .getLogService(classOf[PrestoAllDataTypeTest].getCanonicalName)
 
-  private val rootPath = new File(this.getClass.getResource("/").getPath
-                                  + "../../../..").getCanonicalPath
+  private val rootPath = System.getProperty("user.dir")
   private val storePath = s"$rootPath/integration/presto/target/store"
   private val systemPath = s"$rootPath/integration/presto/target/system"
   private val prestoServer = new PrestoServer

@@ -33,8 +33,7 @@ import org.apache.carbondata.core.util.CarbonProperties
   */
 class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
 
-  val rootPath = new File(this.getClass.getResource("/").getPath
-    + "../../../..").getCanonicalPath
+  val rootPath = System.getProperty("user.dir")
   val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
   override def beforeAll {
     clean

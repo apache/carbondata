@@ -40,8 +40,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
   private val logger = LogServiceFactory
     .getLogService(classOf[PrestoTestNonTransactionalTableFiles].getCanonicalName)
 
-  private val rootPath = new File(this.getClass.getResource("/").getPath
-                                  + "../../../..").getCanonicalPath
+  private val rootPath = System.getProperty("user.dir")
   private val storePath = s"$rootPath/integration/presto/target/store"
   private val systemPath = s"$rootPath/integration/presto/target/system"
   private val writerPath = storePath + "/sdk_output/files"

@@ -28,8 +28,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfterAll {
 
-  val rootPath = new File(this.getClass.getResource("/").getPath
-                          + "../../../..").getCanonicalPath
+  val rootPath = System.getProperty("user.dir")
 
   private val vectorReader = CarbonProperties.getInstance()
     .getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER)

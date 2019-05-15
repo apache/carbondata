@@ -39,8 +39,7 @@ object StreamingUsingBatchLoadExample {
   def main(args: Array[String]): Unit = {
 
     // setup paths
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val checkpointPath =
       s"$rootPath/examples/spark2/target/spark_streaming_cp_" +
       System.currentTimeMillis().toString()

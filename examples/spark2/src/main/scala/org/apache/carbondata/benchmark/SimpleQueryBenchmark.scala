@@ -311,8 +311,7 @@ object SimpleQueryBenchmark {
         .addProperty("carbon.blockletgroup.size.in.mb", "32")
         .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
     import org.apache.spark.sql.CarbonSession._
-    val rootPath = new File(this.getClass.getResource("/").getPath
-        + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val master = Option(System.getProperty("spark.master"))
       .orElse(sys.env.get("MASTER"))

@@ -17,7 +17,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class TestHybridCompaction extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
 
-  val rootPath = new File(this.getClass.getResource("/").getPath + "../../../..").getCanonicalPath
+  val rootPath = System.getProperty("user.dir")
 
   val csvPath1 =
     s"$rootPath/integration/spark-common-test/src/test/resources/compaction/hybridCompaction1.csv"

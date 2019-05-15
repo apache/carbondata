@@ -32,8 +32,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 object SparkSessionExample {
 
   def main(args: Array[String]): Unit = {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metaStoreDB = s"$rootPath/examples/spark2/target/metastore_db"

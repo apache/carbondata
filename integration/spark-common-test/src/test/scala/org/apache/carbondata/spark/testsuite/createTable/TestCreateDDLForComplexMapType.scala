@@ -32,8 +32,7 @@ import scala.collection.JavaConversions._
 class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
   private val conf: Configuration = new Configuration(false)
 
-  val rootPath = new File(this.getClass.getResource("/").getPath
-                          + "../../../..").getCanonicalPath
+  val rootPath = System.getProperty("user.dir")
 
   val path = s"$rootPath/integration/spark-common-test/src/test/resources/maptest2.csv"
 

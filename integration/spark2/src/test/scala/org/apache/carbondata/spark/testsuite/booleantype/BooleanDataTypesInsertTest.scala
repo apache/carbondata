@@ -195,8 +195,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
@@ -287,8 +286,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
@@ -357,8 +355,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
@@ -420,8 +417,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
            | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
-      val rootPath = new File(this.getClass.getResource("/").getPath
-        + "../../../..").getCanonicalPath
+      val rootPath = System.getProperty("user.dir")
       val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
       sql(
@@ -476,8 +472,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | )
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
@@ -550,8 +545,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
@@ -754,8 +748,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
@@ -844,8 +837,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | )
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(
@@ -918,8 +910,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
 
     sql(

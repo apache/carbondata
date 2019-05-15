@@ -39,8 +39,7 @@ object CarbonPartitionExample {
   }
 
   def exampleBody(spark : SparkSession): Unit = {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val testData = s"$rootPath/integration/spark-common-test/src/test/resources/partition_data.csv"
 
     CarbonProperties.getInstance()

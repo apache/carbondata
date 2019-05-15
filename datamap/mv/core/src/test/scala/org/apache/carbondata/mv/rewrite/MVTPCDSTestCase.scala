@@ -34,8 +34,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     drop()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    val projectPath = new File(this.getClass.getResource("/").getPath + "../../../../../")
-      .getCanonicalPath.replaceAll("\\\\", "/")
+    val projectPath = System.getProperty("user.dir")
     val integrationPath = s"$projectPath/integration"
     val resourcesPath = s"$integrationPath/spark-common-test/src/test/resources"
     sql("drop database if exists tpcds cascade")

@@ -58,8 +58,7 @@ object CustomCompactionExample {
          | ) STORED BY 'carbondata'
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val path = s"$rootPath/examples/spark2/src/main/resources/dataSample.csv"
 
     // load 4 segments

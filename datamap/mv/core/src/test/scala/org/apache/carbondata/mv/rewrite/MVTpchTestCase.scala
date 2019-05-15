@@ -31,8 +31,7 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     drop()
-    val projectPath = new File(this.getClass.getResource("/").getPath + "../../../../../")
-      .getCanonicalPath.replaceAll("\\\\", "/")
+    val projectPath = System.getProperty("user.dir")
     val integrationPath = s"$projectPath/integration"
     val resourcesPath = s"$integrationPath/spark-common-test/src/test/resources"
 

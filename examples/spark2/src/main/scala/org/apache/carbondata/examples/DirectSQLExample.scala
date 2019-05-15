@@ -73,8 +73,7 @@ object DirectSQLExample {
   // scalastyle:off
   def main(args: Array[String]) {
     val carbonSession = ExampleUtils.createCarbonSession("DirectSQLExample")
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val path = s"$rootPath/examples/spark2/target/carbonFile/"
 
     import carbonSession._

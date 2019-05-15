@@ -40,8 +40,7 @@ object StandardPartitionExample {
   def exampleBody(spark : SparkSession): Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val testData = s"$rootPath/integration/spark-common-test/src/test/resources/" +
                    s"partition_data_example.csv"
     /**

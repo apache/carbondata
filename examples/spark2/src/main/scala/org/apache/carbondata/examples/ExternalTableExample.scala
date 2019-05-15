@@ -62,8 +62,7 @@ object ExternalTableExample {
          | STORED BY 'carbondata'
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+    val rootPath = System.getProperty("user.dir")
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
 
     // load 4 times, each load has 10 rows data
