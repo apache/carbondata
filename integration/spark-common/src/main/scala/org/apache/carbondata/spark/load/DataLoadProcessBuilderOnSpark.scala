@@ -311,7 +311,7 @@ object DataLoadProcessBuilderOnSpark {
         // better to generate a CarbonData file for each partition
         val totalSize = model.getTotalSize.toDouble
         val table = model.getCarbonDataLoadSchema.getCarbonTable
-        numPartitions = getNumPatitionsBasedOnSize(totalSize, table, model)
+        numPartitions = getNumPatitionsBasedOnSize(totalSize, table, model, false)
       }
     }
     numPartitions
@@ -319,10 +319,13 @@ object DataLoadProcessBuilderOnSpark {
 
   def getNumPatitionsBasedOnSize(totalSize: Double,
       table: CarbonTable,
-      model: CarbonLoadModel): Int = {
+      model: CarbonLoadModel,
+      mergerFlag: Boolean): Int = {
     val blockSize = 1024L * 1024 * table.getBlockSizeInMB
     val blockletSize = 1024L * 1024 * table.getBlockletSizeInMB
-    val scaleFactor = if (model.getScaleFactor == 0) {
+    val scaleFactor = if (mergerFlag) {
+      1
+    } else if (model.getScaleFactor == 0) {
       // use system properties
       CarbonProperties.getInstance().getRangeColumnScaleFactor
     } else {
