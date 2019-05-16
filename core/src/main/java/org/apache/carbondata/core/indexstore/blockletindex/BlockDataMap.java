@@ -689,7 +689,13 @@ public class BlockDataMap extends CoarseGrainDataMap
           CarbonCommonConstants.DEFAULT_CHARSET_CLASS) + CarbonTablePath.getCarbonDataExtension();
       int rowCount = dataMapRow.getInt(ROW_COUNT_INDEX);
       // prepend segment number with the blocklet file path
-      blockletToRowCountMap.put((segment.getSegmentNo() + "," + fileName), (long) rowCount);
+      String blockletMapKey = segment.getSegmentNo() + "," + fileName;
+      Long existingCount = blockletToRowCountMap.get(blockletMapKey);
+      if (null != existingCount) {
+        blockletToRowCountMap.put(blockletMapKey, (long) rowCount + existingCount);
+      } else {
+        blockletToRowCountMap.put(blockletMapKey, (long) rowCount);
+      }
     }
     return blockletToRowCountMap;
   }
