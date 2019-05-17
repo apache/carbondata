@@ -77,8 +77,7 @@ public class ArrowConverter {
     arrowWriter.reset();
     writer.close();
     this.root.close();
-    final byte[] bytes = out.toByteArray();
-    return bytes;
+    return out.toByteArray();
   }
 
   /**
@@ -117,7 +116,7 @@ public class ArrowConverter {
       return arrowRoot;
     } catch (IOException e) {
       reader.close();
-      throw new IOException(e);
+      throw e;
     }
   }
 
