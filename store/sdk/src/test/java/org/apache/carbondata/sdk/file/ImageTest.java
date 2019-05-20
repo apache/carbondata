@@ -32,6 +32,7 @@ import org.apache.carbondata.util.BinaryUtil;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.mapreduce.InputSplit;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -819,7 +820,7 @@ public class ImageTest extends TestCase {
 
   @Test
   public void testBinaryWithProjectionAndFileListsAndWithFile() throws Exception {
-    int num = 3;
+    int num = 5;
     String path = "./target/flowersFolder";
     try {
       FileUtils.deleteDirectory(new File(path));
@@ -878,17 +879,18 @@ public class ImageTest extends TestCase {
 
     // 1. read with file list
     List fileLists = listFiles(path, CarbonTablePath.CARBON_DATA_EXT);
+    int fileNum = fileLists.size() / 2;
 
     Schema schema = CarbonSchemaReader.readSchema((String) fileLists.get(0)).asOriginOrder();
     List projectionLists = new ArrayList();
     projectionLists.add((schema.getFields())[1].getFieldName());
     projectionLists.add((schema.getFields())[2].getFieldName());
 
-    CarbonReader reader = CarbonReader
+    CarbonReader reader = ArrowCarbonReader
         .builder()
-        .withFileLists(fileLists.subList(0, fileLists.size()))
+        .withFileLists(fileLists.subList(0, fileNum))
         .projection(projectionLists)
-        .build();
+        .buildArrowReader();
 
     System.out.println("\nData:");
     int i = 0;
@@ -898,15 +900,9 @@ public class ImageTest extends TestCase {
       assertEquals(2, row.length);
       byte[] outputBinary = (byte[]) row[1];
       System.out.println(row[0] + " " + row[1] + " image size:" + outputBinary.length);
-
-      // save image, user can compare the save image and original image
-      String destString = path + "image" + i + ".jpg";
-      BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
-      bos.write(outputBinary);
-      bos.close();
       i++;
     }
-    assert (9 == i);
+    assert (i == fileNum * 3);
     System.out.println("\nFinished: " + i);
     reader.close();
 
@@ -930,12 +926,6 @@ public class ImageTest extends TestCase {
       String txt = row[2].toString();
       System.out.println(row[0] + " " + row[2] +
           " image size:" + outputBinary.length + " txt size:" + txt.length());
-
-      // save image, user can compare the save image and original image
-      String destString = path + "/image" + i + ".jpg";
-      BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
-      bos.write(outputBinary);
-      bos.close();
       i++;
     }
     System.out.println("\nFinished: " + i);
@@ -943,7 +933,7 @@ public class ImageTest extends TestCase {
 
     // 3. read with folder
     CarbonReader reader3 = CarbonReader
-        .builder()
+        .builder(path)
         .withFolder(path)
         .build();
 
@@ -954,16 +944,19 @@ public class ImageTest extends TestCase {
 
       byte[] outputBinary = (byte[]) row[1];
       System.out.println(row[0] + " " + row[2] + " image size:" + outputBinary.length);
-
-      // save image, user can compare the save image and original image
-      String destString = "./target/flowers/image" + i + ".jpg";
-      BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destString));
-      bos.write(outputBinary);
-      bos.close();
       i++;
     }
     System.out.println("\nFinished: " + i);
     reader3.close();
+
+    InputSplit[] splits = ArrowCarbonReader
+        .builder()
+        .withFileLists(fileLists.subList(0, fileNum))
+        .getSplits(true);
+    Assert.assertTrue(splits.length == fileNum);
+    for (int j = 0; j < splits.length; j++) {
+      ArrowCarbonReader.builder(splits[j]).build();
+    }
   }
 
 }

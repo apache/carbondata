@@ -150,7 +150,17 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
         for (LoadMetadataDetails load : loadMetadataDetails) {
           seg = new Segment(load.getLoadName(), null, readCommittedScope);
-          externalTableSegments.add(seg);
+          if (fileLists != null) {
+            for (int i = 0; i < fileLists.size(); i++) {
+              if (fileLists.get(i).toString().endsWith(seg.getSegmentNo()
+                  + CarbonTablePath.CARBON_DATA_EXT)) {
+                externalTableSegments.add(seg);
+                break;
+              }
+            }
+          } else {
+            externalTableSegments.add(seg);
+          }
         }
       }
       List<InputSplit> splits = new ArrayList<>();
