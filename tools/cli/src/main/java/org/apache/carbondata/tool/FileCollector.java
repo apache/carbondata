@@ -172,18 +172,31 @@ class FileCollector {
   public void collectSortColumns(String segmentFolder) throws IOException {
     CarbonFile[] files = SegmentIndexFileStore.getCarbonIndexFiles(
         segmentFolder, FileFactory.getConfiguration());
-    Boolean isSort = null;
-    String sortColumnsString = null;
-    if (files != null && files.length >= 1) {
-      IndexHeader indexHeader = SegmentIndexFileStore.readIndexHeader(
-          files[0].getCanonicalPath(), FileFactory.getConfiguration());
-      if (indexHeader.isSetIs_sort()) {
-        isSort = indexHeader.is_sort;
+    Set<Boolean> isSortSet = new HashSet<>();
+    Set<String> sortColumnsSet = new HashSet<>();
+    if (files != null) {
+      for (CarbonFile file : files) {
+        IndexHeader indexHeader = SegmentIndexFileStore.readIndexHeader(
+            file.getCanonicalPath(), FileFactory.getConfiguration());
+        if (indexHeader != null) {
+          if (indexHeader.isSetIs_sort()) {
+            isSortSet.add(indexHeader.is_sort);
+            if (indexHeader.is_sort) {
+              sortColumnsSet.add(makeSortColumnsString(indexHeader.getTable_columns()));
+            }
+          } else {
+            // if is_sort is not set, it will be old store and consider as local_sort by default.
+            sortColumnsSet.add(makeSortColumnsString(indexHeader.getTable_columns()));
+          }
+        }
+        if (isSortSet.size() >= 2 || sortColumnsSet.size() >= 2) {
+          break;
+        }
       }
-      sortColumnsString = makeSortColumnsString(indexHeader.getTable_columns());
     }
-    if (isSort == null || isSort) {
-      outPuts.add("sorted by " + sortColumnsString);
+    // for all index files, sort_columns should be same
+    if (isSortSet.size() <= 1 && sortColumnsSet.size() == 1) {
+      outPuts.add("sorted by " + sortColumnsSet.iterator().next());
     } else {
       outPuts.add("unsorted");
     }

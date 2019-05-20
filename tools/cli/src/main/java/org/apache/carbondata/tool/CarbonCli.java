@@ -220,4 +220,8 @@ public class CarbonCli {
     outPuts.add(stringWriter.toString());
   }
 
+  public static void cleanOutPuts() {
+    outPuts = null;
+  }
+
 }
