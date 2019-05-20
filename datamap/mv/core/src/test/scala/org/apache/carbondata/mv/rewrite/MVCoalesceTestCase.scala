@@ -65,6 +65,19 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
     sql("drop datamap if exists coalesce_test_main_mv")
   }
 
+  test("test mv table with coalesce expression in other expression") {
+    sql("drop datamap if exists coalesce_test_main_mv")
+    sql("create datamap coalesce_test_main_mv using 'mv' as " +
+      "select sum(coalesce(id,0)) as sum_id,name as myname,weight from coalesce_test_main group by name,weight")
+    sql("rebuild datamap coalesce_test_main_mv")
+
+    val frame = sql("select sum(coalesce(id,0)) as sumid,name from coalesce_test_main group by name")
+    assert(verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
+    checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
+
+    sql("drop datamap if exists coalesce_test_main_mv")
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get

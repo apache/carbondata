@@ -175,7 +175,8 @@ object MVHelper {
 
     var expressionValid = true
     modularPlan.transformExpressions {
-      case coal@Coalesce(_) =>
+      case coal@Coalesce(_) if coal.children.exists(
+        exp => exp.isInstanceOf[AggregateExpression]) =>
         expressionValid = false
         coal
     }
