@@ -19,3 +19,7 @@ curdir = os.path.dirname(os.path.realpath(__file__))
 jardir = os.path.abspath(os.path.join(curdir, os.path.pardir, os.path.pardir))
 
 DEFAULT_CARBONSDK_PATH = os.path.join(jardir, 'jars/carbondata-sdk.jar')
+DATA_PATH = os.path.join(jardir, 'examples/data/binary')
+S3_DATA_PATH = 's3a://sdk/binary'
+S3_DATA_PATH1 = 's3a://sdk/binary/sub1'
+S3_DATA_PATH2 = 's3a://sdk/binary/sub2'

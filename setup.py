@@ -40,6 +40,7 @@ REQUIRED_PACKAGES = [
     'pyzmq>=14.0.0',
     'pyarrow==0.11.1',
     'six>=1.5.0',
+    'huaweicloud-sdk-python-modelarts-dataset>=0.1.1',
     'future==0.17.1',
     'futures>=2.0; python_version == "2.7"',
 ]

@@ -11,17 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 
 import pyarrow as pa
-from pyarrow.filesystem import (_get_fs_from_path)
+from modelarts import manifest
+from modelarts.field_name import CARBON
 from pyarrow.filesystem import (_ensure_filesystem)
+from pyarrow.filesystem import (_get_fs_from_path)
 from pyarrow.parquet import ParquetFile
-from pycarbon.pysdk.CarbonReader import CarbonReader
+from six.moves.urllib.parse import urlparse
+
+from pycarbon.Constants import LOCAL_FILE_PREFIX
+from pycarbon.pysdk.ArrowCarbonReader import ArrowCarbonReader
 from pycarbon.pysdk.CarbonSchemaReader import CarbonSchemaReader
 from pycarbon.pysdk.Configuration import Configuration
-
-from six.moves.urllib.parse import urlparse
 
 
 class CarbonDataset(object):
@@ -34,6 +36,11 @@ class CarbonDataset(object):
                filesystem=None):
     self.path = path
     self.url_path = urlparse(path)
+
+    if str(path).endswith(".manifest"):
+      self.manifest_path = path
+      if str(path).startswith(LOCAL_FILE_PREFIX):
+        self.manifest_path = str(path)[len(LOCAL_FILE_PREFIX):]
 
     if filesystem is None:
       a_path = self.path
@@ -50,7 +57,7 @@ class CarbonDataset(object):
         raise ValueError('key, secret, endpoint should not be None')
 
       if proxy is None and proxy_port is None:
-        carbon_splits = CarbonReader().builder(self.path) \
+        carbon_splits = ArrowCarbonReader().builder(self.path) \
           .withHadoopConf("fs.s3a.access.key", key) \
           .withHadoopConf("fs.s3a.secret.key", secret) \
           .withHadoopConf("fs.s3a.endpoint", endpoint) \
@@ -64,7 +71,7 @@ class CarbonDataset(object):
         self.configuration = configuration
 
       elif proxy is not None and proxy_port is not None:
-        carbon_splits = CarbonReader().builder(self.path) \
+        carbon_splits = ArrowCarbonReader().builder(self.path) \
           .withHadoopConf("fs.s3a.access.key", key) \
           .withHadoopConf("fs.s3a.secret.key", secret) \
           .withHadoopConf("fs.s3a.endpoint", endpoint) \
@@ -83,23 +90,49 @@ class CarbonDataset(object):
       else:
         raise ValueError('wrong proxy & proxy_port configuration')
 
-      carbon_schema = CarbonSchemaReader().readSchema(self.path, self.configuration.conf)
+      if str(path).endswith(".manifest"):
+        from obs import ObsClient
+        obsClient = ObsClient(access_key_id=key, secret_access_key=secret,
+                              server=str(endpoint).replace('http://', ''),
+                              long_conn_mode=True)
+        sources = manifest.getSources(self.manifest_path, CARBON, obsClient)
+        if len(sources) > 0:
+          self.file_path = sources[0]
+        else:
+          raise Exception("Manifest source can't be None!")
+        carbon_schema = CarbonSchemaReader().readSchema(self.file_path, self.configuration.conf)
+      else:
+        carbon_schema = CarbonSchemaReader().readSchema(self.path, self.configuration.conf)
 
       for split in carbon_splits:
         # split = self.url_path.scheme + "://" + self.url_path.netloc + split
-        self.pieces.append(CarbonDatasetPiece(path, carbon_schema, split,
+        folder_path = path
+        if str(path).endswith(".manifest"):
+          folder_path = str(self.file_path)[0:(str(self.file_path).rindex('/'))]
+        self.pieces.append(CarbonDatasetPiece(folder_path, carbon_schema, split,
                                               key=key, secret=secret, endpoint=endpoint,
                                               proxy=proxy, proxy_port=proxy_port))
 
     else:
-      carbon_splits = CarbonReader().builder(self.path) \
+      if str(path).endswith(".manifest"):
+        sources = manifest.getSources(self.manifest_path, CARBON)
+        if len(sources) > 0:
+          self.file_path = sources[0]
+        else:
+          raise Exception("Manifest source can't be None!")
+        carbon_schema = CarbonSchemaReader().readSchema(self.file_path)
+      else:
+        carbon_schema = CarbonSchemaReader().readSchema(self.path)
+      carbon_splits = ArrowCarbonReader().builder(self.path) \
         .getSplits(True)
-
-      carbon_schema = CarbonSchemaReader().readSchema(self.path)
 
       for split in carbon_splits:
         # split = self.url_path.scheme + "://" + self.url_path.netloc + split
-        self.pieces.append(CarbonDatasetPiece(path, carbon_schema, split))
+        if str(path).endswith(".manifest"):
+          self.pieces.append(
+            CarbonDatasetPiece(str(self.file_path)[0:(str(self.file_path).rindex('/'))], carbon_schema, split))
+        else:
+          self.pieces.append(CarbonDatasetPiece(path, carbon_schema, split))
 
     self.number_of_splits = len(self.pieces)
     self.schema = self.getArrowSchema()
@@ -114,10 +147,14 @@ class CarbonDataset(object):
       self.common_metadata = None
 
   def getArrowSchema(self):
+    file_path = self.path
+
+    if str(self.path).endswith(".manifest"):
+      file_path = self.file_path
     if self.url_path.scheme == 's3a':
-      buf = CarbonSchemaReader().readSchema(self.path, True, self.configuration.conf).tostring()
+      buf = CarbonSchemaReader().readSchema(file_path, True, self.configuration.conf).tostring()
     else:
-      buf = CarbonSchemaReader().readSchema(self.path, True).tostring()
+      buf = CarbonSchemaReader().readSchema(file_path, True).tostring()
 
     reader = pa.RecordBatchFileReader(pa.BufferReader(bytes(buf)))
     return reader.read_all().schema
@@ -159,7 +196,7 @@ class CarbonDatasetPiece(object):
 
   def read_all(self, columns):
     # rebuilding the reader as need to read specific columns
-    carbon_reader_builder = CarbonReader().builder(self.input_split)
+    carbon_reader_builder = ArrowCarbonReader().builder(self.input_split)
     carbon_schema_reader = CarbonSchemaReader()
     if columns is not None:
       carbon_reader_builder = carbon_reader_builder.projection(columns)

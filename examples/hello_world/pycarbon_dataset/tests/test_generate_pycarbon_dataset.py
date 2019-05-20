@@ -22,6 +22,7 @@ from examples.hello_world.pycarbon_dataset.pytorch_hello_world_carbon import pyt
 from examples.hello_world.pycarbon_dataset.tensorflow_hello_world_carbon import tensorflow_hello_world
 from petastorm.tests.conftest import SyntheticDataset
 
+from pycarbon.Constants import LOCAL_FILE_PREFIX
 from pycarbon.carbon_reader import make_carbon_reader
 
 import jnius_config
@@ -43,7 +44,7 @@ else:
 @pytest.fixture(scope="session")
 def pycarbon_dataset(tmpdir_factory):
   path = tmpdir_factory.mktemp("data").strpath
-  url = 'file://' + path
+  url = LOCAL_FILE_PREFIX + path
 
   generate_pycarbon_dataset(url)
 

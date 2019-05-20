@@ -27,6 +27,8 @@ import argparse
 import jnius_config
 
 from obs import ObsClient
+
+from pycarbon.Constants import LOCAL_FILE_PREFIX
 from pycarbon.carbon_reader import make_batch_carbon_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
@@ -34,7 +36,7 @@ from examples.benchmark.external_dataset.generate_benchmark_external_dataset imp
 
 
 def just_read_batch_obs(key, secret, endpoint, bucketname, prefix, download_path):
-  path = 'file://' + download_files_from_obs_concurrently(key, secret, endpoint, bucketname, prefix, download_path)
+  path = LOCAL_FILE_PREFIX + download_files_from_obs_concurrently(key, secret, endpoint, bucketname, prefix, download_path)
 
   with make_batch_carbon_reader(path, key=key, secret=secret, endpoint=endpoint, num_epochs=1) as train_reader:
     i = 0
@@ -60,7 +62,7 @@ def download_files_from_obs(access_key, secret_key, end_point, bucket_name, pref
     num = num + 1
     obsClient.getObject(bucket_name, file, download_path + file)
   obsClient.close()
-  return 'file://' + download_path + prefix
+  return LOCAL_FILE_PREFIX + download_path + prefix
 
 
 def download_files_from_obs_concurrently(access_key, secret_key, end_point, bucket_name, prefix, download_path):
@@ -81,7 +83,7 @@ def download_files_from_obs_concurrently(access_key, secret_key, end_point, buck
   results = pool.map(download, files)
   pool.close()
   obsClient.close()
-  return 'file://' + download_path + prefix
+  return LOCAL_FILE_PREFIX + download_path + prefix
 
 
 def list_obs_files(obs_client, bucket_name, prefix):

@@ -1,0 +1,1 @@
+{"source":"./../../data/carbon/train/part-0-1252313748336967_batchno0-0-null-1252313027747818.carbondata","source-type":"carbon","usage":"TRAIN","property":{"@modelarts:schema":{"digit":"int","idx":"int","image":"BINARY"}}}

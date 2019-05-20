@@ -1,0 +1,1 @@
+{"source":"./../../data/carbon/test/part-0-1252316706969327_batchno0-0-null-1252316571848545.carbondata","source-type":"carbon","usage":"TEST","property":{"@modelarts:schema":{"digit":"int","idx":"int","image":"BINARY"}}}

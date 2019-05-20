@@ -19,11 +19,10 @@ from decimal import Decimal
 from functools import partial
 
 import numpy as np
-import pytz
 from pyspark import Row
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StringType, ShortType, LongType, DecimalType, DoubleType, BooleanType, StructField, \
-  IntegerType, StructType, DateType, TimestampType, ArrayType
+  IntegerType, StructType
 
 from petastorm.codecs import CompressedImageCodec, NdarrayCodec, \
   ScalarCodec

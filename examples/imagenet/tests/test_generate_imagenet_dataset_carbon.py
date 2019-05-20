@@ -26,6 +26,8 @@ from examples.imagenet.generate_pycarbon_imagenet import download_nouns_mapping,
 
 import jnius_config
 
+from pycarbon.Constants import LOCAL_FILE_PREFIX
+
 jnius_config.set_classpath(pytest.config.getoption("--carbon-sdk-path"))
 
 if pytest.config.getoption("--pyspark-python") is not None and \
@@ -88,7 +90,7 @@ class TestGenerate(unittest.TestCase):
   def test_generate(self):
     # Use carbon_files_count to speed up the test
     imagenet_directory_to_pycarbon_dataset(TestGenerate.mock_imagenet_dir,
-                                           'file://' + TestGenerate.mock_output_dir,
+                                           LOCAL_FILE_PREFIX + TestGenerate.mock_output_dir,
                                            spark_master='local[3]', carbon_files_count=3,
                                            noun_id_to_text=TestGenerate.noun_id_to_text)
 
