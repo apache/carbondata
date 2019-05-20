@@ -182,6 +182,37 @@ def get_schema_carbon(carbon_dataset):
   return schema
 
 
+def get_schema_from_dataset_url_carbon(dataset_url,
+                                       key=None,
+                                       secret=None,
+                                       endpoint=None,
+                                       proxy=None,
+                                       proxy_port=None,
+                                       filesystem=None):
+  """Returns a :class:`petastorm.unischema.Unischema` object loaded from a dataset specified by a url.
+
+  :param dataset_url: A dataset URL
+  :param key: access key
+  :param secret: secret key
+  :param endpoint: endpoint_url
+  :param proxy: proxy
+  :param proxy_port:  proxy_port
+  :param filesystem: filesystem
+  :return: A :class:`petastorm.unischema.Unischema` object
+  """
+
+  # Get a unischema stored in the dataset metadata.
+  stored_schema = get_schema_carbon(CarbonDataset(dataset_url,
+                                                  key=key,
+                                                  secret=secret,
+                                                  endpoint=endpoint,
+                                                  proxy=proxy,
+                                                  proxy_port=proxy_port,
+                                                  filesystem=filesystem))
+
+  return stored_schema
+
+
 def infer_or_load_unischema_carbon(carbon_dataset):
   """Try to recover Unischema object stored by ``materialize_dataset`` function. If it can be loaded, infer
       Unischema from native Carbon schema"""

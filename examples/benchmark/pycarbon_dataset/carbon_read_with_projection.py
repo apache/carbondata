@@ -20,30 +20,26 @@
 from __future__ import division, print_function
 
 import time
+
 import argparse
 import jnius_config
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.carbon_reader import make_carbon_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
+from examples.benchmark.pycarbon_dataset.generate_benchmark_pycarbon_dataset import ROW_COUNT
 
 
-def just_read_obs(dataset_url, key, secret, endpoint):
-  with make_carbon_reader(dataset_url, key=key, secret=secret, endpoint=endpoint, num_epochs=1,
-                          workers_count=16) as train_reader:
+def just_read(dataset_url='file:///tmp/benchmark_dataset'):
+  with make_carbon_reader(dataset_url, num_epochs=1, workers_count=16,
+                          schema_fields=["id", "value1"]) as train_reader:
     i = 0
     for schema_view in train_reader:
+      assert len(schema_view) == 2
+      assert schema_view._fields == ('id', 'value1')
       i += 1
-    print(i)
-
-
-def just_read_batch_obs(dataset_url, key, secret, endpoint):
-  with make_batch_carbon_reader(dataset_url, key=key, secret=secret, endpoint=endpoint, num_epochs=1,
-                                workers_count=16) as train_reader:
-    i = 0
-    for schema_view in train_reader:
-      i += len(schema_view.imagename)
-    print(i)
+    assert i == ROW_COUNT
+    return i
 
 
 def main():
@@ -60,13 +56,7 @@ def main():
   print("Start")
   start = time.time()
 
-  key = "OF0FTHGASIHDTRYHBCWU"
-  secret = "fWWjJwh89NFaMDPrFdhu68Umus4vftlIzcNuXvwV"
-  endpoint = "http://obs.cn-north-5.myhuaweicloud.com"
-
-  just_read_obs("s3a://modelarts-carbon/imageNet_resize/imageNet_whole_resize_small1/", key, secret, endpoint)
-
-  just_read_batch_obs("s3a://modelarts-carbon/imageNet_resize/imageNet_whole_resize_small1/", key, secret, endpoint)
+  just_read()
 
   end = time.time()
   print("all time: " + str(end - start))

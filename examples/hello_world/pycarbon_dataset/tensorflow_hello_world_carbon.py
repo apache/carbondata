@@ -36,16 +36,9 @@ def tensorflow_hello_world(dataset_url='file:///tmp/carbon_pycarbon_dataset/'):
       sample = sess.run(tensor)
       print(sample.id)
 
-  with make_carbon_reader(dataset_url) as reader:
-    for schema_view in reader:
-      print(schema_view.id)
-
   # Example: use tf.data.Dataset API
   with make_carbon_reader(dataset_url) as reader:
     dataset = make_pycarbon_dataset(reader)
-    print(dataset.output_classes)
-    print(dataset.output_shapes)
-    print(dataset.output_types)
     iterator = dataset.make_one_shot_iterator()
     tensor = iterator.get_next()
     with tf.Session() as sess:

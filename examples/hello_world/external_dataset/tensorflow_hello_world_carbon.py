@@ -34,7 +34,7 @@ def tensorflow_hello_world(dataset_url='file:///tmp/carbon_external_dataset'):
   with make_batch_carbon_reader(dataset_url) as reader:
     tensor = tf_tensors(reader)
     with tf.Session() as sess:
-      # Because we are using make_batch_reader(), each read returns a batch of rows instead of a single row
+      # Because we are using make_batch_carbon_reader(), each read returns a batch of rows instead of a single row
       batched_sample = sess.run(tensor)
       print("id batch: {0}".format(batched_sample.id))
 

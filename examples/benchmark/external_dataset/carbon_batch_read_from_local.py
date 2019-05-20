@@ -20,35 +20,30 @@
 from __future__ import division, print_function
 
 import time
-
 import argparse
+
 import jnius_config
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.carbon_reader import make_batch_carbon_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
+from examples.benchmark.external_dataset.generate_benchmark_external_dataset import ROW_COUNT
 
 
-def just_read(dataset_url='file:///tmp/benchmark_dataset'):
-  with make_carbon_reader(dataset_url, num_epochs=1, workers_count=16,
-                          schema_fields=["id", "value1"]) as train_reader:
+def just_read_batch(dataset_url='file:///tmp/benchmark_external_dataset'):
+  with make_batch_carbon_reader(dataset_url, num_epochs=1) as train_reader:
     i = 0
+    start = time.time()
     for schema_view in train_reader:
-      assert len(schema_view) == 2
-      assert schema_view._fields == ('id', 'value1')
-      i += 1
-    print(i)
-
-
-def just_read_batch(dataset_url='file:///tmp/benchmark_dataset'):
-  with make_batch_carbon_reader(dataset_url, num_epochs=1, workers_count=16,
-                                schema_fields=["id", "value1"]) as train_reader:
-    i = 0
-    for schema_view in train_reader:
-      assert len(schema_view) == 2
-      assert schema_view._fields == ('id', 'value1')
-      i += len(schema_view.id)
-    print(i)
+      for j in range(len(schema_view.id)):
+        schema_view.id[j]
+        i += 1
+        if i % ROW_COUNT == 0:
+          end = time.time()
+          print("time is " + str(end - start))
+          start = end
+    assert i == ROW_COUNT
+    return i
 
 
 def main():
@@ -64,8 +59,6 @@ def main():
   # jnius_config.add_options('-Xrs', '-Xmx6096m', '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5555')
   print("Start")
   start = time.time()
-
-  just_read()
 
   just_read_batch()
 

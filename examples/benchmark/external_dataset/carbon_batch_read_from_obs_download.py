@@ -30,6 +30,7 @@ from obs import ObsClient
 from pycarbon.carbon_reader import make_batch_carbon_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
+from examples.benchmark.external_dataset.generate_benchmark_external_dataset import ROW_COUNT
 
 
 def just_read_batch_obs(key, secret, endpoint, bucketname, prefix, download_path):
@@ -38,8 +39,10 @@ def just_read_batch_obs(key, secret, endpoint, bucketname, prefix, download_path
   with make_batch_carbon_reader(path, key=key, secret=secret, endpoint=endpoint, num_epochs=1) as train_reader:
     i = 0
     for schema_view in train_reader:
-      i += len(schema_view.imagename)
+      i += len(schema_view.id)
     print(i)
+
+    assert i == ROW_COUNT
 
 
 def download_files_from_obs(access_key, secret_key, end_point, bucket_name, prefix, download_path):
@@ -119,7 +122,7 @@ def main():
   endpoint = "http://obs.cn-north-5.myhuaweicloud.com"
 
   just_read_batch_obs(key, secret, endpoint,
-                      'modelarts-carbon', 'imageNet_resize/imageNet_whole_resize_small1', '/tmp/download/')
+                      'modelarts-carbon', 'test/benchmark_external_dataset', '/tmp/download/')
   shutil.rmtree('/tmp/download/')
 
   end = time.time()

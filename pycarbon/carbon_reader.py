@@ -14,6 +14,7 @@
 
 import collections
 import logging
+import warnings
 
 import six
 
@@ -33,6 +34,7 @@ from petastorm.workers_pool.ventilator import ConcurrentVentilator
 from pycarbon.carbon_arrow_reader_worker import ArrowCarbonReaderWorker
 from pycarbon.carbon_py_dict_reader_worker import PyDictCarbonReaderWorker
 from pycarbon.carbon import CarbonDataset
+from pycarbon.etl import carbon_dataset_metadata
 from pycarbon.etl.carbon_dataset_metadata import infer_or_load_unischema_carbon
 from pycarbon.etl.carbon_dataset_metadata import PycarbonMetadataError
 from pycarbon.carbon_local_memory_cache import LocalMemoryCache
@@ -157,16 +159,16 @@ def make_carbon_reader(dataset_url,
   # blocklet. Using PyDictCarbonReaderWorker or ReaderV2 implementation is very inefficient as it processes data on a
   # row by row basis. ArrowCarbonReaderWorker (used by make_batch_carbon_reader) is much more efficient in these cases.
   try:
-    infer_or_load_unischema_carbon(CarbonDataset(dataset_url,
-                                                 key=key,
-                                                 secret=secret,
-                                                 endpoint=endpoint,
-                                                 proxy=proxy,
-                                                 proxy_port=proxy_port,
-                                                 filesystem=filesystem))
+    carbon_dataset_metadata.get_schema_from_dataset_url_carbon(dataset_url,
+                                                               key=key,
+                                                               secret=secret,
+                                                               endpoint=endpoint,
+                                                               proxy=proxy,
+                                                               proxy_port=proxy_port,
+                                                               filesystem=filesystem)
   except PycarbonMetadataError:
-    raise RuntimeError('Currently make_reader supports reading only Pycarbon datasets. '
-                       'To read from a non-Pycarbon Carbon store use make_batch_reader')
+    raise RuntimeError('Currently make_carbon_reader supports reading only Pycarbon datasets(has unischema). '
+                       'To read from a non-Pycarbon Carbon store use make_batch_carbon_reader')
 
   if reader_engine == 'reader_v1':
     if reader_pool_type == 'thread':
@@ -313,6 +315,19 @@ def make_batch_carbon_reader(dataset_url,
                                       hdfs_driver=hdfs_driver)
   filesystem = resolver.filesystem()
 
+  try:
+    carbon_dataset_metadata.get_schema_from_dataset_url_carbon(dataset_url,
+                                                               key=key,
+                                                               secret=secret,
+                                                               endpoint=endpoint,
+                                                               proxy=proxy,
+                                                               proxy_port=proxy_port,
+                                                               filesystem=filesystem)
+    warnings.warn('Please use make_carbon_reader (instead of \'make_batch_carbon_reader\' function to read this dataset '
+                  'as it contains unischema file.')
+  except PycarbonMetadataError:
+    pass
+
   if cache_type is None or cache_type == 'null':
     cache = NullCache()
   elif cache_type == 'local-disk':
@@ -456,17 +471,38 @@ class CarbonDataReader(object):
     # 3. Create a blocklet ventilator object
     normalized_shuffle_row_drop_partitions = \
       self._normalize_shuffle_options(shuffle_row_drop_partitions, self.carbon_dataset)
-    ventilator = self._create_ventilator(filtered_blocklet_indexes, shuffle_blocklets,
+    self.ventilator = self._create_ventilator(filtered_blocklet_indexes, shuffle_blocklets,
                                          normalized_shuffle_row_drop_partitions, num_epochs, worker_predicate,
                                          self._workers_pool.workers_count + _VENTILATE_EXTRA_BLOCKLETS)
 
     # 4. Start workers pool
     self._workers_pool.start(worker_class, (pyarrow_filesystem, dataset_path, storage_schema, self.ngram,
                                             self.carbon_dataset.pieces, cache, transform_spec),
-                             ventilator=ventilator)
+                             ventilator=self.ventilator)
     logger.debug('Workers pool started')
 
     self.last_row_consumed = False
+
+  def reset(self):
+    """Resets ``Reader`` state and allows to fetch more samples once the ``Reader`` finished reading all epochs,
+    as specified by the ``num_epochs`` parameter.
+
+    Once all samples were read from a reader, an attempt to fetch new sample (e.g. ``next(reader)`` would raise
+    ``StopIterationError``. You can reset the reader to the original state and restart reading samples
+    calling ``reset()``.
+
+    We do not support calling ``reset()`` until all samples were consumed. ``NotImplementedError``
+    will be raised if a user attempt to do so.
+
+    Calling reset after ``stop()`` was called has no effect.
+
+    :return: None
+    """
+    if not self.last_row_consumed:
+      raise NotImplementedError('Currently do not support resetting a reader while in the middle of iteration. '
+                                'You can call reset only after all samples were consumed.')
+    self.last_row_consumed = False
+    self.ventilator.reset()
 
   @property
   def batched_output(self):

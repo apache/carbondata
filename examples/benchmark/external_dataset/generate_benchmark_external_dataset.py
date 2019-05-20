@@ -37,7 +37,7 @@ def row_generator(x):
   return Row(id=x, value1=random.randint(-255, 255), value2=random.randint(-255, 255))
 
 
-def generate_benchmark_dataset(output_url='file:///tmp/benchmark_dataset'):
+def generate_benchmark_dataset(output_url='file:///tmp/benchmark_external_dataset'):
   # """Creates an example dataset at output_url in Carbon format"""
   spark = SparkSession.builder \
     .master('local') \

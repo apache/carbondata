@@ -21,43 +21,23 @@ from __future__ import division, print_function
 
 import time
 import argparse
-
 import jnius_config
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.carbon_reader import make_batch_carbon_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
-from examples.benchmark.generate_benchmark_dataset_carbon import ROW_COUNT
+from examples.benchmark.external_dataset.generate_benchmark_external_dataset import ROW_COUNT
 
 
-def just_read(dataset_url='file:///tmp/benchmark_dataset'):
-  with make_carbon_reader(dataset_url, num_epochs=1) as train_reader:
+def just_read_batch_obs(dataset_url, key, secret, endpoint):
+  with make_batch_carbon_reader(dataset_url, key=key, secret=secret, endpoint=endpoint, num_epochs=1,
+                                workers_count=16) as train_reader:
     i = 0
-    start = time.time()
     for schema_view in train_reader:
-      schema_view.id
-      i += 1
-      if i % ROW_COUNT == 0:
-        end = time.time()
-        print("time is " + str(end - start))
-        start = end
+      i += len(schema_view.id)
     print(i)
 
-
-def just_read_batch(dataset_url='file:///tmp/benchmark_dataset'):
-  with make_batch_carbon_reader(dataset_url, num_epochs=1) as train_reader:
-    i = 0
-    start = time.time()
-    for schema_view in train_reader:
-      for j in range(len(schema_view.id)):
-        schema_view.id[j]
-        i += 1
-        if i % ROW_COUNT == 0:
-          end = time.time()
-          print("time is " + str(end - start))
-          start = end
-
-    print(i)
+    assert i == ROW_COUNT
 
 
 def main():
@@ -74,9 +54,11 @@ def main():
   print("Start")
   start = time.time()
 
-  just_read()
+  key = "OF0FTHGASIHDTRYHBCWU"
+  secret = "fWWjJwh89NFaMDPrFdhu68Umus4vftlIzcNuXvwV"
+  endpoint = "http://obs.cn-north-5.myhuaweicloud.com"
 
-  just_read_batch()
+  just_read_batch_obs("s3a://modelarts-carbon/test/benchmark_external_dataset/", key, secret, endpoint)
 
   end = time.time()
   print("all time: " + str(end - start))

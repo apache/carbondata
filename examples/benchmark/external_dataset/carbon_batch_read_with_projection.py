@@ -24,36 +24,22 @@ import time
 import argparse
 import jnius_config
 
-from petastorm.predicates import in_set
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.carbon_reader import make_batch_carbon_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
+from examples.benchmark.external_dataset.generate_benchmark_external_dataset import ROW_COUNT
 
 
-def just_read(dataset_url='file:///tmp/benchmark_dataset'):
-  values = [5]
-  predicate = in_set(values, "id")
-
-  with make_carbon_reader(dataset_url, num_epochs=1, workers_count=16,
-                          predicate=predicate) as train_reader:
-    i = 0
-    for schema_view in train_reader:
-      assert schema_view.id == 5
-      i += 1
-    assert i == 1
-    print(i)
-
-
-def just_read_batch(dataset_url='file:///tmp/benchmark_dataset'):
-  values = [5]
-  predicate = in_set(values, "id")
+def just_read_batch(dataset_url='file:///tmp/benchmark_external_dataset'):
   with make_batch_carbon_reader(dataset_url, num_epochs=1, workers_count=16,
-                                predicate=predicate) as train_reader:
+                                schema_fields=["id", "value1"]) as train_reader:
     i = 0
     for schema_view in train_reader:
-      assert schema_view.id == 5
+      assert len(schema_view) == 2
+      assert schema_view._fields == ('id', 'value1')
       i += len(schema_view.id)
-    print(i)
+    assert i == ROW_COUNT
+    return i
 
 
 def main():
@@ -70,9 +56,7 @@ def main():
   print("Start")
   start = time.time()
 
-  just_read()
-
-  # just_read_batch()
+  just_read_batch()
 
   end = time.time()
   print("all time: " + str(end - start))
