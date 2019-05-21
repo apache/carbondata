@@ -42,8 +42,8 @@ class MVRewriteTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists data_table_mv")
     sql(s"""create datamap data_table_mv using 'mv' as
            	           | SELECT STARTTIME,LAYER4ID,
-           	           | COALESCE (SUM(seq),0) AS seq_c,
-           	           | COALESCE (SUM(succ),0)  AS succ_c
+           	           |  SUM(seq) AS seq_c,
+           	           |  SUM(succ)  AS succ_c
            	           | FROM data_table
            	           | GROUP BY STARTTIME,LAYER4ID""".stripMargin)
 
