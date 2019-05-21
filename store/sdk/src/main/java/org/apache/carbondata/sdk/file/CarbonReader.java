@@ -29,6 +29,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
+import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 
 
@@ -77,9 +78,14 @@ public class CarbonReader<T> {
         // no more readers
         return false;
       } else {
-        index++;
         // current reader is closed
         currentReader.close();
+        // no need to keep a reference to CarbonVectorizedRecordReader,
+        // until all the readers are processed.
+        // If readers count is very high,
+        // we get OOM as GC not happened for any of the content in CarbonVectorizedRecordReader
+        readers.set(index,null);
+        index++;
         currentReader = readers.get(index);
         return currentReader.nextKeyValue();
       }
@@ -144,7 +150,16 @@ public class CarbonReader<T> {
 
   /**
    * Return a new {@link CarbonReaderBuilder} instance
-   * Default value of table name is table + tablePath + time
+   *
+   * @param inputSplit CarbonInputSplit Object
+   * @return CarbonReaderBuilder object
+   */
+  public static CarbonReaderBuilder builder(InputSplit inputSplit) {
+    return new CarbonReaderBuilder(inputSplit);
+  }
+
+  /**
+   * Return a new {@link CarbonReaderBuilder} instance
    *
    * @param tablePath table path
    * @return CarbonReaderBuilder object

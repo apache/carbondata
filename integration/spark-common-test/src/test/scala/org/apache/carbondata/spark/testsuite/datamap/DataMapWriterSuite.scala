@@ -47,8 +47,6 @@ class C2DataMapFactory(
 
   override def fireEvent(event: Event): Unit = ???
 
-  override def clear(segment: Segment): Unit = {}
-
   override def clear(): Unit = {}
 
   override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = ???
@@ -62,7 +60,7 @@ class C2DataMapFactory(
     new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema), List(ExpressionType.EQUALS).asJava)
 
   /**
-   * Get all distributable objects of a segmentid
+   * Get all distributable objects of a segmentId
    *
    * @return
    */

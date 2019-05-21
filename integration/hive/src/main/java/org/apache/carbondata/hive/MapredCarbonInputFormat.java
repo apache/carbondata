@@ -133,7 +133,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     try {
       queryModel = getQueryModel(jobConf, path);
     } catch (InvalidConfigurationException e) {
-      LOGGER.error("Failed to create record reader: " + e.getMessage());
+      LOGGER.error("Failed to create record reader: " + e.getMessage(), e);
       return null;
     }
     CarbonReadSupport<ArrayWritable> readSupport = new CarbonDictionaryDecodeReadSupport<>();

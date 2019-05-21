@@ -314,7 +314,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     try {
       fileReader.finish();
     } catch (IOException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
     }
   }
 

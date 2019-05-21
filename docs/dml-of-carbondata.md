@@ -35,10 +35,13 @@ CarbonData DML statements are documented here,which includes:
   This command is used to load csv files to carbondata, OPTIONS are not mandatory for data loading process. 
 
   ```
-  LOAD DATA [LOCAL] INPATH 'folder_path' 
+  LOAD DATA INPATH 'folder_path'
   INTO TABLE [db_name.]table_name 
   OPTIONS(property_name=property_value, ...)
   ```
+  **NOTE**:
+    * Use 'file://' prefix to indicate local input files path, but it just supports local mode.
+    * If run on cluster mode, please upload all input files to distributed file system, for example 'hdfs://' for hdfs.
 
   **Supported Properties:**
 
@@ -232,7 +235,7 @@ CarbonData DML statements are documented here,which includes:
    Example:
 
    ```
-   LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
+   LOAD DATA inpath '/opt/rawdata/data.csv' INTO table carbontable
    options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
    'HEADER'='false',
    'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,
@@ -350,17 +353,19 @@ CarbonData DML statements are documented here,which includes:
   This command allows you to load data using static partition.
 
   ```
-  LOAD DATA [LOCAL] INPATH 'folder_path' 
+  LOAD DATA INPATH 'folder_path'
   INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
-  OPTIONS(property_name=property_value, ...)    
-  INSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) <SELECT STATEMENT>
+  OPTIONS(property_name=property_value, ...)
+
+  INSERT INTO TABLE [db_name.]table_name PARTITION (partition_spec) <SELECT STATEMENT>
   ```
 
   Example:
   ```
-  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.csv'
+  LOAD DATA INPATH '${env:HOME}/staticinput.csv'
   INTO TABLE locationTable
-  PARTITION (country = 'US', state = 'CA')  
+  PARTITION (country = 'US', state = 'CA')
+
   INSERT INTO TABLE locationTable
   PARTITION (country = 'US', state = 'AL')
   SELECT <columns list excluding partition columns> FROM another_user
@@ -372,8 +377,9 @@ CarbonData DML statements are documented here,which includes:
 
   Example:
   ```
-  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.csv'
-  INTO TABLE locationTable          
+  LOAD DATA INPATH '${env:HOME}/staticinput.csv'
+  INTO TABLE locationTable
+
   INSERT INTO TABLE locationTable
   SELECT <columns list excluding partition columns> FROM another_user
   ```

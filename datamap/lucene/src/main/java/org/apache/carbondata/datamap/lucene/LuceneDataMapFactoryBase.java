@@ -209,7 +209,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   }
 
   /**
-   * Get all distributable objects of a segmentid
+   * Get all distributable objects of a segmentId
    */
   @Override
   public List<DataMapDistributable> toDistributable(Segment segment) {
@@ -221,6 +221,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
         DataMapDistributable luceneDataMapDistributable =
             new LuceneDataMapDistributable(tableIdentifier.getTablePath(),
                 indexDir.getAbsolutePath());
+        luceneDataMapDistributable.setSegment(segment);
+        luceneDataMapDistributable.setDataMapSchema(getDataMapSchema());
         lstDataMapDistribute.add(luceneDataMapDistributable);
       }
       return lstDataMapDistribute;
@@ -234,6 +236,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
       DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
           CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segment.getSegmentNo()),
           indexDir.getAbsolutePath());
+      luceneDataMapDistributable.setSegment(segment);
+      luceneDataMapDistributable.setDataMapSchema(getDataMapSchema());
       lstDataMapDistribute.add(luceneDataMapDistributable);
     }
     return lstDataMapDistribute;
@@ -241,14 +245,6 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
 
   @Override
   public void fireEvent(Event event) {
-
-  }
-
-  /**
-   * Clears datamap of the segment
-   */
-  @Override
-  public void clear(Segment segment) {
 
   }
 
@@ -262,8 +258,11 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
 
   @Override
   public void deleteDatamapData(Segment segment) throws IOException {
+    deleteSegmentDatamapData(segment.getSegmentNo());
+  }
+
+  @Override public void deleteSegmentDatamapData(String segmentId) throws IOException {
     try {
-      String segmentId = segment.getSegmentNo();
       String datamapPath = CarbonTablePath
           .getDataMapStorePath(tableIdentifier.getTablePath(), segmentId, dataMapName);
       if (FileFactory.isFileExist(datamapPath)) {

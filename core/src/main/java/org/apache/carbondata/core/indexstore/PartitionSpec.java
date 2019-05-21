@@ -16,19 +16,24 @@
  */
 package org.apache.carbondata.core.indexstore;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Writable;
 
 /**
  * Holds partition information.
  */
-public class PartitionSpec implements Serializable {
+public class PartitionSpec implements Serializable, Writable {
 
   private static final long serialVersionUID = 4828007433384867678L;
 
@@ -42,6 +47,10 @@ public class PartitionSpec implements Serializable {
   private String location;
 
   private String uuid;
+
+  public PartitionSpec() {
+
+  }
 
   public PartitionSpec(List<String> partitions, String location) {
     this.partitions = partitions;
@@ -89,4 +98,45 @@ public class PartitionSpec implements Serializable {
     return "PartitionSpec{" + "partitions=" + partitions + ", locationPath=" + locationPath
         + ", location='" + location + '\'' + '}';
   }
+
+  @Override public void write(DataOutput out) throws IOException {
+    if (partitions == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      out.writeInt(partitions.size());
+      for (String partition : partitions) {
+        out.writeUTF(partition);
+      }
+    }
+    if (uuid == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      out.writeUTF(uuid);
+    }
+    if (location == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      out.writeUTF(location);
+    }
+  }
+
+  @Override public void readFields(DataInput in) throws IOException {
+    if (in.readBoolean()) {
+      int numPartitions = in.readInt();
+      partitions = new ArrayList<>(numPartitions);
+      for (int i = 0; i < numPartitions; i++) {
+        partitions.add(in.readUTF());
+      }
+    }
+    if (in.readBoolean()) {
+      uuid = in.readUTF();
+    }
+    if (in.readBoolean()) {
+      location = in.readUTF();
+    }
+  }
+
 }

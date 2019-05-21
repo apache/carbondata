@@ -39,7 +39,7 @@ import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -58,7 +58,7 @@ import org.apache.carbondata.streaming.parser.FieldConverter
 
 object CarbonScalaUtil {
 
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  private val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def getString(value: Any,
       serializationNullFormat: String,
@@ -648,12 +648,21 @@ object CarbonScalaUtil {
                      !x.dataType.get.equalsIgnoreCase("STRUCT") &&
                      !x.dataType.get.equalsIgnoreCase("MAP") &&
                      !x.dataType.get.equalsIgnoreCase("ARRAY"))) {
-        val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
-                       dictColm.trim +
-                       " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_COLUMN" +
-                       " should be no dictionary string/complex/varchar datatype column." +
-                       "Please check the DDL."
-        throw new MalformedCarbonCommandException(errorMsg)
+        if (fields.exists(x => x.column.equalsIgnoreCase(dictColm)
+                && x.dataType.get.equalsIgnoreCase("BINARY"))
+                && tableProperties.get("local_dictionary_exclude").nonEmpty
+                && tableProperties.get("local_dictionary_exclude").get.contains(dictColm)
+                && (tableProperties.get("local_dictionary_include").isEmpty
+                || (!tableProperties.get("local_dictionary_include").get.contains(dictColm)))) {
+          LOGGER.info("Local_dictionary_exclude supports binary")
+        } else {
+          val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
+                  dictColm.trim +
+                  " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_COLUMN" +
+                  " should be no dictionary string/complex/varchar datatype column." +
+                  "Please check the DDL."
+          throw new MalformedCarbonCommandException(errorMsg)
+        }
       }
     }
 
@@ -689,6 +698,13 @@ object CarbonScalaUtil {
     newColumnSchemas ++= columnSchemas.filter(columnSchema => columnSchema.isSortColumn)
     newColumnSchemas ++= columnSchemas.filterNot(columnSchema => columnSchema.isSortColumn)
     newColumnSchemas
+  }
+
+  def logTime[T](f: => T): (T, Long) = {
+    val startTime = System.currentTimeMillis()
+    val response = f
+    val endTime = System.currentTimeMillis() - startTime
+    (response, endTime)
   }
 
 }

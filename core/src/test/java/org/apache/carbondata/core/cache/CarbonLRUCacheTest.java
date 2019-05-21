@@ -60,6 +60,13 @@ public class CarbonLRUCacheTest {
     assertNull(carbonLRUCache.get("Column2"));
   }
 
+  @Test public void testBiggerThanMaxSizeConfiguration() {
+    CarbonLRUCache carbonLRUCacheForConfig =
+            new CarbonLRUCache("prop2", "200000");//200GB
+    assertTrue(carbonLRUCacheForConfig.put("Column1", cacheable, 10L));
+    assertFalse(carbonLRUCacheForConfig.put("Column2", cacheable, 107374182400L));//100GB
+  }
+
   @AfterClass public static void cleanUp() {
     carbonLRUCache.clear();
     assertNull(carbonLRUCache.get("Column1"));

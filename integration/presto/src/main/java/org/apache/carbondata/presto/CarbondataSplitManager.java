@@ -143,7 +143,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
         cSplits.add(new HiveSplit(schemaTableName.getSchemaName(), schemaTableName.getTableName(),
             schemaTableName.getTableName(), "", 0, 0, 0, properties, new ArrayList(),
             getHostAddresses(split.getLocations()), OptionalInt.empty(), false, predicate,
-            new HashMap<>(), Optional.empty()));
+            new HashMap<>(), Optional.empty(), false));
       }
 
       statisticRecorder.logStatisticsAsTableDriver();

@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.indexstore;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.UnsafeDataMapRow;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
@@ -52,7 +53,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     this.allocatedSize = capacity;
     this.memoryBlock =
         UnsafeMemoryManager.allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, allocatedSize);
-    this.pointers = new int[1000];
+    this.pointers = new int[100];
   }
 
   /**
@@ -66,7 +67,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
       increaseMemory(runningLength + rowSize);
     }
     if (this.pointers.length <= rowCount + 1) {
-      int[] newPointer = new int[pointers.length + 1000];
+      int[] newPointer = new int[pointers.length + 100];
       System.arraycopy(pointers, 0, newPointer, 0, pointers.length);
       this.pointers = newPointer;
     }
@@ -84,9 +85,33 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
   /**
    * Add the index row to unsafe.
+   * Below format is used to store data in memory block
+   * WRITE:
+   * <FD><FD><FD><VO><VO><VO><LO><VD><VD><VD>
+   * FD: Fixed Column data
+   * VO: Variable column data offset
+   * VD: Variable column data
+   * LO: Last Offset
+   *
+   * Read:
+   * FD: Read directly based of byte postion added in CarbonRowSchema
+   *
+   * VD: Read based on below logic
+   * if not last variable column schema
+   * X = read actual variable column offset based on byte postion added in CarbonRowSchema
+   * Y = read next variable column offset (next 4 bytes)
+   * get the length
+   * len  = (X-Y)
+   * read data from offset X of size len
+   *
+   * if last variable column
+   * X = read actual variable column offset based on byte postion added in CarbonRowSchema
+   * Y = read last offset (next 4 bytes)
+   * get the length
+   * len  = (X-Y)
+   * read data from offset X of size len
    *
    * @param indexRow
-   * @return
    */
   public void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow) throws MemoryException {
     // First calculate the required memory to keep the row in unsafe
@@ -94,88 +119,122 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     // Check whether allocated memory is sufficient or not.
     ensureSize(rowSize);
     int pointer = runningLength;
-
+    int bytePosition = 0;
     for (int i = 0; i < schema.length; i++) {
-      addToUnsafe(schema[i], indexRow, i);
+      switch (schema[i].getSchemaType()) {
+        case STRUCT:
+          CarbonRowSchema[] childSchemas =
+              ((CarbonRowSchema.StructCarbonRowSchema) schema[i]).getChildSchemas();
+          for (int j = 0; j < childSchemas.length; j++) {
+            if (childSchemas[j].getBytePosition() > bytePosition) {
+              bytePosition = childSchemas[j].getBytePosition();
+            }
+          }
+          break;
+        default:
+          if (schema[i].getBytePosition() > bytePosition) {
+            bytePosition = schema[i].getBytePosition();
+          }
+      }
     }
+    // byte position of Last offset
+    bytePosition += CarbonCommonConstants.INT_SIZE_IN_BYTE;
+    // start byte position of variable length data
+    int varColPosition = bytePosition + CarbonCommonConstants.INT_SIZE_IN_BYTE;
+    // current position refers to current byte postion in memory block
+    int currentPosition;
+    for (int i = 0; i < schema.length; i++) {
+      switch (schema[i].getSchemaType()) {
+        case STRUCT:
+          CarbonRowSchema[] childSchemas =
+              ((CarbonRowSchema.StructCarbonRowSchema) schema[i]).getChildSchemas();
+          DataMapRow row = indexRow.getRow(i);
+          for (int j = 0; j < childSchemas.length; j++) {
+            currentPosition = addToUnsafe(childSchemas[j], row, j, pointer, varColPosition);
+            if (currentPosition > 0) {
+              varColPosition = currentPosition;
+            }
+          }
+          break;
+        default:
+          currentPosition = addToUnsafe(schema[i], indexRow, i, pointer, varColPosition);
+          if (currentPosition > 0) {
+            varColPosition = currentPosition;
+          }
+          break;
+      }
+    }
+    // writting the last offset
+    getUnsafe()
+        .putInt(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + pointer + bytePosition,
+            varColPosition);
+    // after adding last offset increament the length by 4 bytes as last postion
+    // written as INT
+    runningLength += CarbonCommonConstants.INT_SIZE_IN_BYTE;
     pointers[rowCount++] = pointer;
   }
 
-  private void addToUnsafe(CarbonRowSchema schema, DataMapRow row, int index) {
+  private int addToUnsafe(CarbonRowSchema schema, DataMapRow row, int index, int startOffset,
+      int varPosition) {
     switch (schema.getSchemaType()) {
       case FIXED:
         DataType dataType = schema.getDataType();
         if (dataType == DataTypes.BYTE) {
-          getUnsafe()
-              .putByte(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                  row.getByte(index));
+          getUnsafe().putByte(memoryBlock.getBaseObject(),
+              memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(),
+              row.getByte(index));
           runningLength += row.getSizeInBytes(index);
         } else if (dataType == DataTypes.BOOLEAN) {
-          getUnsafe()
-              .putBoolean(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                  row.getBoolean(index));
+          getUnsafe().putBoolean(memoryBlock.getBaseObject(),
+              memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(),
+              row.getBoolean(index));
           runningLength += row.getSizeInBytes(index);
         } else if (dataType == DataTypes.SHORT) {
-          getUnsafe()
-              .putShort(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                  row.getShort(index));
+          getUnsafe().putShort(memoryBlock.getBaseObject(),
+              memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(),
+              row.getShort(index));
           runningLength += row.getSizeInBytes(index);
         } else if (dataType == DataTypes.INT) {
-          getUnsafe()
-              .putInt(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                  row.getInt(index));
+          getUnsafe().putInt(memoryBlock.getBaseObject(),
+              memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(),
+              row.getInt(index));
           runningLength += row.getSizeInBytes(index);
         } else if (dataType == DataTypes.LONG) {
-          getUnsafe()
-              .putLong(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                  row.getLong(index));
+          getUnsafe().putLong(memoryBlock.getBaseObject(),
+              memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(),
+              row.getLong(index));
           runningLength += row.getSizeInBytes(index);
         } else if (dataType == DataTypes.FLOAT) {
-          getUnsafe()
-              .putFloat(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                  row.getFloat(index));
+          getUnsafe().putFloat(memoryBlock.getBaseObject(),
+              memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(),
+              row.getFloat(index));
           runningLength += row.getSizeInBytes(index);
         } else if (dataType == DataTypes.DOUBLE) {
-          getUnsafe()
-              .putDouble(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                  row.getDouble(index));
+          getUnsafe().putDouble(memoryBlock.getBaseObject(),
+              memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(),
+              row.getDouble(index));
           runningLength += row.getSizeInBytes(index);
         } else if (dataType == DataTypes.BYTE_ARRAY) {
           byte[] data = row.getByteArray(index);
           getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
-              memoryBlock.getBaseOffset() + runningLength, data.length);
+              memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(), data.length);
           runningLength += row.getSizeInBytes(index);
         } else {
           throw new UnsupportedOperationException(
               "unsupported data type for unsafe storage: " + schema.getDataType());
         }
-        break;
+        return 0;
       case VARIABLE_SHORT:
-        byte[] data = row.getByteArray(index);
-        getUnsafe().putShort(memoryBlock.getBaseObject(),
-            memoryBlock.getBaseOffset() + runningLength, (short) data.length);
-        runningLength += 2;
-        getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
-            memoryBlock.getBaseOffset() + runningLength, data.length);
-        runningLength += data.length;
-        break;
       case VARIABLE_INT:
-        byte[] data2 = row.getByteArray(index);
+        byte[] data = row.getByteArray(index);
         getUnsafe().putInt(memoryBlock.getBaseObject(),
-            memoryBlock.getBaseOffset() + runningLength, data2.length);
+            memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(), varPosition);
         runningLength += 4;
-        getUnsafe().copyMemory(data2, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
-            memoryBlock.getBaseOffset() + runningLength, data2.length);
-        runningLength += data2.length;
-        break;
-      case STRUCT:
-        CarbonRowSchema[] childSchemas =
-            ((CarbonRowSchema.StructCarbonRowSchema) schema).getChildSchemas();
-        DataMapRow struct = row.getRow(index);
-        for (int i = 0; i < childSchemas.length; i++) {
-          addToUnsafe(childSchemas[i], struct, i);
-        }
-        break;
+        getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
+            memoryBlock.getBaseOffset() + startOffset + varPosition, data.length);
+        runningLength += data.length;
+        varPosition += data.length;
+        return varPosition;
       default:
         throw new UnsupportedOperationException(
             "unsupported data type for unsafe storage: " + schema.getDataType());

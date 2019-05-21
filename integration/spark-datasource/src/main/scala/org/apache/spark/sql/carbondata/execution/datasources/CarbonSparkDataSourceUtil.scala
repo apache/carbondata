@@ -63,6 +63,7 @@ object CarbonSparkDataSourceUtil {
         case CarbonDataTypes.FLOAT => FloatType
         case CarbonDataTypes.BOOLEAN => BooleanType
         case CarbonDataTypes.TIMESTAMP => TimestampType
+        case CarbonDataTypes.BINARY => BinaryType
         case CarbonDataTypes.DATE => DateType
         case CarbonDataTypes.VARCHAR => StringType
       }
@@ -84,6 +85,7 @@ object CarbonSparkDataSourceUtil {
       case DateType => CarbonDataTypes.DATE
       case BooleanType => CarbonDataTypes.BOOLEAN
       case TimestampType => CarbonDataTypes.TIMESTAMP
+      case BinaryType => CarbonDataTypes.BINARY
       case ArrayType(elementType, _) =>
         CarbonDataTypes.createArrayType(convertSparkToCarbonDataType(elementType))
       case StructType(fields) =>
@@ -195,7 +197,13 @@ object CarbonSparkDataSourceUtil {
       } else {
         dataTypeOfAttribute
       }
-      new CarbonLiteralExpression(value, dataType)
+      val dataValue = if (dataTypeOfAttribute.equals(CarbonDataTypes.BINARY)
+              && Option(value).isDefined) {
+        new String(value.asInstanceOf[Array[Byte]])
+      } else {
+        value
+      }
+      new CarbonLiteralExpression(dataValue, dataType)
     }
 
     createFilter(predicate)
@@ -228,6 +236,10 @@ object CarbonSparkDataSourceUtil {
     val blockletSize = options.get("table_blockletsize").map(_.toInt)
     if (blockletSize.isDefined) {
       builder.withBlockletSize(blockletSize.get)
+    }
+    val pageSizeInMb = options.get("table_page_size_inmb").map(_.toInt)
+    if (pageSizeInMb.isDefined) {
+      builder.withPageSizeInMb(pageSizeInMb.get)
     }
     builder.enableLocalDictionary(options.getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
       CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT).toBoolean)

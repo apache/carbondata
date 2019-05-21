@@ -50,6 +50,12 @@ public class TableSpec {
 
   private CarbonTable carbonTable;
 
+  private boolean isUpdateDictDim;
+
+  private boolean isUpdateNoDictDims;
+  private int[] dictDimActualPosition;
+  private int[] noDictDimActualPosition;
+
   public TableSpec(CarbonTable carbonTable) {
     this.carbonTable = carbonTable;
     List<CarbonDimension> dimensions =
@@ -71,30 +77,76 @@ public class TableSpec {
   }
 
   private void addDimensions(List<CarbonDimension> dimensions) {
+    List<DimensionSpec> dictSortDimSpec = new ArrayList<>();
+    List<DimensionSpec> noSortDictDimSpec = new ArrayList<>();
+    List<DimensionSpec> noSortNoDictDimSpec = new ArrayList<>();
+    List<DimensionSpec> noDictSortDimSpec = new ArrayList<>();
+    List<DimensionSpec> dictDimensionSpec = new ArrayList<>();
     int dimIndex = 0;
+    DimensionSpec spec;
+    short dictActualPosition = 0;
+    short noDictActualPosition = 0;
+    // sort step's output is based on sort column order i.e sort columns data will be present
+    // ahead of non sort columns, so table spec also need to add dimension spec in same manner
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
       if (dimension.isComplex()) {
-        DimensionSpec spec = new DimensionSpec(ColumnType.COMPLEX, dimension);
+        spec = new DimensionSpec(ColumnType.COMPLEX, dimension, noDictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
         noDictionaryDimensionSpec.add(spec);
+        noSortNoDictDimSpec.add(spec);
       } else if (dimension.getDataType() == DataTypes.TIMESTAMP && !dimension
           .isDirectDictionaryEncoding()) {
-        DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
+        spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, noDictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
         noDictionaryDimensionSpec.add(spec);
+        if (dimension.isSortColumn()) {
+          noDictSortDimSpec.add(spec);
+        } else {
+          noSortNoDictDimSpec.add(spec);
+        }
       } else if (dimension.isDirectDictionaryEncoding()) {
-        DimensionSpec spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension);
+        spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension, dictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
+        dictDimensionSpec.add(spec);
+        if (dimension.isSortColumn()) {
+          dictSortDimSpec.add(spec);
+        } else {
+          noSortDictDimSpec.add(spec);
+        }
       } else if (dimension.isGlobalDictionaryEncoding()) {
-        DimensionSpec spec = new DimensionSpec(ColumnType.GLOBAL_DICTIONARY, dimension);
+        spec = new DimensionSpec(ColumnType.GLOBAL_DICTIONARY, dimension, dictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
+        dictDimensionSpec.add(spec);
+        if (dimension.isSortColumn()) {
+          dictSortDimSpec.add(spec);
+        } else {
+          noSortDictDimSpec.add(spec);
+        }
       } else {
-        DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
+        spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, noDictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
         noDictionaryDimensionSpec.add(spec);
+        if (dimension.isSortColumn()) {
+          noDictSortDimSpec.add(spec);
+        } else {
+          noSortNoDictDimSpec.add(spec);
+        }
       }
     }
+    noDictSortDimSpec.addAll(noSortNoDictDimSpec);
+    dictSortDimSpec.addAll(noSortDictDimSpec);
+
+    this.dictDimActualPosition = new int[dictSortDimSpec.size()];
+    this.noDictDimActualPosition = new int[noDictSortDimSpec.size()];
+    for (int i = 0; i < dictDimActualPosition.length; i++) {
+      dictDimActualPosition[i] = dictSortDimSpec.get(i).getActualPostion();
+    }
+    for (int i = 0; i < noDictDimActualPosition.length; i++) {
+      noDictDimActualPosition[i] = noDictSortDimSpec.get(i).getActualPostion();
+    }
+    isUpdateNoDictDims = !noDictSortDimSpec.equals(noDictionaryDimensionSpec);
+    isUpdateDictDim = !dictSortDimSpec.equals(dictDimensionSpec);
   }
 
   private void addMeasures(List<CarbonMeasure> measures) {
@@ -102,6 +154,22 @@ public class TableSpec {
       CarbonMeasure measure = measures.get(i);
       measureSpec[i] = new MeasureSpec(measure.getColName(), measure.getDataType());
     }
+  }
+
+  public int[] getDictDimActualPosition() {
+    return dictDimActualPosition;
+  }
+
+  public int[] getNoDictDimActualPosition() {
+    return noDictDimActualPosition;
+  }
+
+  public boolean isUpdateDictDim() {
+    return isUpdateDictDim;
+  }
+
+  public boolean isUpdateNoDictDims() {
+    return isUpdateNoDictDims;
   }
 
   /**
@@ -255,10 +323,13 @@ public class TableSpec {
     // indicate whether this dimension need to do inverted index
     private boolean doInvertedIndex;
 
-    DimensionSpec(ColumnType columnType, CarbonDimension dimension) {
+    // indicate the actual postion in blocklet
+    private short actualPostion;
+    DimensionSpec(ColumnType columnType, CarbonDimension dimension, short actualPostion) {
       super(dimension.getColName(), dimension.getDataType(), columnType);
       this.inSortColumns = dimension.isSortColumn();
       this.doInvertedIndex = dimension.isUseInvertedIndex();
+      this.actualPostion = actualPostion;
     }
 
     public boolean isInSortColumns() {
@@ -269,6 +340,9 @@ public class TableSpec {
       return doInvertedIndex;
     }
 
+    public short getActualPostion() {
+      return actualPostion;
+    }
     @Override
     public void write(DataOutput out) throws IOException {
       super.write(out);

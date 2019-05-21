@@ -344,7 +344,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
             byte[] value = null;
             if (isDirectDictionary) {
               int surrogateKey;
-              if (!(input instanceof Long)) {
+              if (!(input instanceof Long) && !(input instanceof Integer)) {
                 SimpleDateFormat parser = new SimpleDateFormat(getDateFormat(carbonDimension));
                 parser.parse(parsedValue);
               }
@@ -353,6 +353,11 @@ public class PrimitiveDataType implements GenericDataType<Object> {
               // using dictionaryGenerator.
               if (dictionaryGenerator instanceof DirectDictionary && input instanceof Long) {
                 surrogateKey = ((DirectDictionary) dictionaryGenerator).generateKey((long) input);
+              } else if (dictionaryGenerator instanceof DirectDictionary
+                  && input instanceof Integer) {
+                // In case of file format, for complex type date or time type, input data comes as a
+                // Integer object, so just assign the surrogate key with the input object value
+                surrogateKey = (int) input;
               } else {
                 surrogateKey = dictionaryGenerator.getOrGenerateKey(parsedValue);
               }
@@ -574,6 +579,12 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     columnInfoList.add(
         new ComplexColumnInfo(ColumnType.COMPLEX_PRIMITIVE, dataType,
             name, !isDictionary));
+  }
+
+  @Override
+  public int getDepth() {
+    // primitive type has no children
+    return 1;
   }
 
 }

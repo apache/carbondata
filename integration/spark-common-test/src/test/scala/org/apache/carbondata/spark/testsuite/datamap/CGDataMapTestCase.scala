@@ -62,7 +62,7 @@ class CGDataMapFactory(
   }
 
   /**
-   * Get the datamap for segmentid
+   * Get the datamap for segmentId
    */
   override def getDataMaps(segment: Segment): java.util.List[CoarseGrainDataMap] = {
     val path = identifier.getTablePath
@@ -98,7 +98,7 @@ class CGDataMapFactory(
   }
 
   /**
-   * Get all distributable objects of a segmentid
+   * Get all distributable objects of a segmentId
    *
    * @return
    */
@@ -112,14 +112,6 @@ class CGDataMapFactory(
       val d:DataMapDistributable = new BlockletDataMapDistributable(f.getCanonicalPath)
       d
     }.toList.asJava
-  }
-
-
-  /**
-   * Clears datamap of the segment
-   */
-  override def clear(segment: Segment): Unit = {
-
   }
 
   /**

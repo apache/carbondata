@@ -138,7 +138,8 @@ public class UnsafeSortDataRows {
     CarbonDataProcessorUtil.createLocations(parameters.getTempFileLocation());
     this.dataSorterAndWriterExecutorService = Executors
         .newFixedThreadPool(parameters.getNumberOfCores(),
-            new CarbonThreadFactory("UnsafeSortDataRowPool:" + parameters.getTableName()));
+            new CarbonThreadFactory("UnsafeSortDataRowPool:" + parameters.getTableName(),
+                    true));
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 
@@ -199,21 +200,20 @@ public class UnsafeSortDataRows {
           } catch (Exception ex) {
             // row page has freed in handlePreviousPage(), so other iterator may try to access it.
             rowPage = null;
-            LOGGER.error(
-                "exception occurred while trying to acquire a semaphore lock: " + ex.getMessage());
+            LOGGER.error("exception occurred while trying to acquire a semaphore lock: "
+                + ex.getMessage(), ex);
             throw new CarbonSortKeyAndGroupByException(ex);
           }
         }
         bytesAdded += rowPage.addRow(rowBatch[i], reUsableByteArrayDataOutputStream.get());
       } catch (Exception e) {
-        if (e.getMessage().contains("cannot handle this row. create new page"))
-        {
+        if (e.getMessage().contains("cannot handle this row. create new page")) {
           rowPage.makeCanAddFail();
           // so that same rowBatch will be handled again in new page
           i--;
         } else {
           LOGGER.error(
-              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage(), e);
           throw new CarbonSortKeyAndGroupByException(e);
         }
       }
@@ -236,20 +236,19 @@ public class UnsafeSortDataRows {
           rowPage = createUnsafeRowPage();
         } catch (Exception ex) {
           rowPage = null;
-          LOGGER.error(
-              "exception occurred while trying to acquire a semaphore lock: " + ex.getMessage());
+          LOGGER.error("exception occurred while trying to acquire a semaphore lock: "
+              + ex.getMessage(), ex);
           throw new CarbonSortKeyAndGroupByException(ex);
         }
       }
       rowPage.addRow(row, reUsableByteArrayDataOutputStream.get());
     } catch (Exception e) {
-      if (e.getMessage().contains("cannot handle this row. create new page"))
-      {
+      if (e.getMessage().contains("cannot handle this row. create new page")) {
         rowPage.makeCanAddFail();
         addRow(row);
       } else {
         LOGGER.error(
-            "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+            "exception occurred while trying to acquire a semaphore lock: " + e.getMessage(), e);
         throw new CarbonSortKeyAndGroupByException(e);
       }
     }
@@ -422,7 +421,7 @@ public class UnsafeSortDataRows {
         try {
           threadStatusObserver.notifyFailed(e);
         } catch (CarbonSortKeyAndGroupByException ex) {
-          LOGGER.error(e);
+          LOGGER.error(e.getMessage(), e);
         }
       } finally {
         semaphore.release();

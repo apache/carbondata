@@ -100,25 +100,31 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
 
   public void calculateLength() {
     long total = 0;
-    if (splitList.size() > 0 && splitList.get(0).getDetailInfo() != null) {
+    if (splitList.size() > 0) {
       Map<String, Long> blockSizes = new HashMap<>();
       for (CarbonInputSplit split : splitList) {
-        blockSizes.put(split.getBlockPath(), split.getDetailInfo().getBlockSize());
+        blockSizes.put(split.getFilePath(), split.getLength());
       }
       for (Map.Entry<String, Long> entry : blockSizes.entrySet()) {
         total += entry.getValue();
-      }
-    } else {
-      for (CarbonInputSplit split : splitList) {
-        total += split.getLength();
       }
     }
     length = total;
   }
 
-  @Override
-  public String[] getLocations() {
+  @Override public String[] getLocations() {
+    getLocationIfNull();
     return locations;
+  }
+
+  private void getLocationIfNull() {
+    try {
+      if (locations == null && splitList.size() == 1) {
+        this.locations = this.splitList.get(0).getLocations();
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -128,6 +134,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
     for (CarbonInputSplit split: splitList) {
       split.write(out);
     }
+    getLocationIfNull();
     out.writeInt(locations.length);
     for (int i = 0; i < locations.length; i++) {
       out.writeUTF(locations[i]);

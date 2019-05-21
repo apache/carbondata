@@ -103,7 +103,7 @@ public class DataMapWriterListener {
     try {
       writer = factory.createWriter(new Segment(segmentId), taskNo, segmentProperties);
     } catch (IOException e) {
-      LOG.error("Failed to create DataMapWriter: " + e.getMessage());
+      LOG.error("Failed to create DataMapWriter: " + e.getMessage(), e);
       throw new DataMapWriterException(e);
     }
     if (writers != null) {

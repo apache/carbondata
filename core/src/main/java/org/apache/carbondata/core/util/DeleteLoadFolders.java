@@ -156,11 +156,7 @@ public final class DeleteLoadFolders {
                 }
               }
 
-            } else {
-              LOGGER.warn("Files are not found in segment " + path
-                  + " it seems, files are already being deleted");
             }
-
           }
           List<Segment> segments = new ArrayList<>(1);
           for (TableDataMap dataMap : indexDataMaps) {

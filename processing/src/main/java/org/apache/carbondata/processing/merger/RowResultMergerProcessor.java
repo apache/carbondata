@@ -117,8 +117,10 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
       // add all iterators to the queue
       for (RawResultIterator leaftTupleIterator : finalIteratorList) {
-        this.recordHolderHeap.add(leaftTupleIterator);
-        index++;
+        if (leaftTupleIterator.hasNext()) {
+          this.recordHolderHeap.add(leaftTupleIterator);
+          index++;
+        }
       }
       RawResultIterator iterator = null;
       while (index > 1) {
@@ -244,7 +246,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         row1 = o1.fetchConverted();
         row2 = o2.fetchConverted();
       } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage());
+        LOGGER.error(e.getMessage(), e);
       }
       if (null == row1 || null == row2) {
         return 0;

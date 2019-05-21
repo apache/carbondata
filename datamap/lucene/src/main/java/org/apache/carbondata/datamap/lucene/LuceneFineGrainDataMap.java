@@ -236,7 +236,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     } catch (ParseException e) {
       String errorMessage = String.format(
           "failed to filter block with query %s, detail is %s", strQuery, e.getMessage());
-      LOGGER.error(errorMessage);
+      LOGGER.error(errorMessage, e);
       return null;
     }
     // temporary data, delete duplicated data
@@ -262,8 +262,8 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
       } catch (IOException e) {
         String errorMessage =
             String.format("failed to search lucene data, detail is %s", e.getMessage());
-        LOGGER.error(errorMessage);
-        throw new IOException(errorMessage);
+        LOGGER.error(errorMessage, e);
+        throw new IOException(errorMessage, e);
       }
 
       ByteBuffer intBuffer = ByteBuffer.allocate(4);

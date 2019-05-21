@@ -139,7 +139,6 @@ public class CSVCarbonWriterTest {
 
   @Test
   public void testAllPrimitiveDataType() throws IOException {
-    // TODO: write all data type and read by CarbonRecordReader to verify the content
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
@@ -159,15 +158,16 @@ public class CSVCarbonWriterTest {
       CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
 
       for (int i = 0; i < 100; i++) {
-        String[] row = new String[]{
+        Object[] row = new Object[]{
             "robot" + (i % 10),
-            String.valueOf(i),
-            String.valueOf(i),
-            String.valueOf(Long.MAX_VALUE - i),
-            String.valueOf((double) i / 2),
-            String.valueOf(true),
+            i,
+            i,
+            (Long.MAX_VALUE - i),
+            ((double) i / 2),
+            true,
             "2019-03-02",
-            "2019-02-12 03:03:34"
+            "2019-02-12 03:03:34",
+            "1.234567"
         };
         writer.write(row);
       }

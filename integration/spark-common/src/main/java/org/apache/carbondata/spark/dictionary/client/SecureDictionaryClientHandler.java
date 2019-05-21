@@ -74,7 +74,7 @@ public class SecureDictionaryClientHandler extends RpcHandler {
       data.release();
       return newKey;
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -92,7 +92,7 @@ public class SecureDictionaryClientHandler extends RpcHandler {
         LOGGER.error("Failed to add key: " + key + " to queue");
       }
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw e;
     }
   }

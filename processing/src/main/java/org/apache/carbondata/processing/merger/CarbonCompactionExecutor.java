@@ -37,9 +37,12 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.scan.result.RowBatch;
+import org.apache.carbondata.core.scan.result.iterator.ColumnDriftRawResultIterator;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.IntArrayWrapper;
 import org.apache.carbondata.core.stats.QueryStatistic;
@@ -108,9 +111,10 @@ public class CarbonCompactionExecutor {
    * Map has 2 elements: UNSORTED and SORTED
    * Map(UNSORTED) = List of Iterators which yield sorted data
    * Map(Sorted) = List of Iterators which yield sorted data
+   * In Range Column compaction we will have a Filter Expression to process
    */
-  public Map<String, List<RawResultIterator>> processTableBlocks(Configuration configuration)
-      throws QueryExecutionException, IOException {
+  public Map<String, List<RawResultIterator>> processTableBlocks(Configuration configuration,
+      Expression filterExpr) throws QueryExecutionException, IOException {
 
     Map<String, List<RawResultIterator>> resultList = new HashMap<>(2);
     resultList.put(CarbonCompactionUtil.UNSORTED_IDX,
@@ -119,10 +123,16 @@ public class CarbonCompactionExecutor {
         new ArrayList<RawResultIterator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
 
     List<TableBlockInfo> tableBlockInfos = null;
-    QueryModelBuilder builder = new QueryModelBuilder(carbonTable)
-        .projectAllColumns()
-        .dataConverter(dataTypeConverter)
-        .enableForcedDetailRawQuery();
+    QueryModelBuilder builder = null;
+    if (null == filterExpr) {
+      builder =
+          new QueryModelBuilder(carbonTable).projectAllColumns().dataConverter(dataTypeConverter)
+              .enableForcedDetailRawQuery();
+    } else {
+      builder = new QueryModelBuilder(carbonTable).projectAllColumns().filterExpression(filterExpr)
+          .dataConverter(dataTypeConverter).enableForcedDetailRawQuery()
+          .convertToRangeFilter(false);
+    }
     if (enablePageLevelReaderForCompaction()) {
       builder.enableReadPageByPage();
     }
@@ -136,8 +146,7 @@ public class CarbonCompactionExecutor {
       Set<String> taskBlockListMapping = taskBlockInfo.getTaskSet();
       // Check if block needs sorting or not
       boolean sortingRequired =
-          CarbonCompactionUtil.isRestructured(listMetadata, carbonTable.getTableLastUpdatedTime())
-              || !CarbonCompactionUtil.isSorted(listMetadata.get(0));
+          !CarbonCompactionUtil.isSortedByCurrentSortColumns(carbonTable, listMetadata.get(0));
       for (String task : taskBlockListMapping) {
         tableBlockInfos = taskBlockInfo.getTableBlockInfoList(task);
         // during update there may be a chance that the cardinality may change within the segment
@@ -168,11 +177,19 @@ public class CarbonCompactionExecutor {
   private RawResultIterator getRawResultIterator(Configuration configuration, String segmentId,
       String task, List<TableBlockInfo> tableBlockInfoList)
       throws QueryExecutionException, IOException {
-    return new RawResultIterator(
-        executeBlockList(tableBlockInfoList, segmentId, task, configuration),
-        getSourceSegmentProperties(
-            Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter())),
-        destinationSegProperties, false);
+    SegmentProperties sourceSegmentProperties = getSourceSegmentProperties(
+        Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter()));
+    boolean hasColumnDrift = carbonTable.hasColumnDrift() &&
+        RestructureUtil.hasColumnDriftOnSegment(carbonTable, sourceSegmentProperties);
+    if (hasColumnDrift) {
+      return new ColumnDriftRawResultIterator(
+          executeBlockList(tableBlockInfoList, segmentId, task, configuration),
+          sourceSegmentProperties, destinationSegProperties);
+    } else {
+      return new RawResultIterator(
+          executeBlockList(tableBlockInfoList, segmentId, task, configuration),
+          sourceSegmentProperties, destinationSegProperties, true);
+    }
   }
 
   /**

@@ -377,7 +377,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
           // getting new dim index.
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
               .hasEncoding(Encoding.DICTIONARY) || currentCondExpression.getColumnList().get(0)
-              .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+              .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) || currentCondExpression
+              .isAlreadyResolved()) {
+            // In case of Range Column Dictionary Include we do not need to resolve the range
+            // expression as it is already resolved and has the surrogates in the filter value
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
                 FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())

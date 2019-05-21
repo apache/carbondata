@@ -19,7 +19,6 @@ package org.apache.spark.sql
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
@@ -64,7 +63,7 @@ case class CarbonCountStar(
           sparkSession,
           TableIdentifier(
             carbonTable.getTableName,
-            Some(carbonTable.getDatabaseName))).map(_.asJava).orNull),
+            Some(carbonTable.getDatabaseName))).map(_.asJava).orNull, false),
       carbonTable)
     val valueRaw =
       attributesRaw.head.dataType match {

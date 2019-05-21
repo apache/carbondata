@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.processing.store;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -30,7 +28,6 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
-import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
@@ -124,6 +121,8 @@ public class TablePage {
         DataType dataType = DataTypes.STRING;
         if (DataTypes.VARCHAR == spec.getSchemaDataType()) {
           dataType = DataTypes.VARCHAR;
+        } else if (DataTypes.BINARY == spec.getSchemaDataType()) {
+          dataType = DataTypes.BINARY;
         }
         ColumnPageEncoderMeta columnPageEncoderMeta =
             new ColumnPageEncoderMeta(spec, dataType, columnCompressor);
@@ -150,7 +149,7 @@ public class TablePage {
           }
         }
         // set the stats collector according to the data type of the columns
-        if (DataTypes.VARCHAR == dataType) {
+        if (DataTypes.VARCHAR == dataType || DataTypes.BINARY == dataType) {
           page.setStatsCollector(LVLongStringStatsCollector.newInstance());
         } else if (DataTypeUtil.isPrimitiveColumn(spec.getSchemaDataType())) {
           if (spec.getSchemaDataType() == DataTypes.TIMESTAMP) {
@@ -219,7 +218,7 @@ public class TablePage {
       dictDimensionPages[i].putData(rowId, keys[i]);
     }
 
-    // 2. convert noDictionary columns and complex columns and varchar columns.
+    // 2. convert noDictionary columns and complex columns and varchar, binary columns.
     int noDictionaryCount = noDictDimensionPages.length;
     int complexColumnCount = complexDimensionPages.length;
     if (noDictionaryCount > 0 || complexColumnCount > 0) {
@@ -228,8 +227,8 @@ public class TablePage {
           tableSpec.getNoDictionaryDimensionSpec();
       Object[] noDictAndComplex = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < noDictAndComplex.length; i++) {
-        if (noDictionaryDimensionSpec.get(i).getSchemaDataType()
-            == DataTypes.VARCHAR) {
+        if (noDictionaryDimensionSpec.get(i).getSchemaDataType() == DataTypes.VARCHAR
+            || noDictionaryDimensionSpec.get(i).getSchemaDataType() == DataTypes.BINARY) {
           byte[] valueWithLength = addIntLengthToByteArray((byte[]) noDictAndComplex[i]);
           noDictDimensionPages[i].putData(rowId, valueWithLength);
         } else if (i < noDictionaryCount) {
@@ -252,11 +251,11 @@ public class TablePage {
           }
         } else {
           // complex columns
-          addComplexColumn(i - noDictionaryCount, rowId, (byte[]) noDictAndComplex[i]);
+          addComplexColumn(i - noDictionaryCount, rowId,
+              (List<ArrayList<byte[]>>) noDictAndComplex[i]);
         }
       }
     }
-
     // 3. convert measure columns
     Object[] measureColumns = WriteStepRowUtil.getMeasure(row);
     for (int i = 0; i < measurePages.length; i++) {
@@ -278,14 +277,14 @@ public class TablePage {
    *
    * @param index          index of the complexDimensionPage
    * @param rowId          Id of the input row
-   * @param complexColumns byte array the complex columm to be added, extracted of input row
+   * @param encodedComplexColumnar flatten data of complex column
    */
   // TODO: this function should be refactoried, ColumnPage should support complex type encoding
   // directly instead of doing it here
-  private void addComplexColumn(int index, int rowId, byte[] complexColumns) {
+  private void addComplexColumn(int index, int rowId,
+      List<ArrayList<byte[]>> encodedComplexColumnar) {
     GenericDataType complexDataType = complexIndexMap.get(
         index + model.getPrimitiveDimLens().length);
-
     // initialize the page if first row
     if (rowId == 0) {
       List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();
@@ -298,30 +297,7 @@ public class TablePage {
         throw new RuntimeException(e);
       }
     }
-
     int depthInComplexColumn = complexDimensionPages[index].getComplexColumnIndex();
-    // this is the result columnar data which will be added to page,
-    // size of this list is the depth of complex column, we will fill it by input data
-    List<ArrayList<byte[]>> encodedComplexColumnar = new ArrayList<>(depthInComplexColumn);
-    for (int k = 0; k < depthInComplexColumn; k++) {
-      encodedComplexColumnar.add(new ArrayList<byte[]>());
-    }
-
-    // apply the complex type data and fill columnsArray
-    try {
-      ByteBuffer byteArrayInput = ByteBuffer.wrap(complexColumns);
-      ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
-      DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
-      complexDataType.parseComplexValue(byteArrayInput, dataOutputStream,
-          model.getComplexDimensionKeyGenerator());
-      complexDataType.getColumnarDataForComplexType(encodedComplexColumnar,
-          ByteBuffer.wrap(byteArrayOutput.toByteArray()));
-      byteArrayOutput.close();
-    } catch (IOException | KeyGenException e) {
-      throw new CarbonDataWriterException("Problem while bit packing and writing complex datatype",
-          e);
-    }
-
     for (int depth = 0; depth < depthInComplexColumn; depth++) {
       complexDimensionPages[index].putComplexData(depth, encodedComplexColumnar.get(depth));
     }

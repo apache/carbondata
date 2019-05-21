@@ -36,5 +36,6 @@ public class LockUsage {
   public static final String STREAMING_LOCK = "streaming.lock";
   public static final String DATAMAP_STATUS_LOCK = "datamapstatus.lock";
   public static final String CONCURRENT_LOAD_LOCK = "concurrentload.lock";
+  public static final String UPDATE_LOCK = "update.lock";
 
 }

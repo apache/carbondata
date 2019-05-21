@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
+import java.util.concurrent.{Callable, ExecutorService, Executors, Future, TimeUnit}
+
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -51,11 +53,46 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage.contains("Operation not allowed, when source table is carbon table"))
   }
 
+  test("test create table if not exist concurrently") {
+
+    val executorService: ExecutorService = Executors.newFixedThreadPool(10)
+    var futures: List[Future[_]] = List()
+    for (i <- 0 until (3)) {
+      futures = futures :+ runAsync()
+    }
+
+    executorService.shutdown();
+    executorService.awaitTermination(30L, TimeUnit.SECONDS)
+
+    futures.foreach { future =>
+      assertResult("PASS")(future.get.toString)
+    }
+
+    def runAsync(): Future[String] = {
+      executorService.submit(new Callable[String] {
+        override def call() = {
+          // Create table
+          var result = "PASS"
+          try {
+            sql("create table IF NOT EXISTS TestIfExists(name string) stored by 'carbondata'")
+          } catch {
+            case exception: Exception =>
+              result = exception.getMessage
+              exception.printStackTrace()
+          }
+          result
+        }
+      })
+    }
+  }
+
+
   override def afterAll {
     sql("use default")
     sql("drop table if exists test")
     sql("drop table if exists sourceTable")
     sql("drop table if exists targetTable")
+    sql("drop table if exists TestIfExists")
   }
 
 }

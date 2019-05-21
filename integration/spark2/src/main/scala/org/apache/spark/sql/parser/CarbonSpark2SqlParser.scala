@@ -33,11 +33,11 @@ import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
+import org.apache.spark.sql.execution.command.cache.{CarbonDropCacheCommand, CarbonShowCacheCommand}
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
@@ -77,7 +77,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    alterPartition | datamapManagement | alterTableFinishStreaming | stream | cli
+    alterPartition | datamapManagement | alterTableFinishStreaming | stream | cli | cacheManagement
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -93,6 +93,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val stream: Parser[LogicalPlan] =
     createStream | dropStream | showStreams
+
+  protected lazy val cacheManagement: Parser[LogicalPlan] =
+    showCache | dropCache
 
   protected lazy val alterAddPartition: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
@@ -494,6 +497,17 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           showHistory.isDefined)
     }
 
+  protected lazy val showCache: Parser[LogicalPlan] =
+    SHOW ~> METACACHE ~> opt(ontable) <~ opt(";") ^^ {
+      case table =>
+        CarbonShowCacheCommand(table)
+    }
+
+  protected lazy val dropCache: Parser[LogicalPlan] =
+    DROP ~> METACACHE ~> ontable <~ opt(";") ^^ {
+      case table =>
+        CarbonDropCacheCommand(table)
+    }
 
   protected lazy val cli: Parser[LogicalPlan] =
     (CARBONCLI ~> FOR ~> TABLE) ~> (ident <~ ".").? ~ ident ~

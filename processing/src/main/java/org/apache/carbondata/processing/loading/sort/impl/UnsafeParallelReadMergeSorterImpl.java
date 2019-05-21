@@ -86,7 +86,8 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
       throw new CarbonDataLoadingException(e);
     }
     this.executorService = Executors.newFixedThreadPool(iterators.length,
-        new CarbonThreadFactory("UnsafeParallelSorterPool:" + sortParameters.getTableName()));
+        new CarbonThreadFactory("UnsafeParallelSorterPool:" + sortParameters.getTableName(),
+                true));
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
 
     try {
@@ -208,7 +209,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
           }
         }
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         this.threadStatusObserver.notifyFailed(e);
       }
     }

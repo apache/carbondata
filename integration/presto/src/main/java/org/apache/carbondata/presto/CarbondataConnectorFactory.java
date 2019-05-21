@@ -29,6 +29,7 @@ import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.presto.impl.CarbonTableConfig;
 
+import com.facebook.presto.hive.HiveAnalyzeProperties;
 import com.facebook.presto.hive.HiveConnector;
 import com.facebook.presto.hive.HiveConnectorFactory;
 import com.facebook.presto.hive.HiveMetadataFactory;
@@ -86,7 +87,7 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
   private final ClassLoader classLoader;
 
   public CarbondataConnectorFactory(String connectorName, ClassLoader classLoader) {
-    super(connectorName, classLoader, null);
+    super(connectorName, classLoader, Optional.empty());
     this.classLoader = requireNonNull(classLoader, "classLoader is null");
   }
 
@@ -132,6 +133,8 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
       HiveSessionProperties hiveSessionProperties =
           injector.getInstance(HiveSessionProperties.class);
       HiveTableProperties hiveTableProperties = injector.getInstance(HiveTableProperties.class);
+      HiveAnalyzeProperties hiveAnalyzeProperties =
+          injector.getInstance(HiveAnalyzeProperties.class);
       ConnectorAccessControl accessControl =
           new PartitionsAwareAccessControl(injector.getInstance(ConnectorAccessControl.class));
       Set<Procedure> procedures = injector.getInstance(Key.get(new TypeLiteral<Set<Procedure>>() {
@@ -144,7 +147,7 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
           new ClassLoaderSafeNodePartitioningProvider(connectorDistributionProvider, classLoader),
           ImmutableSet.of(), procedures, hiveSessionProperties.getSessionProperties(),
           HiveSchemaProperties.SCHEMA_PROPERTIES, hiveTableProperties.getTableProperties(),
-          accessControl, classLoader);
+          hiveAnalyzeProperties.getAnalyzeProperties(), accessControl, classLoader);
     } catch (Exception e) {
       throwIfUnchecked(e);
       throw new RuntimeException(e);

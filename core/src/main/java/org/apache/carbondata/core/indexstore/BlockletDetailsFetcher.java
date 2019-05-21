@@ -27,7 +27,7 @@ import org.apache.carbondata.core.datamap.Segment;
 public interface BlockletDetailsFetcher {
 
   /**
-   * Get the blocklet detail information based on blockletid, blockid and segmentid.
+   * Get the blocklet detail information based on blockletid, blockid and segmentId.
    *
    * @param blocklets
    * @param segment
@@ -38,7 +38,7 @@ public interface BlockletDetailsFetcher {
       throws IOException;
 
   /**
-   * Get the blocklet detail information based on blockletid, blockid and segmentid.
+   * Get the blocklet detail information based on blockletid, blockid and segmentId.
    *
    * @param blocklet
    * @param segment
@@ -60,4 +60,6 @@ public interface BlockletDetailsFetcher {
    * clears the datamap from cache and segmentMap from executor
    */
   void clear();
+
+  String getCacheSize() throws IOException ;
 }

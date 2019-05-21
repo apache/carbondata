@@ -478,6 +478,11 @@ public final class CarbonCommonConstants {
    */
   public static final String CACHE_LEVEL_DEFAULT_VALUE = "BLOCK";
 
+  /**
+   * column level property: the measure is changed to the dimension
+   */
+  public static final String COLUMN_DRIFT = "column_drift";
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Data loading parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////
@@ -1188,6 +1193,10 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_RANGE_COLUMN_SCALE_FACTOR_DEFAULT = "3";
 
+  public static final String CARBON_ENABLE_RANGE_COMPACTION = "carbon.enable.range.compaction";
+
+  public static final String CARBON_ENABLE_RANGE_COMPACTION_DEFAULT = "false";
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Query parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////
@@ -1255,6 +1264,11 @@ public final class CarbonCommonConstants {
    * max lru cache size default value in MB
    */
   public static final String CARBON_MAX_LRU_CACHE_SIZE_DEFAULT = "-1";
+
+  /**
+   * when LRU cache if beyond the jvm max memory size,set 60% percent of max size
+   */
+  public static final double CARBON_LRU_CACHE_PERCENT_OVER_MAX_SIZE = 0.6d;
 
   /**
    * property to enable min max during filter query
@@ -1744,10 +1758,12 @@ public final class CarbonCommonConstants {
   public static final String ARRAY_SEPARATOR = "\001";
   public static final String STRING = "String";
   public static final String SHORT = "Short";
+  public static final String BINARY = "Binary";
   public static final String TIMESTAMP = "Timestamp";
   public static final String ARRAY = "array";
   public static final String STRUCT = "struct";
   public static final String MAP = "map";
+  public static final String DECIMAL = "decimal";
   public static final String FROM = "from";
 
   /**
@@ -1994,6 +2010,20 @@ public final class CarbonCommonConstants {
    */
   public static final int CARBON_ALLOW_DIRECT_FILL_DICT_COLS_LIMIT = 100;
 
+  /**
+   * page size in mb. If page size exceeds this value before 32000 rows count, page will be cut.
+   * And remaining rows will written in next page.
+   */
+  public static final String TABLE_PAGE_SIZE_INMB = "table_page_size_inmb";
+
+  public static final int TABLE_PAGE_SIZE_MIN_INMB = 1;
+
+  // default 1 MB
+  public static final int TABLE_PAGE_SIZE_INMB_DEFAULT = 1;
+
+  // As due to SnappyCompressor.MAX_BYTE_TO_COMPRESS is 1.75 GB
+  public static final int TABLE_PAGE_SIZE_MAX_INMB = 1755;
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Unused constants and parameters start here
   //////////////////////////////////////////////////////////////////////////////////////////
@@ -2099,4 +2129,38 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL = "512";
 
+  /**
+   * The IP on which Index Server will be started.
+   */
+  @CarbonProperty
+  public static final String CARBON_INDEX_SERVER_IP = "carbon.index.server.ip";
+
+  /**
+   * The Port to be used to start Index Server.
+   */
+  @CarbonProperty
+  public static final String CARBON_INDEX_SERVER_PORT = "carbon.index.server.port";
+
+  /**
+   * Whether to use index server for caching and pruning or not.
+   * This property can be used for
+   * 1. the whole application(carbon.properties).
+   * 2. the whole session(set carbon.enable.index.server)
+   * 3. a specific table for one session (set carbon.enable.index.server.<dbName>.<tableName>)
+   */
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_ENABLE_INDEX_SERVER = "carbon.enable.index.server";
+
+  /**
+   * Property is used to enable/disable fallback for indexserver.
+   * Used for testing purposes only.
+   */
+  public static final String CARBON_DISABLE_INDEX_SERVER_FALLBACK =
+      "carbon.disable.index.server.fallback";
+
+  public static final String CARBON_INDEX_SERVER_WORKER_THREADS =
+      "carbon.index.server.max.worker.threads";
+
+  public static final int CARBON_INDEX_SERVER_WORKER_THREADS_DEFAULT =
+      500;
 }

@@ -17,15 +17,15 @@
 
 package org.apache.carbondata.spark.util
 
-
 import java.io.File
+import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
-import scala.util.Random
+import scala.math.BigDecimal.RoundingMode
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
@@ -46,21 +46,34 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 
-
 object CommonUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
   val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
+
+  val ONE_KB: Long = 1024L
+  val ONE_KB_BI: BigDecimal = BigDecimal.valueOf(ONE_KB)
+  val ONE_MB: Long = ONE_KB * ONE_KB
+  val ONE_MB_BI: BigDecimal = BigDecimal.valueOf(ONE_MB)
+  val ONE_GB: Long = ONE_KB * ONE_MB
+  val ONE_GB_BI: BigDecimal = BigDecimal.valueOf(ONE_GB)
+  val ONE_TB: Long = ONE_KB * ONE_GB
+  val ONE_TB_BI: BigDecimal = BigDecimal.valueOf(ONE_TB)
+  val ONE_PB: Long = ONE_KB * ONE_TB
+  val ONE_PB_BI: BigDecimal = BigDecimal.valueOf(ONE_PB)
+  val ONE_EB: Long = ONE_KB * ONE_PB
+  val ONE_EB_BI: BigDecimal = BigDecimal.valueOf(ONE_EB)
 
   def getColumnProperties(column: String,
       tableProperties: Map[String, String]): Option[util.List[ColumnProperty]] = {
@@ -529,6 +542,38 @@ object CommonUtil {
   }
 
   /**
+   * This method will validate the table page size
+   *
+   * @param tableProperties table property specified by user
+   * @param propertyName property name
+   */
+  def validatePageSizeInmb(tableProperties: Map[String, String], propertyName: String): Unit = {
+    var size: Integer = 0
+    if (tableProperties.get(propertyName).isDefined) {
+      val pageSize: String =
+        parsePropertyValueStringInMB(tableProperties(propertyName))
+      val minPageSize = CarbonCommonConstants.TABLE_PAGE_SIZE_MIN_INMB
+      val maxPageSize = CarbonCommonConstants.TABLE_PAGE_SIZE_MAX_INMB
+      try {
+        size = Integer.parseInt(pageSize)
+      } catch {
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException(s"Invalid $propertyName value found: " +
+                                                    s"$pageSize, only int value from $minPageSize" +
+                                                    s" to " +
+                                                    s"$maxPageSize is supported.")
+      }
+      if (size < minPageSize || size > maxPageSize) {
+        throw new MalformedCarbonCommandException(s"Invalid $propertyName value found: " +
+                                                  s"$pageSize, only int value from $minPageSize " +
+                                                  s"to " +
+                                                  s"$maxPageSize is supported.")
+      }
+      tableProperties.put(propertyName, pageSize)
+    }
+  }
+
+  /**
    * This method will parse the configure string from 'XX MB/M' to 'XX'
    *
    * @param propertyValueString
@@ -748,6 +793,7 @@ object CommonUtil {
     }
     storeLocation
   }
+
   /**
    * This method will validate the cache level
    *
@@ -861,5 +907,102 @@ object CommonUtil {
         tableProperties.put(propertyName, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)
       }
     }
+  }
+
+  def isDataTypeSupportedForSortColumn(columnDataType: String): Boolean = {
+    val dataTypes = Array("array", "struct", "map", "double", "float", "decimal", "binary")
+    dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
+  }
+
+  def validateSortScope(newProperties: Map[String, String]): Unit = {
+    val sortScopeOption = newProperties.get(CarbonCommonConstants.SORT_SCOPE)
+    if (sortScopeOption.isDefined) {
+      if (!CarbonUtil.isValidSortOption(sortScopeOption.get)) {
+        throw new MalformedCarbonCommandException(
+          s"Invalid SORT_SCOPE ${ sortScopeOption.get }, " +
+          s"valid SORT_SCOPE are 'NO_SORT', 'BATCH_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT'")
+      }
+    }
+  }
+
+  def validateSortColumns(
+      sortKey: Array[String],
+      fields: Seq[(String, String)],
+      varcharCols: Seq[String]
+  ): Unit = {
+    if (sortKey.diff(sortKey.distinct).length > 0 ||
+        (sortKey.length > 1 && sortKey.contains(""))) {
+      throw new MalformedCarbonCommandException(
+        "SORT_COLUMNS Either having duplicate columns : " +
+        sortKey.diff(sortKey.distinct).mkString(",") + " or it contains illegal argumnet.")
+    }
+
+    sortKey.foreach { column =>
+      if (!fields.exists(x => x._1.equalsIgnoreCase(column))) {
+        val errorMsg = "sort_columns: " + column +
+                       " does not exist in table. Please check the create table statement."
+        throw new MalformedCarbonCommandException(errorMsg)
+      } else {
+        val dataType = fields.find(x =>
+          x._1.equalsIgnoreCase(column)).get._2
+        if (isDataTypeSupportedForSortColumn(dataType)) {
+          val errorMsg = s"sort_columns is unsupported for $dataType datatype column: " + column
+          throw new MalformedCarbonCommandException(errorMsg)
+        }
+        if (varcharCols.exists(x => x.equalsIgnoreCase(column))) {
+          throw new MalformedCarbonCommandException(
+            s"sort_columns is unsupported for long string datatype column: $column")
+        }
+      }
+    }
+  }
+
+  def validateSortColumns(carbonTable: CarbonTable, newProperties: Map[String, String]): Unit = {
+    val fields = carbonTable.getCreateOrderColumn(carbonTable.getTableName).asScala
+    val tableProperties = carbonTable.getTableInfo.getFactTable.getTableProperties
+    var sortKeyOption = newProperties.get(CarbonCommonConstants.SORT_COLUMNS)
+    val varcharColsString = tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS)
+    val varcharCols: Seq[String] = if (varcharColsString == null) {
+      Seq.empty[String]
+    } else {
+      varcharColsString.split(",").map(_.trim)
+    }
+
+    if (!sortKeyOption.isDefined) {
+      // default no columns are selected for sorting in no_sort scope
+      sortKeyOption = Some("")
+    }
+    val sortKeyString = CarbonUtil.unquoteChar(sortKeyOption.get).trim
+    if (!sortKeyString.isEmpty) {
+      val sortKey = sortKeyString.split(',').map(_.trim)
+      validateSortColumns(
+        sortKey,
+        fields.map { field => (field.getColName, field.getDataType.getName) },
+        varcharCols
+      )
+    }
+  }
+
+  def bytesToDisplaySize(size: Long): String = bytesToDisplaySize(BigDecimal.valueOf(size))
+
+  // This method converts the bytes count to display size upto 2 decimal places
+  def bytesToDisplaySize(size: BigDecimal): String = {
+    var displaySize: String = null
+    if (size.divideToIntegralValue(ONE_EB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_EB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " EB"
+    } else if (size.divideToIntegralValue(ONE_PB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_PB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " PB"
+    } else if (size.divideToIntegralValue(ONE_TB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_TB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " TB"
+    } else if (size.divideToIntegralValue(ONE_GB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_GB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " GB"
+    } else if (size.divideToIntegralValue(ONE_MB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_MB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " MB"
+    } else if (size.divideToIntegralValue(ONE_KB_BI).compareTo(BigDecimal.ZERO) > 0) {
+      displaySize = size.divide(ONE_KB_BI).setScale(2, RoundingMode.HALF_DOWN).doubleValue() + " KB"
+    } else {
+      displaySize = size + " B"
+    }
+    displaySize
   }
 }

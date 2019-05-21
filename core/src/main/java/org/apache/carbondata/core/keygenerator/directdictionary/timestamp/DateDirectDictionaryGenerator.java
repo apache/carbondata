@@ -153,8 +153,8 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
       timeValue = Long.parseLong(memberStr) / 1000;
     } catch (NumberFormatException e) {
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            "Cannot convert value to Long type value. Value considered as null." + e.getMessage());
+        LOGGER.debug("Cannot convert value to Long type value. Value considered as null."
+            + e.getMessage(), e);
       }
     }
     if (timeValue == -1) {

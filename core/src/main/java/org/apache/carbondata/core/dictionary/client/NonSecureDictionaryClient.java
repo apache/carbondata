@@ -91,7 +91,7 @@ public class NonSecureDictionaryClient implements DictionaryClient {
     try {
       workerGroup.terminationFuture().sync();
     } catch (InterruptedException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
     }
   }
 }

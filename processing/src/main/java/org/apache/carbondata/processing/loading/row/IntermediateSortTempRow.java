@@ -64,4 +64,12 @@ public class IntermediateSortTempRow {
   public byte[] getNoSortDimsAndMeasures() {
     return noSortDimsAndMeasures;
   }
+
+  public void setNoDictData(Object[] noDictSortDims) {
+    this.noDictSortDims = noDictSortDims;
+  }
+
+  public void setDictData(int[] dictData) {
+    this.dictSortDims = dictData;
+  }
 }

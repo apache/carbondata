@@ -60,6 +60,8 @@ public class TableSchemaBuilder {
 
   private int blockletSize;
 
+  private int pageSizeInMb;
+
   private String tableName;
   private boolean isLocalDictionaryEnabled;
   private String localDictionaryThreshold;
@@ -77,6 +79,11 @@ public class TableSchemaBuilder {
       throw new IllegalArgumentException("blockletSize should be greater than 0");
     }
     this.blockletSize = blockletSize;
+    return this;
+  }
+
+  public TableSchemaBuilder pageSizeInMb(int pageSizeInMb) {
+    this.pageSizeInMb = pageSizeInMb;
     return this;
   }
 
@@ -120,6 +127,9 @@ public class TableSchemaBuilder {
     }
     if (blockletSize > 0) {
       property.put(CarbonCommonConstants.TABLE_BLOCKLET_SIZE, String.valueOf(blockletSize));
+    }
+    if (pageSizeInMb > 0) {
+      property.put(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB, String.valueOf(pageSizeInMb));
     }
 
     // Adding local dictionary, applicable only for String(dictionary exclude)
@@ -176,6 +186,7 @@ public class TableSchemaBuilder {
         field.getDataType() == DataTypes.VARCHAR ||
         field.getDataType() == DataTypes.DATE ||
         field.getDataType() == DataTypes.TIMESTAMP ||
+        field.getDataType() == DataTypes.BINARY ||
         field.getDataType().isComplexType() ||
         (isComplexChild))  {
       newColumn.setDimensionColumn(true);

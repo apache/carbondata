@@ -46,7 +46,6 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -139,20 +138,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
-    // calculating the total number of aggregated columns
-    int measureCount = queryModel.getProjectionMeasures().size();
 
-    int currentIndex = 0;
-    DataType[] dataTypes = new DataType[measureCount];
-
-    for (ProjectionMeasure carbonMeasure : queryModel.getProjectionMeasures()) {
-      // adding the data type and aggregation type of all the measure this
-      // can be used
-      // to select the aggregator
-      dataTypes[currentIndex] = carbonMeasure.getMeasure().getDataType();
-      currentIndex++;
-    }
-    queryProperties.measureDataTypes = dataTypes;
     // as aggregation will be executed in following order
     // 1.aggregate dimension expression
     // 2. expression
@@ -238,6 +224,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           LOGGER.warn("Skipping Direct Vector Filling as it is not Supported "
               + "for Legacy store prior to V3 store");
           queryModel.setDirectVectorFill(false);
+          // Skip minmax based pruning for measure column in case of legacy store
+          boolean[] minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
+          FilterUtil.setMinMaxFlagForLegacyStore(minMaxFlag, segmentProperties);
+          for (BlockletInfo blockletInfo : fileFooter.getBlockletList()) {
+            blockletInfo.getBlockletIndex().getMinMaxIndex().setIsMinMaxSet(minMaxFlag);
+          }
         }
         readAndFillBlockletInfo(tableBlockInfos, blockInfo,
             blockletDetailInfo, fileFooter, segmentProperties);
@@ -386,15 +378,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     byte[][] maxValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues();
     byte[][] minValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues();
     if (blockletDetailInfo.isLegacyStore()) {
-      minValues = BlockletDataMapUtil.updateMinValues(segmentProperties,
-          blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues());
-      maxValues = BlockletDataMapUtil.updateMaxValues(segmentProperties,
-          blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues());
-      // update min and max values in case of old store for measures as min and max is written
-      // opposite for measures in old store ( store <= 1.1 version)
-      byte[][] tempMaxValues = maxValues;
-      maxValues = CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
-      minValues = CarbonUtil.updateMinMaxValues(fileFooter, tempMaxValues, minValues, true);
       info.setDataBlockFromOldStore(true);
     }
     blockletInfo.getBlockletIndex().getMinMaxIndex().setMaxValues(maxValues);
@@ -464,14 +447,15 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
-    List<CarbonDimension> tableBlockDimensions = segmentProperties.getDimensions();
-
+    // set actual query dimensions and measures. It may differ in case of restructure scenarios
+    RestructureUtil.actualProjectionOfSegment(blockExecutionInfo, queryModel, segmentProperties);
     // below is to get only those dimension in query which is present in the
     // table block
     List<ProjectionDimension> projectDimensions = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
-            queryModel.getProjectionDimensions(), tableBlockDimensions,
-            segmentProperties.getComplexDimensions(), queryModel.getProjectionMeasures().size(),
+            blockExecutionInfo.getActualQueryDimensions(), segmentProperties.getDimensions(),
+            segmentProperties.getComplexDimensions(),
+            blockExecutionInfo.getActualQueryMeasures().length,
             queryModel.getTable().getTableInfo().isTransactionalTable());
     boolean isStandardTable = CarbonUtil.isStandardCarbonTable(queryModel.getTable());
     String blockId = CarbonUtil
@@ -489,10 +473,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setProjectionDimensions(projectDimensions
         .toArray(new ProjectionDimension[projectDimensions.size()]));
     // get measures present in the current block
-    List<ProjectionMeasure> currentBlockQueryMeasures =
-        getCurrentBlockQueryMeasures(blockExecutionInfo, queryModel, blockIndex);
+    List<ProjectionMeasure> projectionMeasures = RestructureUtil
+        .createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,
+            blockExecutionInfo.getActualQueryMeasures(), segmentProperties.getMeasures(),
+            queryModel.getTable().getTableInfo().isTransactionalTable());
     blockExecutionInfo.setProjectionMeasures(
-        currentBlockQueryMeasures.toArray(new ProjectionMeasure[currentBlockQueryMeasures.size()]));
+        projectionMeasures.toArray(new ProjectionMeasure[projectionMeasures.size()]));
     blockExecutionInfo.setDataBlock(blockIndex);
     // setting whether raw record query or not
     blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());
@@ -584,7 +570,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // list of measures to be projected
     List<Integer> allProjectionListMeasureIndexes = new ArrayList<>();
     int[] measureChunkIndexes = QueryUtil.getMeasureChunkIndexes(
-        currentBlockQueryMeasures, expressionMeasures,
+        projectionMeasures, expressionMeasures,
         segmentProperties.getMeasuresOrdinalToChunkMapping(), filterMeasures,
         allProjectionListMeasureIndexes);
     reusableBufferSize = Math.max(segmentProperties.getMeasuresOrdinalToChunkMapping().size(),
@@ -619,7 +605,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // setting the size of fixed key column (dictionary column)
     blockExecutionInfo
         .setFixedLengthKeySize(getKeySize(projectDimensions, segmentProperties));
-    Set<Integer> dictionaryColumnChunkIndex = new HashSet<Integer>();
+    List<Integer> dictionaryColumnChunkIndex = new ArrayList<Integer>();
     List<Integer> noDictionaryColumnChunkIndex = new ArrayList<Integer>();
     // get the block index to be read from file for query dimension
     // for both dictionary columns and no dictionary columns
@@ -630,7 +616,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         dictionaryColumnChunkIndex.toArray(new Integer[dictionaryColumnChunkIndex.size()]));
     // need to sort the dictionary column as for all dimension
     // column key will be filled based on key order
-    Arrays.sort(queryDictionaryColumnChunkIndexes);
+    if (!queryModel.isForcedDetailRawQuery()) {
+      Arrays.sort(queryDictionaryColumnChunkIndexes);
+    }
     blockExecutionInfo.setDictionaryColumnChunkIndex(queryDictionaryColumnChunkIndexes);
     // setting the no dictionary column block indexes
     blockExecutionInfo.setNoDictionaryColumnChunkIndexes(ArrayUtils.toPrimitive(
@@ -640,11 +628,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setComplexColumnParentBlockIndexes(
         getComplexDimensionParentBlockIndexes(projectDimensions));
     blockExecutionInfo.setVectorBatchCollector(queryModel.isVectorReader());
-    // set actual query dimensions and measures. It may differ in case of restructure scenarios
-    blockExecutionInfo.setActualQueryDimensions(queryModel.getProjectionDimensions()
-        .toArray(new ProjectionDimension[queryModel.getProjectionDimensions().size()]));
-    blockExecutionInfo.setActualQueryMeasures(queryModel.getProjectionMeasures()
-        .toArray(new ProjectionMeasure[queryModel.getProjectionMeasures().size()]));
     DataTypeUtil.setDataTypeConverter(queryModel.getConverter());
     blockExecutionInfo.setRequiredRowId(queryModel.isRequiredRowId());
     return blockExecutionInfo;
@@ -692,28 +675,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       return keySize;
     }
     return 0;
-  }
-
-  /**
-   * Below method will be used to get the measures present in the current block
-   *
-   * @param executionInfo
-   * @param queryModel         query model
-   * @param tableBlock         table block
-   * @return
-   */
-  private List<ProjectionMeasure> getCurrentBlockQueryMeasures(BlockExecutionInfo executionInfo,
-      QueryModel queryModel, AbstractIndex tableBlock) throws QueryExecutionException {
-    // getting the measure info which will be used while filling up measure data
-    List<ProjectionMeasure> updatedQueryMeasures = RestructureUtil
-        .createMeasureInfoAndGetCurrentBlockQueryMeasures(executionInfo,
-            queryModel.getProjectionMeasures(),
-            tableBlock.getSegmentProperties().getMeasures(),
-            queryModel.getTable().getTableInfo().isTransactionalTable());
-    // setting the measure aggregator for all aggregation function selected
-    // in query
-    executionInfo.getMeasureInfo().setMeasureDataTypes(queryProperties.measureDataTypes);
-    return updatedQueryMeasures;
   }
 
   private int[] getComplexDimensionParentBlockIndexes(List<ProjectionDimension> queryDimensions) {

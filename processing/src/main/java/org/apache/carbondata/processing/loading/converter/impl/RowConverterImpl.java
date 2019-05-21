@@ -121,7 +121,7 @@ public class RowConverterImpl implements RowConverter {
       if (executorService == null) {
         executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
             "DictionaryClientPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
-                .getTableName()));
+                .getTableName(), true));
       }
       DictionaryOnePassService
           .setDictionaryServiceProvider(configuration.getDictionaryServiceProvider());
@@ -144,7 +144,7 @@ public class RowConverterImpl implements RowConverter {
         // wait for client initialization finished, or will raise null pointer exception
         Thread.sleep(1000);
       } catch (InterruptedException e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         throw new RuntimeException(e);
       }
 

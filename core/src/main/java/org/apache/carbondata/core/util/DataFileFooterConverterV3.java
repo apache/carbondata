@@ -144,6 +144,14 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     blockletInfo.setDimensionOffset(blockletInfoThrift.getDimension_offsets());
     blockletInfo.setMeasureOffsets(blockletInfoThrift.getMeasure_offsets());
     blockletInfo.setNumberOfPages(blockletInfoThrift.getNumber_number_of_pages());
+    if (blockletInfoThrift.getRow_count_in_page() != null
+        && blockletInfoThrift.getRow_count_in_page().size() != 0) {
+      int[] rowCountInPages = new int[blockletInfoThrift.getRow_count_in_page().size()];
+      for (int i = 0; i < blockletInfoThrift.getRow_count_in_page().size(); i++) {
+        rowCountInPages[i] = blockletInfoThrift.getRow_count_in_page().get(i);
+      }
+      blockletInfo.setNumberOfRowsPerPage(rowCountInPages);
+    }
     return blockletInfo;
   }
 

@@ -27,11 +27,13 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util._
@@ -220,7 +222,10 @@ object DataLoadProcessBuilderOnSpark {
     val sampleRDD = getSampleRDD(sparkSession, model, hadoopConf, configuration, modelBroadcast)
     val rangeRDD = keyRDD
       .partitionBy(
-        new DataSkewRangePartitioner(numPartitions, sampleRDD)(objectOrdering, classTag[Object]))
+        new DataSkewRangePartitioner(
+          numPartitions,
+          sampleRDD,
+          false)(objectOrdering, classTag[Object]))
       .map(_._2)
 
     // 4. Sort and Write data
@@ -306,21 +311,30 @@ object DataLoadProcessBuilderOnSpark {
         // better to generate a CarbonData file for each partition
         val totalSize = model.getTotalSize.toDouble
         val table = model.getCarbonDataLoadSchema.getCarbonTable
-        val blockSize = 1024L * 1024 * table.getBlockSizeInMB
-        val blockletSize = 1024L * 1024 * table.getBlockletSizeInMB
-        val scaleFactor = if (model.getScaleFactor == 0) {
-          // use system properties
-          CarbonProperties.getInstance().getRangeColumnScaleFactor
-        } else {
-          model.getScaleFactor
-        }
-        // For Range_Column, it will try to generate one big file for each partition.
-        // And the size of the big file is about TABLE_BLOCKSIZE of this table.
-        val splitSize = Math.max(blockletSize, (blockSize - blockletSize)) * scaleFactor
-        numPartitions = Math.ceil(totalSize / splitSize).toInt
+        numPartitions = getNumPatitionsBasedOnSize(totalSize, table, model, false)
       }
     }
     numPartitions
+  }
+
+  def getNumPatitionsBasedOnSize(totalSize: Double,
+      table: CarbonTable,
+      model: CarbonLoadModel,
+      mergerFlag: Boolean): Int = {
+    val blockSize = 1024L * 1024 * table.getBlockSizeInMB
+    val blockletSize = 1024L * 1024 * table.getBlockletSizeInMB
+    val scaleFactor = if (mergerFlag) {
+      1
+    } else if (model.getScaleFactor == 0) {
+      // use system properties
+      CarbonProperties.getInstance().getRangeColumnScaleFactor
+    } else {
+      model.getScaleFactor
+    }
+    // For Range_Column, it will try to generate one big file for each partition.
+    // And the size of the big file is about TABLE_BLOCKSIZE of this table.
+    val splitSize = Math.max(blockletSize, (blockSize - blockletSize)) * scaleFactor
+    Math.ceil(totalSize / splitSize).toInt
   }
 
   private def indexOfColumn(column: CarbonColumn, fields: Array[DataField]): Int = {
@@ -369,5 +383,16 @@ class PrimtiveOrdering(dataType: DataType) extends Ordering[Object] {
 class ByteArrayOrdering() extends Ordering[Object] {
   override def compare(x: Object, y: Object): Int = {
     UnsafeComparer.INSTANCE.compareTo(x.asInstanceOf[Array[Byte]], y.asInstanceOf[Array[Byte]])
+  }
+}
+
+class StringOrdering() extends Ordering[Object] {
+  override def compare(x: Object, y: Object): Int = {
+    if (x == null) {
+      return -1
+    } else if (y == null) {
+      return 1
+    }
+    return (x.asInstanceOf[UTF8String]).compare(y.asInstanceOf[UTF8String])
   }
 }

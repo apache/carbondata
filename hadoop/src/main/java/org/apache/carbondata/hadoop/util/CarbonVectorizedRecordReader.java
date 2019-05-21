@@ -81,7 +81,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     List<CarbonInputSplit> splitList;
     if (inputSplit instanceof CarbonInputSplit) {
       // Read the footer offset and set.
-      String splitPath = ((CarbonInputSplit) inputSplit).getPath().toString();
+      String splitPath = ((CarbonInputSplit) inputSplit).getFilePath();
       if (((CarbonInputSplit) inputSplit).getDetailInfo().getBlockFooterOffset() == 0L) {
         FileReader reader = FileFactory.getFileHolder(FileFactory.getFileType(splitPath),
             taskAttemptContext.getConfiguration());
@@ -147,7 +147,8 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
         DataType dataType = msr.getMeasure().getDataType();
         if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT
             || dataType == DataTypes.INT || dataType == DataTypes.LONG
-            || dataType == DataTypes.FLOAT || dataType == DataTypes.BYTE) {
+            || dataType == DataTypes.FLOAT || dataType == DataTypes.BYTE
+            || dataType == DataTypes.BINARY) {
           fields[msr.getOrdinal()] =
               new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
         } else if (DataTypes.isDecimal(dataType)) {

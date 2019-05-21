@@ -20,6 +20,7 @@ package org.apache.carbondata.core.indexstore.schema;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -60,7 +61,74 @@ public class SchemaGenerator {
     // written in the metadata or not.
     addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     CarbonRowSchema[] schema = indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]);
+    updateBytePosition(schema);
     return schema;
+  }
+
+  /**
+   * Method to update the byte position which will be used in case of unsafe dm store
+   * @see org/apache/carbondata/core/indexstore/UnsafeMemoryDMStore.java:87
+   *
+   * @param schema
+   */
+  private static void updateBytePosition(CarbonRowSchema[] schema) {
+    int currentSize;
+    int bytePosition = 0;
+    // First assign byte postion to all the fixed length schema
+    for (int i = 0; i < schema.length; i++) {
+      switch (schema[i].getSchemaType()) {
+        case STRUCT:
+          CarbonRowSchema[] childSchemas =
+              ((CarbonRowSchema.StructCarbonRowSchema) schema[i]).getChildSchemas();
+          for (int j = 0; j < childSchemas.length; j++) {
+            currentSize = getSchemaSize(childSchemas[j]);
+            if (currentSize != -1) {
+              childSchemas[j].setBytePosition(bytePosition);
+              bytePosition += currentSize;
+            }
+          }
+          break;
+        default:
+          currentSize = getSchemaSize(schema[i]);
+          if (currentSize != -1) {
+            schema[i].setBytePosition(bytePosition);
+            bytePosition += currentSize;
+          }
+          break;
+      }
+    }
+    // adding byte position for storing offset in case of variable length columns
+    for (int i = 0; i < schema.length; i++) {
+      switch (schema[i].getSchemaType()) {
+        case STRUCT:
+          CarbonRowSchema[] childSchemas =
+              ((CarbonRowSchema.StructCarbonRowSchema) schema[i]).getChildSchemas();
+          for (int j = 0; j < childSchemas.length; j++) {
+            if (childSchemas[j].getBytePosition() == -1) {
+              childSchemas[j].setBytePosition(bytePosition);
+              bytePosition += CarbonCommonConstants.INT_SIZE_IN_BYTE;
+            }
+          }
+          break;
+        default:
+          if (schema[i].getBytePosition() == -1) {
+            schema[i].setBytePosition(bytePosition);
+            bytePosition += CarbonCommonConstants.INT_SIZE_IN_BYTE;
+          }
+          break;
+      }
+    }
+  }
+  private static int getSchemaSize(CarbonRowSchema schema) {
+    switch (schema.getSchemaType()) {
+      case FIXED:
+        return schema.getLength();
+      case VARIABLE_SHORT:
+      case VARIABLE_INT:
+        return -1;
+      default:
+        throw new UnsupportedOperationException("Invalid Type");
+    }
   }
 
   /**
@@ -98,6 +166,7 @@ public class SchemaGenerator {
     // for relative blocklet id i.e. blocklet id that belongs to a particular part file
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.SHORT));
     CarbonRowSchema[] schema = indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]);
+    updateBytePosition(schema);
     return schema;
   }
 
@@ -113,12 +182,14 @@ public class SchemaGenerator {
       List<CarbonColumn> minMaxCacheColumns,
       boolean storeBlockletCount, boolean filePathToBeStored) throws MemoryException {
     List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>();
+    // for number of rows.
+    taskMinMaxSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
     // get MinMax Schema
     getMinMaxSchema(segmentProperties, taskMinMaxSchemas, minMaxCacheColumns);
     // for storing file name
     taskMinMaxSchemas
         .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
-    // for storing segmentid
+    // for storing segmentId
     taskMinMaxSchemas
         .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for storing min max flag for each column which reflects whether min max for a column is
@@ -138,6 +209,7 @@ public class SchemaGenerator {
     }
     CarbonRowSchema[] schema =
         taskMinMaxSchemas.toArray(new CarbonRowSchema[taskMinMaxSchemas.size()]);
+    updateBytePosition(schema);
     return schema;
   }
 

@@ -177,7 +177,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
             length)) {
       vector.putNull(vectorRow);
     } else {
-      if (dt == DataTypes.STRING || dt == DataTypes.VARCHAR) {
+      if (dt == DataTypes.STRING || dt == DataTypes.VARCHAR || dt == DataTypes.BINARY) {
         vector.putByteArray(vectorRow, currentDataOffset, length, data);
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(data[currentDataOffset]));

@@ -61,6 +61,21 @@ case class ModularRelation(databaseName: String,
 
   override def adjacencyList: Map[Int, Seq[(Int, JoinType)]] = Map.empty
 
+  def fineEquals(that: Any): Boolean = {
+    that match {
+      case that: ModularRelation =>
+        if ((databaseName != null && tableName != null && databaseName == that.databaseName &&
+          tableName == that.tableName && output.toString == that.output.toString) ||
+          (databaseName == null && tableName == null && that.databaseName == null &&
+            that.tableName == null && output.toString == that.output.toString)) {
+          true
+        } else {
+          false
+        }
+      case _ => false
+    }
+  }
+
   override def equals(that: Any): Boolean = {
     that match {
       case that: ModularRelation =>

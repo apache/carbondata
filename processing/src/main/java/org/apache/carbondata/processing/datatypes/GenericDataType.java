@@ -158,4 +158,9 @@ public interface GenericDataType<T> {
   GenericDataType<T> deepCopy();
 
   void getComplexColumnInfo(List<ComplexColumnInfo> columnInfoList);
+
+  /**
+   * @return depth of the complex columns , this is the length of flattened complex data.
+   */
+  int getDepth();
 }

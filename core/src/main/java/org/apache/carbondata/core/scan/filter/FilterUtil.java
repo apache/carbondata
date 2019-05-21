@@ -940,7 +940,7 @@ public final class FilterUtil {
         columnFilterInfo.setFilterList(filterValuesList);
       }
     } catch (FilterIllegalMemberException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
     return columnFilterInfo;
   }
@@ -980,7 +980,7 @@ public final class FilterUtil {
         }
       }
     } catch (FilterIllegalMemberException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
 
     if (null == defaultValues) {
@@ -1020,9 +1020,40 @@ public final class FilterUtil {
               break;
             }
           } catch (KeyGenException e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error(e.getMessage(), e);
           }
         }
+      }
+    }
+    return filterValuesList.toArray(new byte[filterValuesList.size()][]);
+  }
+
+  // This function is used for calculating filter values in case when Range Column
+  // is given as a Dictionary Include Column
+  private static byte[][] getFilterValueInBytesForDictRange(ColumnFilterInfo columnFilterInfo,
+      KeyGenerator blockLevelKeyGenerator, int[] dimColumnsCardinality, int[] keys,
+      List<byte[]> filterValuesList, int keyOrdinalOfDimensionFromCurrentBlock) {
+    if (null != columnFilterInfo) {
+      int[] rangesForMaskedByte =
+          getRangesForMaskedByte(keyOrdinalOfDimensionFromCurrentBlock, blockLevelKeyGenerator);
+      List<Integer> listOfsurrogates = columnFilterInfo.getFilterList();
+      if (listOfsurrogates == null || listOfsurrogates.size() > 1) {
+        throw new RuntimeException(
+            "Filter values cannot be null in case of range in dictionary include");
+      }
+      // Here we only get the first column as there can be only one range column.
+      try {
+        if (listOfsurrogates.get(0)
+            <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
+          keys[keyOrdinalOfDimensionFromCurrentBlock] = listOfsurrogates.get(0);
+        } else {
+          keys[keyOrdinalOfDimensionFromCurrentBlock] =
+              dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock];
+        }
+        filterValuesList
+            .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
+      } catch (KeyGenException e) {
+        LOGGER.error(e.getMessage(), e);
       }
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
@@ -1057,10 +1088,12 @@ public final class FilterUtil {
    * @param columnFilterInfo
    * @param carbonDimension
    * @param segmentProperties
+   * @param isDictRange
    * @return
    */
   public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo,
-      CarbonDimension carbonDimension, SegmentProperties segmentProperties,  boolean isExclude) {
+      CarbonDimension carbonDimension, SegmentProperties segmentProperties, boolean isExclude,
+      boolean isDictRange) {
     if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
       return columnFilterInfo.getNoDictionaryFilterValuesList()
           .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
@@ -1071,8 +1104,14 @@ public final class FilterUtil {
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     Arrays.fill(keys, 0);
     int keyOrdinalOfDimensionFromCurrentBlock = carbonDimension.getKeyOrdinal();
-    return getFilterValuesInBytes(columnFilterInfo, isExclude, blockLevelKeyGenerator,
-        dimColumnsCardinality, keys, filterValuesList, keyOrdinalOfDimensionFromCurrentBlock);
+    if (!isDictRange) {
+      return getFilterValuesInBytes(columnFilterInfo, isExclude, blockLevelKeyGenerator,
+          dimColumnsCardinality, keys, filterValuesList, keyOrdinalOfDimensionFromCurrentBlock);
+    } else {
+      // For Dictionary Include Range Column
+      return getFilterValueInBytesForDictRange(columnFilterInfo, blockLevelKeyGenerator,
+          dimColumnsCardinality, keys, filterValuesList, keyOrdinalOfDimensionFromCurrentBlock);
+    }
   }
 
   /**
@@ -1095,7 +1134,7 @@ public final class FilterUtil {
       keys[carbonDimension.getKeyOrdinal()] = surrogate;
       maskedKey = getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
     } catch (KeyGenException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
     return maskedKey;
   }
@@ -1438,7 +1477,7 @@ public final class FilterUtil {
       indexKey =
           new IndexKey(keyGenerator.generateKey(startOrEndKey), startOrEndKeyForNoDictDimension);
     } catch (KeyGenException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
     return indexKey;
   }
@@ -1500,10 +1539,11 @@ public final class FilterUtil {
       if (filterValues == null) {
         dimColumnExecuterInfo.setFilterKeys(new byte[0][]);
       } else {
-        byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, segmentProperties, false);
+        byte[][] keysBasedOnFilter =
+            getKeyArray(filterValues, dimension, segmentProperties, false, false);
         if (!filterValues.isIncludeFilter() || filterValues.isOptimized()) {
-          dimColumnExecuterInfo
-              .setExcludeFilterKeys(getKeyArray(filterValues, dimension, segmentProperties, true));
+          dimColumnExecuterInfo.setExcludeFilterKeys(
+              getKeyArray(filterValues, dimension, segmentProperties, true, false));
         }
         dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
       }
@@ -2124,7 +2164,7 @@ public final class FilterUtil {
             dummy[0] = i;
             encodedFilters.add(keyGenerator.generateKey(dummy));
           } catch (KeyGenException e) {
-            LOGGER.error(e);
+            LOGGER.error(e.getMessage(), e);
           }
           break;
         }
@@ -2215,7 +2255,7 @@ public final class FilterUtil {
           encodedFilterValues.add(keyGenerator.generateKey(dummy));
         }
       } catch (KeyGenException e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
       }
       return encodedFilterValues.toArray(new byte[encodedFilterValues.size()][]);
     } else {
@@ -2227,7 +2267,7 @@ public final class FilterUtil {
           }
         }
       } catch (KeyGenException e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
       }
     }
     return getSortedEncodedFilters(encodedFilterValues);
@@ -2324,6 +2364,14 @@ public final class FilterUtil {
           .getMaskKey(key, currentBlockDimension, segmentProperties.getDimensionKeyGenerator());
     }
     return defaultValue;
+  }
+
+  public static void setMinMaxFlagForLegacyStore(boolean[] minMaxFlag,
+      SegmentProperties segmentProperties) {
+    int index = segmentProperties.getEachDimColumnValueSize().length + segmentProperties
+        .getEachComplexDimColumnValueSize().length;
+    Arrays.fill(minMaxFlag, 0, index, true);
+    Arrays.fill(minMaxFlag, index, minMaxFlag.length, false);
   }
 
 }

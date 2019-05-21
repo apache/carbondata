@@ -85,7 +85,11 @@ public class BlockletDataRefNode implements DataRefNode {
       if (lastPageRowCount > 0) {
         pageRowCount[pageRowCount.length - 1] = lastPageRowCount;
       }
-      detailInfo.getBlockletInfo().setNumberOfRowsPerPage(pageRowCount);
+      // V3 old store to V3 new store compatibility. V3 new store will get this info in thrift.
+      // so don't overwrite it with hardcoded values.
+      if (detailInfo.getBlockletInfo().getNumberOfRowsPerPage() == null) {
+        detailInfo.getBlockletInfo().setNumberOfRowsPerPage(pageRowCount);
+      }
     }
     this.index = index;
     this.dimensionLens = dimensionLens;

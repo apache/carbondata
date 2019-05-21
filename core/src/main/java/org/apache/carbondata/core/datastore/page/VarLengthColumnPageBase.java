@@ -42,6 +42,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   static final int longBits = DataTypes.LONG.getSizeBits();
   // default size for each row, grows as needed
   static final int DEFAULT_ROW_SIZE = 8;
+  static final int DEFAULT_BINARY_SIZE = 512;
 
   static final double FACTOR = 1.25;
 

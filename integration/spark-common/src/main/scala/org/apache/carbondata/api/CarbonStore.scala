@@ -103,8 +103,14 @@ object CarbonStore {
             // since it is continuously inserting data
             val segmentDir = CarbonTablePath.getSegmentPath(tablePath, load.getLoadName)
             val indexPath = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir)
-            val indices = StreamSegment.readIndexFile(indexPath, FileFactory.getFileType(indexPath))
-            (indices.asScala.map(_.getFile_size).sum, FileFactory.getCarbonFile(indexPath).getSize)
+            val indexFile = FileFactory.getCarbonFile(indexPath)
+            if (indexFile.exists()) {
+              val indices =
+                StreamSegment.readIndexFile(indexPath, FileFactory.getFileType(indexPath))
+              (indices.asScala.map(_.getFile_size).sum, indexFile.getSize)
+            } else {
+              (-1L, -1L)
+            }
           } else {
             // for batch segment, we can get the data size from table status file directly
             (if (load.getDataSize == null) -1L else load.getDataSize.toLong,

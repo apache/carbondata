@@ -68,6 +68,9 @@ public class StructDataType implements GenericDataType<StructObject> {
    */
   private int dataCounter;
 
+  /* flat complex datatype length, including the children*/
+  private int depth;
+
   private StructDataType(List<GenericDataType> children, int outputArrayIndex, int dataCounter,
       String name) {
     this.children = children;
@@ -356,5 +359,16 @@ public class StructDataType implements GenericDataType<StructObject> {
     for (int i = 0; i < children.size(); i++) {
       children.get(i).getComplexColumnInfo(columnInfoList);
     }
+  }
+
+  @Override
+  public int getDepth() {
+    if (depth == 0) {
+      // calculate only one time
+      List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();
+      getComplexColumnInfo(complexColumnInfoList);
+      depth = complexColumnInfoList.size();
+    }
+    return depth;
   }
 }

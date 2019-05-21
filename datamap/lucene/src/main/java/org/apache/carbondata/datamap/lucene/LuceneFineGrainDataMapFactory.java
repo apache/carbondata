@@ -47,7 +47,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
   }
 
   /**
-   * Get the datamap for segmentid
+   * Get the datamap for segmentId
    */
   @Override public List<FineGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<FineGrainDataMap> lstDataMap = new ArrayList<>();
@@ -57,7 +57,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
           DataMapWriter.getDefaultDataMapPath(tableIdentifier.getTablePath(),
               segment.getSegmentNo(), dataMapName), segment.getConfiguration()));
     } catch (MemoryException e) {
-      LOGGER.error(String.format("failed to get lucene datamap, detail is %s", e.getMessage()));
+      LOGGER.error(String.format("failed to get lucene datamap, detail is %s", e.getMessage()), e);
       return lstDataMap;
     }
     lstDataMap.add(dataMap);

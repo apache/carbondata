@@ -254,7 +254,7 @@ public class LocalCarbonFile implements CarbonFile {
       tempFile.renameForce(fileName);
       fileTruncatedSuccessfully = true;
     } catch (IOException e) {
-      LOGGER.error("Exception occured while truncating the file " + e.getMessage());
+      LOGGER.error("Exception occured while truncating the file " + e.getMessage(), e);
     } finally {
       CarbonUtil.closeStreams(source, destination);
     }

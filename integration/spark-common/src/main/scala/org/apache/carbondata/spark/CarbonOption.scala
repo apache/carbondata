@@ -62,6 +62,8 @@ class CarbonOption(options: Map[String, String]) {
 
   lazy val tableBlockletSize: Option[String] = options.get("table_blocklet_size")
 
+  lazy val tablePageSizeInMb: Option[String] = options.get("table_page_size_inmb")
+
   lazy val bucketNumber: Int = options.getOrElse("bucketnumber", "0").toInt
 
   lazy val bucketColumns: String = options.getOrElse("bucketcolumns", "")

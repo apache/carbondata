@@ -26,6 +26,8 @@ import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.datastore.impl.FileFactory
+
 class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAndAfterAll {
 
   val testData = s"$resourcesPath/sample.csv"
@@ -223,6 +225,26 @@ class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAnd
     sql("alter table partitionone drop partition(day=1)")
     checkAnswer(sql("select * from partitionone"), Seq(Row("k",2014,1,2), Row("k",2015,2,3)))
     checkAnswer(sql("select * from partitionone_p1"), Seq(Row("k",2014,2014,1,2), Row("k",2015,2015,2,3)))
+  }
+
+  test("test drop partition directory") {
+    sql("drop table if exists droppartition")
+    sql(
+      """
+        | CREATE TABLE if not exists droppartition (empname String)
+        | PARTITIONED BY (year int, month int,day int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql("insert into droppartition values('k',2014,1,1)")
+    sql("insert into droppartition values('k',2015,2,3)")
+    sql("alter table droppartition drop partition(year=2015,month=2,day=3)")
+    sql("clean files for table droppartition")
+    val table = CarbonEnv.getCarbonTable(Option("partition_preaggregate"), "droppartition")(sqlContext.sparkSession)
+    val tablePath = table.getTablePath
+    val carbonFiles = FileFactory.getCarbonFile(tablePath).listFiles().filter{
+      file => file.getName.equalsIgnoreCase("year=2015")
+    }
+    assert(carbonFiles.length == 0)
   }
 
   test("test data with filter query") {

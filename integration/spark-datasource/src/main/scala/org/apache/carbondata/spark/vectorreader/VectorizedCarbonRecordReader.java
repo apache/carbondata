@@ -146,14 +146,14 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
     } catch (QueryExecutionException e) {
       if (ExceptionUtils.indexOfThrowable(e, FileNotFoundException.class) > 0) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         throw new InterruptedException(
             "Insert overwrite may be in progress.Please check " + e.getMessage());
       }
       throw new InterruptedException(e.getMessage());
     } catch (Exception e) {
       if (ExceptionUtils.indexOfThrowable(e, FileNotFoundException.class) > 0) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         throw new InterruptedException(
             "Insert overwrite may be in progress.Please check " + e.getMessage());
       }
@@ -265,7 +265,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       DataType dataType = msr.getMeasure().getDataType();
       if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT || dataType == DataTypes.INT
           || dataType == DataTypes.LONG || dataType == DataTypes.FLOAT
-          || dataType == DataTypes.BYTE) {
+          || dataType == DataTypes.BYTE || dataType == DataTypes.BINARY) {
         fields[msr.getOrdinal()] = new StructField(msr.getColumnName(),
             CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
             null);

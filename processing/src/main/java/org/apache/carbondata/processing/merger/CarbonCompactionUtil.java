@@ -30,13 +30,28 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
+import org.apache.carbondata.core.scan.expression.logical.OrExpression;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
@@ -180,7 +195,7 @@ public class CarbonCompactionUtil {
         return true;
       }
     } catch (IOException e) {
-      LOGGER.error("Exception in isFileExist compaction request file " + e.getMessage());
+      LOGGER.error("Exception in isFileExist compaction request file " + e.getMessage(), e);
     }
     return false;
   }
@@ -207,7 +222,7 @@ public class CarbonCompactionUtil {
       }
 
     } catch (IOException e) {
-      LOGGER.error("Exception in determining the compaction request file " + e.getMessage());
+      LOGGER.error("Exception in determining the compaction request file " + e.getMessage(), e);
     }
     return CompactionType.MINOR;
   }
@@ -243,7 +258,7 @@ public class CarbonCompactionUtil {
         LOGGER.info("Compaction request file is not present. file is : " + compactionRequiredFile);
       }
     } catch (IOException e) {
-      LOGGER.error("Exception in deleting the compaction request file " + e.getMessage());
+      LOGGER.error("Exception in deleting the compaction request file " + e.getMessage(), e);
     }
     return false;
   }
@@ -277,7 +292,7 @@ public class CarbonCompactionUtil {
         LOGGER.info("Compaction request file : " + statusFile + " already exist.");
       }
     } catch (IOException e) {
-      LOGGER.error("Exception in creating the compaction request file " + e.getMessage());
+      LOGGER.error("Exception in creating the compaction request file " + e.getMessage(), e);
     }
     return false;
   }
@@ -460,16 +475,174 @@ public class CarbonCompactionUtil {
     return false;
   }
 
+  // This method will return an Expression(And/Or) for each range based on the datatype
+  // This Expression will be passed to each task as a Filter Query to get the data
+  public static Expression getFilterExpressionForRange(CarbonColumn rangeColumn, Object minVal,
+      Object maxVal, DataType dataType) {
+    Expression finalExpr;
+    Expression exp1, exp2;
+    String colName = rangeColumn.getColName();
+
+    // In case of null values create an OrFilter expression and
+    // for other cases create and AndFilter Expression
+    if (null == minVal) {
+      // First task
+      exp1 = new EqualToExpression(new ColumnExpression(colName, dataType),
+          new LiteralExpression(null, dataType), true);
+      if (null == maxVal) {
+        // If both the min/max values are null, that means, if data contains only
+        // null value then pass only one expression as a filter expression
+        finalExpr = exp1;
+      } else {
+        exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
+            new LiteralExpression(maxVal, dataType));
+        if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
+          exp2.setAlreadyResolved(true);
+        }
+        finalExpr = new OrExpression(exp1, exp2);
+      }
+    } else if (null == maxVal) {
+      // Last task
+      finalExpr = new GreaterThanExpression(new ColumnExpression(colName, dataType),
+          new LiteralExpression(minVal, dataType));
+      if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
+        finalExpr.setAlreadyResolved(true);
+      }
+    } else {
+      // Remaining all intermediate ranges
+      exp1 = new GreaterThanExpression(new ColumnExpression(colName, dataType),
+          new LiteralExpression(minVal, dataType));
+      exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
+          new LiteralExpression(maxVal, dataType));
+      if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
+        exp2.setAlreadyResolved(true);
+        exp1.setAlreadyResolved(true);
+      }
+      finalExpr = new AndExpression(exp1, exp2);
+    }
+    return finalExpr;
+  }
+
+  public static Object[] getOverallMinMax(CarbonInputSplit[] carbonInputSplits,
+      CarbonColumn rangeCol, boolean isSortCol) {
+    byte[] minVal = null;
+    byte[] maxVal = null;
+    int dictMinVal = Integer.MAX_VALUE;
+    int dictMaxVal = Integer.MIN_VALUE;
+    int idx = -1;
+    DataType dataType = rangeCol.getDataType();
+    Object[] minMaxVals = new Object[2];
+    boolean isDictEncode = rangeCol.hasEncoding(Encoding.DICTIONARY);
+    try {
+      for (CarbonInputSplit split : carbonInputSplits) {
+        DataFileFooter dataFileFooter = null;
+        dataFileFooter =
+            CarbonUtil.readMetadataFile(CarbonInputSplit.getTableBlockInfo(split), true);
+
+        if (-1 == idx) {
+          List<ColumnSchema> allColumns = dataFileFooter.getColumnInTable();
+          for (int i = 0; i < allColumns.size(); i++) {
+            if (allColumns.get(i).getColumnName().equalsIgnoreCase(rangeCol.getColName())) {
+              idx = i;
+              break;
+            }
+          }
+        }
+        if (isDictEncode) {
+          byte[] tempMin = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMinValues()[idx];
+          int tempMinVal = CarbonUtil.getSurrogateInternal(tempMin, 0, tempMin.length);
+          byte[] tempMax = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMaxValues()[idx];
+          int tempMaxVal = CarbonUtil.getSurrogateInternal(tempMax, 0, tempMax.length);
+          if (dictMinVal > tempMinVal) {
+            dictMinVal = tempMinVal;
+          }
+          if (dictMaxVal < tempMaxVal) {
+            dictMaxVal = tempMaxVal;
+          }
+        } else {
+          if (null == minVal) {
+            minVal = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMinValues()[idx];
+            maxVal = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMaxValues()[idx];
+          } else {
+            byte[] tempMin = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMinValues()[idx];
+            byte[] tempMax = dataFileFooter.getBlockletIndex().getMinMaxIndex().getMaxValues()[idx];
+            if (ByteUtil.compare(tempMin, minVal) <= 0) {
+              minVal = tempMin;
+            }
+            if (ByteUtil.compare(tempMax, maxVal) >= 0) {
+              maxVal = tempMax;
+            }
+          }
+        }
+      }
+
+      // Based on how min/max value is stored in the footer we change the data
+      if (isDictEncode) {
+        minMaxVals[0] = dictMinVal;
+        minMaxVals[1] = dictMaxVal;
+      } else {
+        if (!isSortCol && (dataType == DataTypes.INT || dataType == DataTypes.LONG)) {
+          minMaxVals[0] = ByteUtil.toLong(minVal, 0, minVal.length);
+          minMaxVals[1] = ByteUtil.toLong(maxVal, 0, maxVal.length);
+        } else if (dataType == DataTypes.DOUBLE) {
+          minMaxVals[0] = ByteUtil.toDouble(minVal, 0, minVal.length);
+          minMaxVals[1] = ByteUtil.toDouble(maxVal, 0, maxVal.length);
+        } else {
+          minMaxVals[0] =
+              DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(minVal, dataType, true);
+          minMaxVals[1] =
+              DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(maxVal, dataType, true);
+        }
+      }
+
+    } catch (IOException e) {
+      LOGGER.error(e.getMessage());
+    }
+    return minMaxVals;
+  }
+
   /**
    * Returns if the DataFileFooter containing carbondata file contains
    * sorted data or not.
    *
+   * @param table
    * @param footer
    * @return
-   * @throws IOException
    */
-  public static boolean isSorted(DataFileFooter footer) throws IOException {
-    return footer.isSorted();
+  public static boolean isSortedByCurrentSortColumns(CarbonTable table, DataFileFooter footer) {
+    if (footer.isSorted()) {
+      // When sort_columns is modified, it will be consider as no_sort also.
+      List<CarbonDimension> sortColumnsOfSegment = new ArrayList<>();
+      for (ColumnSchema column : footer.getColumnInTable()) {
+        if (column.isDimensionColumn() && column.isSortColumn()) {
+          sortColumnsOfSegment.add(new CarbonDimension(column, -1, -1, -1));
+        }
+      }
+      if (sortColumnsOfSegment.size() < table.getNumberOfSortColumns()) {
+        return false;
+      }
+      List<CarbonDimension> sortColumnsOfTable = new ArrayList<>();
+      for (CarbonDimension dimension : table.getDimensions()) {
+        if (dimension.isSortColumn()) {
+          sortColumnsOfTable.add(dimension);
+        }
+      }
+      int sortColumnNums = sortColumnsOfTable.size();
+      if (sortColumnsOfSegment.size() < sortColumnNums) {
+        return false;
+      }
+      // compare sort_columns
+      for (int i = 0; i < sortColumnNums; i++) {
+        if (!RestructureUtil
+            .isColumnMatches(table.isTransactionalTable(), sortColumnsOfTable.get(i),
+                sortColumnsOfSegment.get(i))) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return false;
+    }
   }
 
 }

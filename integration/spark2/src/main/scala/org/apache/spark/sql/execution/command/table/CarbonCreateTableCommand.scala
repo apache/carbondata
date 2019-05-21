@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, _}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 import org.apache.spark.sql.execution.command.MetadataCommand
 
@@ -78,8 +79,7 @@ case class CarbonCreateTableCommand(
         path
       }
       val streaming = tableInfo.getFactTable.getTableProperties.get("streaming")
-      if (path.startsWith("s3") && streaming != null && streaming != null &&
-          streaming.equalsIgnoreCase("true")) {
+      if (streaming != null && streaming.equalsIgnoreCase("true") && path.startsWith("s3")) {
         throw new UnsupportedOperationException("streaming is not supported with s3 store")
       }
       tableInfo.setTablePath(tablePath)
@@ -167,7 +167,38 @@ case class CarbonCreateTableCommand(
              """.stripMargin)
           }
         } catch {
-          case e: AnalysisException => throw e
+          case e: AnalysisException =>
+            // AnalysisException thrown with table already exists msg incase of conurrent drivers
+            if (e.getMessage().contains("already exists")) {
+
+              // Clear the cache first
+              CarbonEnv.getInstance(sparkSession).carbonMetaStore
+                .removeTableFromMetadata(dbName, tableName)
+
+              // Delete the folders created by this call if the actual path is different
+              val actualPath = CarbonEnv
+                .getCarbonTable(TableIdentifier(tableName, Option(dbName)))(sparkSession)
+                .getTablePath
+
+              if (!actualPath.equalsIgnoreCase(tablePath)) {
+                LOGGER
+                  .error(
+                    "TableAlreadyExists with path : " + actualPath + " So, deleting " + tablePath)
+                FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(tablePath))
+              }
+
+              // No need to throw for create if not exists
+              if (ifNotExistsSet) {
+                LOGGER.error(e, e)
+              } else {
+                LOGGER.error(e)
+                throw e
+              }
+            } else {
+              LOGGER.error(e)
+              throw e
+            }
+
           case e: Exception =>
             // call the drop table to delete the created table.
             try {

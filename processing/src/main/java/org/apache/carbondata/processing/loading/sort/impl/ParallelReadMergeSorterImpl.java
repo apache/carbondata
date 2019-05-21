@@ -94,7 +94,8 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
       throw new CarbonDataLoadingException(e);
     }
     this.executorService = Executors.newFixedThreadPool(iterators.length,
-        new CarbonThreadFactory("SafeParallelSorterPool:" + sortParameters.getTableName()));
+        new CarbonThreadFactory("SafeParallelSorterPool:" + sortParameters.getTableName(),
+                true));
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
 
     try {
@@ -217,7 +218,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
           }
         }
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         observer.notifyFailed(e);
       }
     }

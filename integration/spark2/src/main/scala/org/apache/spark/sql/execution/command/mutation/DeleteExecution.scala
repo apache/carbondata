@@ -37,13 +37,15 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
 import org.apache.carbondata.core.mutate.data.RowCountDetailsVO
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
+import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.spark.DeleteDelataResultImpl
@@ -104,7 +106,7 @@ object DeleteExecution {
         CarbonFilters.getPartitions(
           Seq.empty,
           sparkSession,
-          TableIdentifier(tableName, databaseNameOp)).map(_.asJava).orNull)
+          TableIdentifier(tableName, databaseNameOp)).map(_.asJava).orNull, true)
     val segmentUpdateStatusMngr = new SegmentUpdateStatusManager(carbonTable)
     CarbonUpdateUtil
       .createBlockDetailsMap(blockMappingVO, segmentUpdateStatusMngr)
@@ -312,6 +314,22 @@ object DeleteExecution {
     }
 
     segmentsTobeDeleted
+  }
+
+  def clearDistributedSegmentCache(carbonTable: CarbonTable,
+      segmentsToBeCleared: Seq[Segment]): Unit = {
+    if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable
+      .getDatabaseName, carbonTable.getTableName)) {
+      try {
+        IndexServer.getClient.invalidateSegmentCache(carbonTable
+          .getDatabaseName, carbonTable.getTableName, segmentsToBeCleared.map(_.getSegmentNo)
+          .toArray)
+      } catch {
+        case _: Exception =>
+          LOGGER.warn(s"Clearing of invalid segments for ${
+            carbonTable.getTableUniqueName} has failed")
+      }
+    }
   }
 
   private def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier) :

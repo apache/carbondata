@@ -525,9 +525,12 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       }
     } else if (isMeasurePresentInCurrentBlock) {
       chunkIndex = msrColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
-      isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex],
-          msrColumnExecutorInfo.getFilterKeys(),
-          msrColumnEvaluatorInfo.getType());
+      if (isMinMaxSet[chunkIndex]) {
+        isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex],
+            msrColumnExecutorInfo.getFilterKeys(), msrColumnEvaluatorInfo.getType());
+      } else {
+        isScanRequired = true;
+      }
     }
 
     if (isScanRequired) {

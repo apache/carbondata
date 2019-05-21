@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -32,13 +33,14 @@ import org.apache.spark.sql.hive.HiveExternalCatalog._
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
@@ -96,6 +98,76 @@ object AlterTableUtil {
         LOGGER.info("Alter table lock released successfully")
       } else {
         LOGGER.error("Unable to release lock during alter table operation")
+      }
+    }
+  }
+
+  /**
+   * update schema when SORT_COLUMNS are be changed
+   */
+  private def updateSchemaForSortColumns(
+      thriftTable: TableInfo,
+      lowerCasePropertiesMap: mutable.Map[String, String],
+      schemaConverter: SchemaConverter
+  ) = {
+    val sortColumnsOption = lowerCasePropertiesMap.get(CarbonCommonConstants.SORT_COLUMNS)
+    if (sortColumnsOption.isDefined) {
+      val sortColumnsString = CarbonUtil.unquoteChar(sortColumnsOption.get).trim
+      val columns = thriftTable.getFact_table.getTable_columns
+      // remove old sort_columns property from ColumnSchema
+      val columnSeq =
+        columns
+          .asScala
+          .map { column =>
+            val columnProperties = column.getColumnProperties
+            if (columnProperties != null) {
+              columnProperties.remove(CarbonCommonConstants.SORT_COLUMNS)
+            }
+            column
+          }
+          .zipWithIndex
+      if (!sortColumnsString.isEmpty) {
+        val newSortColumns = sortColumnsString.split(',').map(_.trim)
+        // map sort_columns index in column list
+        val sortColumnsIndexMap = newSortColumns
+          .zipWithIndex
+          .map { entry =>
+            val column = columnSeq.find(_._1.getColumn_name.equalsIgnoreCase(entry._1)).get
+            var columnProperties = column._1.getColumnProperties
+            if (columnProperties == null) {
+              columnProperties = new util.HashMap[String, String]()
+              column._1.setColumnProperties(columnProperties)
+            }
+            // change sort_columns to dimension
+            if (!column._1.isDimension) {
+              column._1.setDimension(true)
+              columnProperties.put(CarbonCommonConstants.COLUMN_DRIFT, "true")
+            }
+            // add sort_columns property
+            columnProperties.put(CarbonCommonConstants.SORT_COLUMNS, "true")
+            (column._2, entry._2)
+          }
+          .toMap
+        var index = newSortColumns.length
+        // re-order all columns, move sort_columns to the head of column list
+        val newColumns = columnSeq
+          .map { entry =>
+            val sortColumnIndexOption = sortColumnsIndexMap.get(entry._2)
+            val newIndex = if (sortColumnIndexOption.isDefined) {
+              sortColumnIndexOption.get
+            } else {
+              val tempIndex = index
+              index += 1
+              tempIndex
+            }
+            (newIndex, entry._1)
+          }
+          .sortWith(_._1 < _._1)
+          .map(_._2)
+          .asJava
+        // use new columns
+        columns.clear()
+        columns.addAll(newColumns)
       }
     }
   }
@@ -361,9 +433,10 @@ object AlterTableUtil {
       // validate the range column properties
       validateRangeColumnProperties(carbonTable, lowerCasePropertiesMap)
 
-      // validate the Sort Scope
-      validateSortScopeProperty(carbonTable, lowerCasePropertiesMap)
-
+      // validate the Sort Scope and Sort Columns
+      validateSortScopeAndSortColumnsProperties(carbonTable, lowerCasePropertiesMap)
+      // if SORT_COLUMN is changed, it will move them to the head of column list
+      updateSchemaForSortColumns(thriftTable, lowerCasePropertiesMap, schemaConverter)
       // below map will be used for cache invalidation. As tblProperties map is getting modified
       // in the next few steps the original map need to be retained for any decision making
       val existingTablePropertiesMap = mutable.Map(tblPropertiesMap.toSeq: _*)
@@ -394,9 +467,13 @@ object AlterTableUtil {
             if (propKey.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)) {
               tblPropertiesMap
                 .put(propKey.toLowerCase, CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
-            } else if (propKey.equalsIgnoreCase("sort_scope")) {
+            } else if (propKey.equalsIgnoreCase(CarbonCommonConstants.SORT_SCOPE)) {
               tblPropertiesMap
                 .put(propKey.toLowerCase, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+            } else if (propKey.equalsIgnoreCase(CarbonCommonConstants.SORT_COLUMNS)) {
+              val errorMessage = "Error: Invalid option(s): " + propKey +
+                                 ", please set SORT_COLUMNS as empty instead of unset"
+              throw new MalformedCarbonCommandException(errorMessage)
             } else {
               tblPropertiesMap.remove(propKey.toLowerCase)
             }
@@ -440,7 +517,8 @@ object AlterTableUtil {
       "LOCAL_DICTIONARY_EXCLUDE",
       "LOAD_MIN_SIZE_INMB",
       "RANGE_COLUMN",
-      "SORT_SCOPE")
+      "SORT_SCOPE",
+      "SORT_COLUMNS")
     supportedOptions.contains(propKey.toUpperCase)
   }
 
@@ -542,18 +620,34 @@ object AlterTableUtil {
     }
   }
 
-  def validateSortScopeProperty(carbonTable: CarbonTable,
+  def validateSortScopeAndSortColumnsProperties(carbonTable: CarbonTable,
       propertiesMap: mutable.Map[String, String]): Unit = {
-    propertiesMap.foreach { property =>
-      if (property._1.equalsIgnoreCase("SORT_SCOPE")) {
-        if (!CarbonUtil.isValidSortOption(property._2)) {
-          throw new MalformedCarbonCommandException(
-            s"Invalid SORT_SCOPE ${ property._2 }, valid SORT_SCOPE are 'NO_SORT', 'BATCH_SORT', " +
-            s"'LOCAL_SORT' and 'GLOBAL_SORT'")
-        } else if (!property._2.equalsIgnoreCase("NO_SORT") &&
-                   (carbonTable.getNumberOfSortColumns == 0)) {
+    CommonUtil.validateSortScope(propertiesMap)
+    CommonUtil.validateSortColumns(carbonTable, propertiesMap)
+    // match SORT_SCOPE and SORT_COLUMNS
+    val newSortScope = propertiesMap.get(CarbonCommonConstants.SORT_SCOPE)
+    val newSortColumns = propertiesMap.get(CarbonCommonConstants.SORT_COLUMNS)
+    if (newSortScope.isDefined) {
+      // 1. check SORT_COLUMNS when SORT_SCOPE is not changed to NO_SORT
+      if (!SortScope.NO_SORT.name().equalsIgnoreCase(newSortScope.get)) {
+        if (newSortColumns.isDefined) {
+          if (StringUtils.isBlank(CarbonUtil.unquoteChar(newSortColumns.get))) {
+            throw new InvalidConfigurationException(
+              s"Cannot set SORT_COLUMNS as empty when setting SORT_SCOPE as ${newSortScope.get} ")
+          }
+        } else {
+          if (carbonTable.getNumberOfSortColumns == 0) {
+            throw new InvalidConfigurationException(
+              s"Cannot set SORT_SCOPE as ${newSortScope.get} when table has no SORT_COLUMNS")
+          }
+        }
+      }
+    } else if (newSortColumns.isDefined) {
+      // 2. check SORT_SCOPE when SORT_COLUMNS is changed to empty
+      if (StringUtils.isBlank(CarbonUtil.unquoteChar(newSortColumns.get))) {
+        if (!SortScope.NO_SORT.equals(carbonTable.getSortScope)) {
           throw new InvalidConfigurationException(
-            s"Cannot set SORT_SCOPE as ${ property._2 } when table has no SORT_COLUMNS")
+            s"Cannot set SORT_COLUMNS as empty when SORT_SCOPE is ${carbonTable.getSortScope} ")
         }
       }
     }

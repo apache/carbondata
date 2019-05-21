@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.standardpartition
 
-import java.io.File
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.test.util.QueryTest

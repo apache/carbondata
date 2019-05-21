@@ -167,7 +167,13 @@ object CarbonFilters {
       } else {
         dataTypeOfAttribute
       }
-      new CarbonLiteralExpression(value, dataType)
+      val dataValue = if (dataTypeOfAttribute.equals(CarbonDataTypes.BINARY)
+              && Option(value).isDefined) {
+        new String(value.asInstanceOf[Array[Byte]])
+      } else {
+        value
+      }
+      new CarbonLiteralExpression(dataValue, dataType)
     }
 
     createFilter(predicate)
@@ -526,7 +532,7 @@ object CarbonFilters {
           // read partitions directly from hive metastore using filters
           sparkSession.sessionState.catalog.listPartitionsByFilter(identifier, partitionFilters)
         } else {
-          // Read partitions alternatively by firts get all partitions then filter them
+          // Read partitions alternatively by first get all partitions then filter them
           sparkSession.sessionState.catalog.
             asInstanceOf[CarbonSessionCatalog].getPartitionsAlternate(
             partitionFilters,

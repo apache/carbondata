@@ -356,7 +356,7 @@ public final class DataTypeUtil {
           Date dateToStr = dateformatter.get().parse(data);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
-          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
           return null;
         }
       } else if (actualDataType == DataTypes.TIMESTAMP) {
@@ -367,7 +367,7 @@ public final class DataTypeUtil {
           Date dateToStr = timeStampformatter.get().parse(data);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
-          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
           return null;
         }
       } else if (DataTypes.isDecimal(actualDataType)) {
@@ -476,7 +476,9 @@ public final class DataTypeUtil {
     } else if (actualDataType == DataTypes.LONG) {
       return ByteUtil.toXorBytes((Long) dimensionValue);
     } else if (actualDataType == DataTypes.TIMESTAMP) {
-      return ByteUtil.toXorBytes((Long)dimensionValue);
+      return ByteUtil.toXorBytes((Long) dimensionValue);
+    } else if (actualDataType == DataTypes.BINARY) {
+      return (byte[]) dimensionValue;
     } else {
       // Default action for String/Varchar
       return ByteUtil.toBytes(dimensionValue.toString());
@@ -603,6 +605,11 @@ public final class DataTypeUtil {
           return null;
         }
         return getDataTypeConverter().convertFromBigDecimalToDecimal(byteToBigDecimal(dataInBytes));
+      } else if (actualDataType == DataTypes.BINARY) {
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
+        return dataInBytes;
       } else {
         // Default action for String/Varchar
         return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
@@ -675,7 +682,7 @@ public final class DataTypeUtil {
           Date dateToStr = dateformatter.get().parse(data5);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
-          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
           return null;
         }
       } else if (dataType == DataTypes.TIMESTAMP) {
@@ -687,7 +694,7 @@ public final class DataTypeUtil {
           Date dateToStr = timeStampformatter.get().parse(data6);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
-          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
           return null;
         }
       } else if (DataTypes.isDecimal(dataType)) {
@@ -1057,6 +1064,8 @@ public final class DataTypeUtil {
       return DataTypes.BYTE_ARRAY;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.BYTE_ARRAY;
+    } else if (DataTypes.BINARY.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.BINARY;
     } else if (dataType.getName().equalsIgnoreCase("decimal")) {
       return DataTypes.createDecimalType(precision, scale);
     } else if (dataType.getName().equalsIgnoreCase("array")) {

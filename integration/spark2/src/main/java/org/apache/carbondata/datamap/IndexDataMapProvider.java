@@ -93,7 +93,7 @@ public class IndexDataMapProvider extends DataMapProvider {
     if (mainTable == null) {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
     }
-    DataMapStoreManager.getInstance().clearDataMap(
+    DataMapStoreManager.getInstance().deleteDataMap(
         mainTable.getAbsoluteTableIdentifier(), getDataMapSchema().getDataMapName());
   }
 

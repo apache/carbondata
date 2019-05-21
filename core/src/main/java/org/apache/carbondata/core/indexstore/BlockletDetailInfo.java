@@ -129,7 +129,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
         blockletInfo.readFields(inputStream);
       } catch (IOException e) {
         LOGGER.error("Problem in reading blocklet info", e);
-        throw new IOException("Problem in reading blocklet info." + e.getMessage());
+        throw new IOException("Problem in reading blocklet info." + e.getMessage(), e);
       } finally {
         try {
           inputStream.close();

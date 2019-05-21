@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.metadata.schema.table;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -37,8 +39,6 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -73,7 +73,7 @@ import org.apache.log4j.Logger;
 /**
  * Mapping class for Carbon actual table
  */
-public class CarbonTable implements Serializable {
+public class CarbonTable implements Serializable, Writable {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonTable.class.getName());
@@ -119,6 +119,11 @@ public class CarbonTable implements Serializable {
    * list of allMeasures
    */
   private List<CarbonMeasure> allMeasures;
+
+  /**
+   * list of column drift
+   */
+  private List<CarbonDimension> columnDrift;
 
   /**
    * table bucket map.
@@ -181,7 +186,7 @@ public class CarbonTable implements Serializable {
    */
   private boolean isTransactionalTable = true;
 
-  private CarbonTable() {
+  public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableMeasuresMap = new HashMap<String, List<CarbonMeasure>>();
@@ -189,6 +194,7 @@ public class CarbonTable implements Serializable {
     this.tablePartitionMap = new HashMap<>();
     this.createOrderColumn = new HashMap<String, List<CarbonColumn>>();
     this.tablePrimitiveDimensionsMap = new HashMap<String, List<CarbonDimension>>();
+    this.columnDrift = new ArrayList<CarbonDimension>();
   }
 
   /**
@@ -246,12 +252,9 @@ public class CarbonTable implements Serializable {
       String tableName,
       Configuration configuration) throws IOException {
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
-    CarbonFile carbonFile = getLatestIndexFile(FileFactory.getCarbonFile(tablePath, configuration));
-    if (carbonFile == null) {
-      throw new RuntimeException("Carbon index file not exists.");
-    }
-    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
-        .inferSchemaFromIndexFile(carbonFile.getPath(), tableName);
+    // InferSchema from data file
+    org.apache.carbondata.format.TableInfo tableInfo =
+        CarbonUtil.inferSchema(tablePath, tableName, false, configuration);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
         .getFact_table().getTable_columns()) {
@@ -262,38 +265,6 @@ public class CarbonTable implements Serializable {
       columnSchemaList.add(columnSchema);
     }
     tableInfoInfer.getFactTable().setListOfColumns(columnSchemaList);
-    return CarbonTable.buildFromTableInfo(tableInfoInfer);
-  }
-
-  private static CarbonFile getLatestIndexFile(CarbonFile tablePath) {
-    CarbonFile[] carbonFiles = tablePath.listFiles();
-    CarbonFile latestCarbonIndexFile = null;
-    long latestIndexFileTimestamp = 0L;
-    for (CarbonFile carbonFile : carbonFiles) {
-      if (carbonFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)
-          && carbonFile.getLastModifiedTime() > latestIndexFileTimestamp) {
-        latestCarbonIndexFile = carbonFile;
-        latestIndexFileTimestamp = carbonFile.getLastModifiedTime();
-      } else if (carbonFile.isDirectory()) {
-        // if the list has directories that doesn't contain index files,
-        // continue checking other files/directories in the list.
-        if (getLatestIndexFile(carbonFile) == null) {
-          continue;
-        } else {
-          return getLatestIndexFile(carbonFile);
-        }
-      }
-    }
-    if (latestCarbonIndexFile != null) {
-      return latestCarbonIndexFile;
-    } else {
-      // returning null only if the path doesn't have index files.
-      return null;
-    }
-  }
-
-  public static CarbonTable buildDummyTable(String tablePath) throws IOException {
-    TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
     return CarbonTable.buildFromTableInfo(tableInfoInfer);
   }
 
@@ -898,6 +869,12 @@ public class CarbonTable implements Serializable {
     for (CarbonDimension dimension : allDimensions) {
       if (!dimension.isInvisible()) {
         visibleDimensions.add(dimension);
+        Map<String, String> columnProperties = dimension.getColumnProperties();
+        if (columnProperties != null) {
+          if (columnProperties.get(CarbonCommonConstants.COLUMN_DRIFT) != null) {
+            columnDrift.add(dimension);
+          }
+        }
       }
     }
     tableDimensionsMap.put(tableName, visibleDimensions);
@@ -910,6 +887,14 @@ public class CarbonTable implements Serializable {
    */
   public List<CarbonMeasure> getAllMeasures() {
     return allMeasures;
+  }
+
+  public List<CarbonDimension> getColumnDrift() {
+    return columnDrift;
+  }
+
+  public boolean hasColumnDrift() {
+    return tableInfo.hasColumnDrift();
   }
 
   /**
@@ -1061,20 +1046,24 @@ public class CarbonTable implements Serializable {
     return dataSize + indexSize;
   }
 
-  public void processFilterExpression(Expression filterExpression,
+  public void processFilterExpression(Expression filterExpression, boolean[] isFilterDimensions,
+      boolean[] isFilterMeasures) {
+    processFilterExpressionWithoutRange(filterExpression, isFilterDimensions, isFilterMeasures);
+    if (null != filterExpression) {
+      // Optimize Filter Expression and fit RANGE filters is conditions apply.
+      FilterOptimizer rangeFilterOptimizer = new RangeFilterOptmizer(filterExpression);
+      rangeFilterOptimizer.optimizeFilter();
+    }
+  }
+
+  public void processFilterExpressionWithoutRange(Expression filterExpression,
       boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
     QueryModel.FilterProcessVO processVO =
         new QueryModel.FilterProcessVO(getDimensionByTableName(getTableName()),
             getMeasureByTableName(getTableName()), getImplicitDimensionByTableName(getTableName()));
-    QueryModel.processFilterExpression(processVO, filterExpression, isFilterDimensions,
-        isFilterMeasures, this);
-
-    if (null != filterExpression) {
-      // Optimize Filter Expression and fit RANGE filters is conditions apply.
-      FilterOptimizer rangeFilterOptimizer =
-          new RangeFilterOptmizer(filterExpression);
-      rangeFilterOptimizer.optimizeFilter();
-    }
+    QueryModel
+        .processFilterExpression(processVO, filterExpression, isFilterDimensions, isFilterMeasures,
+            this);
   }
 
   /**
@@ -1133,7 +1122,7 @@ public class CarbonTable implements Serializable {
     } catch (Exception e) {
       // since method returns true or false and based on that calling function throws exception, no
       // need to throw the catched exception
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       return true;
     }
     return true;
@@ -1384,5 +1373,15 @@ public class CarbonTable implements Serializable {
     } else {
       return SortScopeOptions.getSortScope(sortScope);
     }
+  }
+
+  @Override public void write(DataOutput out) throws IOException {
+    tableInfo.write(out);
+  }
+
+  @Override public void readFields(DataInput in) throws IOException {
+    tableInfo = new TableInfo();
+    tableInfo.readFields(in);
+    updateTableByTableInfo(this, tableInfo);
   }
 }

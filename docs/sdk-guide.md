@@ -195,6 +195,7 @@ Each of SQL data types and Avro Data Types are mapped into data types of SDK. Fo
 | BIGINT | LONG | DataTypes.LONG |
 | DOUBLE | DOUBLE | DataTypes.DOUBLE |
 | VARCHAR |  -  | DataTypes.STRING |
+| BINARY |  -  | DataTypes.BINARY |
 | FLOAT | FLOAT | DataTypes.FLOAT |
 | BYTE |  -  | DataTypes.BYTE |
 | DATE | DATE | DataTypes.DATE |
@@ -382,6 +383,7 @@ public CarbonWriterBuilder withLoadOptions(Map<String, String> options);
  *                           default value is null.
  * l. inverted_index -- comma separated string columns for which inverted index needs to be
  *                      generated
+ * m. table_page_size_inmb -- [1-1755] MB. 
  *
  * @return updated CarbonWriterBuilder
  */

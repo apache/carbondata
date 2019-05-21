@@ -112,7 +112,8 @@ public class SortDataRows {
     CarbonDataProcessorUtil.createLocations(parameters.getTempFileLocation());
     this.dataSorterAndWriterExecutorService = Executors
         .newFixedThreadPool(parameters.getNumberOfCores(),
-            new CarbonThreadFactory("SortDataRowPool:" + parameters.getTableName()));
+            new CarbonThreadFactory("SortDataRowPool:" + parameters.getTableName(),
+                    true));
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 
@@ -174,7 +175,7 @@ public class SortDataRows {
               .execute(new DataSorterAndWriter(recordHolderListLocal));
         } catch (Exception e) {
           LOGGER.error(
-              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage(), e);
           throw new CarbonSortKeyAndGroupByException(e);
         }
         // create the new holder Array

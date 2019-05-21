@@ -21,7 +21,7 @@ import java.io.{File, IOException}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
@@ -29,10 +29,12 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 /**
  *
  */
-class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
+class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterEach {
 
-  override def beforeAll {
+  override def beforeEach {
     sql("drop database if exists carbon cascade")
+    sql("drop database if exists carbon1 cascade")
+    sql("drop database if exists carbon2 cascade")
   }
 
   def restoreData(dblocation: String, tableName: String) = {
@@ -60,7 +62,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("register tables test") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -76,7 +77,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("register table test") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -92,7 +92,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
    test("register pre aggregate tables test") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -115,7 +114,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("register pre aggregate table test") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -138,7 +136,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("register pre aggregate table should fail if the aggregate table not copied") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -159,8 +156,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Update operation on carbon table should pass after registration or refresh") {
-    sql("drop database if exists carbon cascade")
-    sql("drop database if exists carbon1 cascade")
     sql(s"create database carbon1 location '$dblocation'")
     sql("use carbon1")
     sql("drop table if exists carbontable")
@@ -183,7 +178,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Update operation on carbon table") {
-    sql("drop database if exists carbon1 cascade")
     sql(s"create database carbon1 location '$dblocation'")
     sql("use carbon1")
     sql(
@@ -208,7 +202,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Delete operation on carbon table") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -230,7 +223,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Alter table add column test") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -252,7 +244,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Alter table change column datatype test") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -273,7 +264,6 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Alter table drop column test") {
-    sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -293,8 +283,10 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  override def afterAll {
+  override def afterEach {
     sql("use default")
     sql("drop database if exists carbon cascade")
+    sql("drop database if exists carbon1 cascade")
+    sql("drop database if exists carbon2 cascade")
   }
 }

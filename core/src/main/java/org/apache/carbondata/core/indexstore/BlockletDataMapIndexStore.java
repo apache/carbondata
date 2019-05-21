@@ -148,8 +148,8 @@ public class BlockletDataMapIndexStore
         for (DataMap dataMap : dataMaps) {
           dataMap.clear();
         }
-        LOGGER.error("memory exception when loading datamap: " + e.getMessage());
-        throw new RuntimeException(e.getMessage(), e);
+        LOGGER.error("memory exception when loading datamap: " + e.getMessage(), e);
+        throw new RuntimeException(e);
       }
     }
     return blockletDataMapIndexWrapper;

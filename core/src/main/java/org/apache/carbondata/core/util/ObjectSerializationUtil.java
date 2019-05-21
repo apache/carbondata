@@ -26,6 +26,7 @@ import java.util.zip.GZIPOutputStream;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
+import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.log4j.Logger;
 
 /**
@@ -65,7 +66,7 @@ public class ObjectSerializationUtil {
           baos.close();
         }
       } catch (IOException e) {
-        LOG.error(e);
+        LOG.error(e.getMessage(), e);
       }
     }
 
@@ -94,7 +95,7 @@ public class ObjectSerializationUtil {
     try {
       bais = new ByteArrayInputStream(bytes);
       gis = new GZIPInputStream(bais);
-      ois = new ObjectInputStream(gis);
+      ois = new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), gis);
       return ois.readObject();
     } catch (ClassNotFoundException e) {
       throw new IOException("Could not read object", e);
@@ -110,7 +111,7 @@ public class ObjectSerializationUtil {
           bais.close();
         }
       } catch (IOException e) {
-        LOG.error(e);
+        LOG.error(e.getMessage(), e);
       }
     }
   }

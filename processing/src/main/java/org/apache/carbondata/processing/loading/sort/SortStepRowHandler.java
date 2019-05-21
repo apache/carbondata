@@ -35,6 +35,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.NonDictionaryUtil;
 import org.apache.carbondata.core.util.ReUsableByteArrayDataOutputStream;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
+import org.apache.carbondata.processing.sort.SortTempRowUpdater;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 
@@ -78,6 +79,8 @@ public class SortStepRowHandler implements Serializable {
 
   private boolean[] noDictNoSortColMapping;
 
+  private SortTempRowUpdater sortTempRowUpdater;
+
   /**
    * constructor
    * @param tableFieldStat table field stat
@@ -108,6 +111,7 @@ public class SortStepRowHandler implements Serializable {
     for (int i = 0; i < noDictNoSortDataTypes.length; i++) {
       noDictNoSortColMapping[i] = DataTypeUtil.isPrimitiveColumn(noDictNoSortDataTypes[i]);
     }
+    this.sortTempRowUpdater = tableFieldStat.getSortTempRowUpdater();
   }
 
   /**
@@ -167,8 +171,7 @@ public class SortStepRowHandler implements Serializable {
       for (int idx = 0; idx < this.measureCnt; idx++) {
         measures[idx] = row[this.measureIdx[idx]];
       }
-
-      NonDictionaryUtil.prepareOutObj(holder, dictDims, nonDictArray, measures);
+      sortTempRowUpdater.updateOutputRow(holder, dictDims, nonDictArray, measures);
     } catch (Exception e) {
       throw new RuntimeException("Problem while converting row to 3 parts", e);
     }
@@ -397,6 +400,11 @@ public class SortStepRowHandler implements Serializable {
       byte[] decimalBytes = new byte[len];
       rowBuffer.get(decimalBytes);
       tmpContent = DataTypeUtil.byteToBigDecimal(decimalBytes);
+    } else if (DataTypes.BINARY == tmpDataType) {
+      int len = rowBuffer.getInt();
+      byte[] bytes = new byte[len];
+      rowBuffer.get(bytes);
+      tmpContent = bytes;
     } else {
       throw new IllegalArgumentException("Unsupported data type: " + tmpDataType);
     }
@@ -844,6 +852,10 @@ public class SortStepRowHandler implements Serializable {
       byte[] decimalBytes = DataTypeUtil.bigDecimalToByte((BigDecimal) tmpValue);
       reUsableByteArrayDataOutputStream.writeShort((short) decimalBytes.length);
       reUsableByteArrayDataOutputStream.write(decimalBytes);
+    } else if (DataTypes.BINARY == tmpDataType) {
+      byte[] bytes = (byte[]) tmpValue;
+      reUsableByteArrayDataOutputStream.writeInt(bytes.length);
+      reUsableByteArrayDataOutputStream.write(bytes);
     } else {
       throw new IllegalArgumentException("Unsupported data type: " + tmpDataType);
     }

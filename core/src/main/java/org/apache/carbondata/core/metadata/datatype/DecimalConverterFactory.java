@@ -23,6 +23,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -102,13 +103,13 @@ public final class DecimalConverterFactory {
       return BigDecimal.valueOf((Long) valueToBeConverted, scale);
     }
 
-    @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
-        BitSet nullBitset, DataType pageType) {
+    @Override public void fillVector(Object valuesToBeConverted, int size,
+        ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
       // TODO we need to find way to directly set to vector with out conversion. This way is very
       // inefficient.
-      CarbonColumnVector vector = info.vector;
-      int precision = info.measure.getMeasure().getPrecision();
-      int newMeasureScale = info.measure.getMeasure().getScale();
+      CarbonColumnVector vector = getCarbonColumnVector(vectorInfo, nullBitSet);
+      int precision = vectorInfo.measure.getMeasure().getPrecision();
+      int newMeasureScale = vectorInfo.measure.getMeasure().getScale();
       if (!(valuesToBeConverted instanceof byte[])) {
         throw new UnsupportedOperationException("This object type " + valuesToBeConverted.getClass()
             + " is not supported in this method");
@@ -116,7 +117,7 @@ public final class DecimalConverterFactory {
       byte[] data = (byte[]) valuesToBeConverted;
       if (pageType == DataTypes.BYTE) {
         for (int i = 0; i < size; i++) {
-          if (nullBitset.get(i)) {
+          if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
             BigDecimal value = BigDecimal.valueOf(data[i], scale);
@@ -128,7 +129,7 @@ public final class DecimalConverterFactory {
         }
       } else if (pageType == DataTypes.SHORT) {
         for (int i = 0; i < size; i++) {
-          if (nullBitset.get(i)) {
+          if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
             BigDecimal value = BigDecimal
@@ -142,7 +143,7 @@ public final class DecimalConverterFactory {
         }
       } else if (pageType == DataTypes.SHORT_INT) {
         for (int i = 0; i < size; i++) {
-          if (nullBitset.get(i)) {
+          if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
             BigDecimal value = BigDecimal
@@ -156,7 +157,7 @@ public final class DecimalConverterFactory {
         }
       } else if (pageType == DataTypes.INT) {
         for (int i = 0; i < size; i++) {
-          if (nullBitset.get(i)) {
+          if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
             BigDecimal value = BigDecimal
@@ -170,7 +171,7 @@ public final class DecimalConverterFactory {
         }
       } else if (pageType == DataTypes.LONG) {
         for (int i = 0; i < size; i++) {
-          if (nullBitset.get(i)) {
+          if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
             BigDecimal value = BigDecimal
@@ -261,18 +262,18 @@ public final class DecimalConverterFactory {
       return new BigDecimal(bigInteger, scale);
     }
 
-    @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
-        BitSet nullBitset, DataType pageType) {
-      CarbonColumnVector vector = info.vector;
-      int precision = info.measure.getMeasure().getPrecision();
-      int newMeasureScale = info.measure.getMeasure().getScale();
+    @Override public void fillVector(Object valuesToBeConverted, int size,
+        ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
+      CarbonColumnVector vector = getCarbonColumnVector(vectorInfo, nullBitSet);
+      int precision = vectorInfo.measure.getMeasure().getPrecision();
+      int newMeasureScale = vectorInfo.measure.getMeasure().getScale();
       if (scale < newMeasureScale) {
         scale = newMeasureScale;
       }
       if (valuesToBeConverted instanceof byte[][]) {
         byte[][] data = (byte[][]) valuesToBeConverted;
         for (int i = 0; i < size; i++) {
-          if (nullBitset.get(i)) {
+          if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
             BigInteger bigInteger = new BigInteger(data[i]);
@@ -307,15 +308,15 @@ public final class DecimalConverterFactory {
       return DataTypeUtil.byteToBigDecimal((byte[]) valueToBeConverted);
     }
 
-    @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
-        BitSet nullBitset, DataType pageType) {
-      CarbonColumnVector vector = info.vector;
-      int precision = info.measure.getMeasure().getPrecision();
-      int newMeasureScale = info.measure.getMeasure().getScale();
+    @Override public void fillVector(Object valuesToBeConverted, int size,
+        ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
+      CarbonColumnVector vector = getCarbonColumnVector(vectorInfo, nullBitSet);
+      int precision = vectorInfo.measure.getMeasure().getPrecision();
+      int newMeasureScale = vectorInfo.measure.getMeasure().getScale();
       if (valuesToBeConverted instanceof byte[][]) {
         byte[][] data = (byte[][]) valuesToBeConverted;
         for (int i = 0; i < size; i++) {
-          if (nullBitset.get(i)) {
+          if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
             BigDecimal value = DataTypeUtil.byteToBigDecimal(data[i]);
@@ -335,6 +336,16 @@ public final class DecimalConverterFactory {
     @Override public DecimalConverterType getDecimalConverterType() {
       return DecimalConverterType.DECIMAL_LV;
     }
+  }
+
+  private static CarbonColumnVector getCarbonColumnVector(ColumnVectorInfo vectorInfo,
+      BitSet nullBitSet) {
+    CarbonColumnVector vector = vectorInfo.vector;
+    BitSet deletedRows = vectorInfo.deletedRows;
+    vector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector, vectorInfo.invertedIndex, nullBitSet, deletedRows,
+            true, false);
+    return vector;
   }
 
   public DecimalConverter getDecimalConverter(int precision, int scale) {

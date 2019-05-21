@@ -91,6 +91,8 @@ public class TableInfo implements Serializable, Writable {
    */
   private boolean isTransactionalTable = true;
 
+  private boolean hasColumnDrift = false;
+
   // this identifier is a lazy field which will be created when it is used first time
   private AbsoluteTableIdentifier identifier;
 
@@ -122,6 +124,7 @@ public class TableInfo implements Serializable, Writable {
     this.factTable = factTable;
     updateParentRelationIdentifier();
     updateIsSchemaModified();
+    updateHasColumnDrift();
   }
 
   private void updateIsSchemaModified() {
@@ -276,6 +279,7 @@ public class TableInfo implements Serializable, Writable {
     out.writeLong(lastUpdatedTime);
     out.writeUTF(getOrCreateAbsoluteTableIdentifier().getTablePath());
     out.writeBoolean(isTransactionalTable);
+    out.writeBoolean(hasColumnDrift);
     boolean isChildSchemaExists =
         null != dataMapSchemaList && dataMapSchemaList.size() > 0;
     out.writeBoolean(isChildSchemaExists);
@@ -305,6 +309,7 @@ public class TableInfo implements Serializable, Writable {
     this.lastUpdatedTime = in.readLong();
     this.tablePath = in.readUTF();
     this.isTransactionalTable = in.readBoolean();
+    this.hasColumnDrift = in.readBoolean();
     boolean isChildSchemaExists = in.readBoolean();
     this.dataMapSchemaList = new ArrayList<>();
     if (isChildSchemaExists) {
@@ -371,4 +376,22 @@ public class TableInfo implements Serializable, Writable {
     return isSchemaModified;
   }
 
+  private void updateHasColumnDrift() {
+    this.hasColumnDrift = false;
+    for (ColumnSchema columnSchema : factTable.getListOfColumns()) {
+      if (columnSchema.isDimensionColumn() && !columnSchema.isInvisible()) {
+        Map<String, String> columnProperties = columnSchema.getColumnProperties();
+        if (columnProperties != null) {
+          if (columnProperties.get(CarbonCommonConstants.COLUMN_DRIFT) != null) {
+            this.hasColumnDrift = true;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  public boolean hasColumnDrift() {
+    return hasColumnDrift;
+  }
 }

@@ -51,4 +51,4 @@
 
   * Other Types
     * BOOLEAN
-
+    * BINARY

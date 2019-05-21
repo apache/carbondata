@@ -39,6 +39,7 @@ enum DataType {
 	MAP = 23,
 	FLOAT = 24,
 	BYTE = 25
+	BINARY = 26,
 }
 
 /**

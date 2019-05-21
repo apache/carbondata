@@ -16,58 +16,73 @@
  */
 package org.apache.carbondata.core.indexstore;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.List;
+
+import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.indexstore.row.DataMapRow;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
+
 /**
  * Detailed blocklet information
  */
 public class ExtendedBlocklet extends Blocklet {
 
-  private String segmentId;
-
-  private BlockletDetailInfo detailInfo;
-
-  private long length;
-
-  private String[] location;
-
-  private String dataMapWriterPath;
-
   private String dataMapUniqueId;
 
-  public ExtendedBlocklet(String filePath, String blockletId) {
-    super(filePath, blockletId);
+  private CarbonInputSplit inputSplit;
+
+  public ExtendedBlocklet() {
+
   }
 
   public ExtendedBlocklet(String filePath, String blockletId,
-      boolean compareBlockletIdForObjectMatching) {
+      boolean compareBlockletIdForObjectMatching, ColumnarFormatVersion version) {
     super(filePath, blockletId, compareBlockletIdForObjectMatching);
+    try {
+      this.inputSplit = CarbonInputSplit.from(null, blockletId, filePath, 0, -1, version, null);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public ExtendedBlocklet(String filePath, String blockletId, ColumnarFormatVersion version) {
+    this(filePath, blockletId, true, version);
   }
 
   public BlockletDetailInfo getDetailInfo() {
-    return detailInfo;
+    return this.inputSplit.getDetailInfo();
   }
 
-  public void setDetailInfo(BlockletDetailInfo detailInfo) {
-    this.detailInfo = detailInfo;
-  }
-
-  public void setLocation(String[] location) {
-    this.location = location;
+  public void setDataMapRow(DataMapRow dataMapRow) {
+    this.inputSplit.setDataMapRow(dataMapRow);
   }
 
   public String[] getLocations() {
-    return location;
+    try {
+      return this.inputSplit.getLocations();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public long getLength() {
-    return length;
+    return this.inputSplit.getLength();
   }
 
   public String getSegmentId() {
-    return segmentId;
+    return this.inputSplit.getSegmentId();
   }
 
-  public void setSegmentId(String segmentId) {
-    this.segmentId = segmentId;
+  public Segment getSegment() {
+    return this.inputSplit.getSegment();
+  }
+  public void setSegment(Segment segment) {
+    this.inputSplit.setSegment(segment);
   }
 
   public String getPath() {
@@ -75,11 +90,11 @@ public class ExtendedBlocklet extends Blocklet {
   }
 
   public String getDataMapWriterPath() {
-    return dataMapWriterPath;
+    return this.inputSplit.getDataMapWritePath();
   }
 
   public void setDataMapWriterPath(String dataMapWriterPath) {
-    this.dataMapWriterPath = dataMapWriterPath;
+    this.inputSplit.setDataMapWritePath(dataMapWriterPath);
   }
 
   public String getDataMapUniqueId() {
@@ -98,13 +113,88 @@ public class ExtendedBlocklet extends Blocklet {
     }
 
     ExtendedBlocklet that = (ExtendedBlocklet) o;
-
-    return segmentId != null ? segmentId.equals(that.segmentId) : that.segmentId == null;
+    return inputSplit.getSegmentId() != null ?
+        inputSplit.getSegmentId().equals(that.inputSplit.getSegmentId()) :
+        that.inputSplit.getSegmentId() == null;
   }
 
   @Override public int hashCode() {
     int result = super.hashCode();
-    result = 31 * result + (segmentId != null ? segmentId.hashCode() : 0);
+    result = 31 * result + (inputSplit.getSegmentId() != null ?
+        inputSplit.getSegmentId().hashCode() :
+        0);
     return result;
   }
+
+  public CarbonInputSplit getInputSplit() {
+    return inputSplit;
+  }
+
+  public void setColumnCardinality(int[] cardinality) {
+    inputSplit.setColumnCardinality(cardinality);
+  }
+
+  public void setLegacyStore(boolean isLegacyStore) {
+    inputSplit.setLegacyStore(isLegacyStore);
+  }
+
+  public void setUseMinMaxForPruning(boolean useMinMaxForPruning) {
+    this.inputSplit.setUseMinMaxForPruning(useMinMaxForPruning);
+  }
+
+  public void setIsBlockCache(boolean isBlockCache) {
+    this.inputSplit.setIsBlockCache(isBlockCache);
+  }
+
+  public void setColumnSchema(List<ColumnSchema> columnSchema) {
+    this.inputSplit.setColumnSchema(columnSchema);
+  }
+
+
+
+  @Override public void write(DataOutput out) throws IOException {
+    super.write(out);
+    if (dataMapUniqueId == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      out.writeUTF(dataMapUniqueId);
+    }
+    if (inputSplit != null) {
+      out.writeBoolean(true);
+      inputSplit.write(out);
+      String[] locations = getLocations();
+      if (locations != null) {
+        out.writeBoolean(true);
+        out.writeInt(locations.length);
+        for (String location : locations) {
+          out.writeUTF(location);
+        }
+      } else {
+        out.writeBoolean(false);
+      }
+    } else {
+      out.writeBoolean(false);
+    }
+  }
+
+  @Override public void readFields(DataInput in) throws IOException {
+    super.readFields(in);
+    if (in.readBoolean()) {
+      dataMapUniqueId = in.readUTF();
+    }
+    if (in.readBoolean()) {
+      inputSplit = new CarbonInputSplit();
+      inputSplit.readFields(in);
+      if (in.readBoolean()) {
+        int numLocations = in.readInt();
+        String[] locations = new String[numLocations];
+        for (int i = 0; i < numLocations; i++) {
+          locations[i] = in.readUTF();
+        }
+        inputSplit.setLocation(locations);
+      }
+    }
+  }
+
 }

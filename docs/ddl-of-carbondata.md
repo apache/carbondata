@@ -67,6 +67,7 @@ CarbonData DDL statements are documented here,which includes:
   * [SPLIT PARTITION](#split-a-partition)
   * [DROP PARTITION](#drop-a-partition)
 * [BUCKETING](#bucketing)
+* [CACHE](#cache)
 
 ## CREATE TABLE
 
@@ -93,6 +94,7 @@ CarbonData DDL statements are documented here,which includes:
 | [SORT_SCOPE](#sort-scope-configuration)                      | Sort scope of the load.Options include no sort, local sort ,batch sort and global sort |
 | [TABLE_BLOCKSIZE](#table-block-size-configuration)           | Size of blocks to write onto hdfs                            |
 | [TABLE_BLOCKLET_SIZE](#table-blocklet-size-configuration)    | Size of blocklet to write in the file                        |
+| [TABLE_PAGE_SIZE_INMB](#table-page-size-configuration)       | Size of page in MB; if page size crosses this value before 32000 rows, page will be cut to this many rows and remaining rows are processed in the subsequent pages. This helps in keeping page size to fit in cpu cache size|
 | [MAJOR_COMPACTION_SIZE](#table-compaction-configuration)     | Size upto which the segments can be combined into one        |
 | [AUTO_LOAD_MERGE](#table-compaction-configuration)           | Whether to auto compact the segments                         |
 | [COMPACTION_LEVEL_THRESHOLD](#table-compaction-configuration) | Number of segments to compact into one segment               |
@@ -155,6 +157,7 @@ CarbonData DDL statements are documented here,which includes:
       * BOOLEAN
       * FLOAT
       * BYTE
+      * Binary
    * In case of multi-level complex dataType columns, primitive string/varchar/char columns are considered for local dictionary generation.
 
    System Level Properties for Local Dictionary: 
@@ -222,7 +225,7 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Sort Columns Configuration
 
      This property is for users to specify which columns belong to the MDK(Multi-Dimensions-Key) index.
-     * If users don't specify "SORT_COLUMN" property, by default no columns are sorted 
+     * If users don't specify "SORT_COLUMNS" property, by default no columns are sorted 
      * If this property is specified but with empty argument, then the table will be loaded without sort.
      * This supports only string, date, timestamp, short, int, long, byte and boolean data types.
      Suggested use cases : Only build MDK index for required columns,it might help to improve the data loading performance.
@@ -231,7 +234,7 @@ CarbonData DDL statements are documented here,which includes:
      TBLPROPERTIES ('SORT_COLUMNS'='column1, column3')
      ```
 
-     **NOTE**: Sort_Columns for Complex datatype columns is not supported.
+     **NOTE**: Sort_Columns for Complex datatype columns and binary data type is not supported.
 
    - ##### Sort Scope Configuration
    
@@ -282,6 +285,23 @@ CarbonData DDL statements are documented here,which includes:
      TBLPROPERTIES ('TABLE_BLOCKLET_SIZE'='8')
      ```
 
+   - ##### Table page Size Configuration
+
+     This property is for setting page size in the carbondata file 
+     and supports a range of 1 MB to 1755 MB.
+     If page size crosses this value before 32000 rows, page will be cut to that many rows. 
+     Helps in keeping page size to fit cpu cache size.
+
+     This property can be configured if the table has string, varchar, binary or complex datatype columns.
+     Because for these columns 32000 rows in one page may exceed 1755 MB and snappy compression will fail in that scenario.
+     Also if page size is huge, page cannot be fit in CPU cache. 
+     So, configuring smaller values of this property (say 1 MB) can result in better use of CPU cache for pages.
+
+     Example usage:
+     ```
+     TBLPROPERTIES ('TABLE_PAGE_SIZE_INMB'='5')
+     ```
+
    - ##### Table Compaction Configuration
    
      These properties are table level compaction configurations, if not specified, system level configurations in carbon.properties will be used.
@@ -312,7 +332,7 @@ CarbonData DDL statements are documented here,which includes:
 
    - ##### Caching Min/Max Value for Required Columns
 
-     By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. 
+     By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. This feature doesn't support binary data type.
 
       Following are the valid values for COLUMN_META_CACHE:
       * If you want no column min/max values to be cached in the driver.
@@ -500,6 +520,7 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Range Column
      This property is used to specify a column to partition the input data by range.
      Only one column can be configured. During data loading, you can use "global_sort_partitions" or "scale_factor" to avoid generating small files.
+     This feature doesn't support binary data type.
 
      ```
      TBLPROPERTIES('RANGE_COLUMN'='col1')
@@ -779,6 +800,27 @@ Users can specify which columns to include and exclude for local dictionary gene
        ALTER TABLE tablename UNSET TBLPROPERTIES('SORT_SCOPE')
        ```
 
+     - ##### SORT COLUMNS
+       Example to SET SORT COLUMNS:
+       ```
+       ALTER TABLE tablename SET TBLPROPERTIES('SORT_COLUMNS'='column1')
+       ```
+       After this operation, the new loading will use the new SORT_COLUMNS. The user can adjust 
+       the SORT_COLUMNS according to the query, but it will not impact the old data directly. So 
+       it will not impact the query performance of the old data segments which are not sorted by 
+       new SORT_COLUMNS.  
+       
+       UNSET is not supported, but it can set SORT_COLUMNS to empty string instead of using UNSET.
+       ```
+       ALTER TABLE tablename SET TBLPROPERTIES('SORT_COLUMNS'='')
+       ```
+
+       **NOTE:**
+        * The future version will enhance "custom" compaction to sort the old segment one by one.
+        * The streaming table is not supported for SORT_COLUMNS modification.
+        * If the inverted index columns are removed from the new SORT_COLUMNS, they will not 
+        create the inverted index. But the old configuration of INVERTED_INDEX will be kept.
+
 ### DROP TABLE
 
   This command is used to delete an existing table.
@@ -876,7 +918,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   PARTITIONED BY (productCategory STRING, productBatch STRING)
   STORED AS carbondata
   ```
-   **NOTE:** Hive partition is not supported on complex datatype columns.
+   **NOTE:** Hive partition is not supported on complex data type columns and binary data type.
 
 
 #### Show Partitions
@@ -919,7 +961,7 @@ Users can specify which columns to include and exclude for local dictionary gene
 
 ### CARBONDATA PARTITION(HASH,RANGE,LIST) -- Alpha feature, this partition feature does not support update and delete data.
 
-  The partition supports three type:(Hash,Range,List), similar to other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column.
+  The partition supports three type:(Hash,Range,List), similar to other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column. Partition feature doesn't support binary data type.
 
 ### Create Hash Partition Table
 
@@ -1088,4 +1130,46 @@ Users can specify which columns to include and exclude for local dictionary gene
   TBLPROPERTIES ('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='productName')
   ```
 
+## CACHE
 
+  CarbonData internally uses LRU caching to improve the performance. The user can get information 
+  about current cache used status in memory through the following command:
+
+  ```sql
+  SHOW METACACHE
+  ``` 
+  
+  This shows the overall memory consumed in the cache by categories - index files, dictionary and 
+  datamaps. This also shows the cache usage by all the tables and children tables in the current 
+  database.
+  
+  ```sql
+  SHOW METACACHE ON TABLE tableName
+  ```
+  
+  This shows detailed information on cache usage by the table `tableName` and its carbonindex files, 
+  its dictionary files, its datamaps and children tables.
+  
+  This command is not allowed on child tables.
+
+  ```sql
+    DROP METACACHE ON TABLE tableName
+   ```
+    
+  This clears any entry in cache by the table `tableName`, its carbonindex files, 
+  its dictionary files, its datamaps and children tables.
+    
+  This command is not allowed on child tables.
+
+### Important points
+
+  1. Cache information is updated only after the select query is executed. 
+  
+  2. In case of alter table the already loaded cache is invalidated when any subsequent select query
+  is fired.
+
+  3. Dictionary is loaded in cache only when the dictionary columns are queried upon. If we don't do
+  direct query on dictionary column, cache will not be loaded.
+  If we do `SELECT * FROM t1`, and even though for this case dictionary is loaded, it is loaded in
+  executor and not on driver, and the final result rows are returned back to driver, and thus will
+  produce no trace on driver cache if we do `SHOW METACACHE` or `SHOW METACACHE ON TABLE t1`.

@@ -41,7 +41,8 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
  * Writer Implementation to write Json Record to carbondata file.
  * json writer requires the path of json file and carbon schema.
  */
-@InterfaceAudience.User public class JsonCarbonWriter extends CarbonWriter {
+@InterfaceAudience.User
+public class JsonCarbonWriter extends CarbonWriter {
   private RecordWriter<NullWritable, ObjectArrayWritable> recordWriter;
   private TaskAttemptContext context;
   private ObjectArrayWritable writable;

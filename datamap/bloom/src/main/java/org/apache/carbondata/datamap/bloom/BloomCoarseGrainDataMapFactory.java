@@ -123,7 +123,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       this.cache = CacheProvider.getInstance()
           .createCache(new CacheType("bloom_cache"), BloomDataMapCache.class.getName());
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new MalformedDataMapCommandException(e.getMessage());
     }
   }
@@ -227,7 +227,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
    * returns all shard directories of bloom index files for query
    * if bloom index files are merged we should get only one shard path
    */
-  private Set<String> getAllShardPaths(String tablePath, String segmentId) {
+  public static Set<String> getAllShardPaths(String tablePath, String segmentId,
+      String dataMapName) {
     String dataMapStorePath = CarbonTablePath.getDataMapStorePath(
         tablePath, segmentId, dataMapName);
     CarbonFile[] carbonFiles = FileFactory.getCarbonFile(dataMapStorePath).listFiles();
@@ -257,7 +258,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     try {
       Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
       if (shardPaths == null) {
-        shardPaths = getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo());
+        shardPaths =
+            getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
         segmentMap.put(segment.getSegmentNo(), shardPaths);
       }
       Set<String> filteredShards = segment.getFilteredIndexShardNames();
@@ -299,7 +301,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<DataMapDistributable> dataMapDistributableList = new ArrayList<>();
     Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
     if (shardPaths == null) {
-      shardPaths = getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo());
+      shardPaths =
+          getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
       segmentMap.put(segment.getSegmentNo(), shardPaths);
     }
     Set<String> filteredShards = segment.getFilteredIndexShardNames();
@@ -310,6 +313,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
           filteredShards.contains(new File(shardPath).getName())) {
         DataMapDistributable bloomDataMapDistributable =
             new BloomDataMapDistributable(shardPath, filteredShards);
+        bloomDataMapDistributable.setSegment(segment);
+        bloomDataMapDistributable.setDataMapSchema(getDataMapSchema());
         dataMapDistributableList.add(bloomDataMapDistributable);
       }
     }
@@ -322,8 +327,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   @Override
-  public void clear(Segment segment) {
-    Set<String> shards = segmentMap.remove(segment.getSegmentNo());
+  public void clear(String segment) {
+    Set<String> shards = segmentMap.remove(segment);
     if (shards != null) {
       for (String shard : shards) {
         for (CarbonColumn carbonColumn : dataMapMeta.getIndexedColumns()) {
@@ -338,15 +343,19 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     if (segmentMap.size() > 0) {
       List<String> segments = new ArrayList<>(segmentMap.keySet());
       for (String segmentId : segments) {
-        clear(new Segment(segmentId, null, null));
+        clear(segmentId);
       }
     }
   }
 
   @Override
   public void deleteDatamapData(Segment segment) throws IOException {
+    deleteSegmentDatamapData(segment.getSegmentNo());
+  }
+
+  @Override
+  public void deleteSegmentDatamapData(String segmentId) throws IOException {
     try {
-      String segmentId = segment.getSegmentNo();
       String datamapPath = CarbonTablePath
           .getDataMapStorePath(getCarbonTable().getTablePath(), segmentId, dataMapName);
       if (FileFactory.isFileExist(datamapPath)) {
@@ -354,9 +363,9 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
             FileFactory.getFileType(datamapPath));
         CarbonUtil.deleteFoldersAndFilesSilent(file);
       }
-      clear(segment);
+      clear(segmentId);
     } catch (InterruptedException ex) {
-      throw new IOException("Failed to delete datamap for segment_" + segment.getSegmentNo());
+      throw new IOException("Failed to delete datamap for segment_" + segmentId);
     }
   }
 

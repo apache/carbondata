@@ -120,9 +120,13 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     boolean isScanRequired = false;
     if (isMeasurePresentInCurrentBlock[0] || isDimensionPresentInCurrentBlock[0]) {
       if (isMeasurePresentInCurrentBlock[0]) {
-        minValue = blockMinValue[measureChunkIndex[0]];
-        isScanRequired =
-            isScanRequired(minValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
+        if (isMinMaxSet[measureChunkIndex[0]]) {
+          minValue = blockMinValue[measureChunkIndex[0]];
+          isScanRequired = isScanRequired(minValue, msrFilterRangeValues,
+              msrColEvalutorInfoList.get(0).getType());
+        } else {
+          isScanRequired = true;
+        }
       } else {
         minValue = blockMinValue[dimensionChunkIndex[0]];
         DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();

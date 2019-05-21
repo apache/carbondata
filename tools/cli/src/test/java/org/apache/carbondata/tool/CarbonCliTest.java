@@ -22,12 +22,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonVersionConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.sdk.file.Field;
-import org.apache.carbondata.sdk.file.Schema;
-import org.apache.carbondata.sdk.file.TestUtil;
+import org.apache.carbondata.sdk.file.*;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -38,6 +37,7 @@ import org.junit.Test;
 public class CarbonCliTest {
 
   private String path = "./CarbonCliTest";
+  private String pathBinary = "./CarbonCliTestBinary";
 
   private String buildLines(String... lines) {
     ByteArrayOutputStream expectedOut = null;
@@ -65,6 +65,35 @@ public class CarbonCliTest {
 
     TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"}, 3, 8);
     TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"}, 3, 8);
+  }
+
+  public void buildBinaryData(int rows, Schema schema, String path, String[] sortColumns,
+                              int blockletSize, int blockSize)
+      throws IOException, InvalidLoadOptionException {
+
+    CarbonWriterBuilder builder = CarbonWriter.builder()
+        .outputPath(path);
+    if (sortColumns != null) {
+      builder = builder.sortBy(sortColumns);
+    }
+    if (blockletSize != -1) {
+      builder = builder.withBlockletSize(blockletSize);
+    }
+    if (blockSize != -1) {
+      builder = builder.withBlockSize(blockSize);
+    }
+
+    CarbonWriter writer = builder.withCsvInput(schema).writtenBy("TestUtil").build();
+
+    for (int i = 0; i < rows; i++) {
+      writer.write(new String[]{
+          "robot" + (i % 10), String.valueOf(i % 3000000), String.valueOf((double) i / 2)});
+    }
+    for (int i = 0; i < rows; i++) {
+      writer.write(new String[]{
+          "robot" + (i % 10), String.valueOf(i % 3000000), String.valueOf("robot" + i / 2)});
+    }
+    writer.close();
   }
 
   @Test
@@ -231,9 +260,35 @@ public class CarbonCliTest {
     System.out.println(output);
   }
 
+  @Test
+  public void testBinary() throws IOException, InvalidLoadOptionException {
+    FileUtils.deleteDirectory(new File(pathBinary));
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("binaryField", DataTypes.BINARY);
+
+    buildBinaryData(5000000, new Schema(fields), pathBinary, new String[]{"name"}, 3, 8);
+    String[] args = {"-cmd", "summary", "-p", pathBinary};
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(out);
+    CarbonCli.run(args, stream);
+
+    String[] args2 = {"-cmd", "summary", "-p", pathBinary, "-s"};
+    out = new ByteArrayOutputStream();
+    stream = new PrintStream(out);
+    CarbonCli.run(args2, stream);
+    String output = new String(out.toByteArray());
+
+    Assert.assertTrue(output.contains("binaryfield") && output.contains("BINARY"));
+    FileUtils.deleteDirectory(new File(pathBinary));
+  }
+
+
   @After
   public void after() throws IOException {
     FileUtils.deleteDirectory(new File(path));
+    FileUtils.deleteDirectory(new File(pathBinary));
   }
 
 }

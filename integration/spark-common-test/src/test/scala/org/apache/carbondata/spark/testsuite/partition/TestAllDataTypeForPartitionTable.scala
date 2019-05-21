@@ -328,7 +328,7 @@ class TestAllDataTypeForPartitionTable extends QueryTest with BeforeAndAfterAll 
       Seq(Row(32767, 2147483647, 9223372036854775807L, 2147483648.1, 9223372036854775808.1, BigDecimal("9223372036854775808.1234"), Timestamp.valueOf("2017-06-13 23:59:59"), Date.valueOf("2017-06-13"), "abc3", "abcd3", "abcde3", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "3")), Row("a", "b", "3"))))
   }
 
-  test("allTypeTable_hash_date") {
+  ignore("allTypeTable_hash_date") {
     val tableName = "allTypeTable_hash_date"
 
     sql(
@@ -1096,7 +1096,7 @@ class TestAllDataTypeForPartitionTable extends QueryTest with BeforeAndAfterAll 
       Seq(Row(32767, 2147483647, 9223372036854775807L, 2147483648.1, 9223372036854775808.1, BigDecimal("9223372036854775808.1234"), Timestamp.valueOf("2017-06-13 23:59:59"), Date.valueOf("2017-06-13"), "abc3", "abcd3", "abcde3", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "3")), Row("a", "b", "3"))))
   }
 
-  test("allTypeTable_range_date") {
+  ignore("allTypeTable_range_date") {
     val tableName = "allTypeTable_range_date"
 
     sql(

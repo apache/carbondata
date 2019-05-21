@@ -28,7 +28,9 @@ import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.loading.FailureCauses
 
 /**
@@ -49,10 +51,6 @@ private[sql] case class CarbonProjectForDeleteCommand(
     setAuditInfo(Map("plan" -> plan.simpleString))
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
-    }
-
-    if (SegmentStatusManager.isCompactionInProgress(carbonTable)) {
-      throw new ConcurrentOperationException(carbonTable, "compaction", "data delete")
     }
 
     if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
@@ -77,10 +75,22 @@ private[sql] case class CarbonProjectForDeleteCommand(
     val metadataLock = CarbonLockFactory
       .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
         LockUsage.METADATA_LOCK)
+    val compactionLock = CarbonLockFactory
+      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
+        LockUsage.COMPACTION_LOCK)
+    val updateLock = CarbonLockFactory
+      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
+        LockUsage.UPDATE_LOCK)
     var lockStatus = false
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
+        if (!compactionLock.lockWithRetries(3, 3)) {
+          throw new ConcurrentOperationException(carbonTable, "compaction", "delete")
+        }
+        if (!updateLock.lockWithRetries(3, 3)) {
+          throw new ConcurrentOperationException(carbonTable, "update/delete", "delete")
+        }
         LOGGER.info("Successfully able to get the table metadata file lock")
       } else {
         throw new Exception("Table is locked for deletion. Please try after some time")
@@ -90,7 +100,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
       // handle the clean up of IUD.
       CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
-      DeleteExecution.deleteDeltaExecution(
+      val deletedSegments = DeleteExecution.deleteDeltaExecution(
         databaseNameOp,
         tableName,
         sparkSession,
@@ -102,6 +112,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
       HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable,
         isUpdateOperation = false)
 
+      DeleteExecution.clearDistributedSegmentCache(carbonTable, deletedSegments)
 
       if (executorErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executorErrors.errorMsg)
@@ -134,6 +145,8 @@ private[sql] case class CarbonProjectForDeleteCommand(
       if (lockStatus) {
         CarbonLockUtil.fileUnlock(metadataLock, LockUsage.METADATA_LOCK)
       }
+      updateLock.unlock()
+      compactionLock.unlock()
     }
     Seq.empty
   }

@@ -1760,6 +1760,16 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists fileformat_drop_hive")
   }
 
+  test("test complexdatype for date and timestamp datatype") {
+    spark.sql("drop table if exists fileformat_date")
+    spark.sql("drop table if exists fileformat_date_hive")
+    spark.sql("create table fileformat_date_hive(name string, age int, dob array<date>, joinTime array<timestamp>) using parquet")
+    spark.sql("create table fileformat_date(name string, age int, dob array<date>, joinTime array<timestamp>) using carbon")
+    spark.sql("insert into fileformat_date_hive select 'joey', 32, array('1994-04-06','1887-05-06'), array('1994-04-06 00:00:05','1887-05-06 00:00:08')")
+    spark.sql("insert into fileformat_date select 'joey', 32, array('1994-04-06','1887-05-06'), array('1994-04-06 00:00:05','1887-05-06 00:00:08')")
+    checkAnswer(spark.sql("select * from fileformat_date_hive"), spark.sql("select * from fileformat_date"))
+  }
+
   test("validate the columns not present in schema") {
     spark.sql("drop table if exists validate")
     spark.sql("create table validate (name string, age int, address string) using carbon options('inverted_index'='abc')")
@@ -1767,6 +1777,32 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       spark.sql("insert into validate select 'abc',4,'def'")
     }
     assert(ex.getMessage.contains("column: abc specified in inverted index columns does not exist in schema"))
+  }
+
+  var writerPath = new File(this.getClass.getResource("/").getPath
+          + "../../target/SparkCarbonFileFormat/WriterOutput/")
+          .getCanonicalPath
+
+  test("Don't support load for datasource") {
+    import spark._
+    sql("DROP TABLE IF EXISTS binaryCarbon")
+    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      sql(
+        s"""
+           | CREATE TABLE binaryCarbon(
+           |    binaryId INT,
+           |    binaryName STRING,
+           |    binary BINARY,
+           |    labelName STRING,
+           |    labelContent STRING
+           |) USING CARBON  """.stripMargin)
+
+      val exception = intercept[Exception] {
+        sql(s"load data local inpath '$writerPath' into table binaryCarbon")
+      }
+      assert(exception.getMessage.contains("LOAD DATA is not supported for datasource tables"))
+    }
+    sql("DROP TABLE IF EXISTS binaryCarbon")
   }
 
   override protected def beforeAll(): Unit = {
@@ -1785,5 +1821,6 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists par_table")
     spark.sql("drop table if exists sdkout")
     spark.sql("drop table if exists validate")
+    spark.sql("drop table if exists fileformat_date")
   }
 }

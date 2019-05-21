@@ -32,6 +32,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -82,6 +83,12 @@ private[sql] case class CarbonDescribeFormattedCommand(
     val catalog = sparkSession.sessionState.catalog
     val catalogTable = catalog.getTableMetadata(tblIdentifier)
 
+    val pageSizeInMb: String = if (tblProps.get(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB)
+      .isDefined) {
+      tblProps(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB)
+    } else {
+      ""
+    }
     //////////////////////////////////////////////////////////////////////////////
     // Table Basic Information
     //////////////////////////////////////////////////////////////////////////////
@@ -121,7 +128,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
         carbonTable.getMinMaxCachedColumnsInCreateOrder.asScala.mkString(", "), ""),
       ("Min/Max Index Cache Level",
         tblProps.getOrElse(CarbonCommonConstants.CACHE_LEVEL,
-          CarbonCommonConstants.CACHE_LEVEL_DEFAULT_VALUE), "")
+          CarbonCommonConstants.CACHE_LEVEL_DEFAULT_VALUE), ""),
+      ("Table page size in mb", pageSizeInMb, "")
     )
 
     //////////////////////////////////////////////////////////////////////////////
@@ -148,19 +156,29 @@ private[sql] case class CarbonDescribeFormattedCommand(
       ("## Compaction Information", "", ""),
       (CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE,
-        CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE), ""),
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE,
+              CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE)), ""),
       (CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE,
-        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE), ""),
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+              CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)), ""),
       (CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD,
-        CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD), ""),
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
+              CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)), ""),
       (CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS,
-        CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER), ""),
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
+              CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER)), ""),
       (CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS,
-        CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT), "")
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
+              CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT)), "")
     )
 
     //////////////////////////////////////////////////////////////////////////////
@@ -175,7 +193,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
         ("Partition Columns",
           partitionInfo.getColumnSchemaList.asScala.map {
             col => s"${col.getColumnName}:${col.getDataType.getName}"}.mkString(", "), ""),
-        ("Number of Partitions", partitionInfo.getNumPartitions.toString, ""),
+        ("Number of Partitions", getNumberOfPartitions(carbonTable, sparkSession), ""),
         ("Partitions Ids", partitionInfo.getPartitionIds.asScala.mkString(","), "")
       )
       if (partitionInfo.getPartitionType == PartitionType.RANGE) {
@@ -227,6 +245,22 @@ private[sql] case class CarbonDescribeFormattedCommand(
     }
 
     results.map{case (c1, c2, c3) => Row(c1, c2, c3)}
+  }
+
+  /**
+   * This method returns the number of partitions based on the partition type
+   */
+  private def getNumberOfPartitions(carbonTable: CarbonTable,
+      sparkSession: SparkSession): String = {
+    val partitionType = carbonTable.getPartitionInfo.getPartitionType
+    partitionType match {
+      case PartitionType.NATIVE_HIVE =>
+        sparkSession.sessionState.catalog
+          .listPartitions(new TableIdentifier(carbonTable.getTableName,
+            Some(carbonTable.getDatabaseName))).size.toString
+      case _ =>
+        carbonTable.getPartitionInfo.getNumPartitions.toString
+    }
   }
 
   private def getLocalDictDesc(

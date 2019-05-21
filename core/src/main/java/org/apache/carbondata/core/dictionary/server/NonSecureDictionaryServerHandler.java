@@ -65,7 +65,7 @@ import org.apache.log4j.Logger;
       key.writeData(buffer);
       ctx.writeAndFlush(buffer);
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw e;
     }
   }

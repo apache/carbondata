@@ -19,20 +19,22 @@ package org.apache.carbondata.spark.rdd
 
 import java.io.IOException
 import java.util
-import java.util.{Collections, List}
+import java.util.{Collections, List, Map}
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
+import scala.reflect.classTag
 
 import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.Job
+import org.apache.hadoop.mapreduce.{InputSplit, Job}
 import org.apache.spark._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, NodeInfo}
 import org.apache.spark.sql.hive.DistributionUtil
-import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.sql.util.{CarbonException, SparkTypeConverter}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
@@ -43,12 +45,17 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.mutate.UpdateVO
+import org.apache.carbondata.core.scan.expression
+import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
-import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
-import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
+import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatusManager, SegmentUpdateStatusManager}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
 import org.apache.carbondata.processing.loading.TableProcessingOperations
@@ -56,7 +63,8 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.MergeResult
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
+import org.apache.carbondata.spark.load.{ByteArrayOrdering, DataLoadProcessBuilderOnSpark, PrimtiveOrdering, StringOrdering}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
 
 class CarbonMergerRDD[K, V](
     @transient private val ss: SparkSession,
@@ -77,12 +85,14 @@ class CarbonMergerRDD[K, V](
   val databaseName = carbonMergerMapping.databaseName
   val factTableName = carbonMergerMapping.factTableName
   val tableId = carbonMergerMapping.tableId
+  var expressionMapForRangeCol: util.Map[Integer, Expression] = null
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val queryStartTime = System.currentTimeMillis()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      val rangeColumn = carbonTable.getRangeColumn
       val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
       if (carbonTable.isPartitionTable) {
         carbonLoadModel.setTaskNo(String.valueOf(carbonSparkPartition.partitionId))
@@ -181,7 +191,12 @@ class CarbonMergerRDD[K, V](
         }
         try {
           // fire a query and get the results.
-          rawResultIteratorMap = exec.processTableBlocks(FileFactory.getConfiguration)
+          var expr: expression.Expression = null
+          if (null != expressionMapForRangeCol) {
+            expr = expressionMapForRangeCol
+              .get(theSplit.asInstanceOf[CarbonSparkPartition].idx)
+          }
+          rawResultIteratorMap = exec.processTableBlocks(FileFactory.getConfiguration, expr)
         } catch {
           case e: Throwable =>
             LOGGER.error(e)
@@ -281,6 +296,19 @@ class CarbonMergerRDD[K, V](
       tablePath, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    var rangeColumn: CarbonColumn = null
+    if (CarbonProperties.getInstance().isRangeCompactionAllowed &&
+        !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
+      // If the table is not a partition table then only we go for range column compaction flow
+      rangeColumn = carbonTable.getRangeColumn
+    }
+    val dataType: DataType = if (null != rangeColumn) {
+      rangeColumn.getDataType
+    } else {
+      null
+    }
+    val isRangeColSortCol = rangeColumn != null && rangeColumn.isDimension &&
+                            rangeColumn.asInstanceOf[CarbonDimension].isSortColumn
     val updateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
       carbonTable)
     val jobConf: JobConf = new JobConf(getConf)
@@ -303,14 +331,30 @@ class CarbonMergerRDD[K, V](
 
     val taskInfoList = new java.util.ArrayList[Distributable]
     var carbonInputSplits = mutable.Seq[CarbonInputSplit]()
+    var allSplits = new java.util.ArrayList[InputSplit]
 
     var splitsOfLastSegment: List[CarbonInputSplit] = null
     // map for keeping the relation of a task and its blocks.
     val taskIdMapping: java.util.Map[String, java.util.List[CarbonInputSplit]] = new
         java.util.HashMap[String, java.util.List[CarbonInputSplit]]
 
+    var totalSize: Double = 0
+    var loadMetadataDetails: Array[LoadMetadataDetails] = null
+    // Only for range column get the details for the size of segments
+    if (null != rangeColumn) {
+      loadMetadataDetails = SegmentStatusManager
+        .readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath))
+    }
     // for each valid segment.
     for (eachSeg <- carbonMergerMapping.validSegments) {
+      // In case of range column get the size for calculation of number of ranges
+      if (null != rangeColumn) {
+        for (details <- loadMetadataDetails) {
+          if (details.getLoadName == eachSeg.getSegmentNo) {
+            totalSize = totalSize + (details.getDataSize.toDouble)
+          }
+        }
+      }
 
       // map for keeping the relation of a task and its blocks.
       job.getConfiguration.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, eachSeg.getSegmentNo)
@@ -329,12 +373,12 @@ class CarbonMergerRDD[K, V](
           .map(_.asInstanceOf[CarbonInputSplit])
           .filter { split => FileFormat.COLUMNAR_V3.equals(split.getFileFormat) }.toList.asJava
       }
-      carbonInputSplits ++:= splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter{ entry =>
-        val blockInfo = new TableBlockInfo(entry.getPath.toString,
+       val filteredSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter{ entry =>
+        val blockInfo = new TableBlockInfo(entry.getFilePath,
           entry.getStart, entry.getSegmentId,
           entry.getLocations, entry.getLength, entry.getVersion,
           updateStatusManager.getDeleteDeltaFilePath(
-            entry.getPath.toString,
+            entry.getFilePath,
             Segment.toSegment(entry.getSegmentId).getSegmentNo)
         )
         (!updated || (updated && (!CarbonUtil
@@ -342,6 +386,36 @@ class CarbonMergerRDD[K, V](
             updateDetails, updateStatusManager)))) &&
         FileFormat.COLUMNAR_V3.equals(entry.getFileFormat)
       }
+      carbonInputSplits ++:= filteredSplits
+      allSplits.addAll(filteredSplits.asJava)
+    }
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    var allRanges: Array[Object] = new Array[Object](0)
+    var singleRange = false
+    if (rangeColumn != null) {
+      // To calculate the number of ranges to be made, min 2 ranges/tasks to be made in any case
+      val numOfPartitions = Math
+        .max(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL.toInt, DataLoadProcessBuilderOnSpark
+          .getNumPatitionsBasedOnSize(totalSize, carbonTable, carbonLoadModel, true))
+      val colName = rangeColumn.getColName
+      LOGGER.info(s"Compacting on range column: $colName")
+      allRanges = getRangesFromRDD(rangeColumn,
+        carbonTable,
+        numOfPartitions,
+        allSplits,
+        dataType)
+      // If RangePartitioner does not give ranges in the case when the data is skewed with
+      // a lot of null records then we take the min/max from footer and set them for tasks
+      if (null == allRanges || allRanges.size == 1) {
+        allRanges = CarbonCompactionUtil.getOverallMinMax(carbonInputSplits.toList.toArray,
+          rangeColumn,
+          isRangeColSortCol)
+        if(allRanges(0) == allRanges(1)) {
+          // This will be true only if data has single values throughout
+          singleRange = true
+        }
+      }
+      LOGGER.info(s"Number of ranges:" + allRanges.size)
     }
 
     // prepare the details required to extract the segment properties using last segment.
@@ -362,34 +436,119 @@ class CarbonMergerRDD[K, V](
     val columnToCardinalityMap = new util.HashMap[java.lang.String, Integer]()
     val partitionTaskMap = new util.HashMap[PartitionSpec, String]()
     val counter = new AtomicInteger()
-    carbonInputSplits.foreach { split =>
-      val taskNo = getTaskNo(split, partitionTaskMap, counter)
-      var dataFileFooter: DataFileFooter = null
+    var indexOfRangeColumn = -1
+    var taskIdCount = 0
+    // As we are already handling null values in the filter expression separately so we
+    // can remove the null from the ranges we get, else it may lead to duplicate data
+    val newRanges = allRanges.filter { range =>
+      range != null
+    }
+    val noOfSplitsPerTask = Math.ceil(carbonInputSplits.size / defaultParallelism)
+    var taskCount = 0
+    // In case of range column if only one data value is present then we try to
+    // divide the splits to different tasks in order to avoid single task creation
+    // and load on single executor
+    if (singleRange) {
+      carbonInputSplits.foreach { split =>
+        var dataFileFooter: DataFileFooter = null
+        try {
+          dataFileFooter = CarbonUtil.readMetadataFile(
+            CarbonInputSplit.getTableBlockInfo(split))
+        } catch {
+          case e: IOException =>
+            logError("Exception in preparing the data file footer for compaction " + e.getMessage)
+            throw e
+        }
+        // add all the column and cardinality to the map
+        CarbonCompactionUtil
+          .addColumnCardinalityToMap(columnToCardinalityMap,
+            dataFileFooter.getColumnInTable,
+            dataFileFooter.getSegmentInfo.getColumnCardinality)
 
-      val splitList = taskIdMapping.get(taskNo)
-      noOfBlocks += 1
-      if (null == splitList) {
-        val splitTempList = new util.ArrayList[CarbonInputSplit]()
-        splitTempList.add(split)
-        taskIdMapping.put(taskNo, splitTempList)
-      } else {
+        var splitList = taskIdMapping.get(taskCount.toString)
+        if (null != splitList && splitList.size == noOfSplitsPerTask) {
+          taskCount = taskCount + 1
+          splitList = taskIdMapping.get(taskCount.toString)
+        }
+        if (null == splitList) {
+          splitList = new util.ArrayList[CarbonInputSplit]()
+          taskIdMapping.put(taskCount.toString, splitList)
+        }
         splitList.add(split)
       }
+    } else {
+      carbonInputSplits.foreach { split =>
+        var dataFileFooter: DataFileFooter = null
+        if (null == rangeColumn) {
+          val taskNo = getTaskNo(split, partitionTaskMap, counter)
+          var sizeOfSplit = split.getDetailInfo.getBlockSize
+          val splitList = taskIdMapping.get(taskNo)
+          noOfBlocks += 1
+          if (null == splitList) {
+            val splitTempList = new util.ArrayList[CarbonInputSplit]()
+            splitTempList.add(split)
+            taskIdMapping.put(taskNo, splitTempList)
+          } else {
+            splitList.add(split)
+          }
+        }
+        // Check the cardinality of each columns and set the highest.
+        try {
+          dataFileFooter = CarbonUtil.readMetadataFile(
+            CarbonInputSplit.getTableBlockInfo(split))
+        } catch {
+          case e: IOException =>
+            logError("Exception in preparing the data file footer for compaction " + e.getMessage)
+            throw e
+        }
+        // add all the column and cardinality to the map
+        CarbonCompactionUtil
+          .addColumnCardinalityToMap(columnToCardinalityMap,
+            dataFileFooter.getColumnInTable,
+            dataFileFooter.getSegmentInfo.getColumnCardinality)
 
-      // Check the cardinality of each columns and set the highest.
-      try {
-        dataFileFooter = CarbonUtil.readMetadataFile(
-          CarbonInputSplit.getTableBlockInfo(split))
-      } catch {
-        case e: IOException =>
-          logError("Exception in preparing the data file footer for compaction " + e.getMessage)
-          throw e
+        // Create taskIdMapping here for range column by reading min/max values.
+        if (null != rangeColumn) {
+          if (null == expressionMapForRangeCol) {
+            expressionMapForRangeCol = new util.HashMap[Integer, Expression]()
+          }
+          if (-1 == indexOfRangeColumn) {
+            val allColumns = dataFileFooter.getColumnInTable
+            for (i <- 0 until allColumns.size()) {
+              if (allColumns.get(i).getColumnName.equalsIgnoreCase(rangeColumn.getColName)) {
+                indexOfRangeColumn = i
+              }
+            }
+          }
+          // Create ranges and add splits to the tasks
+          for (i <- 0 until (newRanges.size + 1)) {
+            if (null == expressionMapForRangeCol.get(i)) {
+              // Creating FilterExpression for the range column
+              var minVal: Object = null
+              var maxVal: Object = null
+              // For first task we will create an Or Filter and also accomodate null values
+              // For last task we will take as GreaterThan Expression of last value
+              if (i != 0) {
+                minVal = newRanges(i - 1)
+              }
+              if (i != newRanges.size) {
+                maxVal = newRanges(i)
+              }
+              val filterExpr = CarbonCompactionUtil
+                .getFilterExpressionForRange(rangeColumn,
+                  minVal, maxVal, dataType)
+              expressionMapForRangeCol.put(i, filterExpr)
+            }
+            var splitList = taskIdMapping.get(i.toString)
+            noOfBlocks += 1
+            if (null == splitList) {
+              splitList = new util.ArrayList[CarbonInputSplit]()
+              taskIdMapping.put(i.toString, splitList)
+            }
+            splitList.add(split)
+          }
+        }
       }
-      // add all the column and cardinality to the map
-      CarbonCompactionUtil
-        .addColumnCardinalityToMap(columnToCardinalityMap,
-          dataFileFooter.getColumnInTable,
-          dataFileFooter.getSegmentInfo.getColumnCardinality)
     }
     val updatedMaxSegmentColumnList = new util.ArrayList[ColumnSchema]()
     // update cardinality and column schema list according to master schema
@@ -472,6 +631,52 @@ class CarbonMergerRDD[K, V](
     result.toArray(new Array[Partition](result.size))
   }
 
+  private def getRangesFromRDD(rangeColumn: CarbonColumn,
+      carbonTable: CarbonTable,
+      defaultParallelism: Int,
+      allSplits: java.util.ArrayList[InputSplit],
+      dataType: DataType): Array[Object] = {
+    val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
+    val projection = new CarbonProjection
+    projection.addColumn(rangeColumn.getColName)
+    val scanRdd = new CarbonScanRDD[InternalRow](
+      ss,
+      projection,
+      null,
+      carbonTable.getAbsoluteTableIdentifier,
+      carbonTable.getTableInfo.serialize(),
+      carbonTable.getTableInfo,
+      inputMetricsStats,
+      partitionNames = null,
+      splits = allSplits)
+    val objectOrdering: Ordering[Object] = createOrderingForColumn(rangeColumn)
+    val sparkDataType = Util.convertCarbonToSparkDataType(dataType)
+    // Change string type to support all types
+    val sampleRdd = scanRdd
+      .map(row => (row.get(0, sparkDataType), null))
+    val value = new DataSkewRangePartitioner(
+      defaultParallelism, sampleRdd, true)(objectOrdering, classTag[Object])
+    value.rangeBounds
+  }
+
+  private def createOrderingForColumn(column: CarbonColumn): Ordering[Object] = {
+    if (column.isDimension) {
+      val dimension = column.asInstanceOf[CarbonDimension]
+      if ((dimension.isGlobalDictionaryEncoding || dimension.isDirectDictionaryEncoding) &&
+          dimension.getDataType != DataTypes.TIMESTAMP) {
+        new PrimtiveOrdering(DataTypes.INT)
+      } else {
+        if (DataTypeUtil.isPrimitiveColumn(column.getDataType)) {
+          new PrimtiveOrdering(column.getDataType)
+        } else {
+          new StringOrdering()
+        }
+      }
+    } else {
+      new PrimtiveOrdering(column.getDataType)
+    }
+  }
+
   private def getTaskNo(
       split: CarbonInputSplit,
       partitionTaskMap: util.Map[PartitionSpec, String],
@@ -494,8 +699,6 @@ class CarbonMergerRDD[K, V](
       split.taskId
     }
   }
-
-
 
   private def getPartitionNamesFromTask(taskId: String,
       partitionTaskMap: util.Map[PartitionSpec, String]): Option[PartitionSpec] = {
