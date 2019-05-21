@@ -41,6 +41,7 @@ import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -248,9 +249,17 @@ public class CarbonReaderBuilder {
       if (fileLists.size() < 1) {
         throw new IllegalArgumentException("fileLists must have one file in list as least!");
       }
-      table = CarbonTable.buildTable(this.fileLists.get(0).toString(), tableName, hadoopConf, true);
+      String commonString = String.valueOf(fileLists.get(0));
+      for (int i = 1; i < fileLists.size(); i++) {
+        commonString = commonString.substring(0, StringUtils.indexOfDifference(commonString,
+            String.valueOf(fileLists.get(i))));
+      }
+      int index = commonString.lastIndexOf("/");
+      commonString = commonString.substring(0, index);
+
+      table = CarbonTable.buildTable(commonString, tableName, hadoopConf);
     } else {
-      table = CarbonTable.buildTable(tablePath, tableName, hadoopConf, false);
+      table = CarbonTable.buildTable(tablePath, tableName, hadoopConf);
     }
     if (enableBlockletDistribution) {
       // set cache level to blocklet level

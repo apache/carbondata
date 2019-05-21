@@ -959,4 +959,80 @@ public class ImageTest extends TestCase {
     }
   }
 
+  public void testGetSplitWithFileListsFromDifferentFolder() throws Exception {
+
+    String path1 = "./target/flowersFolder1";
+    String path2 = "./target/flowersFolder2";
+    writeCarbonFile(path1, 3);
+    writeCarbonFile(path2, 2);
+    List fileLists = listFiles(path1, CarbonTablePath.CARBON_DATA_EXT);
+    fileLists.addAll(listFiles(path2, CarbonTablePath.CARBON_DATA_EXT));
+
+    InputSplit[] splits = ArrowCarbonReader
+        .builder()
+        .withFileLists(fileLists)
+        .getSplits(true);
+    Assert.assertTrue(5 == splits.length);
+    for (int j = 0; j < splits.length; j++) {
+      ArrowCarbonReader.builder(splits[j]).build();
+    }
+  }
+
+  public void writeCarbonFile(String path, int num) throws Exception {
+    try {
+      FileUtils.deleteDirectory(new File(path));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    Field[] fields = new Field[5];
+    fields[0] = new Field("imageId", DataTypes.INT);
+    fields[1] = new Field("imageName", DataTypes.STRING);
+    fields[2] = new Field("imageBinary", DataTypes.BINARY);
+    fields[3] = new Field("txtName", DataTypes.STRING);
+    fields[4] = new Field("txtContent", DataTypes.STRING);
+
+    String imageFolder = "./src/test/resources/image/flowers";
+
+    byte[] originBinary = null;
+
+    // read and write image data
+    for (int j = 0; j < num; j++) {
+      CarbonWriter writer = CarbonWriter
+          .builder()
+          .outputPath(path)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("SDKS3Example")
+          .withPageSizeInMb(1)
+          .build();
+      ArrayList files = listFiles(imageFolder, ".jpg");
+
+      if (null != files) {
+        for (int i = 0; i < files.size(); i++) {
+          // read image and encode to Hex
+          BufferedInputStream bis = new BufferedInputStream(new FileInputStream(files.get(i).toString()));
+          char[] hexValue = null;
+          originBinary = new byte[bis.available()];
+          while ((bis.read(originBinary)) != -1) {
+            hexValue = Hex.encodeHex(originBinary);
+          }
+
+          String txtFileName = files.get(i).toString().split(".jpg")[0] + ".txt";
+          BufferedInputStream txtBis = new BufferedInputStream(new FileInputStream(txtFileName));
+          String txtValue = null;
+          byte[] txtBinary = null;
+          txtBinary = new byte[txtBis.available()];
+          while ((txtBis.read(txtBinary)) != -1) {
+            txtValue = new String(txtBinary, "UTF-8");
+          }
+          // write data
+          System.out.println(files.get(i).toString());
+          writer.write(new String[]{String.valueOf(i), files.get(i).toString(), String.valueOf(hexValue),
+              txtFileName, txtValue});
+          bis.close();
+        }
+      }
+      writer.close();
+    }
+  }
+
 }
