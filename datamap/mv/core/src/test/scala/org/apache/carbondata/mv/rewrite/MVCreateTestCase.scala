@@ -1061,6 +1061,19 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     assert(TestUtil.verifyMVDataMap(analyzed3, "single_mv"))
   }
 
+  test("count test case") {
+
+    sql("drop table if exists mvtable1")
+    sql("create table mvtable1(name string,age int,salary int) stored by 'carbondata'")
+    sql("create datamap MV11 using 'mv' as select name from mvtable1")
+    sql("insert into mvtable1 select 'n1',12,12")
+    sql("rebuild datamap MV11")
+    val frame = sql("select count(*) from mvtable1")
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.analyzed, "MV11"))
+    checkAnswer(frame,Seq(Row(1)))
+    sql("drop table if exists mvtable1")
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
