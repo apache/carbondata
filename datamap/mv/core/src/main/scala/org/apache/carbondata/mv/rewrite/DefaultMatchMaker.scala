@@ -179,7 +179,9 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
           sel_1q.predicateList.exists(_.semanticEquals(expr)))
         val isPredicateEmdR = sel_1q.predicateList.forall(expr =>
           isDerivable(expr, sel_1a.outputList ++ rejoinOutputList, sel_1q, sel_1a, None))
-        val isOutputEdR = sel_1q.outputList.forall(expr =>
+        // Check if sel_1q.outputList is non empty and then check whether
+        // it can be derivable with sel_1a otherwise for empty cases it returns true.
+        val isOutputEdR = sel_1q.outputList.nonEmpty && sel_1q.outputList.forall(expr =>
           isDerivable(expr, sel_1a.outputList ++ rejoinOutputList, sel_1q, sel_1a, None))
 
         if (isUniqueRmE.isEmpty && isUniqueEmR.isEmpty && extrajoin.isEmpty && isPredicateRmE &&
