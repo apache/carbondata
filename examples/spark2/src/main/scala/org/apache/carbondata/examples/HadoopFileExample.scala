@@ -61,7 +61,7 @@ object HadoopFileExample {
     CarbonInputFormat.setTableName(conf, "Hadoopfile_table")
 
 
-    val input = spark.sparkContext.newAPIHadoopFile(s"${storeLocation}/Hadoopfile_table",
+    val input = spark.sparkContext.newAPIHadoopFile(s"${storeLocation}/hadoopfile_table",
       classOf[CarbonTableInputFormat[Array[Object]]],
       classOf[Void],
       classOf[Array[Object]],
