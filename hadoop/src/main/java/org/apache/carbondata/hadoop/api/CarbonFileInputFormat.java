@@ -200,15 +200,19 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
           }
         });
       }
-      if (getColumnProjection(job.getConfiguration()) == null) {
-        // If the user projection is empty, use default all columns as projections.
-        // All column name will be filled inside getSplits, so can update only here.
-        String[]  projectionColumns = projectAllColumns(carbonTable);
-        setColumnProjection(job.getConfiguration(), projectionColumns);
-      }
+      setAllColumnProjectionIfNotConfigured(job, carbonTable);
       return splits;
     }
     return null;
+  }
+
+  public void setAllColumnProjectionIfNotConfigured(JobContext job, CarbonTable carbonTable) {
+    if (getColumnProjection(job.getConfiguration()) == null) {
+      // If the user projection is empty, use default all columns as projections.
+      // All column name will be filled inside getSplits, so can update only here.
+      String[]  projectionColumns = projectAllColumns(carbonTable);
+      setColumnProjection(job.getConfiguration(), projectionColumns);
+    }
   }
 
   private List<CarbonFile> getAllCarbonDataFiles(String tablePath) {
