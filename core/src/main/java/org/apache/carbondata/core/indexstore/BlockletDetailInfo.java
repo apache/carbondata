@@ -108,7 +108,11 @@ public class BlockletDetailInfo implements Serializable, Writable {
   public BlockletInfo getBlockletInfo() {
     if (null == blockletInfo) {
       try {
-        setBlockletInfoFromBinary();
+        synchronized (this) {
+          if (null == blockletInfo) {
+            setBlockletInfoFromBinary();
+          }
+        }
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
