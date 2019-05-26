@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import os
 
 import pytest
@@ -23,6 +24,8 @@ from petastorm.tests.conftest import SyntheticDataset
 
 from pycarbon.Constants import LOCAL_FILE_PREFIX
 from pycarbon.carbon_reader import make_batch_carbon_reader
+
+from unified.reader import make_reader
 
 import jnius_config
 
@@ -58,6 +61,10 @@ def external_dataset(tmpdir_factory):
 def test_generate(external_dataset):
   # Read from it using a plain reader
   with make_batch_carbon_reader(external_dataset.url) as reader:
+    all_samples = list(reader)
+  assert all_samples
+
+  with make_reader(external_dataset.url) as reader:
     all_samples = list(reader)
   assert all_samples
 

@@ -20,3 +20,4 @@ jardir = os.path.abspath(os.path.join(curdir, os.path.pardir))
 
 DEFAULT_CARBONSDK_PATH = os.path.join(jardir, 'jars/carbondata-sdk.jar')
 
+EXAMPLES_MANIFEST_PATH = os.path.join(jardir, 'examples/data/')

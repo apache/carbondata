@@ -36,10 +36,10 @@ UNISCHEMA_KEY = b'dataset-toolkit.unischema.v1'
 
 
 class PycarbonMetadataError(Exception):
-    """
-        Error to specify when the pycarbon metadata does not exist, does not contain the necessary information,
-            or is corrupt/invalid.
-                """
+  """
+  Error to specify when the pycarbon metadata does not exist, does not contain the necessary information,
+  or is corrupt/invalid.
+  """
 
 @contextmanager
 def materialize_dataset_carbon(spark, dataset_url, schema, blocklet_size_mb=None, use_summary_metadata=False,
@@ -91,10 +91,10 @@ def materialize_dataset_carbon(spark, dataset_url, schema, blocklet_size_mb=None
   # After job completes, add the unischema metadata and check for the metadata summary file
   if pyarrow_filesystem is None:
     resolver = FilesystemResolver(dataset_url, spark.sparkContext._jsc.hadoopConfiguration())
-    filesystem = resolver.filesystem()
+    # filesystem = resolver.filesystem()
     dataset_path = resolver.get_dataset_path()
   else:
-    filesystem = pyarrow_filesystem
+    # filesystem = pyarrow_filesystem
     dataset_path = urlparse(dataset_url).path
 
   carbon_dataset = CarbonDataset(dataset_path)

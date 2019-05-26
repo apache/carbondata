@@ -15,9 +15,7 @@
 import numpy as np
 import pytest
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
-
-from pycarbon.tests.conftest import _ROWS_COUNT
+from pycarbon.carbon_reader import make_batch_carbon_reader
 
 import os
 import jnius_config
@@ -32,7 +30,8 @@ elif 'PYSPARK_PYTHON' in os.environ.keys() and 'PYSPARK_DRIVER_PYTHON' in os.env
   pass
 else:
   raise ValueError("please set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON variables, "
-                   "using cmd line --pyspark-python=PYSPARK_PYTHON_PATH --pyspark-driver-python=PYSPARK_DRIVER_PYTHON_PATH, "
+                   "using cmd line "
+                   "--pyspark-python=PYSPARK_PYTHON_PATH --pyspark-driver-python=PYSPARK_DRIVER_PYTHON_PATH "
                    "or set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON in system env")
 
 # pylint: disable=unnecessary-lambda
@@ -83,21 +82,3 @@ def test_many_columns_non_unischema_dataset(carbon_many_columns_non_unischema_da
   with reader_factory(carbon_many_columns_non_unischema_dataset.url) as reader:
     sample = next(reader)
     assert set(sample._fields) == set(carbon_many_columns_non_unischema_dataset.data[0].keys())
-
-
-@pytest.mark.forked
-def test_carbon_reader(carbon_synthetic_dataset):
-  with make_carbon_reader(carbon_synthetic_dataset.url, num_epochs=1) as reader:
-    i = 0
-    for sample in reader:
-      i += 1
-    assert i == _ROWS_COUNT
-
-@pytest.mark.forked
-def test_batch_carbon_reader(carbon_synthetic_dataset):
-  with make_batch_carbon_reader(carbon_synthetic_dataset.url, num_epochs=1) as reader:
-    i = 0
-    for sample in reader:
-      for ele in sample.id:
-        i += 1
-    assert i == _ROWS_COUNT

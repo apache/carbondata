@@ -118,13 +118,13 @@ class CarbonFilesystemResolver(object):
         raise ValueError('key, secret, endpoint should not be None')
 
       http_proxy = 'http://' + proxy + ':' + str(proxy_port) if (
-          proxy is not None and proxy_port is not None) else None
+        proxy is not None and proxy_port is not None) else None
 
       https_proxy = 'https://' + proxy + ':' + str(proxy_port) if (
-          proxy is not None and proxy_port is not None) else None
+        proxy is not None and proxy_port is not None) else None
 
       config_kwargs = {'proxies': {'http': http_proxy, 'https': https_proxy}} if (
-          http_proxy is not None) else None
+        http_proxy is not None) else None
 
       fs = s3fs.S3FileSystem(key=key,
                              secret=secret,

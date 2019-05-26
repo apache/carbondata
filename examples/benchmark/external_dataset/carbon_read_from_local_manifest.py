@@ -21,48 +21,44 @@ from __future__ import division, print_function
 
 import argparse
 import time
-import os
 
 import jnius_config
 
-from examples.benchmark.external_dataset.generate_benchmark_external_dataset import ROW_COUNT
 from pycarbon.Constants import LOCAL_FILE_PREFIX
 from pycarbon.carbon_reader import make_batch_carbon_reader
 
+from unified.reader import make_reader
+
 from examples import DEFAULT_CARBONSDK_PATH
-
-
-def just_read(dataset_url=LOCAL_FILE_PREFIX + os.path.abspath('../') + '/data/binary1558365345315.manifest'):
-  with make_batch_carbon_reader(dataset_url, num_epochs=1) as train_reader:
-    i = 0
-    start = time.time()
-    for schema_view in train_reader:
-      print(schema_view.name)
-      i += len(schema_view.name)
-      if i % ROW_COUNT == 0:
-        end = time.time()
-        print("time is " + str(end - start))
-        start = end
-    print(i)
-    assert 20 == i
+from examples import EXAMPLES_MANIFEST_PATH
 
 
 def just_read_batch(
-        dataset_url=LOCAL_FILE_PREFIX + os.path.abspath('../') + '/data/binary1558365345315.manifest'):
-  with make_batch_carbon_reader(dataset_url, num_epochs=1) as train_reader:
-    i = 0
-    start = time.time()
-    for schema_view in train_reader:
-      for j in range(len(schema_view.name)):
-        print(schema_view.name[j])
-        i += 1
-        if i % ROW_COUNT == 0:
-          end = time.time()
-          print("time is " + str(end - start))
-          start = end
+        dataset_url=LOCAL_FILE_PREFIX + EXAMPLES_MANIFEST_PATH + 'binary1558365345315_record_exist.manifest'):
+  for num_epochs in [1, 4, 8]:
+    with make_batch_carbon_reader(dataset_url, num_epochs=num_epochs) as train_reader:
+      i = 0
+      for schema_view in train_reader:
+        for j in range(len(schema_view.name)):
+          print(schema_view.name[j])
+          i += 1
 
-    print(i)
-    assert 20 == i
+      print(i)
+      assert 20 * num_epochs == i
+
+
+def just_unified_read_batch(
+        dataset_url=LOCAL_FILE_PREFIX + EXAMPLES_MANIFEST_PATH + 'binary1558365345315_record_exist.manifest'):
+  for num_epochs in [1, 4, 8]:
+    with make_reader(dataset_url, num_epochs=num_epochs) as train_reader:
+      i = 0
+      for schema_view in train_reader:
+        for j in range(len(schema_view.name)):
+          print(schema_view.name[j])
+          i += 1
+
+      print(i)
+      assert 20 * num_epochs == i
 
 
 def main():
@@ -78,9 +74,9 @@ def main():
   print("Start")
   start = time.time()
 
-  just_read()
-
   just_read_batch()
+
+  just_unified_read_batch()
 
   end = time.time()
   print("all time: " + str(end - start))

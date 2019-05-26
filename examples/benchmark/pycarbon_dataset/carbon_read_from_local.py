@@ -26,22 +26,39 @@ import jnius_config
 
 from pycarbon.carbon_reader import make_carbon_reader
 
+from unified.reader import make_reader
+
 from examples import DEFAULT_CARBONSDK_PATH
 from examples.benchmark.pycarbon_dataset.generate_benchmark_pycarbon_dataset import ROW_COUNT
 
 
-def just_read(dataset_url='file:///tmp/benchmark_dataset'):
-  with make_carbon_reader(dataset_url, num_epochs=1) as train_reader:
+def just_read(dataset_url='file:///tmp/benchmark_dataset', num_epochs=1):
+  with make_carbon_reader(dataset_url, num_epochs=num_epochs) as train_reader:
     i = 0
     start = time.time()
     for schema_view in train_reader:
-      schema_view.id
+      print(schema_view.id)
       i += 1
       if i % ROW_COUNT == 0:
         end = time.time()
         print("time is " + str(end - start))
         start = end
-    assert i == ROW_COUNT
+    assert i == ROW_COUNT * num_epochs
+    return i
+
+
+def just_unified_read(dataset_url='file:///tmp/benchmark_dataset', num_epochs=1):
+  with make_reader(dataset_url, is_batch=False, num_epochs=num_epochs) as train_reader:
+    i = 0
+    start = time.time()
+    for schema_view in train_reader:
+      print(schema_view.id)
+      i += 1
+      if i % ROW_COUNT == 0:
+        end = time.time()
+        print("time is " + str(end - start))
+        start = end
+    assert i == ROW_COUNT * num_epochs
     return i
 
 
@@ -60,6 +77,8 @@ def main():
   start = time.time()
 
   just_read()
+
+  just_unified_read()
 
   end = time.time()
   print("all time: " + str(end - start))

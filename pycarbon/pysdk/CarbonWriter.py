@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 class CarbonWriter(object):
   def __init__(self):
     from jnius import autoclass
@@ -49,8 +50,8 @@ class CarbonWriter(object):
     self.writer = self.CarbonWriterBuilder.build()
     return self
 
-  def write(self, object):
-    return self.writer.write(object)
+  def write(self, data):
+    return self.writer.write(data)
 
   def close(self):
     return self.writer.close()

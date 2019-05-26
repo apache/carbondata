@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 class CarbonSchemaReader(object):
   def __init__(self):
     from jnius import autoclass
@@ -19,7 +20,7 @@ class CarbonSchemaReader(object):
     self.Schema = autoclass('org.apache.carbondata.sdk.file.Schema')
 
   def readSchema(self, path, getAsBuffer=False, validateSchema=False, conf=None):
-    if (getAsBuffer == True):
+    if getAsBuffer == True:
       return self.carbonSchemaReader.getArrowSchemaAsBytes(path)
     if conf is None:
       schema = self.carbonSchemaReader.readSchema(path, validateSchema)

@@ -1,4 +1,4 @@
-#  Copyright (c) 2017-2018 Uber Technologies, Inc.
+#  Copyright (c) 2018-2019 Huawei Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import logging
 import os
 import pickle
@@ -26,6 +27,8 @@ from pycarbon.tests.test_carbon_common import create_test_dataset, create_test_s
 from pycarbon.tests import DEFAULT_CARBONSDK_PATH
 
 SyntheticDataset = namedtuple('synthetic_dataset', ['url', 'data', 'path'])
+
+ObsDataset = namedtuple('obs_dataset', ['url', 'wrong_url', 'not_exist_url'])
 
 # Number of rows in a fake dataset
 _ROWS_COUNT = 100
@@ -49,6 +52,12 @@ def pytest_addoption(parser):
                    help='pyspark driver python env variable')
   parser.addoption('--carbon-sdk-path', type=str, default=DEFAULT_CARBONSDK_PATH,
                    help='carbon sdk path')
+  parser.addoption('--access_key', type=str, default=None, required=True,
+                   help='access_key of obs')
+  parser.addoption('--secret_key', type=str, default=None, required=True,
+                   help='secret_key of obs')
+  parser.addoption('--end_point', type=str, default=None, required=True,
+                   help='end_point of obs')
 
 
 def maybe_cached_dataset(config, name, generating_func):
@@ -116,3 +125,15 @@ def carbon_many_columns_non_unischema_dataset(request, tmpdir_factory):
     return dataset
 
   return maybe_cached_dataset(request.config, 'many_column_non_unischema', _dataset_no_cache)
+
+
+@pytest.fixture(scope="session")
+def carbon_obs_external_dataset(request):
+  def _obs_dataset_no_cache():
+    url = 's3a://modelarts-carbon/test/benchmark_external_dataset/'
+    wrong_url = 's3a:////modelarts-carbon/test/benchmark_external_dataset/'
+    not_exist_url = 's3a://modelarts-carbon/test/not_exist_dir/'
+    dataset = ObsDataset(url=url, wrong_url=wrong_url, not_exist_url=not_exist_url)
+    return dataset
+
+  return maybe_cached_dataset(request.config, 'obs_dataset', _obs_dataset_no_cache)

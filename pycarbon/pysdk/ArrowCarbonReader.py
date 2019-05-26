@@ -54,8 +54,8 @@ class ArrowCarbonReader(object):
     self.reader = self.ArrowCarbonReaderBuilder.buildArrowReader()
     return self
 
-  def withFileLists(self, list):
-    self.ArrowCarbonReaderBuilder.withFileLists(list)
+  def withFileLists(self, file_list):
+    self.ArrowCarbonReaderBuilder.withFileLists(file_list)
     return self
 
   def getSplits(self, is_blocklet_split):

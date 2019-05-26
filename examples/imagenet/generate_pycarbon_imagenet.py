@@ -22,6 +22,7 @@ Schema defined in examples.imagenet.schema.ImagenetSchema will be used. The sche
 
 NOTE: Imagenet dataset needs to be requested and downloaded separately by the user.
 """
+
 from __future__ import division
 
 import jnius_config
@@ -163,4 +164,3 @@ if __name__ == '__main__':
                      "or set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON in system env")
 
   imagenet_directory_to_pycarbon_dataset(args.input_path, args.output_url)
-

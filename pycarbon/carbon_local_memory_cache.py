@@ -11,23 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from __future__ import division
 
 from petastorm.cache import CacheBase
 
 
 class LocalMemoryCache(CacheBase):
-  def __init__(self, size_limit_bytes, cleanup=False):
+  def __init__(self, size_limit_bytes):
     """LocalMemoryCache is an adapter to a diskcache implementation.
 
     LocalMemoryCache can be used by a pycarbon Reader class to temporarily keep parts of the dataset in local memory.
 
     :param size_limit_bytes: Maximal size of the memory to be used by cache. The size of the cache may actually
                              grow somewhat above the size_limit_bytes, so the limit is not very strict.
-    :param cleanup: If set to True, cache directory would be removed when cleanup() method is called.
     """
 
-    self._cleanup = cleanup
     self._cache = dict()
 
   def get(self, key, fill_cache_func):
@@ -39,5 +38,7 @@ class LocalMemoryCache(CacheBase):
     return value
 
   def cleanup(self):
-    if self._cleanup:
-      self._cache.clear()
+    self._cache.clear()
+
+  def size(self):
+    return len(self._cache)

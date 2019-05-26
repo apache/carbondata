@@ -52,7 +52,10 @@ def generate_benchmark_dataset(output_url='file:///tmp/benchmark_dataset'):
   # """Creates an example dataset at output_url in Carbon format"""
   blocklet_size_mb = 256
 
-  spark = SparkSession.builder.config('spark.driver.memory', '2g').master('local[2]').getOrCreate()
+  spark = SparkSession.builder \
+    .master('local[2]') \
+    .getOrCreate()
+
   sc = spark.sparkContext
 
   rows_count = ROW_COUNT
@@ -63,7 +66,6 @@ def generate_benchmark_dataset(output_url='file:///tmp/benchmark_dataset'):
       .map(lambda x: dict_to_spark_row(BenchmarkSchema, x))
 
     spark.createDataFrame(rows_rdd, BenchmarkSchema.as_spark_schema()) \
-      .coalesce(10) \
       .write \
       .mode('overwrite') \
       .save(path=output_url, format='carbon')

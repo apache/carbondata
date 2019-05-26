@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """A set of Tensorflow specific helper functions for the unischema"""
+
 import datetime
 import sys
 import warnings
@@ -354,8 +355,8 @@ def make_pycarbon_dataset(reader):
     :class:`~pycarbon.carbon_reader.CarbonDataReader` constructor as it will not load any unused shards.
   * ``filter``: Consider using :class:`~pycarbon.carbon_reader.CarbonDataReader` ``predicate`` constructor argument.
     It will make use of columnar nature of the underlying Apache Parquet store to load only the columns that the
-    predicate operates on prior to loading and decoding other columns. :class:`~pycarbon.carbon_reader.CarbonDataReader`'s predicate
-    feature will also make use of Parquet partitioning (if the dataset is partitioned).
+    predicate operates on prior to loading and decoding other columns. :class:`~pycarbon.carbon_reader.
+    CarbonDataReader`'s predicate feature will also make use of Parquet partitioning (if the dataset is partitioned).
 
   The elements produced by the returned dataset object are namedtuples based on the
   :class:`~petastorm.unischema.Unischema`.
@@ -373,7 +374,8 @@ def make_pycarbon_dataset(reader):
 
   NGrams are not yet supported by this function.
 
-  :param reader: An instance of :class:`~pycarbon.carbon_reader.CarbonDataReader` object that would serve as a data source.
+  :param reader: An instance of :class:`~pycarbon.carbon_reader.CarbonDataReader` object that would serve
+    as a data source.
   :return: A ``tf.data.Dataset`` instance.
   """
 

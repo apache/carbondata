@@ -25,6 +25,9 @@ from pycarbon.carbon_tf_utils import tf_tensors, make_pycarbon_dataset
 
 from pycarbon.carbon_reader import make_carbon_reader
 
+from unified.reader import make_reader
+from unified.tensorflow import make_tensor, make_dataset
+
 from examples import DEFAULT_CARBONSDK_PATH
 
 
@@ -36,9 +39,24 @@ def tensorflow_hello_world(dataset_url='file:///tmp/carbon_pycarbon_dataset/'):
       sample = sess.run(tensor)
       print(sample.id)
 
+  with make_reader(dataset_url, is_batch=False) as reader:
+    tensor = make_tensor(reader)
+    with tf.Session() as sess:
+      sample = sess.run(tensor)
+      print(sample.id)
+
+
   # Example: use tf.data.Dataset API
   with make_carbon_reader(dataset_url) as reader:
     dataset = make_pycarbon_dataset(reader)
+    iterator = dataset.make_one_shot_iterator()
+    tensor = iterator.get_next()
+    with tf.Session() as sess:
+      sample = sess.run(tensor)
+      print(sample.id)
+
+  with make_reader(dataset_url, is_batch=False) as reader:
+    dataset = make_dataset(reader)
     iterator = dataset.make_one_shot_iterator()
     tensor = iterator.get_next()
     with tf.Session() as sess:

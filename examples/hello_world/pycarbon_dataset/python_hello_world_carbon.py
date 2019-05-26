@@ -21,12 +21,18 @@ import argparse
 import jnius_config
 
 from pycarbon.carbon_reader import make_carbon_reader
+from unified.reader import make_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
 
 
 def python_hello_world(dataset_url='file:///tmp/carbon_pycarbon_dataset'):
   with make_carbon_reader(dataset_url) as reader:
+    # Pure python
+    for sample in reader:
+      print(sample.id)
+
+  with make_reader(dataset_url, is_batch=False) as reader:
     # Pure python
     for sample in reader:
       print(sample.id)

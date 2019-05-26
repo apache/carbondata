@@ -22,12 +22,20 @@ import jnius_config
 
 from pycarbon.carbon_reader import make_batch_carbon_reader
 
+from unified.reader import make_reader
+
 from examples import DEFAULT_CARBONSDK_PATH
 
 
 def python_hello_world(dataset_url='file:///tmp/carbon_external_dataset'):
   # Reading data from the non-Pycarbon Carbon via pure Python
   with make_batch_carbon_reader(dataset_url, schema_fields=["id", "value1", "value2"]) as reader:
+    for schema_view in reader:
+      # make_batch_reader() returns batches of rows instead of individual rows
+      print("Batched read:\nid: {0} value1: {1} value2: {2}".format(
+        schema_view.id, schema_view.value1, schema_view.value2))
+
+  with make_reader(dataset_url, schema_fields=["id", "value1", "value2"]) as reader:
     for schema_view in reader:
       # make_batch_reader() returns batches of rows instead of individual rows
       print("Batched read:\nid: {0} value1: {1} value2: {2}".format(

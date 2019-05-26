@@ -13,4 +13,3 @@
 # limitations under the License.
 
 DEFAULT_MNIST_DATA_PATH = '/tmp/mnist_external'
-

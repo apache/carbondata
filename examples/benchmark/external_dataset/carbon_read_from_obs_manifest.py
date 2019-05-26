@@ -23,28 +23,46 @@ import time
 import argparse
 import jnius_config
 
+from obs import ObsClient
+
 from pycarbon.carbon_reader import make_batch_carbon_reader
+
+from unified.reader import make_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
 
 
-def just_read_obs(dataset_url, key, secret, endpoint):
-  with make_batch_carbon_reader(dataset_url, key=key, secret=secret, endpoint=endpoint, num_epochs=1,
-                          workers_count=16) as train_reader:
-    i = 0
-    for schema_view in train_reader:
-      schema_view.name
-      i += len( schema_view.name)
-    print(i)
-
-
 def just_read_batch_obs(dataset_url, key, secret, endpoint):
-  with make_batch_carbon_reader(dataset_url, key=key, secret=secret, endpoint=endpoint, num_epochs=1,
-                                workers_count=16) as train_reader:
-    i = 0
-    for schema_view in train_reader:
-      i += len(schema_view.name)
-    print(i)
+  for num_epochs in [1, 4, 8]:
+    with make_batch_carbon_reader(dataset_url, key=key, secret=secret, endpoint=endpoint, num_epochs=num_epochs,
+                                  workers_count=16) as train_reader:
+      i = 0
+      for schema_view in train_reader:
+        for j in range(len(schema_view.name)):
+          print(schema_view.name[j])
+          i += 1
+
+      print(i)
+      assert 20 * num_epochs == i
+
+
+def just_unified_read_batch_obs(dataset_url, key, secret, endpoint):
+  obs_client = ObsClient(
+    access_key_id=key,
+    secret_access_key=secret,
+    server=endpoint
+  )
+  for num_epochs in [1, 4, 8]:
+    with make_reader(dataset_url, obs_client=obs_client, num_epochs=num_epochs,
+                     workers_count=16) as train_reader:
+      i = 0
+      for schema_view in train_reader:
+        for j in range(len(schema_view.name)):
+          print(schema_view.name[j])
+          i += 1
+
+      print(i)
+      assert 20 * num_epochs == i
 
 
 def main():
@@ -68,9 +86,9 @@ def main():
 
   path = "s3a://manifest/carbon/manifestcarbon/obsbinary1557717977531.manifest"
 
-  just_read_obs(path, args.access_key, args.secret_key, args.end_point)
-
   just_read_batch_obs(path, args.access_key, args.secret_key, args.end_point)
+
+  just_unified_read_batch_obs(path, args.access_key, args.secret_key, args.end_point)
 
   end = time.time()
   print("all time: " + str(end - start))

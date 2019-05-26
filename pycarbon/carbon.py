@@ -96,7 +96,7 @@ class CarbonDataset(object):
                               server=str(endpoint).replace('http://', ''),
                               long_conn_mode=True)
         sources = manifest.getSources(self.manifest_path, CARBON, obsClient)
-        if len(sources) > 0:
+        if sources:
           self.file_path = sources[0]
         else:
           raise Exception("Manifest source can't be None!")
@@ -116,13 +116,21 @@ class CarbonDataset(object):
     else:
       if str(path).endswith(".manifest"):
         sources = manifest.getSources(self.manifest_path, CARBON)
-        if len(sources) > 0:
+        if sources:
           self.file_path = sources[0]
         else:
           raise Exception("Manifest source can't be None!")
-        carbon_schema = CarbonSchemaReader().readSchema(self.file_path)
+
+        try:
+          carbon_schema = CarbonSchemaReader().readSchema(self.file_path)
+        except:
+          raise Exception("readSchema has some errors")
       else:
-        carbon_schema = CarbonSchemaReader().readSchema(self.path)
+        try:
+          carbon_schema = CarbonSchemaReader().readSchema(self.path)
+        except:
+          raise Exception("readSchema has some errors")
+
       carbon_splits = ArrowCarbonReader().builder(self.path) \
         .getSplits(True)
 

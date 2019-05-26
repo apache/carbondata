@@ -1,0 +1,2 @@
+{"source":"./examples/data/binary/sub2/part-0-1196034863039545_batchno0-0-null-1196034854301360.carbondata","source-type":"carbon","usage":"TRAIN","property":{"@modelarts:schema":{"name":"string","age":"int","image1":"BINARY","image2":"BINARY","image3":"BINARY"}}}
+{"source":"./examples/data/binary/sub1/part-0-1196034485149392_batchno0-0-null-1196033673787967.carbondata","source-type":"carbon","usage":"TRAIN","property":{"@modelarts:schema":{"name":"string","age":"int","image1":"BINARY","image2":"BINARY","image3":"BINARY"}}}

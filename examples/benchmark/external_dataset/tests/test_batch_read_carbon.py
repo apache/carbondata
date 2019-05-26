@@ -13,8 +13,11 @@
 # limitations under the License.
 
 from examples.benchmark.external_dataset import carbon_batch_read_from_local
+from examples.benchmark.external_dataset import carbon_batch_read_from_obs
 from examples.benchmark.external_dataset import carbon_batch_read_with_projection
 from examples.benchmark.external_dataset import carbon_batch_read_with_shuffle
+from examples.benchmark.external_dataset import carbon_read_from_local_manifest
+from examples.benchmark.external_dataset import carbon_read_from_obs_manifest
 from examples.benchmark.external_dataset import generate_benchmark_external_dataset
 
 from examples.benchmark.external_dataset.generate_benchmark_external_dataset import ROW_COUNT
@@ -43,27 +46,103 @@ generate_benchmark_external_dataset.generate_benchmark_dataset()
 
 
 def test_carbon_batch_read():
-    num_1 = carbon_batch_read_from_local.just_read_batch()
-    num_2 = carbon_batch_read_from_local.just_read_batch()
+  for num_epochs in [1, 4, 8]:
+    num_1 = carbon_batch_read_from_local.just_read_batch(num_epochs=num_epochs)
+    num_2 = carbon_batch_read_from_local.just_read_batch(num_epochs=num_epochs)
 
     assert num_1 == num_2
-    assert num_1 == ROW_COUNT
-    assert num_2 == ROW_COUNT
+    assert num_1 == ROW_COUNT * num_epochs
+
+
+def test_carbon_unified_batch_read():
+  for num_epochs in [1, 4, 8]:
+    num_1 = carbon_batch_read_from_local.just_unified_read_batch(num_epochs=num_epochs)
+    num_2 = carbon_batch_read_from_local.just_unified_read_batch(num_epochs=num_epochs)
+
+    assert num_1 == num_2
+    assert num_1 == ROW_COUNT * num_epochs
 
 
 def test_carbon_batch_read_with_projection():
-    num_1 = carbon_batch_read_with_projection.just_read_batch()
-    num_2 = carbon_batch_read_with_projection.just_read_batch()
+  num_1 = carbon_batch_read_with_projection.just_read_batch()
+  num_2 = carbon_batch_read_with_projection.just_read_batch()
+
+  assert num_1 == num_2
+  assert num_1 == ROW_COUNT
+
+
+def test_carbon_unified_batch_read_with_projection():
+  num_1 = carbon_batch_read_with_projection.just_unified_read_batch()
+  num_2 = carbon_batch_read_with_projection.just_unified_read_batch()
+
+  assert num_1 == num_2
+  assert num_1 == ROW_COUNT
+
+
+def test_carbon_batch_read_obs():
+  for num_epochs in [1, 4, 8]:
+    num_1 = carbon_batch_read_from_obs.just_read_batch_obs(key=pytest.config.getoption("--access_key"),
+                                                           secret=pytest.config.getoption("--secret_key"),
+                                                           endpoint=pytest.config.getoption("--end_point"),
+                                                           num_epochs=num_epochs)
+
+    num_2 = carbon_batch_read_from_obs.just_read_batch_obs(key=pytest.config.getoption("--access_key"),
+                                                           secret=pytest.config.getoption("--secret_key"),
+                                                           endpoint=pytest.config.getoption("--end_point"),
+                                                           num_epochs=num_epochs)
 
     assert num_1 == num_2
-    assert num_1 == ROW_COUNT
-    assert num_2 == ROW_COUNT
+    assert num_1 == ROW_COUNT * num_epochs
+
+
+def test_carbon_unified_batch_read_obs():
+  for num_epochs in [1, 4, 8]:
+    num_1 = carbon_batch_read_from_obs.just_unified_read_batch_obs(key=pytest.config.getoption("--access_key"),
+                                                                   secret=pytest.config.getoption("--secret_key"),
+                                                                   endpoint=pytest.config.getoption("--end_point"),
+                                                                   num_epochs=num_epochs)
+
+    num_2 = carbon_batch_read_from_obs.just_unified_read_batch_obs(key=pytest.config.getoption("--access_key"),
+                                                                   secret=pytest.config.getoption("--secret_key"),
+                                                                   endpoint=pytest.config.getoption("--end_point"),
+                                                                   num_epochs=num_epochs)
+
+    assert num_1 == num_2
+    assert num_1 == ROW_COUNT * num_epochs
 
 
 def test_carbon_batch_read_with_shuffle():
-    list_1 = carbon_batch_read_with_shuffle.just_read_batch()
-    list_2 = carbon_batch_read_with_shuffle.just_read_batch()
+  list_1 = carbon_batch_read_with_shuffle.just_read_batch()
+  list_2 = carbon_batch_read_with_shuffle.just_read_batch()
 
-    assert len(list_1)
-    assert len(list_2)
-    assert list_1 != list_2
+  assert len(list_1)
+  assert len(list_2)
+  assert list_1 != list_2
+
+
+def test_carbon_unified_batch_read_with_shuffle():
+  list_1 = carbon_batch_read_with_shuffle.just_unified_read_batch()
+  list_2 = carbon_batch_read_with_shuffle.just_unified_read_batch()
+
+  assert len(list_1)
+  assert len(list_2)
+  assert list_1 != list_2
+
+
+def test_carbon_batch_read_manifest():
+  carbon_read_from_local_manifest.just_read_batch()
+  carbon_read_from_local_manifest.just_unified_read_batch()
+
+
+def test_carbon_batch_read_obs_manifest():
+  path = "s3a://manifest/carbon/manifestcarbon/obsbinary1557717977531.manifest"
+
+  carbon_read_from_obs_manifest.just_read_batch_obs(path,
+                                                    pytest.config.getoption("--access_key"),
+                                                    pytest.config.getoption("--secret_key"),
+                                                    pytest.config.getoption("--end_point"))
+
+  carbon_read_from_obs_manifest.just_unified_read_batch_obs(path,
+                                                            pytest.config.getoption("--access_key"),
+                                                            pytest.config.getoption("--secret_key"),
+                                                            pytest.config.getoption("--end_point"))

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from __future__ import division
 
 import datetime
@@ -44,7 +45,8 @@ elif 'PYSPARK_PYTHON' in os.environ.keys() and 'PYSPARK_DRIVER_PYTHON' in os.env
   pass
 else:
   raise ValueError("please set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON variables, "
-                   "using cmd line --pyspark-python=PYSPARK_PYTHON_PATH --pyspark-driver-python=PYSPARK_DRIVER_PYTHON_PATH, "
+                   "using cmd line "
+                   "--pyspark-python=PYSPARK_PYTHON_PATH --pyspark-driver-python=PYSPARK_DRIVER_PYTHON_PATH "
                    "or set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON in system env")
 
 NON_NULLABLE_FIELDS = set(TestSchema.fields.values())
@@ -91,6 +93,17 @@ def test_sanitize_field_tf_types():
 
   np.testing.assert_equal(sanitized_tuple.array_of_datetime_date, expected_datetime_ns_from_epoch)
   np.testing.assert_equal(sanitized_tuple.array_of_np_datetime_64, expected_datetime_ns_from_epoch)
+
+
+def test_invalid_sanitize_field_tf_types():
+  sample_input_dict = {
+    'int32': None,
+  }
+
+  TestNamedTuple = namedtuple('TestNamedTuple', sample_input_dict.keys())
+  sample_input_tuple = TestNamedTuple(**sample_input_dict)
+  with pytest.raises(RuntimeError):
+    _sanitize_field_tf_types(sample_input_tuple)
 
 
 def test_decimal_conversion():

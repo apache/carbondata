@@ -40,8 +40,9 @@ def row_generator(x):
 def generate_benchmark_dataset(output_url='file:///tmp/benchmark_external_dataset'):
   # """Creates an example dataset at output_url in Carbon format"""
   spark = SparkSession.builder \
-    .master('local') \
+    .master('local[2]') \
     .getOrCreate()
+
   sc = spark.sparkContext
   sc.setLogLevel('INFO')
 

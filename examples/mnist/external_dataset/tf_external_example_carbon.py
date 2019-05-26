@@ -109,8 +109,7 @@ def train_and_test(dataset_url, num_epochs, batch_size, evaluation_interval):
               print('After {0} training iterations, the accuracy of the model is: {1:.2f}'.format(
                 i,
                 sess.run(accuracy, feed_dict={
-                  x: test_cur_image, y_: test_cur_label}))
-              )
+                  x: test_cur_image, y_: test_cur_label})))
             i += 1
 
         except tf.errors.OutOfRangeError:
@@ -154,4 +153,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-

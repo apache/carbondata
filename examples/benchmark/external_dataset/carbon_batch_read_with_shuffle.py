@@ -26,6 +26,8 @@ import jnius_config
 
 from pycarbon.carbon_reader import make_batch_carbon_reader
 
+from unified.reader import make_reader
+
 from examples import DEFAULT_CARBONSDK_PATH
 
 
@@ -36,9 +38,25 @@ def just_read_batch(dataset_url='file:///tmp/benchmark_external_dataset'):
     i = 0
     for schema_view in train_reader:
       i += len(schema_view.id)
-      for id in schema_view.id:
-        result.append(id)
-    print(i)
+      for ele in schema_view.id:
+        result.append(ele)
+
+    return result
+
+
+def just_unified_read_batch(dataset_url='file:///tmp/benchmark_external_dataset'):
+  properties = {
+    "shuffle_row_drop_partitions": 5,
+  }
+  with make_reader(dataset_url, num_epochs=1, workers_count=10,
+                   **properties) as train_reader:
+    result = list()
+    i = 0
+    for schema_view in train_reader:
+      i += len(schema_view.id)
+      for ele in schema_view.id:
+        result.append(ele)
+
     return result
 
 
@@ -57,6 +75,8 @@ def main():
   start = time.time()
 
   just_read_batch()
+
+  just_unified_read_batch()
 
   end = time.time()
   print("all time: " + str(end - start))

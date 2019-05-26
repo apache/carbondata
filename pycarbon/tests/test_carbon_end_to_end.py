@@ -1,4 +1,4 @@
-#  Copyright (c) 2017-2018 Uber Technologies, Inc.
+#  Copyright (c) 2018-2019 Huawei Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,19 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import operator
-import os
+
 from concurrent.futures import ThreadPoolExecutor
 from shutil import rmtree, copytree
 
 import numpy as np
-import pyarrow.hdfs
 import pytest
 
 from petastorm.codecs import ScalarCodec
 
 from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
 from pycarbon.tests.test_carbon_common import TestSchema
+
+from pycarbon.tests.conftest import _ROWS_COUNT
 
 import os
 import jnius_config
@@ -38,7 +38,8 @@ elif 'PYSPARK_PYTHON' in os.environ.keys() and 'PYSPARK_DRIVER_PYTHON' in os.env
   pass
 else:
   raise ValueError("please set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON variables, "
-                   "using cmd line --pyspark-python=PYSPARK_PYTHON_PATH --pyspark-driver-python=PYSPARK_DRIVER_PYTHON_PATH, "
+                   "using cmd line "
+                   "--pyspark-python=PYSPARK_PYTHON_PATH --pyspark-driver-python=PYSPARK_DRIVER_PYTHON_PATH "
                    "or set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON in system env")
 
 # pylint: disable=unnecessary-lambda
@@ -104,13 +105,6 @@ def test_simple_read(carbon_synthetic_dataset, reader_factory):
   """Just a bunch of read and compares of all values to the expected values using the different reader pools"""
   with reader_factory(carbon_synthetic_dataset.url) as reader:
     _check_simple_reader(reader, carbon_synthetic_dataset.data)
-
-
-def test_simple_read_with_pyarrow_serialize(carbon_synthetic_dataset):
-  """Same as test_simple_read, but don't check type correctness as pyarrow_serialize messes up integer types"""
-  with make_carbon_reader(carbon_synthetic_dataset.url, reader_pool_type='thread', workers_count=1,
-                          pyarrow_serialize=True) as reader:
-    _check_simple_reader(reader, carbon_synthetic_dataset.data, check_types=False)
 
 
 @pytest.mark.parametrize('reader_factory', ALL_READER_FLAVOR_FACTORIES + SCALAR_ONLY_READER_FACTORIES)
@@ -220,49 +214,49 @@ def test_shuffle_drop_ratio(carbon_synthetic_dataset, reader_factory):
 # TODO: fix test_partition_multi_node
 # @pytest.mark.parametrize('reader_factory', ALL_READER_FLAVOR_FACTORIES)
 # def test_partition_multi_node(carbon_synthetic_dataset, reader_factory):
-#     """Tests that the reader only returns half of the expected data consistently"""
-#     with reader_factory(carbon_synthetic_dataset.url, cur_shard=0, shard_count=5) as reader:
-#         with reader_factory(carbon_synthetic_dataset.url, cur_shard=0, shard_count=5) as reader_2:
-#             results_1 = set(_readout_all_ids(reader))
-#             results_2 = set(_readout_all_ids(reader_2))
+#   """Tests that the reader only returns half of the expected data consistently"""
+#   with reader_factory(carbon_synthetic_dataset.url, cur_shard=0, shard_count=5) as reader:
+#     with reader_factory(carbon_synthetic_dataset.url, cur_shard=0, shard_count=5) as reader_2:
+#       results_1 = set(_readout_all_ids(reader))
+#       results_2 = set(_readout_all_ids(reader_2))
 #
-#             assert results_1, 'Non empty shard expected'
+#       assert results_1, 'Non empty shard expected'
 #
-#             np.testing.assert_equal(results_1, results_2)
+#       np.testing.assert_equal(results_1, results_2)
 #
-#             assert len(results_1) < len(carbon_synthetic_dataset.data)
+#       assert len(results_1) < len(carbon_synthetic_dataset.data)
 #
-#             # Test that separate partitions also have no overlap by checking ids)
-#             for partition in range(1, 5):
-#                 with reader_factory(carbon_synthetic_dataset.url, cur_shard=partition,
-#                                     shard_count=5) as reader_other:
-#                     ids_in_other_partition = set(_readout_all_ids(reader_other))
+#       # Test that separate partitions also have no overlap by checking ids)
+#       for partition in range(1, 5):
+#         with reader_factory(carbon_synthetic_dataset.url, cur_shard=partition,
+#                             shard_count=5) as reader_other:
+#           ids_in_other_partition = set(_readout_all_ids(reader_other))
 #
-#                     assert not ids_in_other_partition.intersection(results_1)
+#           assert not ids_in_other_partition.intersection(results_1)
 
 
 # TODO: fix test_partition_value_error
 # @pytest.mark.parametrize('reader_factory', ALL_READER_FLAVOR_FACTORIES)
 # def test_partition_value_error(carbon_synthetic_dataset, reader_factory):
-#     """Tests that the reader raises value errors when appropriate"""
+#   """Tests that the reader raises value errors when appropriate"""
 #
-#     # shard_count has to be greater than 0
-#     with pytest.raises(ValueError):
-#         reader_factory(carbon_synthetic_dataset.url, shard_count=0)
+#   # shard_count has to be greater than 0
+#   with pytest.raises(ValueError):
+#     reader_factory(carbon_synthetic_dataset.url, shard_count=0)
 #
-#     # missing cur_shard value
-#     with pytest.raises(ValueError):
-#         reader_factory(carbon_synthetic_dataset.url, shard_count=5)
+#   # missing cur_shard value
+#   with pytest.raises(ValueError):
+#     reader_factory(carbon_synthetic_dataset.url, shard_count=5)
 #
-#     # cur_shard is a string
-#     with pytest.raises(ValueError):
-#         reader_factory(carbon_synthetic_dataset.url, cur_shard='0',
-#                        shard_count=5)
+#   # cur_shard is a string
+#   with pytest.raises(ValueError):
+#     reader_factory(carbon_synthetic_dataset.url, cur_shard='0',
+#                    shard_count=5)
 #
-#     # shard_count is a string
-#     with pytest.raises(ValueError):
-#         reader_factory(carbon_synthetic_dataset.url, cur_shard=0,
-#                        shard_count='5')
+#   # shard_count is a string
+#   with pytest.raises(ValueError):
+#     reader_factory(carbon_synthetic_dataset.url, cur_shard=0,
+#                    shard_count='5')
 
 
 @pytest.mark.parametrize('reader_factory', [
@@ -351,9 +345,9 @@ def test_dataset_path_is_a_unicode(carbon_synthetic_dataset, reader_factory):
 
 
 # TODO: fix test_make_carbon_reader_fails_loading_non_unischema_dataset
-# def test_make_carbon_reader_fails_loading_non_unischema_dataset(carbon_many_columns_non_unischema_dataset):
-#   with pytest.raises(RuntimeError, match='use make_batch_carbon_reader'):
-#     make_carbon_reader(carbon_many_columns_non_unischema_dataset.url)
+def test_make_carbon_reader_fails_loading_non_unischema_dataset(carbon_many_columns_non_unischema_dataset):
+  with pytest.raises(RuntimeError, match='use make_batch_carbon_reader'):
+    make_carbon_reader(carbon_many_columns_non_unischema_dataset.url)
 
 
 def test_multithreaded_reads(carbon_synthetic_dataset):
@@ -366,3 +360,37 @@ def test_multithreaded_reads(carbon_synthetic_dataset):
       results = [f.result() for f in futures]
       assert len(results) == len(carbon_synthetic_dataset.data)
       assert set(r.id for r in results) == set(d['id'] for d in carbon_synthetic_dataset.data)
+
+
+@pytest.mark.forked
+def test_carbon_reader(carbon_synthetic_dataset):
+  with make_carbon_reader(carbon_synthetic_dataset.url, num_epochs=1) as reader:
+    i = 0
+    for sample in reader:
+      print(sample.id)
+      i += 1
+    assert i == _ROWS_COUNT
+
+
+@pytest.mark.forked
+def test_batch_carbon_reader(carbon_synthetic_dataset):
+  with make_batch_carbon_reader(carbon_synthetic_dataset.url, num_epochs=1) as reader:
+    i = 0
+    for sample in reader:
+      for ele in sample.id:
+        print(ele)
+        i += 1
+    assert i == _ROWS_COUNT
+
+
+@pytest.mark.forked
+def test_make_batch_carbon_reader_of_obs(carbon_obs_external_dataset):
+  with make_batch_carbon_reader(carbon_obs_external_dataset.url,
+                                key=pytest.config.getoption("--access_key"),
+                                secret=pytest.config.getoption("--secret_key"),
+                                endpoint=pytest.config.getoption("--end_point")) as reader:
+    i = 0
+    for sample in reader:
+      i += len(sample.id)
+
+    assert i == _ROWS_COUNT

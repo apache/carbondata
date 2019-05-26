@@ -19,15 +19,9 @@ import warnings
 import six
 
 from petastorm.cache import NullCache
-from petastorm.local_disk_arrow_table_cache import LocalDiskArrowTableCache
 from petastorm.local_disk_cache import LocalDiskCache
 from petastorm.ngram import NGram
-from petastorm.reader_impl.arrow_table_serializer import ArrowTableSerializer
-from petastorm.reader_impl.pickle_serializer import PickleSerializer
-from petastorm.reader_impl.pyarrow_serializer import PyArrowSerializer
 from petastorm.transform import transform_schema
-from petastorm.workers_pool.dummy_pool import DummyPool
-from petastorm.workers_pool.process_pool import ProcessPool
 from petastorm.workers_pool.thread_pool import ThreadPool
 from petastorm.workers_pool.ventilator import ConcurrentVentilator
 
@@ -55,7 +49,7 @@ def make_carbon_reader(dataset_url,
                        proxy=None,
                        proxy_port=None,
                        schema_fields=None,
-                       reader_pool_type='thread', workers_count=10, pyarrow_serialize=False, results_queue_size=100,
+                       reader_pool_type='thread', workers_count=10, results_queue_size=100,
                        shuffle_blocklets=True, shuffle_row_drop_partitions=1,
                        predicate=None,
                        blocklet_selector=None,
@@ -88,8 +82,6 @@ def make_carbon_reader(dataset_url,
     TODO: process support
   :param workers_count: An int for the number of workers to use in the reader pool. This only is used for the
       thread or process pool. Defaults to 10
-  :param pyarrow_serialize: Whether to use pyarrow for serialization. Currently only applicable to process pool.
-      Defaults to False.
   :param results_queue_size: Size of the results queue to store prefetched rows. Currently only applicable to
       thread reader pool type.
   :param shuffle_blocklets: Whether to shuffle blocklets (the order in which full blocklets are read)
@@ -174,13 +166,9 @@ def make_carbon_reader(dataset_url,
     if reader_pool_type == 'thread':
       reader_pool = ThreadPool(workers_count, results_queue_size)
     elif reader_pool_type == 'process':
-      if pyarrow_serialize:
-        serializer = PyArrowSerializer()
-      else:
-        serializer = PickleSerializer()
-      reader_pool = ProcessPool(workers_count, serializer)
+      raise NotImplementedError('not support process reader_pool_type now.')
     elif reader_pool_type == 'dummy':
-      reader_pool = DummyPool()
+      raise NotImplementedError('not support dummy reader_pool_type now.')
     else:
       raise ValueError('Unknown reader_pool_type: {}'.format(reader_pool_type))
 
@@ -323,16 +311,16 @@ def make_batch_carbon_reader(dataset_url,
                                                                proxy=proxy,
                                                                proxy_port=proxy_port,
                                                                filesystem=filesystem)
-    warnings.warn('Please use make_carbon_reader (instead of \'make_batch_carbon_reader\' function to read this dataset '
-                  'as it contains unischema file.')
+    warnings.warn('Please use make_carbon_reader (instead of \'make_batch_carbon_reader\' function '
+                  'to read this dataset as it contains unischema file.')
   except PycarbonMetadataError:
     pass
 
   if cache_type is None or cache_type == 'null':
     cache = NullCache()
   elif cache_type == 'local-disk':
-    cache = LocalDiskArrowTableCache(cache_location, cache_size_limit, cache_row_size_estimate,
-                                     **cache_extra_settings or {})
+    cache = LocalDiskCache(cache_location, cache_size_limit, cache_row_size_estimate,
+                           **cache_extra_settings or {})
   elif cache_type == 'memory-cache':
     cache = LocalMemoryCache(cache_size_limit)
   else:
@@ -341,10 +329,9 @@ def make_batch_carbon_reader(dataset_url,
   if reader_pool_type == 'thread':
     reader_pool = ThreadPool(workers_count, results_queue_size)
   elif reader_pool_type == 'process':
-    serializer = ArrowTableSerializer()
-    reader_pool = ProcessPool(workers_count, serializer)
+    raise NotImplementedError('not support process reader_pool_type now.')
   elif reader_pool_type == 'dummy':
-    reader_pool = DummyPool()
+    raise NotImplementedError('not support dummy reader_pool_type now.')
   else:
     raise ValueError('Unknown reader_pool_type: {}'.format(reader_pool_type))
 
@@ -442,7 +429,7 @@ class CarbonDataReader(object):
       raise NotImplementedError('Using timestamp_overlap=False is not implemented with'
                                 ' shuffle_options.shuffle_row_drop_partitions > 1')
 
-    cache = cache or NullCache()
+    self.cache = cache or NullCache()
 
     self._workers_pool = reader_pool or ThreadPool(10)
     # 1. Resolve dataset path (hdfs://, file://) and open the carbon storage (dataset)
@@ -472,8 +459,8 @@ class CarbonDataReader(object):
     normalized_shuffle_row_drop_partitions = \
       self._normalize_shuffle_options(shuffle_row_drop_partitions, self.carbon_dataset)
     self.ventilator = self._create_ventilator(filtered_blocklet_indexes, shuffle_blocklets,
-                                         normalized_shuffle_row_drop_partitions, num_epochs, worker_predicate,
-                                         self._workers_pool.workers_count + _VENTILATE_EXTRA_BLOCKLETS)
+                                              normalized_shuffle_row_drop_partitions, num_epochs, worker_predicate,
+                                              self._workers_pool.workers_count + _VENTILATE_EXTRA_BLOCKLETS)
 
     # 4. Start workers pool
     self._workers_pool.start(worker_class, (pyarrow_filesystem, dataset_path, storage_schema, self.ngram,
@@ -544,6 +531,15 @@ class CarbonDataReader(object):
     """Joins all worker threads/processes. Will block until all worker workers have been fully terminated."""
     self._workers_pool.join()
 
+  def cleanup(self):
+    if not isinstance(self.cache, NullCache):
+      self.cache.cleanup()
+
+  def exit(self):
+    self.stop()
+    self.join()
+    self.cleanup()
+
   @property
   def diagnostics(self):
     return self._workers_pool.diagnostics
@@ -568,3 +564,4 @@ class CarbonDataReader(object):
   def __exit__(self, exc_type, exc_val, exc_tb):
     self.stop()
     self.join()
+    self.cleanup()

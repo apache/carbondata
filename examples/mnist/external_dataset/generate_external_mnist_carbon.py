@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,6 +21,7 @@ import os
 import shutil
 import tempfile
 import jnius_config
+from six.moves.urllib.parse import urlparse
 
 import tensorflow as tf
 
@@ -61,6 +63,9 @@ def main(download_dir, validation_size, output_url, carbon_files_count=1):
                                    reshape=False,
                                    validation_size=validation_size,
                                    source_url="http://yann.lecun.com/exdb/mnist/")
+  url_path = urlparse(output_url)
+  if os.path.exists(url_path.path):
+    shutil.rmtree(url_path.path)
 
   spark = SparkSession.builder \
     .master('local') \

@@ -24,11 +24,19 @@ from petastorm.pytorch import DataLoader
 
 from pycarbon.carbon_reader import make_batch_carbon_reader
 
+from unified.reader import make_reader
+from unified.pytorch import make_data_loader
+
 from examples import DEFAULT_CARBONSDK_PATH
 
 
 def pytorch_hello_world(dataset_url='file:///tmp/carbon_external_dataset'):
   with DataLoader(make_batch_carbon_reader(dataset_url)) as train_loader:
+    sample = next(iter(train_loader))
+    # Because we are using make_batch_reader(), each read returns a batch of rows instead of a single row
+    print("id batch: {0}".format(sample['id']))
+
+  with make_data_loader(make_reader(dataset_url)) as train_loader:
     sample = next(iter(train_loader))
     # Because we are using make_batch_reader(), each read returns a batch of rows instead of a single row
     print("id batch: {0}".format(sample['id']))

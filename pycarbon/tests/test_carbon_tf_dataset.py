@@ -42,7 +42,8 @@ elif 'PYSPARK_PYTHON' in os.environ.keys() and 'PYSPARK_DRIVER_PYTHON' in os.env
   pass
 else:
   raise ValueError("please set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON variables, "
-                   "using cmd line --pyspark-python=PYSPARK_PYTHON_PATH --pyspark-driver-python=PYSPARK_DRIVER_PYTHON_PATH, "
+                   "using cmd line "
+                   "--pyspark-python=PYSPARK_PYTHON_PATH --pyspark-driver-python=PYSPARK_DRIVER_PYTHON_PATH "
                    "or set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON in system env")
 
 _EXCLUDE_FIELDS = set(TestSchema.fields.values()) - {TestSchema.decimal}
@@ -131,28 +132,28 @@ def test_with_dataset_repeat(carbon_synthetic_dataset, reader_factory):
 @pytest.mark.forked
 @pytest.mark.parametrize('reader_factory', ALL_READER_FLAVOR_FACTORIES)
 def test_some_processing_functions(carbon_synthetic_dataset, reader_factory):
-    """Try several ``tf.data.Dataset`` dataset operations on make_pycarbon_dataset"""
+  """Try several ``tf.data.Dataset`` dataset operations on make_pycarbon_dataset"""
 
-    # reader1 will have a single row with id=1, reader2: a single row with id=2
+  # reader1 will have a single row with id=1, reader2: a single row with id=2
 
-    # Using functools.partial(_eq, 1)) which is equivalent to lambda x: x==1 because standard python pickle
-    # can not pickle this lambda
+  # Using functools.partial(_eq, 1)) which is equivalent to lambda x: x==1 because standard python pickle
+  # can not pickle this lambda
+  with reader_factory(carbon_synthetic_dataset.url,
+                      predicate=in_lambda(['id'], functools.partial(operator.eq, 1))) as reader1:
     with reader_factory(carbon_synthetic_dataset.url,
-                        predicate=in_lambda(['id'], functools.partial(operator.eq, 1))) as reader1:
-        with reader_factory(carbon_synthetic_dataset.url,
-                            predicate=in_lambda(['id'], functools.partial(operator.eq, 2))) as reader2:
-            dataset = make_pycarbon_dataset(reader1) \
-                .prefetch(10) \
-                .concatenate(make_pycarbon_dataset(reader2)) \
-                .map(lambda x: x.id) \
-                .batch(2)
+                        predicate=in_lambda(['id'], functools.partial(operator.eq, 2))) as reader2:
+      dataset = make_pycarbon_dataset(reader1) \
+        .prefetch(10) \
+        .concatenate(make_pycarbon_dataset(reader2)) \
+        .map(lambda x: x.id) \
+        .batch(2)
 
-            next_sample = dataset.make_one_shot_iterator().get_next()
+      next_sample = dataset.make_one_shot_iterator().get_next()
 
-            with tf.Session() as sess:
-                # 'actual' is expected to be content of id column of a concatenated dataset
-                actual = sess.run(next_sample)
-                np.testing.assert_array_equal(actual, [1, 2])
+      with tf.Session() as sess:
+        # 'actual' is expected to be content of id column of a concatenated dataset
+        actual = sess.run(next_sample)
+        np.testing.assert_array_equal(actual, [1, 2])
 
 
 @pytest.mark.parametrize('reader_factory', ALL_READER_FLAVOR_FACTORIES)
@@ -200,7 +201,7 @@ def test_dataset_carbon_reader(carbon_synthetic_dataset):
       i = 0
       try:
         while True:
-          sample = sess.run(tensor)
+          sess.run(tensor)
           i += 1
       except tf.errors.OutOfRangeError:
         print("Finish! the number is " + str(i))
@@ -227,7 +228,7 @@ def test_dataset_batch_carbon_reader(carbon_scalar_dataset):
       i = 0
       try:
         while True:
-          sample = sess.run(tensor)
+          sess.run(tensor)
           i += 1
       except tf.errors.OutOfRangeError:
         print("Finish! the number is " + str(i))
@@ -240,7 +241,7 @@ def test_dynamic_batch_size_of_carbon_reader(carbon_synthetic_dataset):
   with make_carbon_reader(carbon_synthetic_dataset.url, num_epochs=None) as reader:
     batch_size = tf.data.Dataset.range(1, 10).make_one_shot_iterator().get_next()
 
-    dataset = make_pycarbon_dataset(reader)\
+    dataset = make_pycarbon_dataset(reader) \
       .batch(batch_size=batch_size)
 
     iterator = dataset.make_initializable_iterator()
@@ -264,7 +265,7 @@ def test_dynamic_batch_size_of_batch_carbon_reader(carbon_scalar_dataset):
     batch_size = tf.data.Dataset.range(1, 10).make_one_shot_iterator().get_next()
 
     dataset = make_pycarbon_dataset(reader) \
-      .apply(tf.data.experimental.unbatch())\
+      .apply(tf.data.experimental.unbatch()) \
       .batch(batch_size=batch_size)
 
     iterator = dataset.make_initializable_iterator()

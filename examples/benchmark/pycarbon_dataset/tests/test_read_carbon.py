@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from examples.benchmark.pycarbon_dataset import carbon_read_from_local
+from examples.benchmark.pycarbon_dataset import carbon_read_from_obs_download
 from examples.benchmark.pycarbon_dataset import carbon_read_with_filter
 from examples.benchmark.pycarbon_dataset import carbon_read_with_shuffle
 from examples.benchmark.pycarbon_dataset import carbon_read_with_projection
@@ -20,6 +21,7 @@ from examples.benchmark.pycarbon_dataset import generate_benchmark_pycarbon_data
 
 from examples.benchmark.pycarbon_dataset.generate_benchmark_pycarbon_dataset import ROW_COUNT
 
+import shutil
 import os
 import pytest
 import jnius_config
@@ -44,17 +46,76 @@ generate_benchmark_pycarbon_dataset.generate_benchmark_dataset()
 
 
 def test_carbon_read():
-  num_1 = carbon_read_from_local.just_read()
-  num_2 = carbon_read_from_local.just_read()
+  for num_epochs in [1, 4, 8]:
+    num_1 = carbon_read_from_local.just_read(num_epochs=num_epochs)
+    num_2 = carbon_read_from_local.just_read(num_epochs=num_epochs)
 
-  assert num_1 == num_2
-  assert num_1 == ROW_COUNT
-  assert num_2 == ROW_COUNT
+    assert num_1 == num_2
+    assert num_1 == ROW_COUNT * num_epochs
+
+
+def test_carbon_unified_read():
+  for num_epochs in [1, 4, 8]:
+    num_1 = carbon_read_from_local.just_unified_read(num_epochs=num_epochs)
+    num_2 = carbon_read_from_local.just_unified_read(num_epochs=num_epochs)
+
+    assert num_1 == num_2
+    assert num_1 == ROW_COUNT * num_epochs
+
+
+def test_carbon_read_obs_download():
+  for num_epochs in [1, 4, 8]:
+    num_1 = carbon_read_from_obs_download.just_read_obs(key=pytest.config.getoption("--access_key"),
+                                                        secret=pytest.config.getoption("--secret_key"),
+                                                        endpoint=pytest.config.getoption("--end_point"),
+                                                        download_path='/tmp/download_1/',
+                                                        num_epochs=num_epochs)
+
+    num_2 = carbon_read_from_obs_download.just_read_obs(key=pytest.config.getoption("--access_key"),
+                                                        secret=pytest.config.getoption("--secret_key"),
+                                                        endpoint=pytest.config.getoption("--end_point"),
+                                                        download_path='/tmp/download_2/',
+                                                        num_epochs=num_epochs)
+
+    assert num_1 == num_2
+    assert num_1 == ROW_COUNT * num_epochs
+
+    shutil.rmtree('/tmp/download_1')
+    shutil.rmtree('/tmp/download_2')
+
+
+def test_carbon_unified_read_obs_download():
+  for num_epochs in [1, 4, 8]:
+    num_1 = carbon_read_from_obs_download.just_unified_read_obs(key=pytest.config.getoption("--access_key"),
+                                                                secret=pytest.config.getoption("--secret_key"),
+                                                                endpoint=pytest.config.getoption("--end_point"),
+                                                                download_path='/tmp/download_1/',
+                                                                num_epochs=num_epochs)
+
+    num_2 = carbon_read_from_obs_download.just_unified_read_obs(key=pytest.config.getoption("--access_key"),
+                                                                secret=pytest.config.getoption("--secret_key"),
+                                                                endpoint=pytest.config.getoption("--end_point"),
+                                                                download_path='/tmp/download_2/',
+                                                                num_epochs=num_epochs)
+
+    assert num_1 == num_2
+    assert num_1 == ROW_COUNT * num_epochs
+
+    shutil.rmtree('/tmp/download_1')
+    shutil.rmtree('/tmp/download_2')
 
 
 def test_carbon_read_with_filter():
   num_1 = carbon_read_with_filter.just_read()
   num_2 = carbon_read_with_filter.just_read()
+
+  assert num_1 == num_2
+  assert num_1 == 1
+
+
+def test_carbon_unified_read_with_filter():
+  num_1 = carbon_read_with_filter.just_unified_read()
+  num_2 = carbon_read_with_filter.just_unified_read()
 
   assert num_1 == num_2
   assert num_1 == 1
@@ -66,12 +127,28 @@ def test_carbon_read_with_projection():
 
   assert num_1 == num_2
   assert num_1 == ROW_COUNT
-  assert num_2 == ROW_COUNT
+
+
+def test_carbon_unified_read_with_projection():
+  num_1 = carbon_read_with_projection.just_unified_read()
+  num_2 = carbon_read_with_projection.just_unified_read()
+
+  assert num_1 == num_2
+  assert num_1 == ROW_COUNT
 
 
 def test_carbon_read_with_shuffle():
   list_1 = carbon_read_with_shuffle.just_read()
   list_2 = carbon_read_with_shuffle.just_read()
+
+  assert len(list_1)
+  assert len(list_2)
+  assert list_1 != list_2
+
+
+def test_carbon_unified_read_with_shuffle():
+  list_1 = carbon_read_with_shuffle.just_unified_read()
+  list_2 = carbon_read_with_shuffle.just_unified_read()
 
   assert len(list_1)
   assert len(list_2)

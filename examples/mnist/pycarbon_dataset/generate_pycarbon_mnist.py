@@ -32,6 +32,7 @@ import numpy as np
 import os
 import shutil
 import tempfile
+from six.moves.urllib.parse import urlparse
 
 from pyspark.sql import SparkSession
 
@@ -116,6 +117,10 @@ def mnist_data_to_pycarbon_dataset(download_dir, output_url, spark_master=None, 
       'train': download_mnist_data(download_dir, train=True),
       'test': download_mnist_data(download_dir, train=False)
     }
+
+  url_path = urlparse(output_url)
+  if os.path.exists(url_path.path):
+    shutil.rmtree(url_path.path)
 
   # The MNIST data is small enough to do everything here in Python
   for dset, data in mnist_data.items():

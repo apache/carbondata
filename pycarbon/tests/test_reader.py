@@ -11,11 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from time import sleep
 
 import pytest
 
-from pycarbon.carbon_reader import make_carbon_reader
+from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
 from pycarbon.carbon_reader import CarbonDataReader
 from pycarbon.carbon import CarbonDataset
 
@@ -32,13 +33,16 @@ elif 'PYSPARK_PYTHON' in os.environ.keys() and 'PYSPARK_DRIVER_PYTHON' in os.env
   pass
 else:
   raise ValueError("please set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON variables, "
-                   "using cmd line --pyspark-python=PYSPARK_PYTHON_PATH --pyspark-driver-python=PYSPARK_DRIVER_PYTHON_PATH, "
+                   "using cmd line "
+                   "--pyspark-python=PYSPARK_PYTHON_PATH --pyspark-driver-python=PYSPARK_DRIVER_PYTHON_PATH "
                    "or set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON in system env")
 
 # pylint: disable=unnecessary-lambda
 READER_FACTORIES = [
   make_carbon_reader,
   lambda url, **kwargs: make_carbon_reader(url, **kwargs),
+  make_batch_carbon_reader,
+  lambda url, **kwargs: make_batch_carbon_reader(url, **kwargs),
 ]
 
 
@@ -94,12 +98,28 @@ def test_invalid_reader_pool_type(carbon_synthetic_dataset, reader_factory):
 
 
 @pytest.mark.parametrize('reader_factory', READER_FACTORIES)
-def test_invalid_reader_engine(carbon_synthetic_dataset, reader_factory):
+def test_unsupported_reader_pool_type(carbon_synthetic_dataset, reader_factory):
+  with pytest.raises(NotImplementedError):
+    reader_factory(carbon_synthetic_dataset.url, reader_pool_type='process')
+
+  with pytest.raises(NotImplementedError):
+    reader_factory(carbon_synthetic_dataset.url, reader_pool_type='dummy')
+
+
+def test_invalid_reader_engine(carbon_synthetic_dataset):
   with pytest.raises(ValueError, match='Supported reader_engine values'):
     make_carbon_reader(carbon_synthetic_dataset.url, reader_engine='bogus reader engine')
 
 
-@pytest.mark.parametrize('reader_factory', READER_FACTORIES)
-def test_reader_engine_v2_not_supported(carbon_synthetic_dataset, reader_factory):
+def test_reader_engine_v2_not_supported(carbon_synthetic_dataset):
   with pytest.raises(NotImplementedError):
     make_carbon_reader(carbon_synthetic_dataset.url, reader_engine='experimental_reader_v2')
+
+
+@pytest.mark.parametrize('reader_factory', READER_FACTORIES)
+def test_invalid_obs_parameters(carbon_obs_external_dataset, reader_factory):
+  with pytest.raises(ValueError):
+    reader_factory(carbon_obs_external_dataset.url)
+
+  with pytest.raises(ValueError):
+    reader_factory(carbon_obs_external_dataset.wrong_url)

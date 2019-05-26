@@ -25,7 +25,9 @@ import argparse
 import jnius_config
 
 from petastorm.predicates import in_set
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.carbon_reader import make_carbon_reader
+
+from unified.reader import make_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
 
@@ -36,6 +38,24 @@ def just_read(dataset_url='file:///tmp/benchmark_dataset'):
 
   with make_carbon_reader(dataset_url, num_epochs=1, workers_count=16,
                           predicate=predicate) as train_reader:
+    i = 0
+    for schema_view in train_reader:
+      assert schema_view.id == 5
+      i += 1
+    assert i == 1
+    return i
+
+
+def just_unified_read(dataset_url='file:///tmp/benchmark_dataset'):
+  values = [5]
+  predicate = in_set(values, "id")
+
+  properties = {
+    "predicate": predicate,
+  }
+
+  with make_reader(dataset_url, is_batch=False, num_epochs=1, workers_count=16,
+                   **properties) as train_reader:
     i = 0
     for schema_view in train_reader:
       assert schema_view.id == 5
@@ -59,6 +79,8 @@ def main():
   start = time.time()
 
   just_read()
+
+  just_unified_read()
 
   end = time.time()
   print("all time: " + str(end - start))
