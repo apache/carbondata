@@ -14,39 +14,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export CFLAGS=`pkg-config --cflags thrift`" -g3 -O0"
+export CFLAGS=`pkg-config --cflags thrift`" -g3 -O0 -std=c++11"
 export LDFLAGS=`pkg-config --libs-only-L thrift`
 export LIBS=`pkg-config --libs-only-l thrift`
 
 export FORMAT_FILE_PATH=../../../format/src/main/thrift
+export TARGET_PATH=../target
 
-thrift --gen cpp -o . $FORMAT_FILE_PATH/carbondata_index_merge.thrift 
-thrift --gen cpp -o . $FORMAT_FILE_PATH/carbondata_index.thrift
-thrift --gen cpp -o . $FORMAT_FILE_PATH/carbondata.thrift
-thrift --gen cpp -o . $FORMAT_FILE_PATH/dictionary_metadata.thrift
-thrift --gen cpp -o . $FORMAT_FILE_PATH/dictionary.thrift
-thrift --gen cpp -o . $FORMAT_FILE_PATH/schema.thrift
-thrift --gen cpp -o . $FORMAT_FILE_PATH/sort_index.thrift
+mkdir -p $TARGET_PATH
 
-g++ gen-cpp/carbondata_constants.cpp -c $CFLAGS
-g++ gen-cpp/carbondata_index_constants.cpp -c $CFLAGS
-g++ gen-cpp/carbondata_index_merge_constants.cpp -c $CFLAGS
-g++ gen-cpp/carbondata_index_merge_types.cpp -c $CFLAGS
-g++ gen-cpp/carbondata_index_types.cpp -c $CFLAGS
-g++ gen-cpp/carbondata_types.cpp -c $CFLAGS
-g++ gen-cpp/dictionary_constants.cpp -c $CFLAGS
-g++ gen-cpp/dictionary_metadata_constants.cpp -c $CFLAGS
-g++ gen-cpp/dictionary_metadata_types.cpp -c $CFLAGS
-g++ gen-cpp/dictionary_types.cpp -c $CFLAGS
-g++ gen-cpp/schema_constants.cpp -c $CFLAGS
-g++ gen-cpp/schema_types.cpp -c $CFLAGS
-g++ gen-cpp/sort_index_constants.cpp -c $CFLAGS
-g++ gen-cpp/sort_index_types.cpp -c $CFLAGS
+thrift --gen cpp -o $TARGET_PATH $FORMAT_FILE_PATH/carbondata_index_merge.thrift 
+thrift --gen cpp -o $TARGET_PATH $FORMAT_FILE_PATH/carbondata_index.thrift
+thrift --gen cpp -o $TARGET_PATH $FORMAT_FILE_PATH/carbondata.thrift
+thrift --gen cpp -o $TARGET_PATH $FORMAT_FILE_PATH/dictionary_metadata.thrift
+thrift --gen cpp -o $TARGET_PATH $FORMAT_FILE_PATH/dictionary.thrift
+thrift --gen cpp -o $TARGET_PATH $FORMAT_FILE_PATH/schema.thrift
+thrift --gen cpp -o $TARGET_PATH $FORMAT_FILE_PATH/sort_index.thrift
 
-g++ carbondata_test.cpp -c $CFLAGS -I./gen-cpp/
+g++ $TARGET_PATH/gen-cpp/carbondata_constants.cpp -c $CFLAGS -o $TARGET_PATH/carbondata_constants.o
+g++ $TARGET_PATH/gen-cpp/carbondata_index_constants.cpp -c $CFLAGS -o $TARGET_PATH/carbondata_index_constants.o
+g++ $TARGET_PATH/gen-cpp/carbondata_index_merge_constants.cpp -c $CFLAGS -o $TARGET_PATH/carbondata_index_merge_constants.o
+g++ $TARGET_PATH/gen-cpp/carbondata_index_merge_types.cpp -c $CFLAGS -o $TARGET_PATH/carbondata_index_merge_types.o
+g++ $TARGET_PATH/gen-cpp/carbondata_index_types.cpp -c $CFLAGS -o $TARGET_PATH/carbondata_index_types.o
+g++ $TARGET_PATH/gen-cpp/carbondata_types.cpp -c $CFLAGS -o $TARGET_PATH/carbondata_types.o
+g++ $TARGET_PATH/gen-cpp/dictionary_constants.cpp -c $CFLAGS -o $TARGET_PATH/dictionary_constants.o
+g++ $TARGET_PATH/gen-cpp/dictionary_metadata_constants.cpp -c $CFLAGS -o $TARGET_PATH/dictionary_metadata_constants.o
+g++ $TARGET_PATH/gen-cpp/dictionary_metadata_types.cpp -c $CFLAGS -o $TARGET_PATH/dictionary_metadata_types.o
+g++ $TARGET_PATH/gen-cpp/dictionary_types.cpp -c $CFLAGS -o $TARGET_PATH/dictionary_types.o
+g++ $TARGET_PATH/gen-cpp/schema_constants.cpp -c $CFLAGS -o $TARGET_PATH/schema_constants.o
+g++ $TARGET_PATH/gen-cpp/schema_types.cpp -c $CFLAGS -o $TARGET_PATH/schema_types.o
+g++ $TARGET_PATH/gen-cpp/sort_index_constants.cpp -c $CFLAGS -o $TARGET_PATH/sort_index_constants.o
+g++ $TARGET_PATH/gen-cpp/sort_index_types.cpp -c $CFLAGS -o $TARGET_PATH/sort_index_types.o
 
-g++ carbondata_constants.o carbondata_index_constants.o carbondata_index_merge_constants.o \
-carbondata_index_merge_types.o carbondata_index_types.o carbondata_test.o carbondata_types.o \
-dictionary_constants.o dictionary_metadata_constants.o dictionary_metadata_types.o dictionary_types.o \
-schema_constants.o schema_types.o sort_index_constants.o sort_index_types.o -o carbondata_test \
+g++ carbondata_test.cpp -c $CFLAGS -I$TARGET_PATH/gen-cpp/ -o $TARGET_PATH/carbondata_test.o
+
+g++ $TARGET_PATH/carbondata_constants.o $TARGET_PATH/carbondata_index_constants.o $TARGET_PATH/carbondata_index_merge_constants.o \
+$TARGET_PATH/carbondata_index_merge_types.o $TARGET_PATH/carbondata_index_types.o $TARGET_PATH/carbondata_test.o $TARGET_PATH/carbondata_types.o \
+$TARGET_PATH/dictionary_constants.o $TARGET_PATH/dictionary_metadata_constants.o $TARGET_PATH/dictionary_metadata_types.o $TARGET_PATH/dictionary_types.o \
+$TARGET_PATH/schema_constants.o $TARGET_PATH/schema_types.o $TARGET_PATH/sort_index_constants.o $TARGET_PATH/sort_index_types.o -o $TARGET_PATH/carbondata_test \
 $LDFLAGS $LIBS
+
+echo build $TARGET_PATH/carbondata_test completed.

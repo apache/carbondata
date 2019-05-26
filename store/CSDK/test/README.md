@@ -16,10 +16,14 @@
     sh build_carbondata_test.sh
 ```
 
-2. Check if an executable file named carbondata_test is generated.
+2. Check if an executable file "../target/carbondata_test" is generated.
+```shell
+    ls ../target/carbondata_test
+```
 
 3. Execute the carbondata_test wich a carbonindex file. Then will print the carbonindex version and carbondata file name.
 
 ```shell
-    ./carbondata_test  83253824513500_batchno0-0-null-83253220657500.carbonindex
+    cd ../target
+    ./carbondata_test <CARBONDATA_INDEXFILE>
 ```
