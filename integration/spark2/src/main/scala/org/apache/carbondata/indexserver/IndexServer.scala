@@ -167,9 +167,16 @@ object IndexServer extends ServerInterface {
    */
   def getClient: ServerInterface = {
     import org.apache.hadoop.ipc.RPC
+    val indexServerUser = sparkSession.sparkContext.getConf
+      .get("spark.carbon.indexserver.principal", "")
+    val indexServerKeyTab = sparkSession.sparkContext.getConf
+      .get("spark.carbon.indexserver.keytab", "")
+    val ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(indexServerUser,
+      indexServerKeyTab)
+    LOGGER.info("Login successful for user " + indexServerUser);
     RPC.getProxy(classOf[ServerInterface],
       RPC.getProtocolVersion(classOf[ServerInterface]),
-      new InetSocketAddress(serverIp, serverPort), UserGroupInformation.getLoginUser,
+      new InetSocketAddress(serverIp, serverPort), ugi,
       FileFactory.getConfiguration, NetUtils.getDefaultSocketFactory(FileFactory.getConfiguration))
   }
 }
