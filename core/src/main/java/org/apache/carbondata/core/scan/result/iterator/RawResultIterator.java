@@ -59,6 +59,10 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   private boolean isBackupFilled = false;
 
   /**
+   * number of cores which can be used
+   */
+  private int batchSize;
+  /**
    * LOGGER
    */
   private static final Logger LOGGER =
@@ -71,7 +75,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     this.sourceSegProperties = sourceSegProperties;
     this.destinationSegProperties = destinationSegProperties;
     this.executorService = Executors.newFixedThreadPool(1);
-
+    batchSize = CarbonProperties.getQueryBatchSize();
     if (init) {
       init();
     }
@@ -116,9 +120,12 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
 
   private List<Object[]> fetchRows() throws Exception {
     List<Object[]> converted = new ArrayList<>();
-    if (detailRawQueryResultIterator.hasNext()) {
+    while (detailRawQueryResultIterator.hasNext()) {
       for (Object[] r : detailRawQueryResultIterator.next().getRows()) {
         converted.add(convertRow(r));
+      }
+      if (converted.size() >= batchSize) {
+        break;
       }
     }
     return converted;

@@ -297,8 +297,7 @@ class CarbonMergerRDD[K, V](
     )
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     var rangeColumn: CarbonColumn = null
-    if (CarbonProperties.getInstance().isRangeCompactionAllowed &&
-        !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
+    if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
       // If the table is not a partition table then only we go for range column compaction flow
       rangeColumn = carbonTable.getRangeColumn
     }
@@ -339,6 +338,7 @@ class CarbonMergerRDD[K, V](
         java.util.HashMap[String, java.util.List[CarbonInputSplit]]
 
     var totalSize: Double = 0
+    var totalTaskCount: Integer = 0
     var loadMetadataDetails: Array[LoadMetadataDetails] = null
     // Only for range column get the details for the size of segments
     if (null != rangeColumn) {
@@ -386,17 +386,25 @@ class CarbonMergerRDD[K, V](
             updateDetails, updateStatusManager)))) &&
         FileFormat.COLUMNAR_V3.equals(entry.getFileFormat)
       }
+      if (rangeColumn != null) {
+        totalTaskCount = totalTaskCount +
+                         CarbonCompactionUtil.getTaskCountForSegment(filteredSplits.toArray)
+      }
       carbonInputSplits ++:= filteredSplits
       allSplits.addAll(filteredSplits.asJava)
     }
+    totalTaskCount = totalTaskCount / carbonMergerMapping.validSegments.size
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     var allRanges: Array[Object] = new Array[Object](0)
     var singleRange = false
     if (rangeColumn != null) {
-      // To calculate the number of ranges to be made, min 2 ranges/tasks to be made in any case
+      // Calculate the number of ranges to be made, min 2 ranges/tasks to be made in any case
+      // We take the minimum of average number of tasks created during load time and the number
+      // of tasks we get based on size for creating ranges.
       val numOfPartitions = Math
-        .max(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL.toInt, DataLoadProcessBuilderOnSpark
-          .getNumPatitionsBasedOnSize(totalSize, carbonTable, carbonLoadModel, true))
+        .max(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL.toInt,
+          Math.min(totalTaskCount, DataLoadProcessBuilderOnSpark
+            .getNumPatitionsBasedOnSize(totalSize, carbonTable, carbonLoadModel, true)))
       val colName = rangeColumn.getColName
       LOGGER.info(s"Compacting on range column: $colName")
       allRanges = getRangesFromRDD(rangeColumn,
