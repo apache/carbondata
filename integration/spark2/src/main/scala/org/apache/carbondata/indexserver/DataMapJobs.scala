@@ -26,6 +26,11 @@ import org.apache.spark.util.SizeEstimator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DistributableDataMapFormat}
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.scan.expression.BinaryExpression
+import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor
+import org.apache.carbondata.core.scan.filter.intf.ExpressionType
+import org.apache.carbondata.core.scan.filter.resolver.{FilterResolverIntf, LogicalFilterResolverImpl, RowLevelFilterResolverImpl}
 import org.apache.carbondata.spark.util.CarbonScalaUtil.logTime
 
 /**
@@ -42,10 +47,44 @@ class DistributedDataMapJob extends AbstractDataMapJob {
       LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
     }
     val (resonse, time) = logTime {
+      var filterInf = dataMapFormat.getFilterResolverIntf
+      val filterProcessor = new FilterExpressionProcessor
+      filterInf = removeSparkUnknown(filterInf,
+        dataMapFormat.getCarbonTable.getAbsoluteTableIdentifier, filterProcessor)
+      dataMapFormat.setFilterResolverIntf(filterInf)
       IndexServer.getClient.getSplits(dataMapFormat).toList.asJava
     }
     LOGGER.info(s"Time taken to get response from server: $time ms")
     resonse
+  }
+
+  /**
+   * Iterate over FiltersReslover,
+   *   a. Change only RowLevelFilterResolverImpl because SparkUnkown is part of it
+   * and others FilterReslover like ConditionalFilterResolverImpl so directly return.
+   *     b. Change SparkUnkownExpression to TrueExpression so that isScanRequired
+   * selects block/blocklet.
+   *
+   * @param filterInf       FiltersReslover to be changed
+   * @param tableIdentifer  AbsoluteTableIdentifier object
+   * @param filterProcessor changed FiltersReslover.
+   * @return
+   */
+  def removeSparkUnknown(filterInf: FilterResolverIntf,
+      tableIdentifer: AbsoluteTableIdentifier,
+                         filterProcessor: FilterExpressionProcessor): FilterResolverIntf = {
+    if (filterInf.isInstanceOf[LogicalFilterResolverImpl]) {
+      return new LogicalFilterResolverImpl(
+        removeSparkUnknown(filterInf.getLeft, tableIdentifer, filterProcessor),
+        removeSparkUnknown(filterInf.getRight, tableIdentifer, filterProcessor),
+        filterProcessor.removeUnknownExpression(filterInf.getFilterExpression).
+          asInstanceOf[BinaryExpression])
+    }
+    if (filterInf.isInstanceOf[RowLevelFilterResolverImpl] &&
+      filterInf.getFilterExecuterType == ExpressionType.UNKNOWN) {
+      return filterProcessor.changeUnknownResloverToTrue(tableIdentifer)
+    }
+    return filterInf;
   }
 }
 
