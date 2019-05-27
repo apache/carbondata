@@ -590,6 +590,9 @@
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
         <module>datamap/bloom</module>
+        <!-- GCC ,C++,CMAKE,MAKE and TestFramework is added only for spark 2.2 related machines,So calling
+        CSDK only for spark-2.2 profile-->
+        <module>store/CSDK</module>
       </modules>
       <build>
         <plugins>
