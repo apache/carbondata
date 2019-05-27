@@ -132,6 +132,13 @@ object ExtractSelectModule extends PredicateHelper {
             s"\n right child ${ right }")
         }
 
+      // when select * is executed with limit, ColumnPruning rule will remove the project node from
+      // the plan during optimization, so if child of Limit is relation, then make the select node
+      // and make the modular plan
+      case Limit(limitExpr, lr: LogicalRelation) =>
+        (lr.output, lr.output, Nil, Nil, Seq(lr), true, Map.empty, NoFlags, Seq.empty, Seq
+          .empty)
+
       case other =>
         (other.output, other.output, Nil, Nil, Seq(other), false, Map.empty, NoFlags, Seq.empty, Seq
           .empty)

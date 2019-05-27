@@ -19,6 +19,7 @@ package org.apache.carbondata.mv.plans.modular
 
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression, PredicateHelper, _}
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.mv.plans.{Pattern, _}
 import org.apache.carbondata.mv.plans.modular.Flags._
@@ -115,6 +116,15 @@ abstract class ModularPatterns extends Modularizer[ModularPlan] {
             ExtractSelectModule(output, input, predicate, aliasmap, joinedge, children,
               flags1, fspec1, wspec))) =>
           val flags = flags1.setFlag(DISTINCT).setFlag(LIMIT)
+          makeSelectModule(output, input, predicate, aliasmap, joinedge, flags,
+            children.map(modularizeLater), Seq(Seq(limitExpr)) ++ fspec1, wspec)
+
+        // if select * is with limit, then projection is removed from plan, so send the parent plan
+        // to ExtractSelectModule to make the select node
+        case limit@Limit(limitExpr, lr: LogicalRelation) =>
+          val (output, input, predicate, aliasmap, joinedge, children, flags1,
+          fspec1, wspec) = ExtractSelectModule.unapply(limit).get
+          val flags = flags1.setFlag(LIMIT)
           makeSelectModule(output, input, predicate, aliasmap, joinedge, flags,
             children.map(modularizeLater), Seq(Seq(limitExpr)) ++ fspec1, wspec)
 
