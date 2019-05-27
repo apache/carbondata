@@ -1056,6 +1056,23 @@ public final class CarbonProperties {
     return batchSize;
   }
 
+  public static int getQueryBatchSize() {
+    int batchSize;
+    String batchSizeString =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE);
+    if (null != batchSizeString) {
+      try {
+        batchSize = Integer.parseInt(batchSizeString);
+      } catch (NumberFormatException ne) {
+        LOGGER.error("Invalid inmemory records size. Using default value");
+        batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
+      }
+    } else {
+      batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
+    }
+    return batchSize;
+  }
+
   public long getHandoffSize() {
     Long handoffSize;
     try {
@@ -1505,12 +1522,6 @@ public final class CarbonProperties {
     String pushFilters = getProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
             CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT);
     return Boolean.parseBoolean(pushFilters);
-  }
-
-  public boolean isRangeCompactionAllowed() {
-    String isRangeCompact = getProperty(CarbonCommonConstants.CARBON_ENABLE_RANGE_COMPACTION,
-        CarbonCommonConstants.CARBON_ENABLE_RANGE_COMPACTION_DEFAULT);
-    return Boolean.parseBoolean(isRangeCompact);
   }
 
   private void validateSortMemorySpillPercentage() {

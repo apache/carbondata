@@ -19,8 +19,10 @@ package org.apache.carbondata.processing.merger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -599,6 +601,15 @@ public class CarbonCompactionUtil {
       LOGGER.error(e.getMessage());
     }
     return minMaxVals;
+  }
+
+  public static int getTaskCountForSegment(CarbonInputSplit[] splits) {
+    Set<String> taskIdSet = new HashSet<>();
+    for (CarbonInputSplit split : splits) {
+      String taskId = split.taskId;
+      taskIdSet.add(taskId);
+    }
+    return taskIdSet.size();
   }
 
   /**
