@@ -217,7 +217,7 @@ object CarbonStore {
    */
   def cleanUpPartitionFoldersRecursively(carbonTable: CarbonTable,
       partitionSpecList: List[PartitionSpec]): Unit = {
-    if (carbonTable != null) {
+    if (carbonTable != null && carbonTable.isHivePartitionTable) {
       val loadMetadataDetails = SegmentStatusManager
         .readLoadMetadata(carbonTable.getMetadataPath)
 
@@ -265,7 +265,6 @@ object CarbonStore {
         if (CarbonTablePath.DataFileUtil.compareCarbonFileTimeStamp(fileName, timestamp)) {
           // delete the file
           FileFactory.deleteFile(filePath, FileFactory.getFileType(filePath))
-
         }
     }
   }
