@@ -83,7 +83,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static final int THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 20000;
 
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(CSVInputFormat.class.toString());
+      LogServiceFactory.getLogService(CSVInputFormat.class.getName());
 
 
   @Override

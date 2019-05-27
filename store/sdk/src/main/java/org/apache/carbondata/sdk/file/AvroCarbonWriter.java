@@ -72,7 +72,7 @@ public class AvroCarbonWriter extends CarbonWriter {
   private ObjectArrayWritable writable;
   private Schema avroSchema;
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(CarbonTable.class.getName());
+      LogServiceFactory.getLogService(AvroCarbonWriter.class.getName());
 
   AvroCarbonWriter(CarbonLoadModel loadModel, Configuration hadoopConf) throws IOException {
     CarbonTableOutputFormat.setLoadModel(hadoopConf, loadModel);
