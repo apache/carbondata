@@ -38,7 +38,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.rdd.CarbonRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
-private[indexserver] class DataMapRDDPartition(rddId: Int, idx: Int, val inputSplit: InputSplit)
+class DataMapRDDPartition(rddId: Int, idx: Int, val inputSplit: InputSplit)
   extends Partition {
 
   override def index: Int = idx
@@ -49,8 +49,6 @@ private[indexserver] class DataMapRDDPartition(rddId: Int, idx: Int, val inputSp
 private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkSession,
     dataMapFormat: DistributableDataMapFormat)
   extends CarbonRDD[(String, ExtendedBlocklet)](ss, Nil) {
-
-  val executorsList: Set[String] = DistributionUtil.getNodeList(ss.sparkContext).toSet
 
   @transient private val LOGGER = LogServiceFactory.getLogService(classOf[DistributedPruneRDD]
     .getName)
@@ -106,7 +104,8 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
           throw new java.util.NoSuchElementException("End of stream")
         }
         havePair = false
-        val executorIP = SparkEnv.get.blockManager.blockManagerId.host
+        val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
+          SparkEnv.get.blockManager.blockManagerId.executorId}"
         val value = (executorIP + "_" + cacheSize.toString, reader.getCurrentValue)
         value
       }
@@ -125,6 +124,8 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
         f => new DataMapRDDPartition(id, f._2, f._1)
       }.toArray
     } else {
+      val executorsList: Map[String, Seq[String]] = DistributionUtil
+        .getExecutors(ss.sparkContext)
       val (response, time) = CarbonScalaUtil.logTime {
         DistributedRDDUtils.getExecutors(splits.toArray, executorsList, dataMapFormat
           .getCarbonTable.getTableUniqueName, id)
