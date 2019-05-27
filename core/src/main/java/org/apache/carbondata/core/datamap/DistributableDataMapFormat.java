@@ -334,4 +334,12 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
   public boolean isJobToClearDataMaps() {
     return isJobToClearDataMaps;
   }
+
+  public FilterResolverIntf getFilterResolverIntf() {
+    return filterResolverIntf;
+  }
+
+  public void setFilterResolverIntf(FilterResolverIntf filterResolverIntf) {
+    this.filterResolverIntf = filterResolverIntf;
+  }
 }

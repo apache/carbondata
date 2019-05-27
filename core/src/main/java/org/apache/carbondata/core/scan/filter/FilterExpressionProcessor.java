@@ -42,6 +42,8 @@ import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.conditional.StartsWithExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
+import org.apache.carbondata.core.scan.expression.logical.OrExpression;
+import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
@@ -486,5 +488,46 @@ public class FilterExpressionProcessor implements FilterProcessor {
       BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue, isMinMaxSet);
       return !bitSet.isEmpty();
     }
+  }
+
+  /**
+   * Remove UnknownExpression and change to TrueExpression
+   *
+   * @param expressionTree
+   * @return expressionTree without UnknownExpression
+   */
+  public Expression removeUnknownExpression(Expression expressionTree) {
+    ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
+    BinaryExpression currentExpression = null;
+    switch (filterExpressionType) {
+      case OR:
+        currentExpression = (BinaryExpression) expressionTree;
+        return new OrExpression(
+                removeUnknownExpression(currentExpression.getLeft()),
+                removeUnknownExpression(currentExpression.getRight())
+        );
+      case AND:
+        currentExpression = (BinaryExpression) expressionTree;
+        return new AndExpression(
+                removeUnknownExpression(currentExpression.getLeft()),
+                removeUnknownExpression(currentExpression.getRight())
+        );
+      case UNKNOWN:
+        return new TrueExpression(null);
+      default:
+        return expressionTree;
+    }
+  }
+
+  /**
+   * Change UnknownReslover to TrueExpression Reslover.
+   *
+   * @param tableIdentifier
+   * @return
+   */
+  public FilterResolverIntf changeUnknownResloverToTrue(AbsoluteTableIdentifier tableIdentifier) {
+    return getFilterResolverBasedOnExpressionType(ExpressionType.TRUE, false,
+        new TrueExpression(null), tableIdentifier, new TrueExpression(null));
+
   }
 }
