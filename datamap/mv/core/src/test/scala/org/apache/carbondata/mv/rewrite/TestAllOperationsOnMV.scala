@@ -363,5 +363,66 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table IF EXISTS maintable")
   }
 
+  test("test block complex data types") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code array<int>, price struct<b:int>,type map<string, string>) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000, 'ab\002type1'")
+    sql("drop datamap if exists dm ")
+    intercept[UnsupportedOperationException] {
+      sql("create datamap dm using 'mv' as select c_code from maintable")
+    }.getMessage.contains("MV datamap is unsupported for ComplexData type column: c_code")
+    intercept[UnsupportedOperationException] {
+      sql("create datamap dm using 'mv' as select price from maintable")
+    }.getMessage.contains("MV datamap is unsupported for ComplexData type column: price")
+    intercept[UnsupportedOperationException] {
+      sql("create datamap dm using 'mv' as select type from maintable")
+    }.getMessage.contains("MV datamap is unsupported for ComplexData type column: type")
+    intercept[UnsupportedOperationException] {
+      sql("create datamap dm using 'mv' as select price.b from maintable")
+    }.getMessage.contains("MV datamap is unsupported for ComplexData type child column: price")
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("validate dmproperties") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    intercept[MalformedCarbonCommandException] {
+      sql("create datamap dm using 'mv' dmproperties('dictionary_include'='name', 'sort_columns'='name') as select name from maintable")
+    }.getMessage.contains("DMProperties dictionary_include,sort_columns are not allowed for this datamap")
+  }
+
+  test("test todate UDF function with mv") {
+    sql("drop table IF EXISTS maintable")
+    sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'")
+  sql("insert into maintable values(1, 'abc', 'abc001', '1975-06-11 01:00:03.0','1975-06-11 02:00:03.0', 120, 1234,4.34,24.56,12345, 2464, 45)")
+    sql("drop datamap if exists dm ")
+    sql("create datamap dm using 'mv' as select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'")
+    checkExistence(sql("select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'"), true, "1975-06-11 1975-06-11")
+  }
+
+  test("test global dictionary inherited from parent table") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('dictionary_include'='name')")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    sql("create datamap dm using 'mv' as select name, sum(price) from maintable group by name")
+    checkExistence(sql("describe formatted dm_table"), true, "Global Dictionary maintable_name")
+    checkAnswer(sql("select name, sum(price) from maintable group by name"), Seq(Row("abc", 2000)))
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test global dictionary inherited from parent table - Preaggregate") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('dictionary_include'='name')")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    sql("create datamap dm on table maintable using 'preaggregate' as select name, sum(price) from maintable group by name")
+    checkExistence(sql("describe formatted maintable_dm"), true, "Global Dictionary maintable_name")
+    checkAnswer(sql("select name, sum(price) from maintable group by name"), Seq(Row("abc", 2000)))
+    sql("drop table IF EXISTS maintable")
+  }
+
 }
 

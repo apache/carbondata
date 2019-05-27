@@ -115,32 +115,50 @@ object DataMapUtil {
     val parentDictExclude = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, "").split(",")
 
-    val newDictInclude =
-      parentDictInclude.flatMap(parentcol =>
-        fields.collect {
-          case col if fieldRelationMap(col).aggregateFunction.isEmpty &&
-                      fieldRelationMap(col).columnTableRelationList.size == 1 &&
-                      parentcol.equals(fieldRelationMap(col).
-                        columnTableRelationList.get.head.parentColumnName) =>
-            col.column
-        })
+    val parentGlobalDictInclude = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.DICTIONARY_INCLUDE, "").split(",")
 
-    val newDictExclude = parentDictExclude.flatMap(parentcol =>
+    val parentGlobalDictExclude = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.DICTIONARY_EXCLUDE, "").split(",")
+
+    val newLocalDictInclude = getDataMapColumns(parentDictInclude, fields, fieldRelationMap)
+
+    val newLocalDictExclude = getDataMapColumns(parentDictExclude, fields, fieldRelationMap)
+
+    val newGlobalDictInclude = getDataMapColumns(parentGlobalDictInclude, fields, fieldRelationMap)
+
+    val newGlobalDictExclude = getDataMapColumns(parentGlobalDictExclude, fields, fieldRelationMap)
+
+    if (newLocalDictInclude.nonEmpty) {
+      tableProperties
+        .put(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE, newLocalDictInclude.mkString(","))
+    }
+    if (newLocalDictExclude.nonEmpty) {
+      tableProperties
+        .put(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, newLocalDictExclude.mkString(","))
+    }
+
+    if (newGlobalDictInclude.nonEmpty) {
+      tableProperties
+        .put(CarbonCommonConstants.DICTIONARY_INCLUDE, newGlobalDictInclude.mkString(","))
+    }
+    if (newGlobalDictExclude.nonEmpty) {
+      tableProperties
+        .put(CarbonCommonConstants.DICTIONARY_EXCLUDE, newGlobalDictExclude.mkString(","))
+    }
+  }
+
+  private def getDataMapColumns(parentColumns: Array[String], fields: Seq[Field],
+      fieldRelationMap: scala.collection.mutable.LinkedHashMap[Field, DataMapField]) = {
+    val dataMapColumns = parentColumns.flatMap(parentcol =>
       fields.collect {
         case col if fieldRelationMap(col).aggregateFunction.isEmpty &&
-                    fieldRelationMap(col).columnTableRelationList.size == 2 &&
+                    fieldRelationMap(col).columnTableRelationList.size == 1 &&
                     parentcol.equals(fieldRelationMap(col).
                       columnTableRelationList.get.head.parentColumnName) =>
           col.column
       })
-    if (newDictInclude.nonEmpty) {
-      tableProperties
-        .put(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE, newDictInclude.mkString(","))
-    }
-    if (newDictExclude.nonEmpty) {
-      tableProperties
-        .put(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, newDictExclude.mkString(","))
-    }
+    dataMapColumns
   }
 
   /**
