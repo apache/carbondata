@@ -60,7 +60,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     val query: String = "select empname from test_table"
     val df1 = sql(s"$query")
     val analyzed1 = df1.queryExecution.analyzed
-    assert(!verifyMVDataMap(analyzed1, "datamap1"))
+    assert(!TestUtil.verifyMVDataMap(analyzed1, "datamap1"))
     sql(s"rebuild datamap datamap1")
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
@@ -73,7 +73,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
     val df2 = sql(s"$query")
     val analyzed2 = df2.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed2, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed2, "datamap1"))
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     sql(s"rebuild datamap datamap1")
@@ -86,12 +86,12 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       sql("select empname, designation from test_table1"))
     val df3 = sql(s"$query")
     val analyzed3 = df3.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed3, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed3, "datamap1"))
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     val df4 = sql(s"$query")
     val analyzed4 = df4.queryExecution.analyzed
-    assert(!verifyMVDataMap(analyzed4, "datamap1"))
+    assert(!TestUtil.verifyMVDataMap(analyzed4, "datamap1"))
     checkAnswer(sql("select empname, designation from test_table"),
       sql("select empname, designation from test_table1"))
   }
@@ -141,7 +141,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     var df = sql(
       s"""select a, sum(b) from main_table group by a""".stripMargin)
     var analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("update main_table set(a) = ('aaa') where b = 'abc'").show(false)
@@ -162,7 +162,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     assert(segmentList.containsAll( segmentMap.get("default.main_table")))
     df = sql(s""" select a, sum(b) from main_table group by a""".stripMargin)
     analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("drop table IF EXISTS main_table")
@@ -327,12 +327,12 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql(s"rebuild datamap datamap1")
     val df = sql("select a, sum(c) from main_table  group by a")
     val analyzed = df.queryExecution.analyzed
-    assert(!verifyMVDataMap(analyzed, "datamap1"))
+    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap1"))
     sql("reset")
     checkAnswer(sql("select a, sum(c) from main_table  group by a"), Seq(Row("a", 1), Row("b", 2)))
     val df1= sql("select a, sum(c) from main_table  group by a")
     val analyzed1 = df1.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed1, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed1, "datamap1"))
     sql("drop table IF EXISTS main_table")
   }
 
@@ -406,7 +406,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
     val df2 = sql(s"$query")
     val analyzed2 = df2.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed2, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed2, "datamap1"))
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
@@ -418,12 +418,12 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       sql("select empname, designation from test_table1"))
     val df3 = sql(s"$query")
     val analyzed3 = df3.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed3, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed3, "datamap1"))
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     val df4 = sql(s"$query")
     val analyzed4 = df4.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed4, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed4, "datamap1"))
     checkAnswer(sql("select empname, designation from test_table"),
       sql("select empname, designation from test_table1"))
   }
@@ -441,7 +441,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap1 using 'mv' as select a, sum(b) from main_table group by a")
     var df = sql(s"""select a, sum(b) from main_table group by a""".stripMargin)
     var analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("update main_table set(a) = ('aaa') where b = 'abc'").show(false)
@@ -458,7 +458,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     assert(segmentList.containsAll(segmentMap.get("default.main_table")))
     df = sql(s""" select a, sum(b) from main_table group by a""".stripMargin)
     analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("drop table IF EXISTS main_table")
@@ -478,7 +478,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap1 using 'mv' as select a, sum(b) from main_table group by a")
     var df = sql(s"""select a, sum(b) from main_table group by a""".stripMargin)
     var analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("delete from  main_table  where b = 'abc'").show(false)
@@ -495,7 +495,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     assert(segmentList.containsAll(segmentMap.get("default.main_table")))
     df = sql(s""" select a, sum(b) from main_table group by a""".stripMargin)
     analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("drop table IF EXISTS main_table")
@@ -565,13 +565,6 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0.1")
     assert(segmentList.containsAll(segmentMap.get("default.test_table")))
-  }
-
-  def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
-    val tables = logicalPlan collect {
-      case l: LogicalRelation => l.catalogTable.get
-    }
-    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName + "_table"))
   }
 
   override def afterAll(): Unit = {

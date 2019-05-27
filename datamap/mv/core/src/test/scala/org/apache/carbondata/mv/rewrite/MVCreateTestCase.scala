@@ -107,7 +107,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap1 using 'mv' as select empname, designation from fact_table1")
     val df = sql("select empname,designation from fact_table1")
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
     checkAnswer(df, sql("select empname,designation from fact_table2"))
     sql(s"drop datamap datamap1")
   }
@@ -117,7 +117,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap2 using 'mv' as select empname, designation from fact_table1")
     val df = sql("select empname from fact_table1")
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap2"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap2"))
     checkAnswer(df, sql("select empname from fact_table2"))
     sql(s"drop datamap datamap2")
   }
@@ -127,7 +127,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap3 using 'mv' as select empname, designation from fact_table1")
     val frame = sql("select empname, designation from fact_table1 where empname='shivani'")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap3"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap3"))
 
     checkAnswer(frame, sql("select empname, designation from fact_table2 where empname='shivani'"))
     sql(s"drop datamap datamap3")
@@ -137,7 +137,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap4 using 'mv' as select empname, designation from fact_table1")
     val frame = sql("select designation from fact_table1 where empname='shivani'")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap4"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap4"))
     checkAnswer(frame, sql("select designation from fact_table2 where empname='shivani'"))
     sql(s"drop datamap datamap4")
   }
@@ -146,7 +146,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap5 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select designation from fact_table1 where empname='shivani'")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap5"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap5"))
     checkAnswer(frame, sql("select designation from fact_table2 where empname='shivani'"))
     sql(s"drop datamap datamap5")
   }
@@ -155,7 +155,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap6 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select empname,designation from fact_table1 where empname='shivani'")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap6"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap6"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where empname='shivani'"))
     sql(s"drop datamap datamap6")
   }
@@ -165,7 +165,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname,designation from fact_table1 where empname='shivani' and designation='SA'")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap7"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap7"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where empname='shivani' and designation='SA'"))
     sql(s"drop datamap datamap7")
   }
@@ -174,7 +174,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap8 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select empname,designation from fact_table1 where designation='SA'")
     val analyzed = frame.queryExecution.analyzed
-    assert(!verifyMVDataMap(analyzed, "datamap8"))
+    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap8"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where designation='SA'"))
     sql(s"drop datamap datamap8")
   }
@@ -183,7 +183,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap9 using 'mv' as select empname, designation,deptname  from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1 where deptname='cloud'")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap9"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap9"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where deptname='cloud'"))
     sql(s"drop datamap datamap9")
   }
@@ -192,7 +192,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap10 using 'mv' as select empname, designation,deptname from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1")
     val analyzed = frame.queryExecution.analyzed
-    assert(!verifyMVDataMap(analyzed, "datamap10"))
+    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap10"))
     checkAnswer(frame, sql("select empname,designation from fact_table2"))
     sql(s"drop datamap datamap10")
   }
@@ -201,7 +201,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap11 using 'mv' as select empname, designation,deptname from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1 where designation='SA'")
     val analyzed = frame.queryExecution.analyzed
-    assert(!verifyMVDataMap(analyzed, "datamap11"))
+    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap11"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where designation='SA'"))
     sql(s"drop datamap datamap11")
   }
@@ -211,7 +211,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap12 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql("select empname, sum(utilization) from fact_table1 group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap12"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap12"))
     checkAnswer(frame, sql("select empname, sum(utilization) from fact_table2 group by empname"))
     sql(s"drop datamap datamap12")
   }
@@ -221,7 +221,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap13 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql("select sum(utilization) from fact_table1 group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap13"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap13"))
     checkAnswer(frame, sql("select sum(utilization) from fact_table2 group by empname"))
     sql(s"drop datamap datamap13")
   }
@@ -232,7 +232,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname,sum(utilization) from fact_table1 group by empname having empname='shivani'")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap14"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap14"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop datamap datamap14")
   }
@@ -243,7 +243,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname, sum(utilization) from fact_table1 group by empname having empname='shivani'")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap32"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap32"))
     checkAnswer(frame, sql( "select empname, sum(utilization) from fact_table2 group by empname having empname='shivani'"))
     sql(s"drop datamap datamap32")
   }
@@ -253,7 +253,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname,sum(utilization) from fact_table1 where empname='shivani' group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap15"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap15"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop datamap datamap15")
   }
@@ -262,7 +262,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap16 using 'mv' as select empname, sum(utilization) from fact_table1 where empname='shivani' group by empname")
     val frame = sql("select empname,sum(utilization) from fact_table1 group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(!verifyMVDataMap(analyzed, "datamap16"))
+    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap16"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 group by empname"))
     sql(s"drop datamap datamap16")
   }
@@ -273,7 +273,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group" +
       " by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap17"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap17"))
     checkAnswer(frame, sql("select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group" +
                            " by empname"))
     sql(s"drop datamap datamap17")
@@ -285,7 +285,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap18"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap18"))
     checkAnswer(frame, sql("select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group by empname"))
     sql(s"drop datamap datamap18")
   }
@@ -296,7 +296,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap19"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap19"))
     checkAnswer(frame, sql("select count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group by empname"))
     sql(s"drop datamap datamap19")
   }
@@ -308,7 +308,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 where " +
       "empname='shivani' group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap20"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap20"))
     checkAnswer(frame, sql("select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 where " +
                            "empname='shivani' group by empname"))
     sql(s"drop datamap datamap20")
@@ -320,7 +320,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap21"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap21"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
     sql(s"drop datamap datamap21")
   }
@@ -332,7 +332,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = " +
       "t2.empname and t1.empname='shivani'")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap22"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap22"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = " +
                            "t2.empname and t1.empname='shivani'"))
     sql(s"drop datamap datamap22")
@@ -346,7 +346,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = " +
       "t2.empname and t1.empname='shivani'")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap23"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap23"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = " +
                            "t2.empname and t1.empname='shivani'"))
     sql(s"drop datamap datamap23")
@@ -358,7 +358,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(!verifyMVDataMap(analyzed, "datamap24"))
+    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap24"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
     sql(s"drop datamap datamap24")
   }
@@ -369,11 +369,11 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(!verifyMVDataMap(analyzed, "datamap25"))
+    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap25"))
     val frame1 = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname)")
     val analyzed1 = frame1.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed1, "datamap25"))
+    assert(TestUtil.verifyMVDataMap(analyzed1, "datamap25"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
     sql(s"drop datamap datamap25")
   }
@@ -384,7 +384,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2,fact_table3 " +
       "t3  where t1.empname = t2.empname and t1.empname=t3.empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap26"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap26"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2,fact_table6 " +
                            "t3  where t1.empname = t2.empname and t1.empname=t3.empname"))
     sql(s"drop datamap datamap26")
@@ -396,7 +396,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname, t2.designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap27"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap27"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t2.designation"))
     sql(s"drop datamap datamap27")
@@ -409,7 +409,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname group by t2.designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap28"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap28"))
     checkAnswer(frame, sql("select t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname group by t2.designation"))
     sql(s"drop datamap datamap28")
@@ -422,7 +422,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap29"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap29"))
     checkAnswer(frame, sql("select t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation"))
     sql(s"drop datamap datamap29")
@@ -435,7 +435,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t2.designation='SA' group by t1.empname, t2.designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap30"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap30"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  " +
                            "where t1.empname = t2.empname and t2.designation='SA' group by t1.empname, t2.designation"))
     sql(s"drop datamap datamap30")
@@ -447,7 +447,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname, designation, utilization+projectcode from fact_table1")
     val analyzed = frame.queryExecution.analyzed
-    assert(!verifyMVDataMap(analyzed, "datamap31"))
+    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap31"))
     checkAnswer(frame, sql("select empname, designation, utilization+projectcode from fact_table2"))
     sql(s"drop datamap datamap31")
   }
@@ -457,7 +457,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap32 using 'mv' as select empname, count(utilization) from fact_table1 group by empname")
     val frame = sql("select empname,count(utilization) from fact_table1 where empname='shivani' group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap32"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap32"))
     checkAnswer(frame, sql("select empname,count(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop datamap datamap32")
   }
@@ -467,7 +467,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamap33 using 'mv' as select empname, avg(utilization) from fact_table1 group by empname")
     val frame = sql("select empname,avg(utilization) from fact_table1 where empname='shivani' group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap33"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap33"))
     checkAnswer(frame, sql("select empname,avg(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop datamap datamap33")
   }
@@ -479,7 +479,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname group by t1.empname, t2.designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap34"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap34"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname group by t1.empname, t2.designation"))
     sql(s"drop datamap datamap34")
@@ -490,7 +490,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap35"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap35"))
     checkAnswer(frame, sql("select designation, sum(utilization) from fact_table2 where empname='shivani' group by designation"))
     sql(s"drop datamap datamap35")
   }
@@ -500,7 +500,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select sum(utilization) from fact_table1 where empname='shivani' group by designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap36"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap36"))
     checkAnswer(frame, sql("select sum(utilization) from fact_table2 where empname='shivani' group by designation"))
     sql(s"drop datamap datamap36")
   }
@@ -512,7 +512,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap37"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap37"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t1.designation"))
     sql(s"drop datamap datamap37")
@@ -525,7 +525,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t1.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname,t1.designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap38"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap38"))
     checkAnswer(frame, sql("select t1.empname,t1.designation, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t1.designation"))
     sql(s"drop datamap datamap38")
@@ -538,7 +538,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t1.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap39"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap39"))
     checkAnswer(frame, sql("select t1.empname,t1.designation, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname, t1.designation"))
     sql(s"drop datamap datamap39")
@@ -551,7 +551,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t1.designation, sum(t1.utilization),count(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap40"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap40"))
     checkAnswer(frame, sql("select t1.empname, t1.designation, sum(t1.utilization),count(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation"))
     sql(s"drop datamap datamap40")
@@ -564,7 +564,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap41"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap41"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation"))
     sql(s"drop datamap datamap41")
@@ -577,7 +577,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname group by t1.empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap42"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap42"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname group by t1.empname"))
     sql(s"drop datamap datamap42")
@@ -590,7 +590,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap43"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap43"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname"))
     sql(s"drop datamap datamap43")
@@ -603,7 +603,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap44"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap44"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname"))
     sql(s"drop datamap datamap44")
@@ -618,7 +618,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t2.designation='SA' group by t1.empname, t2.designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap45"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap45"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t2.designation='SA' group by t1.empname, t2.designation"))
     sql(s"drop datamap datamap45")
@@ -635,7 +635,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select name,sum(salary) from test4 group by name")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "mv13"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "mv13"))
   }
 
   test("jira carbondata-2528-1") {
@@ -645,7 +645,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname,sum(salary) as total from fact_table1 group by empname order by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "MV_order"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "MV_order"))
   }
 
   test("jira carbondata-2528-2") {
@@ -655,7 +655,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "MV_order"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "MV_order"))
   }
 
   test("jira carbondata-2528-3") {
@@ -665,7 +665,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "MV_order"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "MV_order"))
     sql("drop datamap if exists MV_order")
   }
 
@@ -676,7 +676,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 where empname = 'ravi' group by empname order by empname DESC")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "MV_order"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "MV_order"))
     sql("drop datamap if exists MV_order")
   }
 
@@ -689,11 +689,11 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap datamv2 using 'mv' as select country,sum(salary) from test1 group by country")
     val frame = sql("select country,sum(salary) from test1 where country='USA' group by country")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamv2"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamv2"))
     sql("insert into test1 select 'name1','USA',12,23")
     val frame1 = sql("select country,sum(salary) from test1 where country='USA' group by country")
     val analyzed1 = frame1.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed1, "datamv2"))
+    assert(TestUtil.verifyMVDataMap(analyzed1, "datamv2"))
     sql("drop datamap if exists datamv2")
     sql("drop table if exists test1")
   }
@@ -705,7 +705,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select sum(salary),substring(empname,2,5),designation from fact_table1 group by substring(empname,2,5),designation")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "MV_exp"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "MV_exp"))
     sql("drop datamap if exists MV_exp")
   }
 
@@ -725,7 +725,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select doj,sum(salary) from xy.fact_tablexy group by doj")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "MV_exp"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "MV_exp"))
     sql("drop datamap if exists MV_exp")
     sql("""drop database if exists xy cascade""")
   }
@@ -742,7 +742,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create datamap map1 using 'mv' as select name,sum(salary) from mvtable1 group by name")
     val frame = sql("select name,sum(salary) from mvtable1 group by name limit 1")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "map1"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "map1"))
     sql("drop datamap if exists map1")
     sql("drop table if exists mvtable1")
   }
@@ -754,7 +754,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_comp_maxsumminavg"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_comp_maxsumminavg"))
     sql("drop datamap if exists datamap_comp_maxsumminavg")
   }
 
@@ -778,7 +778,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       val frame = sql(
         "select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
       val analyzed = frame.queryExecution.analyzed
-      assert(verifyMVDataMap(analyzed, "MV_exp"))
+      assert(TestUtil.verifyMVDataMap(analyzed, "MV_exp"))
     }
     sql("drop datamap if exists MV_exp")
   }
@@ -797,7 +797,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname, sum(utilization) from fact_table1 group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "MV_exp1"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "MV_exp1"))
     sql("drop datamap if exists MV_exp1")
     sql("drop datamap if exists MV_exp2")
   }
@@ -809,7 +809,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select deptname as babu, sum(salary) from fact_table1 as tt group by deptname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap46"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap46"))
     sql("drop datamap if exists datamap46")
   }
 
@@ -820,7 +820,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "SELECT max(utilization) FROM fact_table1 WHERE salary IN (select min(salary) from fact_table1 group by empname ) group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_subqry"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_subqry"))
     sql("drop datamap if exists datamap_subqry")
   }
 
@@ -832,7 +832,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "SELECT max(utilization) FROM fact_table1 WHERE salary IN (select min(salary) from fact_table1) group by empname")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_subqry"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_subqry"))
     sql("drop datamap if exists datamap_subqry")
   }
 
@@ -947,7 +947,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
     val frame = sql(querySQL)
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "all_table_mv"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "all_table_mv"))
     assert(1 == frame.collect().size)
 
     sql("drop table if exists all_table")
@@ -963,18 +963,11 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       val df = sql("select distinct(empname) from limit_fail limit 10")
       sql("select * from limit_fail limit 10").show()
       val analyzed = df.queryExecution.analyzed
-      assert(verifyMVDataMap(analyzed, "limit_fail_dm1"))
+      assert(TestUtil.verifyMVDataMap(analyzed, "limit_fail_dm1"))
     } catch {
       case ex: Exception =>
         assert(false)
     }
-  }
-
-  def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
-    val tables = logicalPlan collect {
-      case l: LogicalRelation => l.catalogTable.get
-    }
-    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName+"_table"))
   }
 
   def drop(): Unit = {

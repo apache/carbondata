@@ -98,7 +98,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select empname, sum(year) from partitionone group by empname, year, month,day"), Seq(Row("v", 2014)))
     val df1 = sql(s"select empname, sum(year) from partitionone group by empname, year, month,day")
     val analyzed1 = df1.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed1, "p1"))
+    assert(TestUtil.verifyMVDataMap(analyzed1, "p1"))
     assert(CarbonEnv.getCarbonTable(Some("partition_mv"), "p1_table")(sqlContext.sparkSession).isHivePartitionTable)
   }
 
@@ -117,7 +117,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from partitionone"), Seq(Row("k",2,2014,1,1), Row("v",2,2015,1,1)))
     val df1 = sql(s"select empname, sum(year) from partitionone group by empname, year, month,day")
     val analyzed1 = df1.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed1, "p1"))
+    assert(TestUtil.verifyMVDataMap(analyzed1, "p1"))
     checkAnswer(sql("select * from p1_table"), Seq(Row("k",2014,2014,1,1), Row("v",2015,2015,1,1)))
   }
 
@@ -676,13 +676,6 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     sql("create datamap dm1 on table partitionone using 'mv' as select c,sum(b) from partitionone group by c")
     checkAnswer(sql("select c,sum(b) from partitionone group by c"), Seq(Row(3,2)))
     sql("drop table if exists partitionone")
-  }
-
-  def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
-    val tables = logicalPlan collect {
-      case l: LogicalRelation => l.catalogTable.get
-    }
-    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName + "_table"))
   }
 
 }

@@ -53,7 +53,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create datamap datamap_tpcds1 using 'mv' as ${tpcds_1_4_testCases(0)._2}")
     val df = sql(tpcds_1_4_testCases(0)._3)
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_tpcds1"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_tpcds1"))
     sql(s"drop datamap datamap_tpcds1")
   }
 
@@ -62,7 +62,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create datamap datamap_tpcds3 using 'mv' as ${tpcds_1_4_testCases(2)._2}")
     val df = sql(tpcds_1_4_testCases(2)._3)
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_tpcds3"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_tpcds3"))
     sql(s"drop datamap datamap_tpcds3")
   }
 
@@ -71,7 +71,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create datamap datamap_tpcds4 using 'mv' as ${tpcds_1_4_testCases(3)._2}")
     val df = sql(tpcds_1_4_testCases(3)._3)
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_tpcds4"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_tpcds4"))
     sql(s"drop datamap datamap_tpcds4")
   }
 
@@ -80,7 +80,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create datamap datamap_tpcds5 using 'mv' as ${tpcds_1_4_testCases(4)._2}")
     val df = sql(tpcds_1_4_testCases(4)._3)
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_tpcds5"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_tpcds5"))
     sql(s"drop datamap datamap_tpcds5")
   }
 
@@ -89,7 +89,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create datamap datamap_tpcds6 using 'mv' as ${tpcds_1_4_testCases(5)._2}")
     val df = sql(tpcds_1_4_testCases(5)._3)
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_tpcds6"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_tpcds6"))
     sql(s"drop datamap datamap_tpcds6")
   }
 
@@ -98,7 +98,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create datamap datamap_tpcds8 using 'mv' as ${tpcds_1_4_testCases(7)._2}")
     val df = sql(tpcds_1_4_testCases(7)._3)
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_tpcds8"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_tpcds8"))
     sql(s"drop datamap datamap_tpcds8")
   }
 
@@ -107,7 +107,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create datamap datamap_tpcds11 using 'mv' as ${tpcds_1_4_testCases(10)._2}")
     val df = sql(tpcds_1_4_testCases(10)._3)
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_tpcds11"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_tpcds11"))
     sql(s"drop datamap datamap_tpcds11")
   }
 
@@ -116,7 +116,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create datamap datamap_tpcds15 using 'mv' as ${tpcds_1_4_testCases(14)._2}")
     val df = sql(tpcds_1_4_testCases(14)._3)
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_tpcds15"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_tpcds15"))
     sql(s"drop datamap datamap_tpcds15")
   }
 
@@ -125,19 +125,9 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create datamap datamap_tpcds16 using 'mv' as ${tpcds_1_4_testCases(15)._2}")
     val df = sql(tpcds_1_4_testCases(15)._3)
     val analyzed = df.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "datamap_tpcds16"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_tpcds16"))
     sql(s"drop datamap datamap_tpcds16")
   }
-
-
-
-  def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
-    val tables = logicalPlan collect {
-      case l: LogicalRelation => l.catalogTable.get
-    }
-    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName+"_table"))
-  }
-
 
   def drop(): Unit = {
     sql("use default")

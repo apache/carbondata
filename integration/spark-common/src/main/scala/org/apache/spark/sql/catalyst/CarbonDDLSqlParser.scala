@@ -971,7 +971,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    */
   def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
     val dataTypes =
-      Array("string", "timestamp", "int", "long", "bigint", "struct", "array", "map", "binary")
+      Array("string", "timestamp", "int", "integer", "long", "bigint", "struct", "array",
+        "map", "binary")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 

@@ -32,6 +32,7 @@ import org.apache.spark.sql.execution.command.{Field, PartitionerField, TableMod
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
+import org.apache.spark.sql.types.{ArrayType, MapType, StructType}
 import org.apache.spark.util.{DataMapUtil, PartitionUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -60,6 +61,7 @@ object MVHelper {
         s"MV datamap does not support streaming"
       )
     }
+    MVUtil.validateDMProperty(dmProperties)
     val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
     val query = sparkSession.sql(updatedQuery)
     val logicalPlan = MVHelper.dropDummFuc(query.queryExecution.analyzed)
@@ -71,6 +73,11 @@ object MVHelper {
     val updatedQueryWithDb = validateMVQuery(sparkSession, logicalPlan)
     val fullRebuild = isFullReload(logicalPlan)
     val fields = logicalPlan.output.map { attr =>
+      if (attr.dataType.isInstanceOf[ArrayType] || attr.dataType.isInstanceOf[StructType] ||
+          attr.dataType.isInstanceOf[MapType]) {
+        throw new UnsupportedOperationException(
+          s"MV datamap is unsupported for ComplexData type column: " + attr.name)
+      }
       val name = updateColumnName(attr)
       val rawSchema = '`' + name + '`' + ' ' + attr.dataType.typeName
       if (attr.dataType.typeName.startsWith("decimal")) {
@@ -312,13 +319,19 @@ object MVHelper {
     modularPlan.asCompactSQL
   }
 
+  def getUpdatedName(name: String): String = {
+    val updatedName = name.replace("(", "_")
+      .replace(")", "")
+      .replace(" ", "_")
+      .replace("=", "")
+      .replace(",", "")
+      .replace(".", "_")
+      .replace("`", "")
+    updatedName
+  }
+
   def updateColumnName(attr: Attribute): String = {
-    val name =
-      attr.name.replace("(", "_")
-        .replace(")", "")
-        .replace(" ", "_")
-        .replace("=", "")
-        .replace(",", "")
+    val name = getUpdatedName(attr.name)
     attr.qualifier.map(qualifier => qualifier + "_" + name).getOrElse(name)
   }
 

@@ -612,13 +612,11 @@ case class CarbonLoadDataCommand(
       (dataFrame, dataFrame)
     }
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    if (!table.isChildDataMap) {
-      GlobalDictionaryUtil.generateGlobalDictionary(
-        sparkSession.sqlContext,
-        carbonLoadModel,
-        hadoopConf,
-        dictionaryDataFrame)
-    }
+    GlobalDictionaryUtil.generateGlobalDictionary(
+      sparkSession.sqlContext,
+      carbonLoadModel,
+      hadoopConf,
+      dictionaryDataFrame)
     if (table.isHivePartitionTable) {
       rows = loadDataWithPartition(
         sparkSession,

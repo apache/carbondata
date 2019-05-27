@@ -28,6 +28,7 @@ import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.DataType
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -108,6 +109,8 @@ object MVUtil {
           fieldToDataMapFieldMap +=
           getFieldToDataMapFields(name, attr.dataType, None, "", arrayBuffer, "")
         }
+      case a@Alias(_, name) =>
+        checkIfComplexDataTypeExists(a)
     }
     fieldToDataMapFieldMap
   }
@@ -138,7 +141,8 @@ object MVUtil {
           } else {
             aggregateType = attr.aggregateFunction.nodeName
           }
-        case Alias(_, name) =>
+        case a@Alias(_, name) =>
+          checkIfComplexDataTypeExists(a)
           // In case of arithmetic expressions like sum(a)+sum(b)
           aggregateType = "arithmetic"
       }
@@ -251,12 +255,7 @@ object MVUtil {
       aggregateType: String,
       columnTableRelationList: ArrayBuffer[ColumnTableRelation],
       parenTableName: String) = {
-    var actualColumnName =
-      name.replace("(", "_")
-        .replace(")", "")
-        .replace(" ", "_")
-        .replace("=", "")
-        .replace(",", "")
+    var actualColumnName = MVHelper.getUpdatedName(name)
     if (qualifier.isDefined) {
       actualColumnName = qualifier.map(qualifier => qualifier + "_" + name)
         .getOrElse(actualColumnName)
@@ -283,6 +282,27 @@ object MVUtil {
         name = Some(actualColumnName),
         children = None,
         rawSchema = rawSchema), dataMapField)
+    }
+  }
+
+  private def checkIfComplexDataTypeExists(a: Alias): Unit = {
+    if (a.child.isInstanceOf[GetMapValue] || a.child.isInstanceOf[GetStructField] ||
+        a.child.isInstanceOf[GetArrayItem]) {
+      throw new UnsupportedOperationException(
+        s"MV datamap is unsupported for ComplexData type child column: " + a.child.simpleString)
+    }
+  }
+
+  def validateDMProperty(tableProperty: mutable.Map[String, String]): Unit = {
+    val tableProperties = Array("dictionary_include", "dictionary_exclude", "sort_columns",
+      "local_dictionary_include", "local_dictionary_exclude", "long_string_columns",
+      "no_inverted_index", "inverted_index", "column_meta_cache", "range_column")
+    val unsupportedProps = tableProperty
+      .filter(f => tableProperties.exists(prop => prop.equalsIgnoreCase(f._1)))
+    if (unsupportedProps.nonEmpty) {
+      throw new MalformedDataMapCommandException(
+        "DMProperties " + unsupportedProps.keySet.mkString(",") +
+        " are not allowed for this datamap")
     }
   }
 }

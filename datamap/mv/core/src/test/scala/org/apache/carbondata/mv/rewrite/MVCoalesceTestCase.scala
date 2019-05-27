@@ -43,7 +43,7 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
     sql("rebuild datamap coalesce_test_main_mv")
 
     val frame = sql("select coalesce(sum(id),0) as sumid,name from coalesce_test_main group by name")
-    assert(verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
     checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
 
     sql("drop datamap if exists coalesce_test_main_mv")
@@ -59,7 +59,7 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
     assert("MV doesn't support Coalesce".equals(exception.getMessage))
 
     val frame = sql("select coalesce(sum(id),0) as sumid,name from coalesce_test_main group by name")
-    assert(!verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
     checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
 
     sql("drop datamap if exists coalesce_test_main_mv")
@@ -72,20 +72,22 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
     sql("rebuild datamap coalesce_test_main_mv")
 
     val frame = sql("select sum(coalesce(id,0)) as sumid,name from coalesce_test_main group by name")
-    assert(verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
     checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
 
     sql("drop datamap if exists coalesce_test_main_mv")
   }
 
+  override def afterAll(): Unit ={
+    drop
+  }
+}
+
+object TestUtil {
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
     }
     tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName+"_table"))
-  }
-
-  override def afterAll(): Unit ={
-    drop
   }
 }

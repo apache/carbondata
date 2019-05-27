@@ -79,14 +79,7 @@ class MVCountAndCaseTestCase  extends QueryTest with BeforeAndAfterAll{
                        | GROUP BY MT.`3600`, MT.`2250410101`
                        | ORDER BY `3600` ASC LIMIT 5000""".stripMargin)
 
-    assert(verifyMVDataMap(frame.queryExecution.analyzed, "data_table_mv"))
-  }
-
-  def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
-    val tables = logicalPlan collect {
-      case l: LogicalRelation => l.catalogTable.get
-    }
-    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName+"_table"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.analyzed, "data_table_mv"))
   }
 
   override def afterAll(): Unit = {
