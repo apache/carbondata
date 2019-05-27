@@ -55,6 +55,11 @@ object MVHelper {
       queryString: String,
       ifNotExistsSet: Boolean = false): Unit = {
     val dmProperties = dataMapSchema.getProperties.asScala
+    if (dmProperties.contains("streaming") && dmProperties("streaming").equalsIgnoreCase("true")) {
+      throw new MalformedCarbonCommandException(
+        s"MV datamap does not support streaming"
+      )
+    }
     val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
     val query = sparkSession.sql(updatedQuery)
     val logicalPlan = MVHelper.dropDummFuc(query.queryExecution.analyzed)

@@ -668,6 +668,16 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists partitionone")
   }
 
+  test("test partition at last column") {
+    sql("drop table if exists partitionone")
+    sql("create table partitionone(a int,b int) partitioned by (c int) stored by 'carbondata'")
+    sql("insert into partitionone values(1,2,3)")
+    sql("drop datamap if exists dm1")
+    sql("create datamap dm1 on table partitionone using 'mv' as select c,sum(b) from partitionone group by c")
+    checkAnswer(sql("select c,sum(b) from partitionone group by c"), Seq(Row(3,2)))
+    sql("drop table if exists partitionone")
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get

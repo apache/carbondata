@@ -340,5 +340,28 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table IF EXISTS maintable")
   }
 
+  test("test datamap with streaming dmproperty") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    intercept[MalformedCarbonCommandException] {
+      sql("create datamap dm using 'mv' dmproperties('STREAMING'='true') as select name from maintable")
+    }.getMessage.contains("MV datamap does not support streaming")
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test set streaming after creating datamap table") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    sql("create datamap dm using 'mv' as select name from maintable")
+    intercept[MalformedCarbonCommandException] {
+      sql("ALTER TABLE dm_table SET TBLPROPERTIES('streaming'='true')")
+    }.getMessage.contains("Datamap table does not support set streaming property")
+    sql("drop table IF EXISTS maintable")
+  }
+
 }
 
