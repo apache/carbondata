@@ -823,8 +823,7 @@ public class SegmentStatusManager {
     }
   }
 
-  private static boolean isLoadDeletionRequired(String metaDataLocation) {
-    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
+  private static boolean isLoadDeletionRequired(LoadMetadataDetails[] details) {
     if (details != null && details.length > 0) {
       for (LoadMetadataDetails oneRow : details) {
         if ((SegmentStatus.MARKED_FOR_DELETE == oneRow.getSegmentStatus()
@@ -904,34 +903,27 @@ public class SegmentStatusManager {
     }
   }
 
-  private static ReturnTuple isUpdationRequired(
-      boolean isForceDeletion,
-      CarbonTable carbonTable,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
-    LoadMetadataDetails[] details =
-        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+  private static ReturnTuple isUpdationRequired(boolean isForceDeletion, CarbonTable carbonTable,
+      AbsoluteTableIdentifier absoluteTableIdentifier, LoadMetadataDetails[] details) {
     // Delete marked loads
-    boolean isUpdationRequired =
-        DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
-            absoluteTableIdentifier,
-            isForceDeletion,
-            details,
-            carbonTable.getMetadataPath()
-        );
+    boolean isUpdationRequired = DeleteLoadFolders
+        .deleteLoadFoldersFromFileSystem(absoluteTableIdentifier, isForceDeletion, details,
+            carbonTable.getMetadataPath());
     return new ReturnTuple(details, isUpdationRequired);
   }
 
-  public static void deleteLoadsAndUpdateMetadata(
-      CarbonTable carbonTable,
-      boolean isForceDeletion,
+  public static void deleteLoadsAndUpdateMetadata(CarbonTable carbonTable, boolean isForceDeletion,
       List<PartitionSpec> partitionSpecs) throws IOException {
+    LoadMetadataDetails[] metadataDetails =
+        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
     // delete the expired segment lock files
     CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
-    if (isLoadDeletionRequired(carbonTable.getMetadataPath())) {
+    if (isLoadDeletionRequired(metadataDetails)) {
       AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
       boolean updationCompletionStatus = false;
       LoadMetadataDetails[] newAddedLoadHistoryList = null;
-      ReturnTuple tuple = isUpdationRequired(isForceDeletion, carbonTable, identifier);
+      ReturnTuple tuple =
+          isUpdationRequired(isForceDeletion, carbonTable, identifier, metadataDetails);
       if (tuple.isUpdateRequired) {
         ICarbonLock carbonTableStatusLock =
             CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
@@ -942,7 +934,10 @@ public class SegmentStatusManager {
           if (locked) {
             LOG.info("Table status lock has been successfully acquired.");
             // Again read status and check to verify updation required or not.
-            ReturnTuple tuple2 = isUpdationRequired(isForceDeletion, carbonTable, identifier);
+            LoadMetadataDetails[] details =
+                SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+            ReturnTuple tuple2 =
+                isUpdationRequired(isForceDeletion, carbonTable, identifier, details);
             if (!tuple2.isUpdateRequired) {
               return;
             }
