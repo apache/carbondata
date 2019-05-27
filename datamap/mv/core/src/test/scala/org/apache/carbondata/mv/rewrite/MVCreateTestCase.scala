@@ -954,6 +954,23 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists all_table")
   }
 
+  test("test select * and distinct when MV is enabled") {
+    sql("drop table if exists limit_fail")
+    sql("CREATE TABLE limit_fail (empname String, designation String, doj Timestamp,workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)STORED BY 'org.apache.carbondata.format'")
+    sql(s"LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE limit_fail  OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
+    sql("create datamap limit_fail_dm1 using 'mv' as select empname,designation from limit_fail")
+    try {
+      val df = sql("select distinct(empname) from limit_fail limit 10")
+      sql("select * from limit_fail limit 10").show()
+      val analyzed = df.queryExecution.analyzed
+      assert(verifyMVDataMap(analyzed, "limit_fail_dm1"))
+    } catch {
+      case ex: Exception =>
+        assert(false)
+    }
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
@@ -971,6 +988,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS fact_streaming_table1")
     sql("drop table IF EXISTS fact_streaming_table2")
     sql("drop table IF EXISTS fact_table_parquet")
+    sql("drop table if exists limit_fail")
   }
 
   override def afterAll {
