@@ -20,6 +20,7 @@ package org.apache.spark.rdd
 import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
@@ -37,6 +38,8 @@ case class CarbonMergeFilePartition(rddId: Int, idx: Int, segmentId: String)
 }
 
 object CarbonMergeFilesRDD {
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   /**
    * Merge the carbonindex files with in the segment to carbonindexmerge file inside same segment
@@ -70,9 +73,8 @@ object CarbonMergeFilesRDD {
         readFileFooterFromCarbonDataFile).collect()
     } else {
       try {
-        if (CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
+        if (isPropertySet(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)) {
           new CarbonMergeFilesRDD(
             sparkSession,
             carbonTable,
@@ -82,18 +84,33 @@ object CarbonMergeFilesRDD {
             readFileFooterFromCarbonDataFile).collect()
         }
       } catch {
-        case _: Exception =>
-          if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
-            new CarbonMergeFilesRDD(
-              sparkSession,
-              carbonTable,
-              segmentIds,
-              segmentFileNameToSegmentIdMap,
-              carbonTable.isHivePartitionTable,
-              readFileFooterFromCarbonDataFile).collect()
+        case ex: Exception =>
+          val message = "Merge Index files request is failed " +
+                        s"for table ${ carbonTable.getTableUniqueName }. " + ex.getMessage
+          LOGGER.error(message)
+          if (isPropertySet(CarbonCommonConstants.CARBON_MERGE_INDEX_FAILURE_THROW_EXCEPTION,
+            CarbonCommonConstants.CARBON_MERGE_INDEX_FAILURE_THROW_EXCEPTION_DEFAULT)) {
+            throw new RuntimeException(message, ex)
           }
       }
     }
+  }
+
+  /**
+   * Check whether the Merge Index Property is set by the user.
+   * If not set, take the default value of the property.
+   *
+   * @return
+   */
+  def isPropertySet(property: String, defaultValue: String): Boolean = {
+    var mergeIndex: Boolean = false
+    try {
+      mergeIndex = CarbonProperties.getInstance().getProperty(property, defaultValue).toBoolean
+    } catch {
+      case _: Exception =>
+        mergeIndex = defaultValue.toBoolean
+    }
+    mergeIndex
   }
 }
 

@@ -139,12 +139,32 @@ public class SegmentFileStore {
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID)
       throws IOException {
+    return writeSegmentFile(carbonTable, segmentId, UUID, null);
+  }
+
+  /**
+   * Write segment file to the metadata folder of the table selecting only the current load files
+   *
+   * @param carbonTable
+   * @param segmentId
+   * @param UUID
+   * @param currentLoadTimeStamp
+   * @return
+   * @throws IOException
+   */
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+      final String currentLoadTimeStamp) throws IOException {
     String tablePath = carbonTable.getTablePath();
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
     String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     CarbonFile segmentFolder = FileFactory.getCarbonFile(segmentPath);
     CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
+        if (null != currentLoadTimeStamp) {
+          return file.getName().contains(currentLoadTimeStamp) && (
+              file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+                  .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
+        }
         return (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
             .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
       }
@@ -184,6 +204,7 @@ public class SegmentFileStore {
     }
     return null;
   }
+
 
   /**
    * Move the loaded data from source folder to destination folder.
