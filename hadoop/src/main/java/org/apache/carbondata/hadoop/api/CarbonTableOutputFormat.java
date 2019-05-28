@@ -254,7 +254,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     }
     if (null == loadModel.getTaskNo() || loadModel.getTaskNo().isEmpty()) {
       loadModel.setTaskNo(taskAttemptContext.getConfiguration()
-          .get("carbon.outputformat.taskno", String.valueOf(System.nanoTime())));
+          .get("carbon.outputformat.taskno", String.valueOf(System.currentTimeMillis())));
     }
     loadModel.setDataWritePath(
         taskAttemptContext.getConfiguration().get("carbon.outputformat.writepath"));
