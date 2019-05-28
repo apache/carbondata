@@ -81,13 +81,20 @@ object DirectSQLExample {
     import carbonSession._
     // 1. generate data file
     cleanTestData(path)
-    buildTestData(path, 20, sparkSession = carbonSession)
+
+    val rows = 20;
+    buildTestData(path, rows, sparkSession = carbonSession)
     val readPath = path
 
     println("Running SQL on carbon files directly")
     try {
       // 2. run queries directly, no need to create table first
       sql(s"""select * FROM carbon.`$readPath` limit 10""".stripMargin).show()
+
+      // 3. check rows count
+      val counts = sql(s"""select * FROM carbon.`$readPath`""".stripMargin).count()
+      assert(rows == counts)
+
     } catch {
       case e: Exception => throw e
     } finally {
