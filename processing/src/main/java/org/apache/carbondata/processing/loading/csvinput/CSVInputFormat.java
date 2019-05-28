@@ -85,7 +85,6 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CSVInputFormat.class.getName());
 
-
   @Override
   public RecordReader<NullWritable, StringArrayWritable> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext context) throws IOException, InterruptedException {
