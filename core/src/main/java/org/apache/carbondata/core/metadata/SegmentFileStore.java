@@ -461,7 +461,7 @@ public class SegmentFileStore {
    * @param segmentFilePath
    * @return
    */
-  private static SegmentFile readSegmentFile(String segmentFilePath) throws IOException {
+  public static SegmentFile readSegmentFile(String segmentFilePath) throws IOException {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
