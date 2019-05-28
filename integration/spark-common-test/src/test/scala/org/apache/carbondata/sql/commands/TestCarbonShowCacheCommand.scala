@@ -124,17 +124,17 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE empTable")
     sql("select count(*) from empTable").show()
     var showCache = sql("SHOW METACACHE on table empTable").collect()
-    assert(showCache(1).get(2).toString.equalsIgnoreCase("3/3 index files cached"))
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("3/3 index files cached"))
     sql("delete from table empTable where segment.id in(0)").show()
     // check whether count(*) query invalidates the cache for the invalid segments
     sql("select count(*) from empTable").show()
     showCache = sql("SHOW METACACHE on table empTable").collect()
-    assert(showCache(1).get(2).toString.equalsIgnoreCase("2/2 index files cached"))
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/2 index files cached"))
     sql("delete from table empTable where segment.id in(1)").show()
     // check whether select * query invalidates the cache for the invalid segments
     sql("select * from empTable").show()
     showCache = sql("SHOW METACACHE on table empTable").collect()
-    assert(showCache(1).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
   }
 
   test("test external table show cache") {
@@ -181,12 +181,12 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("use cache_empty_db").collect()
     val result1 = sql("show metacache").collect()
     assertResult(2)(result1.length)
-    assertResult(Row("cache_empty_db", "ALL", "0 B", "0 B", "0 B"))(result1(1))
+    assertResult(Row("cache_empty_db", "ALL", "0 B", "0 B", "0 B", "DRIVER"))(result1(1))
 
     // Database with 3 tables but only 2 are in cache
     sql("use cache_db").collect()
     val result2 = sql("show metacache").collect()
-    assertResult(5)(result2.length)
+    assertResult(4)(result2.length)
 
     // Make sure PreAgg tables are not in SHOW METADATA
     sql("use default").collect()
@@ -202,33 +202,33 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
 
     // Table with Index, Dictionary & Bloom filter
     val result1 = sql("show metacache on table cache_1").collect()
-    assertResult(4)(result1.length)
-    assertResult("1/1 index files cached")(result1(1).getString(2))
-    assertResult("bloomfilter")(result1(3).getString(2))
+    assertResult(3)(result1.length)
+    assertResult("1/1 index files cached")(result1(0).getString(2))
+    assertResult("bloomfilter")(result1(2).getString(2))
 
     // Table with Index and Dictionary
     val result2 = sql("show metacache on table cache_db.cache_2").collect()
-    assertResult(3)(result2.length)
-    assertResult("2/2 index files cached")(result2(1).getString(2))
-    assertResult("0 B")(result2(2).getString(1))
+    assertResult(2)(result2.length)
+    assertResult("2/2 index files cached")(result2(0).getString(2))
+    assertResult("0 B")(result2(1).getString(1))
 
     // Table not in cache
     checkAnswer(sql("show metacache on table cache_db.cache_3"),
-      Seq(Row("DRIVER CACHE","",""), Row("Index", "0 B", "0/1 index files cached"),
-        Row("Dictionary", "0 B", "")))
+      Seq(Row("Index", "0 B", "0/1 index files cached", "DRIVER"),
+        Row("Dictionary", "0 B", "", "DRIVER")))
 
     // Table with Index, Dictionary & PreAgg child table
     val result4 = sql("show metacache on table default.cache_4").collect()
-    assertResult(4)(result4.length)
-    assertResult("1/1 index files cached")(result4(1).getString(2))
-    assertResult("0 B")(result4(2).getString(1))
-    assertResult("preaggregate")(result4(3).getString(2))
+    assertResult(3)(result4.length)
+    assertResult("1/1 index files cached")(result4(0).getString(2))
+    assertResult("0 B")(result4(1).getString(1))
+    assertResult("preaggregate")(result4(2).getString(2))
 
     sql("use default").collect()
 
     // Table with 5 index files
     val result5 = sql("show metacache on table cache_5").collect()
-    assertResult(3)(result5.length)
-    assertResult("5/5 index files cached")(result5(1).getString(2))
+    assertResult(2)(result5.length)
+    assertResult("5/5 index files cached")(result5(0).getString(2))
   }
 }

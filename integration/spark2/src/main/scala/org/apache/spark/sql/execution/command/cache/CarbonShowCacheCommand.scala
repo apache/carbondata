@@ -58,12 +58,14 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
         AttributeReference("Table", StringType, nullable = false)(),
         AttributeReference("Index size", StringType, nullable = false)(),
         AttributeReference("Datamap size", StringType, nullable = false)(),
-        AttributeReference("Dictionary size", StringType, nullable = false)())
+        AttributeReference("Dictionary size", StringType, nullable = false)(),
+        AttributeReference("Cache Location", StringType, nullable = false)())
     } else {
       Seq(
         AttributeReference("Field", StringType, nullable = false)(),
         AttributeReference("Size", StringType, nullable = false)(),
-        AttributeReference("Comment", StringType, nullable = false)())
+        AttributeReference("Comment", StringType, nullable = false)(),
+        AttributeReference("Cache Location", StringType, nullable = false)())
     }
   }
 
@@ -95,15 +97,14 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
                           indexRawResults.drop(2).map { row =>
                             Row(row.get(0), row.getLong(1) + row.getLong(2), row.get(3))
                           }
-      Seq(Row("DRIVER CACHE", "", "")) ++ result.map {
+      result.map {
         row =>
-          Row(row.get(0), bytesToDisplaySize(row.getLong(1)), row.get(2))
+          Row(row.get(0), bytesToDisplaySize(row.getLong(1)), row.get(2), "DRIVER")
       } ++ (serverResults match {
         case Nil => Seq()
         case list =>
-          Seq(Row("-----------", "-----------", "-----------"), Row("INDEX CACHE", "", "")) ++
           list.map {
-          row => Row(row.get(0), bytesToDisplaySize(row.getLong(1)), row.get(2))
+          row => Row(row.get(0), bytesToDisplaySize(row.getLong(1)), row.get(2), "INDEX SERVER")
         }
       })
     }
@@ -156,8 +157,11 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
       driverRows)
     val (indexdbIndexSize, indexdbDatamapSize, indexAllDictSize) = calculateDBIndexAndDatamapSize(
       indexServerRows)
-    val (indexAllIndexSize, indexAllDatamapSize) = getIndexServerCacheSizeForCurrentDB
-
+    val (indexAllIndexSize, indexAllDatamapSize) = if (isDistributedPruningEnabled) {
+      getIndexServerCacheSizeForCurrentDB
+    } else {
+      (0, 0)
+    }
     val driverDisplayRows = if (cache != null) {
       val tablePaths = carbonTables.map {
         carbonTable =>
@@ -166,15 +170,19 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
       val (driverIndexSize, driverDatamapSize, allDictSize) = getAllDriverCacheSize(tablePaths
         .toList)
       if (driverRows.nonEmpty) {
-        val rows = (Seq(
-          Row("ALL", "ALL", driverIndexSize, driverDatamapSize, allDictSize),
-          Row(currentDatabase, "ALL", driverdbIndexSize, driverdbDatamapSize, driverdbDictSize)
+        (Seq(
+          Row("ALL", "ALL", driverIndexSize, driverDatamapSize, allDictSize, "DRIVER"),
+          Row(currentDatabase,
+            "ALL",
+            driverdbIndexSize,
+            driverdbDatamapSize,
+            driverdbDictSize,
+            "DRIVER")
         ) ++ driverRows).collect {
           case row if row.getLong(2) != 0L || row.getLong(3) != 0L || row.getLong(4) != 0L =>
             Row(row(0), row(1), bytesToDisplaySize(row.getLong(2)),
-              bytesToDisplaySize(row.getLong(3)), bytesToDisplaySize(row.getLong(4)))
+              bytesToDisplaySize(row.getLong(3)), bytesToDisplaySize(row.getLong(4)), "DRIVER")
         }
-        Seq(Row("DRIVER CACHE", "", "", "", "")) ++ rows
       } else {
         makeEmptyCacheRows(currentDatabase)
       }
@@ -184,15 +192,19 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
 
     //      val (serverIndexSize, serverDataMapSize) = getAllIndexServerCacheSize
     val indexDisplayRows = if (indexServerRows.nonEmpty) {
-      val rows = (Seq(
-        Row("ALL", "ALL", indexAllIndexSize, indexAllDatamapSize, indexAllDictSize),
-        Row(currentDatabase, "ALL", indexdbIndexSize, indexdbDatamapSize, driverdbDictSize)
+      (Seq(
+        Row("ALL", "ALL", indexAllIndexSize, indexAllDatamapSize, indexAllDictSize, "INDEX SERVER"),
+        Row(currentDatabase,
+          "ALL",
+          indexdbIndexSize,
+          indexdbDatamapSize,
+          driverdbDictSize,
+          "INDEX SERVER")
       ) ++ indexServerRows).collect {
         case row if row.getLong(2) != 0L || row.getLong(3) != 0L || row.getLong(4) != 0L =>
           Row(row.get(0), row.get(1), bytesToDisplaySize(row.getLong(2)),
-            bytesToDisplaySize(row.getLong(3)), bytesToDisplaySize(row.getLong(4)))
+            bytesToDisplaySize(row.getLong(3)), bytesToDisplaySize(row.getLong(4)), "INDEX SERVER")
       }
-      Seq(Row("INDEX SERVER CACHE", "", "", "", "")) ++ rows
     } else {
       Seq()
     }
@@ -237,13 +249,13 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
         comments += " (external table)"
       }
       Seq(
-        Row("Index", parentMetaCacheInfo._3, comments),
-        Row("Dictionary", parentDictionary, "")
+        Row("Index", parentMetaCacheInfo._3, comments, ""),
+        Row("Dictionary", parentDictionary, "", "")
       ) ++ childMetaCacheInfos
     } else {
       Seq(
-        Row("Index", 0L, ""),
-        Row("Dictionary", 0L, "")
+        Row("Index", 0L, "", ""),
+        Row("Dictionary", 0L, "", "")
       )
     }
   }
@@ -252,9 +264,9 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
 
   private def makeEmptyCacheRows(currentDatabase: String) = {
     Seq(
-      Row("ALL", "ALL", bytesToDisplaySize(0), bytesToDisplaySize(0), bytesToDisplaySize(0)),
+      Row("ALL", "ALL", bytesToDisplaySize(0), bytesToDisplaySize(0), bytesToDisplaySize(0), ""),
       Row(currentDatabase, "ALL", bytesToDisplaySize(0), bytesToDisplaySize(0),
-        bytesToDisplaySize(0)))
+        bytesToDisplaySize(0), "DRIVER"))
   }
 
   private def calculateDBIndexAndDatamapSize(rows: Seq[Row]): (Long, Long, Long) = {
