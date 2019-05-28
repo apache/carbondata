@@ -16,20 +16,26 @@
  */
 package org.apache.carbondata.indexserver
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.DistributionUtil
-import scala.collection.JavaConverters._
 
-import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
 class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableName: String)
   extends CarbonRDD[String](ss, Nil) {
 
-  val executorsList: Array[String] = DistributionUtil.getNodeList(ss.sparkContext)
+  val executorsList: Array[String] = DistributionUtil.getExecutors(ss.sparkContext).flatMap {
+    case (host, executors) =>
+      executors.map {
+        executor => s"executor_${host}_$executor"
+      }
+  }.toArray
 
   override protected def internalGetPartitions: Array[Partition] = {
     executorsList.zipWithIndex.map {
@@ -43,15 +49,21 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableName
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[String] = {
     val dataMaps = DataMapStoreManager.getInstance().getAllDataMaps.asScala
+    val tableList = tableName.split(",").map(_.replace("-", "_"))
     val iterator = dataMaps.collect {
-      case (table, tableDataMaps) if table.isEmpty ||
-                                     (tableName.nonEmpty && tableName.equalsIgnoreCase(table)) =>
+      case (table, tableDataMaps) if tableName.isEmpty || tableList.contains(table) =>
         val sizeAndIndexLengths = tableDataMaps.asScala
-          .map(_.getBlockletDetailsFetcher.getCacheSize)
-        // return tableName_indexFileLength_indexCachesize for each executor.
-        sizeAndIndexLengths.map {
-          x => s"$table:$x"
-        }
+          .map { dataMap =>
+            val dataMapName = if (dataMap.getDataMapFactory.isInstanceOf[BlockletDataMapFactory]) {
+              table
+            } else {
+              dataMap.getDataMapSchema.getRelationIdentifier.getDatabaseName + "_" + dataMap
+              .getDataMapSchema.getDataMapName
+            }
+            s"${ dataMapName }:${ dataMap.getDataMapFactory.getCacheSize }:${
+              dataMap.getDataMapSchema.getProviderName} "
+          }
+        sizeAndIndexLengths
     }.flatten.toIterator
     iterator
   }

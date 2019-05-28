@@ -192,4 +192,8 @@ public abstract class DataMapFactory<T extends DataMap> {
   public boolean supportRebuild() {
     return false;
   }
+
+  public String getCacheSize() {
+    return null;
+  }
 }

@@ -45,9 +45,9 @@ trait ServerInterface {
   def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer
 
   /**
-   * Get the cache size for the specified table.
+   * Get the cache size for the specified tables.
    */
-  def showCache(tableName: String) : Array[String]
+  def showCache(tableNames: String) : Array[String]
 
   /**
    * Invalidate the cache for the specified segments only. Used in case of compaction/Update/Delete.
@@ -174,6 +174,7 @@ object IndexServer extends ServerInterface {
    * @return Return a new Client to communicate with the Index Server.
    */
   def getClient: ServerInterface = {
+    val configuration = SparkSQLUtil.sessionState(sparkSession).newHadoopConf()
     import org.apache.hadoop.ipc.RPC
     val indexServerUser = sparkSession.sparkContext.getConf
       .get("spark.carbon.indexserver.principal", "")
@@ -181,10 +182,10 @@ object IndexServer extends ServerInterface {
       .get("spark.carbon.indexserver.keytab", "")
     val ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(indexServerUser,
       indexServerKeyTab)
-    LOGGER.info("Login successful for user " + indexServerUser);
+    LOGGER.info("Login successful for user " + indexServerUser)
     RPC.getProxy(classOf[ServerInterface],
       RPC.getProtocolVersion(classOf[ServerInterface]),
       new InetSocketAddress(serverIp, serverPort), ugi,
-      FileFactory.getConfiguration, NetUtils.getDefaultSocketFactory(FileFactory.getConfiguration))
+      FileFactory.getConfiguration, NetUtils.getDefaultSocketFactory(configuration))
   }
 }

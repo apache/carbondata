@@ -17,24 +17,13 @@
 
 package org.apache.spark.sql.execution.command.cache
 
-import java.util
-import java.util.{HashSet, Set}
-
 import scala.collection.JavaConverters._
-import scala.collection.mutable
-
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.CarbonEnv
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
-import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.datamap.bloom.{BloomCacheKeyValue, BloomCoarseGrainDataMapFactory}
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
 object ShowCachePreAggEventListener extends OperationEventListener {
 
@@ -50,37 +39,30 @@ object ShowCachePreAggEventListener extends OperationEventListener {
     event match {
       case showTableCacheEvent: ShowTableCacheEvent =>
         val carbonTable = showTableCacheEvent.carbonTable
-        val sparkSession = showTableCacheEvent.sparkSession
         val internalCall = showTableCacheEvent.internalCall
         if ((carbonTable.isChildDataMap || carbonTable.isChildTable) && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 
-        val currentTableSizeMap = operationContext.getProperty(carbonTable.getTableUniqueName)
-          .asInstanceOf[mutable.Map[String, (String, Long, Long)]]
+        val childTables = operationContext.getProperty(carbonTable.getTableUniqueName)
+          .asInstanceOf[List[(String, String)]]
 
         if (carbonTable.hasDataMapSchema) {
           val childrenSchemas = carbonTable.getTableInfo.getDataMapSchemaList.asScala
             .filter(_.getRelationIdentifier != null)
-          for (childSchema <- childrenSchemas) {
-            val datamapName = childSchema.getDataMapName
-            val datamapProvider = childSchema.getProviderName
-            val childCarbonTable = CarbonEnv.getCarbonTable(
-              TableIdentifier(childSchema.getRelationIdentifier.getTableName,
-                Some(carbonTable.getDatabaseName)))(sparkSession)
-
-            val resultForChild = CarbonShowCacheCommand(None, true)
-              .getTableCache(sparkSession, childCarbonTable)
-            val datamapSize = resultForChild.head.getLong(1)
-            currentTableSizeMap.put(datamapName, (datamapProvider, datamapSize, 0L))
-          }
+          operationContext.setProperty(carbonTable.getTableUniqueName, childrenSchemas.collect {
+            case childSchema if childSchema.getRelationIdentifier != null =>
+              (s"${ childSchema.getRelationIdentifier.getDatabaseName }-${
+                childSchema.getRelationIdentifier.getTableName
+              }", childSchema.getProviderName)
+          }.toList ++ childTables)
         }
     }
   }
 }
 
 
-object ShowCacheBloomEventListener extends OperationEventListener {
+object ShowCacheDataMapEventListener extends OperationEventListener {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -94,32 +76,32 @@ object ShowCacheBloomEventListener extends OperationEventListener {
     event match {
       case showTableCacheEvent: ShowTableCacheEvent =>
         val carbonTable = showTableCacheEvent.carbonTable
-        val cache = CacheProvider.getInstance().getCarbonCache
-        val currentTableSizeMap = operationContext.getProperty(carbonTable.getTableUniqueName)
-          .asInstanceOf[mutable.Map[String, (String, Long, Long)]]
+        val childTables = operationContext.getProperty(carbonTable.getTableUniqueName)
+          .asInstanceOf[List[(String, String)]]
 
         // Extract all datamaps for the table
         val datamaps = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-          .asScala
+          .asScala.toList
 
-        datamaps.foreach {
-          case datamap if datamap.getProviderName
-            .equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName) =>
+        val bloomDataMaps = filterDataMaps(datamaps, DataMapClassProvider.BLOOMFILTER.getShortName)
 
-            // Get datamap keys
-            val datamapKeys = CacheUtil.getBloomCacheKeys(carbonTable, datamap)
+        val mvDataMaps = filterDataMaps(datamaps, DataMapClassProvider.MV.getShortName)
+        operationContext
+          .setProperty(carbonTable.getTableUniqueName, childTables ++ bloomDataMaps ++ mvDataMaps)
+    }
+  }
 
-            // calculate the memory size if key exists in cache
-            val datamapSize = datamapKeys.collect {
-              case key if cache.get(key) != null =>
-                cache.get(key).getMemorySize
-            }.sum
-
-            // put the datmap size into main table's map.
-            currentTableSizeMap
-              .put(datamap.getDataMapName, (datamap.getProviderName, 0L, datamapSize))
-
-          case _ =>
+  private def filterDataMaps(dataMaps: List[DataMapSchema],
+      filter: String): List[(String, String)] = {
+    dataMaps.collect {
+      case dataMap if dataMap.getProviderName
+        .equalsIgnoreCase(filter) =>
+        if (filter.equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName)) {
+          (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${
+            dataMap.getDataMapName}", dataMap.getProviderName)
+        } else {
+          (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${
+            dataMap.getRelationIdentifier.getTableName}", dataMap.getProviderName)
         }
     }
   }

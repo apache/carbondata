@@ -111,7 +111,7 @@ class DistributedDataMapJob extends AbstractDataMapJob {
           asInstanceOf[BinaryExpression])
     }
     if (filterInf.isInstanceOf[RowLevelFilterResolverImpl] &&
-      filterInf.getFilterExecuterType == ExpressionType.UNKNOWN) {
+        filterInf.getFilterExpression.getFilterExpressionType == ExpressionType.UNKNOWN) {
       return filterProcessor.changeUnknownResloverToTrue(tableIdentifer)
     }
     return filterInf;

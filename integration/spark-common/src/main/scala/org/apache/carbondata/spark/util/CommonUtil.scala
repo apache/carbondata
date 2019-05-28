@@ -985,7 +985,14 @@ object CommonUtil {
     }
   }
 
-  def bytesToDisplaySize(size: Long): String = bytesToDisplaySize(BigDecimal.valueOf(size))
+  def bytesToDisplaySize(size: Long): String = {
+    try {
+      bytesToDisplaySize(BigDecimal.valueOf(size))
+    } catch {
+      case _: Exception =>
+        size.toString
+    }
+  }
 
   // This method converts the bytes count to display size upto 2 decimal places
   def bytesToDisplaySize(size: BigDecimal): String = {

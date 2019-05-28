@@ -194,7 +194,7 @@ object CarbonEnv {
       .addListener(classOf[DropTableCacheEvent], DropCachePreAggEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheBloomEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCachePreAggEventListener)
-      .addListener(classOf[ShowTableCacheEvent], ShowCacheBloomEventListener)
+      .addListener(classOf[ShowTableCacheEvent], ShowCacheDataMapEventListener)
       .addListener(classOf[DeleteSegmentByIdPreEvent], DataMapDeleteSegmentPreListener)
       .addListener(classOf[DeleteSegmentByDatePreEvent], DataMapDeleteSegmentPreListener)
       .addListener(classOf[AlterTableDropColumnPreEvent], DataMapDropColumnPreListener)

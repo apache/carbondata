@@ -302,14 +302,19 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     }
   }
 
-  @Override public String getCacheSize() throws IOException {
+  @Override
+  public String getCacheSize() {
     long sum = 0L;
     int numOfIndexFiles = 0;
     for (Map.Entry<String, Set<TableBlockIndexUniqueIdentifier>> entry : segmentMap.entrySet()) {
       for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : entry.getValue()) {
-        sum += cache.get(new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
-            getCarbonTable())).getMemorySize();
-        numOfIndexFiles++;
+        BlockletDataMapIndexWrapper blockletDataMapIndexWrapper = cache.getIfPresent(
+            new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
+                getCarbonTable()));
+        if (blockletDataMapIndexWrapper != null) {
+          sum += blockletDataMapIndexWrapper.getMemorySize();
+          numOfIndexFiles++;
+        }
       }
     }
     return numOfIndexFiles + ":" + sum;
