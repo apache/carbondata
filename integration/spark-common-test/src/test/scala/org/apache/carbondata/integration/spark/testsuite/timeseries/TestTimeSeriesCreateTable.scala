@@ -517,7 +517,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll with Be
            |GROUP BY dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.contains("Table or view not found: maintableno"))
+    assert(e.getMessage.contains("Table or view not found: mainTableNo"))
   }
 
   test("test timeseries create table 33: support event_time and granularity key with space") {
