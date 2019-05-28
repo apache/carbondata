@@ -196,7 +196,7 @@ object PreAggregateUtil {
       parentDatabaseName: String,
       carbonTable: CarbonTable) : ColumnTableRelation = {
     val parentColumnId = carbonTable.getColumnByName(parentTableName, parentColumnName).getColumnId
-    val columnTableRelation = ColumnTableRelation(parentColumnName = parentColumnName,
+    val columnTableRelation = ColumnTableRelation(parentColumnName = parentColumnName.toLowerCase(),
       parentColumnId = parentColumnId,
       parentTableName = parentTableName,
       parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
@@ -386,13 +386,14 @@ object PreAggregateUtil {
       aggregateType: String = "",
       parentTableName: String,
       columnTableRelationList: Seq[ColumnTableRelation]): (Field, DataMapField) = {
-    val actualColumnName = if (aggregateType.equals("")) {
+    var actualColumnName = if (aggregateType.equals("")) {
       parentTableName + '_' + columnName
     } else {
       parentTableName + '_' + columnName + '_' + aggregateType
     }
     val rawSchema = '`' + actualColumnName + '`' + ' ' + dataType.typeName
     val dataMapField = DataMapField(aggregateType, Some(columnTableRelationList))
+    actualColumnName = actualColumnName.toLowerCase()
     if (dataType.typeName.startsWith("decimal")) {
       val (precision, scale) = CommonUtil.getScaleAndPrecision(dataType.catalogString)
       (Field(column = actualColumnName,

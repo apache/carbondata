@@ -1022,6 +1022,25 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists all_table")
   }
 
+  test(" test MV with like queries and filter queries") {
+    sql("drop table if exists mv_like")
+    sql(
+      "create table mv_like(name string, age int, address string, Country string, id int) stored by 'carbondata'")
+    sql(
+      "create datamap mvlikedm1 using 'mv' as select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
+    sql(
+      "create datamap mvlikedm2 using 'mv' as select name,address,Country from mv_like where Country = 'US' or Country = 'China' group by name,address,Country")
+    sql("insert into mv_like select 'chandler', 32, 'newYork', 'US', 5")
+    val df1 = sql(
+      "select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
+    val analyzed1 = df1.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed1, "mvlikedm1"))
+    val df2 = sql(
+      "select name,address,Country from mv_like where Country = 'US' or Country = 'China' group by name,address,Country")
+    val analyzed2 = df2.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed2, "mvlikedm2"))
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
@@ -1040,6 +1059,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS fact_streaming_table2")
     sql("drop table IF EXISTS fact_table_parquet")
     sql("drop table if exists limit_fail")
+    sql("drop table IF EXISTS mv_like")
   }
 
   override def afterAll {
