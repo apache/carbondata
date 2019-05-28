@@ -60,6 +60,4 @@ public interface BlockletDetailsFetcher {
    * clears the datamap from cache and segmentMap from executor
    */
   void clear();
-
-  String getCacheSize() throws IOException ;
 }

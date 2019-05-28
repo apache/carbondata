@@ -184,7 +184,7 @@ object DataMapUtil {
       fields.collect {
         case col if fieldRelationMap(col).aggregateFunction.isEmpty &&
                     fieldRelationMap(col).columnTableRelationList.size == 1 &&
-                    parentcol.equals(fieldRelationMap(col).
+                    parentcol.equalsIgnoreCase(fieldRelationMap(col).
                       columnTableRelationList.get.head.parentColumnName) =>
           col.column
       })
