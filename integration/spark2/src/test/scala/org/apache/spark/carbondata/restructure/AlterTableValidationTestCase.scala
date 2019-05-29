@@ -634,11 +634,11 @@ test("test alter command for boolean data type with correct default measure valu
         }
         sql("alter table test add columns (c4 timestamp)")
         sql(
-          "insert into test select 2,'String1',12345,'area',20,'country','2017-02-12','1994/01/01 10:10:10','1994/01/01 10:10:10'")
+          "insert into test select 2,'String1',12345,'area',20,'country','2017-02-12','1994-01-01 10:10:10','1994-01-01 10:10:10'")
         sql(
-          "insert into test select 3,'String1',12345,'area',20,'country','2017-02-12','1995/01/01 11:11:11','1995/01/01 11:11:11'")
+          "insert into test select 3,'String1',12345,'area',20,'country','2017-02-12','1995-01-01 11:11:11','1995-01-01 11:11:11'")
         sql(
-          "insert into test select 4,'String1',12345,'area',20,'country','2017-02-12','1996/01/01 10:10:10','1996/01/01 10:10:10'")
+          "insert into test select 4,'String1',12345,'area',20,'country','2017-02-12','1996-01-01 10:10:10','1996-01-01 10:10:10'")
         checkAnswer(sql("select id from test where c3='1996-01-01 11:11:11'"), Seq(Row(1)))
         checkAnswer(sql("select id from test where c3!='1996-01-01 11:11:11'"), Seq(Row(2),Row(3),Row(4)))
         checkAnswer(sql("select id from test where c3<'1995-01-01 11:11:11'"), Seq(Row(2)))

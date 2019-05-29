@@ -505,7 +505,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
          |'$writerPath' """.stripMargin)
     sql("describe formatted sdkOutputTable").show(false)
     checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Row(Row(null, 1)))))
-    sql("insert into sdkOutputTable values('abc:12')")
+    sql("insert into sdkOutputTable values(named_struct('city', named_struct('city0', 'abc', 'city1', 12)))")
     sql("select address.city.city0 from sdkOutputTable").show(false)
   }
 

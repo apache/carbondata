@@ -372,12 +372,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
         | STORED BY 'carbondata'
         | TBLPROPERTIES('long_string_columns'='varchar1,varchar2')
         | """.stripMargin)
-    sql(
-      """
-        | INSERT INTO TABLE varchar_complex_table
-        | VALUES(1,'ar1.0\001ar1.1','longstr10','normal string1','longstr11','ar2.0\001ar2.1'),
-        | (2,'ar1.2\001ar1.3','longstr20','normal string2','longstr21','ar2.2\001ar2.3')
-        | """.stripMargin)
+    sql("insert into varchar_complex_table values(1, array('ar1.0','ar1.1'), 'longstr10', 'normal string1', 'longstr11', array('ar2.0','ar2.1')),(2, array('ar1.2','ar1.3'), 'longstr20', 'normal string2', 'longstr21', array('ar2.2','ar2.3'))")
     checkAnswer(
       sql("SELECT * FROM varchar_complex_table where varchar1='longstr10'"),
       Seq(Row(1,mutable.WrappedArray.make(Array("ar1.0","ar1.1")),"longstr10","normal string1",

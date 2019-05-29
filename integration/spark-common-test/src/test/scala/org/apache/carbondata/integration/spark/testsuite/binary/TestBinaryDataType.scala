@@ -22,7 +22,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
-
+import org.apache.commons.codec.binary.Hex
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.spark.SparkException
 import org.apache.spark.sql.{AnalysisException, Row}
@@ -1458,7 +1459,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
 
         sql("INSERT INTO hive_table PARTITION(photo='binary') select 'a','b'");
-        sql("INSERT INTO hive_table PARTITION(photo=1) select 'a','b'");
+        sql("INSERT INTO hive_table PARTITION(photo='1') select 'a','b'");
         checkAnswer(sql("select cast(photo as string) from hive_table"), Seq(Row("binary"), Row("1")));
 
 
@@ -1471,7 +1472,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
 
         sql("INSERT INTO hive_table2 PARTITION(photo='binary') select 'a','b'");
-        sql("INSERT INTO hive_table2 PARTITION(photo=1) select 'a','b'");
+        sql("INSERT INTO hive_table2 PARTITION(photo='1') select 'a','b'");
         checkAnswer(sql("select cast(photo as string) from hive_table2"), Seq(Row("binary"), Row("1")));
 
         sql(
@@ -1484,7 +1485,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
 
         sql("INSERT INTO parquet_table PARTITION(photo='binary') select 'a','b'");
-        sql("INSERT INTO parquet_table PARTITION(photo=1) select 'a','b'");
+        sql("INSERT INTO parquet_table PARTITION(photo='1') select 'a','b'");
 
         sql("select cast(photo as string) from parquet_table").show()
         //TODO： is it a bug in parquet?
@@ -1501,7 +1502,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
 
         sql("INSERT INTO carbon_partition_table PARTITION(photo='binary') select 'a','b'");
-        sql("INSERT INTO carbon_partition_table PARTITION(photo=1) select 'a','b'");
+        sql("INSERT INTO carbon_partition_table PARTITION(photo='1') select 'a','b'");
         sql("select * from carbon_partition_table").show()
         sql("select cast(photo as string) from carbon_partition_table").show()
         checkAnswer(sql("select cast(photo as string) from carbon_partition_table"), Seq(Row("binary"), Row("1")))
@@ -1514,7 +1515,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         assert(e.getMessage.contains("Dynamic partition strict mode requires at least one static partition column"))
 
         val eInt = intercept[Exception] {
-            sql("insert into hive_table select 'a','b',1");
+            sql("insert into hive_table select 'a','b','1'");
         }
 
         val e2 = intercept[SparkException] {
@@ -1524,7 +1525,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         assert(e2.getMessage.contains("Dynamic partition strict mode requires at least one static partition column"))
 
         val eInt2 = intercept[Exception] {
-            sql("insert into hive_table2 select 'a','b',1");
+            sql("insert into hive_table2 select 'a','b','1'");
         }
 
         val e3 = intercept[SparkException] {
@@ -1534,11 +1535,11 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         assert(e3.getMessage.contains("Dynamic partition strict mode requires at least one static partition column"))
 
         val eInt3 = intercept[Exception] {
-            sql("insert into parquet_table select 'a','b',1");
+            sql("insert into parquet_table select 'a','b','1'");
         }
 
         sql("insert into carbon_partition_table select 'a','b','binary'");
-        sql("insert into carbon_partition_table select 'a','b',1");
+        sql("insert into carbon_partition_table select 'a','b','1'");
 
         checkAnswer(sql("select cast(photo as string) from carbon_partition_table"),
             Seq(Row("binary"), Row("1"), Row("binary"), Row("1")))
@@ -1576,7 +1577,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         //            Seq(Row(),Row(),Row()))
 
         sql("insert into carbon_partition_table select 'a','b','binary'");
-        sql("insert into carbon_partition_table select 'a','b',1");
+        sql("insert into carbon_partition_table select 'a','b','1'");
 
         checkAnswer(sql("select cast(photo as string) from carbon_partition_table"),
             Seq(Row("binary"), Row("1"), Row("binary"), Row("1"), Row("binary"), Row("1")))
@@ -1713,6 +1714,23 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
         assert(e3.getMessage.contains("cannot resolve 'avg(substring(uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not BinaryType"))
 
+    }
+
+    test("test binary insert with int value") {
+        sql("DROP TABLE IF EXISTS binaryTable")
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS binaryTable (
+               |    binaryField binary)
+               | STORED BY 'carbondata'
+                     """.stripMargin)
+        val exception = intercept[AnalysisException] {
+            sql("insert into binaryTable select 1")
+        }
+        assert(exception.getMessage()
+          .contains(
+              "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: "))
+        sql("DROP TABLE binaryTable")
     }
 
     override def afterAll: Unit = {

@@ -142,9 +142,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql(
       "CREATE TABLE local2(name map<string,string>) STORED BY 'carbondata' tblproperties" +
       "('local_dictionary_enable'='true','local_dictionary_include'='name')")
-    sql(
-      "insert into local2 values('Manish\002Nalla\001Manish\002Gupta\001Shardul\002Singh" +
-      "\001Vishal\002Kumar')")
+    sql("insert into local2 values(map('Manish','Gupta','Manish','Nalla','Shardul','Singh','Vishal','Kumar'))")
     checkAnswer(sql("select * from local2"), Seq(
       Row(Map("Manish" -> "Nalla", "Shardul" -> "Singh", "Vishal" -> "Kumar"))))
     assert(!checkForLocalDictionary(getDimRawChunk(0)))

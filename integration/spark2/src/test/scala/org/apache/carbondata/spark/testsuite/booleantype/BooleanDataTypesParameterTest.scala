@@ -75,7 +75,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
       sql("select * from boolean_one_column"),
       Seq(Row(true), Row(true), Row(true), Row(true),
         Row(false), Row(false), Row(false), Row(false),
-        Row(null), Row(null), Row(null), Row(null), Row(null), Row(null))
+        Row(true), Row(false), Row(null), Row(null), Row(null), Row(null))
     )
 
     val segments = sql("SHOW SEGMENTS FOR TABLE boolean_one_column")
@@ -107,7 +107,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
       sql("select * from boolean_one_column"),
       Seq(Row(true), Row(true), Row(true), Row(true),
         Row(false), Row(false), Row(false), Row(false),
-        Row(null), Row(null), Row(null), Row(null), Row(null), Row(null))
+        Row(true), Row(false), Row(null), Row(null), Row(null), Row(null))
     )
 
     val segments = sql("SHOW SEGMENTS FOR TABLE boolean_one_column")
@@ -236,7 +236,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
       sql("select * from boolean_one_column"),
       Seq(Row(true), Row(true), Row(true), Row(true),
         Row(false), Row(false), Row(false), Row(false),
-        Row(null), Row(null), Row(null), Row(null), Row(null), Row(null))
+        Row(true), Row(false), Row(null), Row(null), Row(null), Row(null))
     )
 
     val segments = sql("SHOW SEGMENTS FOR TABLE boolean_one_column")
@@ -275,7 +275,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
       sql("select * from boolean_one_column"),
       Seq(Row(true), Row(true), Row(true), Row(true),
         Row(false), Row(false), Row(false), Row(false),
-        Row(null), Row(null), Row(null), Row(null), Row(null), Row(null))
+        Row(true), Row(false), Row(null), Row(null), Row(null), Row(null))
     )
 
     val segments = sql("SHOW SEGMENTS FOR TABLE boolean_one_column")
