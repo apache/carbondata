@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.loading.converter.impl.binary;
 
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
+
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 

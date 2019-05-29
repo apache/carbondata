@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.processing.loading.converter.impl.binary;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-
 import java.nio.charset.Charset;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * Default decoder is convert string to bytes

@@ -17,12 +17,13 @@
 
 package org.apache.carbondata.processing.loading.converter.impl.binary;
 
+import java.nio.charset.Charset;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
-import org.apache.commons.codec.binary.Base64;
 
-import java.nio.charset.Charset;
+import org.apache.commons.codec.binary.Base64;
 
 public class Base64BinaryDecoder implements BinaryDecoder {
   @Override
