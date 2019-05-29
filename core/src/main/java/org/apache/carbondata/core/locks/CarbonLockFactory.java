@@ -19,6 +19,7 @@ package org.apache.carbondata.core.locks;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 
@@ -64,19 +65,17 @@ public class CarbonLockFactory {
       absoluteLockPath =
           getLockpath(absoluteTableIdentifier.getCarbonTableIdentifier().getTableId());
     }
+    FileFactory.FileType fileType = FileFactory.getFileType(absoluteLockPath);
     if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
       return new ZooKeeperLocking(absoluteLockPath, lockFile);
-    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
-            absoluteLockPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
-            absoluteLockPath.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+    } else if (fileType == FileFactory.FileType.S3) {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_S3;
       return new S3FileLock(absoluteLockPath,
                 lockFile);
-    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)
-            || absoluteLockPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+    } else if (fileType == FileFactory.FileType.HDFS || fileType == FileFactory.FileType.VIEWFS) {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS;
       return new HdfsFileLock(absoluteLockPath, lockFile);
-    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+    } else if (fileType == FileFactory.FileType.ALLUXIO) {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_ALLUXIO;
       return new AlluxioFileLock(absoluteLockPath, lockFile);
     } else {

@@ -271,7 +271,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("drop table carbontable")
     // perform file check
-    assert(FileFactory.isFileExist(timestampFile, timestampFileType, true) ||
+    assert(FileFactory.isFileExist(timestampFile, true) ||
            CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore)
 
     CarbonProperties.getInstance()
@@ -282,7 +282,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("drop table carbontable")
     // perform file check
-    assert(FileFactory.isFileExist(timestampFile, timestampFileType, true) ||
+    assert(FileFactory.isFileExist(timestampFile, true) ||
            CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore)
   }
 

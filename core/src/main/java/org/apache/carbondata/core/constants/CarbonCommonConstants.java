@@ -1601,6 +1601,11 @@ public final class CarbonCommonConstants {
   public static final String S3_SECRET_KEY = "fs.s3.awsSecretAccessKey";
 
   /**
+   * Configuration Key for custom file provider
+   */
+  public static final String CUSTOM_FILE_PROVIDER = "carbon.fs.custom.file.provider";
+
+  /**
    * FS_DEFAULT_FS
    */
   @CarbonProperty

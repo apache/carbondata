@@ -22,18 +22,24 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
+import org.apache.carbondata.core.datastore.impl.DefaultFileTypeProvider;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 import mockit.Mock;
 import mockit.MockUp;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -72,19 +78,19 @@ public class FileFactoryImplUnitTest {
   }
 
   @Test public void testFileExistsForDefaultTypeWithPerformFileCheck() throws IOException {
-    assertTrue(FileFactory.isFileExist(filePath, FileFactory.FileType.LOCAL, true));
+    assertTrue(FileFactory.isFileExist(filePath, true));
   }
 
   @Test public void testFileExistsForDefaultTypeWithOutPerformFileCheck() throws IOException {
-    assertFalse(FileFactory.isFileExist("fakefilePath", FileFactory.FileType.LOCAL, false));
+    assertFalse(FileFactory.isFileExist("fakefilePath", false));
   }
 
   @Test public void testFileExistsForVIEWFSTypeWithPerformFileCheck() throws IOException {
-    assertTrue(FileFactory.isFileExist(filePath, FileFactory.FileType.VIEWFS, true));
+    assertTrue(FileFactory.isFileExist(filePath, true));
   }
 
   @Test public void testFileExistsForVIEWFSTypeWithOutPerformFileCheck() throws IOException {
-    assertFalse(FileFactory.isFileExist("fakefilePath", FileFactory.FileType.VIEWFS, false));
+    assertFalse(FileFactory.isFileExist("fakefilePath", false));
   }
 
   @Test public void testCreateNewFileWithDefaultFileType() throws IOException {
@@ -205,5 +211,46 @@ public class FileFactoryImplUnitTest {
       }
     }
   }
+
+  @Test public void testCustomFS() throws IOException {
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CUSTOM_FILE_PROVIDER,
+        "org.apache.carbondata.DummyFileProvider");
+
+    FileFactory.setFileTypeInterface(new DefaultFileTypeProvider());
+
+    String path = "testfs://dir1/file1";
+    try {
+      FileFactory.getFileType(path);
+      fail("Expected validation error");
+    } catch (Exception e) {
+      assertTrue(e.getMessage().contains("Path belongs to unsupported file system"));
+    }
+
+    try {
+      FileFactory.getCarbonFile(path);
+      fail("Expected validation error");
+    } catch (Exception e) {
+      assertTrue(e.getMessage().contains("Path belongs to unsupported file system"));
+    }
+
+    // Update the conf to   TestFileProvider
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CUSTOM_FILE_PROVIDER, TestFileProvider.class.getName());
+    FileFactory.setFileTypeInterface(new DefaultFileTypeProvider());
+
+    try {
+      Assert.assertSame(FileFactory.FileType.CUSTOM, FileFactory.getFileType(path));
+      assertTrue(FileFactory.getCarbonFile(path) instanceof LocalCarbonFile);
+    } catch (Exception e) {
+      e.printStackTrace();
+      fail("Unexpected error " + e);
+    }
+
+    //Reset the default configuration
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CUSTOM_FILE_PROVIDER, "");
+    FileFactory.setFileTypeInterface(new DefaultFileTypeProvider());
+  }
+
 }
 

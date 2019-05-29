@@ -17,15 +17,30 @@
 
 package org.apache.carbondata.core.datastore.impl;
 
-import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 
 import org.apache.hadoop.conf.Configuration;
 
+/**
+ * Interface to  create CarbonFile Instance specific to the FileSystem where the patch belongs.
+ */
 public interface FileTypeInterface {
 
-  FileReader getFileHolder(FileFactory.FileType fileType, Configuration configuration);
-  CarbonFile getCarbonFile(String path, FileFactory.FileType fileType);
-  CarbonFile getCarbonFile(String path, FileFactory.FileType fileType, Configuration configuration);
+  /**
+   * Return the correct CarbonFile instance.
+   *
+   * @param path          path of the file
+   * @param configuration configuration
+   * @return CarbonFile instance
+   */
+  public CarbonFile getCarbonFile(String path, Configuration configuration);
+
+  /**
+   * Check if the FileSystem mapped with the given path is supported or not.
+   *
+   * @param path path of the file
+   * @return true if supported, fasle if not supported
+   */
+  public boolean isPathSupported(String path);
 }
 
