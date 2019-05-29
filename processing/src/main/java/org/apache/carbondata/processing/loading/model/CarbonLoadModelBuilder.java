@@ -432,21 +432,15 @@ public class CarbonLoadModelBuilder {
   }
 
 
-  private void validateAndSetBinaryDecoder(CarbonLoadModel carbonLoadModel)
-      throws InvalidLoadOptionException {
-    try {
-      String binaryDecoder = carbonLoadModel.getBinaryDecoder();
-      if (StringUtils.isBlank(binaryDecoder)) {
-        binaryDecoder = CarbonProperties.getInstance().getProperty(
-            CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER,
-            CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_DEFAULT);
-      }
-      // check and load binary decoder
-      carbonLoadModel.setBinaryDecoder(binaryDecoder);
-    } catch (Exception e) {
-      LOGGER.error(e.getMessage(), e);
-      throw new InvalidLoadOptionException("Failed to load the binary decoder");
+  private void validateAndSetBinaryDecoder(CarbonLoadModel carbonLoadModel) {
+    String binaryDecoder = carbonLoadModel.getBinaryDecoder();
+    if (StringUtils.isBlank(binaryDecoder)) {
+      binaryDecoder = CarbonProperties.getInstance().getProperty(
+          CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER,
+          CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_DEFAULT);
     }
+    // check and load binary decoder
+    carbonLoadModel.setBinaryDecoder(binaryDecoder);
   }
 
   /**
