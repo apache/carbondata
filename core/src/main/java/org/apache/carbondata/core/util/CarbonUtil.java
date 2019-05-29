@@ -631,7 +631,7 @@ public final class CarbonUtil {
     String defaultFsUrl = FileFactory.getConfiguration().get(CarbonCommonConstants.FS_DEFAULT_FS);
     String baseDFSUrl = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL, "");
-    if (checkIfPrefixExists(filePath)) {
+    if (FileFactory.checkIfPrefixExists(filePath)) {
       return currentPath;
     }
     if (baseDFSUrl.endsWith("/")) {
@@ -641,7 +641,7 @@ public final class CarbonUtil {
       filePath = "/" + filePath;
     }
     currentPath = baseDFSUrl + filePath;
-    if (checkIfPrefixExists(currentPath)) {
+    if (FileFactory.checkIfPrefixExists(currentPath)) {
       return currentPath;
     }
     if (defaultFsUrl == null) {
@@ -658,7 +658,7 @@ public final class CarbonUtil {
   public static String checkAndAppendFileSystemURIScheme(String filePath) {
     String currentPath = filePath;
 
-    if (checkIfPrefixExists(filePath)) {
+    if (FileFactory.checkIfPrefixExists(filePath)) {
       return currentPath;
     }
     if (!filePath.startsWith("/")) {
@@ -686,18 +686,6 @@ public final class CarbonUtil {
       return "";
     }
   }
-
-  private static boolean checkIfPrefixExists(String path) {
-    final String lowerPath = path.toLowerCase(Locale.getDefault());
-    return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) ||
-        lowerPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) ||
-        lowerPath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) ||
-        lowerPath.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX) ||
-        lowerPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
-        lowerPath.startsWith(CarbonCommonConstants.S3_PREFIX) ||
-        lowerPath.startsWith(CarbonCommonConstants.S3A_PREFIX);
-  }
-
   public static String removeAKSK(String filePath) {
     if (null == filePath) {
       return "";

@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
+import java.util.Locale;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -580,6 +581,10 @@ public final class FileFactory {
    * Check and append the hadoop's defaultFS to the path
    */
   public static String checkAndAppendDefaultFs(String path, Configuration conf) {
+    if (FileFactory.getFileType(path) == FileType.CUSTOM) {
+      // If its custom file type, already schema is present, no need to append schema.
+      return path;
+    }
     String defaultFs = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
     String lowerPath = path.toLowerCase();
     if (lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || lowerPath
@@ -594,6 +599,28 @@ public final class FileFactory {
     } else {
       return path;
     }
+  }
+
+  /**
+   * Return true if schema is present or not in the file path
+   *
+   * @param path
+   * @return
+   */
+  public static boolean checkIfPrefixExists(String path) {
+    if (FileFactory.getFileType(path) == FileType.CUSTOM) {
+      // If its custom file type, already schema is present, no need to append schema.
+      return true;
+    }
+
+    final String lowerPath = path.toLowerCase(Locale.getDefault());
+    return lowerPath.contains("://") || lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)
+        || lowerPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.S3N_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.S3_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.S3A_PREFIX);
   }
 
   /**
