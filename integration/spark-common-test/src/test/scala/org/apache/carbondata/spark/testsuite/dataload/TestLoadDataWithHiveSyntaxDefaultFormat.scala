@@ -373,7 +373,8 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       "('dictionary_include'='date1,date2')")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    sql("insert into array_timestamp values('2015/01/01\0012016/01/01','2017/01/01')")
+    sql("insert into array_timestamp values(array('2015-01-01 00:00:00','2016-01-01 00:00:00'),named_struct('date','2017-01-01 00:00:00'))")
+    sql("insert into array_timestamp values(array('2015-01-01 00:00:00','2016-01-01 00:00:00'),named_struct('date','2017-01-01 00:00:00'))")
     checkExistence(sql("select * from array_timestamp "),
       true, "2015-01-01 00:00:00.0, 2016-01-01 00:00:00.0")
     checkExistence(sql("select * from array_timestamp "),

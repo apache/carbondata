@@ -23,7 +23,7 @@ import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql._
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
@@ -35,7 +35,6 @@ import org.apache.spark.util.{CarbonReflectionUtils, DataMapUtil, SparkUtil}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
@@ -283,9 +282,30 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
         s"Maximum number of columns supported: " +
           s"${CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS}")
     }
-    if (child.output.size >= carbonDSRelation.carbonRelation.output.size ||
+    // In spark, PreprocessTableInsertion rule has below cast logic.
+    // It was missed in carbon when implemented insert into rules.
+    var newChildOutput = if (child.output.size >= carbonDSRelation.carbonRelation.output.size) {
+      val expectedOutput = carbonDSRelation.carbonRelation.output
+      child.output.zip(expectedOutput).map {
+        case (actual, expected) =>
+          if (expected.dataType.sameType(actual.dataType) &&
+              expected.name == actual.name &&
+              expected.metadata == actual.metadata) {
+            actual
+          } else {
+            // Renaming is needed for handling the following cases like
+            // 1) Column names/types do not match, e.g., INSERT INTO TABLE tab1 SELECT 1, 2
+            // 2) Target tables have column metadata
+            Alias(Cast(actual, expected.dataType), expected.name)(
+              explicitMetadata = Option(expected.metadata))
+          }
+      }
+    } else {
+      child.output
+    }
+    if (newChildOutput.size >= carbonDSRelation.carbonRelation.output.size ||
         carbonDSRelation.carbonTable.isHivePartitionTable) {
-      val newChildOutput = child.output.zipWithIndex.map { columnWithIndex =>
+      newChildOutput = newChildOutput.zipWithIndex.map { columnWithIndex =>
         columnWithIndex._1 match {
           case attr: Attribute =>
             Alias(attr, s"col${ columnWithIndex._2 }")(NamedExpression.newExprId)

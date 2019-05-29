@@ -44,7 +44,7 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS create_source")
     sql("CREATE TABLE create_source(intField INT, stringField STRING, complexField ARRAY<INT>) " +
       "USING carbondata")
-    sql("""INSERT INTO create_source VALUES(1,"source","1\0012\0013")""")
+    sql("INSERT INTO create_source VALUES(1,'source',array(1,2,3))")
     checkAnswer(sql("SELECT * FROM create_source"), Row(1, "source", mutable.WrappedArray.newBuilder[Int].+=(1, 2, 3)))
     sql("DROP TABLE IF EXISTS create_source")
   }

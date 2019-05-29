@@ -181,7 +181,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | Describe Formatted
          | carbon """.stripMargin).collect()
     assert(desc(0).get(1).asInstanceOf[String].trim.equals("array<map<int,int>>"))
-    sql("insert into carbon values('1\0032\0022\0033\001100\003200\002200\003300')")
+    sql("insert into carbon values(array(map(1,2,2,3), map(100,200,200,300)))")
     sql("select * from carbon").show(false)
   }
 
@@ -200,7 +200,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | Describe Formatted
          | carbon
          | """.stripMargin).collect()
-    sql("insert into carbon values('1\002Nalla\0012\002Singh\0013\002Gupta\0014\002Kumar')")
+    sql("insert into carbon values(map(1,'Nalla',2,'Singh',3,'Gupta',4,'Kumar'))")
     checkAnswer(sql("select * from carbon"), Seq(
       Row(Map(1 -> "Nalla", 2 -> "Singh", 3 -> "Gupta", 4 -> "Kumar"))))
   }
@@ -220,7 +220,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | Describe Formatted
          | carbon
          | """.stripMargin).collect()
-    sql("insert into carbon values('1\002Nalla\0012\002\0013\002Gupta\0014\002Kumar')")
+    sql("insert into carbon values(map(1,'Nalla',2,'',3,'Gupta',4,'Kumar'))")
     checkAnswer(sql("select * from carbon"), Seq(
       Row(Map(1 -> "Nalla", 2 -> "", 3 -> "Gupta", 4 -> "Kumar"))))
   }
@@ -237,7 +237,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | TBLPROPERTIES('DICTIONARY_INCLUDE'='mapField')
          | """
         .stripMargin)
-    sql("insert into carbon values('vi\002Nalla\001sh\002Singh\001al\002Gupta')")
+    sql("insert into carbon values(map('vi','Nalla','sh','Singh','al','Gupta'))")
     sql("select * from carbon").show(false)
     checkAnswer(sql("select * from carbon"), Seq(
       Row(Map("vi" -> "Nalla", "sh" -> "Singh", "al" -> "Gupta"))))
@@ -272,8 +272,8 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED BY 'carbondata'
          | """
         .stripMargin)
-    sql("insert into carbon values(1,'1\002Nalla\0012\002Singh\0013\002Gupta\0014\002Kumar')")
-    sql("insert into carbon values(2,'1\002abc\0012\002xyz\0013\002hello\0014\002mno')")
+    sql("insert into carbon values(1, map(1,'Nalla',2,'Singh',3,'Gupta',4,'Kumar'))")
+    sql("insert into carbon values(2, map(1,'abc',2,'xyz',3,'hello',4,'mno'))")
     val exception = intercept[UnsupportedOperationException](
       sql("update carbon set(mapField)=('1,haha') where a=1").show(false))
     assertResult("Unsupported operation on Complex data type")(exception.getMessage())
@@ -298,9 +298,9 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | Describe Formatted
          | carbon
          | """.stripMargin).collect()
-    sql("insert into carbon values('1\002Nalla\0012\002Singh\0011\002Gupta\0014\002Kumar')")
+    sql("insert into carbon values(map(1,'Nalla',2,'Singh',1,'Gupta',4,'Kumar'))")
     checkAnswer(sql("select * from carbon"), Seq(
-      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar"))))
+      Row(Map(1 -> "Gupta", 2 -> "Singh", 4 -> "Kumar"))))
   }
 
   test("Test Load data in map of map") {
@@ -313,9 +313,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED BY
          |'carbondata' """
         .stripMargin)
-    sql(
-      "insert into carbon values('manish\0021\004nalla\0032\004gupta\001kunal\0021\004kapoor\0032" +
-      "\004sharma')")
+    sql("insert into carbon values(map('manish', map(1,'nalla',2,'gupta'), 'kunal', map(1, 'kapoor', 2, 'sharma')))")
     checkAnswer(sql("select * from carbon"), Seq(
       Row(Map("manish" -> Map(1 -> "nalla", 2 -> "gupta"),
         "kunal" -> Map(1 -> "kapoor", 2 -> "sharma")))))
@@ -332,11 +330,9 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          |'carbondata'
          |"""
         .stripMargin)
-    sql(
-      "insert into carbon values('manish\0021\004nalla\0031\004gupta\001kunal\0021\004kapoor\0032" +
-      "\004sharma')")
+    sql("insert into carbon values(map('manish', map(1,'nalla',1,'gupta'), 'kunal', map(1, 'kapoor', 2, 'sharma')))")
     checkAnswer(sql("select * from carbon"), Seq(
-      Row(Map("manish" -> Map(1 -> "nalla"),
+      Row(Map("manish" -> Map(1 -> "gupta"),
         "kunal" -> Map(1 -> "kapoor", 2 -> "sharma")))))
   }
 
@@ -351,7 +347,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED BY 'carbondata'
          | """
         .stripMargin)
-    sql("insert into carbon values('1\002Nalla\0012\002Singh\0013\002Gupta\0014\002Kumar')")
+    sql("insert into carbon values(map(1,'Nalla',2,'Singh',3,'Gupta',4,'Kumar'))")
     sql(
       s"""
          | CREATE TABLE carbon1
@@ -374,11 +370,9 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED BY 'carbondata'
          | """
         .stripMargin)
-    sql(
-      "insert into carbon values('1.23\002Nalla\0012.34\002Singh\0013.67676\002Gupta\0013.67676" +
-      "\002Kumar')")
+    sql("insert into carbon values(map(1.23,'Nalla',2.34,'Singh',3.67676,'Gupta',3.67676,'Kumar'))")
     checkAnswer(sql("select * from carbon"), Seq(
-      Row(Map(1.23 -> "Nalla", 2.34 -> "Singh", 3.67676 -> "Gupta"))))
+      Row(Map(1.23 -> "Nalla", 2.34 -> "Singh", 3.67676 -> "Kumar"))))
   }
 
   test("Load Map data from CSV File") {
@@ -505,7 +499,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED BY 'carbondata'
          | """
         .stripMargin)
-    sql("INSERT INTO carbon values('1\002man\003nan\0012\002kands\003dsnknd')")
+    sql("INSERT INTO carbon values(map(1, named_struct('kk', 'man', 'mm', 'nan'), 2, named_struct('kk', 'kands', 'mm', 'dsnknd')))")
     sql("INSERT INTO carbon SELECT * FROM carbon")
     checkAnswer(sql("SELECT * FROM carbon limit 1"),
       Seq(Row(Map(1 -> Row("man", "nan"), (2 -> Row("kands", "dsnknd"))))))
@@ -521,7 +515,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED BY 'carbondata'
          | """
         .stripMargin)
-    sql("INSERT INTO carbon values('1\002man\003nan\0012\002kands\003dsnknd')")
+    sql("INSERT INTO carbon values(map(1, named_struct('kk', 'man', 'mm', 'nan'), 2, named_struct('kk', 'kands', 'mm', 'dsnknd')))")
     checkAnswer(sql("SELECT mapField[1].kk FROM carbon"), Row("man"))
   }
 
@@ -535,7 +529,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | STORED BY 'carbondata'
          | """
         .stripMargin)
-    sql("INSERT INTO carbon values('1\001man\003nan\002kands\003dsnknd')")
+    sql("INSERT INTO carbon values(named_struct('intVal', 1, 'map1', map('man','nan','kands','dsnknd')))")
     val res = sql("SELECT structField.intVal FROM carbon").show(false)
     checkAnswer(sql("SELECT structField.intVal FROM carbon"), Seq(Row(1)))
   }

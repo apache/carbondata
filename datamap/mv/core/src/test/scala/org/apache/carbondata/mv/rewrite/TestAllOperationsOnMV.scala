@@ -368,7 +368,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
   test("test block complex data types") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code array<int>, price struct<b:int>,type map<string, string>) stored by 'carbondata'")
-    sql("insert into table maintable select 'abc',21,2000, 'ab\002type1'")
+    sql("insert into table maintable values('abc', array(21), named_struct('b', 2000), map('ab','type1'))")
     sql("drop datamap if exists dm ")
     intercept[UnsupportedOperationException] {
       sql("create datamap dm using 'mv' as select c_code from maintable")
