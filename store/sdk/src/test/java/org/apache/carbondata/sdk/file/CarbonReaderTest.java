@@ -2586,4 +2586,26 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertEquals(totalCount, 1000000);
     FileUtils.deleteDirectory(new File(path));
   }
+
+  @Test
+  public void testGetSplits() throws IOException, InterruptedException {
+    String path = "./testWriteFiles/" + System.nanoTime();
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, 1, 100);
+
+    InputSplit[] splits = CarbonReader.builder(path).getSplits(true);
+    // check for 3 blocklet count (as only one carbon file will be created)
+    Assert.assertEquals(splits.length, 3);
+
+    InputSplit[] splits1 = CarbonReader.builder(path).getSplits(false);
+    // check for 1 block count (as only one carbon file will be created)
+    Assert.assertEquals(splits1.length, 1);
+    FileUtils.deleteDirectory(new File(path));
+  }
+
 }
