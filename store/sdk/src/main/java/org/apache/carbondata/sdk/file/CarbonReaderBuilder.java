@@ -384,9 +384,6 @@ public class CarbonReaderBuilder {
         return new CarbonReader<>(readers);
       }
     } catch (Exception ex) {
-      // Clear the datamap cache as it can get added in getSplits() method
-      DataMapStoreManager.getInstance().clearDataMaps(
-          format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier());
       throw ex;
     }
   }
@@ -405,13 +402,23 @@ public class CarbonReaderBuilder {
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }
-    final Job job = new Job(new JobConf(hadoopConf));
-    CarbonFileInputFormat format = prepareFileInputFormat(job, enableBlockletDistribution, false);
-    List<InputSplit> splits =
-        format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
-    for (InputSplit split : splits) {
-      // Load the detailInfo
-      ((CarbonInputSplit) split).getDetailInfo();
+    Job job = null;
+    List<InputSplit> splits;
+    CarbonFileInputFormat format = null;
+    try {
+      job = new Job(new JobConf(hadoopConf));
+      format = prepareFileInputFormat(job, enableBlockletDistribution, false);
+      splits = format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
+      for (InputSplit split : splits) {
+        // Load the detailInfo
+        ((CarbonInputSplit) split).getDetailInfo();
+      }
+    } finally {
+      if (format != null) {
+        // Clear the datamap cache as it is added in getSplits() method
+        DataMapStoreManager.getInstance().clearDataMaps(
+            format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier());
+      }
     }
     return splits.toArray(new InputSplit[splits.size()]);
   }
