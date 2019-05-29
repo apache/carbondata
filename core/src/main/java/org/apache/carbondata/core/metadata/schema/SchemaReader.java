@@ -39,10 +39,7 @@ public class SchemaReader {
   public static CarbonTable readCarbonTableFromStore(AbsoluteTableIdentifier identifier)
       throws IOException {
     String schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath());
-    if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) ||
-        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||
-        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.S3) ||
-        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)) {
+    if (FileFactory.isFileExist(schemaFilePath)) {
       String tableName = identifier.getCarbonTableIdentifier().getTableName();
 
       org.apache.carbondata.format.TableInfo tableInfo =

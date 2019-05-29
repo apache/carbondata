@@ -139,10 +139,10 @@ public interface CarbonFile {
   DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType, int bufferSize,
       String compressor) throws IOException;
 
-  boolean isFileExist(String filePath, FileFactory.FileType fileType, boolean performFileCheck)
+  boolean isFileExist(String filePath, boolean performFileCheck)
       throws IOException;
 
-  boolean isFileExist(String filePath, FileFactory.FileType fileType) throws IOException;
+  boolean isFileExist(String filePath) throws IOException;
 
   boolean createNewFile(String filePath, FileFactory.FileType fileType) throws IOException;
 

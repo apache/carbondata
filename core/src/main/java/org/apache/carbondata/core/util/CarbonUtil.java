@@ -2566,6 +2566,7 @@ public final class CarbonUtil {
       case ALLUXIO:
       case VIEWFS:
       case S3:
+      case CUSTOM:
         Path path = new Path(segmentPath);
         FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
         if (fs.exists(path)) {

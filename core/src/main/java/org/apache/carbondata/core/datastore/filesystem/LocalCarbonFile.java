@@ -410,10 +410,10 @@ public class LocalCarbonFile implements CarbonFile {
     }
   }
 
-  @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType,
-      boolean performFileCheck) throws IOException {
+  @Override public boolean isFileExist(String filePath, boolean performFileCheck)
+      throws IOException {
     filePath = filePath.replace("\\", "/");
-    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
+    filePath = FileFactory.getUpdatedFilePath(filePath);
     File defaultFile = new File(filePath);
 
     if (performFileCheck) {
@@ -423,10 +423,10 @@ public class LocalCarbonFile implements CarbonFile {
     }
   }
 
-  @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType)
+  @Override public boolean isFileExist(String filePath)
       throws IOException {
     filePath = filePath.replace("\\", "/");
-    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
+    filePath = FileFactory.getUpdatedFilePath(filePath);
     File defaultFile = new File(filePath);
     return defaultFile.exists();
   }

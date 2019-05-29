@@ -52,10 +52,12 @@ public final class FileFactory {
     configuration.addResource(new Path("../core-default.xml"));
   }
 
-  private static FileTypeInterface fileFileTypeInterface = new DefaultFileTypeProvider();
-  public static void setFileTypeInterface(FileTypeInterface fileTypeInterface) {
+  private static DefaultFileTypeProvider fileFileTypeInterface = new DefaultFileTypeProvider();
+
+  public static void setFileTypeInterface(DefaultFileTypeProvider fileTypeInterface) {
     fileFileTypeInterface = fileTypeInterface;
   }
+
   private FileFactory() {
 
   }
@@ -73,11 +75,22 @@ public final class FileFactory {
   }
 
   public static FileReader getFileHolder(FileType fileType) {
-    return fileFileTypeInterface.getFileHolder(fileType, getConfiguration());
+    return getFileHolder(fileType, getConfiguration());
   }
 
-  public static FileReader getFileHolder(FileType fileType, Configuration configuration) {
-    return fileFileTypeInterface.getFileHolder(fileType, configuration);
+  public static FileReader getFileHolder(FileFactory.FileType fileType,
+      Configuration configuration) {
+    switch (fileType) {
+      case LOCAL:
+        return new FileReaderImpl();
+      case HDFS:
+      case ALLUXIO:
+      case VIEWFS:
+      case S3:
+        return new DFSFileReaderImpl(configuration);
+      default:
+        return new FileReaderImpl();
+    }
   }
 
   public static FileType getFileType(String path) {
@@ -89,6 +102,17 @@ public final class FileFactory {
     if (fileType != null) {
       return fileType;
     }
+
+    // If custom file type is configured,
+    if (fileFileTypeInterface.isPathSupported(path)) {
+      return FileType.CUSTOM;
+    }
+
+    // If its unsupported file system, throw error instead of heading to wrong behavior,
+    if (path.contains("://") && !path.startsWith("file://")) {
+      throw new IllegalArgumentException("Path belongs to unsupported file system " + path);
+    }
+
     return FileType.LOCAL;
   }
 
@@ -124,14 +148,15 @@ public final class FileFactory {
   }
 
   public static CarbonFile getCarbonFile(String path) {
-    return fileFileTypeInterface.getCarbonFile(path, getFileType(path));
+    return fileFileTypeInterface.getCarbonFile(path, getConfiguration());
   }
   public static CarbonFile getCarbonFile(String path, FileType fileType) {
-    return fileFileTypeInterface.getCarbonFile(path, fileType);
+    //TODO ignoring this fileType now to avoid refactoring. Remove the unused argument later.
+    return fileFileTypeInterface.getCarbonFile(path, getConfiguration());
   }
   public static CarbonFile getCarbonFile(String path,
       Configuration hadoopConf) {
-    return fileFileTypeInterface.getCarbonFile(path, getFileType(path), hadoopConf);
+    return fileFileTypeInterface.getCarbonFile(path, hadoopConf);
   }
 
   public static DataInputStream getDataInputStream(String path, FileType fileType)
@@ -229,12 +254,11 @@ public final class FileFactory {
    * not if the performFileCheck is true
    *
    * @param filePath         - Path
-   * @param fileType         - FileType Local/HDFS
    * @param performFileCheck - Provide false for folders, true for files and
    */
-  public static boolean isFileExist(String filePath, FileType fileType, boolean performFileCheck)
+  public static boolean isFileExist(String filePath, boolean performFileCheck)
       throws IOException {
-    return getCarbonFile(filePath).isFileExist(filePath, fileType, performFileCheck);
+    return getCarbonFile(filePath).isFileExist(filePath, performFileCheck);
   }
 
   /**
@@ -244,7 +268,7 @@ public final class FileFactory {
    * @param fileType - FileType Local/HDFS
    */
   public static boolean isFileExist(String filePath, FileType fileType) throws IOException {
-    return getCarbonFile(filePath).isFileExist(filePath, fileType);
+    return getCarbonFile(filePath).isFileExist(filePath);
   }
 
   /**
@@ -347,6 +371,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CUSTOM:
       case S3:
         // if hadoop version >= 2.7, it can call method 'FileSystem.truncate' to truncate file,
         // this method was new in hadoop 2.7, otherwise use CarbonFile.truncate to do this.
@@ -392,7 +417,7 @@ public final class FileFactory {
   }
 
   public enum FileType {
-    LOCAL, HDFS, ALLUXIO, VIEWFS, S3
+    LOCAL, HDFS, ALLUXIO, VIEWFS, S3, CUSTOM
   }
 
   /**
@@ -413,6 +438,7 @@ public final class FileFactory {
       case ALLUXIO:
       case VIEWFS:
       case S3:
+      case CUSTOM:
       default:
         return filePath;
     }
@@ -432,6 +458,7 @@ public final class FileFactory {
       case HDFS:
       case VIEWFS:
       case S3:
+      case CUSTOM:
         return filePath;
       case ALLUXIO:
         return StringUtils.startsWith(filePath, "alluxio") ? filePath : "alluxio:///" + filePath;
@@ -483,6 +510,7 @@ public final class FileFactory {
       case ALLUXIO:
       case VIEWFS:
       case S3:
+      case CUSTOM:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(getConfiguration());
         return fs.getContentSummary(path).getLength();
@@ -524,6 +552,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CUSTOM:
         try {
           Path path = new Path(directoryPath);
           FileSystem fs = path.getFileSystem(getConfiguration());

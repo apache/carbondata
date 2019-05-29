@@ -404,8 +404,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return new DataOutputStream(new BufferedOutputStream(outputStream));
   }
 
-  @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType,
-      boolean performFileCheck) throws IOException {
+  @Override public boolean isFileExist(String filePath, boolean performFileCheck)
+      throws IOException {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
     FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
@@ -416,7 +416,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     }
   }
 
-  @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType)
+  @Override public boolean isFileExist(String filePath)
       throws IOException {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
