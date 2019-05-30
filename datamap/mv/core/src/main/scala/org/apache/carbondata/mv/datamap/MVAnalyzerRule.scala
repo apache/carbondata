@@ -22,7 +22,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, ScalaUDF}
-import org.apache.spark.sql.catalyst.plans.logical.{Command, DeserializeToObject, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Command, DeserializeToObject, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
@@ -66,6 +66,14 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
       case attr@UnresolvedAttribute(_) =>
         needAnalysis = false
         attr
+    }
+    plan.transform {
+      case aggregate@Aggregate(grp, aExp, child) =>
+        // check for if plan is for dataload for preaggregate table, then skip applying mv
+        if (aExp.exists(p => p.name.equals("preAggLoad") || p.name.equals("preAgg"))) {
+          needAnalysis = false
+        }
+        Aggregate(grp, aExp, child)
     }
     val catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
       DataMapClassProvider.MV.getShortName).asInstanceOf[SummaryDatasetCatalog]

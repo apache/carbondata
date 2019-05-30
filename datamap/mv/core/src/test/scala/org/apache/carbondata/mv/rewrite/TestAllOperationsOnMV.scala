@@ -424,5 +424,41 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table IF EXISTS maintable")
   }
 
+  test("test preagg and mv") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm_mv ")
+    sql("create datamap dm_mv using 'mv' as select name, sum(price) from maintable group by name")
+    sql("drop datamap if exists dm_pre ")
+    sql("create datamap dm_pre on table maintable using 'preaggregate' as select name, sum(price) from maintable group by name")
+    sql("insert into table maintable select 'abcd',21,20002")
+    checkAnswer(sql("select count(*) from dm_mv_table"), Seq(Row(2)))
+    checkAnswer(sql("select count(*) from maintable_dm_pre"), Seq(Row(2)))
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test inverted index  & no-inverted index inherited from parent table") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_columns'='name', 'inverted_index'='name','sort_scope'='local_sort')")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    sql("create datamap dm using 'mv' as select name, sum(price) from maintable group by name")
+    checkExistence(sql("describe formatted dm_table"), true, "Inverted Index Columns maintable_name")
+    checkAnswer(sql("select name, sum(price) from maintable group by name"), Seq(Row("abc", 2000)))
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test inverted index & no-inverted index inherited from parent table - Preaggregate") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_columns'='name', 'inverted_index'='name','sort_scope'='local_sort')")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    sql("create datamap dm on table maintable using 'preaggregate' as select name, sum(price) from maintable group by name")
+    checkExistence(sql("describe formatted maintable_dm"), true, "Inverted Index Columns maintable_name")
+    checkAnswer(sql("select name, sum(price) from maintable group by name"), Seq(Row("abc", 2000)))
+    sql("drop table IF EXISTS maintable")
+  }
+
 }
 

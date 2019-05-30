@@ -146,6 +146,26 @@ object DataMapUtil {
       tableProperties
         .put(CarbonCommonConstants.DICTIONARY_EXCLUDE, newGlobalDictExclude.mkString(","))
     }
+
+    val parentInvertedIndex = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.INVERTED_INDEX, "").split(",")
+
+    val newInvertedIndex = getDataMapColumns(parentInvertedIndex, fields, fieldRelationMap)
+
+    val parentNoInvertedIndex = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.NO_INVERTED_INDEX, "").split(",")
+
+    val newNoInvertedIndex = getDataMapColumns(parentNoInvertedIndex, fields, fieldRelationMap)
+
+    if (newInvertedIndex.nonEmpty) {
+      tableProperties
+        .put(CarbonCommonConstants.INVERTED_INDEX, newInvertedIndex.mkString(","))
+    }
+    if (newNoInvertedIndex.nonEmpty) {
+      tableProperties
+        .put(CarbonCommonConstants.NO_INVERTED_INDEX, newNoInvertedIndex.mkString(","))
+    }
+
   }
 
   private def getDataMapColumns(parentColumns: Array[String], fields: Seq[Field],
