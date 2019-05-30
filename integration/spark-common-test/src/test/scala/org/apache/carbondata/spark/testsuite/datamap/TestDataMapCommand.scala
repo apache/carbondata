@@ -319,9 +319,10 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
         }
 
         val result = sql(s"show datamap on table $tableName").cache()
+
         checkAnswer(sql(s"show datamap on table $tableName"),
-            Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'bloom_fpp'='0.001', 'bloom_size'='32000', 'index_columns'='d'"),
-                Row(datamapName2, "bloomfilter", s"default.$tableName", "'index_columns'='e'")))
+            Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'bloom_fpp'='0.001', 'bloom_size'='32000', 'index_columns'='d'", "ENABLED", "NA"),
+                Row(datamapName2, "bloomfilter", s"default.$tableName", "'index_columns'='e'", "ENABLED", "NA")))
         result.unpersist()
         sql(s"drop table if exists $tableName")
     }
@@ -366,7 +367,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
                | FROM $tableName GROUP BY name,image
                | """.stripMargin)
         checkAnswer(sql(s"show datamap on table $tableName"),
-            Seq(Row("agg0", "preaggregate", s"default.${tableName}_agg0", "")))
+            Seq(Row("agg0", "preaggregate", s"default.${tableName}_agg0", "", "NA", "NA")))
         val pre = sql(
             s"""
                | select name, image, count(age)
@@ -422,7 +423,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
                | FROM $tableName GROUP BY name,binaryField
                | """.stripMargin)
         checkAnswer(sql(s"show datamap on table $tableName"),
-            Seq(Row("agg0", "preaggregate", s"default.${tableName}_agg0", "")))
+            Seq(Row("agg0", "preaggregate", s"default.${tableName}_agg0", "", "NA", "NA")))
         val pre = sql(
             s"""
                | select name, binaryField, count(id)
@@ -449,7 +450,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     }
 
     test("test don't support lucene on binary data type") {
-        val tableName = "datamapshowtest"
+        val tableName = "datamapshowtest20"
         sql(s"drop table if exists $tableName")
 
         sql(s"CREATE TABLE $tableName(id int, name string, city string, age string, image binary)" +
@@ -460,12 +461,12 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
         sql(s"insert into $tableName  values(3,'a1','b2','c1','image3')")
         sql(
             s"""
-               | CREATE DATAMAP agg0 ON TABLE $tableName USING 'lucene'
+               | CREATE DATAMAP agg10 ON TABLE $tableName USING 'lucene'
                | DMProperties('INDEX_COLUMNS'='name')
                | """.stripMargin)
 
         checkAnswer(sql(s"show datamap on table $tableName"),
-            Seq(Row("agg0", "lucene", s"default.${tableName}", "'index_columns'='name'")))
+            Seq(Row("agg10", "lucene", s"default.${tableName}", "'index_columns'='name'", "ENABLED", "NA")))
 
         val e = intercept[MalformedDataMapCommandException] {
             sql(
@@ -476,7 +477,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
         }
         assert(e.getMessage.contains("Only String column is supported, column 'image' is BINARY type."))
         checkAnswer(sql(s"show datamap on table $tableName"),
-            Seq(Row("agg0", "lucene", s"default.${tableName}", "'index_columns'='name'")))
+            Seq(Row("agg10", "lucene", s"default.${tableName}", "'index_columns'='name'", "ENABLED", "NA")))
 
         val pre = sql(
             s"""
