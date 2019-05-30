@@ -36,6 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.hive.common.type.HiveDecimal;
@@ -45,12 +46,12 @@ import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
 import org.apache.hadoop.io.ArrayWritable;
+import org.apache.hadoop.io.BooleanWritable;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.catalyst.util.GenericArrayData;
 
 /**
  * This is the class to decode dictionary encoded column data back to its original value.
@@ -156,27 +157,25 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
    * @throws IOException
    */
   private ArrayWritable createArray(Object obj, CarbonColumn carbonColumn) throws IOException {
-    if (obj instanceof GenericArrayData) {
-      Object[] objArray = ((GenericArrayData) obj).array();
-      List<CarbonDimension> childCarbonDimensions = null;
-      CarbonDimension arrayDimension = null;
-      if (carbonColumn.isDimension() && carbonColumn.getColumnSchema().getNumberOfChild() > 0) {
-        childCarbonDimensions = ((CarbonDimension) carbonColumn).getListOfChildDimensions();
-        arrayDimension = childCarbonDimensions.get(0);
+    Object[] objArray = (Object[]) obj;
+    List<CarbonDimension> childCarbonDimensions = null;
+    CarbonDimension arrayDimension = null;
+    if (carbonColumn.isDimension() && carbonColumn.getColumnSchema().getNumberOfChild() > 0) {
+      childCarbonDimensions = ((CarbonDimension) carbonColumn).getListOfChildDimensions();
+      arrayDimension = childCarbonDimensions.get(0);
+    }
+    List array = new ArrayList();
+    if (objArray != null) {
+      for (int i = 0; i < objArray.length; i++) {
+        Object curObj = objArray[i];
+        Writable newObj = createWritableObject(curObj, arrayDimension);
+        array.add(newObj);
       }
-      List array = new ArrayList();
-      if (objArray != null) {
-        for (int i = 0; i < objArray.length; i++) {
-          Object curObj = objArray[i];
-          Writable newObj = createWritableObject(curObj, arrayDimension);
-          array.add(newObj);
-        }
-      }
-      if (array.size() > 0) {
-        ArrayWritable subArray = new ArrayWritable(Writable.class,
-            (Writable[]) array.toArray(new Writable[array.size()]));
-        return new ArrayWritable(Writable.class, new Writable[] { subArray });
-      }
+    }
+    if (array.size() > 0) {
+      ArrayWritable subArray =
+          new ArrayWritable(Writable.class, (Writable[]) array.toArray(new Writable[array.size()]));
+      return new ArrayWritable(Writable.class, new Writable[] { subArray });
     }
     return null;
   }
@@ -190,23 +189,21 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
    * @throws IOException
    */
   private ArrayWritable createStruct(Object obj, CarbonColumn carbonColumn) throws IOException {
-    if (obj instanceof GenericInternalRow) {
-      Object[] objArray = ((GenericInternalRow) obj).values();
-      List<CarbonDimension> childCarbonDimensions = null;
-      if (carbonColumn.isDimension() && carbonColumn.getColumnSchema().getNumberOfChild() > 0) {
-        childCarbonDimensions = ((CarbonDimension) carbonColumn).getListOfChildDimensions();
-      }
-
-      if (null != childCarbonDimensions) {
-        Writable[] arr = new Writable[objArray.length];
-        for (int i = 0; i < objArray.length; i++) {
-
-          arr[i] = createWritableObject(objArray[i], childCarbonDimensions.get(i));
-        }
-        return new ArrayWritable(Writable.class, arr);
-      }
+    Object[] objArray = (Object[]) obj;
+    List<CarbonDimension> childCarbonDimensions = null;
+    if (carbonColumn.isDimension() && carbonColumn.getColumnSchema().getNumberOfChild() > 0) {
+      childCarbonDimensions = ((CarbonDimension) carbonColumn).getListOfChildDimensions();
     }
-    throw new IOException("DataType not supported in Carbondata");
+
+    if (null != childCarbonDimensions) {
+      Writable[] arr = new Writable[objArray.length];
+      for (int i = 0; i < objArray.length; i++) {
+
+        arr[i] = createWritableObject(objArray[i], childCarbonDimensions.get(i));
+      }
+      return new ArrayWritable(Writable.class, arr);
+    }
+    return null;
   }
 
   /**
@@ -223,6 +220,12 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
     if (obj == null) {
       return null;
     }
+    if (carbonColumn.hasEncoding(Encoding.DICTIONARY)) {
+      obj = DataTypeUtil.getDataBasedOnDataType(obj.toString(), dataType);
+      if (obj == null) {
+        return null;
+      }
+    }
     if (dataType == DataTypes.NULL) {
       return null;
     } else if (dataType == DataTypes.DOUBLE) {
@@ -233,6 +236,12 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       return new LongWritable((long) obj);
     } else if (dataType == DataTypes.SHORT) {
       return new ShortWritable((short) obj);
+    } else if (dataType == DataTypes.BOOLEAN) {
+      return new BooleanWritable((boolean) obj);
+    } else if (dataType == DataTypes.VARCHAR) {
+      return new Text(obj.toString());
+    } else if (dataType == DataTypes.BINARY) {
+      return new BytesWritable((byte[]) obj);
     } else if (dataType == DataTypes.DATE) {
       Calendar c = Calendar.getInstance();
       c.setTime(new Date(0));
@@ -243,6 +252,10 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       return new TimestampWritable(new Timestamp((long) obj / 1000));
     } else if (dataType == DataTypes.STRING) {
       return new Text(obj.toString());
+    } else if (DataTypes.isArrayType(dataType)) {
+      return createArray(obj, carbonColumn);
+    } else if (DataTypes.isStructType(dataType)) {
+      return createStruct(obj, carbonColumn);
     } else if (DataTypes.isDecimal(dataType)) {
       return new HiveDecimalWritable(HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
     } else {

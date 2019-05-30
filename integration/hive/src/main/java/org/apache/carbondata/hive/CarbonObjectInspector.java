@@ -25,12 +25,13 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.SettableStructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
-import org.apache.hadoop.hive.serde2.typeinfo.CharTypeInfo;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.WritableHiveVarcharObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.ListTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
+import org.apache.hadoop.hive.serde2.typeinfo.VarcharTypeInfo;
 import org.apache.hadoop.io.ArrayWritable;
 
 class CarbonObjectInspector extends SettableStructObjectInspector {
@@ -79,8 +80,14 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
       return PrimitiveObjectInspectorFactory.writableTimestampObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.dateTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableDateObjectInspector;
-    } else if (((CharTypeInfo) typeInfo).getPrimitiveCategory().name().equals("CHAR")) {
+    } else if (typeInfo.equals(TypeInfoFactory.charTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
+    } else if (typeInfo.equals(TypeInfoFactory.booleanTypeInfo)) {
+      return PrimitiveObjectInspectorFactory.writableBooleanObjectInspector;
+    } else if (typeInfo instanceof VarcharTypeInfo) {
+      return new WritableHiveVarcharObjectInspector((VarcharTypeInfo) typeInfo);
+    } else if (typeInfo.equals(TypeInfoFactory.binaryTypeInfo)) {
+      return PrimitiveObjectInspectorFactory.writableBinaryObjectInspector;
     } else {
       throw new UnsupportedOperationException("Unknown field type: " + typeInfo);
     }
