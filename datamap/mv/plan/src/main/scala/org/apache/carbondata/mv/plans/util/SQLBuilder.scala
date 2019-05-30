@@ -124,7 +124,11 @@ class SQLBuilder private(
                   }
                 } else {
                   attrMap.get(ref) match {
-                    case Some(alias) => Alias(alias.child, alias.name)(exprId = alias.exprId)
+                    case Some(alias) =>
+                      AttributeReference(
+                        alias.child.asInstanceOf[AttributeReference].name,
+                        ref.dataType)(exprId = ref.exprId,
+                        alias.child.asInstanceOf[AttributeReference].qualifier)
                     case None => ref
                   }
                 }
