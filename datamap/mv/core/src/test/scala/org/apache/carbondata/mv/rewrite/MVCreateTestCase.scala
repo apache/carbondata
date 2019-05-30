@@ -1041,6 +1041,26 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     assert(verifyMVDataMap(analyzed2, "mvlikedm2"))
   }
 
+  test("test distinct, count, sum on MV with single projection column") {
+    sql("drop table if exists maintable")
+    sql("create table maintable(name string, age int, add string) stored by 'carbondata'")
+    sql("create datamap single_mv using 'mv' as select age from maintable")
+    sql("insert into maintable select 'pheobe',31,'NY'")
+    sql("insert into maintable select 'rachel',32,'NY'")
+    val df1 = sql("select distinct(age) from maintable")
+    val df2 = sql("select sum(age) from maintable")
+    val df3 = sql("select count(age) from maintable")
+    val analyzed1 = df1.queryExecution.analyzed
+    val analyzed2 = df2.queryExecution.analyzed
+    val analyzed3 = df3.queryExecution.analyzed
+    checkAnswer(df1, Seq(Row(31), Row(32)))
+    checkAnswer(df2, Seq(Row(63)))
+    checkAnswer(df3, Seq(Row(2)))
+    assert(TestUtil.verifyMVDataMap(analyzed1, "single_mv"))
+    assert(TestUtil.verifyMVDataMap(analyzed2, "single_mv"))
+    assert(TestUtil.verifyMVDataMap(analyzed3, "single_mv"))
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
@@ -1060,6 +1080,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS fact_table_parquet")
     sql("drop table if exists limit_fail")
     sql("drop table IF EXISTS mv_like")
+    sql("drop table IF EXISTS maintable")
   }
 
   override def afterAll {

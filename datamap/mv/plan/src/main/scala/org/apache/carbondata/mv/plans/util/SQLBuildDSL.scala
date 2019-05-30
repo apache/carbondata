@@ -161,7 +161,7 @@ trait SQLBuildDSL {
         extractRewrittenOrNonRewrittenSelectGroupBySelect(s1, g, s2, alias)
 
       case g@modular.GroupBy(_, _, _, _, s2@modular.Select(_, _, _, _, _, _, _, _, _, _), _, _, _)
-        if (g.alias.isEmpty && !s2.rewritten) =>
+        if g.alias.isEmpty =>
         val fragmentList = s2.children.zipWithIndex
           .map { case (child, index) => fragmentExtract(child, s2.aliasMap.get(index)) }
         val fList = s2.joinEdges.map {
