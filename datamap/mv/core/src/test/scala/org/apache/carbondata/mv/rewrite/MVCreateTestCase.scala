@@ -1022,6 +1022,13 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists all_table")
   }
 
+  def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
+    val tables = logicalPlan collect {
+      case l: LogicalRelation => l.catalogTable.get
+    }
+    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName + "_table"))
+  }
+
   def drop(): Unit = {
     sql("drop table IF EXISTS fact_table1")
     sql("drop table IF EXISTS fact_table2")
