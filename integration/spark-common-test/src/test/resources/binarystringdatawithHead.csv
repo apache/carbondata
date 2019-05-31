@@ -1,0 +1,4 @@
+id|label|name|autolabel|binaryfield
+2|false|2.png|true|binary
+3|false|3.png|false|1
+1|true|1.png|true|Hello world

@@ -22,8 +22,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
+
 import org.apache.commons.codec.binary.{Base64, Hex}
-import org.apache.spark.sql.Row
+import org.apache.spark.SparkException
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -1349,8 +1351,206 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             "Binary decoder only support Base64, Hex or no decode for string, don't support he"))
     }
 
+    test("insert into partition table") {
+        sql("DROP TABLE IF EXISTS hive_table")
+        sql("DROP TABLE IF EXISTS hive_table2")
+        sql("DROP TABLE IF EXISTS parquet_table")
+        sql("DROP TABLE IF EXISTS carbon_partition_table")
+
+        sql("set hive.exec.dynamic.partition.mode=strict")
+
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS hive_table (
+               |    name STRING,
+               |    id string)
+               | PARTITIONED BY(photo binary)
+               | row format delimited fields terminated by '|'
+             """.stripMargin)
+
+        sql("INSERT INTO hive_table PARTITION(photo='binary') select 'a','b'");
+        sql("INSERT INTO hive_table PARTITION(photo=1) select 'a','b'");
+        checkAnswer(sql("select cast(photo as string) from hive_table"), Seq(Row("binary"), Row("1")));
+
+
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS hive_table2 (
+               |    name STRING,
+               |    id string)
+               | PARTITIONED BY(photo binary)
+             """.stripMargin)
+
+        sql("INSERT INTO hive_table2 PARTITION(photo='binary') select 'a','b'");
+        sql("INSERT INTO hive_table2 PARTITION(photo=1) select 'a','b'");
+        checkAnswer(sql("select cast(photo as string) from hive_table2"), Seq(Row("binary"), Row("1")));
+
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS parquet_table (
+               |    name STRING,
+               |    id string)
+               | PARTITIONED BY(photo binary)
+               | STORED AS PARQUET
+             """.stripMargin)
+
+        sql("INSERT INTO parquet_table PARTITION(photo='binary') select 'a','b'");
+        sql("INSERT INTO parquet_table PARTITION(photo=1) select 'a','b'");
+
+        sql("select cast(photo as string) from parquet_table").show()
+        //TODO： is it a bug in parquet?
+        //        checkAnswer(sql("select cast(photo as string) from parquet_table"), Seq(Row(),Row()));
+
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS carbon_partition_table (
+               |    name STRING,
+               |    id string)
+               | PARTITIONED BY(photo binary)
+               | STORED BY 'carbondata'
+             """.stripMargin)
+
+
+        sql("INSERT INTO carbon_partition_table PARTITION(photo='binary') select 'a','b'");
+        sql("INSERT INTO carbon_partition_table PARTITION(photo=1) select 'a','b'");
+        sql("select * from carbon_partition_table").show()
+        sql("select cast(photo as string) from carbon_partition_table").show()
+        checkAnswer(sql("select cast(photo as string) from carbon_partition_table"), Seq(Row("binary"), Row("1")))
+        checkAnswer(sql("select * from carbon_partition_table"), sql("select * from hive_table"))
+
+        val e = intercept[SparkException] {
+            sql("insert into hive_table select 'a','b','binary'");
+        }
+
+        assert(e.getMessage.contains("Dynamic partition strict mode requires at least one static partition column"))
+
+        val eInt = intercept[Exception] {
+            sql("insert into hive_table select 'a','b',1");
+        }
+
+        val e2 = intercept[SparkException] {
+            sql("insert into hive_table2 select 'a','b','binary'");
+        }
+
+        assert(e2.getMessage.contains("Dynamic partition strict mode requires at least one static partition column"))
+
+        val eInt2 = intercept[Exception] {
+            sql("insert into hive_table2 select 'a','b',1");
+        }
+
+        val e3 = intercept[SparkException] {
+            sql("insert into parquet_table select 'a','b','binary'");
+        }
+
+        assert(e3.getMessage.contains("Dynamic partition strict mode requires at least one static partition column"))
+
+        val eInt3 = intercept[Exception] {
+            sql("insert into parquet_table select 'a','b',1");
+        }
+
+        sql("insert into carbon_partition_table select 'a','b','binary'");
+        sql("insert into carbon_partition_table select 'a','b',1");
+
+        checkAnswer(sql("select cast(photo as string) from carbon_partition_table"),
+            Seq(Row("binary"), Row("1"), Row("binary"), Row("1")))
+
+        sql("select * from carbon_partition_table").show()
+
+        // set hive.exec.dynamic.partition.mode=nonstrict
+        sql("set hive.exec.dynamic.partition.mode=nonstrict")
+        sql("insert into hive_table select 'a','b','binary'");
+        val eInt11 = intercept[AnalysisException] {
+            sql("insert into hive_table select 'a','b',1");
+        }
+        assert(eInt11.getMessage.contains("cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
+
+        checkAnswer(sql("select cast(photo as string) from hive_table"),
+            Seq(Row("binary"), Row("1"), Row("binary")))
+
+        sql("insert into hive_table2 select 'a','b','binary'");
+        val eInt22 = intercept[AnalysisException] {
+            sql("insert into hive_table2 select 'a','b',1");
+        }
+        assert(eInt22.getMessage.contains("cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
+
+        checkAnswer(sql("select cast(photo as string) from hive_table2"),
+            Seq(Row("binary"), Row("1"), Row("binary")))
+
+        sql("insert into parquet_table select 'a','b','binary'");
+        val eInt32 = intercept[AnalysisException] {
+            sql("insert into parquet_table select 'a','b',1");
+        }
+        assert(eInt32.getMessage.contains("cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: cannot cast "))
+
+        //TODO: is it bug in parquet?
+        //        checkAnswer(sql("select cast(photo as string) from parquet_table"),
+        //            Seq(Row(),Row(),Row()))
+
+        sql("insert into carbon_partition_table select 'a','b','binary'");
+        sql("insert into carbon_partition_table select 'a','b',1");
+
+        checkAnswer(sql("select cast(photo as string) from carbon_partition_table"),
+            Seq(Row("binary"), Row("1"), Row("binary"), Row("1"), Row("binary"), Row("1")))
+    }
+
+    test("Create table and load data with binary column for partition") {
+        sql("DROP TABLE IF EXISTS binaryTable")
+        sql(
+            s"""
+               | CREATE TABLE IF NOT EXISTS binaryTable (
+               |    id int,
+               |    label boolean,
+               |    name string,
+               |    autoLabel boolean)
+               | PARTITIONED BY(binaryfield binary)
+               | STORED BY 'carbondata'
+               | TBLPROPERTIES('SORT_COLUMNS'='','PARTITION_TYPE'='HASH','NUM_PARTITIONS'='9')
+             """.stripMargin)
+        sql(
+            s"""
+               | LOAD DATA LOCAL INPATH '$resourcesPath/binarystringdatawithHead.csv'
+               | INTO TABLE binaryTable
+               | partition(binaryfield)
+               | OPTIONS('header'='true','DELIMITER'='|')
+             """.stripMargin)
+
+        val result = sql("desc formatted binaryTable").collect()
+        var flag = false
+        result.foreach { each =>
+            if ("binary".equals(each.get(1))) {
+                flag = true
+            }
+        }
+        assert(flag)
+
+        checkAnswer(sql("SELECT COUNT(*) FROM binaryTable"), Seq(Row(3)))
+        try {
+            val df = sql("SELECT * FROM binaryTable").collect()
+            assert(3 == df.length)
+
+            df.foreach { each =>
+                assert(5 == each.length)
+                if (2 == each.get(0)) {
+                    assert("binary".equals(new String(each.getAs[Array[Byte]](4))))
+                } else if (1 == each.get(0)) {
+                    assert("Hello world".equals(new String(each.getAs[Array[Byte]](4))))
+                } else if (3 == each.get(0)) {
+                    assert("1".equals(new String(each.getAs[Array[Byte]](4))))
+                } else {
+                    assert(false)
+                }
+            }
+
+        } catch {
+            case e: Exception =>
+                e.printStackTrace()
+                assert(false)
+        }
+    }
+
     override def afterAll: Unit = {
         sql("DROP TABLE IF EXISTS binaryTable")
         sql("DROP TABLE IF EXISTS hiveTable")
+        sql("DROP TABLE IF EXISTS hive_table")
     }
 }

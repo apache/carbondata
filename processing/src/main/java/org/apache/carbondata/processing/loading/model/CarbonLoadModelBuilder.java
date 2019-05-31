@@ -40,7 +40,9 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
+import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 import org.apache.carbondata.processing.util.TableOptionConstant;
 
 import org.apache.commons.lang.StringUtils;
@@ -434,6 +436,10 @@ public class CarbonLoadModelBuilder {
 
   private void validateAndSetBinaryDecoder(CarbonLoadModel carbonLoadModel) {
     String binaryDecoder = carbonLoadModel.getBinaryDecoder();
+    if (!CarbonLoaderUtil.isValidBinaryDecoder(binaryDecoder)) {
+      throw new CarbonDataLoadingException("Binary decoder only support Base64, " +
+          "Hex or no decode for string, don't support " + binaryDecoder);
+    }
     if (StringUtils.isBlank(binaryDecoder)) {
       binaryDecoder = CarbonProperties.getInstance().getProperty(
           CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER,

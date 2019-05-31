@@ -426,10 +426,10 @@ public final class CarbonLoaderUtil {
   }
 
   public static boolean isValidBinaryDecoder(String binaryDecoderChar) {
-    return binaryDecoderChar.equalsIgnoreCase(
-        CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_BASE64) ||
-        binaryDecoderChar.equalsIgnoreCase(
-            CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_HEX) ||
+    return CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_BASE64.equalsIgnoreCase(
+        binaryDecoderChar) ||
+        CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_HEX.equalsIgnoreCase(
+            binaryDecoderChar) ||
         StringUtils.isBlank(binaryDecoderChar);
   }
 
