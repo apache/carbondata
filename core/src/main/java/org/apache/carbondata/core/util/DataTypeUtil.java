@@ -478,7 +478,12 @@ public final class DataTypeUtil {
     } else if (actualDataType == DataTypes.TIMESTAMP) {
       return ByteUtil.toXorBytes((Long) dimensionValue);
     } else if (actualDataType == DataTypes.BINARY) {
-      return (byte[]) dimensionValue;
+      if (dimensionValue instanceof String) {
+        return ((String) dimensionValue).getBytes(
+            Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      } else {
+        return (byte[]) dimensionValue;
+      }
     } else {
       // Default action for String/Varchar
       return ByteUtil.toBytes(dimensionValue.toString());

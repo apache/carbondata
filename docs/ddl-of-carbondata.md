@@ -918,7 +918,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   PARTITIONED BY (productCategory STRING, productBatch STRING)
   STORED AS carbondata
   ```
-   **NOTE:** Hive partition is not supported on complex data type columns and binary data type.
+   **NOTE:** Hive partition is not supported on complex data type columns.
 
 
 #### Show Partitions
@@ -961,7 +961,7 @@ Users can specify which columns to include and exclude for local dictionary gene
 
 ### CARBONDATA PARTITION(HASH,RANGE,LIST) -- Alpha feature, this partition feature does not support update and delete data.
 
-  The partition supports three type:(Hash,Range,List), similar to other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column. Partition feature doesn't support binary data type.
+  The partition supports three type:(Hash,Range,List), similar to other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column.
 
 ### Create Hash Partition Table
 
