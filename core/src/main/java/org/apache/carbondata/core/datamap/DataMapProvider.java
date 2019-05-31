@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil;
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -208,6 +209,8 @@ public abstract class DataMapProvider {
             "Not able to acquire the lock for Table status updation for table " + dataMapSchema
                 .getRelationIdentifier().getDatabaseName() + "." + dataMapSchema
                 .getRelationIdentifier().getTableName());
+        DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName());
+        return false;
       }
     } finally {
       if (carbonLock.unlock()) {
