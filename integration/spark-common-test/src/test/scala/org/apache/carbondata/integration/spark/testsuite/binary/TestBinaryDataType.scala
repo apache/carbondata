@@ -63,6 +63,17 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
         assert(flag)
 
+        sqlContext.udf.register("decodeHex", (str: String) => Hex.decodeHex(str.toCharArray))
+        sqlContext.udf.register("decodeBase64", (str: String) => Base64.decodeBase64(str.getBytes()))
+
+        val udfHexResult = sql("SELECT decodeHex(binaryField) FROM binaryTable")
+        val unhexResult = sql("SELECT unhex(binaryField) FROM binaryTable")
+        checkAnswer(udfHexResult, unhexResult)
+
+        val udfBase64Result = sql("SELECT decodeBase64(binaryField) FROM binaryTable")
+        val unbase64Result = sql("SELECT unbase64(binaryField) FROM binaryTable")
+        checkAnswer(udfBase64Result, unbase64Result)
+
         checkAnswer(sql("SELECT COUNT(*) FROM binaryTable"), Seq(Row(3)))
         try {
             val df = sql("SELECT * FROM binaryTable").collect()
@@ -611,6 +622,27 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                | INTO TABLE carbontable
                | OPTIONS('header'='false','DELIMITER'='|','bad_records_action'='fail')
              """.stripMargin)
+
+        val hexHiveResult = sql("SELECT hex(binaryField) FROM hivetable")
+        val hexCarbonResult = sql("SELECT hex(binaryField) FROM carbontable")
+        checkAnswer(hexHiveResult, hexCarbonResult)
+        hexCarbonResult.collect().foreach { each =>
+            val result = new String(Hex.decodeHex((each.getAs[Array[Char]](0)).toString.toCharArray))
+            assert("\u0001history\u0002".equals(result)
+                    || "\u0001biology\u0002".equals(result)
+                    || "\u0001education\u0002".equals(result))
+        }
+
+        val base64HiveResult = sql("SELECT base64(binaryField) FROM hivetable")
+        val base64CarbonResult = sql("SELECT base64(binaryField) FROM carbontable")
+        checkAnswer(base64HiveResult, base64CarbonResult)
+        base64CarbonResult.collect().foreach { each =>
+            val result = new String(Base64.decodeBase64((each.getAs[Array[Char]](0)).toString))
+            assert("\u0001history\u0002".equals(result)
+                    || "\u0001biology\u0002".equals(result)
+                    || "\u0001education\u0002".equals(result))
+        }
+
 
         val hiveResult = sql("SELECT * FROM hivetable")
         val carbonResult = sql("SELECT * FROM carbontable")
