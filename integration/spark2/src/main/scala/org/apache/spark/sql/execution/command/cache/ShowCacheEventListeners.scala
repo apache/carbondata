@@ -52,7 +52,7 @@ object ShowCachePreAggEventListener extends OperationEventListener {
             .filter(_.getRelationIdentifier != null)
           operationContext.setProperty(carbonTable.getTableUniqueName, childrenSchemas.collect {
             case childSchema if childSchema.getRelationIdentifier != null =>
-              (s"${ childSchema.getRelationIdentifier.getDatabaseName }_${
+              (s"${ childSchema.getRelationIdentifier.getDatabaseName }-${
                 childSchema.getRelationIdentifier.getTableName
               }", childSchema.getProviderName)
           }.toList ++ childTables)
@@ -97,10 +97,10 @@ object ShowCacheDataMapEventListener extends OperationEventListener {
       case dataMap if dataMap.getProviderName
         .equalsIgnoreCase(filter) =>
         if (filter.equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName)) {
-          (s"${ dataMap.getRelationIdentifier.getDatabaseName }_${
+          (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${
             dataMap.getDataMapName}", dataMap.getProviderName)
         } else {
-          (s"${ dataMap.getRelationIdentifier.getDatabaseName }_${
+          (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${
             dataMap.getRelationIdentifier.getTableName}", dataMap.getProviderName)
         }
     }

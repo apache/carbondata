@@ -35,7 +35,6 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactor
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.bloom.BloomCacheKeyValue
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, ShowTableCacheEvent}
 import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -47,15 +46,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
   extends MetadataCommand {
 
   private lazy val cacheResult: Seq[(String, Int, Long, String)] = {
-    tableIdentifier match {
-      case Some(identifier) =>
-        val tableUniqueName = s"${
-          identifier.database.getOrElse(SparkSession.getActiveSession
-            .get.catalog.currentDatabase)
-        }_${ identifier.table }"
-        executeJobToGetCache(List(tableUniqueName))
-      case None => Seq()
-    }
+    executeJobToGetCache(List())
   }
 
   private val LOGGER = LogServiceFactory.getLogService(classOf[CarbonShowCacheCommand].getName)
@@ -131,7 +122,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
       tableIdent =>
         try {
           val carbonTable = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
-          if (!carbonTable.isChildDataMap || !carbonTable.isChildTable) {
+          if (!carbonTable.isChildDataMap && !carbonTable.isChildTable) {
             carbonTables += carbonTable
           }
         } catch {
@@ -163,11 +154,9 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
 
     val (driverdbIndexSize, driverdbDatamapSize, driverdbDictSize) = calculateDBIndexAndDatamapSize(
       driverRows)
-    val (indexAllIndexSize, indexAllDatamapSize, indexAllDictSize) = calculateDBIndexAndDatamapSize(
+    val (indexdbIndexSize, indexdbDatamapSize, indexAllDictSize) = calculateDBIndexAndDatamapSize(
       indexServerRows)
-    val (indexdbIndexSize, indexdbDatamapSize) = getIndexServerCacheSizeForCurrentDB(
-      currentDatabase)
-
+    val (indexAllIndexSize, indexAllDatamapSize) = getIndexServerCacheSizeForCurrentDB
 
     val driverDisplayRows = if (cache != null) {
       val tablePaths = carbonTables.map {
@@ -215,47 +204,34 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
     val cache = CacheProvider.getInstance().getCarbonCache
     if (cache != null) {
       val childTableList = getChildTableList(carbonTable)(sparkSession)
-      val parentMetaCacheInfo = collectDriverMetaCacheInfo(carbonTable, false)(sparkSession) match {
-        case head :: _ => head
-        case Nil => ("", 0, 0L, "")
+      val (parentMetaCacheInfo, dataMapCacheInfo) = collectDriverMetaCacheInfo(carbonTable
+        .getTableUniqueName) match {
+        case list =>
+          val parentCache = list
+            .filter(_._4.equalsIgnoreCase(BlockletDataMapFactory.DATA_MAP_SCHEMA
+              .getProviderName)) match {
+            case Nil => ("", 0, 0L, "")
+            case head :: _ => head
+          }
+          val dataMapList = list
+            .filter(!_._4.equalsIgnoreCase(BlockletDataMapFactory.DATA_MAP_SCHEMA
+              .getProviderName))
+          (parentCache, dataMapList)
+        case Nil => (("", 0, 0L, ""), Nil)
       }
       val parentDictionary = getDictionarySize(carbonTable)(sparkSession)
       val childMetaCacheInfos = childTableList.flatMap {
         childTable =>
-          val dbName = childTable._1.substring(0, childTable._1.indexOf("_"))
-          val tableName = childTable._1
-            .substring(childTable._1.indexOf("_") + 1, childTable._1.length)
-          if (childTable._2
-            .equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName)) {
-            val datamaps = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-              .asScala
-            val bloomDataMaps = datamaps.collect {
-              case datamap if datamap.getProviderName
-                .equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName) =>
-                datamap
-            }.toList
-
-            // Get datamap keys
-            val datamapKeys = bloomDataMaps.flatMap {
-              datamap =>
-                CacheUtil
-                  .getBloomCacheKeys(carbonTable, datamap)
-            }
-
-            // calculate the memory size if key exists in cache
-            val datamapSize = datamapKeys.collect {
-              case key if cache.get(key) != null =>
-                cache.get(key).getMemorySize
-            }.sum
-            Seq(Row(childTable._1, 0L, datamapSize, childTable._2))
-          } else {
-            val childCarbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-            val childMetaCacheInfo = collectDriverMetaCacheInfo(childCarbonTable)(sparkSession)
-            childMetaCacheInfo.map {
-              childMeta => Row(childMeta._1, childMeta._3, 0L, childTable._2)
-            }.toSeq
+          val tableArray = childTable._1.split("-")
+          val dbName = tableArray(0)
+          val tableName = tableArray(1)
+          val childMetaCacheInfo = collectDriverMetaCacheInfo(s"${dbName}_$tableName")
+          childMetaCacheInfo.map {
+            childMeta => Row(childMeta._1, childMeta._3, 0L, childTable._2)
           }
-      }
+      } ++ (dataMapCacheInfo.map {
+        childMeta => Row(childMeta._1, childMeta._3, 0L, childMeta._4)
+      })
       var comments = parentMetaCacheInfo._2 + s"/$numOfIndexFiles index files cached"
       if (!carbonTable.isTransactionalTable) {
         comments += " (external table)"
@@ -308,17 +284,20 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
   private def getTableCacheFromIndexServer(mainTable: CarbonTable, numberOfIndexFiles: Int = 0)
     (sparkSession: SparkSession): Seq[Row] = {
     val childTables = getChildTableList(mainTable)(sparkSession)
-    val cache = executeJobToGetCache(childTables.map(_._1) ++ List(mainTable.getTableUniqueName))
+    val cache = if (tableIdentifier.nonEmpty) {
+      executeJobToGetCache(childTables.map(_._1) ++ List(mainTable.getTableUniqueName))
+    } else {
+      cacheResult
+    }
     val (mainTableFiles, mainTableCache) = getTableCache(cache, mainTable.getTableUniqueName)
     val childMetaCacheInfos = childTables.flatMap {
       childTable =>
-        val tableName = childTable._1
+        val tableName = childTable._1.replace("-", "_")
         if (childTable._2
-          .equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName) || childTable._2
-          .equalsIgnoreCase(DataMapClassProvider.MV.getShortName)) {
+          .equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName)) {
           Seq(Row(tableName, 0L, getTableCache(cache, tableName)._2, childTable._2))
         } else {
-          val childCache = getTableCache(cache, childTable._1)._2
+          val childCache = getTableCache(cache, tableName)._2
           Seq(Row(tableName, childCache, 0L, childTable._2))
         }
     }
@@ -335,23 +314,29 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
 
   private def executeJobToGetCache(tableUniqueNames: List[String]): Seq[(String, Int, Long,
     String)] = {
-    val (result, time) = CarbonScalaUtil.logTime {
-      IndexServer.getClient.showCache(tableUniqueNames.mkString(",")).map(_.split(":"))
-        .groupBy(_.head).map { t =>
-        var sum = 0L
-        var length = 0
-        var provider = ""
-        t._2.foreach {
-          arr =>
-            sum += arr(2).toLong
-            length += arr(1).toInt
-            provider = arr(3)
+    try {
+      val (result, time) = CarbonScalaUtil.logTime {
+        IndexServer.getClient.showCache(tableUniqueNames.mkString(",")).map(_.split(":"))
+          .groupBy(_.head).map { t =>
+          var sum = 0L
+          var length = 0
+          var provider = ""
+          t._2.foreach {
+            arr =>
+              sum += arr(2).toLong
+              length += arr(1).toInt
+              provider = arr(3)
+          }
+          (t._1, length, sum, provider)
         }
-        (t._1, length, sum, provider)
       }
+      LOGGER.info(s"Time taken to get cache results from Index Server is $time ms")
+      result.toList
+    } catch {
+      case ex: Exception =>
+        LOGGER.error("Error while getting cache details from index server", ex)
+        Seq()
     }
-    LOGGER.info(s"Time taken to get cache results from Index Server is $time ms")
-    result.toList
   }
 
   private def getTableCache(cache: Seq[(String, Int, Long, String)], tableName: String) = {
@@ -394,41 +379,26 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
             if (tablePaths.exists { path => key.startsWith(path) }) {
               dbIndexSize += cacheable.getMemorySize
             }
-          case _: BloomCacheKeyValue.CacheValue =>
-            allDatamapSize += cacheable.getMemorySize
           case _: AbstractColumnDictionaryInfo =>
             allDictSize += cacheable.getMemorySize
+            // consider eveything else as a datamap.
+          case _ =>
+            allDatamapSize += cacheable.getMemorySize
         }
     }
     (allIndexSize, allDatamapSize, allDictSize)
   }
 
-  private def collectDriverMetaCacheInfo(carbonTable: CarbonTable, collectChild: Boolean = true)
-    (sparkSession: SparkSession): List[(String, Int, Long, String)] = {
-    if (CacheProvider.getInstance().getCarbonCache != null) {
-      val tableCacheInfo = collectDriverMetaCacheInfo(carbonTable.getTableUniqueName,
-        collectChild: Boolean)
-      tableCacheInfo
-    } else {
-      List()
-    }
-  }
-
-  private def collectDriverMetaCacheInfo(tableName: String,
-      collectChild: Boolean): List[(String, Int, Long, String)] = {
+  private def collectDriverMetaCacheInfo(tableName: String): List[(String, Int, Long, String)] = {
     val dataMaps = DataMapStoreManager.getInstance().getAllDataMaps.asScala
     dataMaps.collect {
       case (table, tableDataMaps) if table.isEmpty ||
                                      (tableName.nonEmpty && tableName.equalsIgnoreCase(table)) =>
-        val filteredDataMaps = tableDataMaps.asScala.filter(tableDataMap =>
-          collectChild || tableDataMap.getDataMapFactory.isInstanceOf[BlockletDataMapFactory])
-        val sizeAndIndexLengths = filteredDataMaps
+        val sizeAndIndexLengths = tableDataMaps.asScala
           .map { dataMap =>
-            if (!dataMap.getDataMapSchema.getProviderName
-              .equals(DataMapClassProvider.BLOOMFILTER.getShortName)) {
+            if (dataMap.getDataMapFactory.isInstanceOf[BlockletDataMapFactory]) {
               s"$table:${ dataMap.getDataMapFactory.getCacheSize }:${
-                DataMapClassProvider.BLOOMFILTER.getShortName
-              }"
+                dataMap.getDataMapSchema.getProviderName}"
             } else {
               s"${ dataMap.getDataMapSchema.getDataMapName }:${
                 dataMap.getDataMapFactory.getCacheSize
@@ -443,13 +413,13 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
     }.flatten.toList
   }
 
-  private def getIndexServerCacheSizeForCurrentDB(currentDB: String): (Long, Long) = {
+  private def getIndexServerCacheSizeForCurrentDB: (Long, Long) = {
     var (allIndexSize, allDatamapSize) = (0L, 0L)
+    val bloomFilterIdentifier = DataMapClassProvider.BLOOMFILTER.getShortName
     cacheResult.foreach {
-      case (tableUniqueName, _, sum, provider) if tableUniqueName.split("_")(0)
-        .equalsIgnoreCase(currentDB) =>
-        provider match {
-          case "Bloom" =>
+      case (_, _, sum, provider) =>
+        provider.toLowerCase match {
+          case `bloomFilterIdentifier` =>
             allIndexSize += sum
           case _ =>
             allDatamapSize += sum

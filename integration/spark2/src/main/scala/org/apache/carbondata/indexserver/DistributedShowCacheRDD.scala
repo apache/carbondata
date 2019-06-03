@@ -24,7 +24,6 @@ import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
@@ -50,14 +49,11 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableName
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[String] = {
     val dataMaps = DataMapStoreManager.getInstance().getAllDataMaps.asScala
-    val tableList = tableName.split(",")
+    val tableList = tableName.split(",").map(_.replace("-", "_"))
     val iterator = dataMaps.collect {
-      case (table, tableDataMaps) if table.isEmpty ||
-                                     (tableName.nonEmpty && tableList.contains(table)) =>
+      case (table, tableDataMaps) if tableName.isEmpty || tableList.contains(table) =>
         val sizeAndIndexLengths = tableDataMaps.asScala
           .map { dataMap =>
-            // if datamap name is null then it means that the TableDataMap is of BlockletDatamap
-            // type.
             val dataMapName = if (dataMap.getDataMapFactory.isInstanceOf[BlockletDataMapFactory]) {
               table
             } else {
