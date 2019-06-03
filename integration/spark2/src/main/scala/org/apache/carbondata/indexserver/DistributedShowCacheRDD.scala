@@ -31,7 +31,12 @@ import org.apache.carbondata.spark.rdd.CarbonRDD
 class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableName: String)
   extends CarbonRDD[String](ss, Nil) {
 
-  val executorsList: Array[String] = DistributionUtil.getNodeList(ss.sparkContext)
+  val executorsList: Array[String] = DistributionUtil.getExecutors(ss.sparkContext).flatMap {
+    case (host, executors) =>
+      executors.map {
+        executor => s"executor_${host}_$executor"
+      }
+  }.toArray
 
   override protected def internalGetPartitions: Array[Partition] = {
     executorsList.zipWithIndex.map {
