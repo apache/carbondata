@@ -176,6 +176,9 @@ It will show all DataMaps created on main table.
     FROM sales
     GROUP BY country, sex
   ```
+  **NOTE**:
+   * Preaggregate datamap is deprecated and it is replaced by MV datamap.
+     Please refer [CarbonData MV DataMap](./mv-datamap-guide.md) for more info.
   
 #### Functions supported in pre-aggregate table
 

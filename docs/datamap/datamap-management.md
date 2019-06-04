@@ -49,7 +49,7 @@ Currently, there are 5 DataMap implementations in CarbonData.
 | ---------------- | ---------------------------------------- | ---------------------------------------- | ---------------- |
 | preaggregate     | single table pre-aggregate table         | No DMPROPERTY is required                | Automatic        |
 | timeseries       | time dimension rollup table              | event_time, xx_granularity, please refer to [Timeseries DataMap](./timeseries-datamap-guide.md) | Automatic        |
-| mv               | multi-table pre-aggregate table          | No DMPROPERTY is required                | Manual           |
+| mv               | multi-table pre-aggregate table          | No DMPROPERTY is required                | Manual/Automatic           |
 | lucene           | lucene indexing for text column          | index_columns to specifying the index columns | Automatic |
 | bloomfilter      | bloom filter for high cardinality column, geospatial column | index_columns to specifying the index columns | Automatic |
 
@@ -59,9 +59,6 @@ There are two kinds of management semantic for DataMap.
 
 1. Automatic Refresh: Create datamap without `WITH DEFERRED REBUILD` in the statement, which is by default.
 2. Manual Refresh: Create datamap with `WITH DEFERRED REBUILD` in the statement
-
-**CAUTION:**
-If user create MV datamap without specifying `WITH DEFERRED REBUILD`, carbondata will give a warning and treat the datamap as deferred rebuild.
 
 ### Automatic Refresh
 
@@ -142,6 +139,9 @@ There is a SHOW DATAMAPS command, when this is issued, system will read all data
 - DataMapProviderName like mv, preaggreagte, timeseries, etc
 - Associated Table
 - DataMap Properties
+- DataMap status (ENABLED/DISABLED)
+- Sync Status - which displays Last segment Id of main table synced with datamap table and its load
+  end time (Applicable only for mv datamap)
 
 ### Compaction on DataMap
 
