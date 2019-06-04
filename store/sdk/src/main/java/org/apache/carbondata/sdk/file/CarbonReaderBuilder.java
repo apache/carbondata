@@ -359,7 +359,8 @@ public class CarbonReaderBuilder {
     } catch (Exception ex) {
       // Clear the datamap cache as it can get added in getSplits() method
       DataMapStoreManager.getInstance().clearDataMaps(
-          format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier());
+          format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
+          false);
       throw ex;
     }
   }
@@ -417,7 +418,8 @@ public class CarbonReaderBuilder {
       if (format != null) {
         // Clear the datamap cache as it is added in getSplits() method
         DataMapStoreManager.getInstance().clearDataMaps(
-            format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier());
+            format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
+            false);
       }
     }
     return splits.toArray(new InputSplit[splits.size()]);
