@@ -22,10 +22,13 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.*;
 
+import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.Float4Vector;
 import org.apache.arrow.vector.SmallIntVector;
+import org.apache.arrow.vector.VectorLoader;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.avro.generic.GenericData;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.log4j.Logger;
@@ -45,6 +48,7 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
+import org.apache.carbondata.sdk.file.arrow.ArrowUtils;
 
 import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
@@ -2479,8 +2483,14 @@ public class CarbonReaderTest extends TestCase {
           CarbonReader.builder(path, "_temp").withRowRecordReader().buildArrowReader();
       Schema carbonSchema = CarbonSchemaReader.readSchema(path);
       byte[] data = reader.readArrowBatch(carbonSchema);
-      ArrowConverter arrowConverter = new ArrowConverter(carbonSchema,0);
-      VectorSchemaRoot vectorSchemaRoot = arrowConverter.byteArrayToVector(data);
+      BufferAllocator bufferAllocator = ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", 0, Long.MAX_VALUE);
+      ArrowRecordBatch arrowRecordBatch =
+          ArrowConverter.byteArrayToArrowBatch(data, bufferAllocator);
+      VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot
+          .create(ArrowUtils.toArrowSchema(carbonSchema, TimeZone.getDefault().getID()),
+              bufferAllocator);
+      VectorLoader vectorLoader = new VectorLoader(vectorSchemaRoot);
+      vectorLoader.load(arrowRecordBatch);
       // check for 10 rows
       assertEquals(vectorSchemaRoot.getRowCount(), 10);
       List<FieldVector> fieldVectors = vectorSchemaRoot.getFieldVectors();
@@ -2492,6 +2502,9 @@ public class CarbonReaderTest extends TestCase {
       for (int i = 0; i < vectorSchemaRoot.getRowCount(); i++) {
         assertEquals(((Float4Vector)fieldVectors.get(12)).get(i), (float) 1.23);
       }
+      arrowRecordBatch.close();
+      vectorSchemaRoot.close();
+      bufferAllocator.close();
       reader.close();
 
       // Read data with address (unsafe memory)
@@ -2501,19 +2514,28 @@ public class CarbonReaderTest extends TestCase {
       int length = CarbonUnsafe.getUnsafe().getInt(address);
       byte[] data1 = new byte[length];
       CarbonUnsafe.getUnsafe().copyMemory(null, address + 4 , data1, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
-      ArrowConverter arrowConverter1 = new ArrowConverter(carbonSchema,0);
-      VectorSchemaRoot vectorSchemaRoot1 = arrowConverter1.byteArrayToVector(data1);
+      bufferAllocator = ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", 0, Long.MAX_VALUE);
+      arrowRecordBatch =
+          ArrowConverter.byteArrayToArrowBatch(data1, bufferAllocator);
+      vectorSchemaRoot = VectorSchemaRoot
+          .create(ArrowUtils.toArrowSchema(carbonSchema, TimeZone.getDefault().getID()),
+              bufferAllocator);
+      vectorLoader = new VectorLoader(vectorSchemaRoot);
+      vectorLoader.load(arrowRecordBatch);
       // check for 10 rows
-      assertEquals(vectorSchemaRoot1.getRowCount(), 10);
-      List<FieldVector> fieldVectors1 = vectorSchemaRoot1.getFieldVectors();
+      assertEquals(vectorSchemaRoot.getRowCount(), 10);
+      List<FieldVector> fieldVectors1 = vectorSchemaRoot.getFieldVectors();
       // validate short column
-      for (int i = 0; i < vectorSchemaRoot1.getRowCount(); i++) {
+      for (int i = 0; i < vectorSchemaRoot.getRowCount(); i++) {
         assertEquals(((SmallIntVector)fieldVectors1.get(6)).get(i), i);
       }
       // validate float column
-      for (int i = 0; i < vectorSchemaRoot1.getRowCount(); i++) {
+      for (int i = 0; i < vectorSchemaRoot.getRowCount(); i++) {
         assertEquals(((Float4Vector)fieldVectors1.get(12)).get(i), (float) 1.23);
       }
+      arrowRecordBatch.close();
+      vectorSchemaRoot.close();
+      bufferAllocator.close();
       // free the unsafe memory
       reader1.freeArrowBatchMemory(address);
       reader1.close();
@@ -2534,13 +2556,23 @@ public class CarbonReaderTest extends TestCase {
       for (int i = 0; i < vectorSchemaRoot2.getRowCount(); i++) {
         assertEquals(((Float4Vector)fieldVectors2.get(12)).get(i), (float) 1.23);
       }
+      vectorSchemaRoot.close();
       reader2.close();
 
       // Read arrowSchema
       byte[] schema = CarbonSchemaReader.getArrowSchemaAsBytes(path);
-      ArrowConverter arrowConverter3 = new ArrowConverter(carbonSchema, 0);
-      VectorSchemaRoot vectorSchemaRoot3 = arrowConverter3.byteArrayToVector(schema);
-      assertEquals(vectorSchemaRoot3.getSchema().getFields().size(), 13);
+      bufferAllocator = ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", 0, Long.MAX_VALUE);
+      arrowRecordBatch =
+          ArrowConverter.byteArrayToArrowBatch(schema, bufferAllocator);
+      vectorSchemaRoot = VectorSchemaRoot
+          .create(ArrowUtils.toArrowSchema(carbonSchema, TimeZone.getDefault().getID()),
+              bufferAllocator);
+      vectorLoader = new VectorLoader(vectorSchemaRoot);
+      vectorLoader.load(arrowRecordBatch);
+      assertEquals(vectorSchemaRoot.getSchema().getFields().size(), 13);
+      arrowRecordBatch.close();
+      vectorSchemaRoot.close();
+      bufferAllocator.close();
     } catch (Throwable e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
