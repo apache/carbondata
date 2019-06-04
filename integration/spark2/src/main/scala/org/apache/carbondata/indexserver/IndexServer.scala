@@ -18,6 +18,7 @@ package org.apache.carbondata.indexserver
 
 import java.net.InetSocketAddress
 import java.security.PrivilegedAction
+import java.util.UUID
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.ipc.{ProtocolInfo, RPC}
@@ -121,7 +122,11 @@ object IndexServer extends ServerInterface {
   }
 
   override def showCache(tableName: String = ""): Array[String] = doAs {
-    val jobgroup: String = "Show Cache for " + tableName
+    val jobgroup: String = "Show Cache for " + (tableName match {
+      case "" => "for all tables"
+      case table => s"for $table"
+    })
+    sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", UUID.randomUUID().toString)
     sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
     new DistributedShowCacheRDD(sparkSession, tableName).collect()
   }
