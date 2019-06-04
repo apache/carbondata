@@ -67,6 +67,7 @@ import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWra
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
 /**

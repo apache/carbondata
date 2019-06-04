@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -301,9 +302,15 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private void initReadCommittedScope() throws IOException {
     if (readCommittedScope == null) {
-      this.readCommittedScope =
-          new TableStatusReadCommittedScope(table.getAbsoluteTableIdentifier(),
-              FileFactory.getConfiguration());
+      if (table.isTransactionalTable()) {
+        this.readCommittedScope =
+            new TableStatusReadCommittedScope(table.getAbsoluteTableIdentifier(),
+                FileFactory.getConfiguration());
+      } else {
+        this.readCommittedScope =
+            new LatestFilesReadCommittedScope(table.getTablePath(),
+                FileFactory.getConfiguration());
+      }
     }
   }
 
