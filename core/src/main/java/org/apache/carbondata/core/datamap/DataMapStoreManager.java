@@ -511,44 +511,41 @@ public final class DataMapStoreManager {
    */
   public void clearDataMaps(AbsoluteTableIdentifier identifier, boolean launchJob) {
     String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
-    CarbonTable carbonTable = getCarbonTable(identifier);
-    if (launchJob && CarbonProperties.getInstance()
-        .isDistributedPruningEnabled(identifier.getDatabaseName(), identifier.getTableName())) {
+    if (launchJob) {
+      // carbon table need to lookup only if launch job is set.
+      CarbonTable carbonTable = getCarbonTable(identifier);
       if (null != carbonTable) {
+        String jobClassName;
+        if (CarbonProperties.getInstance()
+            .isDistributedPruningEnabled(identifier.getDatabaseName(), identifier.getTableName())) {
+          jobClassName = DataMapUtil.DISTRIBUTED_JOB_NAME;
+        } else {
+          jobClassName = DataMapUtil.EMBEDDED_JOB_NAME;
+        }
         try {
-          DataMapUtil.executeClearDataMapJob(carbonTable, DataMapUtil.DISTRIBUTED_JOB_NAME);
+          DataMapUtil.executeClearDataMapJob(carbonTable, jobClassName);
         } catch (IOException e) {
           LOGGER.error("clear dataMap job failed", e);
           // ignoring the exception
         }
       }
     } else {
-      List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
-      if (tableIndices == null) {
-        String keyUsingTablePath = getKeyUsingTablePath(identifier.getTablePath());
-        if (keyUsingTablePath != null) {
-          tableUniqueName = keyUsingTablePath;
-        }
-      }
-      if (launchJob && null != carbonTable) {
-        try {
-          DataMapUtil.executeClearDataMapJob(carbonTable, DataMapUtil.EMBEDDED_JOB_NAME);
-        } catch (IOException e) {
-          LOGGER.error("clear dataMap job failed", e);
-          // ignoring the exception
-        }
-      }
       // remove carbon table from meta cache if launchJob is false as this would be called in
       // executor side.
-      if (!launchJob) {
-        CarbonMetadata.getInstance()
-            .removeTable(identifier.getDatabaseName(), identifier.getTableName());
-      }
-      segmentRefreshMap.remove(identifier.uniqueName());
-      clearDataMaps(tableUniqueName);
-      allDataMaps.remove(tableUniqueName);
-      tablePathMap.remove(tableUniqueName);
+      CarbonMetadata.getInstance()
+          .removeTable(identifier.getDatabaseName(), identifier.getTableName());
     }
+    List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
+    if (tableIndices == null) {
+      String keyUsingTablePath = getKeyUsingTablePath(identifier.getTablePath());
+      if (keyUsingTablePath != null) {
+        tableUniqueName = keyUsingTablePath;
+      }
+    }
+    segmentRefreshMap.remove(identifier.uniqueName());
+    clearDataMaps(tableUniqueName);
+    allDataMaps.remove(tableUniqueName);
+    tablePathMap.remove(tableUniqueName);
   }
 
   /**
