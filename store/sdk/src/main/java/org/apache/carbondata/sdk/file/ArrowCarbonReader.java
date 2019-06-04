@@ -62,6 +62,7 @@ public class ArrowCarbonReader<T> extends CarbonReader<T> {
    * Carbon reader will fill the arrow vector after reading the carbondata files.
    * This arrow byte[] can be used to create arrow table and used for in memory analytics
    * Note: create a reader at blocklet level, so that arrow byte[] will not exceed INT_MAX
+   * User need to close the VectorSchemaRoot after usage by calling VectorSchemaRoot.close()
    *
    * @param carbonSchema
    * @return

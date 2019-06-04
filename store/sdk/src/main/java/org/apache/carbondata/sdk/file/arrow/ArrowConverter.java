@@ -24,11 +24,11 @@ import java.util.TimeZone;
 import org.apache.carbondata.sdk.file.Schema;
 
 import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.vector.VectorLoader;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.ArrowFileReader;
 import org.apache.arrow.vector.ipc.ArrowFileWriter;
+import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.util.ByteArrayReadableSeekableByteChannel;
 
 public class ArrowConverter {
@@ -73,11 +73,13 @@ public class ArrowConverter {
   public byte[] toSerializeArray() throws IOException {
     arrowWriter.finish();
     writer.writeBatch();
-    this.writer.close();
-    arrowWriter.reset();
     writer.close();
-    this.root.close();
-    return out.toByteArray();
+    arrowWriter.reset();
+    root.close();
+    byte[] bytes = out.toByteArray();
+    allocator.close();
+    out.close();
+    return bytes;
   }
 
   /**
@@ -89,34 +91,36 @@ public class ArrowConverter {
   public long copySerializeArrayToOffHeap() throws IOException {
     arrowWriter.finish();
     writer.writeBatch();
-    this.writer.close();
-    arrowWriter.reset();
     writer.close();
-    this.root.close();
-    return out.copyToAddress();
+    arrowWriter.reset();
+    root.close();
+    long address = out.copyToAddress();
+    allocator.close();
+    out.close();
+    return address;
   }
 
   /**
-   * Utility API to convert back the arrow byte[] to arrow VectorSchemaRoot.
+   * Utility API to convert back the arrow byte[] to arrow ArrowRecordBatch.
+   * User need to close the ArrowRecordBatch after usage by calling ArrowRecordBatch.close()
    *
    * @param batchBytes
-   * @return
+   * @param bufferAllocator
+   * @return ArrowRecordBatch
    * @throws IOException
    */
-  public VectorSchemaRoot byteArrayToVector(byte[] batchBytes) throws IOException {
+  public static ArrowRecordBatch byteArrayToArrowBatch(byte[] batchBytes,
+      BufferAllocator bufferAllocator)
+      throws IOException {
     ByteArrayReadableSeekableByteChannel in = new ByteArrayReadableSeekableByteChannel(batchBytes);
-    ArrowFileReader reader = new ArrowFileReader(in, allocator);
+    ArrowFileReader reader = new ArrowFileReader(in, bufferAllocator);
     try {
       VectorSchemaRoot root = reader.getVectorSchemaRoot();
       VectorUnloader unloader = new VectorUnloader(root);
       reader.loadNextBatch();
-      VectorSchemaRoot arrowRoot = VectorSchemaRoot.create(arrowSchema, allocator);
-      VectorLoader vectorLoader = new VectorLoader(arrowRoot);
-      vectorLoader.load(unloader.getRecordBatch());
-      return arrowRoot;
-    } catch (IOException e) {
+      return unloader.getRecordBatch();
+    } finally {
       reader.close();
-      throw e;
     }
   }
 
@@ -128,7 +132,6 @@ public class ArrowConverter {
   public VectorSchemaRoot getArrowVectors() throws IOException {
     arrowWriter.finish();
     writer.writeBatch();
-    this.writer.close();
     writer.close();
     return root;
   }
