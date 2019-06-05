@@ -17,11 +17,12 @@
 
 package org.apache.carbondata.mv.plans.util
 
-import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
+import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, NamedExpression, PredicateHelper}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.mv.plans.modular.Flags._
 import org.apache.carbondata.mv.plans.modular.JoinEdge
@@ -357,7 +358,23 @@ object ExtractTableModule extends PredicateHelper {
         Some(database, table, l.output, Nil, NoFlags, Seq.empty)
       case l: LocalRelation => // used for unit test
         Some(null, null, l.output, Nil, NoFlags, Seq.empty)
-      case _ => None
+      case _ =>
+        // this check is added as we get MetastoreRelation in spark2.1,
+        // this is removed in later spark version
+        // TODO: this check can be removed once 2.1 support is removed from carbon
+        if (SparkUtil.isSparkVersionEqualTo("2.1") &&
+            plan.getClass.getName.equals("org.apache.spark.sql.hive.MetastoreRelation")) {
+          val catalogTable = CarbonReflectionUtils.getFieldOfCatalogTable("catalogTable", plan)
+            .asInstanceOf[CatalogTable]
+          Some(catalogTable.database,
+            catalogTable.identifier.table,
+            plan.output,
+            Nil,
+            NoFlags,
+            Seq.empty)
+        } else {
+          None
+        }
     }
   }
 }
