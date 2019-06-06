@@ -35,6 +35,7 @@ import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
@@ -294,6 +295,18 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     fields.zipWithIndex.foreach { case (field, index) =>
       field.schemaOrdinal = index
+    }
+
+    // If sort_scope is not no_sort && sort_columns specified by user is empty, then throw exception
+    if (tableProperties.get(CarbonCommonConstants.SORT_COLUMNS).isDefined
+        && tableProperties(CarbonCommonConstants.SORT_COLUMNS).equalsIgnoreCase("") &&
+        tableProperties.get(CarbonCommonConstants.SORT_SCOPE).isDefined &&
+        !tableProperties(CarbonCommonConstants.SORT_SCOPE)
+          .equalsIgnoreCase(SortScope.NO_SORT.name())) {
+      throw new MalformedCarbonCommandException(
+        s"Cannot set SORT_COLUMNS as empty when SORT_SCOPE is ${
+          tableProperties(CarbonCommonConstants.SORT_SCOPE)
+        } ")
     }
     val (dims, msrs, noDictionaryDims, sortKeyDims, varcharColumns) = extractDimAndMsrFields(
       fields, tableProperties)

@@ -22,6 +22,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 /**
@@ -458,6 +460,53 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     checkExistence(sql("describe formatted maintable_dm"), true, "Inverted Index Columns maintable_name")
     checkAnswer(sql("select name, sum(price) from maintable group by name"), Seq(Row("abc", 2000)))
     sql("drop table IF EXISTS maintable")
+  }
+
+  test("test column compressor on preagg and mv") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('carbon.column.compressor'='zstd')")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm_pre ")
+    sql("create datamap dm_pre on table maintable using 'preaggregate' as select name, sum(price) from maintable group by name")
+    var dataMapTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "maintable_dm_pre")
+    assert(dataMapTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR).equalsIgnoreCase("zstd"))
+    sql("drop datamap if exists dm_mv ")
+    sql("create datamap dm_mv on table maintable using 'mv' as select name, sum(price) from maintable group by name")
+    dataMapTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "dm_mv_table")
+    assert(dataMapTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR).equalsIgnoreCase("zstd"))
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test sort_scope if sort_columns are provided") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_columns'='name')")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm_pre ")
+    sql("create datamap dm_pre on table maintable using 'preaggregate' as select name, sum(price) from maintable group by name")
+    checkExistence(sql("describe formatted maintable_dm_pre"), true, "Sort Scope LOCAL_SORT")
+    sql("create datamap dm_mv on table maintable using 'mv' as select name, sum(price) from maintable group by name")
+    checkExistence(sql("describe formatted dm_mv_table"), true, "Sort Scope LOCAL_SORT")
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test inverted_index if sort_scope is provided") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_scope'='no_sort','sort_columns'='name', 'inverted_index'='name')")
+    sql("insert into table maintable select 'abc',21,2000")
+    checkExistence(sql("describe formatted maintable"), true, "Inverted Index Columns name")
+    sql("drop datamap if exists dm_pre ")
+    sql("create datamap dm_pre on table maintable using 'preaggregate' as select name, sum(price) from maintable group by name")
+    checkExistence(sql("describe formatted maintable_dm_pre"), true, "Inverted Index Columns maintable_name")
+    sql("create datamap dm_mv on table maintable using 'mv' as select name, sum(price) from maintable group by name")
+    checkExistence(sql("describe formatted dm_mv_table"), true, "Inverted Index Columns maintable_name")
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test sort column") {
+    sql("drop table IF EXISTS maintable")
+    intercept[MalformedCarbonCommandException] {
+      sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_scope'='local_sort','sort_columns'='')")
+    }.getMessage.contains("Cannot set SORT_COLUMNS as empty when SORT_SCOPE is LOCAL_SORT")
   }
 
 }

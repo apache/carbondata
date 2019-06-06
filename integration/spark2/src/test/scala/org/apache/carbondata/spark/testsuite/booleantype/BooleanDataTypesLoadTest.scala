@@ -247,7 +247,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_EXCLUDE'='charField','TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | TBLPROPERTIES('DICTIONARY_EXCLUDE'='charField','TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBoolean.csv"
@@ -337,7 +337,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_EXCLUDE'='charField','TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | TBLPROPERTIES('DICTIONARY_EXCLUDE'='charField','TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanWithFileHeader.csv"
