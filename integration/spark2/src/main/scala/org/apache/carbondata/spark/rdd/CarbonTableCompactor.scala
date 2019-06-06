@@ -214,10 +214,6 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
       var segmentFilesForIUDCompact = new util.ArrayList[Segment]()
       var segmentFileName: String = null
-      if (compactionType != CompactionType.IUD_DELETE_DELTA &&
-          compactionType != CompactionType.IUD_UPDDEL_DELTA) {
-        MergeIndexUtil.mergeIndexFilesOnCompaction(compactionCallableModel)
-      }
       if (carbonTable.isHivePartitionTable) {
         val readPath =
           CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
@@ -282,6 +278,11 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           carbonLoadModel,
           compactionType,
           segmentFileName)
+
+      if (compactionType != CompactionType.IUD_DELETE_DELTA &&
+          compactionType != CompactionType.IUD_UPDDEL_DELTA) {
+        MergeIndexUtil.mergeIndexFilesOnCompaction(compactionCallableModel)
+      }
 
       val compactionLoadStatusPostEvent = AlterTableCompactionPostStatusUpdateEvent(sc.sparkSession,
         carbonTable,

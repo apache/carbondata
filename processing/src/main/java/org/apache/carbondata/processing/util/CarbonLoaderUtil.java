@@ -1182,10 +1182,10 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static String mergeIndexFilesInPartitionedSegment(CarbonTable table, String segmentId,
-      String uuid) throws IOException {
+      String uuid, String partitionPath) throws IOException {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
-        .mergeCarbonIndexFilesOfSegment(segmentId, uuid, tablePath);
+        .mergeCarbonIndexFilesOfSegment(segmentId, uuid, tablePath, partitionPath);
   }
 
   private static void deleteFiles(List<String> filesToBeDeleted) throws IOException {

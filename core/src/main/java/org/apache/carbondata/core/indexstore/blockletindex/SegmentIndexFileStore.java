@@ -296,7 +296,7 @@ public class SegmentIndexFileStore {
    * @param indexFile
    * @throws IOException
    */
-  private void readIndexFile(CarbonFile indexFile) throws IOException {
+  public void readIndexFile(CarbonFile indexFile) throws IOException {
     String indexFilePath = indexFile.getCanonicalPath();
     DataInputStream dataInputStream = FileFactory
         .getDataInputStream(indexFilePath, FileFactory.getFileType(indexFilePath), configuration);
