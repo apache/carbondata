@@ -493,14 +493,24 @@ class CarbonIndexFileMergeTestCase
     val table = CarbonMetadata.getInstance().getCarbonTable(tableName)
     val path = CarbonTablePath
       .getSegmentPath(table.getAbsoluteTableIdentifier.getTablePath, segment)
-    val carbonFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = {
-        file.getName.endsWith(CarbonTablePath
-          .INDEX_FILE_EXT)
-      }
-    })
+    val carbonFiles = if (table.isHivePartitionTable) {
+      FileFactory.getCarbonFile(table.getAbsoluteTableIdentifier.getTablePath)
+        .listFiles(true, new CarbonFileFilter {
+          override def accept(file: CarbonFile): Boolean = {
+            file.getName.endsWith(CarbonTablePath
+              .INDEX_FILE_EXT)
+          }
+        })
+    } else {
+      FileFactory.getCarbonFile(path).listFiles(true, new CarbonFileFilter {
+        override def accept(file: CarbonFile): Boolean = {
+          file.getName.endsWith(CarbonTablePath
+            .INDEX_FILE_EXT)
+        }
+      })
+    }
     if (carbonFiles != null) {
-      carbonFiles.length
+      carbonFiles.size()
     } else {
       0
     }

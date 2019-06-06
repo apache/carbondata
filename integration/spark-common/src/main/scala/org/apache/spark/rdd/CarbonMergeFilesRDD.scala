@@ -17,20 +17,28 @@
 
 package org.apache.spark.rdd
 
+import java.util
+
+import scala.collection.JavaConverters._
+
 import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
-case class CarbonMergeFilePartition(rddId: Int, idx: Int, segmentId: String)
-  extends Partition {
+case class CarbonMergeFilePartition(rddId: Int,
+    idx: Int,
+    segmentId: String,
+    partitionPath: String = null) extends Partition {
 
   override val index: Int = idx
 
@@ -94,6 +102,20 @@ object CarbonMergeFilesRDD {
           }
       }
     }
+    if (carbonTable.isHivePartitionTable) {
+      segmentIds.foreach(segmentId => {
+        val readPath: String = CarbonTablePath.getSegmentFilesLocation(tablePath) +
+                               CarbonCommonConstants.FILE_SEPARATOR + segmentId + "_" +
+                               segmentFileNameToSegmentIdMap.get(segmentId) + ".tmp"
+        // Merge all partition files into a single file.
+        val segmentFileName: String = SegmentFileStore
+          .genSegmentFileName(segmentId, segmentFileNameToSegmentIdMap.get(segmentId))
+        SegmentFileStore
+          .mergeSegmentFiles(readPath,
+            segmentFileName,
+            CarbonTablePath.getSegmentFilesLocation(tablePath))
+      })
+    }
   }
 
   /**
@@ -130,9 +152,33 @@ class CarbonMergeFilesRDD(
   extends CarbonRDD[String](ss, Nil) {
 
   override def internalGetPartitions: Array[Partition] = {
-    segments.zipWithIndex.map {s =>
-      CarbonMergeFilePartition(id, s._2, s._1)
-    }.toArray
+    if (isHivePartitionedTable) {
+      val metadataDetails = SegmentStatusManager
+        .readLoadMetadata(CarbonTablePath.getMetadataPath(carbonTable.getTablePath))
+      // in case of partition table make rdd partitions per partition of the carbon table
+      val partitionPaths: java.util.Map[String, java.util.List[String]] = new java.util.HashMap()
+      segments.foreach(segment => {
+        val partitionSpecs = SegmentFileStore
+          .getPartitionSpecs(segment, carbonTable.getTablePath, metadataDetails)
+          .asScala.map(_.getLocation.toString)
+        partitionPaths.put(segment, partitionSpecs.asJava)
+      })
+      var index: Int = -1
+      val rddPartitions: java.util.List[Partition] = new java.util.ArrayList()
+      partitionPaths.asScala.foreach(partitionPath => {
+        val segmentId = partitionPath._1
+        partitionPath._2.asScala.map { partition =>
+          index = index + 1
+          rddPartitions.add(CarbonMergeFilePartition(id, index, segmentId, partition))
+        }
+      })
+      rddPartitions.asScala.toArray
+    } else {
+      // in case of normal carbon table, make rdd partitions per segment
+      segments.zipWithIndex.map { s =>
+        CarbonMergeFilePartition(id, s._2, s._1)
+      }.toArray
+    }
   }
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[String] = {
@@ -145,7 +191,7 @@ class CarbonMergeFilesRDD(
       if (isHivePartitionedTable) {
         CarbonLoaderUtil
           .mergeIndexFilesInPartitionedSegment(carbonTable, split.segmentId,
-            segmentFileNameToSegmentIdMap.get(split.segmentId))
+            segmentFileNameToSegmentIdMap.get(split.segmentId), split.partitionPath)
       } else {
         new CarbonIndexFileMergeWriter(carbonTable)
           .mergeCarbonIndexFilesOfSegment(split.segmentId,

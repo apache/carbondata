@@ -80,20 +80,36 @@ public class SegmentFileStore {
    */
   public static void writeSegmentFile(String tablePath, final String taskNo, String location,
       String timeStamp, List<String> partionNames) throws IOException {
+    writeSegmentFile(tablePath, taskNo, location, timeStamp, partionNames, false);
+  }
+
+  /**
+   * Write segment information to the segment folder with indexfilename and
+   * corresponding partitions.
+   */
+  public static void writeSegmentFile(String tablePath, final String taskNo, String location,
+      String timeStamp, List<String> partionNames, boolean isMergeIndexFlow) throws IOException {
     String tempFolderLoc = timeStamp + ".tmp";
     String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath) + "/" + tempFolderLoc;
     CarbonFile carbonFile = FileFactory.getCarbonFile(writePath);
     if (!carbonFile.exists()) {
       carbonFile.mkdirs(writePath);
     }
-    CarbonFile tempFolder =
-        FileFactory.getCarbonFile(location + CarbonCommonConstants.FILE_SEPARATOR + tempFolderLoc);
+    CarbonFile tempFolder = null;
+    if (isMergeIndexFlow) {
+      tempFolder = FileFactory.getCarbonFile(location);
+    } else {
+      tempFolder = FileFactory
+          .getCarbonFile(location + CarbonCommonConstants.FILE_SEPARATOR + tempFolderLoc);
+    }
 
-    if (tempFolder.exists() && partionNames.size() > 0) {
+    if ((tempFolder.exists() && partionNames.size() > 0) || (isMergeIndexFlow
+        && partionNames.size() > 0)) {
       CarbonFile[] carbonFiles = tempFolder.listFiles(new CarbonFileFilter() {
         @Override public boolean accept(CarbonFile file) {
-          return file.getName().startsWith(taskNo) && file.getName()
-              .endsWith(CarbonTablePath.INDEX_FILE_EXT);
+          return file.getName().startsWith(taskNo) && (
+              file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+                  .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
         }
       });
       if (carbonFiles != null && carbonFiles.length > 0) {
@@ -108,10 +124,22 @@ public class SegmentFileStore {
         folderDetails.setPartitions(partionNames);
         folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
         for (CarbonFile file : carbonFiles) {
-          folderDetails.getFiles().add(file.getName());
+          if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+            folderDetails.setMergeFileName(file.getName());
+          } else {
+            folderDetails.getFiles().add(file.getName());
+          }
         }
         segmentFile.addPath(location, folderDetails);
-        String path = writePath + "/" + taskNo + CarbonTablePath.SEGMENT_EXT;
+        String path = null;
+        if (isMergeIndexFlow) {
+          // in case of merge index flow, tasks are launched per partition and all the tasks
+          // will be writting to the same tmp folder, in that case taskNo is not unique.
+          // To generate a unique fileName UUID is used
+          path = writePath + "/" + CarbonUtil.generateUUID() + CarbonTablePath.SEGMENT_EXT;
+        } else {
+          path = writePath + "/" + taskNo + CarbonTablePath.SEGMENT_EXT;
+        }
         // write segment info to new file.
         writeSegmentFile(segmentFile, path);
       }
@@ -909,11 +937,10 @@ public class SegmentFileStore {
    * @return
    * @throws IOException
    */
-  public static List<PartitionSpec> getPartitionSpecs(String segmentId, String tablePath)
+  public static List<PartitionSpec> getPartitionSpecs(String segmentId, String tablePath,
+      LoadMetadataDetails[] details)
       throws IOException {
     LoadMetadataDetails segEntry = null;
-    LoadMetadataDetails[] details =
-        SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath));
     for (LoadMetadataDetails entry : details) {
       if (entry.getLoadName().equals(segmentId)) {
         segEntry = entry;

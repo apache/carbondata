@@ -134,19 +134,26 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       newMetaEntry.setSegmentFile(segmentFileName + CarbonTablePath.SEGMENT_EXT);
     }
     OperationContext operationContext = (OperationContext) getOperationContext();
+    CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String uuid = "";
     if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() &&
         operationContext != null) {
       uuid = operationContext.getProperty("uuid").toString();
     }
+
+    SegmentFileStore.updateSegmentFile(carbonTable, loadModel.getSegmentId(),
+        segmentFileName + CarbonTablePath.SEGMENT_EXT,
+        carbonTable.getCarbonTableIdentifier().getTableId(),
+        new SegmentFileStore(carbonTable.getTablePath(),
+            segmentFileName + CarbonTablePath.SEGMENT_EXT));
+
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(newMetaEntry, SegmentStatus.SUCCESS, loadModel.getFactTimeStamp(),
             true);
-    CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     long segmentSize = CarbonLoaderUtil
         .addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(), carbonTable);
     if (segmentSize > 0 || overwriteSet) {
-      if (operationContext != null && carbonTable.hasAggregationDataMap()) {
+      if (operationContext != null) {
         operationContext
             .setProperty("current.segmentfile", newMetaEntry.getSegmentFile());
         LoadEvents.LoadTablePreStatusUpdateEvent event =

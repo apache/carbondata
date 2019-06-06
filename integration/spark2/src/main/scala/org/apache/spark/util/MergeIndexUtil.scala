@@ -52,9 +52,17 @@ object MergeIndexUtil {
                      CarbonCommonConstants.LOAD_FOLDER.length)
         mergedSegmentIds.add(loadName)
       })
+      val loadFolderDetailsArray = SegmentStatusManager
+        .readLoadMetadata(carbonTable.getMetadataPath)
+      val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
+      loadFolderDetailsArray.foreach(loadMetadataDetails => {
+        segmentFileNameMap
+          .put(loadMetadataDetails.getLoadName,
+            String.valueOf(loadMetadataDetails.getLoadStartTime))
+      })
       CarbonMergeFilesRDD.mergeIndexFiles(sparkSession,
         mergedSegmentIds.asScala,
-        new util.HashMap[String, String](),
+        segmentFileNameMap,
         carbonTable.getTablePath,
         carbonTable, false)
     }
