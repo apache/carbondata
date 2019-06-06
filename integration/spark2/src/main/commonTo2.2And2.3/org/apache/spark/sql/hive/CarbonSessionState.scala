@@ -236,29 +236,33 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
 
   override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
 
-  override protected def analyzer: Analyzer = new CarbonAnalyzer(catalog, conf, sparkSession,
+  override protected def analyzer: Analyzer = {
+    new CarbonAnalyzer(catalog,
+      conf,
+      sparkSession,
+      getAnalyzer(super.analyzer))
+  }
+
+  /**
+   * This method adds carbon rules to Hive Analyzer and returns new analyzer
+   * @param analyzer hiveSessionStateBuilder analyzer
+   * @return
+   */
+  def getAnalyzer(analyzer: Analyzer): Analyzer = {
     new Analyzer(catalog, conf) {
 
       override val extendedResolutionRules: Seq[Rule[LogicalPlan]] =
-        new ResolveHiveSerdeTable(session) +:
-        new FindDataSourceTable(session) +:
-        new ResolveSQLOnFile(session) +:
-        new CarbonIUDAnalysisRule(sparkSession) +:
-        new CarbonPreInsertionCasts(sparkSession) +: customResolutionRules
+        analyzer.extendedResolutionRules ++
+        Seq(CarbonIUDAnalysisRule(sparkSession)) ++
+        Seq(CarbonPreInsertionCasts(sparkSession)) ++ customResolutionRules
 
       override val extendedCheckRules: Seq[LogicalPlan => Unit] =
-      PreWriteCheck :: HiveOnlyCheck :: Nil
+        analyzer.extendedCheckRules
 
       override val postHocResolutionRules: Seq[Rule[LogicalPlan]] =
-        new DetermineTableStats(session) +:
-        RelationConversions(conf, catalog) +:
-        PreprocessTableCreation(session) +:
-        PreprocessTableInsertion(conf) +:
-        DataSourceAnalysis(conf) +:
-        HiveAnalysis +:
-        customPostHocResolutionRules
+        analyzer.postHocResolutionRules
     }
-  )
+  }
 
   override protected def newBuilder: NewBuilder = new CarbonSessionStateBuilder(_, _)
 }
