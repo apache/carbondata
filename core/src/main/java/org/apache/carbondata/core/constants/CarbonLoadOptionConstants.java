@@ -62,7 +62,7 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_OPTIONS_DATEFORMAT =
       "carbon.options.date.format";
 
-  public static final String CARBON_OPTIONS_DATEFORMAT_DEFAULT = "";
+  public static final String CARBON_OPTIONS_DATEFORMAT_DEFAULT = "yyyy-MM-dd";
 
   /**
    * option to specify the timestampFormat in load option for all timestamp columns in table
@@ -71,7 +71,7 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_OPTIONS_TIMESTAMPFORMAT =
           "carbon.options.timestamp.format";
 
-  public static final String CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT = "";
+  public static final String CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT = "yyyy-MM-dd HH:mm:ss";
 
   /**
    * option to specify the sort_scope
