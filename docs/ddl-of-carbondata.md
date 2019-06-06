@@ -811,6 +811,7 @@ Users can specify which columns to include and exclude for local dictionary gene
        new SORT_COLUMNS.  
        
        UNSET is not supported, but it can set SORT_COLUMNS to empty string instead of using UNSET.
+       NOTE: When SORT_SCOPE is not NO_SORT, then setting SORT_COLUMNS to empty string is not valid.
        ```
        ALTER TABLE tablename SET TBLPROPERTIES('SORT_COLUMNS'='')
        ```

@@ -18,7 +18,6 @@
 package org.apache.spark.util
 
 import java.io.IOException
-import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -28,8 +27,9 @@ import org.apache.spark.sql.execution.command.{DataMapField, Field}
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
  * Utility class for keeping all the utility methods common for pre-aggregate and mv datamap
@@ -48,10 +48,14 @@ object DataMapUtil {
                            parentcol.equals(fieldRelationMap(col).
                              columnTableRelationList.get(0).parentColumnName))
         .map(cols => neworder :+= cols.column))
-    tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, neworder.mkString(","))
-    tableProperties.put("sort_scope", parentTable.getTableInfo.getFactTable.
-      getTableProperties.asScala.getOrElse("sort_scope", CarbonCommonConstants
-      .LOAD_SORT_SCOPE_DEFAULT))
+    if (neworder.nonEmpty) {
+      tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, neworder.mkString(","))
+    }
+    val sort_scope = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .get("sort_scope")
+    if (sort_scope.isDefined) {
+      tableProperties.put("sort_scope", sort_scope.get)
+    }
     tableProperties
       .put(CarbonCommonConstants.TABLE_BLOCKSIZE, parentTable.getBlockSizeInMB.toString)
     tableProperties.put(CarbonCommonConstants.FLAT_FOLDER,
@@ -98,6 +102,12 @@ object DataMapUtil {
       tableProperties.put(CarbonCommonConstants.LONG_STRING_COLUMNS,
         newLongStringColumn.mkString(","))
     }
+    // inherit compressor property
+    tableProperties
+      .put(CarbonCommonConstants.COMPRESSOR,
+        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.COMPRESSOR,
+            CompressorFactory.getInstance().getCompressor.getName))
 
     // inherit the local dictionary properties of main parent table
     tableProperties
