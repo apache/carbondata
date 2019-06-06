@@ -741,8 +741,9 @@ public class CarbonFactDataHandlerModel {
       this.numberOfCores = CarbonProperties.getInstance().getNumberOfLoadingCores();
     }
 
-    if (this.sortScope != null && this.sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)
-        && tableSpec.getCarbonTable().getRangeColumn() != null) {
+    if (this.sortScope != null && this.sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) && (
+        tableSpec.getCarbonTable().getRangeColumn() == null || (
+            tableSpec.getCarbonTable().getRangeColumn() != null && !this.isCompactionFlow))) {
       this.numberOfCores = 1;
     }
     // Overriding it to the task specified cores.
