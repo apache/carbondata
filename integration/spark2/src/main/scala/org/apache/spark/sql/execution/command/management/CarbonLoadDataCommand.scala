@@ -847,7 +847,7 @@ case class CarbonLoadDataCommand(
         }
         LOGGER.info(errorMessage)
         LOGGER.error(ex)
-        throw new Exception(errorMessage)
+        throw ex
     } finally {
       CarbonSession.threadUnset("partition.operationcontext")
       if (isOverwriteTable) {
