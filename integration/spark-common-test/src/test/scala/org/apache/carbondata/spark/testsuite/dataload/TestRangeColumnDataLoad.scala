@@ -142,6 +142,21 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_range_column4"), Seq(Row(20)))
   }
 
+  test("Describe formatted for Range Column") {
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+    sql(
+      """
+        | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age SHORT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'SORT_COLUMNS'='age, city',
+        | 'range_column'='age')
+      """.stripMargin)
+    val desc = sql("Desc formatted carbon_range_column1").collect()
+    assert(desc.exists(_.toString().contains("RANGE COLUMN")))
+    assert(desc.exists(_.toString().contains("age")))
+    sql("DROP TABLE IF EXISTS carbon_range_column1")
+  }
+
   test("Test compaction for range_column - SHORT Datatype") {
     sql("DROP TABLE IF EXISTS carbon_range_column1")
     sql(
