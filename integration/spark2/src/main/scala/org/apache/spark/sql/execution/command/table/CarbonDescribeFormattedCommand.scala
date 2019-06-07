@@ -133,7 +133,9 @@ private[sql] case class CarbonDescribeFormattedCommand(
           CarbonCommonConstants.CACHE_LEVEL_DEFAULT_VALUE), ""),
       ("Table page size in mb", pageSizeInMb, "")
     )
-
+    if (carbonTable.getRangeColumn != null) {
+      results ++= Seq(("RANGE COLUMN", carbonTable.getRangeColumn.getColName, ""))
+    }
     //////////////////////////////////////////////////////////////////////////////
     //  Encoding Information
     //////////////////////////////////////////////////////////////////////////////
