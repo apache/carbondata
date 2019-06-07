@@ -175,6 +175,7 @@ case class CarbonCreateDataMapCommand(
         systemFolderLocation, tableIdentifier, dmProviderName)
     OperationListenerBus.getInstance().fireEvent(createDataMapPostExecutionEvent,
       operationContext)
+    CarbonEnv.getInstance(sparkSession).carbonMetaStore.updateAndTouchSchemasUpdatedTime()
     Seq.empty
   }
 

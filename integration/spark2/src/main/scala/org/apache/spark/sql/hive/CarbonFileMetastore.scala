@@ -417,7 +417,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     thriftWriter.open(FileWriteOperation.OVERWRITE)
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
-    updateSchemasUpdatedTime(touchSchemaFileSystemTime())
+    updateAndTouchSchemasUpdatedTime()
     identifier.getTablePath
   }
 
@@ -514,7 +514,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
 
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
-      updateSchemasUpdatedTime(touchSchemaFileSystemTime())
+      updateAndTouchSchemasUpdatedTime()
       // discard cached table info in cachedDataSourceTables
       val tableIdentifier = TableIdentifier(tableName, Option(dbName))
       sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
