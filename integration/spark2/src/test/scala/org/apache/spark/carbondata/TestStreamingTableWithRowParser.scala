@@ -663,20 +663,40 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
     // agg
     checkAnswer(
       sql("select count(*), max(id), min(name), cast(avg(file.age) as integer), sum(file.age) " +
-          "from stream_table_filter_complex where id >= 2 and id <= 100000004"),
+        "from stream_table_filter_complex where id >= 2 and id <= 100000004"),
       Seq(Row(51, 100000004, "batch_1", 27, 1406)))
 
     checkAnswer(
       sql("select city, count(id), sum(id), cast(avg(file.age) as integer), " +
-          "max(salary), min(salary) " +
-          "from stream_table_filter_complex " +
-          "where name in ('batch_1', 'batch_2', 'batch_3', 'name_1', 'name_2', 'name_3') " +
-          "and city <> '' " +
-          "group by city " +
-          "order by city"),
+        "max(salary), min(salary) " +
+        "from stream_table_filter_complex " +
+        "where name in ('batch_1', 'batch_2', 'batch_3', 'name_1', 'name_2', 'name_3') " +
+        "and city <> '' " +
+        "group by city " +
+        "order by city"),
       Seq(Row("city_1", 2, 100000002, 10, 10000.0, 0.1),
         Row("city_2", 1, 100000002, 30, 0.2, 0.2),
         Row("city_3", 2, 100000006, 21, 30000.0, 0.3)))
+  }
+
+
+  test("alter on stream table with dictionary, sort_columns and complex column") {
+    executeStreamingIngest(
+      tableName = "stream_table_filter_complex",
+      batchNums = 2,
+      rowNumsEachBatch = 25,
+      intervalOfSource = 5,
+      intervalOfIngest = 5,
+      continueSeconds = 20,
+      generateBadRecords = true,
+      badRecordAction = "force",
+      autoHandoff = false
+    )
+
+    sql("SHOW SEGMENTS FOR TABLE streaming1.stream_table_filter_complex").show
+    sql("ALTER TABLE streaming1.stream_table_filter_complex COMPACT 'close_streaming'")
+    sql("SHOW SEGMENTS FOR TABLE streaming1.stream_table_filter_complex").show
+
   }
 
   def createWriteSocketThread(

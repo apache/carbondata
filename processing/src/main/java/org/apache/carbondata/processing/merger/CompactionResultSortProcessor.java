@@ -268,7 +268,9 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return
    */
   private Object[] prepareStreamingRowObjectForSorting(Object[] row) {
-    List<CarbonDimension> dimensions = segmentProperties.getDimensions();
+    List<CarbonDimension> dimensions = new ArrayList<>();
+    dimensions.addAll(segmentProperties.getDimensions());
+    dimensions.addAll(segmentProperties.getComplexDimensions());
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dims = dimensions.get(i);
