@@ -126,7 +126,7 @@ CarbonData DDL statements are documented here,which includes:
      ```
 
      **NOTE**: 
-      * Dictionary Include/Exclude for complex child columns is not supported.   
+      * Dictionary Include/Exclude for complex child columns is not supported. Dictionary Include doesn't support binary data type.  
       * Dictionary is global. Except global dictionary, there are local dictionary and non-dictionary in CarbonData.
       
    - ##### Local Dictionary Configuration
