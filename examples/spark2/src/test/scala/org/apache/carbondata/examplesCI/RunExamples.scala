@@ -130,4 +130,8 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
     HiveExample.createCarbonTable(TestQueryExecutor.warehouse)
     HiveExample.readFromHive
   }
+
+  test("DataFrameSDKS3Example") {
+    DataFrameSDKS3Example.exampleBody(spark)
+  }
 }
