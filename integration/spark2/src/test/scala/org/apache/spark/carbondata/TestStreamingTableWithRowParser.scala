@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.spark.carbondatafalse
+package org.apache.spark.carbondata
 
-import java.io.{File, PrintWriter}
+import java.io.PrintWriter
 import java.math.BigDecimal
 import java.net.{BindException, ServerSocket}
 import java.sql.{Date, Timestamp}
@@ -29,7 +29,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
@@ -663,22 +663,21 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
     // agg
     checkAnswer(
       sql("select count(*), max(id), min(name), cast(avg(file.age) as integer), sum(file.age) " +
-        "from stream_table_filter_complex where id >= 2 and id <= 100000004"),
+          "from stream_table_filter_complex where id >= 2 and id <= 100000004"),
       Seq(Row(51, 100000004, "batch_1", 27, 1406)))
 
     checkAnswer(
       sql("select city, count(id), sum(id), cast(avg(file.age) as integer), " +
-        "max(salary), min(salary) " +
-        "from stream_table_filter_complex " +
-        "where name in ('batch_1', 'batch_2', 'batch_3', 'name_1', 'name_2', 'name_3') " +
-        "and city <> '' " +
-        "group by city " +
-        "order by city"),
+          "max(salary), min(salary) " +
+          "from stream_table_filter_complex " +
+          "where name in ('batch_1', 'batch_2', 'batch_3', 'name_1', 'name_2', 'name_3') " +
+          "and city <> '' " +
+          "group by city " +
+          "order by city"),
       Seq(Row("city_1", 2, 100000002, 10, 10000.0, 0.1),
         Row("city_2", 1, 100000002, 30, 0.2, 0.2),
         Row("city_3", 2, 100000006, 21, 30000.0, 0.3)))
   }
-
 
   test("alter on stream table with dictionary, sort_columns and complex column") {
     executeStreamingIngest(
