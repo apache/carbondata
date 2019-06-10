@@ -333,7 +333,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
            |'carbondata' LOCATION
            |'$writerPath' TBLPROPERTIES('sort_scope'='batch_sort') """.stripMargin)
     }
-    assert(ex.message.contains("table properties are not supported for external table"))
+    assert(ex.message.contains("Table properties are not supported for external table"))
   }
 
   test("Read sdk writer output file and test without carbondata and carbonindex files should fail")

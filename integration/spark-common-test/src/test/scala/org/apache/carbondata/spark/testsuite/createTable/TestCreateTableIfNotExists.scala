@@ -86,6 +86,12 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test create table without column specified") {
+    val exception = intercept[MalformedCarbonCommandException] {
+      sql("create table TableWithoutColumn stored by 'carbondata' tblproperties('sort_columns'='')")
+    }
+    assert(exception.getMessage.contains("Creating table without column(s) is not supported"))
+  }
 
   override def afterAll {
     sql("use default")

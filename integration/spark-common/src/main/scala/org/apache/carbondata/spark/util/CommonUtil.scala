@@ -95,12 +95,14 @@ object CommonUtil {
 
   def validateTblProperties(tableProperties: Map[String, String], fields: Seq[Field]): Boolean = {
     var isValid: Boolean = true
-    tableProperties.foreach {
-      case (key, value) =>
-        if (!validateFields(key, fields)) {
-          isValid = false
-          throw new MalformedCarbonCommandException(s"Invalid table properties ${ key }")
-        }
+    if (fields.nonEmpty) {
+      tableProperties.foreach {
+        case (key, value) =>
+          if (!validateFields(key, fields)) {
+            isValid = false
+            throw new MalformedCarbonCommandException(s"Invalid table properties $key")
+          }
+      }
     }
     isValid
   }
