@@ -36,7 +36,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.InvalidConfigurationException
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
@@ -840,6 +840,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
                          " does not exist in table or unsupported for complex child column. " +
                          "Please check the create table statement."
           throw new MalformedCarbonCommandException(errorMsg)
+        }
+        val rangeField = fields.find(_.column.equalsIgnoreCase(distIncludeCol.trim))
+        if ("binary".equalsIgnoreCase(rangeField.get.dataType.get)) {
+          throw new MalformedCarbonCommandException(
+            "DICTIONARY_INCLUDE is unsupported for binary data type column: " +
+                    distIncludeCol.trim)
         }
         if (varcharCols.exists(x => x.equalsIgnoreCase(distIncludeCol.trim))) {
           throw new MalformedCarbonCommandException(
