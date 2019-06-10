@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.spark.carbondatafalse
+package org.apache.spark.carbondata
 
-import java.io.{File, PrintWriter}
+import java.io.PrintWriter
 import java.math.BigDecimal
 import java.net.{BindException, ServerSocket}
 import java.sql.{Date, Timestamp}
@@ -29,7 +29,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
@@ -677,6 +677,25 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
       Seq(Row("city_1", 2, 100000002, 10, 10000.0, 0.1),
         Row("city_2", 1, 100000002, 30, 0.2, 0.2),
         Row("city_3", 2, 100000006, 21, 30000.0, 0.3)))
+  }
+
+  test("alter on stream table with dictionary, sort_columns and complex column") {
+    executeStreamingIngest(
+      tableName = "stream_table_filter_complex",
+      batchNums = 2,
+      rowNumsEachBatch = 25,
+      intervalOfSource = 5,
+      intervalOfIngest = 5,
+      continueSeconds = 20,
+      generateBadRecords = true,
+      badRecordAction = "force",
+      autoHandoff = false
+    )
+
+    sql("SHOW SEGMENTS FOR TABLE streaming1.stream_table_filter_complex").show
+    sql("ALTER TABLE streaming1.stream_table_filter_complex COMPACT 'close_streaming'")
+    sql("SHOW SEGMENTS FOR TABLE streaming1.stream_table_filter_complex").show
+
   }
 
   def createWriteSocketThread(

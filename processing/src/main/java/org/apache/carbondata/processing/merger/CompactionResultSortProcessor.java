@@ -130,6 +130,10 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private int dimensionColumnCount;
   /**
+   * all allDimensions in the table
+   */
+  private List<CarbonDimension> dimensions;
+  /**
    * whether the allocated tasks has any record
    */
   private boolean isRecordFound;
@@ -268,7 +272,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return
    */
   private Object[] prepareStreamingRowObjectForSorting(Object[] row) {
-    List<CarbonDimension> dimensions = segmentProperties.getDimensions();
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dims = dimensions.get(i);
@@ -307,9 +310,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private Object[] prepareRowObjectForSorting(Object[] row) {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
     // ByteBuffer[] noDictionaryBuffer = new ByteBuffer[noDictionaryCount];
-    List<CarbonDimension> dimensions = new ArrayList<>();
-    dimensions.addAll(segmentProperties.getDimensions());
-    dimensions.addAll(segmentProperties.getComplexDimensions());
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
     // convert the dictionary from MDKey to surrogate key
     byte[] dictionaryKey = wrapper.getDictionaryKey();
@@ -431,7 +431,9 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void initSortDataRows() throws Exception {
     measureCount = carbonTable.getMeasureByTableName(tableName).size();
-    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
+    dimensions = new ArrayList<>(2);
+    dimensions.addAll(segmentProperties.getDimensions());
+    dimensions.addAll(segmentProperties.getComplexDimensions());
     noDictionaryColMapping = new boolean[dimensions.size()];
     sortColumnMapping = new boolean[dimensions.size()];
     isVarcharDimMapping = new boolean[dimensions.size()];
