@@ -103,7 +103,7 @@ object DistributionUtil {
     while (iface.hasMoreElements) {
       addresses = iface.nextElement().getInterfaceAddresses.asScala.toList ++ addresses
     }
-    val inets = addresses.map(_.getAddress.getHostName)
+    val inets = addresses.map(_.getAddress.getHostAddress)
     inets
   }
 
