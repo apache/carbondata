@@ -17,11 +17,16 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.Row
+import scala.collection.JavaConverters._
+import java.util
+
+import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
@@ -533,6 +538,47 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     intercept[UnsupportedOperationException] {
       sql("drop metacache on table dm_table").show(false)
     }.getMessage.contains("Operation not allowed on child table.")
+  }
+
+  test("drop meta cache on mv datamap table") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    sql("create datamap dm using 'mv' as select name, sum(price) from maintable group by name")
+    sql("select name, sum(price) from maintable group by name").collect()
+    val droppedCacheKeys = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
+
+    sql("drop metacache on table maintable").show(false)
+
+    val cacheAfterDrop = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
+    droppedCacheKeys.removeAll(cacheAfterDrop)
+
+    val tableIdentifier = new TableIdentifier("maintable", Some("default"))
+    val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
+    val dbPath = CarbonEnv
+      .getDatabaseLocation(tableIdentifier.database.get, sqlContext.sparkSession)
+    val tablePath = carbonTable.getTablePath
+    val mvPath = dbPath + CarbonCommonConstants.FILE_SEPARATOR + "dm_table" +
+                 CarbonCommonConstants.FILE_SEPARATOR
+
+    // Check if table index entries are dropped
+    assert(droppedCacheKeys.asScala.exists(key => key.startsWith(tablePath)))
+
+    // check if cache does not have any more table index entries
+    assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(tablePath)))
+
+    // Check if mv index entries are dropped
+    assert(droppedCacheKeys.asScala.exists(key => key.startsWith(mvPath)))
+
+    // check if cache does not have any more mv index entries
+    assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(mvPath)))
+  }
+
+  def clone(oldSet: util.Set[String]): util.HashSet[String] = {
+    val newSet = new util.HashSet[String]
+    newSet.addAll(oldSet)
+    newSet
   }
 
 }
