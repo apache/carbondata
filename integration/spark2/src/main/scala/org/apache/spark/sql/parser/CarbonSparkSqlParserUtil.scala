@@ -17,7 +17,6 @@
 
 package org.apache.spark.sql.parser
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.antlr.v4.runtime.tree.TerminalNode
@@ -124,10 +123,13 @@ object CarbonSparkSqlParserUtil {
       operationNotAllowed("Streaming is not allowed on partitioned table", partitionColumns)
     }
 
+    if (!external && fields.isEmpty) {
+      throw new MalformedCarbonCommandException("Creating table without column(s) is not supported")
+    }
     if (external && fields.isEmpty && tableProperties.nonEmpty) {
       // as fields are always zero for external table, cannot validate table properties.
       operationNotAllowed(
-        "table properties are not supported for external table", tablePropertyList)
+        "Table properties are not supported for external table", tablePropertyList)
     }
 
     // validate tblProperties
