@@ -150,6 +150,8 @@ public class CarbonInputSplit extends FileSplit
    */
   private int rowCount;
 
+  private boolean writeDeleteDelta = true;
+
   public CarbonInputSplit() {
     segment = null;
     taskId = "0";
@@ -193,6 +195,7 @@ public class CarbonInputSplit extends FileSplit
     this.version = ColumnarFormatVersion.valueOf(in.readShort());
     // will be removed after count(*) optmization in case of index server
     this.rowCount = in.readInt();
+    this.writeDeleteDelta = in.readBoolean();
     // after deseralizing required field get the start position of field which will be only used
     // in executor
     int leftoverPosition = underlineStream.getPosition();
@@ -356,15 +359,11 @@ public class CarbonInputSplit extends FileSplit
       this.length = in.readLong();
       this.version = ColumnarFormatVersion.valueOf(in.readShort());
       this.rowCount = in.readInt();
+      this.writeDeleteDelta = in.readBoolean();
       this.bucketId = in.readUTF();
     }
     this.blockletId = in.readUTF();
     this.segment = Segment.toSegment(in.readUTF());
-    int numberOfDeleteDeltaFiles = in.readInt();
-    deleteDeltaFiles = new String[numberOfDeleteDeltaFiles];
-    for (int i = 0; i < numberOfDeleteDeltaFiles; i++) {
-      deleteDeltaFiles[i] = in.readUTF();
-    }
     boolean detailInfoExists = in.readBoolean();
     if (detailInfoExists) {
       detailInfo = new BlockletDetailInfo();
@@ -380,6 +379,13 @@ public class CarbonInputSplit extends FileSplit
       validBlockletIds.add((int) in.readShort());
     }
     this.isLegacyStore = in.readBoolean();
+    if (writeDeleteDelta) {
+      int numberOfDeleteDeltaFiles = in.readInt();
+      deleteDeltaFiles = new String[numberOfDeleteDeltaFiles];
+      for (int i = 0; i < numberOfDeleteDeltaFiles; i++) {
+        deleteDeltaFiles[i] = in.readUTF();
+      }
+    }
   }
 
   @Override public void write(DataOutput out) throws IOException {
@@ -391,9 +397,11 @@ public class CarbonInputSplit extends FileSplit
       out.writeLong(length);
       out.writeShort(version.number());
       out.writeInt(rowCount);
+      out.writeBoolean(writeDeleteDelta);
       out.writeUTF(bucketId);
       out.writeUTF(blockletId);
       out.write(serializeData, offset, actualLen);
+      writeDeleteDeltaFile(out);
       return;
     }
     // please refer writeDetailInfo doc
@@ -411,17 +419,12 @@ public class CarbonInputSplit extends FileSplit
     } else {
       out.writeInt(0);
     }
+    out.writeBoolean(writeDeleteDelta);
     if (null != bucketId) {
       out.writeUTF(bucketId);
     }
     out.writeUTF(blockletId);
     out.writeUTF(segment.toString());
-    out.writeInt(null != deleteDeltaFiles ? deleteDeltaFiles.length : 0);
-    if (null != deleteDeltaFiles) {
-      for (int i = 0; i < deleteDeltaFiles.length; i++) {
-        out.writeUTF(deleteDeltaFiles[i]);
-      }
-    }
     // please refer writeDetailInfo doc
     out.writeBoolean(writeDetailInfo && (detailInfo != null || dataMapRow != null));
     if (writeDetailInfo && detailInfo != null) {
@@ -439,7 +442,21 @@ public class CarbonInputSplit extends FileSplit
       out.writeShort(blockletId);
     }
     out.writeBoolean(isLegacyStore);
+    writeDeleteDeltaFile(out);
   }
+
+  private void writeDeleteDeltaFile(DataOutput out) throws IOException {
+    if (!writeDeleteDelta) {
+      return;
+    }
+    out.writeInt(null != deleteDeltaFiles ? deleteDeltaFiles.length : 0);
+    if (null != deleteDeltaFiles) {
+      for (int i = 0; i < deleteDeltaFiles.length; i++) {
+        out.writeUTF(deleteDeltaFiles[i]);
+      }
+    }
+  }
+
 
   /**
    * returns the number of blocklets
@@ -569,6 +586,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public void setDeleteDeltaFiles(String[] deleteDeltaFiles) {
+    this.writeDeleteDelta = true;
     this.deleteDeltaFiles = deleteDeltaFiles;
   }
 
@@ -859,5 +877,9 @@ public class CarbonInputSplit extends FileSplit
 
   public void setBucketId(String bucketId) {
     this.bucketId = bucketId;
+  }
+
+  public void setWriteDeleteDelta(boolean writeDeleteDelta) {
+    this.writeDeleteDelta = writeDeleteDelta;
   }
 }

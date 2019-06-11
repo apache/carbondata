@@ -131,7 +131,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
         tableBlockIndexUniqueIdentifierWrappers.add(
             new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
-                this.getCarbonTable(), segment.getConfiguration(), segment.isCacheable()));
+                this.getCarbonTable()));
       }
     }
     List<BlockletDataMapIndexWrapper> blockletDataMapIndexWrappers =

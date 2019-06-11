@@ -17,7 +17,6 @@
 package org.apache.carbondata.indexserver
 
 import java.util
-import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -27,7 +26,6 @@ import org.apache.spark.util.SizeEstimator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DistributableDataMapFormat}
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -51,11 +49,11 @@ class DistributedDataMapJob extends AbstractDataMapJob {
       val messageSize = SizeEstimator.estimate(dataMapFormat)
       LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
     }
-    val queryId = SparkSQLUtil.getSparkSession.sparkContext.getConf
-      .get("queryId", UUID.randomUUID().toString)
-    dataMapFormat.setQueryId(queryId)
-    val tmpFolder = CarbonUtil
-      .createTempFolderForIndexServer(dataMapFormat.getCarbonTable.getTablePath, queryId)
+    val splitFolderPath = CarbonUtil
+      .createTempFolderForIndexServer(dataMapFormat.getCarbonTable.getTablePath,
+        dataMapFormat.getQueryId)
+    LOGGER
+      .info("Temp folder path for Query ID: " + dataMapFormat.getQueryId + " is " + splitFolderPath)
     val (resonse, time) = logTime {
       try {
         val spark = SparkSQLUtil.getSparkSession
@@ -78,8 +76,10 @@ class DistributedDataMapJob extends AbstractDataMapJob {
           .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
       } finally {
         val tmpPath = CarbonUtil
-          .getIndexServerTempPath(dataMapFormat.getCarbonTable.getTablePath, queryId)
-        if (null != tmpFolder && !tmpFolder.deleteFile(tmpPath, FileFactory.getFileType(tmpPath))) {
+          .getIndexServerTempPath(dataMapFormat.getCarbonTable.getTablePath,
+            dataMapFormat.getQueryId)
+        if (null != splitFolderPath &&
+            !splitFolderPath.deleteFile(tmpPath, FileFactory.getFileType(tmpPath))) {
           LOGGER.error("Problem while deleting the temp directory:" + tmpPath)
         }
       }
@@ -126,12 +126,16 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
 
   override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
     val spark = SparkSQLUtil.getSparkSession
-    val queryId = spark.sparkContext.getConf.get("queryId", UUID.randomUUID().toString)
-    dataMapFormat.setQueryId(queryId)
+    val originalJobDesc = spark.sparkContext.getLocalProperty("spark.job.description")
     dataMapFormat.setIsWriteToFile(false)
     dataMapFormat.setFallbackJob()
-    IndexServer.getSplits(dataMapFormat)
-      .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
+    val splits = IndexServer.getSplits(dataMapFormat).getExtendedBlockets(dataMapFormat
+      .getCarbonTable.getTablePath, dataMapFormat.getQueryId)
+    // Fire a job to clear the cache from executors as Embedded mode does not maintain the cache.
+    IndexServer.invalidateSegmentCache(dataMapFormat.getCarbonTable, dataMapFormat
+      .getValidSegmentIds.asScala.toArray)
+    spark.sparkContext.setLocalProperty("spark.job.description", originalJobDesc)
+    splits
   }
 
 }

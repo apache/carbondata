@@ -211,7 +211,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
       }
 
       final byte[] unCompressByte =
-          new SnappyCompressor().unCompressByte(data, data.length - actualDataLen, actualDataLen);
+          new SnappyCompressor().unCompressByte(data, this.dataSize - actualDataLen, actualDataLen);
       ExtendedByteArrayInputStream ebis = new ExtendedByteArrayInputStream(unCompressByte);
       ExtendedDataInputStream eDIS = new ExtendedDataInputStream(ebis);
       List<ExtendedBlocklet> extendedBlockletList = new ArrayList<>();

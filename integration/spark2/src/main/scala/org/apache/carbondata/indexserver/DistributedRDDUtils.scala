@@ -64,9 +64,10 @@ object DistributedRDDUtils {
     if (invalidExecutorIds.nonEmpty) {
       DistributedRDDUtils.invalidateExecutors(invalidExecutorIds.toSeq)
     }
-    val groupedPartitions = (convertToPartition(legacySegments, tableUniqueName, executorsList) ++
-                             convertToPartition(sortedPartitions, tableUniqueName, executorsList))
-      .groupBy {
+    val groupedPartitions = convertToPartition(sortedPartitions,
+      legacySegments,
+      tableUniqueName,
+      executorsList).groupBy {
         partition =>
           partition.getLocations.head
       }
@@ -78,14 +79,26 @@ object DistributedRDDUtils {
     }.toArray.sortBy(_.index)
   }
 
-  private def convertToPartition(segments: Seq[InputSplit], tableUniqueName: String,
+  private def convertToPartition(segments: Seq[InputSplit], legacySegments: Seq[InputSplit],
+      tableUniqueName: String,
       executorList: Map[String, Seq[String]]): Seq[InputSplit] = {
-    segments.map { partition =>
+    if (legacySegments.nonEmpty) {
+      val validExecutorIds = executorList.flatMap {
+        case (host, executors) => executors.map {
+          executor => s"${host}_$executor"
+        }
+      }.toSeq
+      legacySegments.zipWithIndex.map {
+        case (legacySegment, index) =>
+          val wrapper: DataMapDistributable = legacySegment
+            .asInstanceOf[DataMapDistributableWrapper].getDistributable
+          val executor = validExecutorIds(index % validExecutorIds.length)
+          wrapper.setLocations(Array("executor_" + executor))
+          legacySegment
+      }
+    } else { Seq() } ++ segments.map { partition =>
       val wrapper: DataMapDistributable = partition.asInstanceOf[DataMapDistributableWrapper]
         .getDistributable
-      if (wrapper.getSegment.getIndexSize == 0L) {
-        wrapper.getSegment.setIndexSize(1L)
-      }
       wrapper.setLocations(Array(DistributedRDDUtils
         .assignExecutor(tableUniqueName, wrapper.getSegment, executorList)))
       partition
@@ -117,12 +130,30 @@ object DistributedRDDUtils {
     }
   }
 
-  def invalidateCache(tableUniqueName: String): Unit = {
-    tableToExecutorMapping.keySet().asScala.foreach {
-      key =>
-        if (key.equalsIgnoreCase(tableUniqueName)) {
-          tableToExecutorMapping.remove(key)
+  /**
+   * Remove the invalid segment mapping from index server when segments are compacted or become
+   * invalid.
+   */
+  def invalidateSegmentMapping(tableUniqueName: String,
+      invalidSegmentList: Seq[String]): Unit = {
+    synchronized {
+      if (tableToExecutorMapping.get(tableUniqueName) != null) {
+        invalidSegmentList.foreach {
+          invalidSegment => tableToExecutorMapping.get(tableUniqueName).remove(invalidSegment)
         }
+        if (tableToExecutorMapping.get(tableUniqueName).isEmpty) {
+          invalidateTableMapping(tableUniqueName)
+        }
+      }
+    }
+  }
+
+  /**
+   * Remove the table mapping from index server when the table is dropped.
+   */
+  def invalidateTableMapping(tableUniqueName: String): Unit = {
+    synchronized {
+      tableToExecutorMapping.remove(tableUniqueName)
     }
   }
 

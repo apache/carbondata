@@ -31,5 +31,6 @@ public enum CompactionType {
     CLOSE_STREAMING,
     CUSTOM,
     SEGMENT_INDEX,
+    UPGRADE_SEGMENT,
     NONE
 }

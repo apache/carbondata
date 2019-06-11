@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -84,9 +85,12 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private String taskGroupDesc = "";
 
-  private String queryId = "";
+  private String queryId = UUID.randomUUID().toString();
+
+  private transient DataMapChooser dataMapChooser;
 
   private boolean isWriteToFile = true;
+
   DistributableDataMapFormat() {
 
   }
@@ -138,26 +142,16 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
       public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
           throws IOException, InterruptedException {
         DataMapDistributableWrapper distributable = (DataMapDistributableWrapper) inputSplit;
-        distributable.getDistributable().getSegment().setCacheable(!isFallbackJob);
         distributable.getDistributable().getSegment().setReadCommittedScope(readCommittedScope);
         List<Segment> segmentsToLoad = new ArrayList<>();
         segmentsToLoad.add(distributable.getDistributable().getSegment());
         List<ExtendedBlocklet> blocklets = new ArrayList<>();
-        DataMapChooser dataMapChooser = null;
-        if (null != filterResolverIntf) {
-          dataMapChooser = new DataMapChooser(table);
-        }
         if (dataMapLevel == null) {
           TableDataMap defaultDataMap = DataMapStoreManager.getInstance()
               .getDataMap(table, distributable.getDistributable().getDataMapSchema());
           dataMaps = defaultDataMap.getTableDataMaps(distributable.getDistributable());
-          if (table.isTransactionalTable()) {
-            blocklets = defaultDataMap.prune(dataMaps, distributable.getDistributable(),
-                filterResolverIntf, partitions);
-          } else {
-            blocklets = defaultDataMap.prune(segmentsToLoad, new DataMapFilter(filterResolverIntf),
-                partitions);
-          }
+          blocklets = defaultDataMap
+              .prune(segmentsToLoad, new DataMapFilter(filterResolverIntf), partitions);
           blocklets = DataMapUtil
               .pruneDataMaps(table, filterResolverIntf, segmentsToLoad, partitions, blocklets,
                   dataMapChooser);
@@ -380,10 +374,6 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     return queryId;
   }
 
-  public void setQueryId(String queryId) {
-    this.queryId = queryId;
-  }
-
   public String getDataMapToClear() {
     return dataMapToClear;
   }
@@ -398,5 +388,19 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   public void setFallbackJob() {
     isFallbackJob = true;
+  }
+
+  public List<String> getValidSegmentIds() {
+    List<String> validSegments = new ArrayList<>();
+    for (Segment segment : this.validSegments) {
+      validSegments.add(segment.getSegmentNo());
+    }
+    return validSegments;
+  }
+
+  public void createDataMapChooser() throws IOException {
+    if (null != filterResolverIntf) {
+      this.dataMapChooser = new DataMapChooser(table);
+    }
   }
 }

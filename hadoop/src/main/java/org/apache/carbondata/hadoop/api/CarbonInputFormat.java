@@ -578,7 +578,7 @@ m filterExpression
         if (distributedCG && dataMapJob != null) {
           cgPrunedBlocklets = DataMapUtil
               .executeDataMapJob(carbonTable, filter.getResolver(), dataMapJob, partitionsToPrune,
-                  segmentIds, invalidSegments, DataMapLevel.CG, new ArrayList<String>());
+                  segmentIds, invalidSegments, DataMapLevel.CG, true, new ArrayList<String>());
         } else {
           cgPrunedBlocklets = cgDataMapExprWrapper.prune(segmentIds, partitionsToPrune);
         }
@@ -606,7 +606,7 @@ m filterExpression
           // Prune segments from already pruned blocklets
           fgPrunedBlocklets = DataMapUtil
               .executeDataMapJob(carbonTable, filter.getResolver(), dataMapJob, partitionsToPrune,
-                  segmentIds, invalidSegments, fgDataMapExprWrapper.getDataMapLevel(),
+                  segmentIds, invalidSegments, fgDataMapExprWrapper.getDataMapLevel(), true,
                   new ArrayList<String>());
           // note that the 'fgPrunedBlocklets' has extra datamap related info compared with
           // 'prunedBlocklets', so the intersection should keep the elements in 'fgPrunedBlocklets'

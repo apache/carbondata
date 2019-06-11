@@ -69,11 +69,6 @@ public class Segment implements Serializable, Writable {
 
   private long indexSize = 0;
 
-  /**
-   * Whether to cache the segment data maps in executors or not.
-   */
-  private boolean isCacheable = true;
-
   public Segment() {
 
   }
@@ -285,14 +280,6 @@ public class Segment implements Serializable, Writable {
 
   public void setIndexSize(long indexSize) {
     this.indexSize = indexSize;
-  }
-
-  public boolean isCacheable() {
-    return isCacheable;
-  }
-
-  public void setCacheable(boolean cacheable) {
-    isCacheable = cacheable;
   }
 
   @Override public void write(DataOutput out) throws IOException {
