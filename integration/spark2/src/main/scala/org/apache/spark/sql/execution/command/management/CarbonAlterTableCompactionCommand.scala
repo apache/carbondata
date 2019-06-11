@@ -22,7 +22,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.{CarbonEnv, Row, SQLContext, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{AlterTableModel, AtomicRunnableCommand, CompactionModel}
@@ -52,6 +52,7 @@ import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadMetadataEvent
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
+import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, StreamHandoffRDD}
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -118,7 +119,30 @@ case class CarbonAlterTableCompactionCommand(
         throw new MalformedCarbonCommandException(
           "Unsupported alter operation on carbon table")
     }
-    if (compactionType == CompactionType.SEGMENT_INDEX) {
+    if (compactionType == CompactionType.UPGRADE_SEGMENT) {
+      val tableStatusLock = CarbonLockFactory.getCarbonLockObj(table.getAbsoluteTableIdentifier, LockUsage
+        .TABLE_STATUS_LOCK)
+      try {
+        if (tableStatusLock.lockWithRetries()) {
+          val loadMetaDataDetails = SegmentStatusManager.readLoadMetadata(table.getTablePath)
+          loadMetaDataDetails.foreach { loadMetaDataDetail =>
+            if (loadMetaDataDetail.getIndexSize == null || loadMetaDataDetail.getDataSize == null) {
+              CarbonLoaderUtil
+                .addDataIndexSizeIntoMetaEntry(loadMetaDataDetail, loadMetaDataDetail.getLoadName,
+                  table)
+            }
+          }
+          SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath
+            .getTableStatusFilePath(table.getTablePath), loadMetaDataDetails)
+        } else {
+          throw new ConcurrentOperationException(table.getDatabaseName,
+            table.getTableName, "table status updation", "upgrade segments")
+        }
+      } finally {
+        tableStatusLock.unlock()
+      }
+      Seq.empty
+    } else if (compactionType == CompactionType.SEGMENT_INDEX) {
       if (table.isStreamingSink) {
         throw new MalformedCarbonCommandException(
           "Unsupported alter operation on carbon table: Merge index is not supported on streaming" +

@@ -20,6 +20,8 @@ import java.net.InetSocketAddress
 import java.security.PrivilegedAction
 import java.util.UUID
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.ipc.{ProtocolInfo, RPC}
 import org.apache.hadoop.net.NetUtils
@@ -100,17 +102,24 @@ object IndexServer extends ServerInterface {
     })
   }
 
-  def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer = doAs {
-    sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
-    sparkSession.sparkContext.setLocalProperty("spark.job.description", request.getTaskGroupDesc)
-    val splits = new DistributedPruneRDD(sparkSession, request).collect()
-    if (!request.isFallbackJob) {
-      DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
+  def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer = {
+    doAs {
+      sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
+      sparkSession.sparkContext.setLocalProperty("spark.job.description", request.getTaskGroupDesc)
+      val splits = new DistributedPruneRDD(sparkSession, request).collect()
+      if (!request.isFallbackJob) {
+        DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
+      }
+      if (request.isJobToClearDataMaps) {
+        DistributedRDDUtils.invalidateTableMapping(request.getCarbonTable.getTableUniqueName)
+      }
+      if (!request.getInvalidSegments.isEmpty) {
+        DistributedRDDUtils
+          .invalidateSegmentMapping(request.getCarbonTable.getTableUniqueName,
+            request.getInvalidSegments.asScala)
+      }
+      splits.map(_._2)
     }
-    if (request.isJobToClearDataMaps) {
-      DistributedRDDUtils.invalidateCache(request.getCarbonTable.getTableUniqueName)
-    }
-    new ExtendedBlockletWrapperContainer(splits.map(_._2), request.isFallbackJob)
   }
 
   override def invalidateSegmentCache(carbonTable: CarbonTable,
@@ -121,6 +130,11 @@ object IndexServer extends ServerInterface {
     sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
     new InvalidateSegmentCacheRDD(sparkSession, carbonTable, segmentIds.toList)
       .collect()
+    if (segmentIds.nonEmpty) {
+      DistributedRDDUtils
+        .invalidateSegmentMapping(s"${databaseName}_$tableName",
+          segmentIds)
+    }
   }
 
   override def showCache(tableName: String = ""): Array[String] = doAs {

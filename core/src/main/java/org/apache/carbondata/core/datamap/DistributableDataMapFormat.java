@@ -87,6 +87,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
   private String queryId = "";
 
   private boolean isWriteToFile = true;
+
   DistributableDataMapFormat() {
 
   }
@@ -312,13 +313,6 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
                 FileFactory.getConfiguration());
       }
     }
-  }
-
-  /**
-   * @return Whether the job is fallback or not.
-   */
-  public boolean isFallbackJob() {
-    return isFallbackJob;
   }
 
   /**
