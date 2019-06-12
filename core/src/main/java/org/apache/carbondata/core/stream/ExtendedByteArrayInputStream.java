@@ -15,27 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.statusmanager;
+package org.apache.carbondata.core.stream;
 
-/**
- * The data file format supported in carbondata project
- */
-public enum FileFormat {
+import java.io.ByteArrayInputStream;
 
-  // carbondata columnar file format, optimized for read
-  COLUMNAR_V3,
+public class ExtendedByteArrayInputStream extends ByteArrayInputStream {
+  public ExtendedByteArrayInputStream(byte[] buf) {
+    super(buf);
+  }
 
-  // carbondata row file format, optimized for write
-  ROW_V1;
+  public byte[] getBuffer() {
+    return buf;
+  }
 
-  public static FileFormat getByOrdinal(int ordinal) {
-    switch (ordinal) {
-      case 0:
-        return COLUMNAR_V3;
-      case 1:
-        return ROW_V1;
-    }
+  public void setPosition(int position) {
+    this.pos = position;
+  }
 
-    return COLUMNAR_V3;
+  public int getPosition() {
+    return this.pos;
+  }
+
+  public int getLength() {
+    return count - pos;
   }
 }

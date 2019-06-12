@@ -489,7 +489,7 @@ class CarbonMergerRDD[K, V](
         var dataFileFooter: DataFileFooter = null
         if (null == rangeColumn) {
           val taskNo = getTaskNo(split, partitionTaskMap, counter)
-          var sizeOfSplit = split.getDetailInfo.getBlockSize
+          var sizeOfSplit = split.getLength
           val splitList = taskIdMapping.get(taskNo)
           noOfBlocks += 1
           if (null == splitList) {

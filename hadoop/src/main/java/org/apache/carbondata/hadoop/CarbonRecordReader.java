@@ -81,17 +81,25 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     List<CarbonInputSplit> splitList;
     if (inputSplit instanceof CarbonInputSplit) {
       splitList = new ArrayList<>(1);
-      String splitPath = ((CarbonInputSplit) inputSplit).getFilePath();
+      CarbonInputSplit carbonInputSplit = ((CarbonInputSplit) inputSplit);
+      String splitPath = carbonInputSplit.getFilePath();
       // BlockFooterOffSet will be null in case of CarbonVectorizedReader as this has to be set
       // where multiple threads are able to read small set of files to calculate footer instead
       // of the main thread setting this for all the files.
-      if (((CarbonInputSplit) inputSplit).getDetailInfo().getBlockFooterOffset() == 0L) {
+      if ((null != carbonInputSplit.getDetailInfo()
+          && carbonInputSplit.getDetailInfo().getBlockFooterOffset() == 0L) || (
+          null == carbonInputSplit.getDetailInfo() && carbonInputSplit.getStart() == 0)) {
         FileReader reader = FileFactory.getFileHolder(FileFactory.getFileType(splitPath),
             context.getConfiguration());
         ByteBuffer buffer = reader
             .readByteBuffer(FileFactory.getUpdatedFilePath(splitPath), inputSplit.getLength() - 8,
                 8);
-        ((CarbonInputSplit) inputSplit).getDetailInfo().setBlockFooterOffset(buffer.getLong());
+        if (carbonInputSplit.getDetailInfo() == null) {
+          carbonInputSplit.setStart(buffer.getLong());
+        } else {
+          carbonInputSplit.getDetailInfo().setBlockFooterOffset(buffer.getLong());
+        }
+        reader.finish();
       }
       splitList.add((CarbonInputSplit) inputSplit);
     } else if (inputSplit instanceof CarbonMultiBlockSplit) {

@@ -117,9 +117,16 @@ public class BlockDataMap extends CoarseGrainDataMap
     BlockletDataMapModel blockletDataMapInfo = (BlockletDataMapModel) dataMapModel;
     DataFileFooterConverter fileFooterConverter =
         new DataFileFooterConverter(dataMapModel.getConfiguration());
-    List<DataFileFooter> indexInfo = fileFooterConverter
-        .getIndexInfo(blockletDataMapInfo.getFilePath(), blockletDataMapInfo.getFileData(),
-            blockletDataMapInfo.getCarbonTable().isTransactionalTable());
+    List<DataFileFooter> indexInfo = null;
+    if (blockletDataMapInfo.getIndexInfos() == null || blockletDataMapInfo.getIndexInfos()
+        .isEmpty()) {
+      indexInfo = fileFooterConverter
+          .getIndexInfo(blockletDataMapInfo.getFilePath(), blockletDataMapInfo.getFileData(),
+              blockletDataMapInfo.getCarbonTable().isTransactionalTable());
+    } else {
+      // when index info is already read and converted to data file footer object
+      indexInfo = blockletDataMapInfo.getIndexInfos();
+    }
     Path path = new Path(blockletDataMapInfo.getFilePath());
     // store file path only in case of partition table, non transactional table and flat folder
     // structure

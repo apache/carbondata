@@ -18,7 +18,7 @@
 package org.apache.carbondata.spark.rdd
 
 import java.text.SimpleDateFormat
-import java.util.{ArrayList, Date, List}
+import java.util.{ArrayList, Date, List, UUID}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -86,7 +86,11 @@ class CarbonScanRDD[T: ClassTag](
     @transient var splits: java.util.List[InputSplit] = null)
   extends CarbonRDDWithTableInfo[T](spark, Nil, serializedTableInfo) {
 
-  private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
+  private val queryId = {
+    val q = sparkContext.getConf.get("queryId", UUID.randomUUID().toString + "")
+    sparkContext.getConf.set("queryId", q)
+    q
+  }
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new Date())

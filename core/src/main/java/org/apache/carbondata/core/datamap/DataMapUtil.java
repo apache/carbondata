@@ -168,23 +168,32 @@ public class DataMapUtil {
 
   static List<ExtendedBlocklet> pruneDataMaps(CarbonTable table,
       FilterResolverIntf filterResolverIntf, List<Segment> segmentsToLoad,
-      List<PartitionSpec> partitions, List<ExtendedBlocklet> blocklets) throws IOException {
+      List<PartitionSpec> partitions, List<ExtendedBlocklet> blocklets,
+      DataMapChooser dataMapChooser) throws IOException {
+    if (null == dataMapChooser) {
+      return blocklets;
+    }
     pruneSegments(segmentsToLoad, blocklets);
     List<ExtendedBlocklet> cgDataMaps = pruneDataMaps(table, filterResolverIntf, segmentsToLoad,
         partitions, blocklets,
-        DataMapLevel.CG);
+        DataMapLevel.CG, dataMapChooser);
     pruneSegments(segmentsToLoad, cgDataMaps);
     return pruneDataMaps(table, filterResolverIntf, segmentsToLoad,
         partitions, cgDataMaps,
-        DataMapLevel.FG);
+        DataMapLevel.FG, dataMapChooser);
   }
 
   static List<ExtendedBlocklet> pruneDataMaps(CarbonTable table,
       FilterResolverIntf filterResolverIntf, List<Segment> segmentsToLoad,
-      List<PartitionSpec> partitions, List<ExtendedBlocklet> blocklets, DataMapLevel dataMapLevel)
+      List<PartitionSpec> partitions, List<ExtendedBlocklet> blocklets, DataMapLevel dataMapLevel,
+      DataMapChooser dataMapChooser)
       throws IOException {
-    DataMapExprWrapper dataMapExprWrapper =
-        new DataMapChooser(table).chooseDataMap(dataMapLevel, filterResolverIntf);
+    DataMapExprWrapper dataMapExprWrapper = null;
+    if (dataMapLevel == DataMapLevel.CG) {
+      dataMapExprWrapper = dataMapChooser.chooseCGDataMap(filterResolverIntf);
+    } else if (dataMapLevel == DataMapLevel.FG) {
+      dataMapExprWrapper = dataMapChooser.chooseFGDataMap(filterResolverIntf);
+    }
     if (dataMapExprWrapper != null) {
       List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
       // Prune segments from already pruned blocklets
@@ -204,16 +213,11 @@ public class DataMapUtil {
         }
         // For all blocklets initialize the detail info so that it can be serialized to the driver.
         for (ExtendedBlocklet blocklet : prunnedBlocklet) {
-          blocklet.getDetailInfo();
           blocklet.setDataMapUniqueId(wrapper.getUniqueId());
         }
         extendedBlocklets.addAll(prunnedBlocklet);
       }
       return dataMapExprWrapper.pruneBlocklets(extendedBlocklets);
-    }
-    // For all blocklets initialize the detail info so that it can be serialized to the driver.
-    for (ExtendedBlocklet blocklet : blocklets) {
-      blocklet.getDetailInfo();
     }
     return blocklets;
   }

@@ -17,6 +17,7 @@
 package org.apache.carbondata.indexserver
 
 import java.util
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -26,6 +27,8 @@ import org.apache.spark.util.SizeEstimator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DistributableDataMapFormat}
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.scan.expression.BinaryExpression
@@ -47,6 +50,18 @@ class DistributedDataMapJob extends AbstractDataMapJob {
       val messageSize = SizeEstimator.estimate(dataMapFormat)
       LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
     }
+    val queryId = SparkSQLUtil.getSparkSession.sparkContext.getConf
+      .get("queryId", UUID.randomUUID().toString)
+    dataMapFormat.setQueryId(queryId)
+    val tempPath = dataMapFormat.getCarbonTable.getTablePath + "/" + queryId;
+    val file = FileFactory.getCarbonFile(tempPath)
+    var isTempFolderCreated = false
+    if (!file.mkdirs(tempPath)) {
+      LOGGER.info("Unable to create table directory for index server")
+    } else {
+      isTempFolderCreated = true
+      LOGGER.info("Created index server temp directory" + tempPath)
+    }
     val (resonse, time) = logTime {
       val spark = SparkSQLUtil.getSparkSession
       val taskGroupId = spark.sparkContext.getLocalProperty("spark.jobGroup.id") match {
@@ -67,6 +82,9 @@ class DistributedDataMapJob extends AbstractDataMapJob {
       IndexServer.getClient.getSplits(dataMapFormat).toList.asJava
     }
     LOGGER.info(s"Time taken to get response from server: $time ms")
+    if (isTempFolderCreated && !file.delete()) {
+      LOGGER.info("Problem while deleting the temp directory" + tempPath)
+    }
     resonse
   }
 
@@ -106,8 +124,24 @@ class DistributedDataMapJob extends AbstractDataMapJob {
  */
 class EmbeddedDataMapJob extends AbstractDataMapJob {
 
+  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
   override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
     val spark = SparkSQLUtil.getSparkSession
+    val queryId = spark.sparkContext.getConf.get("queryId", UUID.randomUUID().toString)
+    dataMapFormat.setQueryId(queryId)
+    val tempPath = dataMapFormat.getCarbonTable.getTablePath + "/" + queryId;
+    var tempFolder: CarbonFile = null
+    var isTempFolderCreated = false
+    if (dataMapFormat.isFallbackJob) {
+      tempFolder = FileFactory.getCarbonFile(tempPath)
+      if (!tempFolder.mkdirs(tempPath)) {
+        LOGGER.info("Unable to create table directory for index server")
+      } else {
+        isTempFolderCreated = true
+        LOGGER.info("Created index server temp directory: " + tempPath)
+      }
+    }
     val taskGroupId = spark.sparkContext.getLocalProperty("spark.jobGroup.id") match {
       case null => ""
       case _ => spark.sparkContext.getLocalProperty("spark.jobGroup.id")
@@ -118,7 +152,11 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
     }
     dataMapFormat.setTaskGroupId(taskGroupId)
     dataMapFormat.setTaskGroupDesc(taskGroupDesc)
-    IndexServer.getSplits(dataMapFormat).toList.asJava
+    val splits = IndexServer.getSplits(dataMapFormat).toList.asJava
+    if (isTempFolderCreated && !tempFolder.delete()) {
+      LOGGER.info("Problem while deleting the temp directory" + tempPath)
+    }
+    splits
   }
 
 }

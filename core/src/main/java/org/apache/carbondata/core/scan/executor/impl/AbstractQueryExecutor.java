@@ -194,9 +194,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       // available so read the blocklet information from block file
       // 2. CACHE_LEVEL is set to block
       // 3. CACHE_LEVEL is BLOCKLET but filter column min/max is not cached in driver
-      if (blockletDetailInfo.getBlockletInfo() == null || blockletDetailInfo
-            .isUseMinMaxForPruning()) {
-        blockInfo.setBlockOffset(blockletDetailInfo.getBlockFooterOffset());
+      if (null == blockletDetailInfo || blockletDetailInfo.getBlockletInfo() == null
+          || blockletDetailInfo.isUseMinMaxForPruning()) {
+        if (null != blockletDetailInfo) {
+          blockInfo.setBlockOffset(blockletDetailInfo.getBlockFooterOffset());
+        }
         DataFileFooter fileFooter = filePathToFileFooterMapping.get(blockInfo.getFilePath());
         if (null != blockInfo.getDataFileFooter()) {
           fileFooter = blockInfo.getDataFileFooter();
@@ -211,6 +213,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             QueryUtil.updateColumnUniqueIdForNonTransactionTable(fileFooter.getColumnInTable());
           }
           filePathToFileFooterMapping.put(blockInfo.getFilePath(), fileFooter);
+          if (null == blockletDetailInfo) {
+            blockletDetailInfo = getBlockletDetailInfo(fileFooter, blockInfo);
+          }
+          blockletDetailInfo.setLegacyStore(blockInfo.isLegacyStore());
           blockInfo.setDetailInfo(blockletDetailInfo);
         }
         if (null == segmentProperties) {
@@ -220,6 +226,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           updateColumns(queryModel, fileFooter.getColumnInTable(), blockInfo.getFilePath());
           filePathToSegmentPropertiesMap.put(blockInfo.getFilePath(), segmentProperties);
         }
+
         if (blockletDetailInfo.isLegacyStore()) {
           LOGGER.warn("Skipping Direct Vector Filling as it is not Supported "
               + "for Legacy store prior to V3 store");
@@ -253,6 +260,28 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     return indexList;
   }
 
+  /**
+   * In case of index server there will not be any details info serialize from driver.
+   * Below method will use to create blocklet detail info object from footer
+   * @param fileFooter
+   * @param blockInfo
+   * @return
+   */
+  private BlockletDetailInfo getBlockletDetailInfo(DataFileFooter fileFooter,
+      TableBlockInfo blockInfo) {
+    BlockletDetailInfo detailInfo = new BlockletDetailInfo();
+    detailInfo.setDimLens(fileFooter.getSegmentInfo().getColumnCardinality());
+    detailInfo.setBlockletInfoBinary(new byte[0]);
+    detailInfo.setColumnSchemas(fileFooter.getColumnInTable());
+    detailInfo.setBlockletId((short) -1);
+    detailInfo.setRowCount((int) fileFooter.getNumberOfRows());
+    detailInfo.setSchemaUpdatedTimeStamp(fileFooter.getSchemaUpdatedTimeStamp());
+    detailInfo.setBlockFooterOffset(blockInfo.getBlockOffset());
+    detailInfo.setBlockSize(blockInfo.getBlockLength());
+    detailInfo.setUseMinMaxForPruning(true);
+    detailInfo.setVersionNumber(blockInfo.getVersion().number());
+    return detailInfo;
+  }
   /**
    * It updates dimensions and measures of query model. In few scenarios like SDK user can configure
    * sort options per load, so if first load has c1 as integer column and configure as sort column

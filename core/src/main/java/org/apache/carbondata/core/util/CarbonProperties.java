@@ -199,6 +199,9 @@ public final class CarbonProperties {
       case DETAIL_QUERY_BATCH_SIZE:
         validateDetailQueryBatchSize();
         break;
+      case CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD:
+        validateIndexServerSerializationThreshold();
+        break;
       // TODO : Validation for carbon.lock.type should be handled for addProperty flow
       default:
         // none
@@ -264,6 +267,7 @@ public final class CarbonProperties {
     validateSortMemorySpillPercentage();
     validateStringCharacterLimit();
     validateDetailQueryBatchSize();
+    validateIndexServerSerializationThreshold();
   }
 
   /**
@@ -652,6 +656,38 @@ public final class CarbonProperties {
           + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
       carbonProperties.setProperty(BLOCKLET_SIZE,
           CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
+    }
+  }
+
+  /**
+   * This method validates the index server serialization size
+   */
+  private void validateIndexServerSerializationThreshold() {
+    String serializationSizeString = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD,
+            CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
+    try {
+      int serializationSize = Integer.parseInt(serializationSizeString);
+
+      if (serializationSize < CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MIN
+          || serializationSize
+          > CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MAX) {
+        LOGGER.info(
+            "The " + CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD + " value \""
+                + serializationSize + "\" is invalid. Using the default value \""
+                + CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
+        carbonProperties
+            .setProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD,
+                CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info(
+          "The " + CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD + " value \""
+              + serializationSizeString + "\" is invalid. Using the default value \""
+              + CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
+      carbonProperties
+          .setProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD,
+              CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
     }
   }
 

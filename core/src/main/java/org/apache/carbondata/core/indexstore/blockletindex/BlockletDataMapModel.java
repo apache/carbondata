@@ -16,10 +16,12 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
 import org.apache.hadoop.conf.Configuration;
@@ -38,6 +40,10 @@ public class BlockletDataMapModel extends DataMapModel {
   private String segmentId;
 
   private boolean addToUnsafe = true;
+  /**
+   * list of index thrift object present in index file
+   */
+  private List<DataFileFooter> indexInfos;
 
   public BlockletDataMapModel(CarbonTable carbonTable, String filePath, byte[] fileData,
       Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId, Configuration configuration) {
@@ -73,5 +79,13 @@ public class BlockletDataMapModel extends DataMapModel {
 
   public CarbonTable getCarbonTable() {
     return carbonTable;
+  }
+
+  public void setIndexInfos(List<DataFileFooter> indexInfos) {
+    this.indexInfos = indexInfos;
+  }
+
+  public List<DataFileFooter> getIndexInfos() {
+    return indexInfos;
   }
 }

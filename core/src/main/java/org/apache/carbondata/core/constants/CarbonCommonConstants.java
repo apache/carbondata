@@ -2189,9 +2189,18 @@ public final class CarbonCommonConstants {
 
   public static final String LOAD_SYNC_TIME = "load_sync_time";
 
-  public  static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH =
+  public static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH =
           "carbon.index.server.max.jobname.length";
 
-  public  static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT =
+  public static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT =
           "50";
+
+  public static final String CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD =
+      "carbon.index.serverserialize.size.inKB";
+
+  public static final String CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT = "300";
+
+  public static final int CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MIN = 100;
+
+  public static final int CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MAX = 1048576;
 }

@@ -566,7 +566,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           for (InputSplit extendedBlocklet : extendedBlocklets) {
             CarbonInputSplit blocklet = (CarbonInputSplit) extendedBlocklet;
             blockletToRowCountMap.put(blocklet.getSegmentId() + "," + blocklet.getFilePath(),
-                (long) blocklet.getDetailInfo().getRowCount());
+                (long) blocklet.getRowCount());
           }
         } catch (Exception e) {
           // Check if fallback is disabled then directly throw exception otherwise try driver
@@ -618,7 +618,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
             getDistributedSplit(table, null, partitions, filteredSegment,
                 allSegments.getInvalidSegments(), new ArrayList<String>()));
         for (InputSplit extendedBlocklet : extendedBlocklets) {
-          totalRowCount += ((CarbonInputSplit) extendedBlocklet).getDetailInfo().getRowCount();
+          totalRowCount += ((CarbonInputSplit) extendedBlocklet).getRowCount();
         }
       } else {
         TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);

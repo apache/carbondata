@@ -85,7 +85,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private String taskGroupDesc = "";
 
-
+  private String queryId = "";
   DistributableDataMapFormat() {
 
   }
@@ -172,11 +172,12 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
           list.add(new ExtendedBlocklet());
           blockletIterator = list.iterator();
           return;
-        } else if (invalidSegments.size() > 0) {
-          // clear the segmentMap and from cache in executor when there are invalid segments
-          DataMapStoreManager.getInstance().clearInvalidSegments(table, invalidSegments);
         }
         List<ExtendedBlocklet> blocklets = new ArrayList<>();
+        DataMapChooser dataMapChooser = null;
+        if (null != filterResolverIntf) {
+          dataMapChooser = new DataMapChooser(table);
+        }
         if (dataMapLevel == null) {
           TableDataMap defaultDataMap = DataMapStoreManager.getInstance()
               .getDataMap(table, distributable.getDistributable().getDataMapSchema());
@@ -189,11 +190,12 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
                 partitions);
           }
           blocklets = DataMapUtil
-              .pruneDataMaps(table, filterResolverIntf, segmentsToLoad, partitions, blocklets);
+              .pruneDataMaps(table, filterResolverIntf, segmentsToLoad, partitions, blocklets,
+                  dataMapChooser);
         } else {
           blocklets = DataMapUtil
               .pruneDataMaps(table, filterResolverIntf, segmentsToLoad, partitions, blocklets,
-                  dataMapLevel);
+                  dataMapLevel, dataMapChooser);
         }
         blockletIterator = blocklets.iterator();
       }
@@ -280,6 +282,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     out.writeUTF(dataMapToClear);
     out.writeUTF(taskGroupId);
     out.writeUTF(taskGroupDesc);
+    out.writeUTF(queryId);
   }
 
   @Override
@@ -323,6 +326,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     this.dataMapToClear = in.readUTF();
     this.taskGroupId = in.readUTF();
     this.taskGroupDesc = in.readUTF();
+    this.queryId = in.readUTF();
   }
 
   private void initReadCommittedScope() throws IOException {
@@ -389,5 +393,17 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   public void setFilterResolverIntf(FilterResolverIntf filterResolverIntf) {
     this.filterResolverIntf = filterResolverIntf;
+  }
+
+  public List<String> getInvalidSegments() {
+    return invalidSegments;
+  }
+
+  public String getQueryId() {
+    return queryId;
+  }
+
+  public void setQueryId(String queryId) {
+    this.queryId = queryId;
   }
 }

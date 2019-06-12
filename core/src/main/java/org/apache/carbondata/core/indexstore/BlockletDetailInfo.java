@@ -196,7 +196,6 @@ public class BlockletDetailInfo implements Serializable, Writable {
     out.writeInt(blockletInfoBinary.length);
     out.write(blockletInfoBinary);
     out.writeLong(blockSize);
-    out.writeBoolean(isLegacyStore);
     out.writeBoolean(useMinMaxForPruning);
   }
 
@@ -265,7 +264,6 @@ public class BlockletDetailInfo implements Serializable, Writable {
     detailInfo.columnSchemas = columnSchemas;
     detailInfo.columnSchemaBinary = columnSchemaBinary;
     detailInfo.blockSize = blockSize;
-    detailInfo.isLegacyStore = isLegacyStore;
     detailInfo.useMinMaxForPruning = useMinMaxForPruning;
     return detailInfo;
   }
