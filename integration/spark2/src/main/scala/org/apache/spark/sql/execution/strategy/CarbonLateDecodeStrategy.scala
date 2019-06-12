@@ -55,6 +55,7 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
  */
 private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
+  val READ_SCHEMA = "ReadSchema"
 
   /*
   Spark 2.3.1 plan there can be case of multiple projections like below
@@ -274,6 +275,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       if (pushedFilters.nonEmpty) {
         pairs += (PUSHED_FILTERS -> pushedFilters.mkString("[", ", ", "]"))
       }
+      pairs += (READ_SCHEMA -> projectSet.++(filterSet).toSeq.toStructType.catalogString)
       pairs.toMap
     }
 
