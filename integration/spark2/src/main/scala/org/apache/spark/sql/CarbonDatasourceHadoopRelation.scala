@@ -195,8 +195,7 @@ case class CarbonDatasourceHadoopRelation(
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)
 
   override def toString: String = {
-    "CarbonDatasourceHadoopRelation [ " + "Database name :" + identifier.getDatabaseName +
-    ", " + "Table name :" + identifier.getTableName + ", Schema :" + tableSchema + " ]"
+    "carbondata"
   }
 
   override def sizeInBytes: Long = carbonRelation.sizeInBytes
