@@ -172,7 +172,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                   |     age int,
                   |     binaryField binary)
                   | STORED BY 'carbondata'
-                  | tblproperties('dictionary_enable'='true','dictionary_include'='binaryField')
+                  | tblproperties('dictionary_include'='binaryField')
                 """.stripMargin)
         }
         assert(exception.getMessage.contains(
@@ -192,7 +192,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                   |     age int,
                   |     binaryField binary)
                   | STORED BY 'carbondata'
-                  | tblproperties('dictionary_enable'='true','dictionary_include'='name,binaryField')
+                  | tblproperties('dictionary_include'='name,binaryField')
                 """.stripMargin)
         }
         assert(exception.getMessage.contains(
@@ -210,7 +210,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
               |     age int,
               |     binaryField binary)
               | STORED BY 'org.apache.carbondata.format'
-              | tblproperties('dictionary_enable'='true','DICTIONARY_EXCLUDE'='binaryField')
+              | tblproperties('DICTIONARY_EXCLUDE'='binaryField')
             """.stripMargin)
         assert(true)
     }
