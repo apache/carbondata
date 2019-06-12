@@ -162,7 +162,10 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     var isValidPlan = true
     logicalPlan.transform {
       case aggregate@Aggregate(grp, aExp, child) =>
-        isValidPlan = !aExp.exists(p => p.name.equals("preAggLoad") || p.name.equals("preAgg"))
+        isValidPlan = !aExp.exists { p =>
+          if (p.isInstanceOf[UnresolvedAlias]) return false
+          p.name.equals("preAggLoad") || p.name.equals("preAgg")
+        }
         val updatedAggExp = aExp.filterNot(_.name.equalsIgnoreCase("preAggLoad"))
         Aggregate(grp, updatedAggExp, child)
     }

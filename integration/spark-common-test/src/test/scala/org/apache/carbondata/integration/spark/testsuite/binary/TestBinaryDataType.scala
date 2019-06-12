@@ -1580,6 +1580,84 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
     }
 
+    test("Select query with average function for substring of binary column is executed.") {
+        sql("DROP TABLE IF EXISTS uniqdata")
+        sql(
+            s"""
+               | CREATE TABLE uniqdata (
+               |    CUST_ID int,
+               |    CUST_NAME binary,
+               |    ACTIVE_EMUI_VERSION string,
+               |    DOB timestamp,
+               |    DOJ timestamp,
+               |    BIGINT_COLUMN1 bigint,
+               |    BIGINT_COLUMN2 bigint,
+               |    DECIMAL_COLUMN1 decimal(30,10),
+               |    DECIMAL_COLUMN2 decimal(36,10),
+               |    Double_COLUMN1 double,
+               |    Double_COLUMN2 double,
+               |    INTEGER_COLUMN1 int)
+               | STORED BY 'org.apache.carbondata.format'
+               | TBLPROPERTIES('table_blocksize'='2000')
+             """.stripMargin)
+        sql(
+            s"""
+               | LOAD DATA inpath '$resourcesPath/restructure/data_2000.csv'
+               | into table uniqdata
+               | OPTIONS(
+               |    'DELIMITER'=',' ,
+               |    'QUOTECHAR'='"',
+               |    'BAD_RECORDS_ACTION'='FORCE',
+               |    'FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')
+             """.stripMargin)
+
+        sql(
+            s"""select substr(CUST_NAME,1,2)
+               | from uniqdata
+              """.stripMargin).show()
+
+        val e1 = intercept[Exception] {
+            sql(
+                s"""select avg(substr(CUST_NAME,1,2))
+                   | from uniqdata
+              """.stripMargin).show()
+        }
+        assert(e1.getMessage.contains("cannot resolve 'avg(substring(uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not BinaryType"))
+
+        val e2 = intercept[Exception] {
+            sql(
+                s"""
+                   | select
+                   |    max(substr(CUST_NAME,1,2)),
+                   |    min(substr(CUST_NAME,1,2)),
+                   |    avg(substr(CUST_NAME,1,2)),
+                   |    count(substr(CUST_NAME,1,2)),
+                   |    sum(substr(CUST_NAME,1,2)),
+                   |    variance(substr(CUST_NAME,1,2))
+                   | from uniqdata
+                   | where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL limit 10
+             """.stripMargin)
+        }
+        assert(e2.getMessage.contains("cannot resolve 'avg(substring(uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not BinaryType"))
+
+        val e3 = intercept[Exception] {
+            sql(
+                s"""
+                   | select
+                   |    max(substring(CUST_NAME,1,2)),
+                   |    min(substring(CUST_NAME,1,2)),
+                   |    avg(substring(CUST_NAME,1,2)),
+                   |    count(substring(CUST_NAME,1,2)),
+                   |    sum(substring(CUST_NAME,1,2)),
+                   |    variance(substring(CUST_NAME,1,2))
+                   | from uniqdata
+                   | where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL limit 10
+             """.stripMargin)
+        }
+        assert(e3.getMessage.contains("cannot resolve 'avg(substring(uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not BinaryType"))
+
+    }
+
     override def afterAll: Unit = {
         sql("DROP TABLE IF EXISTS binaryTable")
         sql("DROP TABLE IF EXISTS hiveTable")
