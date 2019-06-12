@@ -199,6 +199,9 @@ public final class CarbonProperties {
       case DETAIL_QUERY_BATCH_SIZE:
         validateDetailQueryBatchSize();
         break;
+      case CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD:
+        validateIndexServerSerializationThreshold();
+        break;
       // TODO : Validation for carbon.lock.type should be handled for addProperty flow
       default:
         // none
@@ -264,6 +267,7 @@ public final class CarbonProperties {
     validateSortMemorySpillPercentage();
     validateStringCharacterLimit();
     validateDetailQueryBatchSize();
+    validateIndexServerSerializationThreshold();
   }
 
   /**
@@ -652,6 +656,38 @@ public final class CarbonProperties {
           + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
       carbonProperties.setProperty(BLOCKLET_SIZE,
           CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
+    }
+  }
+
+  /**
+   * This method validates the index server serialization size
+   */
+  private void validateIndexServerSerializationThreshold() {
+    String serializationSizeString = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD,
+            CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
+    try {
+      int serializationSize = Integer.parseInt(serializationSizeString);
+
+      if (serializationSize < CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MIN
+          || serializationSize
+          > CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MAX) {
+        LOGGER.info(
+            "The " + CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD + " value \""
+                + serializationSize + "\" is invalid. Using the default value \""
+                + CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
+        carbonProperties
+            .setProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD,
+                CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info(
+          "The " + CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD + " value \""
+              + serializationSizeString + "\" is invalid. Using the default value \""
+              + CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
+      carbonProperties
+          .setProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD,
+              CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
     }
   }
 
@@ -1670,4 +1706,41 @@ public final class CarbonProperties {
     return CarbonCommonConstants.CARBON_INDEX_SERVER_WORKER_THREADS_DEFAULT;
   }
 
+  public int getNumOfThreadsForExecutorPruning() {
+    String configuredValue = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING);
+    if (configuredValue == null || configuredValue.equalsIgnoreCase("0")) {
+      configuredValue = CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT;
+    }
+    try {
+      int numOfThreads = Integer.parseInt(configuredValue);
+      LOGGER.info("Value for "
+          + CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING + " is "
+          + numOfThreads);
+      return numOfThreads;
+    } catch (NumberFormatException e) {
+      LOGGER.info(configuredValue + " is not a valid input for "
+          + CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING + ", taking "
+          + CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT
+          + " as default value");
+      return Integer
+          .parseInt(CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
+    }
+  }
+
+  public static int getNumOfThreadsForPruning() {
+    int numOfThreadsForPruning = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING,
+            CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT));
+    if (numOfThreadsForPruning > Integer
+        .parseInt(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT)
+        || numOfThreadsForPruning < 1) {
+      LOGGER.info("Invalid value for carbon.max.driver.threads.for.block.pruning, value :"
+          + numOfThreadsForPruning + " .using the default threads : "
+          + CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
+      numOfThreadsForPruning = Integer
+          .parseInt(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
+    }
+    return numOfThreadsForPruning;
+  }
 }

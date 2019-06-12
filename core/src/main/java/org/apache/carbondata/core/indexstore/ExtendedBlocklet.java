@@ -18,13 +18,16 @@ package org.apache.carbondata.core.indexstore;
 
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.stream.ExtendedByteArrayOutputStream;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 /**
@@ -150,9 +153,16 @@ public class ExtendedBlocklet extends Blocklet {
     this.inputSplit.setColumnSchema(columnSchema);
   }
 
-
-
-  @Override public void write(DataOutput out) throws IOException {
+  /**
+   * Method to seralize extended blocklet and inputsplit for index server
+   * DataFormat
+   * <Extended Blocklet data><Carbon input split serializeData lenght><CarbonInputSplitData>
+   * @param out
+   * @param uniqueLocation
+   * @throws IOException
+   */
+  public void serializeData(DataOutput out, Map<String, Short> uniqueLocation)
+      throws IOException {
     super.write(out);
     if (dataMapUniqueId == null) {
       out.writeBoolean(false);
@@ -160,41 +170,44 @@ public class ExtendedBlocklet extends Blocklet {
       out.writeBoolean(true);
       out.writeUTF(dataMapUniqueId);
     }
+    out.writeBoolean(inputSplit != null);
     if (inputSplit != null) {
-      out.writeBoolean(true);
-      inputSplit.write(out);
-      String[] locations = getLocations();
-      if (locations != null) {
-        out.writeBoolean(true);
-        out.writeInt(locations.length);
-        for (String location : locations) {
-          out.writeUTF(location);
-        }
-      } else {
-        out.writeBoolean(false);
+      // creating byte array output stream to get the size of input split serializeData size
+      ExtendedByteArrayOutputStream ebos = new ExtendedByteArrayOutputStream();
+      DataOutputStream dos = new DataOutputStream(ebos);
+      inputSplit.setFilePath(null);
+      inputSplit.setBucketId(null);
+      if (inputSplit.isBlockCache()) {
+        inputSplit.updateFooteroffset();
+        inputSplit.updateBlockLength();
+        inputSplit.setWriteDetailInfo(false);
       }
-    } else {
-      out.writeBoolean(false);
+      inputSplit.serializeFields(dos, uniqueLocation);
+      out.writeInt(ebos.size());
+      out.write(ebos.getBuffer(), 0 , ebos.size());
     }
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  /**
+   * Method to deseralize extended blocklet and inputsplit for index server
+   * @param in
+   * @param locations
+   * @param tablePath
+   * @throws IOException
+   */
+  public void deserializeFields(DataInput in, String[] locations, String tablePath)
+      throws IOException {
     super.readFields(in);
     if (in.readBoolean()) {
       dataMapUniqueId = in.readUTF();
     }
-    if (in.readBoolean()) {
-      inputSplit = new CarbonInputSplit();
-      inputSplit.readFields(in);
-      if (in.readBoolean()) {
-        int numLocations = in.readInt();
-        String[] locations = new String[numLocations];
-        for (int i = 0; i < numLocations; i++) {
-          locations[i] = in.readUTF();
-        }
-        inputSplit.setLocation(locations);
-      }
+    setFilePath(tablePath + getPath());
+    boolean isSplitPresent = in.readBoolean();
+    if (isSplitPresent) {
+      // getting the length of the data
+      final int serializeLen = in.readInt();
+      this.inputSplit =
+          new CarbonInputSplit(serializeLen, in, getFilePath(), locations, getBlockletId());
     }
   }
-
 }

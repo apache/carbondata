@@ -565,12 +565,12 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override protected def afterAll(): Unit = {
-    CompactionSupportGlobalSortBigFileTest.deleteFile(file2)
-    sql("DROP TABLE IF EXISTS normal_test")
-    sql("DROP TABLE IF EXISTS datamap_test")
-    sql("DROP TABLE IF EXISTS datamap_testFG")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+//    CompactionSupportGlobalSortBigFileTest.deleteFile(file2)
+//    sql("DROP TABLE IF EXISTS normal_test")
+//    sql("DROP TABLE IF EXISTS datamap_test")
+//    sql("DROP TABLE IF EXISTS datamap_testFG")
+//    CarbonProperties.getInstance()
+//      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+//        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 }

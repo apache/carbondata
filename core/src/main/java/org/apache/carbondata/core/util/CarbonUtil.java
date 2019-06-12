@@ -3311,4 +3311,31 @@ public final class CarbonUtil {
     }
     return null;
   }
+
+  public static String getIndexServerTempPath(String tablePath, String queryId) {
+    String tempFolderPath = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_TEMP_PATH);
+    if (null == tempFolderPath) {
+      tempFolderPath =
+          tablePath + "/" + CarbonCommonConstants.INDEX_SERVER_TEMP_FOLDER_NAME + "/" + queryId;
+    } else {
+      tempFolderPath =
+          tempFolderPath + "/" + CarbonCommonConstants.INDEX_SERVER_TEMP_FOLDER_NAME + "/"
+              + queryId;
+    }
+    return tempFolderPath;
+  }
+
+  public static CarbonFile createTempFolderForIndexServer(String tablePath, String queryId)
+      throws IOException {
+    final String path = getIndexServerTempPath(tablePath, queryId);
+    CarbonFile file = FileFactory.getCarbonFile(path);
+    if (!file.mkdirs(path)) {
+      LOGGER.info("Unable to create table directory for index server");
+      return null;
+    } else {
+      LOGGER.info("Created index server temp directory" + path);
+      return file;
+    }
+  }
 }

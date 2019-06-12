@@ -37,7 +37,7 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableName
         // create a dummy split for each executor to accumulate the cache size.
         val dummySplit = new CarbonInputSplit()
         dummySplit.setLocation(Array(executor))
-        new DataMapRDDPartition(id, idx, dummySplit)
+        new DataMapRDDPartition(id, idx, List(dummySplit), Array(executor))
     }
   }
 

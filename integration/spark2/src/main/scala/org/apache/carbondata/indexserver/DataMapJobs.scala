@@ -17,6 +17,7 @@
 package org.apache.carbondata.indexserver
 
 import java.util
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -26,12 +27,15 @@ import org.apache.spark.util.SizeEstimator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DistributableDataMapFormat}
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.scan.expression.BinaryExpression
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.scan.filter.resolver.{FilterResolverIntf, LogicalFilterResolverImpl, RowLevelFilterResolverImpl}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.spark.util.CarbonScalaUtil.logTime
 
 /**
@@ -47,24 +51,38 @@ class DistributedDataMapJob extends AbstractDataMapJob {
       val messageSize = SizeEstimator.estimate(dataMapFormat)
       LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
     }
+    val queryId = SparkSQLUtil.getSparkSession.sparkContext.getConf
+      .get("queryId", UUID.randomUUID().toString)
+    dataMapFormat.setQueryId(queryId)
+    val tmpFolder = CarbonUtil
+      .createTempFolderForIndexServer(dataMapFormat.getCarbonTable.getTablePath, queryId)
     val (resonse, time) = logTime {
-      val spark = SparkSQLUtil.getSparkSession
-      val taskGroupId = spark.sparkContext.getLocalProperty("spark.jobGroup.id") match {
-        case null => ""
-        case _ => spark.sparkContext.getLocalProperty("spark.jobGroup.id")
+      try {
+        val spark = SparkSQLUtil.getSparkSession
+        val taskGroupId = spark.sparkContext.getLocalProperty("spark.jobGroup.id") match {
+          case null => ""
+          case _ => spark.sparkContext.getLocalProperty("spark.jobGroup.id")
+        }
+        val taskGroupDesc = spark.sparkContext.getLocalProperty("spark.job.description") match {
+          case null => ""
+          case _ => spark.sparkContext.getLocalProperty("spark.job.description")
+        }
+        dataMapFormat.setTaskGroupId(taskGroupId)
+        dataMapFormat.setTaskGroupDesc(taskGroupDesc)
+        var filterInf = dataMapFormat.getFilterResolverIntf
+        val filterProcessor = new FilterExpressionProcessor
+        filterInf = removeSparkUnknown(filterInf,
+          dataMapFormat.getCarbonTable.getAbsoluteTableIdentifier, filterProcessor)
+        dataMapFormat.setFilterResolverIntf(filterInf)
+        IndexServer.getClient.getSplits(dataMapFormat)
+          .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
+      } finally {
+        val tmpPath = CarbonUtil
+          .getIndexServerTempPath(dataMapFormat.getCarbonTable.getTablePath, queryId)
+        if (null != tmpFolder && !tmpFolder.deleteFile(tmpPath, FileFactory.getFileType(tmpPath))) {
+          LOGGER.error("Problem while deleting the temp directory:" + tmpPath)
+        }
       }
-      val taskGroupDesc = spark.sparkContext.getLocalProperty("spark.job.description") match {
-        case null => ""
-        case _ => spark.sparkContext.getLocalProperty("spark.job.description")
-      }
-      dataMapFormat.setTaskGroupId(taskGroupId)
-      dataMapFormat.setTaskGroupDesc(taskGroupDesc)
-      var filterInf = dataMapFormat.getFilterResolverIntf
-      val filterProcessor = new FilterExpressionProcessor
-      filterInf = removeSparkUnknown(filterInf,
-        dataMapFormat.getCarbonTable.getAbsoluteTableIdentifier, filterProcessor)
-      dataMapFormat.setFilterResolverIntf(filterInf)
-      IndexServer.getClient.getSplits(dataMapFormat).toList.asJava
     }
     LOGGER.info(s"Time taken to get response from server: $time ms")
     resonse
@@ -108,17 +126,12 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
 
   override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
     val spark = SparkSQLUtil.getSparkSession
-    val taskGroupId = spark.sparkContext.getLocalProperty("spark.jobGroup.id") match {
-      case null => ""
-      case _ => spark.sparkContext.getLocalProperty("spark.jobGroup.id")
-    }
-    val taskGroupDesc = spark.sparkContext.getLocalProperty("spark.job.description") match {
-      case null => ""
-      case _ => spark.sparkContext.getLocalProperty("spark.job.description")
-    }
-    dataMapFormat.setTaskGroupId(taskGroupId)
-    dataMapFormat.setTaskGroupDesc(taskGroupDesc)
-    IndexServer.getSplits(dataMapFormat).toList.asJava
+    val queryId = spark.sparkContext.getConf.get("queryId", UUID.randomUUID().toString)
+    dataMapFormat.setQueryId(queryId)
+    dataMapFormat.setIsWriteToFile(false)
+    dataMapFormat.setFallbackJob()
+    IndexServer.getSplits(dataMapFormat)
+      .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
   }
 
 }

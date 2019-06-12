@@ -69,10 +69,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
   private byte[] columnSchemaBinary;
 
   private long blockSize;
-  /**
-   * flag to check for store from 1.1 or any prior version
-   */
-  private boolean isLegacyStore;
+
   /**
    * flag to check whether to serialize min max values. The flag will be set to true in case
    * 1. When CACHE_LEVEL = BLOCKLET and filter column min/max in not cached in the driver using the
@@ -196,7 +193,6 @@ public class BlockletDetailInfo implements Serializable, Writable {
     out.writeInt(blockletInfoBinary.length);
     out.write(blockletInfoBinary);
     out.writeLong(blockSize);
-    out.writeBoolean(isLegacyStore);
     out.writeBoolean(useMinMaxForPruning);
   }
 
@@ -227,7 +223,6 @@ public class BlockletDetailInfo implements Serializable, Writable {
     in.readFully(blockletInfoBinary);
     setBlockletInfoFromBinary();
     blockSize = in.readLong();
-    isLegacyStore = in.readBoolean();
     useMinMaxForPruning = in.readBoolean();
   }
 
@@ -265,7 +260,6 @@ public class BlockletDetailInfo implements Serializable, Writable {
     detailInfo.columnSchemas = columnSchemas;
     detailInfo.columnSchemaBinary = columnSchemaBinary;
     detailInfo.blockSize = blockSize;
-    detailInfo.isLegacyStore = isLegacyStore;
     detailInfo.useMinMaxForPruning = useMinMaxForPruning;
     return detailInfo;
   }
@@ -299,14 +293,6 @@ public class BlockletDetailInfo implements Serializable, Writable {
 
   public void setBlockletInfoBinary(byte[] blockletInfoBinary) {
     this.blockletInfoBinary = blockletInfoBinary;
-  }
-
-  public boolean isLegacyStore() {
-    return isLegacyStore;
-  }
-
-  public void setLegacyStore(boolean legacyStore) {
-    isLegacyStore = legacyStore;
   }
 
   public void setColumnSchemas(List<ColumnSchema> columnSchemas) {

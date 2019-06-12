@@ -124,7 +124,7 @@ public final class TableDataMap extends OperationEventListener {
         datamapsCount++;
       }
     }
-    int numOfThreadsForPruning = getNumOfThreadsForPruning();
+    int numOfThreadsForPruning = CarbonProperties.getNumOfThreadsForPruning();
     if (numOfThreadsForPruning == 1 || datamapsCount < numOfThreadsForPruning || totalFiles
         < CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT) {
       // use multi-thread, only if the files are more than 0.1 million.
@@ -206,7 +206,7 @@ public final class TableDataMap extends OperationEventListener {
      *********************************************************************************
      */
 
-    int numOfThreadsForPruning = getNumOfThreadsForPruning();
+    int numOfThreadsForPruning = CarbonProperties.getNumOfThreadsForPruning();
     LOG.info(
         "Number of threads selected for multi-thread block pruning is " + numOfThreadsForPruning
             + ". total files: " + totalFiles + ". total segments: " + segments.size());
@@ -321,22 +321,6 @@ public final class TableDataMap extends OperationEventListener {
       blocklets.addAll(entry.getValue());
     }
     return blocklets;
-  }
-
-  private int getNumOfThreadsForPruning() {
-    int numOfThreadsForPruning = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING,
-            CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT));
-    if (numOfThreadsForPruning > Integer
-        .parseInt(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT)
-        || numOfThreadsForPruning < 1) {
-      LOG.info("Invalid value for carbon.max.driver.threads.for.block.pruning, value :"
-          + numOfThreadsForPruning + " .using the default threads : "
-          + CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
-      numOfThreadsForPruning = Integer
-          .parseInt(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
-    }
-    return numOfThreadsForPruning;
   }
 
   private List<ExtendedBlocklet> addSegmentId(List<ExtendedBlocklet> pruneBlocklets,

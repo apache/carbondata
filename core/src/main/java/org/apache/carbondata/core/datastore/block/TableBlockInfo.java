@@ -105,6 +105,11 @@ public class TableBlockInfo implements Distributable, Serializable {
   private transient DataFileFooter dataFileFooter;
 
   /**
+   * true when index file does't have blocklet information
+   */
+  private boolean isLegacyStore;
+
+  /**
    * comparator to sort by block size in descending order.
    * Since each line is not exactly the same, the size of a InputSplit may differs,
    * so we allow some deviation for these splits.
@@ -210,6 +215,7 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.deletedDeltaFilePath = deletedDeltaFilePath;
     info.detailInfo = detailInfo.copy();
     info.dataMapWriterPath = dataMapWriterPath;
+    info.isLegacyStore = isLegacyStore;
     return info;
   }
 
@@ -471,6 +477,14 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setDataFileFooter(DataFileFooter dataFileFooter) {
     this.dataFileFooter = dataFileFooter;
+  }
+
+  public boolean isLegacyStore() {
+    return isLegacyStore;
+  }
+
+  public void setLegacyStore(boolean legacyStore) {
+    isLegacyStore = legacyStore;
   }
 
   @Override

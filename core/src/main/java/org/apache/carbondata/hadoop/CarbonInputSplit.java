@@ -16,7 +16,9 @@
  */
 package org.apache.carbondata.hadoop;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
@@ -39,9 +41,12 @@ import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.statusmanager.FileFormat;
+import org.apache.carbondata.core.stream.ExtendedByteArrayInputStream;
+import org.apache.carbondata.core.stream.ExtendedDataInputStream;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.internal.index.Block;
 
@@ -92,7 +97,7 @@ public class CarbonInputSplit extends FileSplit
 
   private transient int[] columnCardinality;
 
-  private transient boolean isLegacyStore;
+  private boolean isLegacyStore;
 
   private transient List<ColumnSchema> columnSchema;
 
@@ -114,6 +119,37 @@ public class CarbonInputSplit extends FileSplit
 
   private transient String blockPath;
 
+  /**
+   * used in case of index server, all the fields which is required
+   * only in case in executor not need to deseralize and will be kept as
+   * byte array and duing write method directly it will be written to output stream
+   */
+  private byte[] serializeData;
+
+  /**
+   * start position of fields
+   */
+  private int offset;
+
+  /**
+   * actual length of data
+   */
+  private int actualLen;
+
+  /**
+   * in case of index server block cache no need to write detail info, filepath, blocklet id
+   * bucket id to reduce the serialize data size, this parameter will be used to check whether
+   * its a index server flow or not
+   */
+  private boolean writeDetailInfo = true;
+
+  /**
+   * TODO remove this code after Index server count(*) optimization
+   * only used for index server, once index server handled count star push down
+   * below row count is not required
+   */
+  private int rowCount;
+
   public CarbonInputSplit() {
     segment = null;
     taskId = "0";
@@ -121,6 +157,58 @@ public class CarbonInputSplit extends FileSplit
     blockletId = "0";
     numberOfBlocklets = 0;
     version = CarbonProperties.getInstance().getFormatVersion();
+  }
+
+  /**
+   * Will be used in case of index server
+   * @param serializeLen
+   * @param in
+   * @param filePath
+   * @param allLocation
+   * @param blockletId
+   * @throws IOException
+   */
+  public CarbonInputSplit(int serializeLen, DataInput in, String filePath, String[] allLocation,
+      String blockletId) throws IOException {
+    this.filePath = filePath;
+    this.blockletId = blockletId;
+    // getting the underline stream to get the actual position of the fileds which won't be
+    // deseralize as its used by executor
+    ExtendedByteArrayInputStream underlineStream =
+        ((ExtendedDataInputStream) in).getUnderlineStream();
+    // current position
+    int currentPosition = underlineStream.getPosition();
+    // number of locations
+    short numberOfLocations = in.readShort();
+    if (numberOfLocations > 0) {
+      // used locations for this split
+      this.location = new String[numberOfLocations];
+      for (int i = 0; i < location.length; i++) {
+        location[i] = allLocation[in.readShort()];
+      }
+    }
+    // get start
+    this.start = in.readLong();
+    this.length = in.readLong();
+    this.version = ColumnarFormatVersion.valueOf(in.readShort());
+    // will be removed after count(*) optmization in case of index server
+    this.rowCount = in.readInt();
+    // after deseralizing required field get the start position of field which will be only used
+    // in executor
+    int leftoverPosition = underlineStream.getPosition();
+    // position of next split
+    int newPosition = currentPosition + serializeLen;
+    // setting the position to next split
+    underlineStream.setPosition(newPosition);
+    this.serializeData = underlineStream.getBuffer();
+    this.offset = leftoverPosition;
+    this.actualLen = serializeLen - (leftoverPosition - currentPosition);
+    String taskNo = CarbonTablePath.DataFileUtil.getTaskNo(this.filePath);
+    if (taskNo.contains("_")) {
+      taskNo = taskNo.split("_")[0];
+    }
+    this.taskId = taskNo;
+    this.bucketId = CarbonTablePath.DataFileUtil.getBucketNo(this.filePath);
   }
 
   private CarbonInputSplit(String segmentId, String blockletId, String filePath, long start,
@@ -211,6 +299,7 @@ public class CarbonInputSplit extends FileSplit
                 blockletInfos, split.getVersion(), split.getDeleteDeltaFiles());
         blockInfo.setDetailInfo(split.getDetailInfo());
         blockInfo.setDataMapWriterPath(split.dataMapWritePath);
+        blockInfo.setLegacyStore(split.isLegacyStore);
         if (split.getDetailInfo() != null) {
           blockInfo.setBlockOffset(split.getDetailInfo().getBlockFooterOffset());
         }
@@ -232,7 +321,10 @@ public class CarbonInputSplit extends FileSplit
               inputSplit.getLength(), blockletInfos, inputSplit.getVersion(),
               inputSplit.getDeleteDeltaFiles());
       blockInfo.setDetailInfo(inputSplit.getDetailInfo());
-      blockInfo.setBlockOffset(inputSplit.getDetailInfo().getBlockFooterOffset());
+      if (null != inputSplit.getDetailInfo()) {
+        blockInfo.setBlockOffset(inputSplit.getDetailInfo().getBlockFooterOffset());
+      }
+      blockInfo.setLegacyStore(inputSplit.isLegacyStore);
       return blockInfo;
     } catch (IOException e) {
       throw new RuntimeException("fail to get location of split: " + inputSplit, e);
@@ -240,6 +332,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public String getSegmentId() {
+    derserializeField();
     if (segment != null) {
       return segment.getSegmentNo();
     } else {
@@ -248,18 +341,25 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public Segment getSegment() {
+    derserializeField();
     return segment;
   }
 
 
   @Override public void readFields(DataInput in) throws IOException {
-    this.filePath = in.readUTF();
-    this.start = in.readLong();
-    this.length = in.readLong();
-    this.segment = Segment.toSegment(in.readUTF());
-    this.version = ColumnarFormatVersion.valueOf(in.readShort());
-    this.bucketId = in.readUTF();
+    // if serializeData is not null it means fields which is present below if condition are alredy
+    // deserialize  org.apache.carbondata.hadoop.CarbonInputSplit#CarbonInputSplit(
+    // int, java.io.DataInput, java.lang.String, java.lang.String[], java.lang.String)
+    if (null == serializeData) {
+      this.filePath = in.readUTF();
+      this.start = in.readLong();
+      this.length = in.readLong();
+      this.version = ColumnarFormatVersion.valueOf(in.readShort());
+      this.rowCount = in.readInt();
+      this.bucketId = in.readUTF();
+    }
     this.blockletId = in.readUTF();
+    this.segment = Segment.toSegment(in.readUTF());
     int numberOfDeleteDeltaFiles = in.readInt();
     deleteDeltaFiles = new String[numberOfDeleteDeltaFiles];
     for (int i = 0; i < numberOfDeleteDeltaFiles; i++) {
@@ -279,26 +379,55 @@ public class CarbonInputSplit extends FileSplit
     for (int i = 0; i < validBlockletIdCount; i++) {
       validBlockletIds.add((int) in.readShort());
     }
+    this.isLegacyStore = in.readBoolean();
   }
 
   @Override public void write(DataOutput out) throws IOException {
-    out.writeUTF(filePath);
+    // if serializeData is not null then its a index server flow so write fields
+    // which is already deserialize and write serializeData to output stream
+    if (null != serializeData) {
+      out.writeUTF(filePath);
+      out.writeLong(start);
+      out.writeLong(length);
+      out.writeShort(version.number());
+      out.writeInt(rowCount);
+      out.writeUTF(bucketId);
+      out.writeUTF(blockletId);
+      out.write(serializeData, offset, actualLen);
+      return;
+    }
+    // please refer writeDetailInfo doc
+    if (null != filePath) {
+      out.writeUTF(filePath);
+    }
     out.writeLong(start);
     out.writeLong(length);
-    out.writeUTF(segment.toString());
     out.writeShort(version.number());
-    out.writeUTF(bucketId);
+    //TODO remove this code once count(*) optmization is added in case of index server
+    if (null != dataMapRow) {
+      out.writeInt(this.dataMapRow.getInt(BlockletDataMapRowIndexes.ROW_COUNT_INDEX));
+    } else if (null != detailInfo) {
+      out.writeInt(this.detailInfo.getRowCount());
+    } else {
+      out.writeInt(0);
+    }
+    if (null != bucketId) {
+      out.writeUTF(bucketId);
+    }
     out.writeUTF(blockletId);
+    out.writeUTF(segment.toString());
     out.writeInt(null != deleteDeltaFiles ? deleteDeltaFiles.length : 0);
     if (null != deleteDeltaFiles) {
       for (int i = 0; i < deleteDeltaFiles.length; i++) {
         out.writeUTF(deleteDeltaFiles[i]);
       }
     }
-    out.writeBoolean(detailInfo != null || dataMapRow != null);
-    if (detailInfo != null) {
+    // please refer writeDetailInfo doc
+    out.writeBoolean(writeDetailInfo && (detailInfo != null || dataMapRow != null));
+    if (writeDetailInfo && detailInfo != null) {
       detailInfo.write(out);
-    } else if (dataMapRow != null) {
+      // please refer writeDetailInfo doc
+    } else if (writeDetailInfo && dataMapRow != null) {
       writeBlockletDetailsInfo(out);
     }
     out.writeBoolean(dataMapWritePath != null);
@@ -309,6 +438,7 @@ public class CarbonInputSplit extends FileSplit
     for (Integer blockletId : getValidBlockletIds()) {
       out.writeShort(blockletId);
     }
+    out.writeBoolean(isLegacyStore);
   }
 
   /**
@@ -339,6 +469,8 @@ public class CarbonInputSplit extends FileSplit
       return -1;
     }
     CarbonInputSplit other = (CarbonInputSplit) o;
+    derserializeField();
+    other.derserializeField();
     int compareResult = 0;
     // get the segment id
     // converr seg ID to double.
@@ -400,6 +532,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   @Override public int hashCode() {
+    derserializeField();
     int result = taskId.hashCode();
     result = 31 * result + segment.hashCode();
     result = 31 * result + bucketId.hashCode();
@@ -498,6 +631,10 @@ public class CarbonInputSplit extends FileSplit
     this.isBlockCache = isBlockCache;
   }
 
+  public boolean isBlockCache() {
+    return this.isBlockCache;
+  }
+
   private void writeBlockletDetailsInfo(DataOutput out) throws IOException {
     out.writeInt(this.dataMapRow.getInt(BlockletDataMapRowIndexes.ROW_COUNT_INDEX));
     if (this.isBlockCache) {
@@ -535,7 +672,6 @@ public class CarbonInputSplit extends FileSplit
       out.write(blockletInfoBinary);
     }
     out.writeLong(getLength());
-    out.writeBoolean(this.isLegacyStore);
     out.writeBoolean(this.useMinMaxForPruning);
   }
 
@@ -544,6 +680,7 @@ public class CarbonInputSplit extends FileSplit
       detailInfo = new BlockletDetailInfo();
       detailInfo
           .setRowCount(this.dataMapRow.getInt(BlockletDataMapRowIndexes.ROW_COUNT_INDEX));
+      rowCount = detailInfo.getRowCount();
       detailInfo
           .setVersionNumber(this.dataMapRow.getShort(BlockletDataMapRowIndexes.VERSION_INDEX));
       detailInfo.setBlockletId(Short.parseShort(this.blockletId));
@@ -552,9 +689,10 @@ public class CarbonInputSplit extends FileSplit
           this.dataMapRow.getLong(BlockletDataMapRowIndexes.SCHEMA_UPADATED_TIME_INDEX));
       detailInfo.setBlockFooterOffset(
           this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_FOOTER_OFFSET));
+      start = detailInfo.getBlockFooterOffset();
       detailInfo
           .setBlockSize(getLength());
-      detailInfo.setLegacyStore(isLegacyStore);
+      length = detailInfo.getBlockSize();
       detailInfo.setUseMinMaxForPruning(useMinMaxForPruning);
       if (!this.isBlockCache) {
         detailInfo.setColumnSchemas(this.columnSchema);
@@ -601,8 +739,22 @@ public class CarbonInputSplit extends FileSplit
   /** The position of the first byte in the file to process. */
   public long getStart() { return start; }
 
-  @Override
-  public long getLength() {
+  /**
+   * In case of index server detail info won't be present
+   * so footer offsets needs to be written correctly, so updating the length
+   *
+   */
+  public void updateFooteroffset() {
+    if (isBlockCache && start == 0) {
+      if (null != dataMapRow) {
+        start = this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_FOOTER_OFFSET);
+      } else if (null != detailInfo) {
+        start = detailInfo.getBlockFooterOffset();
+      }
+    }
+  }
+
+  public void updateBlockLength() {
     if (length == -1) {
       if (null != dataMapRow) {
         length = this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_LENGTH);
@@ -610,6 +762,11 @@ public class CarbonInputSplit extends FileSplit
         length = detailInfo.getBlockSize();
       }
     }
+  }
+
+  @Override
+  public long getLength() {
+    updateBlockLength();
     return length;
   }
 
@@ -628,5 +785,79 @@ public class CarbonInputSplit extends FileSplit
 
   public void setLocation(String[] location) {
     this.location = location;
+  }
+
+  /**
+   * In case of index server block cache no need to write details info as its
+   * heavy object.
+   * @param writeDetailInfo
+   */
+  public void setWriteDetailInfo(boolean writeDetailInfo) {
+    this.writeDetailInfo = writeDetailInfo;
+  }
+
+  /**
+   * Below method will be used to serialize the input split in case of
+   * index server
+   * @param out
+   * @param uniqueLocationMap
+   * @throws IOException
+   */
+  public void serializeFields(DataOutput out, Map<String, Short> uniqueLocationMap)
+      throws IOException {
+    final String[] locations = getLocations();
+    if (null != locations) {
+      out.writeShort(locations.length);
+      // below code is to get the unique locations across all the block
+      for (String loc : locations) {
+        Short pos = uniqueLocationMap.get(loc);
+        if (null == pos) {
+          pos = (short) uniqueLocationMap.size();
+          uniqueLocationMap.put(loc, pos);
+        }
+        out.writeShort(pos);
+      }
+    } else {
+      out.writeShort(0);
+    }
+    write(out);
+  }
+
+  /**
+   * This method will be used to deserialize fields
+   * in case of index server
+   */
+  private void derserializeField() {
+    if (null != serializeData) {
+      DataInputStream in = null;
+      try {
+        ByteArrayInputStream bis = new ByteArrayInputStream(serializeData, offset, actualLen);
+        in = new DataInputStream(bis);
+        readFields(in);
+        serializeData = null;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      } finally {
+        if (null != in) {
+          CarbonUtil.closeStreams(in);
+        }
+      }
+    }
+  }
+
+  public int getRowCount() {
+    return rowCount;
+  }
+
+  public void setStart(long start) {
+    this.start = start;
+  }
+
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
+  }
+
+  public void setBucketId(String bucketId) {
+    this.bucketId = bucketId;
   }
 }

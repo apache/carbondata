@@ -14,26 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.sdk.file.arrow;
 
-import java.io.ByteArrayOutputStream;
+package org.apache.carbondata.core.stream;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.memory.CarbonUnsafe;
+import java.io.DataInputStream;
 
-public class ExtendedByteArrayOutputStream extends ByteArrayOutputStream {
+public class ExtendedDataInputStream extends DataInputStream {
 
-  public ExtendedByteArrayOutputStream(int initialSize) {
-    super(initialSize);
+  private ExtendedByteArrayInputStream in;
+
+  /**
+   * Creates a DataInputStream that uses the specified
+   * underlying InputStream.
+   *
+   * @param in the specified input stream
+   */
+  public ExtendedDataInputStream(ExtendedByteArrayInputStream in) {
+    super(in);
+    this.in = in;
   }
 
-  public long copyToAddress() {
-    final long address = CarbonUnsafe.getUnsafe()
-        .allocateMemory(CarbonCommonConstants.INT_SIZE_IN_BYTE + count);
-    CarbonUnsafe.getUnsafe().putInt(address, count);
-    CarbonUnsafe.getUnsafe()
-        .copyMemory(buf, CarbonUnsafe.BYTE_ARRAY_OFFSET, null,
-            address + CarbonCommonConstants.INT_SIZE_IN_BYTE, count);
-    return address;
+  public ExtendedByteArrayInputStream getUnderlineStream() {
+    return this.in;
   }
+
 }

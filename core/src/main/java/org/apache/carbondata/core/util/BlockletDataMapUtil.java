@@ -74,7 +74,8 @@ public class BlockletDataMapUtil {
   public static Map<String, BlockMetaInfo> getBlockMetaInfoMap(
       TableBlockIndexUniqueIdentifierWrapper identifierWrapper,
       SegmentIndexFileStore indexFileStore, Set<String> filesRead,
-      Map<String, BlockMetaInfo> fileNameToMetaInfoMapping) throws IOException {
+      Map<String, BlockMetaInfo> fileNameToMetaInfoMapping, List<DataFileFooter> indexInfos)
+      throws IOException {
     boolean isTransactionalTable = true;
     TableBlockIndexUniqueIdentifier identifier =
         identifierWrapper.getTableBlockIndexUniqueIdentifier();
@@ -107,6 +108,7 @@ public class BlockletDataMapUtil {
         identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
             .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
         isTransactionalTable);
+    indexInfos.addAll(indexInfo);
     for (DataFileFooter footer : indexInfo) {
       if ((!isTransactionalTable) && (tableColumnList.size() != 0) &&
           !isSameColumnAndDifferentDatatypeInSchema(footer.getColumnInTable(), tableColumnList)) {

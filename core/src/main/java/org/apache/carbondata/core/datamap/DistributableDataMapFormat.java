@@ -29,7 +29,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
-import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -41,7 +40,6 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -85,7 +83,9 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private String taskGroupDesc = "";
 
+  private String queryId = "";
 
+  private boolean isWriteToFile = true;
   DistributableDataMapFormat() {
 
   }
@@ -141,42 +141,11 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
         distributable.getDistributable().getSegment().setReadCommittedScope(readCommittedScope);
         List<Segment> segmentsToLoad = new ArrayList<>();
         segmentsToLoad.add(distributable.getDistributable().getSegment());
-        if (isJobToClearDataMaps) {
-          if (StringUtils.isNotEmpty(dataMapToClear)) {
-            List<TableDataMap> dataMaps =
-                DataMapStoreManager.getInstance().getAllDataMap(table);
-            int i = 0;
-            for (TableDataMap tableDataMap : dataMaps) {
-              if (tableDataMap != null && dataMapToClear
-                  .equalsIgnoreCase(tableDataMap.getDataMapSchema().getDataMapName())) {
-                tableDataMap.deleteSegmentDatamapData(
-                    ((DataMapDistributableWrapper) inputSplit).getDistributable().getSegment()
-                        .getSegmentNo());
-                tableDataMap.clear();
-                dataMaps.remove(i);
-                break;
-              }
-              i++;
-            }
-            DataMapStoreManager.getInstance().getAllDataMaps().put(table.getTableUniqueName(),
-                dataMaps);
-          } else {
-            // if job is to clear datamaps just clear datamaps from cache and return
-            DataMapStoreManager.getInstance()
-                .clearDataMaps(table.getCarbonTableIdentifier().getTableUniqueName());
-            // clear the segment properties cache from executor
-            SegmentPropertiesAndSchemaHolder.getInstance()
-                .invalidate(table.getAbsoluteTableIdentifier());
-          }
-          List<ExtendedBlocklet> list = new ArrayList<ExtendedBlocklet>();
-          list.add(new ExtendedBlocklet());
-          blockletIterator = list.iterator();
-          return;
-        } else if (invalidSegments.size() > 0) {
-          // clear the segmentMap and from cache in executor when there are invalid segments
-          DataMapStoreManager.getInstance().clearInvalidSegments(table, invalidSegments);
-        }
         List<ExtendedBlocklet> blocklets = new ArrayList<>();
+        DataMapChooser dataMapChooser = null;
+        if (null != filterResolverIntf) {
+          dataMapChooser = new DataMapChooser(table);
+        }
         if (dataMapLevel == null) {
           TableDataMap defaultDataMap = DataMapStoreManager.getInstance()
               .getDataMap(table, distributable.getDistributable().getDataMapSchema());
@@ -189,11 +158,12 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
                 partitions);
           }
           blocklets = DataMapUtil
-              .pruneDataMaps(table, filterResolverIntf, segmentsToLoad, partitions, blocklets);
+              .pruneDataMaps(table, filterResolverIntf, segmentsToLoad, partitions, blocklets,
+                  dataMapChooser);
         } else {
           blocklets = DataMapUtil
               .pruneDataMaps(table, filterResolverIntf, segmentsToLoad, partitions, blocklets,
-                  dataMapLevel);
+                  dataMapLevel, dataMapChooser);
         }
         blockletIterator = blocklets.iterator();
       }
@@ -280,6 +250,8 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     out.writeUTF(dataMapToClear);
     out.writeUTF(taskGroupId);
     out.writeUTF(taskGroupDesc);
+    out.writeUTF(queryId);
+    out.writeBoolean(isWriteToFile);
   }
 
   @Override
@@ -323,6 +295,8 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     this.dataMapToClear = in.readUTF();
     this.taskGroupId = in.readUTF();
     this.taskGroupDesc = in.readUTF();
+    this.queryId = in.readUTF();
+    this.isWriteToFile = in.readBoolean();
   }
 
   private void initReadCommittedScope() throws IOException {
@@ -389,5 +363,33 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   public void setFilterResolverIntf(FilterResolverIntf filterResolverIntf) {
     this.filterResolverIntf = filterResolverIntf;
+  }
+
+  public List<String> getInvalidSegments() {
+    return invalidSegments;
+  }
+
+  public String getQueryId() {
+    return queryId;
+  }
+
+  public void setQueryId(String queryId) {
+    this.queryId = queryId;
+  }
+
+  public String getDataMapToClear() {
+    return dataMapToClear;
+  }
+
+  public void setIsWriteToFile(boolean isWriteToFile) {
+    this.isWriteToFile = isWriteToFile;
+  }
+
+  public boolean isWriteToFile() {
+    return isWriteToFile;
+  }
+
+  public void setFallbackJob() {
+    isFallbackJob = true;
   }
 }

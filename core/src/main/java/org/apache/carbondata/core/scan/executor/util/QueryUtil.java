@@ -34,12 +34,15 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -776,5 +779,28 @@ public class QueryUtil {
         vector.putLong(vectorRow, ByteUtil.toXorLong(value, 0, length) * 1000L);
       }
     }
+  }
+
+  /**
+   * In case of index server there will not be any details info serialize from driver.
+   * Below method will use to create blocklet detail info object from footer
+   * @param fileFooter
+   * @param blockInfo
+   * @return
+   */
+  public static BlockletDetailInfo getBlockletDetailInfo(DataFileFooter fileFooter,
+      TableBlockInfo blockInfo) {
+    BlockletDetailInfo detailInfo = new BlockletDetailInfo();
+    detailInfo.setDimLens(fileFooter.getSegmentInfo().getColumnCardinality());
+    detailInfo.setBlockletInfoBinary(new byte[0]);
+    detailInfo.setColumnSchemas(fileFooter.getColumnInTable());
+    detailInfo.setBlockletId((short) -1);
+    detailInfo.setRowCount((int) fileFooter.getNumberOfRows());
+    detailInfo.setSchemaUpdatedTimeStamp(fileFooter.getSchemaUpdatedTimeStamp());
+    detailInfo.setBlockFooterOffset(blockInfo.getBlockOffset());
+    detailInfo.setBlockSize(blockInfo.getBlockLength());
+    detailInfo.setUseMinMaxForPruning(true);
+    detailInfo.setVersionNumber(blockInfo.getVersion().number());
+    return detailInfo;
   }
 }

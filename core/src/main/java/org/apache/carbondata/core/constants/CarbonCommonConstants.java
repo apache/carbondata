@@ -1461,6 +1461,14 @@ public final class CarbonCommonConstants {
   // block prune in multi-thread if files size more than 100K files.
   public static final int CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT = 100000;
 
+  /**
+   * max executor threads used for block pruning [1 to 4 threads]
+   */
+  @CarbonProperty public static final String CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING =
+      "carbon.max.executor.threads.for.block.pruning";
+
+  public static final String CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT = "4";
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Datamap parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////
@@ -2189,9 +2197,42 @@ public final class CarbonCommonConstants {
 
   public static final String LOAD_SYNC_TIME = "load_sync_time";
 
-  public  static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH =
+  public static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH =
           "carbon.index.server.max.jobname.length";
 
-  public  static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT =
+  public static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT =
           "50";
+
+  @CarbonProperty
+  /**
+   * Max in memory serialization size after reaching threshold data will
+   * be written to file
+   */
+  public static final String CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD =
+      "carbon.index.server.inmemory.serialization.threshold.inKB";
+
+  /**
+   * default value for in memory serialization size
+   */
+  public static final String CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT = "300";
+
+  /**
+   * min value for in memory serialization size
+   */
+  public static final int CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MIN = 100;
+
+  /**
+   * max value for in memory serialization size
+   */
+  public static final int CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MAX = 102400;
+
+  /**
+   * will be used to write split serialize data when in memory threashold crosses the limit
+   */
+  public static final String CARBON_INDEX_SERVER_TEMP_PATH = "carbon.indexserver.temp.path";
+
+  /**
+   * index server temp file name
+   */
+  public static final String INDEX_SERVER_TEMP_FOLDER_NAME = "indexservertmp";
 }

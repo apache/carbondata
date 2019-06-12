@@ -31,9 +31,9 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TaskBlockInfo;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -43,6 +43,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -147,7 +148,6 @@ public class CarbonCompactionUtil {
    */
   public static Map<String, List<DataFileFooter>> createDataFileFooterMappingForSegments(
       List<TableBlockInfo> tableBlockInfoList, boolean isSortedTable) throws IOException {
-
     Map<String, List<DataFileFooter>> segmentBlockInfoMapping = new HashMap<>();
     for (TableBlockInfo blockInfo : tableBlockInfoList) {
       List<DataFileFooter> eachSegmentBlocks = new ArrayList<>();
@@ -159,11 +159,16 @@ public class CarbonCompactionUtil {
       // in getting the schema last updated time based on which compaction flow is decided that
       // whether it will go to restructure compaction flow or normal compaction flow.
       // This decision will impact the compaction performance so it needs to be decided carefully
-      final BlockletInfo blockletInfo = blockInfo.getDetailInfo().getBlockletInfo();
-      if (null != blockInfo.getDetailInfo() && (
-          blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp() == 0L || null == blockletInfo
-              || null == blockletInfo.isSorted() || !blockletInfo.isSorted())) {
+      BlockletDetailInfo blockletDetailInfo = blockInfo.getDetailInfo();
+      if (null == blockletDetailInfo || blockletDetailInfo.getBlockletInfo() == null ||
+          blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp() == 0L
+              || null == blockletDetailInfo.getBlockletInfo().isSorted() || !blockletDetailInfo
+              .getBlockletInfo().isSorted()) {
         dataFileMatadata = CarbonUtil.readMetadataFile(blockInfo, true);
+        if (blockletDetailInfo == null) {
+          blockletDetailInfo = QueryUtil.getBlockletDetailInfo(dataFileMatadata, blockInfo);
+          blockInfo.setDetailInfo(blockletDetailInfo);
+        }
         if (null == dataFileMatadata.isSorted()) {
           dataFileMatadata.setSorted(isSortedTable);
         }
@@ -181,7 +186,6 @@ public class CarbonCompactionUtil {
       }
     }
     return segmentBlockInfoMapping;
-
   }
 
   /**
