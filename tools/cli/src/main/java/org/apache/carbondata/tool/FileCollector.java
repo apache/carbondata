@@ -172,26 +172,27 @@ class FileCollector {
   public void collectSortColumns(String segmentFolder) throws IOException {
     CarbonFile[] files = SegmentIndexFileStore.getCarbonIndexFiles(
         segmentFolder, FileFactory.getConfiguration());
+    if (files.length == 0) {
+      throw new IllegalArgumentException("\"" + segmentFolder + "\" is not a valid Segment Folder");
+    }
     Set<Boolean> isSortSet = new HashSet<>();
     Set<String> sortColumnsSet = new HashSet<>();
-    if (files != null) {
-      for (CarbonFile file : files) {
-        IndexHeader indexHeader = SegmentIndexFileStore.readIndexHeader(
-            file.getCanonicalPath(), FileFactory.getConfiguration());
-        if (indexHeader != null) {
-          if (indexHeader.isSetIs_sort()) {
-            isSortSet.add(indexHeader.is_sort);
-            if (indexHeader.is_sort) {
-              sortColumnsSet.add(makeSortColumnsString(indexHeader.getTable_columns()));
-            }
-          } else {
-            // if is_sort is not set, it will be old store and consider as local_sort by default.
+    for (CarbonFile file : files) {
+      IndexHeader indexHeader = SegmentIndexFileStore.readIndexHeader(
+          file.getCanonicalPath(), FileFactory.getConfiguration());
+      if (indexHeader != null) {
+        if (indexHeader.isSetIs_sort()) {
+          isSortSet.add(indexHeader.is_sort);
+          if (indexHeader.is_sort) {
             sortColumnsSet.add(makeSortColumnsString(indexHeader.getTable_columns()));
           }
+        } else {
+          // if is_sort is not set, it will be old store and consider as local_sort by default.
+          sortColumnsSet.add(makeSortColumnsString(indexHeader.getTable_columns()));
         }
-        if (isSortSet.size() >= 2 || sortColumnsSet.size() >= 2) {
-          break;
-        }
+      }
+      if (isSortSet.size() >= 2 || sortColumnsSet.size() >= 2) {
+        break;
       }
     }
     // for all index files, sort_columns should be same
