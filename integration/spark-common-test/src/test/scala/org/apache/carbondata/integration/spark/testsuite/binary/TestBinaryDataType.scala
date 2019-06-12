@@ -1570,7 +1570,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
              """.stripMargin)
         sql(
             s"""
-               | LOAD DATA inpath '$resourcesPath/2000_testCSV.csv'
+               | LOAD DATA inpath '$resourcesPath/restructure/data_2000.csv'
                | into table uniqdata
                | OPTIONS(
                |    'DELIMITER'=',' ,
