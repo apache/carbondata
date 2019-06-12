@@ -509,5 +509,16 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     }.getMessage.contains("Cannot set SORT_COLUMNS as empty when SORT_SCOPE is LOCAL_SORT")
   }
 
+  test("test delete on datamap table") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_scope'='no_sort','sort_columns'='name', 'inverted_index'='name')")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("create datamap dm_mv on table maintable using 'mv' as select name, sum(price) from maintable group by name")
+    intercept[UnsupportedOperationException] {
+      sql("delete from dm_mv_table where maintable_name='abc'")
+    }.getMessage.contains("Delete operation is not supported for datamap table")
+    sql("drop table IF EXISTS maintable")
+  }
+
 }
 

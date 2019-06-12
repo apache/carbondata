@@ -567,6 +567,33 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     assert(segmentList.containsAll(segmentMap.get("default.test_table")))
   }
 
+  test("test auto compaction with threshold") {
+    sql(s"drop table IF EXISTS test_table")
+    sql(
+      s"""
+         | CREATE TABLE test_table (empname String, designation String, doj Timestamp,
+         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+         |  utilization int,salary int)
+         | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='6,0')
+      """.stripMargin)
+    loadDataToFactTable("test_table")
+    sql("drop datamap if exists datamap1")
+    sql("create datamap datamap_com using 'mv' as select empname, designation from test_table")
+    for (i <- 0 to 4) {
+      loadDataToFactTable("test_table")
+    }
+    createTableFactTable("test_table1")
+    for (i <- 0 to 5) {
+      loadDataToFactTable("test_table1")
+    }
+    checkAnswer(sql("select empname, designation from test_table"),
+      sql("select empname, designation from test_table1"))
+    val df = sql(s""" select empname, designation from test_table""".stripMargin)
+    val analyzed = df.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_com"))
+  }
+
   override def afterAll(): Unit = {
     sql("drop table if exists products")
     sql("drop table if exists sales")

@@ -370,17 +370,15 @@ public abstract class DataMapProvider {
   private boolean checkIfSegmentsToBeReloaded(LoadMetadataDetails[] loadMetaDataDetails,
       List<String> segmentIds, String segmentId) {
     boolean isToBeLoadedAgain = true;
-    for (String loadName : segmentIds) {
-      for (LoadMetadataDetails loadMetadataDetail : loadMetaDataDetails) {
-        if (loadMetadataDetail.getLoadName().equalsIgnoreCase(loadName)) {
-          if (null != loadMetadataDetail.getMergedLoadName() && loadMetadataDetail
-              .getMergedLoadName().equalsIgnoreCase(segmentId)) {
-            isToBeLoadedAgain = false;
-          } else {
-            return true;
-          }
-        }
+    List<String> mergedSegments = new ArrayList<>();
+    for (LoadMetadataDetails loadMetadataDetail : loadMetaDataDetails) {
+      if (null != loadMetadataDetail.getMergedLoadName() && loadMetadataDetail.getMergedLoadName()
+          .equalsIgnoreCase(segmentId)) {
+        mergedSegments.add(loadMetadataDetail.getLoadName());
       }
+    }
+    if (!mergedSegments.isEmpty() && segmentIds.containsAll(mergedSegments)) {
+      isToBeLoadedAgain = false;
     }
     return isToBeLoadedAgain;
   }
