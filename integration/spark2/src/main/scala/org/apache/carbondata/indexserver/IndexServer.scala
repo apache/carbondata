@@ -32,7 +32,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DistributableDataMapFormat
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.indexstore.ExtendedBlocklet
+import org.apache.carbondata.core.indexstore.{ExtendedBlocklet, ExtendedBlockletWrapperContainer}
 import org.apache.carbondata.core.util.CarbonProperties
 
 @ProtocolInfo(protocolName = "Server", protocolVersion = 1)
@@ -42,7 +42,7 @@ trait ServerInterface {
   /**
    * Used to prune and cache the datamaps for the table.
    */
-  def getSplits(request: DistributableDataMapFormat): Array[ExtendedBlocklet]
+  def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer
 
   /**
    * Get the cache size for the specified table.
@@ -99,7 +99,7 @@ object IndexServer extends ServerInterface {
     })
   }
 
-  def getSplits(request: DistributableDataMapFormat): Array[ExtendedBlocklet] = doAs {
+  def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer = doAs {
     sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
     sparkSession.sparkContext.setLocalProperty("spark.job.description", request.getTaskGroupDesc)
     val splits = new DistributedPruneRDD(sparkSession, request).collect()
@@ -107,7 +107,7 @@ object IndexServer extends ServerInterface {
     if (request.isJobToClearDataMaps) {
       DistributedRDDUtils.invalidateCache(request.getCarbonTable.getTableUniqueName)
     }
-    splits.map(_._2)
+    new ExtendedBlockletWrapperContainer(splits.map(_._2))
   }
 
   override def invalidateSegmentCache(databaseName: String, tableName: String,

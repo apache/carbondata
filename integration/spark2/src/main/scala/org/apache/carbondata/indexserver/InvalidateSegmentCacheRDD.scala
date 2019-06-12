@@ -51,7 +51,7 @@ class InvalidateSegmentCacheRDD(@transient private val ss: SparkSession, databas
           // create a dummy split for each executor to accumulate the cache size.
           val dummySplit = new CarbonInputSplit()
           dummySplit.setLocation(Array(executor))
-          new DataMapRDDPartition(id, idx, dummySplit)
+          new DataMapRDDPartition(id, idx, List(dummySplit), Array(executor))
       }
     }
   }

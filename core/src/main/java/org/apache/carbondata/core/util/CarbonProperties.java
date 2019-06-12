@@ -1706,4 +1706,10 @@ public final class CarbonProperties {
     return CarbonCommonConstants.CARBON_INDEX_SERVER_WORKER_THREADS_DEFAULT;
   }
 
+  public int getNumOfThreadsForExecutorPruning() {
+    return Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING,
+            CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT));
+  }
+
 }

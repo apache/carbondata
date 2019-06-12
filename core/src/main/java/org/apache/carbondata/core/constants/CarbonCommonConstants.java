@@ -1461,6 +1461,14 @@ public final class CarbonCommonConstants {
   // block prune in multi-thread if files size more than 100K files.
   public static final int CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT = 100000;
 
+  /**
+   * max executor threads used for block pruning [1 to 4 threads]
+   */
+  @CarbonProperty public static final String CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING =
+      "carbon.max.executor.threads.for.block.pruning";
+
+  public static final String CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT = "4";
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Datamap parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////

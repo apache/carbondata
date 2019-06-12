@@ -53,7 +53,7 @@ class DistributedDataMapJob extends AbstractDataMapJob {
     val queryId = SparkSQLUtil.getSparkSession.sparkContext.getConf
       .get("queryId", UUID.randomUUID().toString)
     dataMapFormat.setQueryId(queryId)
-    val tempPath = dataMapFormat.getCarbonTable.getTablePath + "/" + queryId;
+    val tempPath = dataMapFormat.getCarbonTable.getTablePath + "/" + queryId
     val file = FileFactory.getCarbonFile(tempPath)
     var isTempFolderCreated = false
     if (!file.mkdirs(tempPath)) {
@@ -79,7 +79,8 @@ class DistributedDataMapJob extends AbstractDataMapJob {
       filterInf = removeSparkUnknown(filterInf,
         dataMapFormat.getCarbonTable.getAbsoluteTableIdentifier, filterProcessor)
       dataMapFormat.setFilterResolverIntf(filterInf)
-      IndexServer.getClient.getSplits(dataMapFormat).toList.asJava
+      IndexServer.getClient.getSplits(dataMapFormat)
+        .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
     }
     LOGGER.info(s"Time taken to get response from server: $time ms")
     if (isTempFolderCreated && !file.delete()) {
@@ -151,7 +152,8 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
     }
     dataMapFormat.setTaskGroupId(taskGroupId)
     dataMapFormat.setTaskGroupDesc(taskGroupDesc)
-    val splits = IndexServer.getSplits(dataMapFormat).toList.asJava
+    val splits = IndexServer.getSplits(dataMapFormat)
+      .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
     if (isTempFolderCreated && !tempFolder.delete()) {
       LOGGER.info("Problem while deleting the temp directory" + tempPath)
     }

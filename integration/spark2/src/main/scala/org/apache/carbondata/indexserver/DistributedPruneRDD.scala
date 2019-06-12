@@ -19,98 +19,166 @@ package org.apache.carbondata.indexserver
 
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.duration.Duration
 
-import org.apache.hadoop.mapred.TaskAttemptID
+import org.apache.commons.lang.StringUtils
+import org.apache.hadoop.mapred.{RecordReader, TaskAttemptID}
 import org.apache.hadoop.mapreduce.{InputSplit, Job, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{Partition, SparkEnv, TaskContext, TaskKilledException}
+import org.apache.spark.{Partition, SparkEnv, TaskContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.DistributableDataMapFormat
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapStoreManager, DistributableDataMapFormat, TableDataMap}
+import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.indexstore.ExtendedBlocklet
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.indexstore.{ExtendedBlocklet, ExtendedBlockletWrapper}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonThreadFactory}
 import org.apache.carbondata.spark.rdd.CarbonRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
-class DataMapRDDPartition(rddId: Int, idx: Int, val inputSplit: InputSplit)
+class DataMapRDDPartition(rddId: Int,
+    idx: Int,
+    val inputSplit: Seq[InputSplit],
+    location: Array[String])
   extends Partition {
 
   override def index: Int = idx
 
   override def hashCode(): Int = 41 * (41 + rddId) + idx
+
+  def getLocations: Array[String] = {
+    location
+  }
 }
 
 private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkSession,
     dataMapFormat: DistributableDataMapFormat)
-  extends CarbonRDD[(String, ExtendedBlocklet)](ss, Nil) {
+  extends CarbonRDD[(String, ExtendedBlockletWrapper)](ss, Nil) {
 
   @transient private val LOGGER = LogServiceFactory.getLogService(classOf[DistributedPruneRDD]
     .getName)
-
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new Date())
   }
+  var readers: scala.collection.Iterator[RecordReader[Void, ExtendedBlocklet]] = _
 
-  override protected def getPreferredLocations(split: Partition): Seq[String] = {
-    if (split.asInstanceOf[DataMapRDDPartition].inputSplit.getLocations != null) {
-      split.asInstanceOf[DataMapRDDPartition].inputSplit.getLocations.toSeq
-    } else {
-      Seq()
+  private def clearInvalidDataMaps(segmentNo: List[String]): Unit = {
+    if (dataMapFormat.isJobToClearDataMaps) {
+      if (StringUtils.isNotEmpty(dataMapFormat.getDataMapToClear)) {
+        val dataMaps = DataMapStoreManager.getInstance
+          .getAllDataMap(dataMapFormat.getCarbonTable).asScala.collect {
+          case dataMap if dataMapFormat.getDataMapToClear
+            .equalsIgnoreCase(dataMap.getDataMapSchema.getDataMapName) =>
+            segmentNo.foreach(segment => dataMap.deleteSegmentDatamapData(segment))
+            dataMap.clear()
+            Nil
+          case others => List(others)
+        }.flatten
+        DataMapStoreManager.getInstance.getAllDataMaps
+          .put(dataMapFormat.getCarbonTable.getTableUniqueName, dataMaps.asJava)
+      }
+      else {
+        DataMapStoreManager.getInstance
+          .clearDataMaps(dataMapFormat.getCarbonTable.getTableUniqueName)
+        // clear the segment properties cache from executor
+        SegmentPropertiesAndSchemaHolder.getInstance
+          .invalidate(dataMapFormat.getCarbonTable.getAbsoluteTableIdentifier)
+      }
     }
   }
 
+  private def groupSplits(xs: Seq[InputSplit], n: Int) = {
+    val (quot, rem) = (xs.size / n, xs.size % n)
+    val (smaller, bigger) = xs.splitAt(xs.size - rem * (quot + 1))
+    (smaller.grouped(quot) ++ bigger.grouped(quot + 1)).toList
+  }
+
   override def internalCompute(split: Partition,
-      context: TaskContext): Iterator[(String, ExtendedBlocklet)] = {
+      context: TaskContext): Iterator[(String, ExtendedBlockletWrapper)] = {
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
     val attemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration, attemptId)
-    val inputSplit = split.asInstanceOf[DataMapRDDPartition].inputSplit
-    val reader = dataMapFormat.createRecordReader(inputSplit, attemptContext)
-    reader.initialize(inputSplit, attemptContext)
-    val cacheSize = if (CacheProvider.getInstance().getCarbonCache != null) {
-      CacheProvider.getInstance().getCarbonCache.getCurrentSize
+    val inputSplits = split.asInstanceOf[DataMapRDDPartition].inputSplit
+    if (dataMapFormat.isJobToClearDataMaps) {
+      // if job is to clear datamaps just clear datamaps from cache and pass empty iterator
+      clearInvalidDataMaps(inputSplits.asInstanceOf[DataMapRDDPartition].inputSplit.map(_
+        .asInstanceOf[DataMapDistributable].getSegment.getSegmentNo).toList)
+      Iterator(("", new ExtendedBlockletWrapper()))
     } else {
-      0L
+      if (dataMapFormat.getInvalidSegments.size > 0) {
+        // clear the segmentMap and from cache in executor when there are invalid segments
+        DataMapStoreManager.getInstance().clearInvalidSegments(dataMapFormat.getCarbonTable,
+          dataMapFormat.getInvalidSegments)
+      }
+      val startTime = System.currentTimeMillis()
+      val numOfThreads = CarbonProperties.getInstance().getNumOfThreadsForExecutorPruning
+
+      val service = Executors
+        .newFixedThreadPool(numOfThreads, new CarbonThreadFactory("IndexPruningPool", true))
+      implicit val ec: ExecutionContextExecutor = ExecutionContext
+        .fromExecutor(service)
+
+      val futures = if (inputSplits.length <= numOfThreads) {
+        inputSplits.map {
+          split => generateFuture(Seq(split), attemptContext)
+        }
+      } else {
+        groupSplits(inputSplits, numOfThreads).map {
+          splits => generateFuture(splits, attemptContext)
+        }
+      }
+      // scalastyle:off
+      val f = Await.result(Future.sequence(futures), Duration.Inf).flatten
+      // scalastyle:on
+      service.shutdownNow()
+      val LOGGER = LogServiceFactory.getLogService(classOf[DistributedPruneRDD].getName)
+      LOGGER.info(s"Time taken to collect ${ inputSplits.size } blocklets : " +
+                  (System.currentTimeMillis() - startTime))
+      val cacheSize = if (CacheProvider.getInstance().getCarbonCache != null) {
+        CacheProvider.getInstance().getCarbonCache.getCurrentSize
+      } else {
+        0L
+      }
+      val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
+        SparkEnv.get.blockManager.blockManagerId.executorId
+      }"
+      val value = (executorIP + "_" + cacheSize.toString, new ExtendedBlockletWrapper(f.toList
+        .asJava,
+        dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId))
+      Iterator(value)
     }
-    context.addTaskCompletionListener(_ => {
-      if (reader != null) {
+  }
+
+  private def generateFuture(split: Seq[InputSplit],
+      attemptContextImpl: TaskAttemptContextImpl)
+    (implicit executionContext: ExecutionContext) = {
+    Future {
+      split.flatMap { inputSplit =>
+        val blocklets = new java.util.ArrayList[ExtendedBlocklet]()
+        val reader = dataMapFormat.createRecordReader(inputSplit, attemptContextImpl)
+        reader.initialize(inputSplit, attemptContextImpl)
+        while (reader.nextKeyValue()) {
+          blocklets.add(reader.getCurrentValue)
+        }
         reader.close()
-      }
-    })
-    val iter: Iterator[(String, ExtendedBlocklet)] = new Iterator[(String, ExtendedBlocklet)] {
-
-      private var havePair = false
-      private var finished = false
-
-      override def hasNext: Boolean = {
-        if (context.isInterrupted) {
-          throw new TaskKilledException
-        }
-        if (!finished && !havePair) {
-          finished = !reader.nextKeyValue
-          havePair = !finished
-        }
-        !finished
-      }
-
-      override def next(): (String, ExtendedBlocklet) = {
-        if (!hasNext) {
-          throw new java.util.NoSuchElementException("End of stream")
-        }
-        havePair = false
-        val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
-          SparkEnv.get.blockManager.blockManagerId.executorId}"
-        val value = (executorIP + "_" + cacheSize.toString, reader.getCurrentValue)
-        value
+        blocklets.asScala
       }
     }
-    iter
+  }
+
+  override protected def getPreferredLocations(split: Partition): Seq[String] = {
+    if (split.asInstanceOf[DataMapRDDPartition].getLocations != null) {
+      split.asInstanceOf[DataMapRDDPartition].getLocations.toSeq
+    } else {
+      Seq()
+    }
   }
 
   override protected def internalGetPartitions: Array[Partition] = {
@@ -121,7 +189,7 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
         dataMapFormat.getCarbonTable.getTableName)
     if (!isDistributedPruningEnabled || dataMapFormat.isFallbackJob || splits.isEmpty) {
       splits.zipWithIndex.map {
-        f => new DataMapRDDPartition(id, f._2, f._1)
+        f => new DataMapRDDPartition(id, f._2, List(f._1), f._1.getLocations)
       }.toArray
     } else {
       val executorsList: Map[String, Seq[String]] = DistributionUtil
@@ -130,7 +198,7 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
         DistributedRDDUtils.getExecutors(splits.toArray, executorsList, dataMapFormat
           .getCarbonTable.getTableUniqueName, id)
       }
-      LOGGER.debug(s"Time taken to assign executors to ${splits.length} is $time ms")
+      LOGGER.debug(s"Time taken to assign executors to ${ splits.length } is $time ms")
       response.toArray
     }
   }

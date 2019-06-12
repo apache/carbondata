@@ -64,11 +64,21 @@ object DistributedRDDUtils {
     if (invalidExecutorIds.nonEmpty) {
       DistributedRDDUtils.invalidateExecutors(invalidExecutorIds.toSeq)
     }
-    (convertToPartition(legacySegments, tableUniqueName, executorsList) ++
-     convertToPartition(sortedPartitions, tableUniqueName, executorsList)).zipWithIndex.map {
-      case (dataMapDistributable, index) =>
-        new DataMapRDDPartition(rddId, index, dataMapDistributable)
-    }
+    val groupedPartitions = (convertToPartition(legacySegments, tableUniqueName, executorsList) ++
+                             convertToPartition(sortedPartitions, tableUniqueName, executorsList))
+      .groupBy {
+        partition =>
+          partition.getLocations.head
+      }
+    groupedPartitions.map {
+      case (location, dataMapDistributable) =>
+        (location, dataMapDistributable)
+    }.zipWithIndex.map {
+      case ((location, splitList), index) =>
+        new DataMapRDDPartition(rddId,
+          index, splitList,
+          Array(location))
+    }.toArray.sortBy(_.index)
   }
 
   private def convertToPartition(segments: Seq[InputSplit], tableUniqueName: String,
