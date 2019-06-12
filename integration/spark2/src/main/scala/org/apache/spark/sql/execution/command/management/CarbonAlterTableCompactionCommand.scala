@@ -22,7 +22,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, Row, SQLContext, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{AlterTableModel, AtomicRunnableCommand, CompactionModel}
@@ -34,14 +34,12 @@ import org.apache.spark.util.AlterTableUtil
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapUtil
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
-import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -120,13 +118,17 @@ case class CarbonAlterTableCompactionCommand(
           "Unsupported alter operation on carbon table")
     }
     if (compactionType == CompactionType.UPGRADE_SEGMENT) {
-      val tableStatusLock = CarbonLockFactory.getCarbonLockObj(table.getAbsoluteTableIdentifier, LockUsage
-        .TABLE_STATUS_LOCK)
+      val tableStatusLock = CarbonLockFactory
+        .getCarbonLockObj(table.getAbsoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
       try {
         if (tableStatusLock.lockWithRetries()) {
-          val loadMetaDataDetails = SegmentStatusManager.readLoadMetadata(table.getTablePath)
+          val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
+            .getTableStatusFilePath(table.getTablePath))
           loadMetaDataDetails.foreach { loadMetaDataDetail =>
-            if (loadMetaDataDetail.getIndexSize == null || loadMetaDataDetail.getDataSize == null) {
+            // "0" check is added to reproduce a scenario similar to 1.1 store where the size
+            // would be null. For test case in the new version it would be set to 0.
+            if (loadMetaDataDetail.getIndexSize == null || loadMetaDataDetail.getDataSize == null
+            || loadMetaDataDetail.getIndexSize == "0" || loadMetaDataDetail.getDataSize == "0") {
               CarbonLoaderUtil
                 .addDataIndexSizeIntoMetaEntry(loadMetaDataDetail, loadMetaDataDetail.getLoadName,
                   table)

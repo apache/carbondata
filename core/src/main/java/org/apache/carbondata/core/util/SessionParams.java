@@ -204,7 +204,9 @@ public class SessionParams implements Serializable, Cloneable {
         isValid = true;
         break;
       default:
-        if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
+        if (key.startsWith(CARBON_ENABLE_INDEX_SERVER) && key.split("\\.").length == 6) {
+          isValid = true;
+        } else if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
           isValid = CarbonUtil.validateRangeOfSegmentList(value);
           if (!isValid) {
             throw new InvalidConfigurationException("Invalid CARBON_INPUT_SEGMENT_IDs");

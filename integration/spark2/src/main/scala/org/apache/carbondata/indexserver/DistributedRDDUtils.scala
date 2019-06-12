@@ -90,10 +90,10 @@ object DistributedRDDUtils {
       }.toSeq
       legacySegments.zipWithIndex.map {
         case (legacySegment, index) =>
-          val wrapper: DataMapDistributable = legacySegment.asInstanceOf[DataMapDistributableWrapper]
-            .getDistributable
+          val wrapper: DataMapDistributable = legacySegment
+            .asInstanceOf[DataMapDistributableWrapper].getDistributable
           val executor = validExecutorIds(index % validExecutorIds.length)
-          wrapper.setLocations(Array(executor))
+          wrapper.setLocations(Array("executor_" + executor))
           legacySegment
       }
     } else { Seq() } ++ segments.map { partition =>
@@ -137,11 +137,13 @@ object DistributedRDDUtils {
   def invalidateSegmentMapping(tableUniqueName: String,
       invalidSegmentList: Seq[String]): Unit = {
     synchronized {
-      invalidSegmentList.foreach {
-        invalidSegment => tableToExecutorMapping.get(tableUniqueName).remove(invalidSegment)
-      }
-      if (tableToExecutorMapping.get(tableUniqueName).isEmpty) {
-        invalidateTableMapping(tableUniqueName)
+      if (tableToExecutorMapping.get(tableUniqueName) != null) {
+        invalidSegmentList.foreach {
+          invalidSegment => tableToExecutorMapping.get(tableUniqueName).remove(invalidSegment)
+        }
+        if (tableToExecutorMapping.get(tableUniqueName).isEmpty) {
+          invalidateTableMapping(tableUniqueName)
+        }
       }
     }
   }

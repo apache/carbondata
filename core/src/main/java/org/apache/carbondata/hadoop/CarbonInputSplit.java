@@ -360,11 +360,6 @@ public class CarbonInputSplit extends FileSplit
     }
     this.blockletId = in.readUTF();
     this.segment = Segment.toSegment(in.readUTF());
-    int numberOfDeleteDeltaFiles = in.readInt();
-    deleteDeltaFiles = new String[numberOfDeleteDeltaFiles];
-    for (int i = 0; i < numberOfDeleteDeltaFiles; i++) {
-      deleteDeltaFiles[i] = in.readUTF();
-    }
     boolean detailInfoExists = in.readBoolean();
     if (detailInfoExists) {
       detailInfo = new BlockletDetailInfo();
@@ -380,6 +375,11 @@ public class CarbonInputSplit extends FileSplit
       validBlockletIds.add((int) in.readShort());
     }
     this.isLegacyStore = in.readBoolean();
+    int numberOfDeleteDeltaFiles = in.readInt();
+    deleteDeltaFiles = new String[numberOfDeleteDeltaFiles];
+    for (int i = 0; i < numberOfDeleteDeltaFiles; i++) {
+      deleteDeltaFiles[i] = in.readUTF();
+    }
   }
 
   @Override public void write(DataOutput out) throws IOException {
@@ -394,6 +394,7 @@ public class CarbonInputSplit extends FileSplit
       out.writeUTF(bucketId);
       out.writeUTF(blockletId);
       out.write(serializeData, offset, actualLen);
+      writeDeleteDeltaFile(out);
       return;
     }
     // please refer writeDetailInfo doc
@@ -416,12 +417,6 @@ public class CarbonInputSplit extends FileSplit
     }
     out.writeUTF(blockletId);
     out.writeUTF(segment.toString());
-    out.writeInt(null != deleteDeltaFiles ? deleteDeltaFiles.length : 0);
-    if (null != deleteDeltaFiles) {
-      for (int i = 0; i < deleteDeltaFiles.length; i++) {
-        out.writeUTF(deleteDeltaFiles[i]);
-      }
-    }
     // please refer writeDetailInfo doc
     out.writeBoolean(writeDetailInfo && (detailInfo != null || dataMapRow != null));
     if (writeDetailInfo && detailInfo != null) {
@@ -439,7 +434,18 @@ public class CarbonInputSplit extends FileSplit
       out.writeShort(blockletId);
     }
     out.writeBoolean(isLegacyStore);
+    writeDeleteDeltaFile(out);
   }
+
+  private void writeDeleteDeltaFile(DataOutput out) throws IOException {
+    out.writeInt(null != deleteDeltaFiles ? deleteDeltaFiles.length : 0);
+    if (null != deleteDeltaFiles) {
+      for (int i = 0; i < deleteDeltaFiles.length; i++) {
+        out.writeUTF(deleteDeltaFiles[i]);
+      }
+    }
+  }
+
 
   /**
    * returns the number of blocklets

@@ -107,7 +107,7 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
       }
       val startTime = System.currentTimeMillis()
       val numOfThreads = CarbonProperties.getInstance().getNumOfThreadsForExecutorPruning
-
+      dataMapFormat.createDataMapChooser()
       val service = Executors
         .newFixedThreadPool(numOfThreads, new CarbonThreadFactory("IndexPruningPool", true))
       implicit val ec: ExecutionContextExecutor = ExecutionContext

@@ -75,19 +75,15 @@ import org.apache.log4j.Logger;
  */
 public class CarbonTable implements Serializable, Writable {
 
-  private static final Logger LOGGER =
-      LogServiceFactory.getLogService(CarbonTable.class.getName());
-
-  /**
-   * the cached table info
-   */
-  private TableInfo tableInfo;
-
+  private static final Logger LOGGER = LogServiceFactory.getLogService(CarbonTable.class.getName());
   /**
    * serialization id
    */
   private static final long serialVersionUID = 8696507171227156445L;
-
+  /**
+   * the cached table info
+   */
+  private TableInfo tableInfo;
   /**
    * TableName, Dimensions list. This map will contain allDimensions which are visible
    */
@@ -214,9 +210,9 @@ public class CarbonTable implements Serializable, Writable {
     }
     tableInfo.setDataMapSchemaList(dataMapSchemas);
     for (ColumnSchema columnSchema : tableInfo.getFactTable().getListOfColumns()) {
-      columnSchema.setDataType(
-          DataTypeUtil.valueOf(
-              columnSchema.getDataType(), columnSchema.getPrecision(), columnSchema.getScale()));
+      columnSchema.setDataType(DataTypeUtil
+          .valueOf(columnSchema.getDataType(), columnSchema.getPrecision(),
+              columnSchema.getScale()));
     }
     List<DataMapSchema> childSchema = tableInfo.getDataMapSchemaList();
     for (DataMapSchema dataMapSchema : childSchema) {
@@ -230,11 +226,11 @@ public class CarbonTable implements Serializable, Writable {
       }
     }
     if (tableInfo.getFactTable().getBucketingInfo() != null) {
-      for (ColumnSchema columnSchema :
-          tableInfo.getFactTable().getBucketingInfo().getListOfColumns()) {
-        columnSchema.setDataType(
-            DataTypeUtil.valueOf(
-                columnSchema.getDataType(), columnSchema.getPrecision(), columnSchema.getScale()));
+      for (ColumnSchema columnSchema : tableInfo.getFactTable().getBucketingInfo()
+          .getListOfColumns()) {
+        columnSchema.setDataType(DataTypeUtil
+            .valueOf(columnSchema.getDataType(), columnSchema.getPrecision(),
+                columnSchema.getScale()));
       }
     }
     if (tableInfo.getFactTable().getPartitionInfo() != null) {
@@ -247,17 +243,15 @@ public class CarbonTable implements Serializable, Writable {
     }
   }
 
-  public static CarbonTable buildTable(
-      String tablePath,
-      String tableName,
+  public static CarbonTable buildTable(String tablePath, String tableName,
       Configuration configuration) throws IOException {
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, tableName, "null");
     // InferSchema from data file
     org.apache.carbondata.format.TableInfo tableInfo =
         CarbonUtil.inferSchema(tablePath, tableName, false, configuration);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-    for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
-        .getFact_table().getTable_columns()) {
+    for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo.getFact_table()
+        .getTable_columns()) {
       ColumnSchema columnSchema = thriftColumnSchemaToWrapperColumnSchema(thriftColumnSchema);
       if (columnSchema.getColumnReferenceId() == null) {
         columnSchema.setColumnReferenceId(columnSchema.getColumnUniqueId());
@@ -281,6 +275,114 @@ public class CarbonTable implements Serializable, Writable {
     CarbonTable table = new CarbonTable();
     updateTableByTableInfo(table, tableInfo);
     return table;
+  }
+
+  /**
+   * build table unique name
+   * all should call this method to build table unique name
+   *
+   * @param databaseName
+   * @param tableName
+   * @return
+   */
+  public static String buildUniqueName(String databaseName, String tableName) {
+    return databaseName + CarbonCommonConstants.UNDERSCORE + tableName;
+  }
+
+  /**
+   * Get Dimension for columnName from list of dimensions
+   *
+   * @param columnName
+   * @param dimensions
+   * @return
+   */
+  public static CarbonDimension getCarbonDimension(String columnName,
+      List<CarbonDimension> dimensions) {
+    CarbonDimension carbonDimension = null;
+    for (CarbonDimension dim : dimensions) {
+      if (dim.getColName().equalsIgnoreCase(columnName)) {
+        carbonDimension = dim;
+        break;
+      }
+    }
+    return carbonDimension;
+  }
+
+  /**
+   * Resolve the filter expression.
+   */
+  public static FilterResolverIntf resolveFilter(Expression filterExpression,
+      AbsoluteTableIdentifier identifier) {
+    try {
+      FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
+      return filterExpressionProcessor.getFilterResolver(filterExpression, identifier);
+    } catch (Exception e) {
+      throw new RuntimeException("Error while resolving filter expression", e);
+    }
+  }
+
+  /**
+   * Create a {@link CarbonTableBuilder} to create {@link CarbonTable}
+   */
+  public static CarbonTableBuilder builder() {
+    return new CarbonTableBuilder();
+  }
+
+  /**
+   * update the carbon table by using the passed tableInfo
+   *
+   * @param table
+   * @param tableInfo
+   */
+  public static void updateTableByTableInfo(CarbonTable table, TableInfo tableInfo) {
+    updateTableInfo(tableInfo);
+    table.tableInfo = tableInfo;
+    table.blockSize = tableInfo.getTableBlockSizeInMB();
+    table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
+    table.tableUniqueName = tableInfo.getTableUniqueName();
+    table.setTransactionalTable(tableInfo.isTransactionalTable());
+    table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
+    table.fillCreateOrderColumn(tableInfo.getFactTable().getTableName());
+    if (tableInfo.getFactTable().getBucketingInfo() != null) {
+      table.tableBucketMap.put(tableInfo.getFactTable().getTableName(),
+          tableInfo.getFactTable().getBucketingInfo());
+    }
+    if (tableInfo.getFactTable().getPartitionInfo() != null) {
+      table.tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
+          tableInfo.getFactTable().getPartitionInfo());
+    }
+    table.hasDataMapSchema =
+        null != tableInfo.getDataMapSchemaList() && tableInfo.getDataMapSchemaList().size() > 0;
+    setLocalDictInfo(table, tableInfo);
+  }
+
+  /**
+   * This method sets whether the local dictionary is enabled or not, and the local dictionary
+   * threshold, if not defined default value are considered.
+   *
+   * @param table
+   * @param tableInfo
+   */
+  private static void setLocalDictInfo(CarbonTable table, TableInfo tableInfo) {
+    Map<String, String> tableProperties = tableInfo.getFactTable().getTableProperties();
+    String isLocalDictionaryEnabled =
+        tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
+    String localDictionaryThreshold =
+        tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD);
+    if (null != isLocalDictionaryEnabled) {
+      table.setLocalDictionaryEnabled(Boolean.parseBoolean(isLocalDictionaryEnabled));
+      if (null != localDictionaryThreshold) {
+        table.setLocalDictionaryThreshold(Integer.parseInt(localDictionaryThreshold));
+      } else {
+        table.setLocalDictionaryThreshold(
+            Integer.parseInt(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT));
+      }
+    } else {
+      // in case of old tables, local dictionary enable property will not be present in
+      // tableProperties, so disable the local dictionary generation
+      table.setLocalDictionaryEnabled(Boolean.parseBoolean("false"));
+      tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE, "false");
+    }
   }
 
   /**
@@ -326,8 +428,8 @@ public class CarbonTable implements Serializable, Writable {
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++,
-                    columnSchema.getSchemaOrdinal(), -1, ++complexTypeOrdinal);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(),
+                  -1, ++complexTypeOrdinal);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           allDimensions.add(complexDimension);
           dimensionOrdinal =
@@ -340,18 +442,16 @@ public class CarbonTable implements Serializable, Writable {
             this.numberOfSortColumns++;
           }
           if (!columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
-            CarbonDimension dimension =
-                    new CarbonDimension(columnSchema, dimensionOrdinal++,
-                            columnSchema.getSchemaOrdinal(), -1, -1);
+            CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++,
+                columnSchema.getSchemaOrdinal(), -1, -1);
             if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
               this.numberOfNoDictSortColumns++;
             }
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           } else if (columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
-            CarbonDimension dimension =
-                    new CarbonDimension(columnSchema, dimensionOrdinal++,
-                            columnSchema.getSchemaOrdinal(), keyOrdinal++, -1);
+            CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++,
+                columnSchema.getSchemaOrdinal(), keyOrdinal++, -1);
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           }
@@ -365,8 +465,8 @@ public class CarbonTable implements Serializable, Writable {
     fillVisibleMeasures(tableSchema.getTableName());
     addImplicitDimension(dimensionOrdinal, implicitDimensions);
     CarbonUtil.setLocalDictColumnsToWrapperSchema(tableSchema.getListOfColumns(),
-        tableSchema.getTableProperties(), tableSchema.getTableProperties()
-            .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE));
+        tableSchema.getTableProperties(),
+        tableSchema.getTableProperties().get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE));
     dimensionOrdinalMax = dimensionOrdinal;
   }
 
@@ -411,8 +511,8 @@ public class CarbonTable implements Serializable, Writable {
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++,
-                        columnSchema.getSchemaOrdinal(), -1, -1);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(),
+                  -1, -1);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
           dimensionOrdinal =
@@ -420,8 +520,8 @@ public class CarbonTable implements Serializable, Writable {
                   listOfColumns, complexDimension, primitiveDimensions);
         } else {
           CarbonDimension carbonDimension =
-                  new CarbonDimension(columnSchema, dimensionOrdinal++,
-                          columnSchema.getSchemaOrdinal(), -1, -1);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(),
+                  -1, -1);
           parentDimension.getListOfChildDimensions().add(carbonDimension);
           primitiveDimensions.add(carbonDimension);
         }
@@ -478,6 +578,7 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * is local dictionary enabled for the table
+   *
    * @return
    */
   public boolean isLocalDictionaryEnabled() {
@@ -486,6 +587,7 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * set whether local dictionary enabled or not
+   *
    * @param localDictionaryEnabled
    */
   public void setLocalDictionaryEnabled(boolean localDictionaryEnabled) {
@@ -501,21 +603,11 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * set the local dictionary generation threshold
+   *
    * @param localDictionaryThreshold
    */
   public void setLocalDictionaryThreshold(int localDictionaryThreshold) {
     this.localDictionaryThreshold = localDictionaryThreshold;
-  }
-
-  /**
-   * build table unique name
-   * all should call this method to build table unique name
-   * @param databaseName
-   * @param tableName
-   * @return
-   */
-  public static String buildUniqueName(String databaseName, String tableName) {
-    return databaseName + CarbonCommonConstants.UNDERSCORE + tableName;
   }
 
   /**
@@ -690,25 +782,6 @@ public class CarbonTable implements Serializable, Writable {
     return carbonDimension;
   }
 
-  /**
-   * Get Dimension for columnName from list of dimensions
-   *
-   * @param columnName
-   * @param dimensions
-   * @return
-   */
-  public static CarbonDimension getCarbonDimension(String columnName,
-      List<CarbonDimension> dimensions) {
-    CarbonDimension carbonDimension = null;
-    for (CarbonDimension dim : dimensions) {
-      if (dim.getColName().equalsIgnoreCase(columnName)) {
-        carbonDimension = dim;
-        break;
-      }
-    }
-    return carbonDimension;
-  }
-
   private CarbonDimension getDimensionBasedOnOrdinal(List<CarbonDimension> dimList, int ordinal) {
     for (CarbonDimension dimension : dimList) {
       if (dimension.getOrdinal() == ordinal) {
@@ -828,8 +901,8 @@ public class CarbonTable implements Serializable, Writable {
 
   public int getBlockletSizeInMB() {
     try {
-      return Integer.parseInt(tableInfo.getFactTable().getTableProperties().get(
-          CarbonCommonConstants.TABLE_BLOCKLET_SIZE));
+      return Integer.parseInt(tableInfo.getFactTable().getTableProperties()
+          .get(CarbonCommonConstants.TABLE_BLOCKLET_SIZE));
     } catch (NumberFormatException e) {
       return Integer.parseInt(CarbonCommonConstants.TABLE_BLOCKLET_SIZE_DEFAULT);
     }
@@ -960,8 +1033,8 @@ public class CarbonTable implements Serializable, Writable {
    */
   public boolean isStreamingSink() {
     String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
-    return streaming != null &&
-        (streaming.equalsIgnoreCase("true") || streaming.equalsIgnoreCase("sink"));
+    return streaming != null && (streaming.equalsIgnoreCase("true") || streaming
+        .equalsIgnoreCase("sink"));
   }
 
   /**
@@ -1014,8 +1087,8 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   public boolean isChildDataMap() {
-    return null != tableInfo.getParentRelationIdentifiers() &&
-        !tableInfo.getParentRelationIdentifiers().isEmpty();
+    return null != tableInfo.getParentRelationIdentifiers() && !tableInfo
+        .getParentRelationIdentifiers().isEmpty();
   }
 
   public boolean isChildTable() {
@@ -1037,7 +1110,6 @@ public class CarbonTable implements Serializable, Writable {
     String external = tableInfo.getFactTable().getTableProperties().get("_filelevelformat");
     return external != null && external.equalsIgnoreCase("true");
   }
-
 
   public long size() throws IOException {
     Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this, true);
@@ -1072,26 +1144,6 @@ public class CarbonTable implements Serializable, Writable {
             this);
   }
 
-  /**
-   * Resolve the filter expression.
-   */
-  public static FilterResolverIntf resolveFilter(Expression filterExpression,
-      AbsoluteTableIdentifier identifier) {
-    try {
-      FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
-      return filterExpressionProcessor.getFilterResolver(filterExpression, identifier);
-    } catch (Exception e) {
-      throw new RuntimeException("Error while resolving filter expression", e);
-    }
-  }
-
-  /**
-   * Create a {@link CarbonTableBuilder} to create {@link CarbonTable}
-   */
-  public static CarbonTableBuilder builder() {
-    return new CarbonTableBuilder();
-  }
-
   public boolean isTransactionalTable() {
     return isTransactionalTable;
   }
@@ -1103,9 +1155,10 @@ public class CarbonTable implements Serializable, Writable {
   /**
    * methods returns true if operation is allowed for the corresponding datamap or not
    * if this operation makes datamap stale it is not allowed
+   *
    * @param carbonTable carbontable to be operated
-   * @param operation which operation on the table,such as drop column,change datatype.
-   * @param targets objects which the operation impact on,such as column
+   * @param operation   which operation on the table,such as drop column,change datatype.
+   * @param targets     objects which the operation impact on,such as column
    * @return true allow;false not allow
    */
   public boolean canAllow(CarbonTable carbonTable, TableOperation operation, Object... targets) {
@@ -1113,9 +1166,8 @@ public class CarbonTable implements Serializable, Writable {
       List<TableDataMap> datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
       if (!datamaps.isEmpty()) {
         for (TableDataMap dataMap : datamaps) {
-          DataMapFactory factoryClass =
-              DataMapStoreManager.getInstance().getDataMapFactoryClass(
-                  carbonTable, dataMap.getDataMapSchema());
+          DataMapFactory factoryClass = DataMapStoreManager.getInstance()
+              .getDataMapFactoryClass(carbonTable, dataMap.getDataMapSchema());
           if (factoryClass.willBecomeStale(operation)) {
             return false;
           }
@@ -1144,9 +1196,9 @@ public class CarbonTable implements Serializable, Writable {
     for (String column : columns) {
       CarbonColumn carbonColumn = getColumnByName(getTableName(), column.trim().toLowerCase());
       if (carbonColumn == null) {
-        throw new MalformedDataMapCommandException(String.format(
-            "column '%s' does not exist in table. Please check create DataMap statement.",
-            column));
+        throw new MalformedDataMapCommandException(String
+            .format("column '%s' does not exist in table. Please check create DataMap statement.",
+                column));
       }
       if (carbonColumn.getColName().isEmpty()) {
         throw new MalformedDataMapCommandException(
@@ -1171,63 +1223,8 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * update the carbon table by using the passed tableInfo
-   *
-   * @param table
-   * @param tableInfo
-   */
-  public static void updateTableByTableInfo(CarbonTable table, TableInfo tableInfo) {
-    updateTableInfo(tableInfo);
-    table.tableInfo = tableInfo;
-    table.blockSize = tableInfo.getTableBlockSizeInMB();
-    table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
-    table.tableUniqueName = tableInfo.getTableUniqueName();
-    table.setTransactionalTable(tableInfo.isTransactionalTable());
-    table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
-    table.fillCreateOrderColumn(tableInfo.getFactTable().getTableName());
-    if (tableInfo.getFactTable().getBucketingInfo() != null) {
-      table.tableBucketMap.put(tableInfo.getFactTable().getTableName(),
-          tableInfo.getFactTable().getBucketingInfo());
-    }
-    if (tableInfo.getFactTable().getPartitionInfo() != null) {
-      table.tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
-          tableInfo.getFactTable().getPartitionInfo());
-    }
-    table.hasDataMapSchema =
-        null != tableInfo.getDataMapSchemaList() && tableInfo.getDataMapSchemaList().size() > 0;
-    setLocalDictInfo(table, tableInfo);
-  }
-
-  /**
-   * This method sets whether the local dictionary is enabled or not, and the local dictionary
-   * threshold, if not defined default value are considered.
-   * @param table
-   * @param tableInfo
-   */
-  private static void setLocalDictInfo(CarbonTable table, TableInfo tableInfo) {
-    Map<String, String> tableProperties = tableInfo.getFactTable().getTableProperties();
-    String isLocalDictionaryEnabled =
-        tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
-    String localDictionaryThreshold =
-        tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD);
-    if (null != isLocalDictionaryEnabled) {
-      table.setLocalDictionaryEnabled(Boolean.parseBoolean(isLocalDictionaryEnabled));
-      if (null != localDictionaryThreshold) {
-        table.setLocalDictionaryThreshold(Integer.parseInt(localDictionaryThreshold));
-      } else {
-        table.setLocalDictionaryThreshold(
-            Integer.parseInt(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT));
-      }
-    } else {
-      // in case of old tables, local dictionary enable property will not be present in
-      // tableProperties, so disable the local dictionary generation
-      table.setLocalDictionaryEnabled(Boolean.parseBoolean("false"));
-      tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE, "false");
-    }
-  }
-
-  /**
    * Return the format value defined in table properties
+   *
    * @return String as per table properties, null if not defined
    */
   public String getFormat() {
