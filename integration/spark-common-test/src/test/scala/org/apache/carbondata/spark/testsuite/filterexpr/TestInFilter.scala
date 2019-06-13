@@ -2,21 +2,24 @@ package org.apache.carbondata.spark.testsuite.filterexpr
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
-class TestInFilter extends QueryTest {
+class TestInFilter extends QueryTest with BeforeAndAfterAll{
 
-  test("sql with in different measurement type") {
-
+  override def beforeAll: Unit = {
     sql("drop table if exists test_table")
-    sql("create table test_table(intField INT, floatField FLOAT, doubleField DOUBLE, decimalField DECIMAL(18,2))  stored by 'carbondata'")
-    
+    sql("create table test_table(intField INT, floatField FLOAT, doubleField DOUBLE, " +
+      "decimalField DECIMAL(18,2))  stored by 'carbondata'")
+
     // turn on carbon row level filter by setting spark.sql.codegen.wholeStage=false
     // because only row level is on, 'in' will be pushdowned into CarbonScanRDD
     //  or in filter will be handled by spark.
     sql("set spark.sql.codegen.wholeStage=false")
     sql("insert into test_table values(8,8,8,8),(5,5.0,5.0,5.0),(4,1.00,2.00,3.00)," +
       "(6,6.0000,6.0000,6.0000),(4743,4743.00,4743.0000,4743.0),(null,null,null,null)")
+  }
 
+  test("sql with in different measurement type") {
     // the precision of filter value is less one digit than column value
     // float type test
     checkAnswer(
@@ -135,15 +138,19 @@ class TestInFilter extends QueryTest {
       sql("select * from test_table where doubleField in(8) " +
         "and floatField in(8) and decimalField in(8) and intField in(8)"),
       Seq(Row(8, 8, 8, 8)))
-    checkAnswer(     sql("select * from test_table where doubleField in(4743.0000) " +
-        "and floatField in(4743.00) and decimalField in(4743.0) and intField in(4743)"),
+    checkAnswer(
+      sql("select * from test_table where doubleField in(4743.0000) " +
+      "and floatField in(4743.00) and decimalField in(4743.0) and intField in(4743)"),
       Seq(Row(4743, 4743.00, 4743.0000, 4743.0)))
     checkAnswer(
       sql("select * from test_table where doubleField in(2.00) " +
         "and floatField in(1.00) and decimalField in(3.00) and intField in(4)"),
       Seq(Row(4, 1.00, 2.00, 3.00)))
+  }
 
+  override def afterAll(): Unit = {
     sql("drop table if exists test_table")
+    sql("set spark.sql.codegen.wholeStage=true")
   }
 
 }
