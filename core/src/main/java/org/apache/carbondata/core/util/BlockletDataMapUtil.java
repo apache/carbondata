@@ -257,7 +257,8 @@ public class BlockletDataMapUtil {
    * name but with different dataType.
    */
   public static boolean isSameColumnAndDifferentDatatypeInSchema(
-      List<ColumnSchema> indexFileColumnList, List<ColumnSchema> tableColumnList) throws IOException {
+      List<ColumnSchema> indexFileColumnList, List<ColumnSchema> tableColumnList)
+      throws IOException {
     for (int i = 0; i < tableColumnList.size(); i++) {
       for (int j = 0; j < indexFileColumnList.size(); j++) {
         if (indexFileColumnList.get(j).getColumnName()
