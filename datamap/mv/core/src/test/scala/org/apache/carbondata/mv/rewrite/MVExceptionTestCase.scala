@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -40,6 +40,13 @@ class MVExceptionTestCase  extends QueryTest with BeforeAndAfterAll {
       sql("create datamap main_table_mv1 on table main_table using 'mv' as select sum(age),name from main_table group by name")
     }
     assertResult("DataMap with name main_table_mv1 already exists in storage")(ex.getMessage)
+  }
+
+  test("test mv creation with limit in query") {
+    val ex = intercept[MalformedCarbonCommandException] {
+      sql("create datamap maintable_mv2 on table main_table using 'mv' as select sum(age),name from main_table group by name limit 10")
+    }
+    assertResult("MV datamap does not support the query with limit")(ex.getMessage)
   }
 
   def drop(): Unit = {

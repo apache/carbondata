@@ -27,7 +27,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Coalesce, Expression, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Join, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Join, Limit, LogicalPlan, Project}
 import org.apache.spark.sql.execution.command.{Field, PartitionerField, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -65,6 +65,13 @@ object MVHelper {
     val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
     val query = sparkSession.sql(updatedQuery)
     val logicalPlan = MVHelper.dropDummFuc(query.queryExecution.analyzed)
+    // if there is limit in MV ctas query string, throw exception, as its not a valid usecase
+    logicalPlan match {
+      case Limit(_, _) =>
+        throw new MalformedCarbonCommandException("MV datamap does not support the query with " +
+                                                  "limit")
+      case _ =>
+    }
     val selectTables = getTables(logicalPlan)
     if (selectTables.isEmpty) {
       throw new MalformedCarbonCommandException(
@@ -72,6 +79,8 @@ object MVHelper {
     }
     val updatedQueryWithDb = validateMVQuery(sparkSession, logicalPlan)
     val fullRebuild = isFullReload(logicalPlan)
+    // the ctas query can have duplicate columns, so we should take distinct and create fields,
+    // so that it won't fail during create mv table
     val fields = logicalPlan.output.map { attr =>
       if (attr.dataType.isInstanceOf[ArrayType] || attr.dataType.isInstanceOf[StructType] ||
           attr.dataType.isInstanceOf[MapType]) {
@@ -96,7 +105,8 @@ object MVHelper {
           children = None,
           rawSchema = rawSchema)
       }
-    }
+    }.distinct
+
     val tableProperties = mutable.Map[String, String]()
     val parentTables = new util.ArrayList[String]()
     val parentTablesList = new util.ArrayList[CarbonTable](selectTables.size)
@@ -403,7 +413,9 @@ object MVHelper {
 
   def getAttributeMap(subsumer: Seq[NamedExpression],
       subsume: Seq[NamedExpression]): Map[AttributeKey, NamedExpression] = {
-    if (subsumer.length == subsume.length) {
+    // when datamap is created with duplicate columns like select sum(age),sum(age) from table,
+    // the subsumee will have duplicate, so handle that case here
+    if (subsumer.length == subsume.groupBy(_.name).size) {
       subsume.zip(subsumer).flatMap { case (left, right) =>
         var tuples = left collect {
           case attr: AttributeReference =>

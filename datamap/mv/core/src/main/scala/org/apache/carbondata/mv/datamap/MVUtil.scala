@@ -129,7 +129,12 @@ object MVUtil {
       val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new ArrayBuffer[ColumnTableRelation]()
       agg.collect {
         case Alias(attr: AggregateExpression, name) =>
-          if (attr.aggregateFunction.isInstanceOf[Count]) {
+          var isLiteralPresent = false
+          attr.aggregateFunction.collect {
+            case l@Literal(_, _) =>
+              isLiteralPresent = true
+          }
+          if (isLiteralPresent) {
             fieldToDataMapFieldMap +=
             getFieldToDataMapFields(name,
               attr.aggregateFunction.dataType,
@@ -137,7 +142,7 @@ object MVUtil {
               attr.aggregateFunction.nodeName,
               arrayBuffer,
               "")
-            aggregateType = "count"
+            aggregateType = attr.aggregateFunction.nodeName
           } else {
             aggregateType = attr.aggregateFunction.nodeName
           }
