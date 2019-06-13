@@ -1560,6 +1560,12 @@ public final class CarbonProperties {
     return Boolean.parseBoolean(pushFilters);
   }
 
+  public boolean isRangeCompactionAllowed() {
+    String isRangeCompact = getProperty(CarbonCommonConstants.CARBON_ENABLE_RANGE_COMPACTION,
+        CarbonCommonConstants.CARBON_ENABLE_RANGE_COMPACTION_DEFAULT);
+    return Boolean.parseBoolean(isRangeCompact);
+  }
+
   private void validateSortMemorySpillPercentage() {
     String spillPercentageStr = carbonProperties.getProperty(
         CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,

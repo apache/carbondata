@@ -29,6 +29,7 @@ import scala.reflect.classTag
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{InputSplit, Job}
 import org.apache.spark._
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
@@ -85,14 +86,20 @@ class CarbonMergerRDD[K, V](
   val databaseName = carbonMergerMapping.databaseName
   val factTableName = carbonMergerMapping.factTableName
   val tableId = carbonMergerMapping.tableId
+  var rangeColumn: CarbonColumn = null
+  var singleRange = false
   var expressionMapForRangeCol: util.Map[Integer, Expression] = null
+  var broadCastSplits: Broadcast[util.List[CarbonInputSplit]] = null
+
+  def makeBroadCast(splits: util.List[CarbonInputSplit]): Unit = {
+    broadCastSplits = sparkContext.broadcast(splits)
+  }
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val queryStartTime = System.currentTimeMillis()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-      val rangeColumn = carbonTable.getRangeColumn
       val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
       if (carbonTable.isPartitionTable) {
         carbonLoadModel.setTaskNo(String.valueOf(carbonSparkPartition.partitionId))
@@ -112,7 +119,14 @@ class CarbonMergerRDD[K, V](
       var rawResultIteratorMap: util.Map[String, util.List[RawResultIterator]] = _
       try {
         // sorting the table block info List.
-        val splitList = carbonSparkPartition.split.value.getAllSplits
+        val splitList = if (null == rangeColumn || singleRange) {
+          // In case of non-range column or single value inside the range column we do not use
+          // the broadcast splits, only for range column we use the broadcast splits(which have
+          // all the splits)
+          carbonSparkPartition.split.value.getAllSplits
+        } else {
+          broadCastSplits.value
+        }
         val tableBlockInfoList = CarbonInputSplit.createBlocks(splitList)
 
         Collections.sort(tableBlockInfoList)
@@ -296,8 +310,8 @@ class CarbonMergerRDD[K, V](
       tablePath, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    var rangeColumn: CarbonColumn = null
-    if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
+    if (CarbonProperties.getInstance().isRangeCompactionAllowed &&
+        !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
       // If the table is not a partition table then only we go for range column compaction flow
       rangeColumn = carbonTable.getRangeColumn
     }
@@ -396,7 +410,6 @@ class CarbonMergerRDD[K, V](
     totalTaskCount = totalTaskCount / carbonMergerMapping.validSegments.size
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     var allRanges: Array[Object] = new Array[Object](0)
-    var singleRange = false
     if (rangeColumn != null) {
       // Calculate the number of ranges to be made, min 2 ranges/tasks to be made in any case
       // We take the minimum of average number of tasks created during load time and the number
@@ -557,6 +570,11 @@ class CarbonMergerRDD[K, V](
           }
         }
       }
+      if (null != rangeColumn) {
+        // Broadcast all splits to all the executors only in case of range column
+        // having more than 1 unique value.
+        makeBroadCast(carbonInputSplits.asJava)
+      }
     }
     val updatedMaxSegmentColumnList = new util.ArrayList[ColumnSchema]()
     // update cardinality and column schema list according to master schema
@@ -599,9 +617,16 @@ class CarbonMergerRDD[K, V](
 
         if (blockletCount != 0) {
           val taskInfo = splitInfo.asInstanceOf[CarbonInputSplitTaskInfo]
-          val multiBlockSplit = new CarbonMultiBlockSplit(
-            taskInfo.getCarbonInputSplitList,
-            Array(nodeName))
+          val multiBlockSplit = if (null == rangeColumn || singleRange) {
+            new CarbonMultiBlockSplit(
+              taskInfo.getCarbonInputSplitList,
+              Array(nodeName))
+          } else {
+            var splitListForRange = new util.ArrayList[CarbonInputSplit]()
+            new CarbonMultiBlockSplit(
+              splitListForRange,
+              Array(nodeName))
+          }
           if (isPartitionTable) {
             carbonPartitionId = Integer.parseInt(taskInfo.getTaskId)
           }
@@ -630,11 +655,13 @@ class CarbonMergerRDD[K, V](
     logInfo(s"Identified  no.of.Blocks: $noOfBlocks," +
             s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks")
     logInfo("Time taken to identify Blocks to scan : " + (System.currentTimeMillis() - startTime))
-    for (j <- 0 until result.size) {
-      val multiBlockSplit = result.get(j).asInstanceOf[CarbonSparkPartition].split.value
-      val splitList = multiBlockSplit.getAllSplits
-      logInfo(s"Node: ${ multiBlockSplit.getLocations.mkString(",") }, No.Of Blocks: " +
-              s"${ CarbonInputSplit.createBlocks(splitList).size }")
+    if (rangeColumn == null) {
+      for (j <- 0 until result.size) {
+        val multiBlockSplit = result.get(j).asInstanceOf[CarbonSparkPartition].split.value
+        val splitList = multiBlockSplit.getAllSplits
+        logInfo(s"Node: ${ multiBlockSplit.getLocations.mkString(",") }, No.Of Blocks: " +
+                s"${ CarbonInputSplit.createBlocks(splitList).size }")
+      }
     }
     result.toArray(new Array[Partition](result.size))
   }
