@@ -87,7 +87,7 @@ public class Field {
         this.type = DataTypes.createDefaultDecimalType();
       } else {
         try {
-          Matcher m = Pattern.compile("^decimal\\(([^)]+)\\)").matcher(type);
+          Matcher m = Pattern.compile("^decimal\\(([^)]+)\\)").matcher(type.toLowerCase());
           m.find();
           String matchedString = m.group(1);
           String[] scaleAndPrecision = matchedString.split(",");
