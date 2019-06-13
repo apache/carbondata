@@ -19,8 +19,6 @@ package org.apache.carbondata.mv.rewrite
 import java.io.File
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -992,7 +990,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
     var frame = sql(querySQL)
     var analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "all_table_mv"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "all_table_mv"))
     assert(2 == frame.collect().size)
     frame.collect().foreach { each =>
       if (1 == each.get(0)) {
@@ -1008,7 +1006,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
     frame = sql(querySQL2)
     analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "all_table_mv"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "all_table_mv"))
     assert(1 == frame.collect().size)
     frame.collect().foreach { each =>
       if (2 == each.get(0)) {
@@ -1034,11 +1032,11 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val df1 = sql(
       "select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
     val analyzed1 = df1.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed1, "mvlikedm1"))
+    assert(TestUtil.verifyMVDataMap(analyzed1, "mvlikedm1"))
     val df2 = sql(
       "select name,address,Country from mv_like where Country = 'US' or Country = 'China' group by name,address,Country")
     val analyzed2 = df2.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed2, "mvlikedm2"))
+    assert(TestUtil.verifyMVDataMap(analyzed2, "mvlikedm2"))
   }
 
   test("test distinct, count, sum on MV with single projection column") {
@@ -1074,11 +1072,24 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists mvtable1")
   }
 
-  def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
-    val tables = logicalPlan collect {
-      case l: LogicalRelation => l.catalogTable.get
-    }
-    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName + "_table"))
+  test("test mv with duplicate columns in query and constant column") {
+    sql("drop table if exists maintable")
+    sql("create table maintable(name string, age int, add string) stored by 'carbondata'")
+    sql("create datamap dupli_mv using 'mv' as select name, sum(age),sum(age) from maintable group by name")
+    sql("create datamap constant_mv using 'mv' as select name, sum(1) ex1 from maintable group by name")
+    sql("insert into maintable select 'pheobe',31,'NY'")
+    val df1 = sql("select sum(age),name from maintable group by name")
+    val df2 = sql("select sum(age),sum(age),name from maintable group by name")
+    val df3 = sql("select name, sum(1) ex1 from maintable group by name")
+    val df4 = sql("select sum(1) ex1 from maintable group by name")
+    val analyzed1 = df1.queryExecution.analyzed
+    val analyzed2 = df2.queryExecution.analyzed
+    val analyzed3 = df3.queryExecution.analyzed
+    val analyzed4 = df4.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed1, "dupli_mv"))
+    assert(TestUtil.verifyMVDataMap(analyzed2, "dupli_mv"))
+    assert(TestUtil.verifyMVDataMap(analyzed3, "constant_mv"))
+    assert(TestUtil.verifyMVDataMap(analyzed4, "constant_mv"))
   }
 
   def drop(): Unit = {
