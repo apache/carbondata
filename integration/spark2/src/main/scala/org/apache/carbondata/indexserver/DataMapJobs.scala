@@ -124,8 +124,6 @@ class DistributedDataMapJob extends AbstractDataMapJob {
  */
 class EmbeddedDataMapJob extends AbstractDataMapJob {
 
-  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
   override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
     val spark = SparkSQLUtil.getSparkSession
     val queryId = spark.sparkContext.getConf.get("queryId", UUID.randomUUID().toString)
@@ -133,6 +131,7 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
     val tempPath = dataMapFormat.getCarbonTable.getTablePath + "/" + queryId;
     var tempFolder: CarbonFile = null
     var isTempFolderCreated = false
+    val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     if (dataMapFormat.isFallbackJob) {
       tempFolder = FileFactory.getCarbonFile(tempPath)
       if (!tempFolder.mkdirs(tempPath)) {

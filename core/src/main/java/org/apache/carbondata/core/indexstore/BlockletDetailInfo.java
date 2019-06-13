@@ -226,7 +226,6 @@ public class BlockletDetailInfo implements Serializable, Writable {
     in.readFully(blockletInfoBinary);
     setBlockletInfoFromBinary();
     blockSize = in.readLong();
-    isLegacyStore = in.readBoolean();
     useMinMaxForPruning = in.readBoolean();
   }
 
