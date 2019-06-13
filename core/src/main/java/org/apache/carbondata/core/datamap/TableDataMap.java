@@ -48,7 +48,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.events.Event;
 import org.apache.carbondata.events.OperationContext;
 import org.apache.carbondata.events.OperationEventListener;
@@ -124,7 +124,7 @@ public final class TableDataMap extends OperationEventListener {
         datamapsCount++;
       }
     }
-    int numOfThreadsForPruning = CarbonUtil.getNumOfThreadsForPruning();
+    int numOfThreadsForPruning = CarbonProperties.getNumOfThreadsForPruning();
     if (numOfThreadsForPruning == 1 || datamapsCount < numOfThreadsForPruning || totalFiles
         < CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT) {
       // use multi-thread, only if the files are more than 0.1 million.
@@ -206,7 +206,7 @@ public final class TableDataMap extends OperationEventListener {
      *********************************************************************************
      */
 
-    int numOfThreadsForPruning = CarbonUtil.getNumOfThreadsForPruning();
+    int numOfThreadsForPruning = CarbonProperties.getNumOfThreadsForPruning();
     LOG.info(
         "Number of threads selected for multi-thread block pruning is " + numOfThreadsForPruning
             + ". total files: " + totalFiles + ". total segments: " + segments.size());

@@ -2195,12 +2195,36 @@ public final class CarbonCommonConstants {
   public static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT =
           "50";
 
+  @CarbonProperty
+  /**
+   * Max in memory serialization size after reaching threshold data will
+   * be written to file
+   */
   public static final String CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD =
-      "carbon.index.serverserialize.size.inKB";
+      "carbon.index.server.inmemory.serialization.threshold.inKB";
 
+  /**
+   * default value for in memory serialization size
+   */
   public static final String CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT = "300";
 
+  /**
+   * min value for in memory serialization size
+   */
   public static final int CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MIN = 100;
 
-  public static final int CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MAX = 1048576;
+  /**
+   * max value for in memory serialization size
+   */
+  public static final int CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MAX = 102400;
+
+  /**
+   * will be used to write split serialize data when in memory threashold crosses the limit
+   */
+  public static final String CARBON_INDEX_SERVER_TEMP_PATH = "carbon.indexserver.temp.path";
+
+  /**
+   * index server temp file name
+   */
+  public static final String INDEX_SERVER_TEMP_FOLDER_NAME = "indexservertmp";
 }

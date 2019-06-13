@@ -153,7 +153,15 @@ public class ExtendedBlocklet extends Blocklet {
     this.inputSplit.setColumnSchema(columnSchema);
   }
 
-  public void serializeData(DataOutput out, Map<String, Byte> uniqueLocation)
+  /**
+   * Method to seralize extended blocklet and inputsplit for index server
+   * DataFormat
+   * <Extended Blocklet data><Carbon input split serializeData lenght><CarbonInputSplitData>
+   * @param out
+   * @param uniqueLocation
+   * @throws IOException
+   */
+  public void serializeData(DataOutput out, Map<String, Short> uniqueLocation)
       throws IOException {
     super.write(out);
     if (dataMapUniqueId == null) {
@@ -162,11 +170,14 @@ public class ExtendedBlocklet extends Blocklet {
       out.writeBoolean(true);
       out.writeUTF(dataMapUniqueId);
     }
+    out.writeBoolean(inputSplit != null);
     if (inputSplit != null) {
+      // creating byte array output stream to get the size of input split serializeData size
       ExtendedByteArrayOutputStream ebos = new ExtendedByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(ebos);
       if (inputSplit.isBlockCache()) {
         inputSplit.updateFooteroffset();
+        inputSplit.updateBlockLength();
         inputSplit.setWriteDetailInfo(false);
       }
       inputSplit.serializeFields(dos, uniqueLocation);
@@ -175,6 +186,13 @@ public class ExtendedBlocklet extends Blocklet {
     }
   }
 
+  /**
+   * Method to deseralize extended blocklet and inputsplit for index server
+   * @param in
+   * @param locations
+   * @param tablePath
+   * @throws IOException
+   */
   public void deserializeFields(DataInput in, String[] locations, String tablePath)
       throws IOException {
     super.readFields(in);
@@ -184,6 +202,7 @@ public class ExtendedBlocklet extends Blocklet {
     setFilePath(tablePath + getPath());
     boolean isSplitPresent = in.readBoolean();
     if (isSplitPresent) {
+      // getting the length of the data
       final int serializeLen = in.readInt();
       this.inputSplit =
           new CarbonInputSplit(serializeLen, in, getFilePath(), locations, getBlockletId());
