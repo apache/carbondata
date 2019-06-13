@@ -238,12 +238,14 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
           val dbName = tableArray(0)
           val tableName = tableArray(1)
           val childMetaCacheInfo = collectDriverMetaCacheInfo(s"${dbName}_$tableName")
-          childMetaCacheInfo.map {
-            childMeta => Row(childMeta._1, childMeta._3, 0L, childTable._2)
+          childMetaCacheInfo.collect {
+            case childMeta if childMeta._3 != 0 =>
+              Row(childMeta._1, childMeta._3, 0L, childTable._2)
           }
-      } ++ (dataMapCacheInfo.map {
-        childMeta => Row(childMeta._1, childMeta._3, 0L, childMeta._4)
-      })
+      } ++ dataMapCacheInfo.collect {
+        case childMeta if childMeta._3 != 0 =>
+          Row(childMeta._1, childMeta._3, 0L, childMeta._4)
+      }
       var comments = parentMetaCacheInfo._2 + s"/$numOfIndexFiles index files cached"
       if (!carbonTable.isTransactionalTable) {
         comments += " (external table)"
@@ -307,10 +309,19 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
         val tableName = childTable._1.replace("-", "_")
         if (childTable._2
           .equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName)) {
-          Seq(Row(tableName, 0L, getTableCache(cache, tableName)._2, childTable._2))
+          val childCache = getTableCache(cache, tableName)._2
+          if (childCache != 0) {
+            Seq(Row(tableName, 0L, childCache, childTable._2))
+          } else {
+            Seq.empty
+          }
         } else {
           val childCache = getTableCache(cache, tableName)._2
-          Seq(Row(tableName, childCache, 0L, childTable._2))
+          if (childCache != 0) {
+            Seq(Row(tableName, childCache, 0L, childTable._2))
+          } else {
+            Seq.empty
+          }
         }
     }
     var comments = mainTableFiles + s"/$numberOfIndexFiles index files cached"
