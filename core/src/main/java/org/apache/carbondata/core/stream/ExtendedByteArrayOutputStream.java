@@ -18,7 +18,18 @@ package org.apache.carbondata.core.stream;
 
 import java.io.ByteArrayOutputStream;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.memory.CarbonUnsafe;
+
 public class ExtendedByteArrayOutputStream extends ByteArrayOutputStream {
+
+  public ExtendedByteArrayOutputStream() {
+
+  }
+
+  public ExtendedByteArrayOutputStream(int initialSize) {
+    super(initialSize);
+  }
 
   public int getPosition() {
     return count;
@@ -26,5 +37,14 @@ public class ExtendedByteArrayOutputStream extends ByteArrayOutputStream {
 
   public byte[] getBuffer() {
     return buf;
+  }
+
+  public long copyToAddress() {
+    final long address =
+        CarbonUnsafe.getUnsafe().allocateMemory(CarbonCommonConstants.INT_SIZE_IN_BYTE + count);
+    CarbonUnsafe.getUnsafe().putInt(address, count);
+    CarbonUnsafe.getUnsafe().copyMemory(buf, CarbonUnsafe.BYTE_ARRAY_OFFSET, null,
+        address + CarbonCommonConstants.INT_SIZE_IN_BYTE, count);
+    return address;
   }
 }

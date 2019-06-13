@@ -188,12 +188,8 @@ public class DataMapUtil {
       List<PartitionSpec> partitions, List<ExtendedBlocklet> blocklets, DataMapLevel dataMapLevel,
       DataMapChooser dataMapChooser)
       throws IOException {
-    DataMapExprWrapper dataMapExprWrapper = null;
-    if (dataMapLevel == DataMapLevel.CG) {
-      dataMapExprWrapper = dataMapChooser.chooseCGDataMap(filterResolverIntf);
-    } else if (dataMapLevel == DataMapLevel.FG) {
-      dataMapExprWrapper = dataMapChooser.chooseFGDataMap(filterResolverIntf);
-    }
+    DataMapExprWrapper dataMapExprWrapper =
+        dataMapChooser.chooseDataMap(dataMapLevel, filterResolverIntf);
     if (dataMapExprWrapper != null) {
       List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
       // Prune segments from already pruned blocklets
@@ -213,6 +209,7 @@ public class DataMapUtil {
         }
         // For all blocklets initialize the detail info so that it can be serialized to the driver.
         for (ExtendedBlocklet blocklet : prunnedBlocklet) {
+          blocklet.getDetailInfo();
           blocklet.setDataMapUniqueId(wrapper.getUniqueId());
         }
         extendedBlocklets.addAll(prunnedBlocklet);

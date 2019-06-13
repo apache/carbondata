@@ -32,11 +32,17 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.log4j.Logger;
 
+/**
+ * below class will be used to send split information from index driver to
+ * main driver.
+ * Main driver will Deserialize the extended blocklet object and get the split
+ * to run the query
+ */
 public class ExtendedBlockletWrapperContainer implements Writable {
 
   private static final Logger LOGGER =
@@ -53,7 +59,7 @@ public class ExtendedBlockletWrapperContainer implements Writable {
   }
 
   public List<ExtendedBlocklet> getExtendedBlockets(String tablePath, String queryId) {
-    int numOfThreads = CarbonUtil.getNumOfThreadsForPruning();
+    int numOfThreads = CarbonProperties.getNumOfThreadsForPruning();
     ExecutorService executorService = Executors
         .newFixedThreadPool(numOfThreads, new CarbonThreadFactory("SplitDeseralizerPool", true));
     int numberOfWrapperPerThread = extendedBlockletWrappers.length / numOfThreads;

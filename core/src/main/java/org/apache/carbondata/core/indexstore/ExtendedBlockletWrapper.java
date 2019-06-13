@@ -46,6 +46,12 @@ import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.log4j.Logger;
 
+/**
+ * class will be used to send extended blocklet object from index executor to index driver
+ * if data size is more than it will be written in temp folder provided by user
+ * and only file name will send, if data size is less then complete data will be send to
+ * index executor
+ */
 public class ExtendedBlockletWrapper implements Writable, Serializable {
 
   private static final Logger LOGGER =
@@ -67,23 +73,25 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
 
   public ExtendedBlockletWrapper(List<ExtendedBlocklet> extendedBlockletList, String tablePath,
       String queryId) {
-    Map<String, Byte> uniqueLocations = new HashMap<>();
+    Map<String, Short> uniqueLocations = new HashMap<>();
     byte[] bytes = convertToBytes(tablePath, uniqueLocations, extendedBlockletList);
     int serializeAllowedSize = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD)) * 1024;
     DataOutputStream stream = null;
+    // if data size is more then data will be written in file and file name will be sent from
+    // executor to driver, in case of any failure data will send through network
     if (bytes.length > serializeAllowedSize) {
       final String fileName = UUID.randomUUID().toString();
+      String folderPath = CarbonUtil.getIndexServerTempPath(tablePath, queryId);
       try {
-        String folderPath = tablePath + "/" + queryId;
         final CarbonFile carbonFile = FileFactory.getCarbonFile(folderPath);
         boolean writeToFile = false;
         if (carbonFile.isFileExist(folderPath)) {
           writeToFile = true;
         }
         if (writeToFile) {
-          stream = FileFactory
-              .getDataOutputStream(folderPath + "/" + fileName, FileFactory.getFileType(folderPath),
+          stream = FileFactory.getDataOutputStream(folderPath + "/" + fileName,
+              FileFactory.getFileType(folderPath),
                   BUFFER_SIZE, BLOCK_SIZE, (short) 1);
           writeBlockletToStream(stream, bytes, uniqueLocations, extendedBlockletList);
           this.dataSize = stream.size();
@@ -111,7 +119,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
     }
   }
 
-  private byte[] convertToBytes(String tablePath, Map<String, Byte> uniqueLocations,
+  private byte[] convertToBytes(String tablePath, Map<String, Short> uniqueLocations,
       List<ExtendedBlocklet> extendedBlockletList) {
     ByteArrayOutputStream bos = new ExtendedByteArrayOutputStream();
     DataOutputStream stream = new DataOutputStream(bos);
@@ -128,17 +136,27 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
     }
   }
 
+  /**
+   * Below method will be used to write the data to stream[file/memory]
+   * Data Format
+   * <number of splits><number of unique location[short]><locations><serialize data len><data>
+   * @param stream
+   * @param data
+   * @param uniqueLocation
+   * @param extendedBlockletList
+   * @throws IOException
+   */
   private void writeBlockletToStream(DataOutputStream stream, byte[] data,
-      Map<String, Byte> uniqueLocation, List<ExtendedBlocklet> extendedBlockletList)
+      Map<String, Short> uniqueLocation, List<ExtendedBlocklet> extendedBlockletList)
       throws IOException {
     stream.writeInt(extendedBlockletList.size());
     String[] uniqueLoc = new String[uniqueLocation.size()];
-    Iterator<Map.Entry<String, Byte>> iterator = uniqueLocation.entrySet().iterator();
+    Iterator<Map.Entry<String, Short>> iterator = uniqueLocation.entrySet().iterator();
     while (iterator.hasNext()) {
-      final Map.Entry<String, Byte> next = iterator.next();
+      final Map.Entry<String, Short> next = iterator.next();
       uniqueLoc[next.getValue()] = next.getKey();
     }
-    stream.writeByte((byte) uniqueLoc.length);
+    stream.writeShort((short)uniqueLoc.length);
     for (String loc : uniqueLoc) {
       stream.writeUTF(loc);
     }
@@ -146,14 +164,24 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
     stream.write(data);
   }
 
+  /**
+   * deseralize the blocklet data from file or stream
+   * data format
+   * <number of splits><number of unique location[short]><locations><serialize data len><data>
+   * @param tablePath
+   * @param queryId
+   * @return
+   * @throws IOException
+   */
   public List<ExtendedBlocklet> readBlocklet(String tablePath, String queryId) throws IOException {
     byte[] data;
     if (isWrittenToFile) {
       DataInputStream stream = null;
       try {
+        final String folderPath = CarbonUtil.getIndexServerTempPath(tablePath, queryId);
         String fileName = new String(bytes, CarbonCommonConstants.DEFAULT_CHARSET);
-        stream = FileFactory.getDataInputStream(tablePath + "/" + queryId + "/" + fileName,
-            FileFactory.getFileType(tablePath));
+        stream = FileFactory.getDataInputStream(folderPath + "/" + fileName,
+            FileFactory.getFileType(folderPath));
         data = new byte[dataSize];
         stream.readFully(data);
       } finally {
@@ -169,7 +197,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
     try {
       stream = new DataInputStream(new ByteArrayInputStream(data));
       numberOfBlocklet = stream.readInt();
-      final byte numberOfLocations = stream.readByte();
+      short numberOfLocations = stream.readShort();
       locations = new String[numberOfLocations];
       for (int i = 0; i < numberOfLocations; i++) {
         locations[i] = stream.readUTF();

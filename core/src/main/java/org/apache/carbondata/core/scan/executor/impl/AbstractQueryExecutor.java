@@ -216,7 +216,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           if (null == blockletDetailInfo) {
             blockletDetailInfo = getBlockletDetailInfo(fileFooter, blockInfo);
           }
-          blockletDetailInfo.setLegacyStore(blockInfo.isLegacyStore());
           blockInfo.setDetailInfo(blockletDetailInfo);
         }
         if (null == segmentProperties) {
@@ -226,8 +225,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           updateColumns(queryModel, fileFooter.getColumnInTable(), blockInfo.getFilePath());
           filePathToSegmentPropertiesMap.put(blockInfo.getFilePath(), segmentProperties);
         }
-
-        if (blockletDetailInfo.isLegacyStore()) {
+        if (blockInfo.isLegacyStore()) {
           LOGGER.warn("Skipping Direct Vector Filling as it is not Supported "
               + "for Legacy store prior to V3 store");
           queryModel.setDirectVectorFill(false);
@@ -406,7 +404,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     detailInfo.setRowCount(blockletInfo.getNumberOfRows());
     byte[][] maxValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues();
     byte[][] minValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues();
-    if (blockletDetailInfo.isLegacyStore()) {
+    if (blockInfo.isLegacyStore()) {
       info.setDataBlockFromOldStore(true);
     }
     blockletInfo.getBlockletIndex().getMinMaxIndex().setMaxValues(maxValues);
