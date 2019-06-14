@@ -56,8 +56,7 @@ object CacheUtil {
         val invalidSegmentIds = validAndInvalidSegmentsInfo.getInvalidSegments.asScala
           .map(_.getSegmentNo).toArray
         try {
-          IndexServer.getClient.invalidateSegmentCache(carbonTable.getDatabaseName, carbonTable
-            .getTableName, invalidSegmentIds)
+          IndexServer.getClient.invalidateSegmentCache(carbonTable, invalidSegmentIds)
         } catch {
           case e: Exception =>
             LOGGER.warn("Failed to clear cache from executors. ", e)

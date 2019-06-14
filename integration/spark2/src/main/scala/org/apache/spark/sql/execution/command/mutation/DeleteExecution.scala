@@ -321,8 +321,8 @@ object DeleteExecution {
     if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable
       .getDatabaseName, carbonTable.getTableName)) {
       try {
-        IndexServer.getClient.invalidateSegmentCache(carbonTable
-          .getDatabaseName, carbonTable.getTableName, segmentsToBeCleared.map(_.getSegmentNo)
+        IndexServer.getClient
+          .invalidateSegmentCache(carbonTable, segmentsToBeCleared.map(_.getSegmentNo)
           .toArray)
       } catch {
         case _: Exception =>

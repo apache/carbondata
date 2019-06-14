@@ -33,7 +33,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DistributableDataMapFormat
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.indexstore.{ExtendedBlocklet, ExtendedBlockletWrapperContainer}
+import org.apache.carbondata.core.indexstore.ExtendedBlockletWrapperContainer
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 
 @ProtocolInfo(protocolName = "Server", protocolVersion = 1)
@@ -53,8 +54,7 @@ trait ServerInterface {
   /**
    * Invalidate the cache for the specified segments only. Used in case of compaction/Update/Delete.
    */
-  def invalidateSegmentCache(databaseName: String,
-      tableName: String,
+  def invalidateSegmentCache(carbonTable: CarbonTable,
       segmentIds: Array[String]): Unit
 }
 
@@ -113,11 +113,13 @@ object IndexServer extends ServerInterface {
     new ExtendedBlockletWrapperContainer(splits.map(_._2), request.isFallbackJob)
   }
 
-  override def invalidateSegmentCache(databaseName: String, tableName: String,
+  override def invalidateSegmentCache(carbonTable: CarbonTable,
       segmentIds: Array[String]): Unit = doAs {
+    val databaseName = carbonTable.getDatabaseName
+    val tableName = carbonTable.getTableName
     val jobgroup: String = " Invalided Segment Cache for " + databaseName + "." + tableName
     sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
-    new InvalidateSegmentCacheRDD(sparkSession, databaseName, tableName, segmentIds.toList)
+    new InvalidateSegmentCacheRDD(sparkSession, carbonTable, segmentIds.toList)
       .collect()
   }
 

@@ -258,8 +258,8 @@ object CarbonDataRDDFactory {
           if (CarbonProperties.getInstance().isDistributedPruningEnabled(
               carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)) {
             try {
-              IndexServer.getClient.invalidateSegmentCache(carbonLoadModel.getDatabaseName,
-                carbonLoadModel.getTableName, compactedSegments.asScala.toArray)
+              IndexServer.getClient.invalidateSegmentCache(carbonLoadModel
+                .getCarbonDataLoadSchema.getCarbonTable, compactedSegments.asScala.toArray)
             } catch {
               case ex: Exception =>
                 LOGGER.warn(s"Clear cache job has failed for ${carbonLoadModel

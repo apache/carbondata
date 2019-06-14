@@ -19,8 +19,7 @@ package org.apache.carbondata.indexserver
 import scala.collection.JavaConverters._
 
 import org.apache.spark.{Partition, TaskContext}
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
@@ -28,11 +27,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
-class InvalidateSegmentCacheRDD(@transient private val ss: SparkSession, databaseName: String,
-    tableName: String, invalidSegmentIds: List[String]) extends CarbonRDD[String](ss, Nil) {
-
-  val carbonTable: CarbonTable = CarbonEnv
-    .getCarbonTable(TableIdentifier(tableName, Some(databaseName)))(ss)
+class InvalidateSegmentCacheRDD(@transient private val ss: SparkSession, carbonTable: CarbonTable,
+    invalidSegmentIds: List[String]) extends CarbonRDD[String](ss, Nil) {
 
   val executorsList: Array[String] = DistributionUtil.getNodeList(ss.sparkContext)
 
