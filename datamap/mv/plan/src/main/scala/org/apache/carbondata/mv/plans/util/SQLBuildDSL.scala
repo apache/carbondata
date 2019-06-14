@@ -308,6 +308,32 @@ trait SQLBuildDSL {
       operator: ModularPlan,
       alias: Option[String]): Fragment = {
     operator match {
+      case g@modular.GroupBy(_, _, _, _, s@modular.Select(_, _, _, _, _, _, _, _, _, _), _, _, _) =>
+        val fragmentList = s.children.zipWithIndex
+          .map { case (child, index) => fragmentExtract(child, s.aliasMap.get(index)) }
+        val fList = s.joinEdges.map {
+          e => {
+            (e.right, (fragmentList(e.right), Some(e.joinType), s
+              .extractRightEvaluableConditions(s.children(e.left), s.children(e.right))))
+          }
+        }.toMap
+        val from = (0 to fragmentList.length - 1)
+          .map(index => fList.get(index).getOrElse((fragmentList(index), None, Nil)))
+        val excludesPredicate = from.flatMap(_._3).toSet
+        val windowExprs = s.windowSpec
+          .map { case Seq(expr) => expr.asInstanceOf[Seq[NamedExpression]] }
+          .foldLeft(Seq.empty.asInstanceOf[Seq[NamedExpression]])(_ ++ _)
+        val select = s.outputList ++ windowExprs
+
+        SPJGFragment(
+          select, // select
+          from, // from
+          s.predicateList.filter { p => !excludesPredicate(p) }, // where
+          (Nil, Nil), // group by
+          Nil, // having
+          alias,
+          (s.flags, s.flagSpec))
+
       case s@modular.Select(_, _, _, _, _, _, _, _, _, _) =>
         val fragmentList = s.children.zipWithIndex
           .map { case (child, index) => fragmentExtract(child, s.aliasMap.get(index)) }

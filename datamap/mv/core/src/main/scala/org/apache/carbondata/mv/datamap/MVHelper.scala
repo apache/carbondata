@@ -42,7 +42,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, RelationIdentifier}
 import org.apache.carbondata.datamap.DataMapManager
-import org.apache.carbondata.mv.plans.modular.{GroupBy, Matchable, ModularPlan, Select}
+import org.apache.carbondata.mv.plans.modular._
 import org.apache.carbondata.mv.rewrite.{MVPlanWrapper, QueryRewrite, SummaryDatasetCatalog}
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -302,6 +302,7 @@ object MVHelper {
         g.child match {
           case s: Select =>
             isValidSelect(isValidExp, s)
+          case m: ModularRelation => isValidExp
         }
       case s: Select =>
         isValidSelect(true, s)

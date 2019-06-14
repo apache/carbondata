@@ -200,6 +200,7 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
               return intersetJoinEdges.exists(j => j.left == rIndex && j.left == eIndex ||
                 j.right == rIndex && j.right == eIndex)
             }
+          case _ => false
         }
     }
     true

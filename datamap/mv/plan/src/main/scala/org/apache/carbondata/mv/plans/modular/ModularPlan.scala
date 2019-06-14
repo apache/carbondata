@@ -125,6 +125,8 @@ abstract class ModularPlan
       case modular.Select(_, _, _, _, _, children, _, _, _, _)
         if children.forall(_.isInstanceOf[modular.LeafNode]) => true
 
+      case modular.GroupBy(_, _, _, _, modular.ModularRelation(_, _, _, _, _), _, _, _) => true
+
       case _ => false
     }
   }
