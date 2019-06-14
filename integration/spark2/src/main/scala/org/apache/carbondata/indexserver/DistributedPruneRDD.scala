@@ -70,31 +70,6 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
   }
   var readers: scala.collection.Iterator[RecordReader[Void, ExtendedBlocklet]] = _
 
-  private def clearInvalidDataMaps(segmentNo: List[String]): Unit = {
-    if (dataMapFormat.isJobToClearDataMaps) {
-      if (StringUtils.isNotEmpty(dataMapFormat.getDataMapToClear)) {
-        val dataMaps = DataMapStoreManager.getInstance
-          .getAllDataMap(dataMapFormat.getCarbonTable).asScala.collect {
-          case dataMap if dataMapFormat.getDataMapToClear
-            .equalsIgnoreCase(dataMap.getDataMapSchema.getDataMapName) =>
-            segmentNo.foreach(segment => dataMap.deleteSegmentDatamapData(segment))
-            dataMap.clear()
-            Nil
-          case others => List(others)
-        }.flatten
-        DataMapStoreManager.getInstance.getAllDataMaps
-          .put(dataMapFormat.getCarbonTable.getTableUniqueName, dataMaps.asJava)
-      }
-      else {
-        DataMapStoreManager.getInstance
-          .clearDataMaps(dataMapFormat.getCarbonTable.getTableUniqueName)
-        // clear the segment properties cache from executor
-        SegmentPropertiesAndSchemaHolder.getInstance
-          .invalidate(dataMapFormat.getCarbonTable.getAbsoluteTableIdentifier)
-      }
-    }
-  }
-
   private def groupSplits(xs: Seq[InputSplit], n: Int) = {
     val (quot, rem) = (xs.size / n, xs.size % n)
     val (smaller, bigger) = xs.splitAt(xs.size - rem * (quot + 1))
@@ -108,8 +83,12 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
     val inputSplits = split.asInstanceOf[DataMapRDDPartition].inputSplit
     if (dataMapFormat.isJobToClearDataMaps) {
       // if job is to clear datamaps just clear datamaps from cache and pass empty iterator
-      clearInvalidDataMaps(inputSplits.asInstanceOf[DataMapRDDPartition].inputSplit.map(_
-        .asInstanceOf[DataMapDistributable].getSegment.getSegmentNo).toList)
+      DataMapStoreManager.getInstance().clearInvalidDataMaps(dataMapFormat.getCarbonTable,
+        inputSplits
+          .asInstanceOf[DataMapRDDPartition]
+          .inputSplit.map(_
+          .asInstanceOf[DataMapDistributable].getSegment.getSegmentNo).toList.asJava, dataMapFormat
+          .getDataMapToClear)
       Iterator(("", new ExtendedBlockletWrapper()))
     } else {
       if (dataMapFormat.getInvalidSegments.size > 0) {

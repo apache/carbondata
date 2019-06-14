@@ -70,10 +70,7 @@ object DistributedRDDUtils {
         partition =>
           partition.getLocations.head
       }
-    groupedPartitions.map {
-      case (location, dataMapDistributable) =>
-        (location, dataMapDistributable)
-    }.zipWithIndex.map {
+    groupedPartitions.zipWithIndex.map {
       case ((location, splitList), index) =>
         new DataMapRDDPartition(rddId,
           index, splitList,

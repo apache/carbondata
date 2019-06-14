@@ -31,6 +31,7 @@ import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
@@ -53,6 +54,7 @@ import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassPro
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
@@ -736,6 +738,32 @@ public final class DataMapStoreManager {
       } else {
         return false;
       }
+    }
+  }
+
+  public synchronized void clearInvalidDataMaps(CarbonTable carbonTable, List<String> segmentNos,
+      String dataMapToClear) throws IOException {
+    List<TableDataMap> dataMaps = getAllDataMap(carbonTable);
+    List<TableDataMap> remainingDataMaps = new ArrayList<>();
+    if (StringUtils.isNotEmpty(dataMapToClear)) {
+      Iterator<TableDataMap> dataMapIterator = dataMaps.iterator();
+      while (dataMapIterator.hasNext()) {
+        TableDataMap tableDataMap = dataMapIterator.next();
+        if (dataMapToClear.equalsIgnoreCase(tableDataMap.getDataMapSchema().getDataMapName())) {
+          for (String segment: segmentNos) {
+            tableDataMap.deleteSegmentDatamapData(segment);
+          }
+          tableDataMap.clear();
+        } else {
+          remainingDataMaps.add(tableDataMap);
+        }
+      }
+      getAllDataMaps().put(carbonTable.getTableUniqueName(), remainingDataMaps);
+    } else {
+      clearDataMaps(carbonTable.getTableUniqueName());
+      // clear the segment properties cache from executor
+      SegmentPropertiesAndSchemaHolder.getInstance()
+          .invalidate(carbonTable.getAbsoluteTableIdentifier());
     }
   }
 
