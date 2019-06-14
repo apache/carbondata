@@ -68,7 +68,7 @@ public class ExtendedBlockletWrapperContainer implements Writable {
     if (numberOfWrapperPerThread > 0) {
       split = new int[numOfThreads];
     } else {
-      split = new int[1];
+      split = new int[leftOver];
     }
     Arrays.fill(split, numberOfWrapperPerThread);
     for (int i = 0; i < leftOver; i++) {

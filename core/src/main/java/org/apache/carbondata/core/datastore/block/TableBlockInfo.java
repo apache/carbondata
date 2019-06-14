@@ -105,7 +105,7 @@ public class TableBlockInfo implements Distributable, Serializable {
   private transient DataFileFooter dataFileFooter;
 
   /**
-   * to determine whether carbondata file is of old format
+   * true when index file does't have blocklet information
    */
   private boolean isLegacyStore;
 

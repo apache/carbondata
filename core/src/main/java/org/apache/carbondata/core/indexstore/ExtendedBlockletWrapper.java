@@ -85,9 +85,10 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
       String folderPath = CarbonUtil.getIndexServerTempPath(tablePath, queryId);
       try {
         final CarbonFile carbonFile = FileFactory.getCarbonFile(folderPath);
-        boolean writeToFile = false;
-        if (carbonFile.isFileExist(folderPath)) {
-          writeToFile = true;
+        boolean writeToFile = true;
+        if (!carbonFile.isFileExist(folderPath)) {
+          LOGGER.warn("Folder:" + folderPath + "doesn't exists, data will be send through netwrok");
+          writeToFile = false;
         }
         if (writeToFile) {
           stream = FileFactory.getDataOutputStream(folderPath + "/" + fileName,

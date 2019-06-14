@@ -31,10 +31,6 @@ public class ExtendedByteArrayOutputStream extends ByteArrayOutputStream {
     super(initialSize);
   }
 
-  public int getPosition() {
-    return count;
-  }
-
   public byte[] getBuffer() {
     return buf;
   }

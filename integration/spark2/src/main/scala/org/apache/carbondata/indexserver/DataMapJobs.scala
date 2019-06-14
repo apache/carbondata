@@ -78,7 +78,7 @@ class DistributedDataMapJob extends AbstractDataMapJob {
           .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
       } finally {
         if (null != tmpFolder && !tmpFolder.delete()) {
-          LOGGER.info("Problem while deleting the temp directory" + tmpFolder.getAbsolutePath)
+          LOGGER.error("Problem while deleting the temp directory:" + tmpFolder.getAbsolutePath)
         }
       }
     }
@@ -147,7 +147,7 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
         .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
     } finally {
       if (null != tmpFolder && !tmpFolder.delete()) {
-        LOGGER.info("Problem while deleting the temp directory" + tmpFolder.getAbsolutePath)
+        LOGGER.error("Problem while deleting the temp directory:" + tmpFolder.getAbsolutePath)
       }
     }
     splits
