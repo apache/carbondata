@@ -851,10 +851,6 @@ public class CarbonInputSplit extends FileSplit
     return rowCount;
   }
 
-  public boolean isLegacyStore() {
-    return isLegacyStore;
-  }
-
   public void setStart(long start) {
     this.start = start;
   }

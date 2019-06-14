@@ -52,7 +52,7 @@ public class Util {
    */
   public static boolean isBlockWithoutBlockletInfoExists(List<CarbonInputSplit> splitList) {
     for (CarbonInputSplit inputSplit : splitList) {
-      if (inputSplit.isLegacyStore()) {
+      if (inputSplit.isBlockCache()) {
         return true;
       }
     }
