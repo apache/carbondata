@@ -101,6 +101,7 @@ object HarmonizedRelation {
             case alias: Alias =>
               alias.child.isInstanceOf[AttributeReference] ||
               alias.child.isInstanceOf[Literal] ||
+              alias.child.isInstanceOf[Expression] ||
               (alias.child match {
                 case AggregateExpression(First(_, _), _, _, _) => true
                 case AggregateExpression(Last(_, _), _, _, _) => true
