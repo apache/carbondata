@@ -18,8 +18,8 @@ package org.apache.carbondata.processing.loading.parser.impl;
 
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
 
@@ -36,7 +36,7 @@ public class MapParserImpl extends ArrayParserImpl {
   }
 
   //The Key for Map will always be a PRIMITIVE type so Set<Object> here will work fine
-  //Only the first occurance of key will be added and the remaining will be skipped/ignored
+  //The last occurance of the key, value pair will be added and all others will be overwritten
   @Override public ArrayObject parse(Object data) {
     if (data != null) {
       String value = data.toString();
@@ -44,12 +44,13 @@ public class MapParserImpl extends ArrayParserImpl {
         String[] split = pattern.split(value, -1);
         if (ArrayUtils.isNotEmpty(split)) {
           ArrayList<Object> array = new ArrayList<>();
-          Set<Object> set = new HashSet<>();
+          Map<Object, String> map = new HashMap<>();
           for (int i = 0; i < split.length; i++) {
             Object currKey = split[i].split(keyValueDelimiter)[0];
-            if (set.add(currKey)) {
-              array.add(child.parse(split[i]));
-            }
+            map.put(currKey, split[i]);
+          }
+          for (Map.Entry<Object, String> entry : map.entrySet()) {
+            array.add(child.parse(entry.getValue()));
           }
           return new ArrayObject(array.toArray());
         }

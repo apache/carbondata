@@ -392,7 +392,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | 'header' = 'false')
        """.stripMargin)
     checkAnswer(sql("select * from carbon"), Seq(
-      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(1 -> "Gupta", 2 -> "Singh", 4 -> "Kumar")),
       Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar"))
     ))
   }
@@ -434,13 +434,13 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
     sql("alter table carbon compact 'minor'")
     sql("show segments for table carbon").show(false)
     checkAnswer(sql("select * from carbon"), Seq(
-      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(1 -> "Gupta", 2 -> "Singh", 4 -> "Kumar")),
       Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar")),
-      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(1 -> "Gupta", 2 -> "Singh", 4 -> "Kumar")),
       Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar")),
-      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(1 -> "Gupta", 2 -> "Singh", 4 -> "Kumar")),
       Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar")),
-      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(1 -> "Gupta", 2 -> "Singh", 4 -> "Kumar")),
       Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar"))
     ))
     sql("DROP TABLE IF EXISTS carbon")
@@ -482,8 +482,8 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
     sql("INSERT INTO carbon SELECT * FROM carbon")
     checkAnswer(sql("select * from carbon"), Seq(
-      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
-      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(1 -> "Gupta", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(1 -> "Gupta", 2 -> "Singh", 4 -> "Kumar")),
       Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar")),
       Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar"))
       ))
