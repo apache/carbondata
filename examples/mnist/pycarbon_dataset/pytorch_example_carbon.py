@@ -35,7 +35,7 @@ from examples import DEFAULT_CARBONSDK_PATH
 from petastorm.pytorch import DataLoader
 from petastorm import TransformSpec
 
-from pycarbon.carbon_reader import make_carbon_reader
+from pycarbon.core.carbon_reader import make_carbon_reader
 
 
 class Net(nn.Module):

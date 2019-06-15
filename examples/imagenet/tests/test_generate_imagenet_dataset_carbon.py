@@ -26,7 +26,7 @@ from examples.imagenet.generate_pycarbon_imagenet import download_nouns_mapping,
 
 import jnius_config
 
-from pycarbon.Constants import LOCAL_FILE_PREFIX
+from pycarbon.core.Constants import LOCAL_FILE_PREFIX
 
 jnius_config.set_classpath(pytest.config.getoption("--carbon-sdk-path"))
 

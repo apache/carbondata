@@ -24,10 +24,10 @@ import time
 
 import jnius_config
 
-from pycarbon.Constants import LOCAL_FILE_PREFIX
-from pycarbon.carbon_reader import make_batch_carbon_reader
+from pycarbon.core.Constants import LOCAL_FILE_PREFIX
+from pycarbon.core.carbon_reader import make_batch_carbon_reader
 
-from unified.reader import make_reader
+from pycarbon.reader import make_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
 from examples import EXAMPLES_MANIFEST_PATH

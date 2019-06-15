@@ -21,12 +21,12 @@ import argparse
 import jnius_config
 import tensorflow as tf
 
-from pycarbon.carbon_tf_utils import tf_tensors, make_pycarbon_dataset
+from pycarbon.core.carbon_tf_utils import tf_tensors, make_pycarbon_dataset
 
-from pycarbon.carbon_reader import make_carbon_reader
+from pycarbon.core.carbon_reader import make_carbon_reader
 
-from unified.reader import make_reader
-from unified.tensorflow import make_tensor, make_dataset
+from pycarbon.reader import make_reader
+from pycarbon.reader import make_tensor, make_dataset
 
 from examples import DEFAULT_CARBONSDK_PATH
 

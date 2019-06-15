@@ -26,8 +26,8 @@ from petastorm.unischema import _numpy_and_codec_from_arrow_type
 from petastorm.unischema import UnischemaField
 from petastorm.etl.dataset_metadata import _init_spark, _cleanup_spark
 
-from pycarbon.carbon import CarbonDataset
-from pycarbon import carbon_utils
+from pycarbon.core.carbon import CarbonDataset
+from pycarbon.core import carbon_utils
 
 logger = logging.getLogger(__name__)
 

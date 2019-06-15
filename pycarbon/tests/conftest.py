@@ -58,6 +58,8 @@ def pytest_addoption(parser):
                    help='secret_key of obs')
   parser.addoption('--end_point', type=str, default=None, required=True,
                    help='end_point of obs')
+  parser.addoption('--obs_path', type=str, default="s3a://modelarts-carbon/test/benchmark_external_dataset/", required=False,
+                   help='path of obs')
 
 
 def maybe_cached_dataset(config, name, generating_func):
@@ -130,7 +132,7 @@ def carbon_many_columns_non_unischema_dataset(request, tmpdir_factory):
 @pytest.fixture(scope="session")
 def carbon_obs_external_dataset(request):
   def _obs_dataset_no_cache():
-    url = 's3a://modelarts-carbon/test/benchmark_external_dataset/'
+    url = pytest.config.getoption("--obs_path")
     wrong_url = 's3a:////modelarts-carbon/test/benchmark_external_dataset/'
     not_exist_url = 's3a://modelarts-carbon/test/not_exist_dir/'
     dataset = ObsDataset(url=url, wrong_url=wrong_url, not_exist_url=not_exist_url)

@@ -30,8 +30,8 @@ import tensorflow as tf
 from examples.mnist.pycarbon_dataset import DEFAULT_MNIST_DATA_PATH
 from examples import DEFAULT_CARBONSDK_PATH
 
-from unified.reader import make_reader
-from unified.tensorflow import make_tensor
+from pycarbon.reader import make_reader
+from pycarbon.reader import make_tensor
 
 
 def train_and_test(dataset_url, training_iterations, batch_size, evaluation_interval, start):

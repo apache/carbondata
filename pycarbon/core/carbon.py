@@ -20,7 +20,7 @@ from pyarrow.filesystem import (_get_fs_from_path)
 from pyarrow.parquet import ParquetFile
 from six.moves.urllib.parse import urlparse
 
-from pycarbon.Constants import LOCAL_FILE_PREFIX
+from pycarbon.core.Constants import LOCAL_FILE_PREFIX
 from pycarbon.pysdk.ArrowCarbonReader import ArrowCarbonReader
 from pycarbon.pysdk.CarbonSchemaReader import CarbonSchemaReader
 from pycarbon.pysdk.Configuration import Configuration
@@ -124,7 +124,7 @@ class CarbonDataset(object):
         try:
           carbon_schema = CarbonSchemaReader().readSchema(self.file_path)
         except:
-          raise Exception("readSchema has some errors")
+          raise Exception("readSchema has some errors: " + self.file_path)
       else:
         try:
           carbon_schema = CarbonSchemaReader().readSchema(self.path)

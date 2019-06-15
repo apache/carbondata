@@ -21,8 +21,8 @@ import time
 import jnius_config
 import tensorflow as tf
 
-from pycarbon.carbon_reader import make_batch_carbon_reader
-from pycarbon.carbon_tf_utils import make_pycarbon_dataset
+from pycarbon.core.carbon_reader import make_batch_carbon_reader
+from pycarbon.core.carbon_tf_utils import make_pycarbon_dataset
 
 from examples.mnist.external_dataset import DEFAULT_MNIST_DATA_PATH
 from examples import DEFAULT_CARBONSDK_PATH

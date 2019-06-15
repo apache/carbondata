@@ -16,9 +16,9 @@ from time import sleep
 
 import pytest
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
-from pycarbon.carbon_reader import CarbonDataReader
-from pycarbon.carbon import CarbonDataset
+from pycarbon.core.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.core.carbon_reader import CarbonDataReader
+from pycarbon.core.carbon import CarbonDataset
 
 import os
 import jnius_config

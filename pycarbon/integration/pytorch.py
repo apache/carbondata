@@ -132,7 +132,3 @@ class DataLoader(object):
   def __exit__(self, exc_type, exc_val, exc_tb):
     self.reader.stop()
     self.reader.join()
-
-
-def make_data_loader(reader, batch_size=1, collate_fn=decimal_friendly_collate):
-  return DataLoader(reader, batch_size=batch_size, collate_fn=collate_fn)

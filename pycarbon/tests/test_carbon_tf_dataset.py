@@ -24,8 +24,8 @@ import tensorflow as tf
 from petastorm.ngram import NGram
 from petastorm.predicates import in_lambda
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
-from pycarbon.carbon_tf_utils import make_pycarbon_dataset
+from pycarbon.core.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.core.carbon_tf_utils import make_pycarbon_dataset
 from pycarbon.tests.conftest import _ROWS_COUNT
 
 from pycarbon.tests.test_carbon_common import TestSchema

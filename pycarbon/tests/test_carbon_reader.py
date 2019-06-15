@@ -15,7 +15,7 @@
 import numpy as np
 import pytest
 
-from pycarbon.carbon_reader import make_batch_carbon_reader
+from pycarbon.core.carbon_reader import make_batch_carbon_reader
 
 import os
 import jnius_config

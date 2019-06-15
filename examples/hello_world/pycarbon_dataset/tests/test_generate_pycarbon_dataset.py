@@ -23,10 +23,10 @@ from examples.hello_world.pycarbon_dataset.pytorch_hello_world_carbon import pyt
 from examples.hello_world.pycarbon_dataset.tensorflow_hello_world_carbon import tensorflow_hello_world
 from petastorm.tests.conftest import SyntheticDataset
 
-from pycarbon.Constants import LOCAL_FILE_PREFIX
-from pycarbon.carbon_reader import make_carbon_reader
+from pycarbon.core.Constants import LOCAL_FILE_PREFIX
+from pycarbon.core.carbon_reader import make_carbon_reader
 
-from unified.reader import make_reader
+from pycarbon.reader import make_reader
 
 import jnius_config
 

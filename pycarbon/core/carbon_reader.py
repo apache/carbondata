@@ -25,14 +25,14 @@ from petastorm.transform import transform_schema
 from petastorm.workers_pool.thread_pool import ThreadPool
 from petastorm.workers_pool.ventilator import ConcurrentVentilator
 
-from pycarbon.carbon_arrow_reader_worker import ArrowCarbonReaderWorker
-from pycarbon.carbon_py_dict_reader_worker import PyDictCarbonReaderWorker
-from pycarbon.carbon import CarbonDataset
+from pycarbon.core.carbon_arrow_reader_worker import ArrowCarbonReaderWorker
+from pycarbon.core.carbon_py_dict_reader_worker import PyDictCarbonReaderWorker
+from pycarbon.core.carbon import CarbonDataset
 from pycarbon.etl import carbon_dataset_metadata
 from pycarbon.etl.carbon_dataset_metadata import infer_or_load_unischema_carbon
 from pycarbon.etl.carbon_dataset_metadata import PycarbonMetadataError
-from pycarbon.carbon_local_memory_cache import LocalMemoryCache
-from pycarbon.carbon_fs_utils import CarbonFilesystemResolver
+from pycarbon.core.carbon_local_memory_cache import LocalMemoryCache
+from pycarbon.core.carbon_fs_utils import CarbonFilesystemResolver
 
 logger = logging.getLogger(__name__)
 

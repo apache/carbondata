@@ -22,10 +22,10 @@ import jnius_config
 
 from petastorm.pytorch import DataLoader
 
-from pycarbon.carbon_reader import make_carbon_reader
+from pycarbon.core.carbon_reader import make_carbon_reader
 
-from unified.reader import make_reader
-from unified.pytorch import make_data_loader
+from pycarbon.reader import make_reader
+from pycarbon.reader import make_data_loader
 
 from examples import DEFAULT_CARBONSDK_PATH
 

@@ -284,13 +284,24 @@ def _tf_tensors_ngram(reader, shuffling_queue_capacity, min_after_dequeue):
   return make_namedtuple_tf_ngram(reader.schema, reader.ngram, **fields_as_dict)
 
 
-def make_tensor(reader, shuffling_queue_capacity=0, min_after_dequeue=0):
+def tf_tensors(reader, shuffling_queue_capacity=0, min_after_dequeue=0):
   """Bridges between python-only interface of the Reader (next(Reader)) and tensorflow world.
 
   This function returns a named tuple of tensors from the dataset, e.g.,
 
+  >>> row_tensors
+  >>> Out[2]: TestSchema_view(field_1=<tf.Tensor 'PyFunc:0' shape=() dtype=string>,
+  >>>         field_2=<tf.Tensor 'StringSplit:1' shape=(?,) dtype=string>,
+  >>>         field_3=<tf.Tensor 'PyFunc:2' shape=() dtype=int64>, ...)
+
   If the reader was created with ``ngram=NGram(...)`` parameter, then a dictionary of named tuples is returned
   (indexed by time):
+
+  >>> row_tensors
+  >>> Out[6]:
+  >>> {0: TestSchema_view(field_1=<tf.Tensor 'PyFunc_4:0' shape=() dtype=string>, field_2=...),
+  >>>  1: TestSchema_view(field_1=<tf.Tensor 'PyFunc_4:11' shape=() dtype=string>, field_2=...),
+  >>>  2: TestSchema_view(field_1=<tf.Tensor 'PyFunc_4:22' shape=() dtype=string>, field_2=...)}
 
   An optional shuffling queue is created if shuffling_queue_capacity is greater than 0.
 
@@ -298,7 +309,7 @@ def make_tensor(reader, shuffling_queue_capacity=0, min_after_dequeue=0):
   represent it as a tf.string which will be an array of bytes. If using python3 you may need to decode
   it to convert it back to a python str type.
 
-  :param reader: An instance of Reader object used as the data source
+  :param reader: An instance of pycarbon.CarbonDataReader object used as the data source
   :param shuffling_queue_capacity: Queue capacity is passed to the underlying :class:`tf.RandomShuffleQueue`
       instance. If set to 0, no suffling will be done.
   :param min_after_dequeue: If ``shuffling_queue_capacity > 0``, this value is passed to the underlying
@@ -314,8 +325,8 @@ def make_tensor(reader, shuffling_queue_capacity=0, min_after_dequeue=0):
   if reader.batched_output:
     if shuffling_queue_capacity > 0:
       raise ValueError('shuffling_queue_capacity can not be used with a reader that produces '
-                       'batched_output. Extra shuffling of the batches does not further '
-                       'decrease correlation.')
+                       'batched_output, since each batch is a carbon read blocklet. Extra '
+                       'shuffling of the batches does not further decrease correlation.')
 
   if reader.ngram:
     result = _tf_tensors_ngram(reader, shuffling_queue_capacity, min_after_dequeue)
@@ -332,12 +343,39 @@ def _set_shape_to_named_tuple(schema, fields, batched_output):
   return schema.make_namedtuple_tf(**fields_as_dict)
 
 
-def make_dataset(reader):
+def make_pycarbon_dataset(reader):
   """Creates a `tensorflow.data.Dataset <https://www.tensorflow.org/api_docs/python/tf/data/Dataset>`_ object from
+  a Pycarbon :class:`~pycarbon.carbon_reader.CarbonDataReader`.
+
+  The returned object can be used as any ``tf.data.Dataset`` with some limitations described below.
+
+  * ``repeat``: An error will be raised if you call ``repeat`` on the returned dataset. Please use ``num_epochs``
+    argument of the :meth:`~pycarbon.carbon_reader.CarbonDataReader` constructor.
+  * ``shard``: Consider using ``training_partition`` and ``num_training_partitions`` arguments of the
+    :class:`~pycarbon.carbon_reader.CarbonDataReader` constructor as it will not load any unused shards.
+  * ``filter``: Consider using :class:`~pycarbon.carbon_reader.CarbonDataReader` ``predicate`` constructor argument.
+    It will make use of columnar nature of the underlying Apache Parquet store to load only the columns that the
+    predicate operates on prior to loading and decoding other columns. :class:`~pycarbon.carbon_reader.
+    CarbonDataReader`'s predicate feature will also make use of Parquet partitioning (if the dataset is partitioned).
+
+  The elements produced by the returned dataset object are namedtuples based on the
+  :class:`~petastorm.unischema.Unischema`.
+
+  >>> import tensorflow as tf
+  >>> from pycarbon.core.carbon_reader import CarbonDataReader
+  >>> from pycarbon.core.carbon_tf_utils import make_pycarbon_dataset
+  >>>
+  >>> with CarbonDataReader('file:///some/path') as reader:
+  >>>     dataset = make_pycarbon_dataset(reader)
+  >>>     next_sample = dataset.make_one_shot_iterator().get_next()
+  >>>     with tf.Session() as sess:
+  >>>         x = sess.run(next_sample)
+
 
   NGrams are not yet supported by this function.
 
-  :param reader: An instance of :class:`Reader` object that would serve as a data source.
+  :param reader: An instance of :class:`~pycarbon.carbon_reader.CarbonDataReader` object that would serve
+    as a data source.
   :return: A ``tf.data.Dataset`` instance.
   """
 
@@ -348,9 +386,9 @@ def make_dataset(reader):
         # This means that Dataset is trying to create a new instance of the generator. Can not do that
         # (nor want to do that) since this is an expensive operation. num_epochs is a more efficient way
         # to do this.
-        raise RuntimeError('Multiple iterations over make_dataset are not supported. '
+        raise RuntimeError('Multiple iterations over make_pycarbon_dataset are not supported. '
                            'Multiple iterations can be triggered by calling \'repeat\' method of Dataset class.'
-                           'Use Reader\'s num_epochs constructor arguments to set number of iterations.')
+                           'Use Reader\'s num_epochs contructor arguments to set number of iterations.')
       for row in reader:
         yield _sanitize_field_tf_types(row)
 
@@ -360,4 +398,4 @@ def make_dataset(reader):
       .map(lambda row: _set_shape_to_named_tuple(reader.schema, row, reader.batched_output))
     return named_tuple_dataset
   else:
-    raise NotImplementedError('make_dataset does not support NGram yet.')
+    raise NotImplementedError('make_pycarbon_dataset does not support NGram yet.')

@@ -20,7 +20,7 @@ import pytest
 
 from petastorm.codecs import ScalarCodec
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.core.carbon_reader import make_carbon_reader, make_batch_carbon_reader
 from pycarbon.tests.test_carbon_common import TestSchema
 
 from pycarbon.tests.conftest import _ROWS_COUNT

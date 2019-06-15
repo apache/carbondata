@@ -28,9 +28,9 @@ import tensorflow as tf
 from petastorm.ngram import NGram
 from petastorm.unischema import Unischema, UnischemaField
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.core.carbon_reader import make_carbon_reader, make_batch_carbon_reader
 from pycarbon.tests.test_carbon_common import TestSchema
-from pycarbon.carbon_tf_utils import _sanitize_field_tf_types, _numpy_to_tf_dtypes, \
+from pycarbon.core.carbon_tf_utils import _sanitize_field_tf_types, _numpy_to_tf_dtypes, \
   _schema_to_tf_dtypes, tf_tensors
 
 import jnius_config

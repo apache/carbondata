@@ -14,9 +14,9 @@
 
 import pytest
 
-from pycarbon.Constants import LOCAL_FILE_PREFIX
-from pycarbon.carbon import CarbonDataset
-from pycarbon.carbon import CarbonDatasetPiece
+from pycarbon.core.Constants import LOCAL_FILE_PREFIX
+from pycarbon.core.carbon import CarbonDataset
+from pycarbon.core.carbon import CarbonDatasetPiece
 
 from pycarbon.pysdk.ArrowCarbonReader import ArrowCarbonReader
 from pycarbon.pysdk.Configuration import Configuration

@@ -24,7 +24,7 @@ import mxnet.ndarray as nd
 from examples.mnist.pycarbon_dataset import DEFAULT_MNIST_DATA_PATH
 from examples import DEFAULT_CARBONSDK_PATH
 
-from pycarbon.carbon_reader import make_carbon_reader
+from pycarbon.core.carbon_reader import make_carbon_reader
 
 logging.getLogger().setLevel(logging.INFO)
 

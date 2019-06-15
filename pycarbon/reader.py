@@ -14,7 +14,9 @@
 
 from obs import ObsClient
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.core.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.integration.pytorch import DataLoader, decimal_friendly_collate
+from pycarbon.integration.tensorflow import TensorFlow
 
 
 def make_reader(dataset_url=None,
@@ -158,3 +160,46 @@ def make_reader(dataset_url=None,
 
   else:
     raise ValueError("""the value of is_batch is invalid, it should be set True or False""")
+
+
+def make_dataset(reader):
+  """Creates a `tensorflow.data.Dataset <https://www.tensorflow.org/api_docs/python/tf/data/Dataset>`_ object from
+
+  NGrams are not yet supported by this function.
+
+  :param reader: An instance of :class:`Reader` object that would serve as a data source.
+  :return: A ``tf.data.Dataset`` instance.
+  """
+  tensorflow = TensorFlow()
+  return tensorflow.make_dataset(reader)
+
+
+def make_tensor(reader, shuffling_queue_capacity=0, min_after_dequeue=0):
+  """Bridges between python-only interface of the Reader (next(Reader)) and tensorflow world.
+
+  This function returns a named tuple of tensors from the dataset, e.g.,
+
+  If the reader was created with ``ngram=NGram(...)`` parameter, then a dictionary of named tuples is returned
+  (indexed by time):
+
+  An optional shuffling queue is created if shuffling_queue_capacity is greater than 0.
+
+  Note that if reading a unischema field that is unicode (``np.unicode_`` or ``np.str_``) tensorflow will
+  represent it as a tf.string which will be an array of bytes. If using python3 you may need to decode
+  it to convert it back to a python str type.
+
+  :param reader: An instance of Reader object used as the data source
+  :param shuffling_queue_capacity: Queue capacity is passed to the underlying :class:`tf.RandomShuffleQueue`
+      instance. If set to 0, no suffling will be done.
+  :param min_after_dequeue: If ``shuffling_queue_capacity > 0``, this value is passed to the underlying
+      :class:`tf.RandomShuffleQueue`.
+  :return: If no ngram reading is used, the function will return a named tuple with tensors that are populated
+      from the underlying dataset. If ngram reading is enabled, a dictionary of named tuples of tensors is returned.
+      The dictionary is indexed by time.
+  """
+  tensorflow = TensorFlow()
+  return tensorflow.make_tensor(reader, shuffling_queue_capacity, min_after_dequeue)
+
+
+def make_data_loader(reader, batch_size=1, collate_fn=decimal_friendly_collate):
+  return DataLoader(reader, batch_size=batch_size, collate_fn=collate_fn)

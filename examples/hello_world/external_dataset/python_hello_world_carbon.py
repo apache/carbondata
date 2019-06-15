@@ -20,9 +20,9 @@ from __future__ import print_function
 import argparse
 import jnius_config
 
-from pycarbon.carbon_reader import make_batch_carbon_reader
+from pycarbon.core.carbon_reader import make_batch_carbon_reader
 
-from unified.reader import make_reader
+from pycarbon.reader import make_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
 

@@ -26,8 +26,8 @@ from examples.mnist.pycarbon_dataset.tests.conftest import SMALL_MOCK_IMAGE_COUN
 
 from petastorm import TransformSpec
 
-from pycarbon.carbon_reader import make_carbon_reader
-from unified.reader import make_reader
+from pycarbon.core.carbon_reader import make_carbon_reader
+from pycarbon.reader import make_reader
 
 import jnius_config
 
@@ -95,7 +95,7 @@ def test_full_pytorch_example_unified(large_mock_mnist_data, tmpdir):
                                  spark_master='local[1]', carbon_files_count=1)
 
   # Next, run a round of training using the pytorce adapting data loader
-  from unified.pytorch import make_data_loader
+  from pycarbon.reader import make_data_loader
 
   torch.manual_seed(1)
   device = torch.device('cpu')

@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.core.carbon_reader import make_carbon_reader, make_batch_carbon_reader
 
 __version__ = '0.1.0'

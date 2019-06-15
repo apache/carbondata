@@ -18,7 +18,7 @@ import pyarrow as pa
 from modelarts import manifest
 from modelarts.field_name import CARBON
 
-from pycarbon.Constants import LOCAL_FILE_PREFIX
+from pycarbon.core.Constants import LOCAL_FILE_PREFIX
 
 
 class ArrowCarbonReader(object):

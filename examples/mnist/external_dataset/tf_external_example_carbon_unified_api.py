@@ -21,8 +21,8 @@ import time
 import jnius_config
 import tensorflow as tf
 
-from unified.reader import make_reader
-from unified.tensorflow import make_dataset
+from pycarbon.reader import make_reader
+from pycarbon.reader import make_dataset
 
 from examples.mnist.external_dataset import DEFAULT_MNIST_DATA_PATH
 from examples import DEFAULT_CARBONSDK_PATH

@@ -14,8 +14,8 @@
 
 import pytest
 
-from pycarbon.Constants import LOCAL_FILE_PREFIX
-from pycarbon.carbon_reader import make_batch_carbon_reader
+from pycarbon.core.Constants import LOCAL_FILE_PREFIX
+from pycarbon.core.carbon_reader import make_batch_carbon_reader
 from pycarbon.tests import EXAMPLES_MANIFEST_PATH
 
 import os

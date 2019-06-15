@@ -34,8 +34,8 @@ from examples import DEFAULT_CARBONSDK_PATH
 
 from petastorm import TransformSpec
 
-from unified.reader import make_reader
-from unified.pytorch import make_data_loader
+from pycarbon.reader import make_reader
+from pycarbon.reader import make_data_loader
 
 class Net(nn.Module):
   def __init__(self):

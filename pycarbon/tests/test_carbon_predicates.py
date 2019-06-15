@@ -22,7 +22,7 @@ from petastorm.codecs import ScalarCodec
 from petastorm.predicates import in_lambda
 from petastorm.unischema import dict_to_spark_row, Unischema, UnischemaField
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.core.carbon_reader import make_carbon_reader, make_batch_carbon_reader
 from pycarbon.etl.carbon_dataset_metadata import materialize_dataset_carbon
 from pycarbon.tests.test_carbon_common import TestSchema
 

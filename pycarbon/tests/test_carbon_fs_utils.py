@@ -22,7 +22,7 @@ from six.moves.urllib.parse import urlparse
 from petastorm.hdfs.tests.test_hdfs_namenode import HC, MockHadoopConfiguration, \
   MockHdfs, MockHdfsConnector
 
-from pycarbon.carbon_fs_utils import CarbonFilesystemResolver
+from pycarbon.core.carbon_fs_utils import CarbonFilesystemResolver
 
 ABS_PATH = '/abs/path'
 

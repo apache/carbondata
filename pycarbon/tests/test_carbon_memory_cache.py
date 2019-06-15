@@ -14,8 +14,8 @@
 
 import pytest
 
-from pycarbon.carbon_reader import make_carbon_reader, make_batch_carbon_reader
-from pycarbon.carbon_local_memory_cache import LocalMemoryCache
+from pycarbon.core.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.core.carbon_local_memory_cache import LocalMemoryCache
 
 import os
 import jnius_config

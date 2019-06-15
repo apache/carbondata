@@ -28,10 +28,10 @@ import jnius_config
 
 from obs import ObsClient
 
-from pycarbon.carbon_reader import make_carbon_reader
-from pycarbon.Constants import LOCAL_FILE_PREFIX
+from pycarbon.core.carbon_reader import make_carbon_reader
+from pycarbon.core.Constants import LOCAL_FILE_PREFIX
 
-from unified.reader import make_reader
+from pycarbon.reader import make_reader
 
 from examples import DEFAULT_CARBONSDK_PATH
 from examples.benchmark.pycarbon_dataset.generate_benchmark_pycarbon_dataset import ROW_COUNT
