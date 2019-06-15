@@ -193,17 +193,16 @@ public class CarbonInputSplit extends FileSplit
     this.version = ColumnarFormatVersion.valueOf(in.readShort());
     // will be removed after count(*) optmization in case of index server
     this.rowCount = in.readInt();
-    this.isLegacyStore = in.readBoolean();
     // after deseralizing required field get the start position of field which will be only used
     // in executor
     int leftoverPosition = underlineStream.getPosition();
     // position of next split
     int newPosition = currentPosition + serializeLen;
-    // setting the position to next spliy
+    // setting the position to next split
     underlineStream.setPosition(newPosition);
     this.serializeData = underlineStream.getBuffer();
     this.offset = leftoverPosition;
-    this.actualLen = serializeLen - leftoverPosition - currentPosition;
+    this.actualLen = serializeLen - (leftoverPosition - currentPosition);
     String taskNo = CarbonTablePath.DataFileUtil.getTaskNo(this.filePath);
     if (taskNo.contains("_")) {
       taskNo = taskNo.split("_")[0];
@@ -357,7 +356,6 @@ public class CarbonInputSplit extends FileSplit
       this.length = in.readLong();
       this.version = ColumnarFormatVersion.valueOf(in.readShort());
       this.rowCount = in.readInt();
-      this.isLegacyStore = in.readBoolean();
       this.bucketId = in.readUTF();
       this.blockletId = in.readUTF();
     }
@@ -381,6 +379,7 @@ public class CarbonInputSplit extends FileSplit
     for (int i = 0; i < validBlockletIdCount; i++) {
       validBlockletIds.add((int) in.readShort());
     }
+    this.isLegacyStore = in.readBoolean();
   }
 
   @Override public void write(DataOutput out) throws IOException {
@@ -392,14 +391,13 @@ public class CarbonInputSplit extends FileSplit
       out.writeLong(length);
       out.writeShort(version.number());
       out.writeInt(rowCount);
-      out.writeBoolean(isLegacyStore);
       out.writeUTF(bucketId);
       out.writeUTF(blockletId);
       out.write(serializeData, offset, actualLen);
       return;
     }
     // please refer writeDetailInfo doc
-    if (writeDetailInfo) {
+    if (null != filePath) {
       out.writeUTF(filePath);
     }
     out.writeLong(start);
@@ -413,9 +411,11 @@ public class CarbonInputSplit extends FileSplit
     } else {
       out.writeInt(0);
     }
-    out.writeBoolean(isLegacyStore);
-    if (writeDetailInfo) {
+    if (null != bucketId) {
       out.writeUTF(bucketId);
+    }
+
+    if (null != blockletId) {
       out.writeUTF(blockletId);
     }
     out.writeUTF(segment.toString());
@@ -441,6 +441,7 @@ public class CarbonInputSplit extends FileSplit
     for (Integer blockletId : getValidBlockletIds()) {
       out.writeShort(blockletId);
     }
+    out.writeBoolean(isLegacyStore);
   }
 
   /**
@@ -853,5 +854,17 @@ public class CarbonInputSplit extends FileSplit
 
   public void setStart(long start) {
     this.start = start;
+  }
+
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
+  }
+
+  public void setBlockletId(String blockletId) {
+    this.blockletId = blockletId;
+  }
+
+  public void setBucketId(String bucketId) {
+    this.bucketId = bucketId;
   }
 }

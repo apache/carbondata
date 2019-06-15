@@ -175,6 +175,9 @@ public class ExtendedBlocklet extends Blocklet {
       // creating byte array output stream to get the size of input split serializeData size
       ExtendedByteArrayOutputStream ebos = new ExtendedByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(ebos);
+      inputSplit.setFilePath(null);
+      inputSplit.setBlockletId(null);
+      inputSplit.setBucketId(null);
       if (inputSplit.isBlockCache()) {
         inputSplit.updateFooteroffset();
         inputSplit.updateBlockLength();
@@ -182,7 +185,7 @@ public class ExtendedBlocklet extends Blocklet {
       }
       inputSplit.serializeFields(dos, uniqueLocation);
       out.writeInt(ebos.size());
-      out.write(ebos.getBuffer());
+      out.write(ebos.getBuffer(), 0 , ebos.size());
     }
   }
 

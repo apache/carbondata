@@ -84,6 +84,8 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
   private String taskGroupDesc = "";
 
   private String queryId = "";
+
+  private boolean isWriteToFile = true;
   DistributableDataMapFormat() {
 
   }
@@ -249,6 +251,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     out.writeUTF(taskGroupId);
     out.writeUTF(taskGroupDesc);
     out.writeUTF(queryId);
+    out.writeBoolean(isWriteToFile);
   }
 
   @Override
@@ -293,6 +296,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     this.taskGroupId = in.readUTF();
     this.taskGroupDesc = in.readUTF();
     this.queryId = in.readUTF();
+    this.isWriteToFile = in.readBoolean();
   }
 
   private void initReadCommittedScope() throws IOException {
@@ -375,5 +379,13 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   public String getDataMapToClear() {
     return dataMapToClear;
+  }
+
+  public void setIsWriteToFile(boolean isWriteToFile) {
+    this.isWriteToFile = isWriteToFile;
+  }
+
+  public boolean isWriteToFile() {
+    return isWriteToFile;
   }
 }

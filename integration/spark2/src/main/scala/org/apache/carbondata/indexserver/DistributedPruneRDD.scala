@@ -130,7 +130,9 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
       }"
       val value = (executorIP + "_" + cacheSize.toString, new ExtendedBlockletWrapper(f.toList
         .asJava,
-        dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId))
+        dataMapFormat.getCarbonTable.getTablePath,
+        dataMapFormat.getQueryId,
+        dataMapFormat.isWriteToFile))
       Iterator(value)
     }
   }

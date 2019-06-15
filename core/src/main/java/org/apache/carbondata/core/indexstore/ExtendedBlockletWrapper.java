@@ -72,25 +72,26 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
   }
 
   public ExtendedBlockletWrapper(List<ExtendedBlocklet> extendedBlockletList, String tablePath,
-      String queryId) {
+      String queryId, boolean isWriteToFile) {
     Map<String, Short> uniqueLocations = new HashMap<>();
     byte[] bytes = convertToBytes(tablePath, uniqueLocations, extendedBlockletList);
     int serializeAllowedSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD)) * 1024;
+        .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD,
+            CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT)) * 1024;
     DataOutputStream stream = null;
     // if data size is more then data will be written in file and file name will be sent from
     // executor to driver, in case of any failure data will send through network
-    if (bytes.length > serializeAllowedSize) {
+    if (bytes.length > serializeAllowedSize && isWriteToFile) {
       final String fileName = UUID.randomUUID().toString();
       String folderPath = CarbonUtil.getIndexServerTempPath(tablePath, queryId);
       try {
         final CarbonFile carbonFile = FileFactory.getCarbonFile(folderPath);
-        boolean writeToFile = true;
+        boolean isFolderExists = true;
         if (!carbonFile.isFileExist(folderPath)) {
           LOGGER.warn("Folder:" + folderPath + "doesn't exists, data will be send through netwrok");
-          writeToFile = false;
+          isFolderExists = false;
         }
-        if (writeToFile) {
+        if (isFolderExists) {
           stream = FileFactory.getDataOutputStream(folderPath + "/" + fileName,
               FileFactory.getFileType(folderPath),
                   BUFFER_SIZE, BLOCK_SIZE, (short) 1);

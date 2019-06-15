@@ -77,8 +77,10 @@ class DistributedDataMapJob extends AbstractDataMapJob {
         IndexServer.getClient.getSplits(dataMapFormat)
           .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
       } finally {
-        if (null != tmpFolder && !tmpFolder.delete()) {
-          LOGGER.error("Problem while deleting the temp directory:" + tmpFolder.getAbsolutePath)
+        val tmpPath = CarbonUtil
+          .getIndexServerTempPath(dataMapFormat.getCarbonTable.getTablePath, queryId)
+        if (null != tmpFolder && !tmpFolder.deleteFile(tmpPath, FileFactory.getFileType(tmpPath))) {
+          LOGGER.error("Problem while deleting the temp directory:" + tmpPath)
         }
       }
     }
@@ -124,14 +126,9 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
 
   override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
     val spark = SparkSQLUtil.getSparkSession
-    val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val queryId = spark.sparkContext.getConf.get("queryId", UUID.randomUUID().toString)
     dataMapFormat.setQueryId(queryId)
-    var tmpFolder: CarbonFile = null
-    if (dataMapFormat.isFallbackJob) {
-      tmpFolder = CarbonUtil
-        .createTempFolderForIndexServer(dataMapFormat.getCarbonTable.getTablePath, queryId)
-    }
+    dataMapFormat.setIsWriteToFile(false)
     val taskGroupId = spark.sparkContext.getLocalProperty("spark.jobGroup.id") match {
       case null => ""
       case _ => spark.sparkContext.getLocalProperty("spark.jobGroup.id")
@@ -142,15 +139,8 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
     }
     dataMapFormat.setTaskGroupId(taskGroupId)
     dataMapFormat.setTaskGroupDesc(taskGroupDesc)
-    val splits = try {
-      IndexServer.getSplits(dataMapFormat)
-        .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
-    } finally {
-      if (null != tmpFolder && !tmpFolder.delete()) {
-        LOGGER.error("Problem while deleting the temp directory:" + tmpFolder.getAbsolutePath)
-      }
-    }
-    splits
+    IndexServer.getSplits(dataMapFormat)
+      .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
   }
 
 }
