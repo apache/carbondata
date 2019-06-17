@@ -176,7 +176,6 @@ public class ExtendedBlocklet extends Blocklet {
       ExtendedByteArrayOutputStream ebos = new ExtendedByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(ebos);
       inputSplit.setFilePath(null);
-      inputSplit.setBlockletId(null);
       inputSplit.setBucketId(null);
       if (inputSplit.isBlockCache()) {
         inputSplit.updateFooteroffset();

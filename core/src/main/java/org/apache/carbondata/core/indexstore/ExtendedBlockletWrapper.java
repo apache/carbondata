@@ -183,7 +183,8 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
         try {
           final String folderPath = CarbonUtil.getIndexServerTempPath(tablePath, queryId);
           String fileName = new String(bytes, CarbonCommonConstants.DEFAULT_CHARSET);
-          stream = FileFactory.getDataInputStream(folderPath + "/" + fileName, FileFactory.getFileType(folderPath));
+          stream = FileFactory
+              .getDataInputStream(folderPath + "/" + fileName, FileFactory.getFileType(folderPath));
           data = new byte[dataSize];
           stream.readFully(data);
         } finally {
@@ -232,8 +233,10 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
   @Override public void write(DataOutput out) throws IOException {
     out.writeBoolean(isWrittenToFile);
     out.writeBoolean(bytes != null);
-    out.writeInt(bytes.length);
-    out.write(bytes);
+    if (bytes != null) {
+      out.writeInt(bytes.length);
+      out.write(bytes);
+    }
     out.writeInt(dataSize);
   }
 

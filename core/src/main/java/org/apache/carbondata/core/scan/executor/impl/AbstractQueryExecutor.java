@@ -214,7 +214,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           }
           filePathToFileFooterMapping.put(blockInfo.getFilePath(), fileFooter);
           if (null == blockletDetailInfo) {
-            blockletDetailInfo = getBlockletDetailInfo(fileFooter, blockInfo);
+            blockletDetailInfo = QueryUtil.getBlockletDetailInfo(fileFooter, blockInfo);
           }
           blockInfo.setDetailInfo(blockletDetailInfo);
         }
@@ -258,28 +258,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     return indexList;
   }
 
-  /**
-   * In case of index server there will not be any details info serialize from driver.
-   * Below method will use to create blocklet detail info object from footer
-   * @param fileFooter
-   * @param blockInfo
-   * @return
-   */
-  private BlockletDetailInfo getBlockletDetailInfo(DataFileFooter fileFooter,
-      TableBlockInfo blockInfo) {
-    BlockletDetailInfo detailInfo = new BlockletDetailInfo();
-    detailInfo.setDimLens(fileFooter.getSegmentInfo().getColumnCardinality());
-    detailInfo.setBlockletInfoBinary(new byte[0]);
-    detailInfo.setColumnSchemas(fileFooter.getColumnInTable());
-    detailInfo.setBlockletId((short) -1);
-    detailInfo.setRowCount((int) fileFooter.getNumberOfRows());
-    detailInfo.setSchemaUpdatedTimeStamp(fileFooter.getSchemaUpdatedTimeStamp());
-    detailInfo.setBlockFooterOffset(blockInfo.getBlockOffset());
-    detailInfo.setBlockSize(blockInfo.getBlockLength());
-    detailInfo.setUseMinMaxForPruning(true);
-    detailInfo.setVersionNumber(blockInfo.getVersion().number());
-    return detailInfo;
-  }
   /**
    * It updates dimensions and measures of query model. In few scenarios like SDK user can configure
    * sort options per load, so if first load has c1 as integer column and configure as sort column

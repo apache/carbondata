@@ -357,8 +357,8 @@ public class CarbonInputSplit extends FileSplit
       this.version = ColumnarFormatVersion.valueOf(in.readShort());
       this.rowCount = in.readInt();
       this.bucketId = in.readUTF();
-      this.blockletId = in.readUTF();
     }
+    this.blockletId = in.readUTF();
     this.segment = Segment.toSegment(in.readUTF());
     int numberOfDeleteDeltaFiles = in.readInt();
     deleteDeltaFiles = new String[numberOfDeleteDeltaFiles];
@@ -414,10 +414,7 @@ public class CarbonInputSplit extends FileSplit
     if (null != bucketId) {
       out.writeUTF(bucketId);
     }
-
-    if (null != blockletId) {
-      out.writeUTF(blockletId);
-    }
+    out.writeUTF(blockletId);
     out.writeUTF(segment.toString());
     out.writeInt(null != deleteDeltaFiles ? deleteDeltaFiles.length : 0);
     if (null != deleteDeltaFiles) {
@@ -858,10 +855,6 @@ public class CarbonInputSplit extends FileSplit
 
   public void setFilePath(String filePath) {
     this.filePath = filePath;
-  }
-
-  public void setBlockletId(String blockletId) {
-    this.blockletId = blockletId;
   }
 
   public void setBucketId(String bucketId) {

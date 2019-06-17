@@ -56,7 +56,8 @@ public class ExtendedBlockletWrapperContainer implements Writable {
 
   }
 
-  public ExtendedBlockletWrapperContainer(ExtendedBlockletWrapper[] extendedBlockletWrappers, boolean isFallbackJob) {
+  public ExtendedBlockletWrapperContainer(ExtendedBlockletWrapper[] extendedBlockletWrappers,
+      boolean isFallbackJob) {
     this.extendedBlockletWrappers = extendedBlockletWrappers;
     this.isFallbackJob = isFallbackJob;
   }

@@ -35,8 +35,8 @@ import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapStoreManager, DistributableDataMapFormat, TableDataMap}
+import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.{ExtendedBlocklet, ExtendedBlockletWrapper}
@@ -90,7 +90,15 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
           .toList.asJava,
         dataMapFormat
           .getDataMapToClear)
-      Iterator(("", new ExtendedBlockletWrapper()))
+      val cacheSize = if (CacheProvider.getInstance().getCarbonCache != null) {
+        CacheProvider.getInstance().getCarbonCache.getCurrentSize
+      } else {
+        0L
+      }
+      val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
+        SparkEnv.get.blockManager.blockManagerId.executorId
+      }"
+      Iterator((executorIP + "_" + cacheSize, new ExtendedBlockletWrapper()))
     } else {
       if (dataMapFormat.getInvalidSegments.size > 0) {
         // clear the segmentMap and from cache in executor when there are invalid segments
