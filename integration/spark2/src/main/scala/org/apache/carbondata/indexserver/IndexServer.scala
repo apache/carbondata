@@ -103,11 +103,13 @@ object IndexServer extends ServerInterface {
     sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
     sparkSession.sparkContext.setLocalProperty("spark.job.description", request.getTaskGroupDesc)
     val splits = new DistributedPruneRDD(sparkSession, request).collect()
-    DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
+    if (!request.isFallbackJob) {
+      DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
+    }
     if (request.isJobToClearDataMaps) {
       DistributedRDDUtils.invalidateCache(request.getCarbonTable.getTableUniqueName)
     }
-    new ExtendedBlockletWrapperContainer(splits.map(_._2))
+    new ExtendedBlockletWrapperContainer(splits.map(_._2), request.isFallbackJob)
   }
 
   override def invalidateSegmentCache(databaseName: String, tableName: String,

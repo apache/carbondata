@@ -50,56 +50,68 @@ public class ExtendedBlockletWrapperContainer implements Writable {
 
   private ExtendedBlockletWrapper[] extendedBlockletWrappers;
 
+  private boolean isFallbackJob;
+
   public ExtendedBlockletWrapperContainer() {
 
   }
 
-  public ExtendedBlockletWrapperContainer(ExtendedBlockletWrapper[] extendedBlockletWrappers) {
+  public ExtendedBlockletWrapperContainer(ExtendedBlockletWrapper[] extendedBlockletWrappers, boolean isFallbackJob) {
     this.extendedBlockletWrappers = extendedBlockletWrappers;
+    this.isFallbackJob = isFallbackJob;
   }
 
-  public List<ExtendedBlocklet> getExtendedBlockets(String tablePath, String queryId) {
-    int numOfThreads = CarbonProperties.getNumOfThreadsForPruning();
-    ExecutorService executorService = Executors
-        .newFixedThreadPool(numOfThreads, new CarbonThreadFactory("SplitDeseralizerPool", true));
-    int numberOfWrapperPerThread = extendedBlockletWrappers.length / numOfThreads;
-    int leftOver = extendedBlockletWrappers.length % numOfThreads;
-    int[] split = null;
-    if (numberOfWrapperPerThread > 0) {
-      split = new int[numOfThreads];
-    } else {
-      split = new int[leftOver];
-    }
-    Arrays.fill(split, numberOfWrapperPerThread);
-    for (int i = 0; i < leftOver; i++) {
-      split[i] += 1;
-    }
-    int start = 0;
-    int end = 0;
-    List<Future<List<ExtendedBlocklet>>> futures = new ArrayList<>();
-    for (int i = 0; i < split.length; i++) {
-      end += split[i];
-      futures.add(executorService
-          .submit(new ExtendedBlockletDeserializerThread(start, end, tablePath, queryId)));
-      start += split[i];
-    }
-    executorService.shutdown();
-    try {
-      executorService.awaitTermination(1, TimeUnit.HOURS);
-    } catch (InterruptedException e) {
-      LOGGER.error(e);
-      throw new RuntimeException(e);
-    }
-    List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
-    for (int i = 0; i < futures.size(); i++) {
+  public List<ExtendedBlocklet> getExtendedBlockets(String tablePath, String queryId)
+      throws IOException {
+    if (!isFallbackJob) {
+      int numOfThreads = CarbonProperties.getNumOfThreadsForPruning();
+      ExecutorService executorService = Executors
+          .newFixedThreadPool(numOfThreads, new CarbonThreadFactory("SplitDeseralizerPool", true));
+      int numberOfWrapperPerThread = extendedBlockletWrappers.length / numOfThreads;
+      int leftOver = extendedBlockletWrappers.length % numOfThreads;
+      int[] split = null;
+      if (numberOfWrapperPerThread > 0) {
+        split = new int[numOfThreads];
+      } else {
+        split = new int[leftOver];
+      }
+      Arrays.fill(split, numberOfWrapperPerThread);
+      for (int i = 0; i < leftOver; i++) {
+        split[i] += 1;
+      }
+      int start = 0;
+      int end = 0;
+      List<Future<List<ExtendedBlocklet>>> futures = new ArrayList<>();
+      for (int i = 0; i < split.length; i++) {
+        end += split[i];
+        futures.add(executorService
+            .submit(new ExtendedBlockletDeserializerThread(start, end, tablePath, queryId)));
+        start += split[i];
+      }
+      executorService.shutdown();
       try {
-        extendedBlocklets.addAll(futures.get(i).get());
-      } catch (InterruptedException | ExecutionException e) {
+        executorService.awaitTermination(1, TimeUnit.HOURS);
+      } catch (InterruptedException e) {
         LOGGER.error(e);
         throw new RuntimeException(e);
       }
+      List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
+      for (int i = 0; i < futures.size(); i++) {
+        try {
+          extendedBlocklets.addAll(futures.get(i).get());
+        } catch (InterruptedException | ExecutionException e) {
+          LOGGER.error(e);
+          throw new RuntimeException(e);
+        }
+      }
+      return extendedBlocklets;
+    } else {
+      List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
+      for (ExtendedBlockletWrapper extendedBlockletWrapper: extendedBlockletWrappers) {
+        extendedBlocklets.addAll(extendedBlockletWrapper.readBlocklet(tablePath, queryId));
+      }
+      return extendedBlocklets;
     }
-    return extendedBlocklets;
   }
 
   private class ExtendedBlockletDeserializerThread implements Callable<List<ExtendedBlocklet>> {

@@ -129,16 +129,7 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
     val queryId = spark.sparkContext.getConf.get("queryId", UUID.randomUUID().toString)
     dataMapFormat.setQueryId(queryId)
     dataMapFormat.setIsWriteToFile(false)
-    val taskGroupId = spark.sparkContext.getLocalProperty("spark.jobGroup.id") match {
-      case null => ""
-      case _ => spark.sparkContext.getLocalProperty("spark.jobGroup.id")
-    }
-    val taskGroupDesc = spark.sparkContext.getLocalProperty("spark.job.description") match {
-      case null => ""
-      case _ => spark.sparkContext.getLocalProperty("spark.job.description")
-    }
-    dataMapFormat.setTaskGroupId(taskGroupId)
-    dataMapFormat.setTaskGroupDesc(taskGroupDesc)
+    dataMapFormat.setFallbackJob()
     IndexServer.getSplits(dataMapFormat)
       .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId)
   }

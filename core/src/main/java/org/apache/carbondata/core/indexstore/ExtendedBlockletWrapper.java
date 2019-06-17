@@ -177,57 +177,61 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
    */
   public List<ExtendedBlocklet> readBlocklet(String tablePath, String queryId) throws IOException {
     byte[] data;
-    if (isWrittenToFile) {
+    if (bytes != null) {
+      if (isWrittenToFile) {
+        DataInputStream stream = null;
+        try {
+          final String folderPath = CarbonUtil.getIndexServerTempPath(tablePath, queryId);
+          String fileName = new String(bytes, CarbonCommonConstants.DEFAULT_CHARSET);
+          stream = FileFactory.getDataInputStream(folderPath + "/" + fileName, FileFactory.getFileType(folderPath));
+          data = new byte[dataSize];
+          stream.readFully(data);
+        } finally {
+          CarbonUtil.closeStreams(stream);
+        }
+      } else {
+        data = bytes;
+      }
       DataInputStream stream = null;
+      int numberOfBlocklet;
+      String[] locations;
+      int actualDataLen;
       try {
-        final String folderPath = CarbonUtil.getIndexServerTempPath(tablePath, queryId);
-        String fileName = new String(bytes, CarbonCommonConstants.DEFAULT_CHARSET);
-        stream = FileFactory.getDataInputStream(folderPath + "/" + fileName,
-            FileFactory.getFileType(folderPath));
-        data = new byte[dataSize];
-        stream.readFully(data);
+        stream = new DataInputStream(new ByteArrayInputStream(data));
+        numberOfBlocklet = stream.readInt();
+        short numberOfLocations = stream.readShort();
+        locations = new String[numberOfLocations];
+        for (int i = 0; i < numberOfLocations; i++) {
+          locations[i] = stream.readUTF();
+        }
+        actualDataLen = stream.readInt();
       } finally {
         CarbonUtil.closeStreams(stream);
       }
-    } else {
-      data = bytes;
-    }
-    DataInputStream stream = null;
-    int numberOfBlocklet;
-    String[] locations;
-    int actualDataLen;
-    try {
-      stream = new DataInputStream(new ByteArrayInputStream(data));
-      numberOfBlocklet = stream.readInt();
-      short numberOfLocations = stream.readShort();
-      locations = new String[numberOfLocations];
-      for (int i = 0; i < numberOfLocations; i++) {
-        locations[i] = stream.readUTF();
-      }
-      actualDataLen = stream.readInt();
-    } finally {
-      CarbonUtil.closeStreams(stream);
-    }
 
-    final byte[] unCompressByte =
-        new SnappyCompressor().unCompressByte(data, data.length - actualDataLen, actualDataLen);
-    ExtendedByteArrayInputStream ebis = new ExtendedByteArrayInputStream(unCompressByte);
-    ExtendedDataInputStream eDIS = new ExtendedDataInputStream(ebis);
-    List<ExtendedBlocklet> extendedBlockletList = new ArrayList<>();
-    try {
-      for (int i = 0; i < numberOfBlocklet; i++) {
-        ExtendedBlocklet extendedBlocklet = new ExtendedBlocklet();
-        extendedBlocklet.deserializeFields(eDIS, locations, tablePath);
-        extendedBlockletList.add(extendedBlocklet);
+      final byte[] unCompressByte =
+          new SnappyCompressor().unCompressByte(data, data.length - actualDataLen, actualDataLen);
+      ExtendedByteArrayInputStream ebis = new ExtendedByteArrayInputStream(unCompressByte);
+      ExtendedDataInputStream eDIS = new ExtendedDataInputStream(ebis);
+      List<ExtendedBlocklet> extendedBlockletList = new ArrayList<>();
+      try {
+        for (int i = 0; i < numberOfBlocklet; i++) {
+          ExtendedBlocklet extendedBlocklet = new ExtendedBlocklet();
+          extendedBlocklet.deserializeFields(eDIS, locations, tablePath);
+          extendedBlockletList.add(extendedBlocklet);
+        }
+      } finally {
+        CarbonUtil.closeStreams(eDIS);
       }
-    } finally {
-      CarbonUtil.closeStreams(eDIS);
+      return extendedBlockletList;
+    } else {
+      return new ArrayList<>();
     }
-    return extendedBlockletList;
   }
 
   @Override public void write(DataOutput out) throws IOException {
     out.writeBoolean(isWrittenToFile);
+    out.writeBoolean(bytes != null);
     out.writeInt(bytes.length);
     out.write(bytes);
     out.writeInt(dataSize);
@@ -235,8 +239,10 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
 
   @Override public void readFields(DataInput in) throws IOException {
     this.isWrittenToFile = in.readBoolean();
-    this.bytes = new byte[in.readInt()];
-    in.readFully(bytes);
+    if (in.readBoolean()) {
+      this.bytes = new byte[in.readInt()];
+      in.readFully(bytes);
+    }
     this.dataSize = in.readInt();
   }
 }

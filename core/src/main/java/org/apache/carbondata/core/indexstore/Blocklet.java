@@ -83,6 +83,7 @@ public class Blocklet implements Writable,Serializable {
       out.writeBoolean(true);
       out.writeUTF(blockletId);
     }
+    out.writeBoolean(compareBlockletIdForObjectMatching);
   }
 
   @Override
@@ -93,6 +94,7 @@ public class Blocklet implements Writable,Serializable {
     if (in.readBoolean()) {
       blockletId = in.readUTF();
     }
+    this.compareBlockletIdForObjectMatching = in.readBoolean();
   }
 
   @Override

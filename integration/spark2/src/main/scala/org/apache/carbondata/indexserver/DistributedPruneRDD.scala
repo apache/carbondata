@@ -35,6 +35,7 @@ import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
+import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapStoreManager, DistributableDataMapFormat, TableDataMap}
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -84,10 +85,10 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
     if (dataMapFormat.isJobToClearDataMaps) {
       // if job is to clear datamaps just clear datamaps from cache and pass empty iterator
       DataMapStoreManager.getInstance().clearInvalidDataMaps(dataMapFormat.getCarbonTable,
-        inputSplits
-          .asInstanceOf[DataMapRDDPartition]
-          .inputSplit.map(_
-          .asInstanceOf[DataMapDistributable].getSegment.getSegmentNo).toList.asJava, dataMapFormat
+        inputSplits.map(_
+          .asInstanceOf[DataMapDistributableWrapper].getDistributable.getSegment.getSegmentNo)
+          .toList.asJava,
+        dataMapFormat
           .getDataMapToClear)
       Iterator(("", new ExtendedBlockletWrapper()))
     } else {
@@ -129,9 +130,7 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
         SparkEnv.get.blockManager.blockManagerId.executorId
       }"
       val value = (executorIP + "_" + cacheSize.toString, new ExtendedBlockletWrapper(f.toList
-        .asJava,
-        dataMapFormat.getCarbonTable.getTablePath,
-        dataMapFormat.getQueryId,
+        .asJava, dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId,
         dataMapFormat.isWriteToFile))
       Iterator(value)
     }

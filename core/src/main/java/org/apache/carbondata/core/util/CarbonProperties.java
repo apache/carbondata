@@ -1707,9 +1707,25 @@ public final class CarbonProperties {
   }
 
   public int getNumOfThreadsForExecutorPruning() {
-    return Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING,
-            CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT));
+    String configuredValue = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING);
+    if (configuredValue == null || configuredValue.equalsIgnoreCase("0")) {
+      configuredValue = CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT;
+    }
+    try {
+      int numOfThreads = Integer.parseInt(configuredValue);
+      LOGGER.info("Value for "
+          + CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING + " is "
+          + numOfThreads);
+      return numOfThreads;
+    } catch (NumberFormatException e) {
+      LOGGER.info(configuredValue + " is not a valid input for "
+          + CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING + ", taking "
+          + CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT
+          + " as default value");
+      return Integer
+          .parseInt(CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
+    }
   }
 
   public static int getNumOfThreadsForPruning() {

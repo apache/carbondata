@@ -388,4 +388,8 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
   public boolean isWriteToFile() {
     return isWriteToFile;
   }
+
+  public void setFallbackJob() {
+    isFallbackJob = true;
+  }
 }
