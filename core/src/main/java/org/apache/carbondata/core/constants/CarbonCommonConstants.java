@@ -1317,6 +1317,11 @@ public final class CarbonCommonConstants {
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION = "carbon.custom.block.distribution";
 
   /**
+   * default property of custom block distribution
+   */
+  public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT = "false";
+
+  /**
    * This property defines how the tasks are split/combined and launch spark tasks during query
    */
   @CarbonProperty
