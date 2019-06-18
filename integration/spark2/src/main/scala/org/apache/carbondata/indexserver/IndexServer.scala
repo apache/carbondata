@@ -72,9 +72,6 @@ trait ServerInterface {
  */
 object IndexServer extends ServerInterface {
 
-  val isDistributedPruning: Boolean =
-    CarbonProperties.getInstance().isDistributedPruningEnabled("", "")
-
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   private val serverIp: String = CarbonProperties.getInstance().getIndexServerIP
@@ -154,10 +151,6 @@ object IndexServer extends ServerInterface {
   def main(args: Array[String]): Unit = {
     if (serverIp.isEmpty) {
       throw new RuntimeException(s"Please set the server IP to use Index Cache Server")
-    } else if (!isDistributedPruning) {
-      throw new RuntimeException(
-        s"Please set ${ CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER }" +
-        s" as true to use index server")
     } else if (!isExecutorLRUConfigured) {
       throw new RuntimeException(s"Executor LRU cache size is not set. Please set using " +
                                  s"${ CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE }")
@@ -179,6 +172,8 @@ object IndexServer extends ServerInterface {
           server.stop()
         }
       })
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants
+        .CARBON_ENABLE_INDEX_SERVER, "true")
       LOGGER.info(s"Index cache server running on ${ server.getPort } port")
     }
   }
