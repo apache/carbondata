@@ -61,7 +61,8 @@ object MVHelper {
         s"MV datamap does not support streaming"
       )
     }
-    MVUtil.validateDMProperty(dmProperties)
+    val mvUtil = new MVUtil
+    mvUtil.validateDMProperty(dmProperties)
     val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
     val query = sparkSession.sql(updatedQuery)
     val logicalPlan = MVHelper.dropDummFuc(query.queryExecution.analyzed)
@@ -79,6 +80,7 @@ object MVHelper {
     }
     val updatedQueryWithDb = validateMVQuery(sparkSession, logicalPlan)
     val fullRebuild = isFullReload(logicalPlan)
+    var counter = 0
     // the ctas query can have duplicate columns, so we should take distinct and create fields,
     // so that it won't fail during create mv table
     val fields = logicalPlan.output.map { attr =>
@@ -87,7 +89,8 @@ object MVHelper {
         throw new UnsupportedOperationException(
           s"MV datamap is unsupported for ComplexData type column: " + attr.name)
       }
-      val name = updateColumnName(attr)
+      val name = updateColumnName(attr, counter)
+      counter += 1
       val rawSchema = '`' + name + '`' + ' ' + attr.dataType.typeName
       if (attr.dataType.typeName.startsWith("decimal")) {
         val (precision, scale) = CommonUtil.getScaleAndPrecision(attr.dataType.catalogString)
@@ -137,7 +140,7 @@ object MVHelper {
     tableProperties.put(CarbonCommonConstants.DATAMAP_NAME, dataMapSchema.getDataMapName)
     tableProperties.put(CarbonCommonConstants.PARENT_TABLES, parentTables.asScala.mkString(","))
 
-    val fieldRelationMap = MVUtil.getFieldsAndDataMapFieldsFromPlan(
+    val fieldRelationMap = mvUtil.getFieldsAndDataMapFieldsFromPlan(
       logicalPlan, queryString, sparkSession)
     // If dataMap is mapped to single main table, then inherit table properties from main table,
     // else, will use default table properties. If DMProperties contains table properties, then
@@ -330,19 +333,22 @@ object MVHelper {
     modularPlan.asCompactSQL
   }
 
-  def getUpdatedName(name: String): String = {
-    val updatedName = name.replace("(", "_")
+  def getUpdatedName(name: String, counter: Int): String = {
+    var updatedName = name.replace("(", "_")
       .replace(")", "")
       .replace(" ", "_")
       .replace("=", "")
       .replace(",", "")
       .replace(".", "_")
       .replace("`", "")
+    if (updatedName.length >= CarbonCommonConstants.MAXIMUM_CHAR_LENGTH) {
+      updatedName = updatedName.substring(0, 110) + CarbonCommonConstants.UNDERSCORE + counter
+    }
     updatedName
   }
 
-  def updateColumnName(attr: Attribute): String = {
-    val name = getUpdatedName(attr.name)
+  def updateColumnName(attr: Attribute, counter: Int): String = {
+    val name = getUpdatedName(attr.name, counter)
     attr.qualifier.map(qualifier => qualifier + "_" + name).getOrElse(name)
   }
 
