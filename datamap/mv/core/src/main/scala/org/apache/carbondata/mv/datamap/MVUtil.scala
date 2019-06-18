@@ -35,7 +35,9 @@ import org.apache.carbondata.spark.util.CommonUtil
 /**
  * Utility class for keeping all the utility method for mv datamap
  */
-object MVUtil {
+class MVUtil {
+
+  var counter = 0
 
   /**
    * Below method will be used to validate and get the required fields from select plan
@@ -127,9 +129,9 @@ object MVUtil {
     aggExp.map { agg =>
       var aggregateType: String = ""
       val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new ArrayBuffer[ColumnTableRelation]()
+      var isLiteralPresent = false
       agg.collect {
         case Alias(attr: AggregateExpression, name) =>
-          var isLiteralPresent = false
           attr.aggregateFunction.collect {
             case l@Literal(_, _) =>
               isLiteralPresent = true
@@ -175,7 +177,7 @@ object MVUtil {
             }
           }
       }
-      if (!aggregateType.isEmpty && arrayBuffer.nonEmpty) {
+      if (!aggregateType.isEmpty && arrayBuffer.nonEmpty && !isLiteralPresent) {
         fieldToDataMapFieldMap +=
         getFieldToDataMapFields(agg.name,
           agg.dataType,
@@ -260,7 +262,8 @@ object MVUtil {
       aggregateType: String,
       columnTableRelationList: ArrayBuffer[ColumnTableRelation],
       parenTableName: String) = {
-    var actualColumnName = MVHelper.getUpdatedName(name)
+    var actualColumnName = MVHelper.getUpdatedName(name, counter)
+    counter += 1
     if (qualifier.isDefined) {
       actualColumnName = qualifier.map(qualifier => qualifier + "_" + name)
         .getOrElse(actualColumnName)

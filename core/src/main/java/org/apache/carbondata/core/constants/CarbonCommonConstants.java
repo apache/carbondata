@@ -2235,4 +2235,9 @@ public final class CarbonCommonConstants {
    * index server temp file name
    */
   public static final String INDEX_SERVER_TEMP_FOLDER_NAME = "indexservertmp";
+
+  /**
+   * hive column-name maximum length
+   */
+  public static final int MAXIMUM_CHAR_LENGTH = 128;
 }
