@@ -131,6 +131,8 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     }
     QueryModel queryModel = null;
     try {
+      jobConf.set(DATABASE_NAME, "_dummyDb_" + UUID.randomUUID().toString());
+      jobConf.set(TABLE_NAME, "_dummyTable_" + UUID.randomUUID().toString());
       queryModel = getQueryModel(jobConf, path);
     } catch (InvalidConfigurationException e) {
       LOGGER.error("Failed to create record reader: " + e.getMessage(), e);
@@ -181,7 +183,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
       allColumns.append(column.getColName() + ",");
     }
 
-    if (!projection.equals("")) {
+    if (null != projection && !projection.equals("")) {
       String[] columnNames = projection.split(",");
       //verify that the columns parsed by Hive exist in the table
       for (String col : columnNames) {

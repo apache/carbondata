@@ -105,7 +105,7 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       valueObj = new ArrayWritable(Writable.class, new Writable[columnTypes.size()]);
     }
 
-    if (!colIds.equals("")) {
+    if (null != colIds && !colIds.equals("")) {
       String[] arraySelectedColId = colIds.split(",");
       columnIds = new int[arraySelectedColId.length];
       int columnId = 0;
