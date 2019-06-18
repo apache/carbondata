@@ -614,6 +614,10 @@ reader.close();
 
 Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/java/org/apache/carbondata/examples/sdk/CarbonReaderExample.java) in the CarbonData repo.
 
+SDK reader also supports reading carbondata files and filling it to apache arrow vectors.
+Find example code at [ArrowCarbonReaderTest](https://github.com/apache/carbondata/blob/master/store/sdk/src/test/java/org/apache/carbondata/sdk/file/ArrowCarbonReaderTest.java) in the CarbonData repo.
+
+
 ## API List
 
 ### Class org.apache.carbondata.sdk.file.CarbonReader
@@ -685,6 +689,82 @@ public Object[] readNextBatchRow();
  * Close reader
  */
 public void close();
+```
+
+### Class org.apache.carbondata.sdk.file.ArrowCarbonReader
+```
+/**
+ * Carbon reader will fill the arrow vector after reading the carbondata files.
+ * This arrow byte[] can be used to create arrow table and used for in memory analytics
+ * Note: create a reader at blocklet level, so that arrow byte[] will not exceed INT_MAX
+ *
+ * @param carbonSchema org.apache.carbondata.sdk.file.Schema
+ * @return Serialized byte array
+ * @throws Exception
+ */
+public byte[] readArrowBatch(Schema carbonSchema) throws Exception;
+```
+
+```
+/**
+ * Carbon reader will fill the arrow vector after reading the carbondata files.
+ * This arrow byte[] can be used to create arrow table and used for in memory analytics
+ * Note: create a reader at blocklet level, so that arrow byte[] will not exceed INT_MAX
+ * User need to close the VectorSchemaRoot after usage by calling VectorSchemaRoot.close()
+ *
+ * @param carbonSchema org.apache.carbondata.sdk.file.Schema 
+ * @return Arrow VectorSchemaRoot
+ * @throws Exception
+ */
+public VectorSchemaRoot readArrowVectors(Schema carbonSchema) throws Exception;
+```
+
+```
+/**
+ * Carbon reader will fill the arrow vector after reading carbondata files.
+ * Here unsafe memory address will be returned instead of byte[],
+ * so that this address can be sent across java to python or c modules and
+ * can directly read the content from this unsafe memory
+ * Note:Create a carbon reader at blocklet level using CarbonReader.buildWithSplits(split) method,
+ * so that arrow byte[] will not exceed INT_MAX.
+ *
+ * @param carbonSchema org.apache.carbondata.sdk.file.Schema
+ * @return address of the unsafe memory where arrow buffer is stored
+ * @throws Exception
+ */
+public long readArrowBatchAddress(Schema carbonSchema) throws Exception;
+```
+
+```
+/**
+ * Free the unsafe memory allocated , if unsafe arrow batch is used.
+ *
+ * @param address address of the unsafe memory where arrow bufferer is stored
+ */
+public void freeArrowBatchMemory(long address)
+```
+
+### Class org.apache.carbondata.sdk.file.arrow.ArrowConverter
+```
+/**
+ * To get the arrow vectors directly after filling from carbondata
+ *
+ * @return Arrow VectorSchemaRoot. which contains array of arrow vectors.
+ */
+public VectorSchemaRoot getArrowVectors() throws IOException;
+```
+
+```
+/**
+ * Utility API to convert back the arrow byte[] to arrow ArrowRecordBatch.
+ * User need to close the ArrowRecordBatch after usage by calling ArrowRecordBatch.close()
+ *
+ * @param batchBytes input byte array
+ * @param bufferAllocator arrow buffer allocator
+ * @return ArrowRecordBatch
+ * @throws IOException
+ */
+public static ArrowRecordBatch byteArrayToArrowBatch(byte[] batchBytes, BufferAllocator bufferAllocator) throws IOException;
 ```
 
 ### Class org.apache.carbondata.sdk.file.CarbonReaderBuilder

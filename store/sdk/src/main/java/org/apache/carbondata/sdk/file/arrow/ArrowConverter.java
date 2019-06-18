@@ -105,8 +105,8 @@ public class ArrowConverter {
    * Utility API to convert back the arrow byte[] to arrow ArrowRecordBatch.
    * User need to close the ArrowRecordBatch after usage by calling ArrowRecordBatch.close()
    *
-   * @param batchBytes
-   * @param bufferAllocator
+   * @param batchBytes input byte array
+   * @param bufferAllocator arrow buffer allocator
    * @return ArrowRecordBatch
    * @throws IOException
    */
@@ -128,7 +128,7 @@ public class ArrowConverter {
   /**
    * To get the arrow vectors directly after filling from carbondata
    *
-   * @return
+   * @return Arrow VectorSchemaRoot. which contains array of arrow vectors.
    */
   public VectorSchemaRoot getArrowVectors() throws IOException {
     arrowWriter.finish();
