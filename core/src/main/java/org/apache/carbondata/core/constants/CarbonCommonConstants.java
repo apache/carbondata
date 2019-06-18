@@ -2223,7 +2223,7 @@ public final class CarbonCommonConstants {
   /**
    * min value for in memory serialization size
    */
-  public static final int CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MIN = 100;
+  public static final int CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_MIN = 0;
 
   /**
    * max value for in memory serialization size

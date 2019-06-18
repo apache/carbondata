@@ -63,7 +63,8 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
 * [SDK Guide](https://github.com/apache/carbondata/blob/master/docs/sdk-guide.md) 
 * [C++ SDK Guide](https://github.com/apache/carbondata/blob/master/docs/csdk-guide.md)
 * [Performance Tuning](https://github.com/apache/carbondata/blob/master/docs/performance-tuning.md) 
-* [S3 Storage](https://github.com/apache/carbondata/blob/master/docs/s3-guide.md) 
+* [S3 Storage](https://github.com/apache/carbondata/blob/master/docs/s3-guide.md)
+* [Distributed Index Server](https://github.com/apache/carbondata/blob/master/docs/index-server.md)
 * [Carbon as Spark's Datasource](https://github.com/apache/carbondata/blob/master/docs/carbon-as-spark-datasource-guide.md) 
 * [FAQs](https://github.com/apache/carbondata/blob/master/docs/faq.md) 
 
