@@ -46,8 +46,8 @@ public class ArrowCarbonReader<T> extends CarbonReader<T> {
    * This arrow byte[] can be used to create arrow table and used for in memory analytics
    * Note: create a reader at blocklet level, so that arrow byte[] will not exceed INT_MAX
    *
-   * @param carbonSchema
-   * @return
+   * @param carbonSchema org.apache.carbondata.sdk.file.Schema
+   * @return Serialized byte array
    * @throws Exception
    */
   public byte[] readArrowBatch(Schema carbonSchema) throws Exception {
@@ -64,8 +64,8 @@ public class ArrowCarbonReader<T> extends CarbonReader<T> {
    * Note: create a reader at blocklet level, so that arrow byte[] will not exceed INT_MAX
    * User need to close the VectorSchemaRoot after usage by calling VectorSchemaRoot.close()
    *
-   * @param carbonSchema
-   * @return
+   * @param carbonSchema org.apache.carbondata.sdk.file.Schema
+   * @return Arrow VectorSchemaRoot
    * @throws Exception
    */
   public VectorSchemaRoot readArrowVectors(Schema carbonSchema) throws Exception {
@@ -84,8 +84,8 @@ public class ArrowCarbonReader<T> extends CarbonReader<T> {
    * Note:Create a carbon reader at blocklet level using CarbonReader.buildWithSplits(split) method,
    * so that arrow byte[] will not exceed INT_MAX.
    *
-   * @param carbonSchema
-   * @return
+   * @param carbonSchema org.apache.carbondata.sdk.file.Schema
+   * @return address of the unsafe memory where arrow buffer is stored
    * @throws Exception
    */
   public long readArrowBatchAddress(Schema carbonSchema) throws Exception {
@@ -99,7 +99,7 @@ public class ArrowCarbonReader<T> extends CarbonReader<T> {
   /**
    * free the unsafe memory allocated , if unsafe arrow batch is used.
    *
-   * @param address
+   * @param address address of the unsafe memory where arrow buffer is stored
    */
   public void freeArrowBatchMemory(long address) {
     CarbonUnsafe.getUnsafe().freeMemory(address);
