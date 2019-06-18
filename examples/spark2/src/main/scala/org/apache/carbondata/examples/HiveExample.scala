@@ -59,7 +59,7 @@ object HiveExample {
          | STORED BY 'carbondata'
        """.stripMargin)
 
-    val inputPath = FileFactory
+    var inputPath = FileFactory
       .getUpdatedFilePath(s"$rootPath/examples/spark2/src/main/resources/sample.csv")
 
     carbonSession.sql(
@@ -75,6 +75,24 @@ object HiveExample {
        """.stripMargin)
 
     carbonSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
+
+    carbonSession.sql("DROP TABLE IF EXISTS TEST_BOUNDARY")
+
+    carbonSession
+      .sql(
+        s"""CREATE TABLE TEST_BOUNDARY (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,30),
+           |c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string)
+           |STORED BY 'org.apache.carbondata.format' TBLPROPERTIES
+           |('DICTIONARY_INCLUDE'='c6_Timestamp')""".stripMargin)
+
+    inputPath = FileFactory
+      .getUpdatedFilePath(s"$rootPath/examples/spark2/src/main/resources/Test_Data1.csv")
+
+    carbonSession
+      .sql(
+        s"LOAD DATA INPATH '$inputPath' INTO table TEST_BOUNDARY OPTIONS('DELIMITER'=','," +
+        "'QUOTECHAR'='\"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='c1_int,c2_Bigint," +
+        "c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc')")
 
     carbonSession.close()
 
@@ -216,6 +234,37 @@ object HiveExample {
     println(" ********** Total Rows Fetched When Quering The Out Of Order Columns **********" +
       s"$outOfOrderColFetched")
     assert(outOfOrderColFetched == 4)
+
+    val resultAggQuery = statement
+      .executeQuery(
+        "SELECT min(c3_Decimal) as min, max(c3_Decimal) as max, " +
+        "sum(c3_Decimal) as sum FROM TEST_BOUNDARY")
+
+    var resultAggQueryFetched = 0
+
+    var resultMin = ""
+    var resultMax = ""
+    var resultSum = ""
+
+    while (resultAggQuery.next) {
+      if (resultAggQueryFetched == 0) {
+        println("+-----+" + "+-------------------+" + "+--------------------------------+")
+        println("| min |" + "| max               |" + "| sum                            |")
+
+        println("+-----+" + "+-------------------+" + "+--------------------------------+")
+
+        resultMin = resultAggQuery.getString("min")
+        resultMax = resultAggQuery.getString("max")
+        resultSum = resultAggQuery.getString("sum")
+
+        println(s"| $resultMin   |" + s"| $resultMax               |" + s"| $resultSum|")
+        println("+-----+" + "+-------------------+" + "+--------------------------------+")
+      }
+      resultAggQueryFetched = resultAggQueryFetched + 1
+    }
+    println(" ********** Total Rows Fetched When Aggregate Query **********" +
+            s"$resultAggQueryFetched")
+    assert(resultAggQueryFetched == 1)
 
     hiveEmbeddedServer2.stop()
   }
