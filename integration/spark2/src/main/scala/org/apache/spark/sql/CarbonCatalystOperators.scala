@@ -179,6 +179,9 @@ object CountStarPlan {
     if (groupingExpressions.nonEmpty) {
       return false
     }
+    if (partialComputation.isEmpty) {
+      return false
+    }
     if (partialComputation.size > 1 && partialComputation.nonEmpty) {
       return false
     }
