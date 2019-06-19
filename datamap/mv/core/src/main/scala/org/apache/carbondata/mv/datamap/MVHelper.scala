@@ -583,7 +583,9 @@ object MVHelper {
         val relation =
           s.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
         val outputList = getUpdatedOutputList(relation.outputList, s.dataMapTableRelation)
-        val mappings = s.outputList zip outputList
+        // when the output list contains multiple projection of same column, but relation
+        // contains distinct columns, mapping may go wrong with columns, so select distinct
+        val mappings = s.outputList.distinct zip outputList
         val oList = for ((o1, o2) <- mappings) yield {
           if (o1.name != o2.name) Alias(o2, o1.name)(exprId = o1.exprId) else o2
         }

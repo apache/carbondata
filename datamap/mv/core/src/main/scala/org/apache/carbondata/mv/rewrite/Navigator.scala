@@ -19,6 +19,7 @@ package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap}
 
+import org.apache.carbondata.mv.datamap.MVUtil
 import org.apache.carbondata.mv.expressions.modular._
 import org.apache.carbondata.mv.plans.modular
 import org.apache.carbondata.mv.plans.modular._
@@ -121,11 +122,16 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
       dataMapRelation: ModularPlan): ModularPlan = {
     // Update datamap table relation to the subsumer modular plan
     val updatedSubsumer = subsumer match {
-        // In case of order by it adds extra select but that can be ignored while doing selection.
-      case s@ Select(_, _, _, _, _, Seq(g: GroupBy), _, _, _, _) =>
-        s.copy(children = Seq(g.copy(dataMapTableRelation = Some(dataMapRelation))))
-      case s: Select => s.copy(dataMapTableRelation = Some(dataMapRelation))
-      case g: GroupBy => g.copy(dataMapTableRelation = Some(dataMapRelation))
+      // In case of order by it adds extra select but that can be ignored while doing selection.
+      case s@Select(_, _, _, _, _, Seq(g: GroupBy), _, _, _, _) =>
+        s.copy(children = Seq(g.copy(dataMapTableRelation = Some(dataMapRelation))),
+            outputList = MVUtil.updateDuplicateColumns(s.outputList))
+      case s: Select => s
+        .copy(dataMapTableRelation = Some(dataMapRelation),
+          outputList = MVUtil.updateDuplicateColumns(s.outputList))
+      case g: GroupBy => g
+        .copy(dataMapTableRelation = Some(dataMapRelation),
+          outputList = MVUtil.updateDuplicateColumns(g.outputList))
       case other => other
     }
     (updatedSubsumer, subsumee) match {

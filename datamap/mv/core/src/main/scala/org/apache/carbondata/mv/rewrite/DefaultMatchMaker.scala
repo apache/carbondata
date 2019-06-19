@@ -124,7 +124,10 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
           exprListR.exists(a1 => a1.isInstanceOf[Alias] &&
                                  a1.asInstanceOf[Alias].child.semanticEquals(a.child)) ||
           exprListR.exists(_.semanticEquals(exprE) || canEvaluate(exprE, subsumer))
-        case exp => exprListR.exists(_.semanticEquals(exp) || canEvaluate(exp, subsumer))
+        case exp =>
+          exprListR.exists(a1 => a1.isInstanceOf[Alias] &&
+                                 a1.asInstanceOf[Alias].child.semanticEquals(exp)) ||
+          exprListR.exists(_.semanticEquals(exprE) || canEvaluate(exprE, subsumer))
       }
     } else {
       false
@@ -244,8 +247,7 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
               val tChildren = new collection.mutable.ArrayBuffer[ModularPlan]()
               val tAliasMap = new collection.mutable.HashMap[Int, String]()
 
-              val updatedOutList: Seq[NamedExpression] = updateDuplicateColumns(sel_1a)
-              val usel_1a = sel_1a.copy(outputList = updatedOutList)
+              val usel_1a = sel_1a.copy(outputList = sel_1a.outputList)
               tChildren += usel_1a
               tAliasMap += (tChildren.indexOf(usel_1a) -> rewrite.newSubsumerName())
 
@@ -350,18 +352,6 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
     }
   }
 
-  private def updateDuplicateColumns(sel_1a: Select) = {
-    val duplicateNameCols = sel_1a.outputList.groupBy(_.name).filter(_._2.length > 1).flatMap(_._2)
-      .toList
-    val updatedOutList = sel_1a.outputList.map { col =>
-      if (duplicateNameCols.contains(col)) {
-        Alias(col, col.qualifiedName)(exprId = col.exprId)
-      } else {
-        col
-      }
-    }
-    updatedOutList
-  }
 }
 
 object GroupbyGroupbyNoChildDelta extends DefaultMatchPattern {
