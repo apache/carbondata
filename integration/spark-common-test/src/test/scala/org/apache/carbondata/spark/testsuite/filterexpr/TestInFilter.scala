@@ -31,7 +31,7 @@ class TestInFilter extends QueryTest with BeforeAndAfterAll{
     // turn on carbon row level filter by setting spark.sql.codegen.wholeStage=false
     // because only row level is on, 'in' will be pushdowned into CarbonScanRDD
     //  or in filter will be handled by spark.
-    sql("set spark.sql.codegen.wholeStage=false")
+    sql("set carbon.push.rowfilters.for.vector=true")
     sql("insert into test_table values(8,8,8,8),(5,5.0,5.0,5.0),(4,1.00,2.00,3.00)," +
         "(6,6.0000,6.0000,6.0000),(4743,4743.00,4743.0000,4743.0),(null,null,null,null)")
   }
@@ -167,7 +167,7 @@ class TestInFilter extends QueryTest with BeforeAndAfterAll{
 
   override def afterAll(): Unit = {
     sql("drop table if exists test_table")
-    sql("set spark.sql.codegen.wholeStage=true")
+    sql("set carbon.push.rowfilters.for.vector=false")
   }
 
 }
