@@ -131,6 +131,6 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
   }
 
   test("DirectSQLExample") {
-    DirectSQLExample.exampleBody(spark)
+    DirectSQLExample.exampleBodyDebug(spark)
   }
 }
