@@ -522,12 +522,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       }
     } else if (isMeasurePresentInCurrentBlock) {
       chunkIndex = msrColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
-      if (isMinMaxSet[chunkIndex]) {
-        isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex],
-            msrColumnExecutorInfo.getFilterKeys(), msrColumnEvaluatorInfo.getType());
-      } else {
-        isScanRequired = true;
-      }
+      isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex],
+          msrColumnExecutorInfo.getFilterKeys(),
+          msrColumnEvaluatorInfo.getType());
     }
 
     if (isScanRequired) {
@@ -646,7 +643,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     if (dataType == DataTypes.BYTE) {
       ByteOpenHashSet byteOpenHashSet = measureColumnExecuterFilterInfo.getByteOpenHashSet();
       for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i) && !bitSet.get(i)) {
+        if (!nullBitset.get(i)) {
           if (byteOpenHashSet.contains((byte) page.getLong(i))) {
             bitSet.set(i);
           }
@@ -656,7 +653,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       BooleanOpenHashSet booleanOpenHashSet =
           measureColumnExecuterFilterInfo.getBooleanOpenHashSet();
       for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i) && !bitSet.get(i)) {
+        if (!nullBitset.get(i)) {
           if (booleanOpenHashSet.contains(page.getBoolean(i))) {
             bitSet.set(i);
           }
@@ -665,7 +662,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     } else if (dataType == DataTypes.SHORT) {
       ShortOpenHashSet shortOpenHashSet = measureColumnExecuterFilterInfo.getShortOpenHashSet();
       for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i) && !bitSet.get(i)) {
+        if (!nullBitset.get(i)) {
           if (shortOpenHashSet.contains((short) page.getLong(i))) {
             bitSet.set(i);
           }
@@ -674,7 +671,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     } else if (dataType == DataTypes.INT) {
       IntOpenHashSet intOpenHashSet = measureColumnExecuterFilterInfo.getIntOpenHashSet();
       for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i) && !bitSet.get(i)) {
+        if (!nullBitset.get(i)) {
           if (intOpenHashSet.contains((int) page.getLong(i))) {
             bitSet.set(i);
           }
@@ -683,7 +680,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     } else if (dataType == DataTypes.FLOAT) {
       FloatOpenHashSet floatOpenHashSet = measureColumnExecuterFilterInfo.getFloatOpenHashSet();
       for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i) && !bitSet.get(i)) {
+        if (!nullBitset.get(i)) {
           if (floatOpenHashSet.contains((float) page.getDouble(i))) {
             bitSet.set(i);
           }
@@ -692,7 +689,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     } else if (dataType == DataTypes.DOUBLE) {
       DoubleOpenHashSet doubleOpenHashSet = measureColumnExecuterFilterInfo.getDoubleOpenHashSet();
       for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i) && !bitSet.get(i)) {
+        if (!nullBitset.get(i)) {
           if (doubleOpenHashSet.contains(page.getDouble(i))) {
             bitSet.set(i);
           }
@@ -701,7 +698,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     } else if (dataType == DataTypes.LONG) {
       LongOpenHashSet longOpenHashSet = measureColumnExecuterFilterInfo.getLongOpenHashSet();
       for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i) && !bitSet.get(i)) {
+        if (!nullBitset.get(i)) {
           if (longOpenHashSet.contains(page.getLong(i))) {
             bitSet.set(i);
           }
@@ -710,7 +707,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     } else if (DataTypes.isDecimal(dataType)) {
       Set<Object> bigDecimalHashSet = measureColumnExecuterFilterInfo.getBigDecimalHashSet();
       for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i) && !bitSet.get(i)) {
+        if (!nullBitset.get(i)) {
           final Object measureObjectBasedOnDataType = DataTypeUtil
               .getMeasureObjectBasedOnDataType(page, i, dataType,
                   msrColumnEvaluatorInfo.getMeasure());
