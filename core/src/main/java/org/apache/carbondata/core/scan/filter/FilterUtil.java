@@ -1534,7 +1534,7 @@ public final class FilterUtil {
                   converter);
         }
       }
-      msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+      msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter,  measures.getDataType());
     } else {
       if (filterValues == null) {
         dimColumnExecuterInfo.setFilterKeys(new byte[0][]);
