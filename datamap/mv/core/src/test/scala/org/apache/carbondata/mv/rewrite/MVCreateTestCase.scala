@@ -1092,6 +1092,18 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     assert(TestUtil.verifyMVDataMap(analyzed4, "constant_mv"))
   }
 
+  test("test mv query when the column names and table name same in join scenario") {
+    sql("drop table IF EXISTS price")
+    sql("drop table IF EXISTS quality")
+    sql("create table price(product string,price int) stored by 'carbondata'")
+    sql("create table quality(product string,quality string) stored by 'carbondata'")
+    sql("create datamap same_mv using 'mv' as select price.product,price.price,quality.product,quality.quality from price,quality where price.product = quality.product")
+    val df1 = sql("select price.product from price,quality where price.product = quality.product")
+    val analyzed1 = df1.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed1, "same_mv"))
+  }
+
+
   def drop(): Unit = {
     sql("drop table IF EXISTS fact_table1")
     sql("drop table IF EXISTS fact_table2")

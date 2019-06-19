@@ -310,4 +310,35 @@ object MVUtil {
         " are not allowed for this datamap")
     }
   }
+
+  def updateDuplicateColumns(outputList: Seq[NamedExpression]): Seq[NamedExpression] = {
+    val duplicateNameCols = outputList.groupBy(_.name).filter(_._2.length > 1).flatMap(_._2)
+      .toList
+    val updatedOutList = outputList.map { col =>
+      val duplicateColumn = duplicateNameCols
+        .find(a => a.semanticEquals(col))
+      val qualifiedName = col.qualifier.getOrElse(s"${ col.name }_${ col.exprId.id }")
+      if (duplicateColumn.isDefined) {
+        val attributesOfDuplicateCol = duplicateColumn.get.collect {
+          case a: AttributeReference => a
+        }
+        val attributeOfCol = col.collect { case a: AttributeReference => a }
+        val isStrictDuplicate = attributesOfDuplicateCol.forall(expr =>
+          attributeOfCol.exists(a => a.semanticEquals(expr)))
+        if (!isStrictDuplicate) {
+          Alias(col, qualifiedName)(exprId = col.exprId)
+        } else if (col.qualifier.isDefined) {
+          Alias(col, col.qualifiedName)(exprId = col.exprId)
+        } else if (duplicateColumn.get.isInstanceOf[AttributeReference] &&
+                   col.isInstanceOf[AttributeReference]) {
+          Alias(col, qualifiedName)(exprId = col.exprId)
+        } else {
+          col
+        }
+      } else {
+        col
+      }
+    }
+    updatedOutList
+  }
 }
