@@ -26,7 +26,9 @@ import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.filter.FilterExecutorUtil;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
@@ -55,13 +57,19 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
 
   private byte[][] filterValues;
 
+  private FilterBitSetUpdater filterBitSetUpdater;
+
   public ExcludeFilterExecuterImpl(byte[][] filterValues, boolean isNaturalSorted) {
     this.filterValues = filterValues;
     this.isNaturalSorted = isNaturalSorted;
+    this.filterBitSetUpdater =
+        BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecuterType.EXCLUDE);
   }
   public ExcludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
       MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo, SegmentProperties segmentProperties,
       boolean isMeasure) {
+    this.filterBitSetUpdater =
+        BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecuterType.EXCLUDE);
     this.segmentProperties = segmentProperties;
     if (!isMeasure) {
       this.dimColEvaluatorInfo = dimColEvaluatorInfo;
@@ -188,30 +196,8 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     // the filter values. The one that matches sets it Bitset.
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
-    Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
-    SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
-    for (int i = 0; i < filterValues.length; i++) {
-      BitSet nullBitSet = columnPage.getNullBits();
-      if (filterValues[i] == null) {
-        for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
-          bitSet.flip(j);
-        }
-        continue;
-      }
-      for (int startIndex = 0; startIndex < numerOfRows; startIndex++) {
-        if (!nullBitSet.get(startIndex)) {
-          // Check if filterValue[i] matches with measure Values.
-          Object msrValue = DataTypeUtil
-              .getMeasureObjectBasedOnDataType(columnPage, startIndex,
-                  msrType, msrColumnEvaluatorInfo.getMeasure());
-
-          if (comparator.compare(msrValue, filterValues[i]) == 0) {
-            // This is a match.
-            bitSet.flip(startIndex);
-          }
-        }
-      }
-    }
+    FilterExecutorUtil.executeIncludeExcludeFilterForMeasure(columnPage,bitSet,
+        msrColumnExecutorInfo, msrColumnEvaluatorInfo, filterBitSetUpdater);
     return bitSet;
   }
 

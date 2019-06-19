@@ -28,7 +28,9 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.filter.FilterExecutorUtil;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
@@ -57,15 +59,20 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
 
   private byte[][] filterValues;
 
+  private FilterBitSetUpdater filterBitSetUpdater;
+
   public IncludeFilterExecuterImpl(byte[][] filterValues, boolean isNaturalSorted) {
     this.filterValues = filterValues;
     this.isNaturalSorted = isNaturalSorted;
+    this.filterBitSetUpdater =
+        BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecuterType.INCLUDE);
   }
 
   public IncludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColumnEvaluatorInfo,
       MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo, SegmentProperties segmentProperties,
       boolean isMeasure) {
-
+    this.filterBitSetUpdater =
+        BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecuterType.INCLUDE);
     this.segmentProperties = segmentProperties;
     if (!isMeasure) {
       this.dimColumnEvaluatorInfo = dimColumnEvaluatorInfo;
@@ -272,31 +279,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     // Get the measure values from the chunk. compare sequentially with the
     // the filter values. The one that matches sets it Bitset.
     BitSet bitSet = new BitSet(rowsInPage);
-    Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
-
-    SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
-    BitSet nullBitSet = columnPage.getNullBits();
-    for (int i = 0; i < filterValues.length; i++) {
-      if (filterValues[i] == null) {
-        for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
-          bitSet.set(j);
-        }
-        continue;
-      }
-      for (int startIndex = 0; startIndex < rowsInPage; startIndex++) {
-        if (!nullBitSet.get(startIndex)) {
-          // Check if filterValue[i] matches with measure Values.
-          Object msrValue = DataTypeUtil
-              .getMeasureObjectBasedOnDataType(columnPage, startIndex,
-                  msrType, msrColumnEvaluatorInfo.getMeasure());
-
-          if (comparator.compare(msrValue, filterValues[i]) == 0) {
-            // This is a match.
-            bitSet.set(startIndex);
-          }
-        }
-      }
-    }
+    FilterExecutorUtil.executeIncludeExcludeFilterForMeasure(columnPage,bitSet,
+        msrColumnExecutorInfo, msrColumnEvaluatorInfo, filterBitSetUpdater);
     return bitSet;
   }
 
@@ -525,12 +509,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       }
     } else if (isMeasurePresentInCurrentBlock) {
       chunkIndex = msrColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
-      if (isMinMaxSet[chunkIndex]) {
-        isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex],
-            msrColumnExecutorInfo.getFilterKeys(), msrColumnEvaluatorInfo.getType());
-      } else {
-        isScanRequired = true;
-      }
+      isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex],
+          msrColumnExecutorInfo.getFilterKeys(),
+          msrColumnEvaluatorInfo.getType());
     }
 
     if (isScanRequired) {
