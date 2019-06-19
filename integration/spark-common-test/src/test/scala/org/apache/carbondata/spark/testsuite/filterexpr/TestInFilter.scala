@@ -28,7 +28,7 @@ class TestInFilter extends QueryTest with BeforeAndAfterAll{
     sql("create table test_table(intField INT, floatField FLOAT, doubleField DOUBLE, " +
         "decimalField DECIMAL(18,2))  stored by 'carbondata'")
 
-    // turn on carbon row level filter by setting spark.sql.codegen.wholeStage=false
+    // turn on carbon row level filter by setting carbon.push.rowfilters.for.vector=false
     // because only row level is on, 'in' will be pushdowned into CarbonScanRDD
     //  or in filter will be handled by spark.
     sql("set carbon.push.rowfilters.for.vector=true")
