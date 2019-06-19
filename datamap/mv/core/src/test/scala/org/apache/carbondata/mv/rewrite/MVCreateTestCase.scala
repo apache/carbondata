@@ -1153,6 +1153,22 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS maintable")
   }
 
+  test("test cast expression with mv") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable (m_month bigint, c_code string, " +
+        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) stored by 'carbondata'")
+    sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
+    sql("drop datamap if exists da_cast")
+    sql(
+      "create datamap da_cast using 'mv' as select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a, c_code as abc,m_month from maintable")
+    val df1 = sql(
+      " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a ,c_code as abc  from maintable")
+    val df2 = sql(
+      " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT),c_code as abc  from maintable")
+    val analyzed1 = df1.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed1, "da_cast"))
+  }
+
   def drop(): Unit = {
     sql("drop table IF EXISTS fact_table1")
     sql("drop table IF EXISTS fact_table2")

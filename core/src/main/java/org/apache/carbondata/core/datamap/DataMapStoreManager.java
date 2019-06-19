@@ -240,7 +240,7 @@ public final class DataMapStoreManager {
     if (dataMapCatalog == null) {
       dataMapCatalog = dataMapProvider.createDataMapCatalog();
       if (dataMapCatalog != null) {
-        dataMapCatalogs.put(name, dataMapCatalog);
+        dataMapCatalogs.put(name.toLowerCase(), dataMapCatalog);
         dataMapCatalog.registerSchema(dataMapSchema);
       }
     } else {
@@ -291,7 +291,7 @@ public final class DataMapStoreManager {
             if (null == dataMapCatalog) {
               throw new RuntimeException("Internal Error.");
             }
-            dataMapCatalogs.put(schema.getProviderName(), dataMapCatalog);
+            dataMapCatalogs.put(schema.getProviderName().toLowerCase(), dataMapCatalog);
           }
           try {
             dataMapCatalog.registerSchema(schema);
