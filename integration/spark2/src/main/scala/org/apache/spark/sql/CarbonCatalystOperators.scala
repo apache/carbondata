@@ -160,7 +160,9 @@ object CountStarPlan {
       case Aggregate(groupingExpressions, aggregateExpressions,
       child) if strictCountStar(groupingExpressions, aggregateExpressions, child) =>
         val outputColumns = scala.collection.mutable.MutableList[Attribute]()
-        fillCountStarAttribute(aggregateExpressions.head, outputColumns)
+        if (aggregateExpressions.nonEmpty) {
+          fillCountStarAttribute(aggregateExpressions.head, outputColumns)
+        }
         if (outputColumns.nonEmpty) {
           Some(outputColumns, child)
         } else {
@@ -179,7 +181,7 @@ object CountStarPlan {
     if (groupingExpressions.nonEmpty) {
       return false
     }
-    if (partialComputation.size > 1 && partialComputation.nonEmpty) {
+    if (partialComputation.size > 1) {
       return false
     }
     child collect {
