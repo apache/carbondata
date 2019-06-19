@@ -18,9 +18,6 @@
 # Quick Start
 This tutorial provides a quick introduction to using current integration/hive module.
 
-## Build (In 1.2.0, hive integration only support spark2.1 and hadoop2.7.2)
-mvn -DskipTests -Pspark-2.1 -Phadoop-2.7.2 clean package
-
 ## Prepare CarbonData in Spark
 * Create a sample.csv file using the following commands. The CSV file is required for loading data into CarbonData.
 
@@ -83,20 +80,42 @@ copy snappy-java-xxx.jar from "./<SPARK_HOME>/jars/" to "./Library/Java/Extensio
 export HADOOP_OPTS="-Dorg.xerial.snappy.lib.path=/Library/Java/Extensions -Dorg.xerial.snappy.lib.name=libsnappyjava.jnilib -Dorg.xerial.snappy.tempdir=/Users/apple/DEMO/tmp"
 ```
 
-### Start hive client
+### Carbon Jars to be placed
 ```
-$HIVE_HOME/bin/hive
+hive/lib/ (for hive server)
+yarn/lib/ (for MapReduce)
+
+Carbon Jars to be copied to the above paths.
 ```
 
-### Query data from hive table
+### Start hive beeline to query
+```
+$HIVE_HOME/bin/beeline
+```
+
+### Query data from hive
+
+ - This is to read the carbon table through Hive. It is the integration of the carbon with Hive.
 
 ```
 set hive.mapred.supports.subdirectories=true;
-set mapreduce.input.fileinputformat.input.dir.recursive=true;
-
-select * from hive_carbon;
-select count(*) from hive_carbon;
-select * from hive_carbon order by id;
+set mapreduce.dir.recursive=true;
+These properties helps to recursively traverse through the directories to read the carbon folder structure.
 ```
+
+### Example
+```
+ - In case if the carbon table is not set with the SERDE and the INPUTFORMAT/OUTPUTFORMAT, user can create a new hive managed table like below with the required details for the hive to read.
+create table hive_carbon_1(id int, name string, scale decimal, country string, salary double) ROW FORMAT SERDE 'org.apache.carbondata.hive.CarbonHiveSerDe' WITH SERDEPROPERTIES ('mapreduce.input.carboninputformat.databaseName'='default', 'mapreduce.input.carboninputformat.tableName'='HIVE_CARBON_EXAMPLE') STORED AS INPUTFORMAT 'org.apache.carbondata.hive.MapredCarbonInputFormat' OUTPUTFORMAT 'org.apache.carbondata.hive.MapredCarbonOutputFormat' LOCATION 'location_to_the_carbon_table';
+
+ - Query the table
+select * from hive_carbon_1;
+select count(*) from hive_carbon_1;
+select * from hive_carbon_1 order by id;
+```
+
+### Note
+ - Partition table support is not handled
+ - Map data type is not supported
 
 
