@@ -291,7 +291,7 @@ public final class DataMapStoreManager {
             if (null == dataMapCatalog) {
               throw new RuntimeException("Internal Error.");
             }
-            dataMapCatalogs.put(schema.getProviderName(), dataMapCatalog);
+            dataMapCatalogs.put(schema.getProviderName().toLowerCase(), dataMapCatalog);
           }
           try {
             dataMapCatalog.registerSchema(schema);

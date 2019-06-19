@@ -113,6 +113,23 @@ class MVUtil {
         }
       case a@Alias(_, name) =>
         checkIfComplexDataTypeExists(a)
+        val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new ArrayBuffer[ColumnTableRelation]()
+        a.collect {
+          case attr: AttributeReference =>
+            val carbonTable = getCarbonTable(logicalRelation, attr)
+            if (null != carbonTable) {
+              val relation = getColumnRelation(attr.name,
+                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
+                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
+                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
+                carbonTable)
+              if (null != relation) {
+                arrayBuffer += relation
+              }
+            }
+        }
+        fieldToDataMapFieldMap +=
+        getFieldToDataMapFields(a.name, a.dataType, None, "arithmetic", arrayBuffer, "")
     }
     fieldToDataMapFieldMap
   }
