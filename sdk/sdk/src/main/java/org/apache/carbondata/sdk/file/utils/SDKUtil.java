@@ -75,4 +75,8 @@ public class SDKUtil {
     return getSplitList(path, suf, numOfSplit, new Configuration());
   }
 
+  public static Object[] readObjects(Object[] input, int i) {
+    return (Object[]) input[i];
+  }
+
 }

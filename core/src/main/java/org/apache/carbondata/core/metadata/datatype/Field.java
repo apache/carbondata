@@ -133,7 +133,8 @@ public class Field {
     } else if (type.equalsIgnoreCase("binary")) {
       this.type = DataTypes.BINARY;
     } else if (type.equalsIgnoreCase("array")) {
-      this.type = DataTypes.createArrayType(fields.get(0).getDataType());
+      this.type = DataTypes.createArrayType(fields.get(0).getDataType(),
+        fields.get(0).getFieldName());
     } else if (type.equalsIgnoreCase("struct")) {
       this.type = DataTypes.createStructType(fields);
     } else {
