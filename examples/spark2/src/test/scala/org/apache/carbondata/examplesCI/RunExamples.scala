@@ -127,12 +127,11 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
   }
 
   test("DirectSQLExample") {
-    DirectSQLExample.exampleBodyDebug(spark)
+    DirectSQLExample.exampleBody(spark)
   }
 
   test("HiveExample") {
     HiveExample.exampleBody(spark, TestQueryExecutor.warehouse)
   }
-
 
 }

@@ -72,19 +72,6 @@ object DirectSQLExample {
 
   }
 
-  def exampleBodyDebug(carbonSession : SparkSession): Unit = {
-
-    import carbonSession._
-
-    println("Running SQL on carbon files directly")
-    try {
-      sql(s"""select 1""".stripMargin).show()
-    } catch {
-      case e: Exception => throw e
-    }
-
-  }
-
   // prepare SDK writer output
   def buildTestData(
       path: String,
