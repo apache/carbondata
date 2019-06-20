@@ -16,8 +16,8 @@
  */
 package org.apache.carbondata.core.scan.filter.executer;
 
+import java.util.AbstractCollection;
 import java.util.HashSet;
-import java.util.Set;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -41,81 +41,35 @@ public class MeasureColumnExecuterFilterInfo {
 
   Object[] filterKeys;
 
-  private ByteOpenHashSet byteOpenHashSet;
-
-  private IntOpenHashSet intOpenHashSet;
-
-  private DoubleOpenHashSet doubleOpenHashSet;
-
-  private ShortOpenHashSet shortOpenHashSet;
-
-  private Set<Object> bigDecimalHashSet;
-
-  private LongOpenHashSet longOpenHashSet;
-
-  private BooleanOpenHashSet booleanOpenHashSet;
-
-  private FloatOpenHashSet floatOpenHashSet;
+  /**
+   * filter set used for filtering the measure value based on data type
+   */
+  private AbstractCollection filterSet;
 
   public void setFilterKeys(Object[] filterKeys, DataType dataType) {
     this.filterKeys = filterKeys;
     if (dataType == DataTypes.BOOLEAN) {
-      booleanOpenHashSet = new BooleanOpenHashSet();
-      for (int i = 0; i < filterKeys.length; i++) {
-        if (null != filterKeys[i]) {
-          booleanOpenHashSet.add(((Boolean) filterKeys[i]).booleanValue());
-        }
-      }
-    }
-    if (dataType == DataTypes.BYTE) {
-      byteOpenHashSet = new ByteOpenHashSet();
-      for (int i = 0; i < filterKeys.length; i++) {
-        if (null != filterKeys[i]) {
-          byteOpenHashSet.add(((Byte) filterKeys[i]).byteValue());
-        }
-      }
-    }
-    if (dataType == DataTypes.SHORT) {
-      shortOpenHashSet = new ShortOpenHashSet();
-      for (int i = 0; i < filterKeys.length; i++) {
-        if (null != filterKeys[i]) {
-          shortOpenHashSet.add(((Short) filterKeys[i]).shortValue());
-        }
-      }
+      filterSet = new BooleanOpenHashSet();
+    } else if (dataType == DataTypes.BYTE) {
+      filterSet = new ByteOpenHashSet();
+    } else if (dataType == DataTypes.SHORT) {
+      filterSet = new ShortOpenHashSet();
     } else if (dataType == DataTypes.INT) {
-      intOpenHashSet = new IntOpenHashSet();
-      for (int i = 0; i < filterKeys.length; i++) {
-        if (null != filterKeys[i]) {
-          intOpenHashSet.add(((Integer) filterKeys[i]).intValue());
-        }
-      }
+      filterSet = new IntOpenHashSet();
     } else if (dataType == DataTypes.FLOAT) {
-      floatOpenHashSet = new FloatOpenHashSet();
-      for (int i = 0; i < filterKeys.length; i++) {
-        if (null != filterKeys[i]) {
-          floatOpenHashSet.add(((Float) filterKeys[i]).floatValue());
-        }
-      }
+      filterSet = new FloatOpenHashSet();
     } else if (dataType == DataTypes.LONG) {
-      longOpenHashSet = new LongOpenHashSet();
-      for (int i = 0; i < filterKeys.length; i++) {
-        if (null != filterKeys[i]) {
-          longOpenHashSet.add(((Long) filterKeys[i]).longValue());
-        }
-      }
+      filterSet = new LongOpenHashSet();
     } else if (dataType == DataTypes.DOUBLE) {
-      doubleOpenHashSet = new DoubleOpenHashSet();
-      for (int i = 0; i < filterKeys.length; i++) {
-        if (null != filterKeys[i]) {
-          doubleOpenHashSet.add(((Double) filterKeys[i]).doubleValue());
-        }
-      }
+      filterSet = new DoubleOpenHashSet();
+    } else if (DataTypes.isDecimal(dataType)) {
+      filterSet = new HashSet();
     } else {
-      this.bigDecimalHashSet = new HashSet<>();
-      for (int i = 0; i < filterKeys.length; i++) {
-        if (null != filterKeys[i]) {
-          bigDecimalHashSet.add(filterKeys[i]);
-        }
+      throw new IllegalArgumentException("Invalid data type");
+    }
+    for (int i = 0; i < filterKeys.length; i++) {
+      if (null != filterKeys[i]) {
+        filterSet.add(filterKeys[i]);
       }
     }
   }
@@ -124,35 +78,7 @@ public class MeasureColumnExecuterFilterInfo {
     return filterKeys;
   }
 
-  public ByteOpenHashSet getByteOpenHashSet() {
-    return byteOpenHashSet;
-  }
-
-  public IntOpenHashSet getIntOpenHashSet() {
-    return intOpenHashSet;
-  }
-
-  public DoubleOpenHashSet getDoubleOpenHashSet() {
-    return doubleOpenHashSet;
-  }
-
-  public ShortOpenHashSet getShortOpenHashSet() {
-    return shortOpenHashSet;
-  }
-
-  public Set<Object> getBigDecimalHashSet() {
-    return bigDecimalHashSet;
-  }
-
-  public LongOpenHashSet getLongOpenHashSet() {
-    return longOpenHashSet;
-  }
-
-  public BooleanOpenHashSet getBooleanOpenHashSet() {
-    return booleanOpenHashSet;
-  }
-
-  public FloatOpenHashSet getFloatOpenHashSet() {
-    return floatOpenHashSet;
+  public AbstractCollection getFilterSet() {
+    return filterSet;
   }
 }

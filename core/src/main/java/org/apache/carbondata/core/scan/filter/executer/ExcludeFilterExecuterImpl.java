@@ -18,7 +18,6 @@ package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Set;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
@@ -26,9 +25,10 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.filter.FilterExecutorUtil;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
@@ -39,14 +39,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
-
-import it.unimi.dsi.fastutil.booleans.BooleanOpenHashSet;
-import it.unimi.dsi.fastutil.bytes.ByteOpenHashSet;
-import it.unimi.dsi.fastutil.doubles.DoubleOpenHashSet;
-import it.unimi.dsi.fastutil.floats.FloatOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 
 public class ExcludeFilterExecuterImpl implements FilterExecuter {
 
@@ -65,13 +57,19 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
 
   private byte[][] filterValues;
 
+  private FilterBitSetUpdater filterBitSetUpdater;
+
   public ExcludeFilterExecuterImpl(byte[][] filterValues, boolean isNaturalSorted) {
     this.filterValues = filterValues;
     this.isNaturalSorted = isNaturalSorted;
+    this.filterBitSetUpdater =
+        BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecuterType.EXCLUDE);
   }
   public ExcludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
       MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo, SegmentProperties segmentProperties,
       boolean isMeasure) {
+    this.filterBitSetUpdater =
+        BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecuterType.EXCLUDE);
     this.segmentProperties = segmentProperties;
     if (!isMeasure) {
       this.dimColEvaluatorInfo = dimColEvaluatorInfo;
@@ -198,17 +196,8 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     // the filter values. The one that matches sets it Bitset.
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
-    Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
-    BitSet nullBitSet = columnPage.getNullBits();
-    for (int i = 0; i < filterValues.length; i++) {
-      if (filterValues[i] == null) {
-        for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
-          bitSet.flip(j);
-        }
-      }
-    }
-    executeExcludeFilterForMeasure(columnPage, numerOfRows, bitSet, nullBitSet,
-        msrColumnExecutorInfo, msrType);
+    FilterExecutorUtil.executeIncludeExcludeFilterForMeasure(columnPage,bitSet,
+        msrColumnExecutorInfo, msrColumnEvaluatorInfo, filterBitSetUpdater);
     return bitSet;
   }
 
@@ -449,101 +438,6 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
             rawBlockletColumnChunks.getDataBlock().readMeasureChunk(
                 rawBlockletColumnChunks.getFileReader(), chunkIndex);
       }
-    }
-  }
-
-  /**
-   * Below method will be used to execute measure filter based on data type
-   * This is done to avoid conversion of primitive type to primitive object
-   * as it may cause lots of gc when number of record is high and will impact performance
-   * @param page
-   * @param numberOfRows
-   * @param bitSet
-   * @param nullBitset
-   * @param measureColumnExecuterFilterInfo
-   * @param dataType
-   */
-  private void executeExcludeFilterForMeasure(ColumnPage page, int numberOfRows, BitSet bitSet,
-      BitSet nullBitset, MeasureColumnExecuterFilterInfo measureColumnExecuterFilterInfo,
-      DataType dataType) {
-    if (dataType == DataTypes.BYTE) {
-      ByteOpenHashSet byteOpenHashSet = measureColumnExecuterFilterInfo.getByteOpenHashSet();
-      for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i)) {
-          if (byteOpenHashSet.contains((byte) page.getLong(i))) {
-            bitSet.flip(i);
-          }
-        }
-      }
-    } else if (dataType == DataTypes.BOOLEAN) {
-      final BooleanOpenHashSet booleanOpenHashSet =
-          measureColumnExecuterFilterInfo.getBooleanOpenHashSet();
-      for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i)) {
-          if (booleanOpenHashSet.contains(page.getBoolean(i))) {
-            bitSet.flip(i);
-          }
-        }
-      }
-    } else if (dataType == DataTypes.SHORT) {
-      ShortOpenHashSet shortOpenHashSet = measureColumnExecuterFilterInfo.getShortOpenHashSet();
-      for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i)) {
-          if (shortOpenHashSet.contains((short) page.getLong(i))) {
-            bitSet.flip(i);
-          }
-        }
-      }
-    } else if (dataType == DataTypes.INT) {
-      IntOpenHashSet intOpenHashSet = measureColumnExecuterFilterInfo.getIntOpenHashSet();
-      for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i)) {
-          if (intOpenHashSet.contains((int) page.getLong(i))) {
-            bitSet.flip(i);
-          }
-        }
-      }
-    } else if (dataType == DataTypes.FLOAT) {
-      FloatOpenHashSet floatOpenHashSet = measureColumnExecuterFilterInfo.getFloatOpenHashSet();
-      for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i)) {
-          if (floatOpenHashSet.contains((float) page.getDouble(i))) {
-            bitSet.flip(i);
-          }
-        }
-      }
-    } else if (dataType == DataTypes.DOUBLE) {
-      DoubleOpenHashSet doubleOpenHashSet = measureColumnExecuterFilterInfo.getDoubleOpenHashSet();
-      for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i)) {
-          if (doubleOpenHashSet.contains(page.getDouble(i))) {
-            bitSet.flip(i);
-          }
-        }
-      }
-    } else if (dataType == DataTypes.LONG) {
-      LongOpenHashSet longOpenHashSet = measureColumnExecuterFilterInfo.getLongOpenHashSet();
-      for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i)) {
-          if (longOpenHashSet.contains(page.getLong(i))) {
-            bitSet.flip(i);
-          }
-        }
-      }
-    } else if (DataTypes.isDecimal(dataType)) {
-      Set<Object> bigDecimalHashSet = measureColumnExecuterFilterInfo.getBigDecimalHashSet();
-      for (int i = 0; i < numberOfRows; i++) {
-        if (!nullBitset.get(i)) {
-          final Object measureObjectBasedOnDataType = DataTypeUtil
-              .getMeasureObjectBasedOnDataType(page, i, dataType,
-                  msrColumnEvaluatorInfo.getMeasure());
-          if (bigDecimalHashSet.contains(measureObjectBasedOnDataType)) {
-            bitSet.flip(i);
-          }
-        }
-      }
-    } else {
-      throw new IllegalArgumentException("Invalid data type");
     }
   }
 }
