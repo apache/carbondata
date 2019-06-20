@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
@@ -30,7 +31,12 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.Field;
+import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
@@ -44,7 +50,6 @@ import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.CARBON_DATA_EXT;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.INDEX_FILE_EXT;
-import static org.apache.carbondata.core.util.path.CarbonTablePath.MERGE_INDEX_FILE_EXT;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -194,15 +199,7 @@ public class CarbonSchemaReader {
         throw new CarbonDataLoadingException("No carbonindex file in this path.");
       }
     } else {
-      String indexFilePath;
-      indexFilePath = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter() {
-        @Override
-        public boolean accept(CarbonFile file) {
-          return file.getName().endsWith(INDEX_FILE_EXT) || file.getName()
-              .endsWith(MERGE_INDEX_FILE_EXT);
-        }
-      })[0].getAbsolutePath();
-      return readSchemaFromIndexFile(indexFilePath, conf);
+      return readSchemaFromFolder(path, conf);
     }
   }
 
@@ -281,6 +278,89 @@ public class CarbonSchemaReader {
   @Deprecated
   public static Schema readSchemaInIndexFile(String indexFilePath) throws IOException {
     return readSchema(indexFilePath, false);
+  }
+
+  public static List<StructField> getChildrenCommon(CarbonTable table, String columnName) {
+    List<CarbonDimension> list = table.getChildren(columnName);
+    List<StructField> structFields = new ArrayList<StructField>();
+    for (int i = 0; i < list.size(); i++) {
+      CarbonDimension carbonDimension = list.get(i);
+      if (DataTypes.isStructType(carbonDimension.getDataType())) {
+        structFields.add(getStructChildren(table, carbonDimension.getColName()));
+        return structFields;
+      } else if (DataTypes.isArrayType(carbonDimension.getDataType())) {
+        structFields.add(getArrayChildren(table, carbonDimension.getColName()));
+        return structFields;
+      } else if (DataTypes.isMapType(carbonDimension.getDataType())) {
+        //TODO
+      } else {
+        ColumnSchema columnSchema = carbonDimension.getColumnSchema();
+        structFields.add(new StructField(columnSchema.getColumnName(), columnSchema.getDataType()));
+      }
+    }
+    return structFields;
+  }
+
+  public static StructField getStructChildren(CarbonTable table, String columnName) {
+    List<StructField> structFields = getChildrenCommon(table, columnName);
+    return new StructField(columnName, DataTypes.createStructType(structFields));
+  }
+
+  public static StructField getArrayChildren(CarbonTable table, String columnName) {
+    List<StructField> structFields = getChildrenCommon(table, columnName);
+    return structFields.get(0);
+  }
+
+  /**
+   * Read schema from carbon file folder path
+   *
+   * @param folderPath carbon file folder path
+   * @param conf       hadoop configuration support, can set s3a AK,SK,
+   *                   end point and other conf with this
+   * @return carbon data Schema
+   * @throws IOException
+   */
+  private static Schema readSchemaFromFolder(String folderPath, Configuration conf)
+    throws IOException {
+    String tableName = "UnknownTable" + UUID.randomUUID();
+    CarbonTable table = CarbonTable.buildTable(folderPath, tableName, conf);
+    List<ColumnSchema> columnSchemaList = table.getTableInfo().getFactTable().getListOfColumns();
+    int numOfChildren = 0;
+    for (ColumnSchema columnSchema : columnSchemaList) {
+      if (!(columnSchema.getColumnName().contains(CarbonCommonConstants.POINT))) {
+        numOfChildren++;
+      }
+    }
+    Field[] fields = new Field[numOfChildren];
+
+    int indexOfFields = 0;
+    for (ColumnSchema columnSchema : columnSchemaList) {
+      if (!columnSchema.getColumnName().contains(CarbonCommonConstants.POINT)) {
+        if (DataTypes.isStructType(columnSchema.getDataType())) {
+          StructField structField = getStructChildren(table, columnSchema.getColumnName());
+          List<StructField> list = new ArrayList<>();
+          list.add(structField);
+          fields[indexOfFields] = new Field(columnSchema.getColumnName(),
+            DataTypes.createStructType(list));
+          fields[indexOfFields].setSchemaOrdinal(columnSchema.getSchemaOrdinal());
+          indexOfFields++;
+        } else if (DataTypes.isArrayType(columnSchema.getDataType())) {
+          StructField structField = getArrayChildren(table, columnSchema.getColumnName());
+          List<StructField> list = new ArrayList<>();
+          list.add(structField);
+          fields[indexOfFields] = new Field(columnSchema.getColumnName(), "array", list);
+          fields[indexOfFields].setSchemaOrdinal(columnSchema.getSchemaOrdinal());
+          indexOfFields++;
+        } else if (DataTypes.isMapType(columnSchema.getDataType())) {
+          //TODO
+        } else {
+          fields[indexOfFields] = new Field(columnSchema);
+          fields[indexOfFields].setSchemaOrdinal(columnSchema.getSchemaOrdinal());
+          indexOfFields++;
+        }
+      }
+    }
+    return new Schema(fields);
   }
 
   /**

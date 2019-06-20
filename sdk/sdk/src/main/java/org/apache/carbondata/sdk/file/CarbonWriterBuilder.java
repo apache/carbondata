@@ -854,8 +854,9 @@ public class CarbonWriterBuilder {
         if (field.getChildren() != null && field.getChildren().size() > 0) {
           if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
             // Loop through the inner columns and for a StructData
-            DataType complexType =
-                DataTypes.createArrayType(field.getChildren().get(0).getDataType());
+            DataType complexType = DataTypes
+                .createArrayType(field.getChildren().get(0).getDataType(),
+                    field.getChildren().get(0).getFieldName());
             tableSchemaBuilder
                 .addColumn(new StructField(field.getFieldName(), complexType, field.getChildren()),
                     valIndex, false, isInvertedIdxColumn > -1);

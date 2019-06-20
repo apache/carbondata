@@ -142,6 +142,13 @@ public class DataTypes {
   }
 
   /**
+   * create array type with specified element type and name
+   */
+  public static ArrayType createArrayType(DataType elementType, String elementName) {
+    return new ArrayType(elementType, elementName);
+  }
+
+  /**
    * create a array type object with no child
    */
   public static ArrayType createDefaultArrayType() {

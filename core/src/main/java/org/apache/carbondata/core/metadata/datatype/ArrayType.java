@@ -21,9 +21,17 @@ public class ArrayType extends DataType {
 
   private DataType elementType;
 
+  private String elementName;
+
   ArrayType(DataType elementType) {
     super(DataTypes.ARRAY_TYPE_ID, 9, "ARRAY", -1);
     this.elementType = elementType;
+  }
+
+  public ArrayType(DataType elementType, String elementName) {
+    super(DataTypes.ARRAY_TYPE_ID, 9, "ARRAY", -1);
+    this.elementType = elementType;
+    this.elementName = elementName;
   }
 
   @Override
@@ -63,6 +71,10 @@ public class ArrayType extends DataType {
 
   public DataType getElementType() {
     return elementType;
+  }
+
+  public String getElementName() {
+    return elementName;
   }
 
 }

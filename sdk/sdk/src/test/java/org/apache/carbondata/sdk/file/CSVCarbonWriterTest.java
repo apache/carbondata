@@ -32,10 +32,12 @@ import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.ArrayType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -49,6 +51,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.apache.carbondata.sdk.file.utils.SDKUtil.readObjects;
 
 /**
  * Test suite for {@link CSVCarbonWriter}
@@ -671,6 +675,196 @@ public class CSVCarbonWriterTest {
     } catch (Exception e) {
       e.printStackTrace();
       Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testWritingAndReadingArrayString() throws IOException {
+    String path = "./testWriteFilesArrayString";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[4];
+    fields[0] = new Field("id", DataTypes.STRING);
+    fields[1] = new Field("source", DataTypes.STRING);
+    fields[2] = new Field("usage", DataTypes.STRING);
+
+    StructField[] stringFields = new StructField[1];
+    stringFields[0] = new StructField("stringField", DataTypes.STRING);
+
+    Field arrayType = new Field("annotations", "array", Arrays.asList(stringFields));
+    fields[3] = arrayType;
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[]{
+          "robot" + (i % 10),
+          String.valueOf(i),
+          i + "." + i,
+          "sunflowers" + (i % 10) + "\002" + "modelarts/image_classification" + "\002" + "2019-03-30 17:22:31" + "\002" + "{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"
+            + "\001" +
+            "roses" + (i % 10) + "\002" + "modelarts/image_classification" + "\002" + "2019-03-30 17:22:32" + "\002" + "{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"};
+        writer.write(row);
+      }
+      writer.close();
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    }
+
+    Schema schema = CarbonSchemaReader
+      .readSchema(path)
+      .asOriginOrder();
+
+    assert (4 == schema.getFieldsLength());
+    Field[] fields1 = schema.getFields();
+    boolean flag = false;
+    for (int i = 0; i < fields1.length; i++) {
+      if (DataTypes.isArrayType(fields1[i].getDataType())) {
+        ArrayType arrayType1 = (ArrayType) fields1[i].getDataType();
+        assert ("annotations.stringField" .equalsIgnoreCase(arrayType1.getElementName()));
+        assert (DataTypes.STRING.equals(fields1[i].getChildren().get(0).getDataType()));
+        flag = true;
+      }
+    }
+    assert (flag);
+
+    // Read again
+    CarbonReader reader = null;
+    try {
+      reader = CarbonReader
+        .builder(path)
+        .projection(new String[]{"id", "source", "usage", "annotations"})
+        .build();
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] row = (Object[]) reader.readNextRow();
+        assert (4 == row.length);
+        assert (((String) row[0]).contains("robot"));
+        int value = Integer.valueOf((String) row[1]);
+        Float value2 = Float.valueOf((String) row[2]);
+        assert (value > -1 || value < 15);
+        assert (value2 > -1 || value2 < 15);
+        Object[] annotations = (Object[]) row[3];
+        for (int j = 0; j < annotations.length; j++) {
+          assert (((String) annotations[j]).contains("\u0002modelarts/image_classification\u00022019-03-30 17:22:31\u0002{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}")
+            || ((String) annotations[j]).contains("\u0002modelarts/image_classification\u00022019-03-30 17:22:32\u0002{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"));
+        }
+        i++;
+      }
+      assert (15 == i);
+      reader.close();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testWritingAndReadingArrayStruct() throws IOException {
+    String path = "./testWriteFilesArrayStruct";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[4];
+    fields[0] = new Field("id", DataTypes.STRING);
+    fields[1] = new Field("source", DataTypes.STRING);
+    fields[2] = new Field("usage", DataTypes.STRING);
+
+    List<StructField> structFieldsList = new ArrayList<>();
+    structFieldsList.add(new StructField("name", DataTypes.STRING));
+    structFieldsList.add(new StructField("type", DataTypes.STRING));
+    structFieldsList.add(new StructField("creation-time", DataTypes.STRING));
+    structFieldsList.add(new StructField("property", DataTypes.STRING));
+    StructField structTypeByList =
+      new StructField("annotation", DataTypes.createStructType(structFieldsList), structFieldsList);
+
+    List<StructField> list = new ArrayList<>();
+    list.add(structTypeByList);
+
+    Field arrayType = new Field("annotations", "array", list);
+    fields[3] = arrayType;
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[]{
+          "robot" + (i % 10),
+          String.valueOf(i),
+          i + "." + i,
+          "sunflowers" + (i % 10) + "\002" + "modelarts/image_classification" + "\002" + "2019-03-30 17:22:31" + "\002" + "{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"
+            + "\001" +
+            "roses" + (i % 10) + "\002" + "modelarts/image_classification" + "\002" + "2019-03-30 17:22:32" + "\002" + "{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"};
+        writer.write(row);
+      }
+      writer.close();
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    }
+
+    Schema schema = CarbonSchemaReader
+      .readSchema(path)
+      .asOriginOrder();
+
+    assert (4 == schema.getFieldsLength());
+    Field[] fields1 = schema.getFields();
+    boolean flag = false;
+    for (int i = 0; i < fields1.length; i++) {
+      if (DataTypes.isArrayType(fields1[i].getDataType())) {
+        ArrayType arrayType1 = (ArrayType) fields1[i].getDataType();
+        assert ("annotations.annotation" .equalsIgnoreCase(arrayType1.getElementName()));
+        assert (DataTypes.isStructType(fields1[i].getChildren().get(0).getDataType()));
+        assert (4 == (((StructType) fields1[i].getChildren().get(0).getDataType()).getFields()).size());
+        flag = true;
+      }
+    }
+    assert (flag);
+
+    // Read again
+    CarbonReader reader = null;
+    try {
+      reader = CarbonReader
+        .builder(path)
+        .projection(new String[]{"id", "source", "usage", "annotations"})
+        .build();
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] row = (Object[]) reader.readNextRow();
+        assert (4 == row.length);
+        assert (((String) row[0]).contains("robot"));
+        int value = Integer.valueOf((String) row[1]);
+        Float value2 = Float.valueOf((String) row[2]);
+        assert (value > -1 || value < 15);
+        assert (value2 > -1 || value2 < 15);
+        Object[] annotations = (Object[]) row[3];
+        for (int j = 0; j < annotations.length; j++) {
+          Object[] annotation = (Object[]) annotations[j];
+          assert (((String) annotation[0]).contains("sunflowers")
+            || ((String) annotation[0]).contains("roses"));
+
+          assert (((String) annotation[1]).contains("modelarts/image_classification"));
+          assert (((String) annotation[2]).contains("2019-03-30 17:22:3"));
+          assert (((String) annotation[3]).contains("{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"));
+
+          Object[] annotation1 = readObjects(annotations, j);
+          assert (((String) annotation1[0]).contains("sunflowers")
+            || ((String) annotation1[0]).contains("roses"));
+
+          assert (((String) annotation1[1]).contains("modelarts/image_classification"));
+          assert (((String) annotation1[2]).contains("2019-03-30 17:22:3"));
+          assert (((String) annotation1[3]).contains("{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"));
+        }
+        i++;
+      }
+      assert (15 == i);
+      reader.close();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     } finally {
       FileUtils.deleteDirectory(new File(path));
     }
