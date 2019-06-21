@@ -520,5 +520,20 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table IF EXISTS maintable")
   }
 
+  test("test drop/show meta cache directly on mv datamap table") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("drop datamap if exists dm ")
+    sql("create datamap dm using 'mv' as select name, sum(price) from maintable group by name")
+    sql("select name, sum(price) from maintable group by name").collect()
+    intercept[UnsupportedOperationException] {
+      sql("show metacache on table dm_table").show(false)
+    }.getMessage.contains("Operation not allowed on child table.")
+    intercept[UnsupportedOperationException] {
+      sql("drop metacache on table dm_table").show(false)
+    }.getMessage.contains("Operation not allowed on child table.")
+  }
+
 }
 
