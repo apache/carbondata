@@ -125,13 +125,9 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
                                  a1.asInstanceOf[Alias].child.semanticEquals(a.child)) ||
           exprListR.exists(_.semanticEquals(exprE) || canEvaluate(exprE, subsumer))
         case exp =>
-          if (exprListR.collect { case a@Alias(_, _) => a }.nonEmpty) {
-            exprListR.exists(a1 => a1.isInstanceOf[Alias] &&
-                            a1.asInstanceOf[Alias].child.semanticEquals(exp)) ||
-            exprListR.exists(_.semanticEquals(exprE) || canEvaluate(exprE, subsumer))
-          } else {
-            exprListR.exists(_.semanticEquals(exp) || canEvaluate(exp, subsumer))
-          }
+          exprListR.exists(a1 => a1.isInstanceOf[Alias] &&
+                                 a1.asInstanceOf[Alias].child.semanticEquals(exp)) ||
+          exprListR.exists(_.semanticEquals(exprE) || canEvaluate(exprE, subsumer))
       }
     } else {
       false

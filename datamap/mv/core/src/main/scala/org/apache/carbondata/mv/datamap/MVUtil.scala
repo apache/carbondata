@@ -317,18 +317,28 @@ object MVUtil {
     val updatedOutList = outputList.map { col =>
       val duplicateColumn = duplicateNameCols
         .find(a => a.semanticEquals(col))
-      val qualifiedName = col.qualifier.getOrElse(s"${ col.name }_${ col.exprId.id }")
+      val qualifiedName = col.qualifier.getOrElse(s"${ col.exprId.id }") + "_" + col.name
       if (duplicateColumn.isDefined) {
         val attributesOfDuplicateCol = duplicateColumn.get.collect {
           case a: AttributeReference => a
         }
         val attributeOfCol = col.collect { case a: AttributeReference => a }
+        // here need to check the whether the duplicate columns is of same tables,
+        // since query with duplicate columns is valid, we need to make sure, not to change their
+        // names with above defined qualifier name, for example in case of some expression like
+        // cast((FLOOR((cast(col_name) as double))).., upper layer even exprid will be same,
+        // we need to find the attribute ref(col_name) at lower level and check where expid is same
+        // or of same tables, so doin the semantic equals
         val isStrictDuplicate = attributesOfDuplicateCol.forall(expr =>
           attributeOfCol.exists(a => a.semanticEquals(expr)))
         if (!isStrictDuplicate) {
           Alias(col, qualifiedName)(exprId = col.exprId)
         } else if (col.qualifier.isDefined) {
-          Alias(col, col.qualifiedName)(exprId = col.exprId)
+          Alias(col, qualifiedName)(exprId = col.exprId)
+          // this check is added in scenario where the column is direct Attribute reference and
+          // since duplicate columns select is allowed, we should just put alias for those columns
+          // and update, for this also above isStrictDuplicate will be true so, it will not be
+          // updated above
         } else if (duplicateColumn.get.isInstanceOf[AttributeReference] &&
                    col.isInstanceOf[AttributeReference]) {
           Alias(col, qualifiedName)(exprId = col.exprId)
