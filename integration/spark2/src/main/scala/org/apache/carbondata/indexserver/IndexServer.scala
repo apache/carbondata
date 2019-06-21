@@ -45,7 +45,7 @@ trait ServerInterface {
   def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer
 
   /**
-   * Get the cache size for the specified table.
+   * Get the cache size for the specified tables.
    */
   def showCache(tableNames: String) : Array[String]
 

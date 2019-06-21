@@ -454,7 +454,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     return DataMapLevel.CG;
   }
 
-  @Override public String getCacheSize() {
+  @Override
+  public String getCacheSize() {
     long sum = 0L;
     for (Map.Entry<String, Set<String>> entry : segmentMap.entrySet()) {
       for (String shardName : entry.getValue()) {

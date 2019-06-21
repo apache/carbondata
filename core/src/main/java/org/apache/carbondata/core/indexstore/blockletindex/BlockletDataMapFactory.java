@@ -302,7 +302,8 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     }
   }
 
-  @Override public String getCacheSize() {
+  @Override
+  public String getCacheSize() {
     long sum = 0L;
     int numOfIndexFiles = 0;
     for (Map.Entry<String, Set<TableBlockIndexUniqueIdentifier>> entry : segmentMap.entrySet()) {

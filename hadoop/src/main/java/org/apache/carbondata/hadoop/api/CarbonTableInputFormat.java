@@ -565,7 +565,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
                   allSegments.getInvalidSegments(), toBeCleanedSegments));
           for (InputSplit extendedBlocklet : extendedBlocklets) {
             CarbonInputSplit blocklet = (CarbonInputSplit) extendedBlocklet;
-            String filePath = blocklet.getFilePath();
+            String filePath = blocklet.getFilePath().replace("\\", "/");
             String blockName = filePath.substring(filePath.lastIndexOf("/") + 1);
             blockletToRowCountMap.put(blocklet.getSegmentId() + "," + blockName,
                 (long) blocklet.getRowCount());
