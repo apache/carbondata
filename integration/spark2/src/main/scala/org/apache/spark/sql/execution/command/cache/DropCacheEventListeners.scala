@@ -49,7 +49,7 @@ object DropCachePreAggEventListener extends OperationEventListener {
         val carbonTable = dropCacheEvent.carbonTable
         val sparkSession = dropCacheEvent.sparkSession
         val internalCall = dropCacheEvent.internalCall
-        if (carbonTable.isChildDataMap && !internalCall) {
+        if ((carbonTable.isChildDataMap || carbonTable.isChildTable) && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 

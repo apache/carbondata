@@ -52,7 +52,7 @@ object ShowCachePreAggEventListener extends OperationEventListener {
         val carbonTable = showTableCacheEvent.carbonTable
         val sparkSession = showTableCacheEvent.sparkSession
         val internalCall = showTableCacheEvent.internalCall
-        if (carbonTable.isChildDataMap && !internalCall) {
+        if ((carbonTable.isChildDataMap || carbonTable.isChildTable) && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 
