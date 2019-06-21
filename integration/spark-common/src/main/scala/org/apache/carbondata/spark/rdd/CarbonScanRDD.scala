@@ -654,7 +654,6 @@ class CarbonScanRDD[T: ClassTag](
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
     CarbonInputFormatUtil.setDataMapJobIfConfigured(conf)
     // when validate segments is disabled in thread local update it to CarbonTableInputFormat
-    val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (carbonSessionInfo != null) {
       val tableUniqueKey = identifier.getDatabaseName + "." + identifier.getTableName
       val validateInputSegmentsKey = CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
@@ -675,9 +674,18 @@ class CarbonScanRDD[T: ClassTag](
               CarbonProperties.getInstance().getProperty(inputSegmentsKey, "*")))
       if (queryOnPreAggStreaming) {
         CarbonInputFormat.setAccessStreamingSegments(conf, queryOnPreAggStreaming)
-        carbonSessionInfo.getThreadParams.removeProperty(queryOnPreAggStreamingKey)
-        carbonSessionInfo.getThreadParams.removeProperty(inputSegmentsKey)
-        carbonSessionInfo.getThreadParams.removeProperty(validateInputSegmentsKey)
+        // union for streaming preaggregate can happen concurrently from spark.
+        // Need to clean both maintable and aggregate table segments
+        var keyList = scala.collection.immutable.List[String]()
+        carbonSessionInfo.getThreadParams.getAll.asScala.foreach {
+          case (key, value) =>
+            if (key.contains(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS) ||
+                key.contains(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING) ||
+                key.contains(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
+              keyList ::= key
+            }
+        }
+        keyList.foreach(key => carbonSessionInfo.getThreadParams.removeProperty(key))
       }
     }
     format

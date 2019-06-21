@@ -18,6 +18,8 @@
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -297,6 +299,33 @@ class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with Be
     sql("reset")
     checkAnswer(sql("select * from maintable_preagg_sum"), Row(1, 52, "xyz"))
   }
+
+  test("test pregarregate with spark adaptive execution ") {
+    if (Spark2TestQueryExecutor.spark.version.startsWith("2.3")) {
+      // enable adaptive execution
+      Spark2TestQueryExecutor.conf.set(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key, "true")
+    }
+    sql("DROP TABLE IF EXISTS maintable")
+    sql(
+      """
+        | CREATE TABLE maintable(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id, sum(age) from maintable group by id,name"""
+        .stripMargin)
+    sql(s"insert into maintable values(1, 'xyz', 'bengaluru', 20)")
+    sql(s"insert into maintable values(1, 'xyz', 'bengaluru', 30)")
+
+    checkAnswer(sql("select id, sum(age) from maintable group by id, name"), Row(1, 50))
+    sql("drop datamap preagg_sum on table maintable")
+    sql("drop table maintable")
+    if (Spark2TestQueryExecutor.spark.version.startsWith("2.3")) {
+      // disable adaptive execution
+      Spark2TestQueryExecutor.conf.set(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key, "false")
+    }
+  }
+
 
 test("check load and select for avg double datatype") {
   sql("drop table if exists maintbl ")
