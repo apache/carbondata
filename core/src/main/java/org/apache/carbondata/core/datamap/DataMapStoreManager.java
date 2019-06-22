@@ -240,7 +240,7 @@ public final class DataMapStoreManager {
     if (dataMapCatalog == null) {
       dataMapCatalog = dataMapProvider.createDataMapCatalog();
       if (dataMapCatalog != null) {
-        dataMapCatalogs.put(name, dataMapCatalog);
+        dataMapCatalogs.put(name.toLowerCase(), dataMapCatalog);
         dataMapCatalog.registerSchema(dataMapSchema);
       }
     } else {
