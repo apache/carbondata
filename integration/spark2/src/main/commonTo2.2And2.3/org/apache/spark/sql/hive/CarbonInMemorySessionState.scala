@@ -146,7 +146,7 @@ class InMemorySessionCatalog(
   }
 
   // Initialize all listeners to the Operation bus.
-  CarbonEnv.initListeners()
+  CarbonEnv.init
 
   def getThriftTableInfo(tablePath: String): TableInfo = {
     val tableMetadataFile = CarbonTablePath.getSchemaFilePath(tablePath)
