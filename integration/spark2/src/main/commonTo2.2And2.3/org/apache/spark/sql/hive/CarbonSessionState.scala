@@ -83,7 +83,7 @@ class CarbonHiveSessionCatalog(
   }
 
   // Initialize all listeners to the Operation bus.
-  CarbonEnv.initListeners()
+  CarbonEnv.init
 
   override def lookupRelation(name: TableIdentifier): LogicalPlan = {
     val rtnRelation = super.lookupRelation(name)

@@ -149,9 +149,10 @@ object CarbonEnv {
    * Method
    * 1. To initialize Listeners to their respective events in the OperationListenerBus
    * 2. To register common listeners
-   *
+   * 3. Only initialize once for all the listeners in case of concurrent scenarios we have given
+   * val, as val initializes once
    */
-  def init(sparkSession: SparkSession): Unit = {
+  val init = {
     initListeners
   }
 

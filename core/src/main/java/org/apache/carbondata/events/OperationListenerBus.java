@@ -53,7 +53,7 @@ public class OperationListenerBus {
    * @param eventClass
    * @param operationEventListener
    */
-  public OperationListenerBus addListener(Class<? extends Event> eventClass,
+  public synchronized OperationListenerBus addListener(Class<? extends Event> eventClass,
       OperationEventListener operationEventListener) {
 
     String eventType = eventClass.getName();
