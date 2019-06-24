@@ -121,34 +121,65 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
         assert(exception.getCause.getMessage.contains("sort columns not supported for array, struct, map, double, float, decimal, varchar, binary"))
 
         sql("DROP TABLE IF EXISTS binaryTable")
-        exception = intercept[Exception] {
-            sql(
-                s"""
-                   | CREATE TABLE binaryTable
-                   | using carbon
-                   | options('SORT_COLUMNS'='image')
-                   | LOCATION '$writerPath'
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+            exception = intercept[Exception] {
+                sql(
+                    s"""
+                       | CREATE TABLE binaryTable
+                       | using carbon
+                       | options(PATH '$writerPath',
+                       |  'SORT_COLUMNS'='image')
                 """.stripMargin)
-            sql("SELECT COUNT(*) FROM binaryTable").show()
+                sql("SELECT COUNT(*) FROM binaryTable").show()
+            }
+        } else {
+            exception = intercept[Exception] {
+                sql(
+                    s"""
+                       | CREATE TABLE binaryTable
+                       | using carbon
+                       | options('SORT_COLUMNS'='image')
+                       | LOCATION '$writerPath'
+                """.stripMargin)
+                sql("SELECT COUNT(*) FROM binaryTable").show()
+            }
         }
         assert(exception.getMessage.contains("Cannot use sort columns during infer schema"))
 
 
         sql("DROP TABLE IF EXISTS binaryTable")
-        exception = intercept[Exception] {
-            sql(
-                s"""
-                   | CREATE TABLE binaryTable (
-                   |    id DOUBLE,
-                   |    label BOOLEAN,
-                   |    name STRING,
-                   |    image BINARY,
-                   |    autoLabel BOOLEAN)
-                   | using carbon
-                   | options('SORT_COLUMNS'='image')
-                   | LOCATION '$writerPath'
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+            exception = intercept[Exception] {
+                sql(
+                    s"""
+                       | CREATE TABLE binaryTable (
+                       |    id DOUBLE,
+                       |    label BOOLEAN,
+                       |    name STRING,
+                       |    image BINARY,
+                       |    autoLabel BOOLEAN)
+                       | using carbon
+                       | options(PATH '$writerPath',
+                       | 'SORT_COLUMNS'='image')
                  """.stripMargin)
-            sql("SELECT COUNT(*) FROM binaryTable").show()
+                sql("SELECT COUNT(*) FROM binaryTable").show()
+            }
+        } else {
+            exception = intercept[Exception] {
+                sql(
+                    s"""
+                       | CREATE TABLE binaryTable (
+                       |    id DOUBLE,
+                       |    label BOOLEAN,
+                       |    name STRING,
+                       |    image BINARY,
+                       |    autoLabel BOOLEAN)
+                       | using carbon
+                       | options('SORT_COLUMNS'='image')
+                       | LOCATION '$writerPath'
+                 """.stripMargin)
+                sql("SELECT COUNT(*) FROM binaryTable").show()
+            }
         }
         assert(exception.getCause.getMessage.contains("sort columns not supported for array, struct, map, double, float, decimal, varchar, binary"))
     }
