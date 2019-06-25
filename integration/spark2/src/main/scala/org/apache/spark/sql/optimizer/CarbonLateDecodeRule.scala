@@ -698,11 +698,25 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         u
       case p: Project if relations.nonEmpty =>
         val prExps = p.projectList.map { prExp =>
+          var needChangeDatatype = true
           prExp.transform {
-            case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            case attr: AttributeReference => attr
+            case a@Alias(attr: AttributeReference, _) => a
+            case others =>
+              // datatype need to change for dictionary columns if only alias
+              // or attribute ref present.
+              // If anything else present, no need to change data type.
+              needChangeDatatype = false
+              others
           }
-        }.asInstanceOf[Seq[NamedExpression]]
+          if (needChangeDatatype) {
+            prExp.transform {
+              case attr: AttributeReference =>
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            }
+          }
+          prExp
+        }
         Project(prExps, p.child)
       case wd: Window if relations.nonEmpty =>
         val prExps = wd.output.map { prExp =>
