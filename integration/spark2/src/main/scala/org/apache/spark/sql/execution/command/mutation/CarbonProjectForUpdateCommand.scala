@@ -158,7 +158,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
             executionErrors,
             segmentsToBeDeleted)
 
-          DeleteExecution.clearDistributedSegmentCache(carbonTable, segmentsToBeDeleted)
+          DeleteExecution
+            .clearDistributedSegmentCache(carbonTable, segmentsToBeDeleted)(sparkSession)
 
         } else {
           throw new ConcurrentOperationException(carbonTable, "compaction", "update")

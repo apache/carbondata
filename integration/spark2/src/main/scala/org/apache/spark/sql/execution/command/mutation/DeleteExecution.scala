@@ -317,13 +317,13 @@ object DeleteExecution {
   }
 
   def clearDistributedSegmentCache(carbonTable: CarbonTable,
-      segmentsToBeCleared: Seq[Segment]): Unit = {
+      segmentsToBeCleared: Seq[Segment])(sparkSession: SparkSession): Unit = {
     if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable
       .getDatabaseName, carbonTable.getTableName)) {
       try {
         IndexServer.getClient
           .invalidateSegmentCache(carbonTable, segmentsToBeCleared.map(_.getSegmentNo)
-          .toArray)
+          .toArray, SparkSQLUtil.getTaskGroupId(sparkSession))
       } catch {
         case _: Exception =>
           LOGGER.warn(s"Clearing of invalid segments for ${

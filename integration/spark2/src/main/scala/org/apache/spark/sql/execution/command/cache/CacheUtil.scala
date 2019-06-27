@@ -20,6 +20,8 @@ package org.apache.spark.sql.execution.command.cache
 import scala.collection.JavaConverters._
 
 import org.apache.log4j.Logger
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheType
@@ -45,7 +47,7 @@ object CacheUtil {
    * @param carbonTable
    * @return List of all index files
    */
-  def getAllIndexFiles(carbonTable: CarbonTable): List[String] = {
+  def getAllIndexFiles(carbonTable: CarbonTable)(sparkSession: SparkSession): List[String] = {
     if (carbonTable.isTransactionalTable) {
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       val validAndInvalidSegmentsInfo = new SegmentStatusManager(absoluteTableIdentifier)
@@ -56,7 +58,10 @@ object CacheUtil {
         val invalidSegmentIds = validAndInvalidSegmentsInfo.getInvalidSegments.asScala
           .map(_.getSegmentNo).toArray
         try {
-          IndexServer.getClient.invalidateSegmentCache(carbonTable, invalidSegmentIds)
+          IndexServer.getClient
+            .invalidateSegmentCache(carbonTable,
+              invalidSegmentIds,
+              SparkSQLUtil.getTaskGroupId(sparkSession))
         } catch {
           case e: Exception =>
             LOGGER.warn("Failed to clear cache from executors. ", e)
