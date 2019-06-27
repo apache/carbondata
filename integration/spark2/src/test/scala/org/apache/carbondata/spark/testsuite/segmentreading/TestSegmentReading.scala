@@ -40,6 +40,8 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     cleanAllTable()
+    // reset
+    sql("SET carbon.input.segments.default.carbon_table=*")
   }
 
   test("test SET -V for segment reading property") {
