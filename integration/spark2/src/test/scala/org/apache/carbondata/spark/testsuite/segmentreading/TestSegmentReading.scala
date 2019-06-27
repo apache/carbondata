@@ -366,4 +366,19 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
         "SET carbon.input.segments.default.carbon_table=*")
     }
   }
+  test("test with the adaptive execution") {
+    sql("set spark.sql.adaptive.enabled=true")
+
+    sql("SET carbon.input.segments.default.carbon_table=1")
+    checkAnswer(sql("select count(*) from carbon_table"), Seq(Row(10)))
+
+    // segment doesn't exist
+    sql("SET carbon.input.segments.default.carbon_table=5")
+    checkAnswer(sql("select count(*) from carbon_table"), Seq(Row(0)))
+
+    sql("SET carbon.input.segments.default.carbon_table=1")
+    checkAnswer(sql("select count(*) from carbon_table"), Seq(Row(10)))
+
+    sql("set spark.sql.adaptive.enabled=false")
+  }
 }
