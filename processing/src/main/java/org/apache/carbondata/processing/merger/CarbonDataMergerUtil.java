@@ -953,13 +953,14 @@ public final class CarbonDataMergerUtil {
    * @param absoluteTableIdentifier
    * @return
    */
-  public static List<Segment> getValidSegmentList(AbsoluteTableIdentifier absoluteTableIdentifier)
+  public static List<Segment> getValidSegmentList(AbsoluteTableIdentifier absoluteTableIdentifier,
+      Boolean isChildTable)
           throws IOException {
 
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments = null;
     try {
-      validAndInvalidSegments =
-              new SegmentStatusManager(absoluteTableIdentifier).getValidAndInvalidSegments();
+      validAndInvalidSegments = new SegmentStatusManager(absoluteTableIdentifier)
+          .getValidAndInvalidSegments(isChildTable);
     } catch (IOException e) {
       LOGGER.error("Error while getting valid segment list for a table identifier");
       throw new IOException();

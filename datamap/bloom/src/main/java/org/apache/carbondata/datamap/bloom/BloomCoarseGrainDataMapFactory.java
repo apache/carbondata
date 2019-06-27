@@ -374,7 +374,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     SegmentStatusManager ssm =
         new SegmentStatusManager(getCarbonTable().getAbsoluteTableIdentifier());
     try {
-      List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
+      List<Segment> validSegments =
+          ssm.getValidAndInvalidSegments(getCarbonTable().isChildTable()).getValidSegments();
       for (Segment segment : validSegments) {
         deleteDatamapData(segment);
       }

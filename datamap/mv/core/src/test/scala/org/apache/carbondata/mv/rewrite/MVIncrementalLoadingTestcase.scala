@@ -580,15 +580,17 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     loadDataToFactTable("test_table")
     sql("drop datamap if exists datamap1")
     sql("create datamap datamap_com using 'mv' as select empname, designation from test_table")
-    for (i <- 0 to 4) {
+    for (i <- 0 to 16) {
       loadDataToFactTable("test_table")
     }
     createTableFactTable("test_table1")
-    for (i <- 0 to 5) {
+    for (i <- 0 to 17) {
       loadDataToFactTable("test_table1")
     }
     checkAnswer(sql("select empname, designation from test_table"),
       sql("select empname, designation from test_table1"))
+    val result = sql("show datamap on table test_table").collectAsList()
+    assert(result.get(0).get(5).toString.contains("\"default.test_table\":\"12.1\""))
     val df = sql(s""" select empname, designation from test_table""".stripMargin)
     val analyzed = df.queryExecution.analyzed
     assert(TestUtil.verifyMVDataMap(analyzed, "datamap_com"))

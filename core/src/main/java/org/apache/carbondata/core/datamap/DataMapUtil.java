@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datamap;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -258,7 +259,7 @@ public class DataMapUtil {
       CarbonTable carbonTable, Configuration configuration) throws IOException {
     SegmentStatusManager ssm =
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(), configuration);
-    return ssm.getValidAndInvalidSegments();
+    return ssm.getValidAndInvalidSegments(carbonTable.isChildTable());
   }
 
   /**
@@ -278,6 +279,21 @@ public class DataMapUtil {
       segmentList.add(segment.getSegmentNo());
     }
     return segmentList;
+  }
+
+  public static String getMaxSegmentID(List<String> segmentList) {
+    double[] segment = new double[segmentList.size()];
+    int i = 0;
+    for (String id : segmentList) {
+      segment[i] = Double.parseDouble(id);
+      i++;
+    }
+    Arrays.sort(segment);
+    String maxId = Double.toString(segment[segmentList.size() - 1]);
+    if (maxId.endsWith(".0")) {
+      maxId = maxId.substring(0, maxId.indexOf("."));
+    }
+    return maxId;
   }
 
 }

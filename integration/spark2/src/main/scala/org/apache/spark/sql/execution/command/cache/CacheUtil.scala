@@ -51,7 +51,7 @@ object CacheUtil {
     if (carbonTable.isTransactionalTable) {
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       val validAndInvalidSegmentsInfo = new SegmentStatusManager(absoluteTableIdentifier)
-        .getValidAndInvalidSegments()
+        .getValidAndInvalidSegments(carbonTable.isChildTable)
       // Fire a job to clear the invalid segments cached in the executors.
       if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable.getDatabaseName,
         carbonTable.getTableName)) {
@@ -111,7 +111,7 @@ object CacheUtil {
 
   def getBloomCacheKeys(carbonTable: CarbonTable, datamap: DataMapSchema): List[String] = {
     val segments = CarbonDataMergerUtil
-      .getValidSegmentList(carbonTable.getAbsoluteTableIdentifier).asScala
+      .getValidSegmentList(carbonTable.getAbsoluteTableIdentifier, carbonTable.isChildTable).asScala
 
     // Generate shard Path for the datamap
     val shardPaths = segments.flatMap {

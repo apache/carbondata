@@ -30,6 +30,7 @@ import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -55,14 +56,16 @@ public abstract class DataMapSyncStatus {
         SegmentStatusManager.readLoadMetadata(metaDataPath);
     Map<String, List<String>> dataMapSegmentMap = new HashMap<>();
     for (LoadMetadataDetails loadMetadataDetail : dataMapLoadMetadataDetails) {
-      Map<String, List<String>> segmentMap =
-          DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetail.getExtraInfo());
-      if (dataMapSegmentMap.isEmpty()) {
-        dataMapSegmentMap.putAll(segmentMap);
-      } else {
-        for (Map.Entry<String, List<String>> entry : segmentMap.entrySet()) {
-          if (null != dataMapSegmentMap.get(entry.getKey())) {
-            dataMapSegmentMap.get(entry.getKey()).addAll(entry.getValue());
+      if (loadMetadataDetail.getSegmentStatus() == SegmentStatus.SUCCESS) {
+        Map<String, List<String>> segmentMap =
+            DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetail.getExtraInfo());
+        if (dataMapSegmentMap.isEmpty()) {
+          dataMapSegmentMap.putAll(segmentMap);
+        } else {
+          for (Map.Entry<String, List<String>> entry : segmentMap.entrySet()) {
+            if (null != dataMapSegmentMap.get(entry.getKey())) {
+              dataMapSegmentMap.get(entry.getKey()).addAll(entry.getValue());
+            }
           }
         }
       }

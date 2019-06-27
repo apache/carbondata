@@ -109,7 +109,8 @@ object DropCacheBloomEventListener extends OperationEventListener {
         val datamaps = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
           .asScala.toList
         val segments = CarbonDataMergerUtil
-          .getValidSegmentList(carbonTable.getAbsoluteTableIdentifier).asScala.toList
+          .getValidSegmentList(carbonTable.getAbsoluteTableIdentifier, carbonTable.isChildTable)
+          .asScala.toList
 
         datamaps.foreach {
           case datamap if datamap.getProviderName

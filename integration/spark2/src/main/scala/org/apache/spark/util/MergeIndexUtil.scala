@@ -73,7 +73,7 @@ object MergeIndexUtil {
     mergedLoads: util.List[String]): Unit = {
     // get only the valid segments of the table
     val validSegments: mutable.Buffer[Segment] = CarbonDataMergerUtil.getValidSegmentList(
-      carbonTable.getAbsoluteTableIdentifier).asScala
+      carbonTable.getAbsoluteTableIdentifier, carbonTable.isChildTable).asScala
     val mergedSegmentIds = new util.ArrayList[String]()
     mergedLoads.asScala.foreach(mergedLoad => {
       val loadName = mergedLoad
