@@ -1169,6 +1169,64 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     assert(TestUtil.verifyMVDataMap(analyzed1, "da_cast"))
   }
 
+  test("test cast of expression with mv") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable (m_month bigint, c_code string, " +
+        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) stored by 'carbondata'")
+    sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
+    sql("drop datamap if exists da_cast")
+    sql(
+      "create datamap da_cast using 'mv' as select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a, c_code as abc from maintable")
+    val df1 = sql(
+      " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a ,c_code as abc  from maintable")
+    val df2 = sql(
+      " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT),c_code as abc  from maintable")
+    val analyzed1 = df1.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed1, "da_cast"))
+  }
+
+  test("test cast with & without alias") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable (m_month bigint, c_code string, " +
+        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) stored by 'carbondata'")
+    sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
+    sql("drop datamap if exists da_cast")
+    sql(
+      "create datamap da_cast using 'mv' as select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
+    checkAnswer(sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable"), Seq(Row(1010, "xxx")))
+    var df1 = sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
+    var analyzed1 = df1.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed1, "da_cast"))
+    sql("drop datamap if exists da_cast")
+    sql(
+      "create datamap da_cast using 'mv' as select cast(m_month + 1000 AS INT), c_code from maintable")
+    df1 = sql("select cast(m_month + 1000 AS INT), c_code from maintable")
+    analyzed1 = df1.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed1, "da_cast"))
+    checkAnswer(sql("select cast(m_month + 1000 AS INT), c_code from maintable"), Seq(Row(1010, "xxx")))
+  }
+
+  test("test mv with floor & ceil exp") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable (m_month bigint, c_code string, " +
+        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) stored by 'carbondata'")
+    sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
+    sql("drop datamap if exists da_floor")
+    sql(
+      "create datamap da_floor using 'mv' as select floor(m_month) as a, c_code as abc from maintable")
+    checkAnswer(sql("select floor(m_month) as a, c_code as abc from maintable"), Seq(Row(10, "xxx")))
+    var df1 = sql("select floor(m_month) as a, c_code as abc from maintable")
+    var analyzed1 = df1.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed1, "da_floor"))
+    sql("drop datamap if exists da_ceil")
+    sql(
+      "create datamap da_ceil using 'mv' as select ceil(m_month) as a, c_code as abc from maintable")
+    checkAnswer(sql("select ceil(m_month) as a, c_code as abc from maintable"), Seq(Row(10, "xxx")))
+    var df2 = sql("select ceil(m_month) as a, c_code as abc from maintable")
+    var analyzed2 = df2.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed2, "da_ceil"))
+  }
+
   def drop(): Unit = {
     sql("drop table IF EXISTS fact_table1")
     sql("drop table IF EXISTS fact_table2")

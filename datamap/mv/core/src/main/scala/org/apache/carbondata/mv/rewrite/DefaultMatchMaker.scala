@@ -53,6 +53,14 @@ abstract class DefaultMatchPattern extends MatchPattern[ModularPlan] {
             (a.child.asInstanceOf[Attribute], a.toAttribute)
           })
 
+    // Create aliasMap with Expression to alias reference attribute
+    val aliasMapExp =
+      subsumer.outputList.collect {
+        case a: Alias if a.child.isInstanceOf[Expression] &&
+                         !a.child.isInstanceOf[AggregateExpression] =>
+          a.child -> a.toAttribute
+      }.toMap
+
     // Check and replace all alias references with subsumer alias map references.
     val compensation1 = compensation.transform {
       case plan if !plan.skip && plan != subsumer =>
@@ -65,6 +73,14 @@ abstract class DefaultMatchPattern extends MatchPattern[ModularPlan] {
                   ref.name, ref.dataType)(
                   exprId = ref.exprId,
                   qualifier = a.qualifier)
+              }.getOrElse(a)
+          case a: Expression =>
+            aliasMapExp
+              .get(a)
+              .map { ref =>
+                AttributeReference(
+                  ref.name, ref.dataType)(
+                  exprId = ref.exprId)
               }.getOrElse(a)
           }
     }
