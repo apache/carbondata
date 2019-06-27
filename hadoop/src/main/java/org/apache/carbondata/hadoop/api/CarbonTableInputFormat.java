@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -562,15 +563,14 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       if (CarbonProperties.getInstance()
           .isDistributedPruningEnabled(table.getDatabaseName(), table.getTableName())) {
         try {
-          List<InputSplit> extendedBlocklets = CarbonTableInputFormat.convertToCarbonInputSplit(
-              getDistributedSplit(table, null, partitions, filteredSegment,
-                  allSegments.getInvalidSegments(), toBeCleanedSegments));
-          for (InputSplit extendedBlocklet : extendedBlocklets) {
-            CarbonInputSplit blocklet = (CarbonInputSplit) extendedBlocklet;
+          List<ExtendedBlocklet> extendedBlocklets =
+              getDistributedBlockRowCount(table, partitions, filteredSegment,
+                  allSegments.getInvalidSegments(), toBeCleanedSegments);
+          for (ExtendedBlocklet blocklet : extendedBlocklets) {
             String filePath = blocklet.getFilePath().replace("\\", "/");
             String blockName = filePath.substring(filePath.lastIndexOf("/") + 1);
             blockletToRowCountMap.put(blocklet.getSegmentId() + "," + blockName,
-                (long) blocklet.getRowCount());
+                blocklet.getRowCount());
           }
         } catch (Exception e) {
           // Check if fallback is disabled then directly throw exception otherwise try driver
@@ -615,15 +615,11 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         }
       }
     } else {
-      long totalRowCount = 0L;
+      long totalRowCount;
       if (CarbonProperties.getInstance()
           .isDistributedPruningEnabled(table.getDatabaseName(), table.getTableName())) {
-        List<InputSplit> extendedBlocklets = CarbonTableInputFormat.convertToCarbonInputSplit(
-            getDistributedSplit(table, null, partitions, filteredSegment,
-                allSegments.getInvalidSegments(), new ArrayList<String>()));
-        for (InputSplit extendedBlocklet : extendedBlocklets) {
-          totalRowCount += ((CarbonInputSplit) extendedBlocklet).getRowCount();
-        }
+        totalRowCount =
+            getDistributedCount(table, partitions, filteredSegment);
       } else {
         TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);
         totalRowCount = defaultDataMap.getRowCount(filteredSegment, partitions, defaultDataMap);

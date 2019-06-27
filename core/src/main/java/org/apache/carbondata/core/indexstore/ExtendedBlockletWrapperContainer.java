@@ -62,8 +62,8 @@ public class ExtendedBlockletWrapperContainer implements Writable {
     this.isFallbackJob = isFallbackJob;
   }
 
-  public List<ExtendedBlocklet> getExtendedBlockets(String tablePath, String queryId)
-      throws IOException {
+  public List<ExtendedBlocklet> getExtendedBlockets(String tablePath, String queryId,
+      boolean isCountJob) throws IOException {
     if (!isFallbackJob) {
       int numOfThreads = CarbonProperties.getNumOfThreadsForPruning();
       ExecutorService executorService = Executors
@@ -85,8 +85,8 @@ public class ExtendedBlockletWrapperContainer implements Writable {
       List<Future<List<ExtendedBlocklet>>> futures = new ArrayList<>();
       for (int i = 0; i < split.length; i++) {
         end += split[i];
-        futures.add(executorService
-            .submit(new ExtendedBlockletDeserializerThread(start, end, tablePath, queryId)));
+        futures.add(executorService.submit(
+            new ExtendedBlockletDeserializerThread(start, end, tablePath, queryId, isCountJob)));
         start += split[i];
       }
       executorService.shutdown();
@@ -109,7 +109,8 @@ public class ExtendedBlockletWrapperContainer implements Writable {
     } else {
       List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
       for (ExtendedBlockletWrapper extendedBlockletWrapper: extendedBlockletWrappers) {
-        extendedBlocklets.addAll(extendedBlockletWrapper.readBlocklet(tablePath, queryId));
+        extendedBlocklets
+            .addAll(extendedBlockletWrapper.readBlocklet(tablePath, queryId, isCountJob));
       }
       return extendedBlocklets;
     }
@@ -125,18 +126,22 @@ public class ExtendedBlockletWrapperContainer implements Writable {
 
     private String queryId;
 
+    private boolean isCountJob;
+
     public ExtendedBlockletDeserializerThread(int start, int end, String tablePath,
-        String queryId) {
+        String queryId, boolean isCountJob) {
       this.start = start;
       this.end = end;
       this.tablePath = tablePath;
       this.queryId = queryId;
+      this.isCountJob = isCountJob;
     }
 
     @Override public List<ExtendedBlocklet> call() throws Exception {
       List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
       for (int i = start; i < end; i++) {
-        extendedBlocklets.addAll(extendedBlockletWrappers[i].readBlocklet(tablePath, queryId));
+        extendedBlocklets.addAll(extendedBlockletWrappers[i].readBlocklet(tablePath, queryId,
+            isCountJob));
       }
       return extendedBlocklets;
     }

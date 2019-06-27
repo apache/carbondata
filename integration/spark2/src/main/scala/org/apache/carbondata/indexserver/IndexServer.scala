@@ -23,6 +23,7 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.ipc.{ProtocolInfo, RPC}
 import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.security.{KerberosInfo, SecurityUtil, UserGroupInformation}
@@ -58,6 +59,9 @@ trait ServerInterface {
    */
   def invalidateSegmentCache(carbonTable: CarbonTable,
       segmentIds: Array[String], jobGroupId: String = ""): Unit
+
+  def getCount(request: DistributableDataMapFormat): LongWritable
+
 }
 
 /**
@@ -97,6 +101,21 @@ object IndexServer extends ServerInterface {
         f
       }
     })
+  }
+
+  def getCount(request: DistributableDataMapFormat): LongWritable = {
+    doAs {
+      if (!request.isFallbackJob) {
+        sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
+        sparkSession.sparkContext
+          .setLocalProperty("spark.job.description", request.getTaskGroupDesc)
+      }
+      val splits = new DistributedCountRDD(sparkSession, request).collect()
+      if (!request.isFallbackJob) {
+        DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
+      }
+      new LongWritable(splits.map(_._2.toLong).sum)
+    }
   }
 
   def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer = {
