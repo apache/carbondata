@@ -63,7 +63,8 @@ object HorizontalCompaction {
     val deleteTimeStamp = updateTimeStamp + 1
 
     // get the valid segments
-    var segLists = CarbonDataMergerUtil.getValidSegmentList(absTableIdentifier)
+    var segLists = CarbonDataMergerUtil
+      .getValidSegmentList(absTableIdentifier, carbonTable.isChildTable)
 
     if (segLists == null || segLists.size() == 0) {
       return
@@ -91,7 +92,8 @@ object HorizontalCompaction {
 
     // After Update Compaction perform delete compaction
     compactionTypeIUD = CompactionType.IUD_DELETE_DELTA
-    segLists = CarbonDataMergerUtil.getValidSegmentList(absTableIdentifier)
+    segLists = CarbonDataMergerUtil
+      .getValidSegmentList(absTableIdentifier, carbonTable.isChildTable)
     if (segLists == null || segLists.size() == 0) {
       return
     }

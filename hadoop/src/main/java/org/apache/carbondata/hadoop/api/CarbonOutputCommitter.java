@@ -196,7 +196,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       List<Segment> segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","), null);
       Set<Segment> segmentSet = new HashSet<>(
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
-              context.getConfiguration()).getValidAndInvalidSegments().getValidSegments());
+              context.getConfiguration()).getValidAndInvalidSegments(carbonTable.isChildTable())
+              .getValidSegments());
       if (updateTime != null) {
         CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, updateTime, true,
             segmentDeleteList);
@@ -231,7 +232,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     if (partitionSpecs != null && partitionSpecs.size() > 0) {
       List<Segment> validSegments =
           new SegmentStatusManager(table.getAbsoluteTableIdentifier())
-              .getValidAndInvalidSegments().getValidSegments();
+              .getValidAndInvalidSegments(table.isChildTable()).getValidSegments();
       String uniqueId = String.valueOf(System.currentTimeMillis());
       List<String> tobeUpdatedSegs = new ArrayList<>();
       List<String> tobeDeletedSegs = new ArrayList<>();

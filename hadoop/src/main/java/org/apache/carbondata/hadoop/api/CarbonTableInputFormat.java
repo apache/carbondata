@@ -122,7 +122,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier,
         readCommittedScope.getConfiguration());
     SegmentStatusManager.ValidAndInvalidSegmentsInfo segments = segmentStatusManager
-        .getValidAndInvalidSegments(loadMetadataDetails, this.readCommittedScope);
+        .getValidAndInvalidSegments(carbonTable.isChildTable(), loadMetadataDetails,
+            this.readCommittedScope);
 
     // to check whether only streaming segments access is enabled or not,
     // if access streaming segment is true then data will be read from streaming segments
@@ -523,7 +524,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         table, loadMetadataDetails);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo allSegments =
         new SegmentStatusManager(identifier, readCommittedScope.getConfiguration())
-            .getValidAndInvalidSegments(loadMetadataDetails, readCommittedScope);
+            .getValidAndInvalidSegments(table.isChildTable(), loadMetadataDetails,
+                readCommittedScope);
     Map<String, Long> blockRowCountMapping = new HashMap<>();
     Map<String, Long> segmentAndBlockCountMapping = new HashMap<>();
 

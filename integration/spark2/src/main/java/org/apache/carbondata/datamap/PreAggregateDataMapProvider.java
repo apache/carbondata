@@ -112,8 +112,8 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
     return false;
   }
 
-  @Override
-  public boolean rebuildInternal(String newLoadName, Map<String, List<String>> segmentMap) {
+  @Override public boolean rebuildInternal(String newLoadName, Map<String, List<String>> segmentMap,
+      CarbonTable carbonTable) {
     return false;
   }
 }

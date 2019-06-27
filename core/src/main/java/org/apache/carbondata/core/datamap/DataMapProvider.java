@@ -129,10 +129,15 @@ public abstract class DataMapProvider {
     }
     String newLoadName = "";
     String segmentMap = "";
-    AbsoluteTableIdentifier dataMapTableAbsoluteTableIdentifier = AbsoluteTableIdentifier
-        .from(dataMapSchema.getRelationIdentifier().getTablePath(),
+    CarbonTable dataMapTable = CarbonTable
+        .buildFromTablePath(dataMapSchema.getRelationIdentifier().getTableName(),
             dataMapSchema.getRelationIdentifier().getDatabaseName(),
-            dataMapSchema.getRelationIdentifier().getTableName());
+            dataMapSchema.getRelationIdentifier().getTablePath(),
+            dataMapSchema.getRelationIdentifier().getTableId());
+    AbsoluteTableIdentifier dataMapTableAbsoluteTableIdentifier =
+        dataMapTable.getAbsoluteTableIdentifier();
+    // Clean up the old invalid segment data before creating a new entry for new load.
+    SegmentStatusManager.deleteLoadsAndUpdateMetadata(dataMapTable, false, null);
     SegmentStatusManager segmentStatusManager =
         new SegmentStatusManager(dataMapTableAbsoluteTableIdentifier);
     Map<String, List<String>> segmentMapping = new HashMap<>();
@@ -148,6 +153,15 @@ public abstract class DataMapProvider {
             CarbonTablePath.getMetadataPath(dataMapSchema.getRelationIdentifier().getTablePath());
         LoadMetadataDetails[] loadMetaDataDetails =
             SegmentStatusManager.readLoadMetadata(dataMapTableMetadataPath);
+        // Mark for delete all stale loadMetadetail
+        for (LoadMetadataDetails loadMetadataDetail : loadMetaDataDetails) {
+          if ((loadMetadataDetail.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS
+              || loadMetadataDetail.getSegmentStatus()
+              == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) && loadMetadataDetail.getVisibility()
+              .equalsIgnoreCase("false")) {
+            loadMetadataDetail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+          }
+        }
         List<LoadMetadataDetails> listOfLoadFolderDetails =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         Collections.addAll(listOfLoadFolderDetails, loadMetaDataDetails);
@@ -223,7 +237,7 @@ public abstract class DataMapProvider {
             + " during table status updation");
       }
     }
-    return rebuildInternal(newLoadName, segmentMapping);
+    return rebuildInternal(newLoadName, segmentMapping, dataMapTable);
   }
 
   /**
@@ -395,5 +409,6 @@ public abstract class DataMapProvider {
 
   public abstract boolean supportRebuild();
 
-  public abstract boolean rebuildInternal(String newLoadName, Map<String, List<String>> segmentMap);
+  public abstract boolean rebuildInternal(String newLoadName, Map<String, List<String>> segmentMap,
+      CarbonTable carbonTable);
 }

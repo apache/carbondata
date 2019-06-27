@@ -103,13 +103,18 @@ public class SegmentStatusManager {
   }
 
   public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments() throws IOException {
-    return getValidAndInvalidSegments(null, null);
+    return getValidAndInvalidSegments(false, null, null);
+  }
+
+  public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(Boolean isChildTable)
+      throws IOException {
+    return getValidAndInvalidSegments(isChildTable, null, null);
   }
 
   /**
    * get valid segment for given load status details.
    */
-  public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(
+  public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(Boolean isChildTable,
       LoadMetadataDetails[] loadMetadataDetails, ReadCommittedScope readCommittedScope)
       throws IOException {
 
@@ -162,9 +167,21 @@ public class SegmentStatusManager {
                 new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope));
             continue;
           }
-          listOfValidSegments.add(
-              new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope,
-                  segment));
+          // In case of child table, during loading, if no record is loaded to the segment, then
+          // segmentStatus will be marked as 'Success'. During query, don't need to add that segment
+          // to validSegment list, as segment does not exists
+          if (isChildTable) {
+            if (!segment.getDataSize().equalsIgnoreCase("0") && !segment.getIndexSize()
+                .equalsIgnoreCase("0")) {
+              listOfValidSegments.add(
+                  new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope,
+                      segment));
+            }
+          } else {
+            listOfValidSegments.add(
+                new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope,
+                    segment));
+          }
         } else if ((SegmentStatus.LOAD_FAILURE == segment.getSegmentStatus()
             || SegmentStatus.COMPACTED == segment.getSegmentStatus()
             || SegmentStatus.MARKED_FOR_DELETE == segment.getSegmentStatus())) {

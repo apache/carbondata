@@ -103,7 +103,8 @@ class MVDataMapProvider(
 
   @throws[IOException]
   override def rebuildInternal(newLoadName: String,
-      segmentMap: java.util.Map[String, java.util.List[String]]): Boolean = {
+      segmentMap: java.util.Map[String, java.util.List[String]],
+      dataMapTable: CarbonTable): Boolean = {
     val ctasQuery = dataMapSchema.getCtasQuery
     if (ctasQuery != null) {
       val identifier = dataMapSchema.getRelationIdentifier
@@ -129,11 +130,6 @@ class MVDataMapProvider(
       if (isFullRefresh) {
         isOverwriteTable = true
       }
-      val dataMapTable = CarbonTable
-        .buildFromTablePath(identifier.getTableName,
-          identifier.getDatabaseName,
-          identifier.getTablePath,
-          identifier.getTableId)
       // Set specified segments for incremental load
       val segmentMapIterator = segmentMap.entrySet().iterator()
       while (segmentMapIterator.hasNext) {

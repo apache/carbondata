@@ -135,8 +135,8 @@ public class IndexDataMapProvider extends DataMapProvider {
     return dataMapFactory.supportRebuild();
   }
 
-  @Override
-  public boolean rebuildInternal(String newLoadName, Map<String, List<String>> segmentMap) {
+  @Override public boolean rebuildInternal(String newLoadName, Map<String, List<String>> segmentMap,
+      CarbonTable carbonTable) {
     return false;
   }
 }

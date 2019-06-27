@@ -30,7 +30,7 @@ import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, DataMapUtil}
 import org.apache.carbondata.core.datamap.status.{DataMapSegmentStatusUtil, DataMapStatus, DataMapStatusManager}
 import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
@@ -125,7 +125,8 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
                     val iterator = segmentMaps.entrySet().iterator()
                     while (iterator.hasNext) {
                       val entry = iterator.next()
-                      syncInfoMap.put(entry.getKey, entry.getValue.get(entry.getValue.size() - 1))
+
+                      syncInfoMap.put(entry.getKey, DataMapUtil.getMaxSegmentID(entry.getValue))
                     }
                     val loadEndTime =
                       if (loadMetadataDetails(i).getLoadEndTime ==
