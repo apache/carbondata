@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datamap.DataMapJob;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.DataMapUtil;
+import org.apache.carbondata.core.datamap.DistributableDataMapFormat;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
@@ -412,10 +413,42 @@ m filterExpression
    */
   @Override public abstract List<InputSplit> getSplits(JobContext job) throws IOException;
 
-  List<ExtendedBlocklet> getDistributedSplit(CarbonTable table,
+  /**
+   * This method will execute a distributed job(DistributedDataMapJob) to get the count for the
+   * table. If the DistributedDataMapJob fails for some reason then an embedded job is fired to
+   * get the count.
+   */
+  Long getDistributedCount(CarbonTable table,
+      List<PartitionSpec> partitionNames, List<Segment> validSegments) throws IOException {
+    DistributableDataMapFormat dataMapFormat =
+        new DistributableDataMapFormat(table, null, validSegments, new ArrayList<String>(),
+            partitionNames, false, null, false);
+    dataMapFormat.setIsWriteToFile(false);
+    try {
+      DataMapJob dataMapJob =
+          (DataMapJob) DataMapUtil.createDataMapJob(DataMapUtil.DISTRIBUTED_JOB_NAME);
+      if (dataMapJob == null) {
+        throw new ExceptionInInitializerError("Unable to create DistributedDataMapJob");
+      }
+      return dataMapJob.executeCountJob(dataMapFormat);
+    } catch (Exception e) {
+      LOG.error("Failed to get count from index server. Initializing fallback", e);
+      DataMapJob dataMapJob = DataMapUtil.getEmbeddedJob();
+      return dataMapJob.executeCountJob(dataMapFormat);
+    }
+  }
+
+  List<ExtendedBlocklet> getDistributedBlockRowCount(CarbonTable table,
+      List<PartitionSpec> partitionNames, List<Segment> validSegments,
+      List<Segment> invalidSegments, List<String> segmentsToBeRefreshed) throws IOException {
+    return getDistributedSplit(table, null, partitionNames, validSegments, invalidSegments,
+        segmentsToBeRefreshed, true);
+  }
+
+  private List<ExtendedBlocklet> getDistributedSplit(CarbonTable table,
       FilterResolverIntf filterResolverIntf, List<PartitionSpec> partitionNames,
       List<Segment> validSegments, List<Segment> invalidSegments,
-      List<String> segmentsToBeRefreshed) throws IOException {
+      List<String> segmentsToBeRefreshed, boolean isCountJob) throws IOException {
     try {
       DataMapJob dataMapJob =
           (DataMapJob) DataMapUtil.createDataMapJob(DataMapUtil.DISTRIBUTED_JOB_NAME);
@@ -424,7 +457,7 @@ m filterExpression
       }
       return DataMapUtil
           .executeDataMapJob(table, filterResolverIntf, dataMapJob, partitionNames, validSegments,
-              invalidSegments, null, segmentsToBeRefreshed);
+              invalidSegments, null, false, segmentsToBeRefreshed, isCountJob);
     } catch (Exception e) {
       // Check if fallback is disabled for testing purposes then directly throw exception.
       if (CarbonProperties.getInstance().isFallBackDisabled()) {
@@ -432,10 +465,9 @@ m filterExpression
       }
       LOG.error("Exception occurred while getting splits using index server. Initiating Fall "
           + "back to embedded mode", e);
-      return DataMapUtil
-          .executeDataMapJob(table, filterResolverIntf,
-              DataMapUtil.getEmbeddedJob(), partitionNames, validSegments, invalidSegments, null,
-              true, segmentsToBeRefreshed);
+      return DataMapUtil.executeDataMapJob(table, filterResolverIntf,
+          DataMapUtil.getEmbeddedJob(), partitionNames, validSegments,
+          invalidSegments, null, true, segmentsToBeRefreshed, isCountJob);
     }
   }
 
@@ -545,7 +577,7 @@ m filterExpression
       try {
         prunedBlocklets =
             getDistributedSplit(carbonTable, filter.getResolver(), partitionsToPrune, segmentIds,
-                invalidSegments, segmentsToBeRefreshed);
+                invalidSegments, segmentsToBeRefreshed, false);
       } catch (Exception e) {
         // Check if fallback is disabled then directly throw exception otherwise try driver
         // pruning.
@@ -580,7 +612,7 @@ m filterExpression
           if (distributedCG && dataMapJob != null) {
             cgPrunedBlocklets = DataMapUtil
                 .executeDataMapJob(carbonTable, filter.getResolver(), dataMapJob, partitionsToPrune,
-                    segmentIds, invalidSegments, DataMapLevel.CG, true, new ArrayList<String>());
+                    segmentIds, invalidSegments, DataMapLevel.CG, new ArrayList<String>());
           } else {
             cgPrunedBlocklets = cgDataMapExprWrapper.prune(segmentIds, partitionsToPrune);
           }
@@ -616,7 +648,7 @@ m filterExpression
           // Prune segments from already pruned blocklets
           fgPrunedBlocklets = DataMapUtil
               .executeDataMapJob(carbonTable, filter.getResolver(), dataMapJob, partitionsToPrune,
-                  segmentIds, invalidSegments, fgDataMapExprWrapper.getDataMapLevel(), true,
+                  segmentIds, invalidSegments, fgDataMapExprWrapper.getDataMapLevel(),
                   new ArrayList<String>());
           // note that the 'fgPrunedBlocklets' has extra datamap related info compared with
           // 'prunedBlocklets', so the intersection should keep the elements in 'fgPrunedBlocklets'
