@@ -35,4 +35,6 @@ public interface DataMapJob extends Serializable {
 
   List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat);
 
+  Long executeCountJob(DistributableDataMapFormat dataMapFormat);
+
 }

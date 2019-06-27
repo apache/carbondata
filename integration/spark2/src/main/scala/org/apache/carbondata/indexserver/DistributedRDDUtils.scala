@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.indexserver
 
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
@@ -323,6 +325,17 @@ object DistributedRDDUtils {
       }
       s"executor_${newHost}_$newExecutor"
     }
+  }
+
+  def groupSplits(xs: Seq[InputSplit], n: Int): List[Seq[InputSplit]] = {
+    val (quot, rem) = (xs.size / n, xs.size % n)
+    val (smaller, bigger) = xs.splitAt(xs.size - rem * (quot + 1))
+    (smaller.grouped(quot) ++ bigger.grouped(quot + 1)).toList
+  }
+
+  def generateTrackerId: String = {
+    val formatter = new SimpleDateFormat("yyyyMMddHHmm")
+    formatter.format(new Date())
   }
 
 }

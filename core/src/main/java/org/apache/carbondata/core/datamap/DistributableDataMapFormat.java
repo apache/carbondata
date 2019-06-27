@@ -28,7 +28,6 @@ import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
@@ -91,6 +90,8 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private boolean isWriteToFile = true;
 
+  private boolean isCountStarJob = false;
+
   DistributableDataMapFormat() {
 
   }
@@ -103,7 +104,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     this.dataMapToClear = dataMapToClear;
   }
 
-  DistributableDataMapFormat(CarbonTable table, FilterResolverIntf filterResolverIntf,
+  public DistributableDataMapFormat(CarbonTable table, FilterResolverIntf filterResolverIntf,
       List<Segment> validSegments, List<String> invalidSegments, List<PartitionSpec> partitions,
       boolean isJobToClearDataMaps, DataMapLevel dataMapLevel, boolean isFallbackJob)
       throws IOException {
@@ -136,7 +137,6 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     return new RecordReader<Void, ExtendedBlocklet>() {
       private Iterator<ExtendedBlocklet> blockletIterator;
       private ExtendedBlocklet currBlocklet;
-      private List<DataMap> dataMaps;
 
       @Override
       public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
@@ -149,7 +149,6 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
         if (dataMapLevel == null) {
           TableDataMap defaultDataMap = DataMapStoreManager.getInstance()
               .getDataMap(table, distributable.getDistributable().getDataMapSchema());
-          dataMaps = defaultDataMap.getTableDataMaps(distributable.getDistributable());
           blocklets = defaultDataMap
               .prune(segmentsToLoad, new DataMapFilter(filterResolverIntf), partitions);
           blocklets = DataMapUtil
@@ -192,11 +191,6 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
       @Override
       public void close() throws IOException {
-        if (null != dataMaps) {
-          for (DataMap dataMap : dataMaps) {
-            dataMap.finish();
-          }
-        }
       }
     };
   }
@@ -247,6 +241,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     out.writeUTF(taskGroupDesc);
     out.writeUTF(queryId);
     out.writeBoolean(isWriteToFile);
+    out.writeBoolean(isCountStarJob);
   }
 
   @Override
@@ -292,6 +287,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     this.taskGroupDesc = in.readUTF();
     this.queryId = in.readUTF();
     this.isWriteToFile = in.readBoolean();
+    this.isCountStarJob = in.readBoolean();
   }
 
   private void initReadCommittedScope() throws IOException {
@@ -398,9 +394,29 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     return validSegments;
   }
 
+  public List<Segment> getValidSegments() {
+    return validSegments;
+  }
+
   public void createDataMapChooser() throws IOException {
     if (null != filterResolverIntf) {
       this.dataMapChooser = new DataMapChooser(table);
     }
+  }
+
+  public void setCountStarJob() {
+    this.isCountStarJob = true;
+  }
+
+  public boolean isCountStarJob() {
+    return this.isCountStarJob;
+  }
+
+  public List<PartitionSpec> getPartitions() {
+    return partitions;
+  }
+
+  public ReadCommittedScope getReadCommittedScope() {
+    return readCommittedScope;
   }
 }

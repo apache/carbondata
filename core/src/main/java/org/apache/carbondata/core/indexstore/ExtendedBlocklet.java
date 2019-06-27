@@ -39,6 +39,10 @@ public class ExtendedBlocklet extends Blocklet {
 
   private CarbonInputSplit inputSplit;
 
+  private Long count;
+
+  private String segmentNo;
+
   public ExtendedBlocklet() {
 
   }
@@ -78,6 +82,9 @@ public class ExtendedBlocklet extends Blocklet {
   }
 
   public String getSegmentId() {
+    if (segmentNo != null) {
+      return segmentNo;
+    }
     return this.inputSplit.getSegmentId();
   }
 
@@ -92,8 +99,12 @@ public class ExtendedBlocklet extends Blocklet {
     return getFilePath();
   }
 
-  public String getDataMapWriterPath() {
-    return this.inputSplit.getDataMapWritePath();
+  public Long getRowCount() {
+    if (count != null) {
+      return count;
+    } else {
+      return (long) inputSplit.getRowCount();
+    }
   }
 
   public void setDataMapWriterPath(String dataMapWriterPath) {
@@ -161,30 +172,35 @@ public class ExtendedBlocklet extends Blocklet {
    * @param uniqueLocation
    * @throws IOException
    */
-  public void serializeData(DataOutput out, Map<String, Short> uniqueLocation)
+  public void serializeData(DataOutput out, Map<String, Short> uniqueLocation, boolean isCountJob)
       throws IOException {
     super.write(out);
-    if (dataMapUniqueId == null) {
-      out.writeBoolean(false);
+    if (isCountJob) {
+      out.writeLong(inputSplit.getRowCount());
+      out.writeUTF(inputSplit.getSegmentId());
     } else {
-      out.writeBoolean(true);
-      out.writeUTF(dataMapUniqueId);
-    }
-    out.writeBoolean(inputSplit != null);
-    if (inputSplit != null) {
-      // creating byte array output stream to get the size of input split serializeData size
-      ExtendedByteArrayOutputStream ebos = new ExtendedByteArrayOutputStream();
-      DataOutputStream dos = new DataOutputStream(ebos);
-      inputSplit.setFilePath(null);
-      inputSplit.setBucketId(null);
-      if (inputSplit.isBlockCache()) {
-        inputSplit.updateFooteroffset();
-        inputSplit.updateBlockLength();
-        inputSplit.setWriteDetailInfo(false);
+      if (dataMapUniqueId == null) {
+        out.writeBoolean(false);
+      } else {
+        out.writeBoolean(true);
+        out.writeUTF(dataMapUniqueId);
       }
-      inputSplit.serializeFields(dos, uniqueLocation);
-      out.writeInt(ebos.size());
-      out.write(ebos.getBuffer(), 0 , ebos.size());
+      out.writeBoolean(inputSplit != null);
+      if (inputSplit != null) {
+        // creating byte array output stream to get the size of input split serializeData size
+        ExtendedByteArrayOutputStream ebos = new ExtendedByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(ebos);
+        inputSplit.setFilePath(null);
+        inputSplit.setBucketId(null);
+        if (inputSplit.isBlockCache()) {
+          inputSplit.updateFooteroffset();
+          inputSplit.updateBlockLength();
+          inputSplit.setWriteDetailInfo(false);
+        }
+        inputSplit.serializeFields(dos, uniqueLocation);
+        out.writeInt(ebos.size());
+        out.write(ebos.getBuffer(), 0, ebos.size());
+      }
     }
   }
 
@@ -195,9 +211,15 @@ public class ExtendedBlocklet extends Blocklet {
    * @param tablePath
    * @throws IOException
    */
-  public void deserializeFields(DataInput in, String[] locations, String tablePath)
+  public void deserializeFields(DataInput in, String[] locations, String tablePath,
+      boolean isCountJob)
       throws IOException {
     super.readFields(in);
+    if (isCountJob) {
+      count = in.readLong();
+      segmentNo = in.readUTF();
+      return;
+    }
     if (in.readBoolean()) {
       dataMapUniqueId = in.readUTF();
     }
