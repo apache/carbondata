@@ -220,4 +220,33 @@ object SparkSQLUtil {
   def getSerializableConfigurableInstance(hadoopConf: Configuration): SerializableConfiguration = {
     new SerializableConfiguration(hadoopConf)
   }
+
+  /**
+   * Get the task group id
+   *
+   * @param sparkSession
+   * @return
+   */
+  def getTaskGroupId(sparkSession: SparkSession): String = {
+    val taskGroupId = sparkSession.sparkContext.getLocalProperty("spark.jobGroup.id") match {
+      case null => ""
+      case _ => sparkSession.sparkContext.getLocalProperty("spark.jobGroup.id")
+    }
+    taskGroupId
+  }
+
+  /**
+   * Get the task group description
+   *
+   * @param sparkSession
+   * @return
+   */
+  def getTaskGroupDesc(sparkSession: SparkSession): String = {
+    val taskGroupDesc = sparkSession.sparkContext.getLocalProperty("spark.job.description") match {
+      case null => ""
+      case _ => sparkSession.sparkContext.getLocalProperty("spark.job.description")
+    }
+    taskGroupDesc
+  }
+
 }

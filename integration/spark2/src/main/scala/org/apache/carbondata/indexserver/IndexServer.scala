@@ -57,7 +57,7 @@ trait ServerInterface {
    * Invalidate the cache for the specified segments only. Used in case of compaction/Update/Delete.
    */
   def invalidateSegmentCache(carbonTable: CarbonTable,
-      segmentIds: Array[String]): Unit
+      segmentIds: Array[String], jobGroupId: String = ""): Unit
 }
 
 /**
@@ -126,11 +126,12 @@ object IndexServer extends ServerInterface {
   }
 
   override def invalidateSegmentCache(carbonTable: CarbonTable,
-      segmentIds: Array[String]): Unit = doAs {
+      segmentIds: Array[String], jobGroupId: String = ""): Unit = doAs {
     val databaseName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     val jobgroup: String = " Invalided Segment Cache for " + databaseName + "." + tableName
     sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
+    sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", jobGroupId)
     new InvalidateSegmentCacheRDD(sparkSession, carbonTable, segmentIds.toList)
       .collect()
     if (segmentIds.nonEmpty) {

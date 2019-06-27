@@ -55,7 +55,7 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
         carbonTable.getTableName)) {
         DataMapUtil.executeClearDataMapJob(carbonTable, DataMapUtil.DISTRIBUTED_JOB_NAME)
       } else {
-        val allIndexFiles = CacheUtil.getAllIndexFiles(carbonTable)
+        val allIndexFiles = CacheUtil.getAllIndexFiles(carbonTable)(sparkSession)
         // Extract dictionary keys for the table and create cache keys from those
         val dictKeys: List[String] = CacheUtil.getAllDictCacheKeys(carbonTable)
 

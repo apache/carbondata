@@ -259,7 +259,9 @@ object CarbonDataRDDFactory {
               carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)) {
             try {
               IndexServer.getClient.invalidateSegmentCache(carbonLoadModel
-                .getCarbonDataLoadSchema.getCarbonTable, compactedSegments.asScala.toArray)
+                .getCarbonDataLoadSchema.getCarbonTable,
+                compactedSegments.asScala.toArray,
+                SparkSQLUtil.getTaskGroupId(sqlContext.sparkSession))
             } catch {
               case ex: Exception =>
                 LOGGER.warn(s"Clear cache job has failed for ${carbonLoadModel

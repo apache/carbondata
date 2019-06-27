@@ -116,7 +116,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
       HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable,
         isUpdateOperation = false)
 
-      DeleteExecution.clearDistributedSegmentCache(carbonTable, deletedSegments)
+      DeleteExecution.clearDistributedSegmentCache(carbonTable, deletedSegments)(sparkSession)
 
       if (executorErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executorErrors.errorMsg)

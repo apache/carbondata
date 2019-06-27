@@ -82,7 +82,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
       val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier.get)(sparkSession)
       Checker
         .validateTableExists(tableIdentifier.get.database, tableIdentifier.get.table, sparkSession)
-      val numberOfIndexFiles = CacheUtil.getAllIndexFiles(carbonTable).size
+      val numberOfIndexFiles = CacheUtil.getAllIndexFiles(carbonTable)(sparkSession).size
       val driverRawResults = getTableCacheFromDriver(sparkSession, carbonTable, numberOfIndexFiles)
       val indexRawResults = if (CarbonProperties.getInstance().isDistributedPruningEnabled
       (tableIdentifier.get.database.getOrElse(sparkSession.catalog.currentDatabase),

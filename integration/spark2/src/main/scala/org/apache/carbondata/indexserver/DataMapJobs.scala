@@ -57,16 +57,8 @@ class DistributedDataMapJob extends AbstractDataMapJob {
     val (resonse, time) = logTime {
       try {
         val spark = SparkSQLUtil.getSparkSession
-        val taskGroupId = spark.sparkContext.getLocalProperty("spark.jobGroup.id") match {
-          case null => ""
-          case _ => spark.sparkContext.getLocalProperty("spark.jobGroup.id")
-        }
-        val taskGroupDesc = spark.sparkContext.getLocalProperty("spark.job.description") match {
-          case null => ""
-          case _ => spark.sparkContext.getLocalProperty("spark.job.description")
-        }
-        dataMapFormat.setTaskGroupId(taskGroupId)
-        dataMapFormat.setTaskGroupDesc(taskGroupDesc)
+        dataMapFormat.setTaskGroupId(SparkSQLUtil.getTaskGroupId(spark))
+        dataMapFormat.setTaskGroupDesc(SparkSQLUtil.getTaskGroupDesc(spark))
         var filterInf = dataMapFormat.getFilterResolverIntf
         val filterProcessor = new FilterExpressionProcessor
         filterInf = removeSparkUnknown(filterInf,
