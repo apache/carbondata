@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.channels.Channels;
 import java.util.TimeZone;
 
+import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stream.ExtendedByteArrayOutputStream;
 import org.apache.carbondata.sdk.file.Schema;
 
@@ -43,6 +44,17 @@ public class ArrowConverter {
 
   public ArrowConverter(Schema schema, int initialSize) {
     this.arrowSchema = ArrowUtils.toArrowSchema(schema, TimeZone.getDefault().getID());
+    this.allocator =
+        ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", initialSize, Long.MAX_VALUE);
+    this.root = VectorSchemaRoot.create(arrowSchema, allocator);
+    this.arrowWriter = ArrowWriter.create(root);
+    // currently blocklet level read and set initial value to 32 MB.
+    this.out = new ExtendedByteArrayOutputStream(32 * 1024 * 1024);
+    this.writer = new ArrowFileWriter(root, null, Channels.newChannel(out));
+  }
+
+  public ArrowConverter(QueryModel queryModel, int initialSize) {
+    this.arrowSchema = ArrowUtils.toArrowSchema(queryModel, TimeZone.getDefault().getID());
     this.allocator =
         ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", initialSize, Long.MAX_VALUE);
     this.root = VectorSchemaRoot.create(arrowSchema, allocator);
@@ -135,5 +147,9 @@ public class ArrowConverter {
     writer.writeBatch();
     writer.close();
     return root;
+  }
+
+  public ArrowWriter getArrowWriter() {
+    return arrowWriter;
   }
 }

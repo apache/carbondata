@@ -52,11 +52,24 @@ public abstract class ArrowFieldWriter {
 
   public abstract void setValue(Object data, int ordinal);
 
+  public void setValue(Object data, int ordinal, int offset, int length) {
+    throw new UnsupportedOperationException("Only supported for binary type");
+  }
+
   public void write(Object data, int ordinal) {
     if (data == null) {
       setNull();
     } else {
       setValue(data, ordinal);
+    }
+    count += 1;
+  }
+
+  public void write(Object data, int ordinal, int offset, int length) {
+    if (data == null) {
+      setNull();
+    } else {
+      setValue(data, ordinal, offset, length);
     }
     count += 1;
   }
@@ -68,6 +81,14 @@ public abstract class ArrowFieldWriter {
   public void reset() {
     valueVector.reset();
     count = 0;
+  }
+
+  public ValueVector getValueVector() {
+    return valueVector;
+  }
+
+  public int getCount() {
+    return count;
   }
 }
 
@@ -85,7 +106,11 @@ class BooleanWriter extends ArrowFieldWriter {
   }
 
   @Override public void setValue(Object data, int ordinal) {
-    bitVector.setSafe(count, (Boolean) data ? 1 : 0);
+    if (data instanceof Boolean) {
+      bitVector.setSafe(count, (Boolean) data ? 1 : 0);
+    } else {
+      bitVector.setSafe(count, (Byte) data);
+    }
   }
 }
 
@@ -238,8 +263,13 @@ class StringWriter extends ArrowFieldWriter {
   }
 
   @Override public void setValue(Object data, int ordinal) {
-    byte[] bytes =
-        (String.valueOf(data)).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+    byte[] bytes;
+    if (data instanceof byte[]) {
+      bytes = (byte[]) data;
+    } else {
+      bytes =
+          (String.valueOf(data)).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+    }
     ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
     this.varCharVector.setSafe(count, byteBuffer, byteBuffer.position(), bytes.length);
   }
@@ -260,6 +290,11 @@ class BinaryWriter extends ArrowFieldWriter {
   @Override public void setValue(Object data, int ordinal) {
     byte[] bytes = (byte[]) data;
     varBinaryVector.setSafe(count, bytes, 0, bytes.length);
+  }
+
+  public void setValue(Object data, int ordinal, int offset, int length) {
+    byte[] bytes = (byte[]) data;
+    varBinaryVector.setSafe(count, bytes, offset, length);
   }
 }
 

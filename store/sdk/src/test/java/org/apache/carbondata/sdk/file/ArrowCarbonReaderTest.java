@@ -38,6 +38,7 @@ import org.apache.arrow.vector.VectorLoader;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.mapreduce.InputSplit;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -67,7 +68,7 @@ public class ArrowCarbonReaderTest extends TestCase {
     try {
       FileUtils.deleteDirectory(new File(path));
 
-      Field[] fields = new Field[13];
+      Field[] fields = new Field[12];
       fields[0] = new Field("stringField", DataTypes.STRING);
       fields[1] = new Field("shortField", DataTypes.SHORT);
       fields[2] = new Field("intField", DataTypes.INT);
@@ -78,9 +79,8 @@ public class ArrowCarbonReaderTest extends TestCase {
       fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
       fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
       fields[9] = new Field("varcharField", DataTypes.VARCHAR);
-      fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
-      fields[11] = new Field("floatField", DataTypes.FLOAT);
-      fields[12] = new Field("binaryField", DataTypes.BINARY);
+      fields[10] = new Field("floatField", DataTypes.FLOAT);
+      fields[11] = new Field("binaryField", DataTypes.BINARY);
       Map<String, String> map = new HashMap<>();
       map.put("complex_delimiter_level_1", "#");
       CarbonWriter writer = CarbonWriter.builder()
@@ -102,7 +102,6 @@ public class ArrowCarbonReaderTest extends TestCase {
             "2019-02-12 03:03:34",
             12.345,
             "varchar",
-            "Hello#World#From#Carbon",
             1.23,
             value
         };
@@ -110,8 +109,9 @@ public class ArrowCarbonReaderTest extends TestCase {
       }
       writer.close();
       // Read data
+      InputSplit[] splits = CarbonReader.builder(path).getSplits(true);
       ArrowCarbonReader reader =
-          CarbonReader.builder(path, "_temp").withRowRecordReader().buildArrowReader();
+          CarbonReader.builder(splits[0]).buildArrowReader();
       Schema carbonSchema = CarbonSchemaReader.readSchema(path);
       byte[] data = reader.readArrowBatch(carbonSchema);
       BufferAllocator bufferAllocator = ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", 0, Long.MAX_VALUE);
@@ -140,7 +140,7 @@ public class ArrowCarbonReaderTest extends TestCase {
 
       // Read data with address (unsafe memory)
       ArrowCarbonReader reader1 =
-          CarbonReader.builder(path, "_temp").withRowRecordReader().buildArrowReader();
+          CarbonReader.builder(splits[0]).buildArrowReader();
       long address = reader1.readArrowBatchAddress(carbonSchema);
       int length = CarbonUnsafe.getUnsafe().getInt(address);
       byte[] data1 = new byte[length];
@@ -174,7 +174,7 @@ public class ArrowCarbonReaderTest extends TestCase {
 
       // Read as arrow vector
       ArrowCarbonReader reader2 =
-          CarbonReader.builder(path, "_temp").withRowRecordReader().buildArrowReader();
+          CarbonReader.builder(splits[0]).buildArrowReader();
       VectorSchemaRoot vectorSchemaRoot2 = reader2.readArrowVectors(carbonSchema);
       // check for 10 rows
       assertEquals(vectorSchemaRoot2.getRowCount(), 10);

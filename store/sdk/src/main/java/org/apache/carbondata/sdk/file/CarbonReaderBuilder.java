@@ -296,8 +296,7 @@ public class CarbonReaderBuilder {
     return format;
   }
 
-  private <T> RecordReader getRecordReader(Job job, CarbonFileInputFormat format,
-      List<RecordReader<Void, T>> readers, InputSplit split)
+  private <T> RecordReader getRecordReader(Job job, CarbonFileInputFormat format, InputSplit split)
       throws IOException, InterruptedException {
     TaskAttemptContextImpl attempt =
         new TaskAttemptContextImpl(job.getConfiguration(), new TaskAttemptID());
@@ -310,16 +309,25 @@ public class CarbonReaderBuilder {
         break;
       }
     }
-    if (useVectorReader && !hasComplex) {
-      queryModel.setDirectVectorFill(filterExpression == null);
-      reader = new CarbonVectorizedRecordReader(queryModel);
+    if (useArrowReader) {
+      if (hasComplex) {
+        throw new RuntimeException(" Arrow reader currently doesn't support complex data types");
+      } else {
+        queryModel.setDirectVectorFill(filterExpression == null);
+        reader = new CarbonArrowVectorizedRecordReader(queryModel);
+      }
     } else {
-      reader = format.createRecordReader(split, attempt);
+      if (useVectorReader && !hasComplex) {
+        queryModel.setDirectVectorFill(filterExpression == null);
+        reader = new CarbonVectorizedRecordReader(queryModel);
+      } else {
+        reader = format.createRecordReader(split, attempt);
+      }
     }
     try {
       reader.initialize(split, attempt);
     } catch (Exception e) {
-      CarbonUtil.closeStreams(readers.toArray(new RecordReader[0]));
+      CarbonUtil.closeStreams(reader);
       throw e;
     }
     return reader;
@@ -338,6 +346,9 @@ public class CarbonReaderBuilder {
     if (inputSplit != null) {
       return buildWithSplits(inputSplit);
     }
+    /*if (useArrowReader) {
+      throw new RuntimeException(" currently arrow reader support can build with split only");
+    }*/
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }
@@ -348,14 +359,10 @@ public class CarbonReaderBuilder {
           format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
       List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
       for (InputSplit split : splits) {
-        RecordReader reader = getRecordReader(job, format, readers, split);
+        RecordReader reader = getRecordReader(job, format, split);
         readers.add(reader);
       }
-      if (useArrowReader) {
-        return new ArrowCarbonReader<>(readers);
-      } else {
-        return new CarbonReader<>(readers);
-      }
+      return new CarbonReader<>(readers);
     } catch (Exception ex) {
       // Clear the datamap cache as it can get added in getSplits() method
       DataMapStoreManager.getInstance().clearDataMaps(
@@ -377,7 +384,7 @@ public class CarbonReaderBuilder {
         format.getOrCreateCarbonTable(job.getConfiguration()));
     try {
       List<RecordReader<Void, T>> readers = new ArrayList<>(1);
-      RecordReader reader = getRecordReader(job, format, readers, inputSplit);
+      RecordReader reader = getRecordReader(job, format, inputSplit);
       readers.add(reader);
       if (useArrowReader) {
         return new ArrowCarbonReader<>(readers);

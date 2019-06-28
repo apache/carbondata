@@ -255,4 +255,13 @@ public class CarbonReader<T> {
           " not initialise, please create it first.");
     }
   }
+
+  /**
+   * Get the current reader
+   *
+   * @return
+   */
+  public RecordReader<Void, T> getCurrentReader() {
+    return currentReader;
+  }
 }

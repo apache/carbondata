@@ -22,7 +22,6 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -51,11 +50,11 @@ public class ArrowCarbonReader<T> extends CarbonReader<T> {
    * @throws Exception
    */
   public byte[] readArrowBatch(Schema carbonSchema) throws Exception {
-    ArrowConverter arrowConverter = new ArrowConverter(carbonSchema, 0);
     while (hasNext()) {
-      arrowConverter.addToArrowBuffer(readNextBatchRow());
+      getCurrentReader().getCurrentValue();
     }
-    return arrowConverter.toSerializeArray();
+    return ((CarbonArrowVectorizedRecordReader) getCurrentReader()).getArrowConverter()
+        .toSerializeArray();
   }
 
   /**
@@ -69,11 +68,11 @@ public class ArrowCarbonReader<T> extends CarbonReader<T> {
    * @throws Exception
    */
   public VectorSchemaRoot readArrowVectors(Schema carbonSchema) throws Exception {
-    ArrowConverter arrowConverter = new ArrowConverter(carbonSchema, 0);
     while (hasNext()) {
-      arrowConverter.addToArrowBuffer(readNextBatchRow());
+      getCurrentReader().getCurrentValue();
     }
-    return arrowConverter.getArrowVectors();
+    return ((CarbonArrowVectorizedRecordReader) getCurrentReader()).getArrowConverter()
+        .getArrowVectors();
   }
 
   /**
@@ -89,11 +88,11 @@ public class ArrowCarbonReader<T> extends CarbonReader<T> {
    * @throws Exception
    */
   public long readArrowBatchAddress(Schema carbonSchema) throws Exception {
-    ArrowConverter arrowConverter = new ArrowConverter(carbonSchema, 0);
     while (hasNext()) {
-      arrowConverter.addToArrowBuffer(readNextBatchRow());
+      getCurrentReader().getCurrentValue();
     }
-    return arrowConverter.copySerializeArrayToOffHeap();
+    return ((CarbonArrowVectorizedRecordReader) getCurrentReader()).getArrowConverter()
+        .copySerializeArrayToOffHeap();
   }
 
   /**
