@@ -18,6 +18,8 @@
 package org.apache.spark.util
 
 import org.apache.spark.{SPARK_VERSION, TaskContext}
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 
 /*
  * this object use to handle file splits
@@ -55,6 +57,14 @@ object SparkUtil {
 
   def isSparkVersionEqualTo(xVersion: String): Boolean = {
     isSparkVersionXandAbove(xVersion, true)
+  }
+
+  def setNullExecutionId(sparkSession: SparkSession): Unit = {
+    // "spark.sql.execution.id is already set" exception will be
+    // thrown if not set to null in spark2.2 and below versions
+    if (!SparkUtil.isSparkVersionXandAbove("2.3")) {
+      sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
+    }
   }
 
 }

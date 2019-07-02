@@ -37,7 +37,6 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Ascending, AttributeReference, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, Sort}
 import org.apache.spark.sql.execution.LogicalRDD
-import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataLoadTableFileMapping, UpdateTableModel}
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, FindDataSourceTable, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
 import org.apache.spark.sql.hive.CarbonRelation
@@ -46,7 +45,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
+import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils, SparkUtil}
 
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -837,7 +836,7 @@ case class CarbonLoadDataCommand(
           query = logicalPlan,
           overwrite = false,
           ifPartitionNotExists = false)
-      sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
+      SparkUtil.setNullExecutionId(sparkSession)
       Dataset.ofRows(sparkSession, convertedPlan)
     } catch {
       case ex: Throwable =>
@@ -1056,7 +1055,7 @@ case class CarbonLoadDataCommand(
       catalogTable: CatalogTable,
       df: DataFrame,
       carbonLoadModel: CarbonLoadModel): LogicalPlan = {
-    sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
+    SparkUtil.setNullExecutionId(sparkSession)
     // In case of update, we don't need the segmrntid column in case of partitioning
     val dropAttributes = df.logicalPlan.output.dropRight(1)
     val finalOutput = catalogTable.schema.map { attr =>
