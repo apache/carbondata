@@ -22,8 +22,8 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, _}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 import org.apache.spark.sql.execution.command.MetadataCommand
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -122,7 +122,7 @@ case class CarbonCreateTableCommand(
           val tablePath = tableIdentifier.getTablePath
           val carbonRelation = CarbonSparkUtil.createCarbonRelation(tableInfo, tablePath)
           val rawSchema = CarbonSparkUtil.getRawSchema(carbonRelation)
-          sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
+          SparkUtil.setNullExecutionId(sparkSession)
           val partitionInfo = tableInfo.getFactTable.getPartitionInfo
           val partitionString =
             if (partitionInfo != null &&
