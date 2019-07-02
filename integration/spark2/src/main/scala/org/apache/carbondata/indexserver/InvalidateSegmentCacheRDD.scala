@@ -30,12 +30,25 @@ import org.apache.carbondata.spark.rdd.CarbonRDD
 class InvalidateSegmentCacheRDD(@transient private val ss: SparkSession, carbonTable: CarbonTable,
     invalidSegmentIds: List[String]) extends CarbonRDD[String](ss, Nil) {
 
-  val executorsList: Array[String] = DistributionUtil.getNodeList(ss.sparkContext)
+  val executorsList: Array[String] = DistributionUtil.getExecutors(ss.sparkContext).flatMap {
+    case (host, executors) =>
+      executors.map {
+        executor => s"executor_${host}_$executor"
+      }
+  }.toArray
 
   override def internalCompute(split: Partition,
       context: TaskContext): Iterator[String] = {
     DataMapStoreManager.getInstance().clearInvalidSegments(carbonTable, invalidSegmentIds.asJava)
     Iterator.empty
+  }
+
+  override protected def getPreferredLocations(split: Partition): Seq[String] = {
+    if (split.asInstanceOf[DataMapRDDPartition].getLocations != null) {
+      split.asInstanceOf[DataMapRDDPartition].getLocations.toSeq
+    } else {
+      Seq()
+    }
   }
 
   override protected def internalGetPartitions: Array[Partition] = {

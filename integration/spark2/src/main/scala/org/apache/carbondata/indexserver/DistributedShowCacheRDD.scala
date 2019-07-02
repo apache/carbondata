@@ -37,6 +37,14 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableName
       }
   }.toArray
 
+  override protected def getPreferredLocations(split: Partition): Seq[String] = {
+    if (split.asInstanceOf[DataMapRDDPartition].getLocations != null) {
+      split.asInstanceOf[DataMapRDDPartition].getLocations.toSeq
+    } else {
+      Seq()
+    }
+  }
+
   override protected def internalGetPartitions: Array[Partition] = {
     executorsList.zipWithIndex.map {
       case (executor, idx) =>
