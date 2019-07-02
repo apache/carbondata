@@ -316,10 +316,10 @@ object DistributedRDDUtils {
       if (existingSegmentMapping == null) {
         val newSegmentMapping = new ConcurrentHashMap[String, String]()
         newSegmentMapping.put(segment.getSegmentNo, s"${newHost}_$newExecutor")
-        tableToExecutorMapping.put(tableUniqueName, newSegmentMapping)
+        tableToExecutorMapping.putIfAbsent(tableUniqueName, newSegmentMapping)
       } else {
-        existingSegmentMapping.put(segment.getSegmentNo, s"${newHost}_$newExecutor")
-        tableToExecutorMapping.put(tableUniqueName, existingSegmentMapping)
+        existingSegmentMapping.putIfAbsent(segment.getSegmentNo, s"${newHost}_$newExecutor")
+        tableToExecutorMapping.putIfAbsent(tableUniqueName, existingSegmentMapping)
       }
       s"executor_${newHost}_$newExecutor"
     }
