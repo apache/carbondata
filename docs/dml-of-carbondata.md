@@ -70,6 +70,7 @@ CarbonData DML statements are documented here,which includes:
 | [IS_EMPTY_DATA_BAD_RECORD](#bad-records-handling)       | Whether empty data of a column to be considered as bad record or not |
 | [GLOBAL_SORT_PARTITIONS](#global_sort_partitions)       | Number of partition to use for shuffling of data during sorting |
 | [SCALE_FACTOR](#scale_factor)                           | Control the partition size for RANGE_COLUMN feature          |
+| [CARBON_OPTIONS_BINARY_DECODER]                         | Support configurable decode for loading from csv             |
 -
   You can use the following options to load data:
 
@@ -306,6 +307,11 @@ CarbonData DML statements are documented here,which includes:
    **NOTE:**
    * If both GLOBAL_SORT_PARTITIONS and SCALE_FACTOR are used at the same time, only GLOBAL_SORT_PARTITIONS is valid.
    * The compaction on RANGE_COLUMN will use LOCAL_SORT by default.
+
+   - ##### CARBON_ENABLE_RANGE_COMPACTION
+
+   To configure Ranges-based Compaction to be used or not for RANGE_COLUMN.
+   The default value is 'true'.
 
 ### INSERT DATA INTO CARBONDATA TABLE
 
