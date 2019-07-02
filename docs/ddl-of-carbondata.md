@@ -165,7 +165,7 @@ CarbonData DDL statements are documented here,which includes:
    
    | Properties | Default value | Description |
    | ---------- | ------------- | ----------- |
-   | carbon.local.dictionary.enable | false | By default, Local Dictionary will be disabled for the carbondata table. |
+   | carbon.local.dictionary.enable | true | By default, Local Dictionary will be enabled for the carbondata table. |
    | carbon.local.dictionary.decoder.fallback | true | Page Level data will not be maintained for the blocklet. During fallback, actual data will be retrieved from the encoded page data using local dictionary. **NOTE:** Memory footprint decreases significantly as compared to when this property is set to false |
     
    Local Dictionary can be configured using the following properties during create table command: 
