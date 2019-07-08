@@ -523,14 +523,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val cli: Parser[LogicalPlan] =
-    (CARBONCLI ~> FOR ~> TABLE) ~> (ident <~ ".").? ~ ident ~
-    (OPTIONS ~> "(" ~> commandOptions <~ ")").? <~
-    opt(";") ^^ {
-      case databaseName ~ tableName ~ commandList =>
-        var commandOptions: String = null
-        if (commandList.isDefined) {
-          commandOptions = commandList.get
-        }
+    CARBONCLI ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    (OPTIONS ~> "(" ~> commandOptions <~ ")") <~ opt(";") ^^ {
+      case databaseName ~ tableName ~ commandOptions =>
         CarbonCliCommand(
           convertDbNameToLowerCase(databaseName),
           tableName.toLowerCase(),

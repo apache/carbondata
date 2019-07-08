@@ -56,7 +56,7 @@ case class CarbonCliCommand(
       case x => Seq(x.trim)
     }.flatten
     val summaryOutput = new util.ArrayList[String]()
-    CarbonCli.run(finalCommands.toArray, summaryOutput)
+    CarbonCli.run(finalCommands.toArray, summaryOutput, false)
     summaryOutput.asScala.map(x =>
       Row(x)
     )
