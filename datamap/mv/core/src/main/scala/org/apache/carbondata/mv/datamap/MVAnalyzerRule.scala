@@ -70,7 +70,14 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
     plan.transform {
       case aggregate@Aggregate(grp, aExp, child) =>
         // check for if plan is for dataload for preaggregate table, then skip applying mv
-        if (aExp.exists(p => p.name.equals("preAggLoad") || p.name.equals("preAgg"))) {
+        val isPreAggLoad = aExp.exists { p =>
+          if (p.isInstanceOf[UnresolvedAlias]) {
+            false
+          } else {
+            p.name.equals("preAggLoad") || p.name.equals("preAgg")
+          }
+        }
+        if (isPreAggLoad) {
           needAnalysis = false
         }
         Aggregate(grp, aExp, child)

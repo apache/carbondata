@@ -540,6 +540,17 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     }.getMessage.contains("Operation not allowed on child table.")
   }
 
+  test("test count(*) with filter") {
+    sql("drop table if exists maintable")
+    sql("create table maintable(id int, name string, id1 string, id2 string, dob timestamp, doj " +
+        "timestamp, v1 bigint, v2 bigint, v3 decimal(30,10), v4 decimal(20,10), v5 double, v6 " +
+        "double ) stored by 'carbondata'")
+    sql("insert into maintable values(1, 'abc', 'id001', 'id002', '2017-01-01 00:00:00','2017-01-01 " +
+        "00:00:00', 234, 2242,12.4,23.4,2323,455 )")
+    checkAnswer(sql("select count(*) from maintable where  id1 < id2"), Seq(Row(1)))
+    sql("drop table if exists maintable")
+  }
+
   test("drop meta cache on mv datamap table") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
@@ -580,6 +591,6 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     newSet.addAll(oldSet)
     newSet
   }
-
+  
 }
 
