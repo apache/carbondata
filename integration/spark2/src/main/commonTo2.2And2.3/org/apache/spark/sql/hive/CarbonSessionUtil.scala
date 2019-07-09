@@ -17,7 +17,9 @@
 
 package org.apache.spark.sql.hive
 
-import org.apache.spark.sql.catalyst.TableIdentifier
+import java.util.concurrent.Callable
+
+import org.apache.spark.sql.catalyst.{QualifiedTableName, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition, ExternalCatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
@@ -29,8 +31,9 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.spark.sql.types.{StructField, StructType}
 import org.apache.spark.sql.util.SparkTypeConverter
-
 import scala.collection.mutable.ArrayBuffer
+
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 /**
  * This class refresh the relation from cache if the carbontable in
@@ -48,16 +51,43 @@ object CarbonSessionUtil {
    * @param sparkSession
    * @return
    */
-  def refreshRelation(rtnRelation: LogicalPlan, name: TableIdentifier)
+  def refreshRelationAndSetStats(rtnRelation: LogicalPlan, name: TableIdentifier)
     (sparkSession: SparkSession): Boolean = {
     var isRelationRefreshed = false
+
+    /**
+     * Set the stats to none in case of carbontable
+     */
+    def setStatsNone(catalogTable: CatalogTable): Unit = {
+      catalogTable.provider match {
+        case Some(provider)
+          if provider.equals("org.apache.spark.sql.CarbonSource") ||
+             provider.equalsIgnoreCase("carbondata") =>
+          // Update stats to none in case of carbon table as we are not expecting any stats from
+          // Hive. Hive gives wrong stats for carbon table.
+          catalogTable.stats match {
+            case Some(stats) =>
+              CarbonReflectionUtils.setFieldToCaseClass(catalogTable, "stats", None)
+            case _ =>
+          }
+          isRelationRefreshed =
+            CarbonEnv.refreshRelationFromCache(catalogTable.identifier)(sparkSession)
+        case _ =>
+      }
+    }
+
     rtnRelation match {
       case SubqueryAlias(_,
-      MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, _)
-      ) =>
+      MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, catalogTable)) =>
         isRelationRefreshed = CarbonEnv.refreshRelationFromCache(name)(sparkSession)
-      case MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, _) =>
+        if (catalogTable.isInstanceOf[Option[CatalogTable]]) {
+          catalogTable.asInstanceOf[Option[CatalogTable]].foreach(setStatsNone)
+        }
+      case MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, catalogTable) =>
         isRelationRefreshed = CarbonEnv.refreshRelationFromCache(name)(sparkSession)
+        if (catalogTable.isInstanceOf[Option[CatalogTable]]) {
+          catalogTable.asInstanceOf[Option[CatalogTable]].foreach(setStatsNone)
+        }
       case SubqueryAlias(_, relation) if
       relation.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
       relation.getClass.getName
@@ -70,21 +100,7 @@ object CarbonSessionUtil {
             "tableMeta",
             relation
           ).asInstanceOf[CatalogTable]
-        catalogTable.provider match {
-          case Some(provider)
-            if provider.equals("org.apache.spark.sql.CarbonSource") ||
-               provider.equalsIgnoreCase("carbondata") =>
-            // Update stats to none in case of carbon table as we are not expecting any stats from
-            // Hive. Hive gives wrong stats for carbon table.
-            catalogTable.stats match {
-              case Some(stats) =>
-                CarbonReflectionUtils.setFieldToCaseClass(catalogTable, "stats", None)
-              case _ =>
-            }
-            isRelationRefreshed =
-              CarbonEnv.refreshRelationFromCache(catalogTable.identifier)(sparkSession)
-          case _ =>
-        }
+        setStatsNone(catalogTable)
       case _ =>
     }
     isRelationRefreshed
@@ -157,6 +173,17 @@ object CarbonSessionUtil {
       .alterTableDataSchema(tableIdentifier.database.get,
         tableIdentifier.table,
         StructType(colArray))
+  }
+
+  def updateCachedPlan(plan: LogicalPlan): LogicalPlan = {
+    plan match {
+      case sa@SubqueryAlias(_,
+      MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, catalogTable)) =>
+        sa.copy(child = sa.child.asInstanceOf[LogicalRelation].copy())
+      case MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, _) =>
+        plan.asInstanceOf[LogicalRelation].copy()
+      case _ => plan
+    }
   }
 
 }
