@@ -106,6 +106,59 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
   }
 
+  @Test
+  public void testWriteAndReadJson() throws IOException, InterruptedException {
+    int numRows = 100;
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    String json = "{\"name\":\"bob\", \"age\":10}";
+
+    Schema schema = new Schema(
+        new Field[]{
+            new Field("name", "string"),
+            new Field("age", "int")});
+
+    try {
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path)
+          .withJsonInput(schema).writtenBy("AvroCarbonWriterTest").build();
+
+      for (int i = 0; i < numRows; i++) {
+        writer.write(json);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
+      @Override public boolean accept(File pathname) {
+        return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
+      }
+    });
+    Assert.assertNotNull(dataFiles);
+    Assert.assertEquals(1, dataFiles.length);
+
+    // read it and verify
+
+    CarbonReader reader = CarbonReader.builder(path, "_temp")
+        .projection(new String[]{"name", "age"}).build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      Assert.assertEquals("bob", row[0]);
+      Assert.assertEquals(10, row[1]);
+      i++;
+    }
+    Assert.assertEquals(i, numRows);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
   @Test public void testReadWithZeroBatchSize() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));

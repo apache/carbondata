@@ -65,7 +65,10 @@ public class CarbonWriterBuilder {
   private int pageSizeInMb;
   private int blockSize;
   private long timestamp;
-  private Map<String, String> options;
+
+  // use TreeMap as keys need to be case insensitive
+  private Map<String, String> options = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
   private String taskNo;
   private int localDictionaryThreshold;
   private boolean isLocalDictionaryEnabled = Boolean.parseBoolean(
@@ -239,10 +242,6 @@ public class CarbonWriterBuilder {
       }
     }
 
-    if (this.options == null) {
-      // convert it to treeMap as keys need to be case insensitive
-      this.options = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    }
     this.options.putAll(options);
     return this;
   }
