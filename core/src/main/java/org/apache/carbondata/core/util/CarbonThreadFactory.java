@@ -49,7 +49,7 @@ public class CarbonThreadFactory implements ThreadFactory {
   @Override public Thread newThread(Runnable r) {
     final Thread thread = defaultFactory.newThread(r);
     if (withTime) {
-      thread.setName(name + "_" + System.currentTimeMillis());
+      thread.setName(name + "_" + System.nanoTime());
     } else {
       thread.setName(name);
     }
