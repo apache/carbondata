@@ -305,13 +305,13 @@ public class CarbonTablePath {
    * @param factUpdateTimeStamp unique identifier to identify an update
    * @return gets data file name only with out path
    */
-  public static String getCarbonDataFileName(Integer filePartNo, Long taskNo, int bucketNumber,
+  public static String getCarbonDataFileName(Integer filePartNo, String taskNo, int bucketNumber,
       int batchNo, String factUpdateTimeStamp, String segmentNo) {
     return DATA_PART_PREFIX + filePartNo + "-" + taskNo + BATCH_PREFIX + batchNo + "-"
         + bucketNumber + "-" + segmentNo + "-" + factUpdateTimeStamp + CARBON_DATA_EXT;
   }
 
-  public static String getShardName(Long taskNo, int bucketNumber, int batchNo,
+  public static String getShardName(String taskNo, int bucketNumber, int batchNo,
       String factUpdateTimeStamp, String segmentNo) {
     return taskNo + BATCH_PREFIX + batchNo + "-" + bucketNumber + "-" + segmentNo + "-"
         + factUpdateTimeStamp;
@@ -324,14 +324,14 @@ public class CarbonTablePath {
    * @param factUpdatedTimeStamp time stamp
    * @return filename
    */
-  public static String getCarbonIndexFileName(long taskNo, int bucketNumber, int batchNo,
+  public static String getCarbonIndexFileName(String taskNo, int bucketNumber, int batchNo,
       String factUpdatedTimeStamp, String segmentNo) {
     return getShardName(taskNo, bucketNumber, batchNo, factUpdatedTimeStamp, segmentNo)
         + INDEX_FILE_EXT;
   }
 
   public static String getCarbonStreamIndexFileName() {
-    return getCarbonIndexFileName(0, 0, 0, "0", "0");
+    return getCarbonIndexFileName("0", 0, 0, "0", "0");
   }
 
   public static String getCarbonStreamIndexFilePath(String segmentDir) {
@@ -516,8 +516,8 @@ public class CarbonTablePath {
     /**
      * Return the taskId part from taskNo(include taskId + batchNo)
      */
-    public static long getTaskIdFromTaskNo(String taskNo) {
-      return Long.parseLong(taskNo.split(BATCH_PREFIX)[0]);
+    public static String getTaskIdFromTaskNo(String taskNo) {
+      return taskNo.split(BATCH_PREFIX)[0];
     }
 
     /**

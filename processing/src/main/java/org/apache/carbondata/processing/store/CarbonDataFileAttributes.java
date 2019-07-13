@@ -25,7 +25,7 @@ public class CarbonDataFileAttributes {
   /**
    * task Id which is unique for each spark task
    */
-  private long taskId;
+  private String taskId;
 
   /**
    * load start time
@@ -36,15 +36,24 @@ public class CarbonDataFileAttributes {
    * @param taskId
    * @param factTimeStamp
    */
-  public CarbonDataFileAttributes(long taskId, long factTimeStamp) {
+  public CarbonDataFileAttributes(String taskId, long factTimeStamp) {
     this.taskId = taskId;
+    this.factTimeStamp = factTimeStamp;
+  }
+
+  /**
+   * @param taskId
+   * @param factTimeStamp
+   */
+  public CarbonDataFileAttributes(long taskId, long factTimeStamp) {
+    this.taskId = String.valueOf(taskId);
     this.factTimeStamp = factTimeStamp;
   }
 
   /**
    * @return
    */
-  public long getTaskId() {
+  public String getTaskId() {
     return taskId;
   }
 

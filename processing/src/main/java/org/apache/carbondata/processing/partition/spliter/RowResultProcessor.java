@@ -57,7 +57,7 @@ public class RowResultProcessor {
         CarbonFactDataHandlerModel.getCarbonFactDataHandlerModel(loadModel, carbonTable,
             segProp, tableName, tempStoreLocation, carbonStoreLocation);
     CarbonDataFileAttributes carbonDataFileAttributes =
-        new CarbonDataFileAttributes(Long.parseLong(loadModel.getTaskNo()),
+        new CarbonDataFileAttributes(loadModel.getTaskNo(),
             loadModel.getFactTimeStamp());
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     carbonFactDataHandlerModel.setBucketId(bucketId);

@@ -18,6 +18,7 @@
 package org.apache.spark.sql.carbondata.execution.datasources
 
 import java.net.URI
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -153,7 +154,8 @@ class SparkCarbonFileFormat extends FileFormat
           path
         }
         context.getConfiguration.set("carbon.outputformat.writepath", updatedPath)
-        context.getConfiguration.set("carbon.outputformat.taskno", System.nanoTime() + "")
+        context.getConfiguration.set("carbon.outputformat.taskno",
+          UUID.randomUUID().toString.replace("-", ""))
         new CarbonOutputWriter(path, context, dataSchema.fields)
       }
 
