@@ -19,6 +19,7 @@ package org.apache.spark.sql.carbondata.execution.datasources
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -200,6 +201,10 @@ object CarbonSparkDataSourceUtil {
       val dataValue = if (dataTypeOfAttribute.equals(CarbonDataTypes.BINARY)
               && Option(value).isDefined) {
         new String(value.asInstanceOf[Array[Byte]])
+      } else if (dataTypeOfAttribute.equals(CarbonDataTypes.DATE) &&
+                 value.isInstanceOf[java.sql.Date]) {
+        // In case of Date object , convert back to int.
+        DateTimeUtils.fromJavaDate(value.asInstanceOf[java.sql.Date])
       } else {
         value
       }
