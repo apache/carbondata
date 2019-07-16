@@ -377,16 +377,16 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop datamap if exists dm ")
     intercept[UnsupportedOperationException] {
       sql("create datamap dm using 'mv' as select c_code from maintable")
-    }.getMessage.contains("MV datamap is unsupported for ComplexData type column: c_code")
+    }.getMessage.contains("MV datamap is not supported for complex datatype columns and complex datatype return types of function : c_code")
     intercept[UnsupportedOperationException] {
       sql("create datamap dm using 'mv' as select price from maintable")
-    }.getMessage.contains("MV datamap is unsupported for ComplexData type column: price")
+    }.getMessage.contains("MV datamap is not supported for complex datatype columns and complex datatype return types of function : price")
     intercept[UnsupportedOperationException] {
       sql("create datamap dm using 'mv' as select type from maintable")
-    }.getMessage.contains("MV datamap is unsupported for ComplexData type column: type")
+    }.getMessage.contains("MV datamap is not supported for complex datatype columns and complex datatype return types of function : type")
     intercept[UnsupportedOperationException] {
       sql("create datamap dm using 'mv' as select price.b from maintable")
-    }.getMessage.contains("MV datamap is unsupported for ComplexData type child column: price")
+    }.getMessage.contains("MV datamap is not supported for complex datatype child columns and complex datatype return types of function : price")
     sql("drop table IF EXISTS maintable")
   }
 
@@ -549,6 +549,34 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
         "00:00:00', 234, 2242,12.4,23.4,2323,455 )")
     checkAnswer(sql("select count(*) from maintable where  id1 < id2"), Seq(Row(1)))
     sql("drop table if exists maintable")
+  }
+
+  test("test mv with filter instance of expression") {
+    sql("drop table IF EXISTS maintable")
+    sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB date, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'")
+    sql("insert into maintable values(1, 'abc', 'abc001', '1975-06-11','1975-06-11 02:00:03.0', 120, 1234,4.34,24.56,12345, 2464, 45)")
+    sql("drop datamap if exists dm ")
+    intercept[UnsupportedOperationException] {
+      sql("create datamap dm using 'mv' as select dob from maintable where (dob='1975-06-11' or cust_id=2)")
+    }.getMessage.contains("Group by/Filter columns must be present in project columns")
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test histogram_numeric, collect_set & collect_list functions") {
+    sql("drop table IF EXISTS maintable")
+    sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'")
+    sql("insert into maintable values(1, 'abc', 'abc001', '1975-06-11 01:00:03.0','1975-06-11 02:00:03.0', 120, 1234,4.34,24.56,12345, 2464, 45)")
+    sql("drop datamap if exists dm ")
+    intercept[UnsupportedOperationException] {
+      sql("create datamap dm using 'mv' as select histogram_numeric(1,2) from maintable")
+    }.getMessage.contains("MV datamap is not supported for complex datatype columns and complex datatype return types of function : histogram_numeric( 1, 2)")
+    intercept[UnsupportedOperationException] {
+      sql("create datamap dm using 'mv' as select collect_set(cust_id) from maintable")
+    }.getMessage.contains("MV datamap is not supported for complex datatype columns and complex datatype return types of function : collect_set(cust_id)")
+    intercept[UnsupportedOperationException] {
+      sql("create datamap dm using 'mv' as select collect_list(cust_id) from maintable")
+    }.getMessage.contains("MV datamap is not supported for complex datatype columns and complex datatype return types of function : collect_list(cust_id)")
+    sql("drop table IF EXISTS maintable")
   }
 
   test("drop meta cache on mv datamap table") {

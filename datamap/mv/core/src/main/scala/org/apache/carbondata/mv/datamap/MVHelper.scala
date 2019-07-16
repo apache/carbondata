@@ -87,7 +87,8 @@ object MVHelper {
       if (attr.dataType.isInstanceOf[ArrayType] || attr.dataType.isInstanceOf[StructType] ||
           attr.dataType.isInstanceOf[MapType]) {
         throw new UnsupportedOperationException(
-          s"MV datamap is unsupported for ComplexData type column: " + attr.name)
+          s"MV datamap is not supported for complex datatype columns and complex datatype return " +
+          s"types of function :" + attr.name)
       }
       val name = updateColumnName(attr, counter)
       counter += 1
@@ -260,13 +261,21 @@ object MVHelper {
       f.children.collect {
         case p: AttributeReference =>
           predicateList = predicateList.+:(p)
+        case e: Expression =>
+          e.collect {
+            case attr: AttributeReference =>
+              predicateList = predicateList.+:(attr)
+          }
       }
     }
     if (predicateList.nonEmpty) {
       predicateList.forall { p =>
         s.outputList.exists {
           case a: Alias =>
-            a.semanticEquals(p) || a.child.semanticEquals(p)
+            a.semanticEquals(p) || a.child.semanticEquals(p) || a.collect {
+              case attr: AttributeReference =>
+                attr.semanticEquals(p)
+            }.exists(p => p.equals(true))
           case other => other.semanticEquals(p)
         }
       }
