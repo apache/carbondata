@@ -45,7 +45,7 @@ object DataMapUtil {
     parentOrder.foreach(parentcol =>
       fields.filter(col => fieldRelationMap(col).aggregateFunction.isEmpty &&
                            fieldRelationMap(col).columnTableRelationList.size == 1 &&
-                           parentcol.equals(fieldRelationMap(col).
+                           parentcol.equalsIgnoreCase(fieldRelationMap(col).
                              columnTableRelationList.get(0).parentColumnName))
         .map(cols => neworder :+= cols.column))
     if (neworder.nonEmpty) {

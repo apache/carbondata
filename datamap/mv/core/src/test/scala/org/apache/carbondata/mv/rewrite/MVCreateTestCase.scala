@@ -1051,7 +1051,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table mv_like(name string, age int, address string, Country string, id int) stored by 'carbondata'")
     sql(
-      "create datamap mvlikedm1 using 'mv' as select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
+      "create datamap mvlikedm1 using 'mv' as select name,address,sum(Country) from mv_like where Country NOT LIKE 'US' group by name,address")
     sql(
       "create datamap mvlikedm2 using 'mv' as select name,address,Country from mv_like where Country = 'US' or Country = 'China' group by name,address,Country")
     sql("insert into mv_like select 'chandler', 32, 'newYork', 'US', 5")
