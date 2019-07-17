@@ -121,16 +121,21 @@ class DataFile {
     this.partNo = CarbonTablePath.DataFileUtil.getPartNo(fileName);
 
     // calculate blocklet size and column size
-    // first calculate the header size, it equals the offset of first
-    // column chunk in first blocklet
-    long headerSizeInBytes = footer.blocklet_info_list3.get(0).column_data_chunks_offsets.get(0);
-    long previousOffset = headerSizeInBytes;
-    for (BlockletInfo3 blockletInfo3 : footer.blocklet_info_list3) {
+    for (int j = 0; j < footer.getBlocklet_info_list3().size(); j++) {
+      // remark start and end offset of current blocklet for computing blocklet size
+      // and chunk data size of the last column
+      BlockletInfo3 blockletInfo3 = footer.blocklet_info_list3.get(j);
+      long blockletEndOffset;
+      if (j != footer.getBlocklet_info_list3().size() - 1) {
+        // use start offset of next blocklet as end offset of current blocklet
+        blockletEndOffset = footer.blocklet_info_list3.get(j + 1).column_data_chunks_offsets.get(j);
+      } else {
+        // use start offset of footer as end offset of current blocklet if it is the last blocklet
+        blockletEndOffset = fileSizeInBytes - footerSizeInBytes;
+      }
       // calculate blocklet size in bytes
-      long blockletOffset = blockletInfo3.column_data_chunks_offsets.get(0);
-      blockletSizeInBytes.add(blockletOffset - previousOffset);
-      previousOffset = blockletOffset;
-
+      this.blockletSizeInBytes.add(
+              blockletEndOffset - blockletInfo3.column_data_chunks_offsets.get(0));
       // calculate column size in bytes for each column
       LinkedList<Long> columnDataSize = new LinkedList<>();
       LinkedList<Long> columnMetaSize = new LinkedList<>();
@@ -140,17 +145,12 @@ class DataFile {
         columnMetaSize.add(blockletInfo3.column_data_chunks_length.get(i).longValue());
         previousChunkOffset = blockletInfo3.column_data_chunks_offsets.get(i);
       }
-      // last column chunk data size
-      columnDataSize.add(fileSizeInBytes - footerSizeInBytes - previousChunkOffset);
+      // update chunk data size of the last column
+      columnDataSize.add(blockletEndOffset - previousChunkOffset);
       columnDataSize.removeFirst();
       this.columnDataSizeInBytes.add(columnDataSize);
       this.columnMetaSizeInBytes.add(columnMetaSize);
-
     }
-    // last blocklet size
-    blockletSizeInBytes.add(
-        fileSizeInBytes - footerSizeInBytes - headerSizeInBytes - previousOffset);
-    this.blockletSizeInBytes.removeFirst();
 
     assert (blockletSizeInBytes.size() == getNumBlocklets());
   }
