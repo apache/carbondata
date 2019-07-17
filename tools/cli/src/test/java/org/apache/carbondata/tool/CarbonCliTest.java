@@ -234,11 +234,11 @@ public class CarbonCliTest {
 
     expectedOutput = buildLines(
         "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%   Min  Max      " ,
-        "0    0      3.36KB     5.14MB     false      0            0.0B      93.76KB      0.0   100.0  0    2999990  " ,
+        "0    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  0    2999990  " ,
         "0    1      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  1    2999992  " ,
-        "1    0      3.36KB     5.14MB     false      0            0.0B      93.76KB      0.0   100.0  3    2999994  " ,
+        "1    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  3    2999994  " ,
         "1    1      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  5    2999996  " ,
-        "2    0      3.36KB     4.06MB     false      0            0.0B      93.76KB      0.0   100.0  7    2999998  " ,
+        "2    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  7    2999998  " ,
         "2    1      2.04KB     1.49MB     false      0            0.0B      89.62KB      0.0   100.0  9    2999999  ");
     Assert.assertTrue(output.contains(expectedOutput));
     Assert.assertTrue(output.contains("## version Details"));
