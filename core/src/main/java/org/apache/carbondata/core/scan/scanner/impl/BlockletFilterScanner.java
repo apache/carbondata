@@ -96,8 +96,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
    * @param rawBlockletColumnChunks block chunk holder which holds the data
    * @throws FilterUnsupportedException
    */
-  @Override
-  public BlockletScannedResult scanBlocklet(RawBlockletColumnChunks rawBlockletColumnChunks)
+  @Override public BlockletScannedResult scanBlocklet(
+      RawBlockletColumnChunks rawBlockletColumnChunks)
       throws IOException, FilterUnsupportedException {
     if (blockExecutionInfo.isDirectVectorFill()) {
       return executeFilterForPages(rawBlockletColumnChunks);
@@ -106,8 +106,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     }
   }
 
-  @Override
-  public boolean isScanRequired(DataRefNode dataBlock) {
+  @Override public boolean isScanRequired(DataRefNode dataBlock) {
     // adding statistics for number of pages
     QueryStatistic totalPagesScanned = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.TOTAL_PAGE_SCANNED);
@@ -115,31 +114,30 @@ public class BlockletFilterScanner extends BlockletFullScanner {
         totalPagesScanned.getCount() + dataBlock.numberOfPages());
     // apply min max
     if (isMinMaxEnabled) {
-      if (null == dataBlock.getColumnsMaxValue()
-              || null == dataBlock.getColumnsMinValue()) {
+      if (null == dataBlock.getColumnsMaxValue() || null == dataBlock.getColumnsMinValue()) {
         return true;
       }
       BitSet bitSet = null;
       // check for implicit include filter instance
       if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
-        String blockletId = blockExecutionInfo.getBlockIdString() +
-            CarbonCommonConstants.FILE_SEPARATOR + dataBlock.blockletIndex();
+        String blockletId =
+            blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR + dataBlock
+                .blockletIndex();
         bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
-            .isFilterValuesPresentInBlockOrBlocklet(
-                dataBlock.getColumnsMaxValue(),
+            .isFilterValuesPresentInBlockOrBlocklet(dataBlock.getColumnsMaxValue(),
                 dataBlock.getColumnsMinValue(), blockletId, dataBlock.minMaxFlagArray());
       } else {
         bitSet = this.filterExecuter
-            .isScanRequired(dataBlock.getColumnsMaxValue(),
-                dataBlock.getColumnsMinValue(), dataBlock.minMaxFlagArray());
+            .isScanRequired(dataBlock.getColumnsMaxValue(), dataBlock.getColumnsMinValue(),
+                dataBlock.minMaxFlagArray());
       }
       return !bitSet.isEmpty();
     }
     return true;
   }
 
-  @Override
-  public void readBlocklet(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
+  @Override public void readBlocklet(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws IOException {
     long startTime = System.currentTimeMillis();
     this.filterExecuter.readColumnChunks(rawBlockletColumnChunks);
     // adding statistics for carbon read time
@@ -176,8 +174,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     BitSetGroup fgBitSetGroup = rawBlockletColumnChunks.getDataBlock().getIndexedData();
     rawBlockletColumnChunks.setBitSetGroup(fgBitSetGroup);
     // apply filter on actual data, for each page
-    BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(rawBlockletColumnChunks,
-        useBitSetPipeLine);
+    BitSetGroup bitSetGroup =
+        this.filterExecuter.applyFilter(rawBlockletColumnChunks, useBitSetPipeLine);
     // if filter result is empty then return with empty result
     if (bitSetGroup.isEmpty()) {
       CarbonUtil.freeMemory(rawBlockletColumnChunks.getDimensionRawColumnChunks(),
@@ -198,8 +196,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     BlockletScannedResult scannedResult =
         new FilterQueryScannedResult(blockExecutionInfo, queryStatisticsModel);
     scannedResult.setBlockletId(
-        blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR +
-            rawBlockletColumnChunks.getDataBlock().blockletIndex());
+        blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR
+            + rawBlockletColumnChunks.getDataBlock().blockletIndex());
     // valid scanned blocklet
     QueryStatistic validScannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);
@@ -234,7 +232,6 @@ public class BlockletFilterScanner extends BlockletFullScanner {
 
     FileReader fileReader = rawBlockletColumnChunks.getFileReader();
 
-
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         new DimensionRawColumnChunk[blockExecutionInfo.getTotalNumberDimensionToRead()];
     int numDimensionChunks = dimensionRawColumnChunks.length;
@@ -244,37 +241,33 @@ public class BlockletFilterScanner extends BlockletFullScanner {
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
     }
     //dimensionReadTime is the time required to read the data from dimension array
-    long dimensionReadTime = System.currentTimeMillis();
+    long totalReadTime = System.currentTimeMillis();
     int[][] allSelectedDimensionColumnIndexRange =
         blockExecutionInfo.getAllSelectedDimensionColumnIndexRange();
     DimensionRawColumnChunk[] projectionListDimensionChunk = rawBlockletColumnChunks.getDataBlock()
         .readDimensionChunks(fileReader, allSelectedDimensionColumnIndexRange);
-    dimensionReadTime = System.currentTimeMillis() - dimensionReadTime;
+    totalReadTime = System.currentTimeMillis() - totalReadTime;
 
     for (int[] columnIndexRange : allSelectedDimensionColumnIndexRange) {
-      System.arraycopy(projectionListDimensionChunk, columnIndexRange[0],
-          dimensionRawColumnChunks, columnIndexRange[0],
-          columnIndexRange[1] + 1 - columnIndexRange[0]);
+      System.arraycopy(projectionListDimensionChunk, columnIndexRange[0], dimensionRawColumnChunks,
+          columnIndexRange[0], columnIndexRange[1] + 1 - columnIndexRange[0]);
     }
 
-    /*
-     * In the case when the projection of the projected dimension are not loaded in the
-     * dimensionDataColumnChunk , i.e., filterDimension, they are loaded into
-     * projectionListDimensionIndex. filterDimensionReadTime contains the time required for the
-     * same.
+    /**
+     * Below code is to read the dimension which is not read as part of filter or projection
+     * for example in case of or filter if first filter matches all the rows then it will not read
+     * second filter column and if it is present as part of projection, so needs to be read
      */
-
     long filterDimensionReadTime = System.currentTimeMillis();
     int[] projectionListDimensionIndexes = blockExecutionInfo.getProjectionListDimensionIndexes();
     for (int projectionListDimensionIndex : projectionListDimensionIndexes) {
       if (null == dimensionRawColumnChunks[projectionListDimensionIndex]) {
         dimensionRawColumnChunks[projectionListDimensionIndex] =
-            rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
-                fileReader, projectionListDimensionIndex);
+            rawBlockletColumnChunks.getDataBlock()
+                .readDimensionChunk(fileReader, projectionListDimensionIndex);
       }
     }
-    filterDimensionReadTime = System.currentTimeMillis() - filterDimensionReadTime;
-    dimensionReadTime +=filterDimensionReadTime;
+    totalReadTime += System.currentTimeMillis() - filterDimensionReadTime;
 
     DimensionColumnPage[][] dimensionColumnPages =
         new DimensionColumnPage[numDimensionChunks][numPages];
@@ -290,7 +283,6 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       }
     }
 
-    //measureReadTime is the time required to read the data from the measure array.
     long measureReadTime = System.currentTimeMillis();
     int[][] allSelectedMeasureColumnIndexRange =
         blockExecutionInfo.getAllSelectedMeasureIndexRange();
@@ -302,10 +294,10 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       System.arraycopy(projectionListMeasureChunk, columnIndexRange[0], measureRawColumnChunks,
           columnIndexRange[0], columnIndexRange[1] + 1 - columnIndexRange[0]);
     }
-    /*
-     * In the case when the projection of the projected measure are not loaded in the
-     * ColumnPage, i.e., filterMeasure, they are loaded into
-     * projectionListMeasureIndex. filterMeasureReadTime contains the time required for the same.
+    /**
+     * Below code is to read the measure which is not read as part of filter or projection
+     * for example in case of or filter if first filter matches all the rows then it will not read
+     * second filter column and if it is present as part of projection, so needs to be read
      */
     long filterMeasureReadTime = System.currentTimeMillis();
     int[] projectionListMeasureIndexes = blockExecutionInfo.getProjectionListMeasureIndexes();
@@ -315,9 +307,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
             .readMeasureChunk(fileReader, projectionListMeasureIndex);
       }
     }
-    filterMeasureReadTime = System.currentTimeMillis() - filterMeasureReadTime;
-    measureReadTime +=filterMeasureReadTime;
-    dimensionReadTime +=measureReadTime;
+    measureReadTime += System.currentTimeMillis() - filterMeasureReadTime;
+    totalReadTime += measureReadTime;
 
     ColumnPage[][] measureColumnPages = new ColumnPage[numMeasureChunks][numPages];
     scannedResult.setDimensionColumnPages(dimensionColumnPages);
@@ -331,11 +322,11 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
     scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
-        scanTime.getCount() + (System.currentTimeMillis() - startTime - dimensionReadTime));
+        scanTime.getCount() + (System.currentTimeMillis() - startTime - totalReadTime));
     QueryStatistic readTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.READ_BLOCKlET_TIME);
     readTime.addCountStatistic(QueryStatisticsConstants.READ_BLOCKlET_TIME,
-        readTime.getCount() + dimensionReadTime);
+        readTime.getCount() + totalReadTime);
     return scannedResult;
   }
 
