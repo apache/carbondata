@@ -55,6 +55,7 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                               new ShowLoadsTestCase ::
                               new SinglepassTestCase ::
                               new SortColumnTestCase ::
+                              new SegmentReadingTestCase ::
                               new TableCommentAlterTableTestCase ::
                               new TimestamptypesTestCase ::
                               new V3offheapvectorTestCase ::
@@ -147,6 +148,7 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new QueriesRangeFilterTestCase ::
                     new QueriesSparkBlockDistTestCase ::
                     new DataLoadingV3TestCase ::
+                    new SegmentReadingTestCase ::
                     new QueriesIncludeDictionaryTestCase ::
                     new TestRegisterCarbonTable ::
                     new TableCommentAlterTableTestCase ::
