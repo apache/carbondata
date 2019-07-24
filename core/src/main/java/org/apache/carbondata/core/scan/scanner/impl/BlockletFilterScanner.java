@@ -232,11 +232,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       }
     }
 
-    long dimensionReadTime = System.currentTimeMillis();
-    dimensionReadTime = System.currentTimeMillis() - dimensionReadTime;
-
     FileReader fileReader = rawBlockletColumnChunks.getFileReader();
-
 
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         new DimensionRawColumnChunk[blockExecutionInfo.getTotalNumberDimensionToRead()];
@@ -246,20 +242,26 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       dimensionRawColumnChunks[chunkIndex] =
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
     }
+    //dimensionReadTime is the time required to read the data from dimension array
+    long totalReadTime = System.currentTimeMillis();
     int[][] allSelectedDimensionColumnIndexRange =
         blockExecutionInfo.getAllSelectedDimensionColumnIndexRange();
     DimensionRawColumnChunk[] projectionListDimensionChunk = rawBlockletColumnChunks.getDataBlock()
         .readDimensionChunks(fileReader, allSelectedDimensionColumnIndexRange);
+    totalReadTime = System.currentTimeMillis() - totalReadTime;
+
     for (int[] columnIndexRange : allSelectedDimensionColumnIndexRange) {
       System.arraycopy(projectionListDimensionChunk, columnIndexRange[0],
           dimensionRawColumnChunks, columnIndexRange[0],
           columnIndexRange[1] + 1 - columnIndexRange[0]);
     }
 
-    /*
-     * in case projection if the projected dimension are not loaded in the dimensionColumnDataChunk
-     * then loading them
+    /**
+     * Below code is to read the dimension which is not read as part of filter or projection
+     * for example in case of or filter if first filter matches all the rows then it will not read
+     * second filter column and if it is present as part of projection, so needs to be read
      */
+    long filterDimensionReadTime = System.currentTimeMillis();
     int[] projectionListDimensionIndexes = blockExecutionInfo.getProjectionListDimensionIndexes();
     for (int projectionListDimensionIndex : projectionListDimensionIndexes) {
       if (null == dimensionRawColumnChunks[projectionListDimensionIndex]) {
@@ -268,6 +270,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
                 fileReader, projectionListDimensionIndex);
       }
     }
+    totalReadTime += System.currentTimeMillis() - filterDimensionReadTime;
 
     DimensionColumnPage[][] dimensionColumnPages =
         new DimensionColumnPage[numDimensionChunks][numPages];
@@ -283,18 +286,23 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       }
     }
 
+    long measureReadTime = System.currentTimeMillis();
     int[][] allSelectedMeasureColumnIndexRange =
         blockExecutionInfo.getAllSelectedMeasureIndexRange();
     MeasureRawColumnChunk[] projectionListMeasureChunk = rawBlockletColumnChunks.getDataBlock()
         .readMeasureChunks(fileReader, allSelectedMeasureColumnIndexRange);
+    measureReadTime = System.currentTimeMillis() - measureReadTime;
+
     for (int[] columnIndexRange : allSelectedMeasureColumnIndexRange) {
       System.arraycopy(projectionListMeasureChunk, columnIndexRange[0], measureRawColumnChunks,
           columnIndexRange[0], columnIndexRange[1] + 1 - columnIndexRange[0]);
     }
-    /*
-     * in case projection if the projected measure are not loaded in the ColumnPage
-     * then loading them
+    /**
+     * Below code is to read the measure which is not read as part of filter or projection
+     * for example in case of or filter if first filter matches all the rows then it will not read
+     * second filter column and if it is present as part of projection, so needs to be read
      */
+    long filterMeasureReadTime = System.currentTimeMillis();
     int[] projectionListMeasureIndexes = blockExecutionInfo.getProjectionListMeasureIndexes();
     for (int projectionListMeasureIndex : projectionListMeasureIndexes) {
       if (null == measureRawColumnChunks[projectionListMeasureIndex]) {
@@ -302,6 +310,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
             .readMeasureChunk(fileReader, projectionListMeasureIndex);
       }
     }
+    measureReadTime += System.currentTimeMillis() - filterMeasureReadTime;
+    totalReadTime += measureReadTime;
     ColumnPage[][] measureColumnPages = new ColumnPage[numMeasureChunks][numPages];
     scannedResult.setDimensionColumnPages(dimensionColumnPages);
     scannedResult.setPageFilteredRowId(pageFilteredRowId);
@@ -314,11 +324,11 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
     scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
-        scanTime.getCount() + (System.currentTimeMillis() - startTime - dimensionReadTime));
+        scanTime.getCount() + (System.currentTimeMillis() - startTime - totalReadTime));
     QueryStatistic readTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.READ_BLOCKlET_TIME);
     readTime.addCountStatistic(QueryStatisticsConstants.READ_BLOCKlET_TIME,
-        readTime.getCount() + dimensionReadTime);
+        readTime.getCount() + totalReadTime);
     return scannedResult;
   }
 
