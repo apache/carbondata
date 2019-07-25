@@ -60,6 +60,7 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
  * [CarbonData Lucene DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/lucene-datamap-guide.md) 
  * [CarbonData Pre-aggregate DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/preaggregate-datamap-guide.md) 
  * [CarbonData Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md) 
+ * [CarbonData MV DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/mv-datamap-guide.md)
 * [SDK Guide](https://github.com/apache/carbondata/blob/master/docs/sdk-guide.md) 
 * [C++ SDK Guide](https://github.com/apache/carbondata/blob/master/docs/csdk-guide.md)
 * [Performance Tuning](https://github.com/apache/carbondata/blob/master/docs/performance-tuning.md) 
