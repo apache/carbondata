@@ -207,9 +207,6 @@ public final class TableDataMap extends OperationEventListener {
      */
 
     int numOfThreadsForPruning = CarbonProperties.getNumOfThreadsForPruning();
-    LOG.info(
-        "Number of threads selected for multi-thread block pruning is " + numOfThreadsForPruning
-            + ". total files: " + totalFiles + ". total segments: " + segments.size());
     int filesPerEachThread = totalFiles / numOfThreadsForPruning;
     int prev;
     int filesCount = 0;
@@ -254,6 +251,15 @@ public final class TableDataMap extends OperationEventListener {
       // this should not happen
       throw new RuntimeException(" not all the files processed ");
     }
+    if (datamapListForEachThread.size() < numOfThreadsForPruning) {
+      // If the total datamaps fitted in lesser number of threads than numOfThreadsForPruning.
+      // Launch only that many threads where datamaps are fitted while grouping.
+      LOG.info("Datamaps is distributed in " + datamapListForEachThread.size() + " threads");
+      numOfThreadsForPruning = datamapListForEachThread.size();
+    }
+    LOG.info(
+        "Number of threads selected for multi-thread block pruning is " + numOfThreadsForPruning
+            + ". total files: " + totalFiles + ". total segments: " + segments.size());
     List<Future<Void>> results = new ArrayList<>(numOfThreadsForPruning);
     final Map<Segment, List<ExtendedBlocklet>> prunedBlockletMap =
         new ConcurrentHashMap<>(segments.size());
