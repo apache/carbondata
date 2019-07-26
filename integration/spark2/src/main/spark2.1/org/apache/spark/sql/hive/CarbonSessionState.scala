@@ -125,9 +125,9 @@ class CarbonHiveSessionCatalog(
     rtnRelation match {
       case SubqueryAlias(_,
       LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _), _) =>
-        toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
-      case LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
-        toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
+        toRefreshRelation = CarbonEnv.isRefreshRequired(name)(sparkSession)
+      case LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _) =>
+        toRefreshRelation = CarbonEnv.isRefreshRequired(name)(sparkSession)
       case _ =>
     }
 
@@ -136,31 +136,6 @@ class CarbonHiveSessionCatalog(
     } else {
       rtnRelation
     }
-  }
-
-  private def refreshRelationFromCache(identifier: TableIdentifier,
-      alias: Option[String],
-      carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Boolean = {
-    var isRefreshed = false
-    val storePath = CarbonProperties.getStorePath
-    carbonEnv.carbonMetaStore.
-      checkSchemasModifiedTimeAndReloadTable(identifier)
-
-    val table = carbonEnv.carbonMetaStore.getTableFromMetadataCache(
-      carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
-      carbonDatasourceHadoopRelation.carbonTable.getTableName)
-    if (table.isEmpty || (table.isDefined &&
-        table.get.getTableLastUpdatedTime !=
-          carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime)) {
-      refreshTable(identifier)
-      DataMapStoreManager.getInstance().
-        clearDataMaps(AbsoluteTableIdentifier.from(storePath,
-          identifier.database.getOrElse("default"),
-          identifier.table))
-      isRefreshed = true
-      logInfo(s"Schema changes have been detected for table: $identifier")
-    }
-    isRefreshed
   }
 
   /**

@@ -105,8 +105,6 @@ case class RefreshCarbonTableCommand(
         }
       }
     }
-    // update the schema modified time
-    metaStore.updateAndTouchSchemasUpdatedTime()
     Seq.empty
   }
 

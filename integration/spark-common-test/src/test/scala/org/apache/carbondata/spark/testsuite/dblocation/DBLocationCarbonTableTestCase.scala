@@ -261,7 +261,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("drop table carbontable")
   }
 
-  test("test mdt file path with configured paths") {
+  ignore("test mdt file path with configured paths") {
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
     CarbonProperties.getInstance()

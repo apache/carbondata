@@ -207,18 +207,23 @@ public class QueryModel {
       col.setDimension(dim);
       col.setDimension(true);
     } else {
-      // in case of sdk or fileformat, there can be chance that each carbondata file may have
-      // different schema, so every segment properties will have dims and measures based on
-      // corresponding segment. So the filter column may not be present in it. so generate the
-      // dimension and measure from the carbontable
-      CarbonDimension dimension =
-          table.getDimensionByName(table.getTableName(), col.getColumnName());
-      CarbonMeasure measure = table.getMeasureByName(table.getTableName(), col.getColumnName());
-      col.setDimension(dimension);
-      col.setMeasure(measure);
-      col.setCarbonColumn(dimension == null ? measure : dimension);
-      col.setDimension(null != dimension);
-      col.setMeasure(null != measure);
+      if (table.isTransactionalTable()) {
+        throw new RuntimeException(
+            "Column " + columnName + " does not exist in table " + table.getTableUniqueName());
+      } else {
+        // in case of sdk or fileformat, there can be chance that each carbondata file may have
+        // different schema, so every segment properties will have dims and measures based on
+        // corresponding segment. So the filter column may not be present in it. so generate the
+        // dimension and measure from the carbontable
+        CarbonDimension dimension =
+            table.getDimensionByName(table.getTableName(), col.getColumnName());
+        CarbonMeasure measure = table.getMeasureByName(table.getTableName(), col.getColumnName());
+        col.setDimension(dimension);
+        col.setMeasure(measure);
+        col.setCarbonColumn(dimension == null ? measure : dimension);
+        col.setDimension(null != dimension);
+        col.setMeasure(null != measure);
+      }
     }
   }
 
