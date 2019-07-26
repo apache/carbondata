@@ -82,7 +82,7 @@ trait CarbonMetaStore {
    * @param carbonStorePath
    * @param sparkSession
    */
-  def updateTableSchemaForDataMap(newTableIdentifier: CarbonTableIdentifier,
+  def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       carbonStorePath: String)(sparkSession: SparkSession): String
@@ -135,9 +135,8 @@ trait CarbonMetaStore {
   def dropTable(tableIdentifier: AbsoluteTableIdentifier)
     (sparkSession: SparkSession)
 
-  def updateAndTouchSchemasUpdatedTime()
-
-  def checkSchemasModifiedTimeAndReloadTable(tableIdentifier: TableIdentifier): Boolean
+  def isSchemaRefreshed(absoluteTableIdentifier: AbsoluteTableIdentifier,
+      sparkSession: SparkSession): Boolean
 
   def isReadFromHiveMetaStore: Boolean
 
@@ -146,8 +145,6 @@ trait CarbonMetaStore {
   def getThriftTableInfo(
       carbonTable: CarbonTable
   ): org.apache.carbondata.format.TableInfo
-
-  def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable]
 
   /**
    * Method will be used to retrieve or create carbon data source relation
@@ -173,6 +170,7 @@ trait CarbonMetaStore {
     val df: DataFrame = Dataset.ofRows(sparkSession, query)
     df.schema
   }
+
 }
 /**
  * Factory for Carbon metastore

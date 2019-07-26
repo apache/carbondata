@@ -82,8 +82,6 @@ object TableLoader {
 
     val spark = TableAPIUtil.spark(storePath, s"TableLoader: $dbName.$tableName")
 
-    CarbonEnv.getInstance(spark).carbonMetaStore.
-      checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     loadTable(spark, Option(dbName), tableName, inputPaths, map)
   }
 

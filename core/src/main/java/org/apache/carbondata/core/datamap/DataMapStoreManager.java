@@ -699,8 +699,13 @@ public final class DataMapStoreManager {
       SegmentUpdateDetails[] updateStatusDetails = statusManager.getUpdateStatusDetails();
       for (SegmentUpdateDetails updateDetails : updateStatusDetails) {
         UpdateVO updateVO = statusManager.getInvalidTimestampRange(updateDetails.getSegmentName());
-        segmentRefreshTime.put(updateVO.getSegmentId(),
-            new SegmentRefreshInfo(updateVO.getCreatedOrUpdatedTimeStamp(), 0));
+        SegmentRefreshInfo segmentRefreshInfo;
+        if (updateVO != null && updateVO.getLatestUpdateTimestamp() != null) {
+          segmentRefreshInfo = new SegmentRefreshInfo(updateVO.getCreatedOrUpdatedTimeStamp(), 0);
+        } else {
+          segmentRefreshInfo = new SegmentRefreshInfo(0L, 0);
+        }
+        segmentRefreshTime.put(updateVO.getSegmentId(), segmentRefreshInfo);
       }
     }
 
@@ -708,8 +713,11 @@ public final class DataMapStoreManager {
       SegmentRefreshInfo segmentRefreshInfo =
           seg.getSegmentRefreshInfo(updateVo);
       String segmentId = seg.getSegmentNo();
+      if (segmentRefreshInfo.getSegmentUpdatedTimestamp() == null) {
+        return false;
+      }
       if (segmentRefreshTime.get(segmentId) == null
-          && segmentRefreshInfo.getSegmentUpdatedTimestamp() != null) {
+          && segmentRefreshInfo.getSegmentUpdatedTimestamp() != 0) {
         segmentRefreshTime.put(segmentId, segmentRefreshInfo);
         return true;
       }

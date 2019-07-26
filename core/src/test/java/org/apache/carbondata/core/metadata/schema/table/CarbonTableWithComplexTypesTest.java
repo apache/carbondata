@@ -43,11 +43,11 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
   }
 
   @Test public void testNumberOfDimensionReturnsProperCount() {
-    assertEquals(2, carbonTable.getNumberOfDimensions("carbonTestTable"));
+    assertEquals(2, carbonTable.getNumberOfDimensions("carbontesttable"));
   }
 
   @Test public void testNumberOfMeasureReturnsProperCount() {
-    assertEquals(1, carbonTable.getNumberOfMeasures("carbonTestTable"));
+    assertEquals(1, carbonTable.getNumberOfMeasures("carbontesttable"));
   }
 
   @Test public void testGetDatabaseNameResturnsDatabaseName() {
@@ -55,7 +55,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
   }
 
   @Test public void testFactTableNameReturnsProperFactTableName() {
-    assertEquals("carbonTestTable", carbonTable.getTableName());
+    assertEquals("carbontesttable", carbonTable.getTableName());
   }
 
   @Test public void testTableUniqueNameIsProper() {

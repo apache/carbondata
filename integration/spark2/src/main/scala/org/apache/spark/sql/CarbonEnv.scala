@@ -33,7 +33,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.datamap.{TextMatchMaxDocUDF, TextMatchUDF}
@@ -215,38 +215,35 @@ object CarbonEnv {
       databaseNameOp: Option[String],
       tableName: String)
     (sparkSession: SparkSession): CarbonTable = {
-    refreshRelationFromCache(TableIdentifier(tableName, databaseNameOp))(sparkSession)
-    val databaseName = getDatabaseName(databaseNameOp)(sparkSession)
     val catalog = getInstance(sparkSession).carbonMetaStore
-    // refresh cache
-    catalog.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, databaseNameOp))
-
-    // try to get it from catch, otherwise lookup in catalog
-    catalog.getTableFromMetadataCache(databaseName, tableName)
-      .getOrElse(
-        catalog
-          .lookupRelation(databaseNameOp, tableName)(sparkSession)
-          .asInstanceOf[CarbonRelation]
-          .carbonTable)
+    // if relation is not refreshed of the table does not exist in cache then
+    if (isRefreshRequired(TableIdentifier(tableName, databaseNameOp))(sparkSession)) {
+      catalog
+        .lookupRelation(databaseNameOp, tableName)(sparkSession)
+        .asInstanceOf[CarbonRelation]
+        .carbonTable
+    } else {
+      CarbonMetadata.getInstance().getCarbonTable(databaseNameOp.getOrElse(sparkSession
+        .catalog.currentDatabase), tableName)
+    }
   }
 
-  def refreshRelationFromCache(identifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
-    var isRefreshed = false
+  /**
+   *
+   * @return true is the relation was changes and was removed from cache. false is there is no
+   *         change in the relation.
+   */
+  def isRefreshRequired(identifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
     val carbonEnv = getInstance(sparkSession)
-    val table = carbonEnv.carbonMetaStore.getTableFromMetadataCache(
-      identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
-      identifier.table)
-    if (carbonEnv.carbonMetaStore
-          .checkSchemasModifiedTimeAndReloadTable(identifier)  && table.isDefined) {
-      sparkSession.sessionState.catalog.refreshTable(identifier)
-      val tablePath = table.get.getTablePath
-      DataMapStoreManager.getInstance().
-        clearDataMaps(AbsoluteTableIdentifier.from(tablePath,
+    val databaseName = identifier.database.getOrElse(sparkSession.catalog.currentDatabase)
+    val table = CarbonMetadata.getInstance().getCarbonTable(databaseName, identifier.table)
+    if (table == null) {
+      true
+    } else {
+      carbonEnv.carbonMetaStore.isSchemaRefreshed(AbsoluteTableIdentifier.from(table.getTablePath,
           identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
-          identifier.table, table.get.getTableInfo.getFactTable.getTableId))
-      isRefreshed = true
+          identifier.table, table.getTableInfo.getFactTable.getTableId), sparkSession)
     }
-    isRefreshed
   }
 
   /**

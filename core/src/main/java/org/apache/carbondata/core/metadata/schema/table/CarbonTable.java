@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
@@ -286,7 +287,8 @@ public class CarbonTable implements Serializable, Writable {
    * @return
    */
   public static String buildUniqueName(String databaseName, String tableName) {
-    return databaseName + CarbonCommonConstants.UNDERSCORE + tableName;
+    return (databaseName + CarbonCommonConstants.UNDERSCORE + tableName).toLowerCase(
+        Locale.getDefault());
   }
 
   /**

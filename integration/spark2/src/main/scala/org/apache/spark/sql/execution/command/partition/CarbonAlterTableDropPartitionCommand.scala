@@ -60,14 +60,8 @@ case class CarbonAlterTableDropPartitionCommand(
     setAuditTable(dbName, tableName)
     setAuditInfo(Map("partition" -> model.partitionId))
     val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-    val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
-      .asInstanceOf[CarbonRelation]
-    val tablePath = relation.carbonTable.getTablePath
-    carbonMetaStore.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
-    if (relation == null || CarbonMetadata.getInstance.getCarbonTable(dbName, tableName) == null) {
-      throwMetadataException(dbName, tableName, "table not found")
-    }
-    val carbonTable = relation.carbonTable
+    val carbonTable = CarbonEnv.getCarbonTable(Option(dbName), tableName)(sparkSession)
+    val tablePath = carbonTable.getTablePath
     val partitionInfo = carbonTable.getPartitionInfo(tableName)
     if (partitionInfo == null) {
       throwMetadataException(dbName, tableName, "table is not a partition table")
@@ -116,8 +110,6 @@ case class CarbonAlterTableDropPartitionCommand(
       thriftTable,
       null,
       carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
-    // update the schema modified time
-    carbonMetaStore.updateAndTouchSchemasUpdatedTime()
     // sparkSession.catalog.refreshTable(tableName)
     Seq.empty
   }

@@ -47,6 +47,7 @@ public class CarbonMetadataTest {
 
   @BeforeClass public static void setUp() {
     carbonMetadata = CarbonMetadata.getInstance();
+    carbonMetadata.clearAll();
     carbonMetadata.loadTableMetadata(getTableInfo(10000));
     tableUniqueName = CarbonTable.buildUniqueName("carbonTestDatabase", "carbonTestTable");
   }
@@ -77,13 +78,13 @@ public class CarbonMetadataTest {
   @Test public void testGetCarbonTableReturingProperTableWithProperDimensionCount() {
     int expectedResult = 1;
     assertEquals(expectedResult,
-        carbonMetadata.getCarbonTable(tableUniqueName).getNumberOfDimensions("carbonTestTable"));
+        carbonMetadata.getCarbonTable(tableUniqueName).getNumberOfDimensions("carbontesttable"));
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperMeasureCount() {
     int expectedResult = 1;
     assertEquals(expectedResult,
-        carbonMetadata.getCarbonTable(tableUniqueName).getNumberOfMeasures("carbonTestTable"));
+        carbonMetadata.getCarbonTable(tableUniqueName).getNumberOfMeasures("carbontesttable"));
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperDatabaseName() {
@@ -92,7 +93,7 @@ public class CarbonMetadataTest {
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperFactTableName() {
-    String expectedResult = "carbonTestTable";
+    String expectedResult = "carbontesttable";
     assertEquals(expectedResult, carbonMetadata.getCarbonTable(tableUniqueName).getTableName());
   }
 
