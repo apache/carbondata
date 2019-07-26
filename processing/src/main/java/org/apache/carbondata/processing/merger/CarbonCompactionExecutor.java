@@ -177,8 +177,9 @@ public class CarbonCompactionExecutor {
   private RawResultIterator getRawResultIterator(Configuration configuration, String segmentId,
       String task, List<TableBlockInfo> tableBlockInfoList)
       throws QueryExecutionException, IOException {
-    SegmentProperties sourceSegmentProperties = getSourceSegmentProperties(
-        Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter()));
+    SegmentProperties sourceSegmentProperties =
+        new SegmentProperties(tableBlockInfoList.get(0).getDataFileFooter().getColumnInTable(),
+            tableBlockInfoList.get(0).getDataFileFooter().getSegmentInfo().getColumnCardinality());
     boolean hasColumnDrift = carbonTable.hasColumnDrift() &&
         RestructureUtil.hasColumnDriftOnSegment(carbonTable, sourceSegmentProperties);
     if (hasColumnDrift) {
@@ -186,6 +187,10 @@ public class CarbonCompactionExecutor {
           executeBlockList(tableBlockInfoList, segmentId, task, configuration),
           sourceSegmentProperties, destinationSegProperties);
     } else {
+      if (restructuredBlockExists) {
+        sourceSegmentProperties = getSourceSegmentProperties(
+            Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter()));
+      }
       return new RawResultIterator(
           executeBlockList(tableBlockInfoList, segmentId, task, configuration),
           sourceSegmentProperties, destinationSegProperties, true);
