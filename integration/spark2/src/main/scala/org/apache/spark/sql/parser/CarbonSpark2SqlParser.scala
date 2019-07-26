@@ -284,8 +284,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     ("=" ~> restInput) <~ opt(";") ^^ {
       case tab ~ columns ~ rest =>
         val (sel, where) = splitQuery(rest)
+        val selectPattern = """^\s*select\s+""".r
         val (selectStmt, relation) =
-          if (!sel.toLowerCase.startsWith("select ")) {
+          if (!selectPattern.findFirstIn(sel.toLowerCase).isDefined) {
             if (sel.trim.isEmpty) {
               sys.error("At least one source column has to be specified ")
             }
