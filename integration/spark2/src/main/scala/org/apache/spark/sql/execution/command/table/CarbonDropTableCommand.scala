@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
+import org.apache.spark.sql.hive.CarbonFileMetastore
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
@@ -183,6 +184,18 @@ case class CarbonDropTableCommand(
           ifExistsSet,
           sparkSession)
       OperationListenerBus.getInstance.fireEvent(dropTablePostEvent, operationContext)
+      // Remove all invalid entries of carbonTable and corresponding updated timestamp
+      // values from the cache. This case is valid when there are 2 JDBCServer and one of them
+      // drops the table, the other server would not be able to clear its cache.
+      try {
+        CarbonEnv.getInstance(sparkSession).carbonMetaStore match {
+          case metastore: CarbonFileMetastore => metastore.removeStaleTimeStampEntries(sparkSession)
+          case _ =>
+        }
+      } catch {
+        case _: Exception =>
+          // Do nothing
+      }
     } catch {
       case ex: NoSuchTableException =>
         if (!ifExistsSet) {

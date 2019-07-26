@@ -67,7 +67,6 @@ case class CarbonDropDataMapCommand(
       val carbonEnv = CarbonEnv.getInstance(sparkSession)
       val catalog = carbonEnv.carbonMetaStore
       val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName)(sparkSession)
-      catalog.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
       if (mainTable == null) {
         mainTable = try {
           CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)

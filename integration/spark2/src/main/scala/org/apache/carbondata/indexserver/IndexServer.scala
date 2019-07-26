@@ -106,17 +106,17 @@ object IndexServer extends ServerInterface {
         sparkSession.sparkContext
           .setLocalProperty("spark.job.description", request.getTaskGroupDesc)
       }
+      if (!request.getInvalidSegments.isEmpty) {
+        DistributedRDDUtils
+          .invalidateSegmentMapping(request.getCarbonTable.getTableUniqueName,
+            request.getInvalidSegments.asScala)
+      }
       val splits = new DistributedPruneRDD(sparkSession, request).collect()
       if (!request.isFallbackJob) {
         DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
       }
       if (request.isJobToClearDataMaps) {
         DistributedRDDUtils.invalidateTableMapping(request.getCarbonTable.getTableUniqueName)
-      }
-      if (!request.getInvalidSegments.isEmpty) {
-        DistributedRDDUtils
-          .invalidateSegmentMapping(request.getCarbonTable.getTableUniqueName,
-            request.getInvalidSegments.asScala)
       }
       new ExtendedBlockletWrapperContainer(splits.map(_._2), request.isFallbackJob)
     }

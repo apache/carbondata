@@ -133,10 +133,10 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     sql("alter table rename change empname name string")
     sql("update rename set (name) = ('joey') where workgroupcategory = 'developer'").show()
     sql("insert into rename select 20,'bill','PM','01-12-2015',3,'manager',14,'Learning',928479,'01-01-2016','30-11-2016',75,94,13547")
-    val df1 = sql("select * from rename where name = 'joey'")
+    val df1Count = sql("select * from rename where name = 'joey'").count
     sql("alter table rename change name empname string")
     val df2 = sql("select * from rename where empname = 'joey'")
-    assert(df1.count() == df2.count())
+    assert(df1Count == df2.count())
     sql("delete from rename where empname = 'joey'")
     val df3 = sql("select empname from rename")
     sql("alter table rename change empname newname string")

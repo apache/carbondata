@@ -71,7 +71,7 @@ object CarbonSessionUtil {
             case _ =>
           }
           isRelationRefreshed =
-            CarbonEnv.refreshRelationFromCache(catalogTable.identifier)(sparkSession)
+            CarbonEnv.isRefreshRequired(catalogTable.identifier)(sparkSession)
         case _ =>
       }
     }
@@ -79,12 +79,12 @@ object CarbonSessionUtil {
     rtnRelation match {
       case SubqueryAlias(_,
       MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, catalogTable)) =>
-        isRelationRefreshed = CarbonEnv.refreshRelationFromCache(name)(sparkSession)
+        isRelationRefreshed = CarbonEnv.isRefreshRequired(name)(sparkSession)
         if (catalogTable.isInstanceOf[Option[CatalogTable]]) {
           catalogTable.asInstanceOf[Option[CatalogTable]].foreach(setStatsNone)
         }
       case MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, catalogTable) =>
-        isRelationRefreshed = CarbonEnv.refreshRelationFromCache(name)(sparkSession)
+        isRelationRefreshed = CarbonEnv.isRefreshRequired(name)(sparkSession)
         if (catalogTable.isInstanceOf[Option[CatalogTable]]) {
           catalogTable.asInstanceOf[Option[CatalogTable]].foreach(setStatsNone)
         }

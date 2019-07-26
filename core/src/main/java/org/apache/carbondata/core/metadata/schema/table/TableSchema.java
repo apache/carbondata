@@ -24,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -142,6 +143,9 @@ public class TableSchema implements Serializable, Writable {
    * @param tableName the tableName to set
    */
   public void setTableName(String tableName) {
+    if (tableName != null) {
+      tableName = tableName.toLowerCase(Locale.getDefault());
+    }
     this.tableName = tableName;
   }
 

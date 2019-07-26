@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.metadata;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -179,5 +180,13 @@ public final class CarbonMetadata {
       }
     }
     return null;
+  }
+
+  public List<CarbonTable> getAllTables() {
+    return new ArrayList<>(tableInfoMap.values());
+  }
+
+  public void clearAll() {
+    tableInfoMap.clear();
   }
 }

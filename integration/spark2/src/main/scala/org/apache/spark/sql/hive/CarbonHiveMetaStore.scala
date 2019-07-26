@@ -63,6 +63,8 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     carbonRelation
   }
 
+  override def isSchemaRefreshed(absoluteTableIdentifier: AbsoluteTableIdentifier,
+      sparkSession: SparkSession): Boolean = true
 
   override def isTablePathExists(tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): Boolean = {
@@ -78,7 +80,6 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       // clear driver B-tree and dictionary cache
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
     }
-    checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
     val tableIdentifier = TableIdentifier(tableName, Option(dbName))
@@ -86,11 +87,6 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
     SegmentPropertiesAndSchemaHolder.getInstance().invalidate(absoluteTableIdentifier)
     removeTableFromMetadata(dbName, tableName)
-  }
-
-  override def checkSchemasModifiedTimeAndReloadTable(tableIdentifier: TableIdentifier): Boolean = {
-    // do nothing
-    false
   }
 
   override def listAllTables(sparkSession: SparkSession): Seq[CarbonTable] = {
@@ -140,7 +136,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
    * @param carbonTablePath
    * @param sparkSession
    */
-  override def updateTableSchemaForDataMap(newTableIdentifier: CarbonTableIdentifier,
+  override def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       carbonTablePath: String)(sparkSession: SparkSession): String = {
