@@ -108,6 +108,8 @@
     <module>store/sdk</module>
     <module>assembly</module>
     <module>tools/cli</module>
+    <module>datamap/bloom</module>
+    <module>datamap/lucene</module>
     <module>datamap/mv/plan</module>
     <module>datamap/mv/core</module>
     <module>examples/spark2</module>
