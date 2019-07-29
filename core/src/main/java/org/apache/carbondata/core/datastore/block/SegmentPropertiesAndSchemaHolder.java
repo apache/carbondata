@@ -98,7 +98,7 @@ public class SegmentPropertiesAndSchemaHolder {
    * @param columnCardinality
    * @param segmentId
    */
-  public int addSegmentProperties(CarbonTable carbonTable,
+  public SegmentPropertiesWrapper addSegmentProperties(CarbonTable carbonTable,
       List<ColumnSchema> columnsInTable, int[] columnCardinality, String segmentId) {
     SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper segmentPropertiesWrapper =
         new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(carbonTable,
@@ -137,7 +137,7 @@ public class SegmentPropertiesAndSchemaHolder {
             .addMinMaxColumns(carbonTable);
       }
     }
-    return segmentIdSetAndIndexWrapper.getSegmentPropertiesIndex();
+    return getSegmentPropertiesWrapper(segmentIdSetAndIndexWrapper.getSegmentPropertiesIndex());
   }
 
   /**
@@ -222,17 +222,14 @@ public class SegmentPropertiesAndSchemaHolder {
    * Method to remove the given segment ID
    *
    * @param segmentId
-   * @param segmentPropertiesIndex
    * @param clearSegmentWrapperFromMap flag to specify whether to clear segmentPropertiesWrapper
    *                                   from Map if all the segment's using it have become stale
    */
-  public void invalidate(String segmentId, int segmentPropertiesIndex,
+  public void invalidate(String segmentId, SegmentPropertiesWrapper segmentPropertiesWrapper,
       boolean clearSegmentWrapperFromMap) {
-    SegmentPropertiesWrapper segmentPropertiesWrapper =
-        indexToSegmentPropertiesWrapperMapping.get(segmentPropertiesIndex);
-    if (null != segmentPropertiesWrapper) {
-      SegmentIdAndSegmentPropertiesIndexWrapper segmentIdAndSegmentPropertiesIndexWrapper =
-          segmentPropWrapperToSegmentSetMap.get(segmentPropertiesWrapper);
+    SegmentIdAndSegmentPropertiesIndexWrapper segmentIdAndSegmentPropertiesIndexWrapper =
+        segmentPropWrapperToSegmentSetMap.get(segmentPropertiesWrapper);
+    if (segmentIdAndSegmentPropertiesIndexWrapper != null) {
       synchronized (getOrCreateTableLock(segmentPropertiesWrapper.getTableIdentifier())) {
         segmentIdAndSegmentPropertiesIndexWrapper.removeSegmentId(segmentId);
         // if after removal of given SegmentId, the segmentIdSet becomes empty that means this
@@ -240,14 +237,16 @@ public class SegmentPropertiesAndSchemaHolder {
         // removed from all the holders
         if (clearSegmentWrapperFromMap && segmentIdAndSegmentPropertiesIndexWrapper.segmentIdSet
             .isEmpty()) {
-          indexToSegmentPropertiesWrapperMapping.remove(segmentPropertiesIndex);
+          indexToSegmentPropertiesWrapperMapping
+              .remove(segmentIdAndSegmentPropertiesIndexWrapper.getSegmentPropertiesIndex());
           segmentPropWrapperToSegmentSetMap.remove(segmentPropertiesWrapper);
         } else if (!clearSegmentWrapperFromMap
             && segmentIdAndSegmentPropertiesIndexWrapper.segmentIdSet.isEmpty()) {
           // min max columns can very when cache is modified. So even though entry is not required
           // to be deleted from map clear the column cache so that it can filled again
           segmentPropertiesWrapper.clear();
-          LOGGER.info("cleared min max for segmentProperties at index: " + segmentPropertiesIndex);
+          LOGGER.info("cleared min max for segmentProperties at index: "
+              + segmentIdAndSegmentPropertiesIndexWrapper.getSegmentPropertiesIndex());
         }
       }
     }
