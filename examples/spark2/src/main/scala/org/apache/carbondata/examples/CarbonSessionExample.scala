@@ -134,6 +134,8 @@ object CarbonSessionExample {
          | WHERE stringField = 'spark' and floatField > 2.8
        """.stripMargin).show()
 
+    spark.sql("select count(*) from source").show()
+
     // Drop table
     spark.sql("DROP TABLE IF EXISTS source")
   }
