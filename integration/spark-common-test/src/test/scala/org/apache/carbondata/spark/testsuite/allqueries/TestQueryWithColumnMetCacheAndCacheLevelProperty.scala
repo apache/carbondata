@@ -88,9 +88,8 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
 
   private def validateMinMaxColumnsCacheLength(dataMaps: List[DataMap[_ <: Blocklet]],
       expectedLength: Int, storeBlockletCount: Boolean = false): Boolean = {
-    val index = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesIndex
-    val summarySchema = SegmentPropertiesAndSchemaHolder.getInstance()
-      .getSegmentPropertiesWrapper(index).getTaskSummarySchemaForBlock(storeBlockletCount, false)
+    val summarySchema = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesWrapper
+      .getTaskSummarySchemaForBlock(storeBlockletCount, false)
     val minSchemas = summarySchema(BlockletDataMapRowIndexes.TASK_MIN_VALUES_INDEX)
       .asInstanceOf[CarbonRowSchema.StructCarbonRowSchema]
       .getChildSchemas
@@ -107,13 +106,11 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     assert(dataMaps.nonEmpty)
     assert(dataMaps(0).isInstanceOf[BlockDataMap])
     assert(validateMinMaxColumnsCacheLength(dataMaps, 3, true))
-    var segmentPropertyIndex = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesIndex
 
     // alter table to add column_meta_cache and cache_level
     sql(
       "alter table metaCache set tblproperties('column_meta_cache'='c2,c1', 'CACHE_LEVEL'='BLOCKLET')")
-    var wrapper = SegmentPropertiesAndSchemaHolder.getInstance()
-      .getSegmentPropertiesWrapper(segmentPropertyIndex)
+    var wrapper = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesWrapper
     // after alter operation cache should be cleaned and cache should be evicted
     assert(null == wrapper)
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
@@ -125,20 +122,16 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     assert(validateMinMaxColumnsCacheLength(dataMaps, 2))
 
     // alter table to add same value as previous with order change for column_meta_cache and cache_level
-    segmentPropertyIndex = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesIndex
     sql(
       "alter table metaCache set tblproperties('column_meta_cache'='c1,c2', 'CACHE_LEVEL'='BLOCKLET')")
-    wrapper = SegmentPropertiesAndSchemaHolder.getInstance()
-      .getSegmentPropertiesWrapper(segmentPropertyIndex)
+    wrapper = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesWrapper
     // after alter operation cache should not be cleaned as value are unchanged
     assert(null != wrapper)
 
     // alter table to cache no column in column_meta_cache
-    segmentPropertyIndex = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesIndex
     sql(
       "alter table metaCache set tblproperties('column_meta_cache'='')")
-    wrapper = SegmentPropertiesAndSchemaHolder.getInstance()
-      .getSegmentPropertiesWrapper(segmentPropertyIndex)
+    wrapper = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesWrapper
 
     // after alter operation cache should be cleaned and cache should be evicted
     assert(null == wrapper)
@@ -151,11 +144,9 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     assert(validateMinMaxColumnsCacheLength(dataMaps, 0))
 
     // alter table to cache no column in column_meta_cache
-    segmentPropertyIndex = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesIndex
     sql(
       "alter table metaCache unset tblproperties('column_meta_cache', 'cache_level')")
-    wrapper = SegmentPropertiesAndSchemaHolder.getInstance()
-      .getSegmentPropertiesWrapper(segmentPropertyIndex)
+    wrapper = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesWrapper
     // after alter operation cache should be cleaned and cache should be evicted
     assert(null == wrapper)
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
