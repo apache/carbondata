@@ -99,7 +99,8 @@ public class BlockDataMap extends CoarseGrainDataMap
   /**
    * index of segmentProperties in the segmentProperties holder
    */
-  protected int segmentPropertiesIndex;
+  protected transient SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper
+      segmentPropertiesWrapper;
   /**
    * flag to check for store from 1.1 or any prior version
    */
@@ -204,10 +205,10 @@ public class BlockDataMap extends CoarseGrainDataMap
       DataFileFooter fileFooter) throws IOException {
     List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
     int[] columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
-    segmentPropertiesIndex = SegmentPropertiesAndSchemaHolder.getInstance()
+    segmentPropertiesWrapper = SegmentPropertiesAndSchemaHolder.getInstance()
         .addSegmentProperties(blockletDataMapInfo.getCarbonTable(),
             columnInTable, columnCardinality, blockletDataMapInfo.getSegmentId());
-    return getSegmentProperties();
+    return segmentPropertiesWrapper.getSegmentProperties();
   }
 
   /**
@@ -485,8 +486,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       return getTableTaskInfo(SUMMARY_INDEX_PATH);
     }
     // create the segment directory path
-    String tablePath = SegmentPropertiesAndSchemaHolder.getInstance()
-        .getSegmentPropertiesWrapper(segmentPropertiesIndex).getTableIdentifier().getTablePath();
+    String tablePath = segmentPropertiesWrapper.getTableIdentifier().getTablePath();
     String segmentId = getTableTaskInfo(SUMMARY_SEGMENTID);
     return CarbonTablePath.getSegmentPath(tablePath, segmentId);
   }
@@ -620,8 +620,7 @@ public class BlockDataMap extends CoarseGrainDataMap
   }
 
   protected List<CarbonColumn> getMinMaxCacheColumns() {
-    return SegmentPropertiesAndSchemaHolder.getInstance()
-        .getSegmentPropertiesWrapper(segmentPropertiesIndex).getMinMaxCacheColumns();
+    return segmentPropertiesWrapper.getMinMaxCacheColumns();
   }
 
   /**
@@ -1019,18 +1018,15 @@ public class BlockDataMap extends CoarseGrainDataMap
   }
 
   protected SegmentProperties getSegmentProperties() {
-    return SegmentPropertiesAndSchemaHolder.getInstance()
-        .getSegmentProperties(segmentPropertiesIndex);
+    return segmentPropertiesWrapper.getSegmentProperties();
   }
 
   public int[] getColumnCardinality() {
-    return SegmentPropertiesAndSchemaHolder.getInstance()
-        .getSegmentPropertiesWrapper(segmentPropertiesIndex).getColumnCardinality();
+    return segmentPropertiesWrapper.getColumnCardinality();
   }
 
   public List<ColumnSchema> getColumnSchema() {
-    return SegmentPropertiesAndSchemaHolder.getInstance()
-        .getSegmentPropertiesWrapper(segmentPropertiesIndex).getColumnsInTable();
+    return segmentPropertiesWrapper.getColumnsInTable();
   }
 
   protected AbstractMemoryDMStore getMemoryDMStore(boolean addToUnsafe)
@@ -1045,14 +1041,10 @@ public class BlockDataMap extends CoarseGrainDataMap
   }
 
   protected CarbonRowSchema[] getFileFooterEntrySchema() {
-    return SegmentPropertiesAndSchemaHolder.getInstance()
-        .getSegmentPropertiesWrapper(segmentPropertiesIndex).getBlockFileFooterEntrySchema();
+    return segmentPropertiesWrapper.getBlockFileFooterEntrySchema();
   }
 
   protected CarbonRowSchema[] getTaskSummarySchema() {
-    SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper segmentPropertiesWrapper =
-        SegmentPropertiesAndSchemaHolder.getInstance()
-            .getSegmentPropertiesWrapper(segmentPropertiesIndex);
     try {
       return segmentPropertiesWrapper.getTaskSummarySchemaForBlock(true, isFilePathStored);
     } catch (MemoryException e) {
@@ -1080,12 +1072,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     }
   }
 
-  public void setSegmentPropertiesIndex(int segmentPropertiesIndex) {
-    this.segmentPropertiesIndex = segmentPropertiesIndex;
-  }
-
-  public int getSegmentPropertiesIndex() {
-    return segmentPropertiesIndex;
+  public SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper getSegmentPropertiesWrapper() {
+    return segmentPropertiesWrapper;
   }
 
   @Override public int getNumberOfEntries() {

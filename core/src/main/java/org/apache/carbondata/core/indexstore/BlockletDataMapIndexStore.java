@@ -230,7 +230,7 @@ public class BlockletDataMapIndexStore
         // as segmentId will be same for all the dataMaps and segmentProperties cache is
         // maintained at segment level so it need to be called only once for clearing
         SegmentPropertiesAndSchemaHolder.getInstance()
-            .invalidate(segmentId, dataMaps.get(0).getSegmentPropertiesIndex(),
+            .invalidate(segmentId, dataMaps.get(0).getSegmentPropertiesWrapper(),
                 tableSegmentUniqueIdentifierWrapper.isAddTableBlockToUnsafeAndLRUCache());
       }
     }
