@@ -28,6 +28,7 @@ import org.apache.spark.sql.execution.command.mv._
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
+import org.apache.spark.sql.profiler.Profiler
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -121,6 +122,7 @@ class CarbonEnv {
         initialized = true
       }
     }
+    Profiler.initialize(sparkSession.sparkContext)
     LOGGER.info("Initialize CarbonEnv completed...")
   }
 }
