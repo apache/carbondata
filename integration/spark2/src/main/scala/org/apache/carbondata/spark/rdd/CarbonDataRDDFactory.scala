@@ -276,7 +276,9 @@ object CarbonDataRDDFactory {
         } finally {
           executor.shutdownNow()
           compactor.deletePartialLoadsInCompaction()
-          compactionLock.unlock()
+          if (compactionModel.compactionType != CompactionType.IUD_UPDDEL_DELTA) {
+            compactionLock.unlock()
+          }
         }
       }
     }

@@ -319,35 +319,42 @@ case class CarbonAlterTableCompactionCommand(
       val updateLock = CarbonLockFactory.getCarbonLockObj(carbonTable
         .getAbsoluteTableIdentifier, LockUsage.UPDATE_LOCK)
       try {
-        if (updateLock.lockWithRetries(3, 3)) {
-          if (lock.lockWithRetries()) {
-            LOGGER.info("Acquired the compaction lock for table" +
-                        s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-            CarbonDataRDDFactory.startCompactionThreads(
-              sqlContext,
-              carbonLoadModel,
-              storeLocation,
-              compactionModel,
-              lock,
-              compactedSegments,
-              operationContext
-            )
-          } else {
-            LOGGER.error(s"Not able to acquire the compaction lock for table" +
-                         s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+        // COMPACTION_LOCK and UPDATE_LOCK are already locked when start to execute update sql,
+        // so it don't need to require locks again when compactionType is IUD_UPDDEL_DELTA.
+        if (CompactionType.IUD_UPDDEL_DELTA != compactionType) {
+          if (!updateLock.lockWithRetries(3, 3)) {
+            throw new ConcurrentOperationException(carbonTable, "update", "compaction")
+          }
+          if (!lock.lockWithRetries()) {
+            LOGGER.error(s"Not able to acquire the compaction lock for table " +
+                         s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
             CarbonException.analysisException(
               "Table is already locked for compaction. Please try after some time.")
+          } else {
+            LOGGER.info("Acquired the compaction lock for table " +
+                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
           }
-        } else {
-          throw new ConcurrentOperationException(carbonTable, "update", "compaction")
         }
+        CarbonDataRDDFactory.startCompactionThreads(
+          sqlContext,
+          carbonLoadModel,
+          storeLocation,
+          compactionModel,
+          lock,
+          compactedSegments,
+          operationContext
+        )
       } catch {
         case e: Exception =>
           LOGGER.error(s"Exception in start compaction thread.", e)
-          lock.unlock()
+          if (CompactionType.IUD_UPDDEL_DELTA != compactionType) {
+            lock.unlock()
+          }
           throw e
       } finally {
-        updateLock.unlock()
+        if (CompactionType.IUD_UPDDEL_DELTA != compactionType) {
+          updateLock.unlock()
+        }
         DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
       }
     }

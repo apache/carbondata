@@ -20,9 +20,13 @@ package org.apache.carbondata.spark.testsuite.iud
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.test.util.QueryTest
-
 
 class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
@@ -383,6 +387,64 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select longfield from customer1"),Seq(Row(9223372036854775807L),Row(9223372036854775807L),Row(9223372036854775807L),Row(9223372036854775807L)))
 
   }
+
+  def getDeltaFiles(carbonFile: CarbonFile, fileSuffix: String): Array[CarbonFile] = {
+    return carbonFile.listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(fileSuffix)
+      }
+    })
+  }
+
+  test("[CARBONDATA-3483] Don't require update.lock and compaction.lock again when execute 'IUD_UPDDEL_DELTA' compaction") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM, "1")
+    sql("""drop database if exists iud10 cascade""")
+    sql("""create database iud10""")
+    sql("""use iud10""")
+
+    sql(
+      """create table dest10 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest10""")
+
+    val carbonTable = CarbonEnv.getCarbonTable(Some("iud10"), "dest10")(sqlContext.sparkSession)
+    val identifier = carbonTable.getAbsoluteTableIdentifier()
+    val dataFilesDir = CarbonTablePath.getSegmentPath(identifier.getTablePath, "0")
+    val carbonFile =
+        FileFactory.getCarbonFile(dataFilesDir, FileFactory.getFileType(dataFilesDir))
+
+    var updateDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
+    var deletaDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+    assert(updateDeltaFiles.length == 0)
+    assert(deletaDeltaFiles.length == 0)
+
+    sql("""update dest10 set (c1, c3) = ('update_a', 'update_aa') where c2 = 3 or c2 = 6""").show()
+
+    updateDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
+    deletaDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+    // just update once, there is no horizontal compaction at this time
+    assert(updateDeltaFiles.length == 1)
+    assert(deletaDeltaFiles.length == 1)
+
+    sql("""update dest10 set (c1, c3) = ('update_a', 'update_aa') where c2 = 5 or c2 = 8""").show()
+
+    updateDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
+    deletaDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+    // one '.carbonindex' file for last update operation
+    // one '.carbonindex' file for update operation this time
+    // one '.carbonindex' file for horizontal compaction
+    // so there must be three '.carbonindex' files and three '.deletedelta' files
+    assert(updateDeltaFiles.length == 3)
+    assert(deletaDeltaFiles.length == 3)
+
+    sql("""drop table dest10""")
+    sql("""drop database if exists iud10 cascade""")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "false")
+  }
+
   override def afterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
