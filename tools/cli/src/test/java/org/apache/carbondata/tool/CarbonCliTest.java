@@ -241,12 +241,9 @@ public class CarbonCliTest {
         "2    0      3.36KB     4.06MB     false      0            0.0B      93.76KB      0.0   100.0  7    2999998  " ,
         "2    1      2.04KB     1.49MB     false      0            0.0B      89.62KB      0.0   100.0  9    2999999  ");
     Assert.assertTrue(output.contains(expectedOutput));
-
-    expectedOutput = buildLines(
-        "## version Details",
-        "written_by  Version         ",
-        "TestUtil    "+ CarbonVersionConstants.CARBONDATA_VERSION+"  ");
-    Assert.assertTrue(output.contains(expectedOutput));
+    Assert.assertTrue(output.contains("## version Details"));
+    Assert.assertTrue(output.contains("written_by  Version"));
+    Assert.assertTrue(output.contains("TestUtil    "+ CarbonVersionConstants.CARBONDATA_VERSION));
   }
 
   @Test
