@@ -798,6 +798,31 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       sql("""select c3,c5 from iud.dest11"""),
       Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","Disco"),Row("RGK","Music"))
     )
+    sql("update iud.dest11 d set (d.c3, d.c5 ) = (select\ns.c33,s.c66 from iud.source2 s where d.c1 = s.c11) where 1 = 1").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","10"),Row("RGK","8"))
+    )
+    sql("update iud.dest11 d set (d.c3, d.c5 ) = (select\r\ns.c55,s.c66 from iud.source2 s where d.c1 = s.c11) where 1 = 1").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("Disco","10"),Row("Music","8"))
+    )
+    sql("update iud.dest11 d set (d.c3, d.c5 ) = (select\rs.c33,s.c66 from iud.source2 s where d.c1 = s.c11) where 1 = 1").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","10"),Row("RGK","8"))
+    )
+    sql("update iud.dest11 d set (d.c3, d.c5 ) = (select\ts.c33,s.c55 from iud.source2 s where d.c1 = s.c11) where 1 = 1").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","Disco"),Row("RGK","Music"))
+    )
+    sql("update iud.dest11 d set (d.c3, d.c5 ) = (select\t\ns.c33,s.c55 from iud.source2 s where d.c1 = s.c11) where 1 = 1").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","Disco"),Row("RGK","Music"))
+    )
     sql("""drop table iud.dest11""").show
   }
 
