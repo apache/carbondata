@@ -36,7 +36,7 @@ public class TaskMetricsMap {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(TaskMetricsMap.class.getName());
 
-  public static final InheritableThreadLocal<Long> threadLocal = new InheritableThreadLocal<>();
+  private static final InheritableThreadLocal<Long> threadLocal = new InheritableThreadLocal<>();
   /**
    * In this map we are maintaining all spawned child threads callback info for each parent thread
    * here key = parent thread id & values =  list of spawned child threads callbacks
@@ -48,6 +48,25 @@ public class TaskMetricsMap {
 
   public static TaskMetricsMap getInstance() {
     return taskMetricsMap;
+  }
+
+  public static InheritableThreadLocal<Long> getThreadLocal() {
+    return threadLocal;
+  }
+
+
+  /**
+   * initializes thread local to current thread id
+   *
+   * @return
+   */
+  public static void initializeThreadLocal() {
+    // In case of multi level RDD (say insert into scenario, where DataFrameRDD calling ScanRDD)
+    // parent thread id should not be overwritten by child thread id.
+    // so don't set if it is already set.
+    if (threadLocal.get() == null) {
+      threadLocal.set(Thread.currentThread().getId());
+    }
   }
 
   /**

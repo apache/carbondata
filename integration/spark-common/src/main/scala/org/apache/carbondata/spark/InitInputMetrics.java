@@ -28,5 +28,5 @@ import org.apache.spark.TaskContext;
  */
 public interface InitInputMetrics extends InputMetricsStats {
 
-  void initBytesReadCallback(TaskContext context, CarbonMultiBlockSplit carbonMultiBlockSplit);
+  void initBytesReadCallback(TaskContext context, CarbonMultiBlockSplit carbonMultiBlockSplit, Long inputMetricsInterval);
 }

@@ -18,10 +18,10 @@ package org.apache.spark
 
 import java.lang.Long
 
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.executor.InputMetrics
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.TaskMetricsMap
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit
 import org.apache.carbondata.spark.InitInputMetrics
@@ -35,20 +35,28 @@ class CarbonInputMetrics extends InitInputMetrics{
     var inputMetrics: InputMetrics = _
     // bytes read before compute by other map rdds in lineage
     var existingBytesRead: Long = _
+    var recordCount: Long = _
+    var inputMetricsInterval: Long = _
     var carbonMultiBlockSplit: CarbonMultiBlockSplit = _
 
   def initBytesReadCallback(context: TaskContext,
-      carbonMultiBlockSplit: CarbonMultiBlockSplit) {
+      carbonMultiBlockSplit: CarbonMultiBlockSplit, inputMetricsInterval: Long) {
     inputMetrics = context.taskMetrics().inputMetrics
     existingBytesRead = inputMetrics.bytesRead
-    this.carbonMultiBlockSplit = carbonMultiBlockSplit;
+    recordCount = 0L
+    this.inputMetricsInterval = inputMetricsInterval
+    this.carbonMultiBlockSplit = carbonMultiBlockSplit
   }
 
   def incrementRecordRead(recordRead: Long) {
-    val value : scala.Long = recordRead
-    inputMetrics.incRecordsRead(value)
-    if (inputMetrics.recordsRead % SparkHadoopUtil.UPDATE_INPUT_METRICS_INTERVAL_RECORDS == 0) {
-      updateBytesRead()
+    val value: scala.Long = recordRead
+    recordCount = recordCount + value
+    if (recordCount > inputMetricsInterval) {
+      inputMetrics.synchronized {
+        inputMetrics.incRecordsRead(recordCount)
+        updateBytesRead()
+      }
+      recordCount = 0L
     }
   }
 
@@ -59,10 +67,16 @@ class CarbonInputMetrics extends InitInputMetrics{
   }
 
   def updateAndClose() {
+    if (recordCount > 0L) {
+      inputMetrics.synchronized {
+        inputMetrics.incRecordsRead(recordCount)
+      }
+      recordCount = 0L
+    }
     // if metrics supported file system ex: hdfs
     if (!TaskMetricsMap.getInstance().isCallbackEmpty(Thread.currentThread().getId)) {
       updateBytesRead()
-     // after update clear parent thread entry from map.
+      // after update clear parent thread entry from map.
       TaskMetricsMap.getInstance().removeEntry(Thread.currentThread().getId)
     } else if (carbonMultiBlockSplit.isInstanceOf[CarbonMultiBlockSplit]) {
       // If we can't get the bytes read from the FS stats, fall back to the split size,
