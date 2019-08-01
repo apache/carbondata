@@ -51,6 +51,8 @@ abstract class CarbonRDD[T: ClassTag](
     info
   }
 
+  val inputMetricsInterval: Long = CarbonProperties.getInputMetricsInterval
+
   @transient val hadoopConf = SparkSQLUtil.sessionState(ss).newHadoopConf()
 
   val config = SparkSQLUtil.broadCastHadoopConf(sparkContext, hadoopConf)
@@ -73,7 +75,7 @@ abstract class CarbonRDD[T: ClassTag](
     TaskContext.get.addTaskCompletionListener(_ => ThreadLocalSessionInfo.unsetAll())
     carbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf", getConf)
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
-    TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
+    TaskMetricsMap.initializeThreadLocal()
     val carbonTaskInfo = new CarbonTaskInfo
     carbonTaskInfo.setTaskId(CarbonUtil.generateUUID())
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)

@@ -338,7 +338,7 @@ class IndexDataMapRebuildRDD[K, V](
     val segmentId = inputSplit.getAllSplits.get(0).getSegment.getSegmentNo
     val segment = segments.find(p => p.getSegmentNo.equals(segmentId))
     if (segment.isDefined) {
-      inputMetrics.initBytesReadCallback(context, inputSplit)
+      inputMetrics.initBytesReadCallback(context, inputSplit, inputMetricsInterval)
 
       val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
       val attemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration, attemptId)

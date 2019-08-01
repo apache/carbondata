@@ -1307,6 +1307,16 @@ public final class CarbonCommonConstants {
   public static final String IS_DRIVER_INSTANCE_DEFAULT = "false";
 
   /**
+   * property to set input metrics update interval (in records count), after every interval,
+   * input metrics will be updated to spark, else will be update in the end of query
+   */
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String INPUT_METRICS_UPDATE_INTERVAL = "carbon.input.metrics.update.interval";
+
+  public static final Long INPUT_METRICS_UPDATE_INTERVAL_DEFAULT = 500000L;
+
+
+  /**
    * property for enabling unsafe based query processing
    */
   @CarbonProperty(dynamicConfigurable = true)

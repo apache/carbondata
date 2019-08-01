@@ -1749,4 +1749,28 @@ public final class CarbonProperties {
     }
     return numOfThreadsForPruning;
   }
+
+  /**
+   * Validate and get the input metrics interval
+   *
+   * @return input metrics interval
+   */
+  public static Long getInputMetricsInterval() {
+    String metrics = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.INPUT_METRICS_UPDATE_INTERVAL);
+    if (metrics == null) {
+      return CarbonCommonConstants.INPUT_METRICS_UPDATE_INTERVAL_DEFAULT;
+    } else {
+      try {
+        long configuredValue = Long.parseLong(metrics);
+        if (configuredValue < 0) {
+          return CarbonCommonConstants.INPUT_METRICS_UPDATE_INTERVAL_DEFAULT;
+        } else {
+          return configuredValue;
+        }
+      } catch (Exception ex) {
+        return CarbonCommonConstants.INPUT_METRICS_UPDATE_INTERVAL_DEFAULT;
+      }
+    }
+  }
 }

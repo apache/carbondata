@@ -364,7 +364,7 @@ object DataLoadProcessBuilderOnSpark {
     TaskContext.get.addTaskCompletionListener { _ =>
       CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
     }
-    TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
+    TaskMetricsMap.initializeThreadLocal()
     val carbonTaskInfo = new CarbonTaskInfo
     carbonTaskInfo.setTaskId(CarbonUtil.generateUUID())
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)
