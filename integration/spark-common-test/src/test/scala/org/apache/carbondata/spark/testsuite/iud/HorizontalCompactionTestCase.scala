@@ -397,15 +397,17 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("[CARBONDATA-3483] Don't require update.lock and compaction.lock again when execute 'IUD_UPDDEL_DELTA' compaction") {
-    sql("""drop database if exists iud4 cascade""")
-    sql("""create database iud4""")
-    sql("""use iud4""")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+    sql("""drop database if exists iud10 cascade""")
+    sql("""create database iud10""")
+    sql("""use iud10""")
 
     sql(
-      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
-    sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest2""")
+      """create table dest10 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest10""")
 
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("iud4_dest2")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("iud10_dest10")
     val identifier = carbonTable.getAbsoluteTableIdentifier()
     val dataFilesDir = CarbonTablePath.getSegmentPath(identifier.getTablePath, "0")
     val carbonFile =
@@ -416,7 +418,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     assert(updateDeltaFiles.length == 0)
     assert(deletaDeltaFiles.length == 0)
 
-    sql("""update dest2 set (c1, c3) = ('update_a', 'update_aa') where c2 = 3 or c2 = 6""").show()
+    sql("""update dest10 set (c1, c3) = ('update_a', 'update_aa') where c2 = 3 or c2 = 6""").show()
 
     updateDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     deletaDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
@@ -424,7 +426,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     assert(updateDeltaFiles.length == 1)
     assert(deletaDeltaFiles.length == 1)
 
-    sql("""update dest2 set (c1, c3) = ('update_a', 'update_aa') where c2 = 5 or c2 = 8""").show()
+    sql("""update dest10 set (c1, c3) = ('update_a', 'update_aa') where c2 = 5 or c2 = 8""").show()
 
     updateDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     deletaDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
@@ -435,7 +437,10 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     assert(updateDeltaFiles.length == 3)
     assert(deletaDeltaFiles.length == 3)
 
-    sql("""drop table dest2""")
+    sql("""drop table dest10""")
+    sql("""drop database if exists iud10 cascade""")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "false")
   }
 
   override def afterAll {
