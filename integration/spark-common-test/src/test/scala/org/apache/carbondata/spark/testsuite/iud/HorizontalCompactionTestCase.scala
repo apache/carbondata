@@ -22,11 +22,11 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.test.util.QueryTest
-
 
 class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
@@ -407,7 +407,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
       """create table dest10 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest10""")
 
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("iud10_dest10")
+    val carbonTable = CarbonEnv.getCarbonTable(Some("iud10"), "dest10")(sqlContext.sparkSession)
     val identifier = carbonTable.getAbsoluteTableIdentifier()
     val dataFilesDir = CarbonTablePath.getSegmentPath(identifier.getTablePath, "0")
     val carbonFile =
