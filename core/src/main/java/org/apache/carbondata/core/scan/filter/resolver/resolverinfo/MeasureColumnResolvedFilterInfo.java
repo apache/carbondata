@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -101,7 +102,7 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
   }
 
   public void setType(org.apache.carbondata.core.metadata.datatype.DataType dataType) {
-    this.type = dataType;
+    this.type = DataTypes.valueOf(dataType.getId());
   }
 
   public CarbonColumn getCarbonColumn() {

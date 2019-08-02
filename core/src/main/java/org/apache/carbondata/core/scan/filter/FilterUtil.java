@@ -1524,17 +1524,18 @@ public final class FilterUtil {
       DimColumnExecuterFilterInfo dimColumnExecuterInfo, CarbonMeasure measures,
       MeasureColumnExecuterFilterInfo msrColumnExecuterInfo) {
     if (null != measures) {
+      DataType filterColumnDataType = DataTypes.valueOf(measures.getDataType().getId());
       DataTypeConverterImpl converter = new DataTypeConverterImpl();
       Object[] keysBasedOnFilter = filterValues.getMeasuresFilterValuesList()
           .toArray((new Object[filterValues.getMeasuresFilterValuesList().size()]));
       for (int i = 0; i < keysBasedOnFilter.length; i++) {
         if (keysBasedOnFilter[i] != null) {
           keysBasedOnFilter[i] = DataTypeUtil
-              .getDataBasedOnDataType(keysBasedOnFilter[i].toString(), measures.getDataType(),
+              .getDataBasedOnDataType(keysBasedOnFilter[i].toString(), filterColumnDataType,
                   converter);
         }
       }
-      msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter,  measures.getDataType());
+      msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter, filterColumnDataType);
     } else {
       if (filterValues == null) {
         dimColumnExecuterInfo.setFilterKeys(new byte[0][]);
