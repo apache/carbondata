@@ -399,6 +399,8 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   test("[CARBONDATA-3483] Don't require update.lock and compaction.lock again when execute 'IUD_UPDDEL_DELTA' compaction") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM, "1")
     sql("""drop database if exists iud10 cascade""")
     sql("""create database iud10""")
     sql("""use iud10""")
