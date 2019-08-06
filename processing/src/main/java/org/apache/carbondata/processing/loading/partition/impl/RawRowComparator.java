@@ -49,9 +49,9 @@ public class RawRowComparator implements Comparator<CarbonRow> {
     for (int colIdx : sortColumnIndices) {
       if (isSortColumnNoDict[i]) {
         if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[noDicIdx])) {
-	  if (!comparator_map.containsKey(noDicDataTypes[noDicIdx])) {
-	    comparator_map.put(noDicDataTypes[noDicIdx],
-	        org.apache.carbondata.core.util.comparator.Comparator
+          if (!comparator_map.containsKey(noDicDataTypes[noDicIdx])) {
+            comparator_map.put(noDicDataTypes[noDicIdx],
+                org.apache.carbondata.core.util.comparator.Comparator
                     .getComparator(noDicDataTypes[noDicIdx]));
           }
         }
@@ -70,7 +70,7 @@ public class RawRowComparator implements Comparator<CarbonRow> {
       if (isSortColumnNoDict[i]) {
         if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[noDicIdx])) {
           // for no dictionary numeric column get comparator based on the data type
-	  SerializableComparator comparator = comparator_map.get(noDicDataTypes[noDicIdx]);
+          SerializableComparator comparator = comparator_map.get(noDicDataTypes[noDicIdx]);
           int difference = comparator.compare(o1.getObject(colIdx), o2.getObject(colIdx));
           if (difference != 0) {
             return difference;

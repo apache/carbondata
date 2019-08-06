@@ -43,7 +43,7 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
     this.dictSizeInMemory = tableFieldStat.getDictSortDimCnt() * 4;
     int noDicSortIdx = 0;
     comparator_map = new HashMap<>();
-    
+
     for (boolean isNoDictionary : tableFieldStat.getIsSortColNoDictFlags()) {
       if (isNoDictionary) {
         DataType dataType = tableFieldStat.getNoDictDataType()[noDicSortIdx++];
@@ -104,7 +104,7 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
             sizeInNonDictPartB += lengthB;
           }
           // use the data type based comparator for the no dictionary encoded columns
-          SerializableComparator comparator = comparator_map.get(dataType); 
+          SerializableComparator comparator = comparator_map.get(dataType);
           int difference = comparator.compare(data1, data2);
           if (difference != 0) {
             return difference;
