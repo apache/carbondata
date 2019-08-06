@@ -25,24 +25,34 @@ import org.apache.carbondata.core.util.ByteUtil;
 
 public final class Comparator {
 
+  //Comparators are made static so that only one instance is generated
+  private static SerializableComparator Boolean  = new BooleanSerializableComparator();
+  private static SerializableComparator Int = new IntSerializableComparator();
+  private static SerializableComparator Short = new ShortSerializableComparator();
+  private static SerializableComparator Double = new DoubleSerializableComparator();
+  private static SerializableComparator Float = new FloatSerializableComparator();
+  private static SerializableComparator Long = new LongSerializableComparator();
+  private static SerializableComparator Decimal  = new BigDecimalSerializableComparator();
+  private static SerializableComparator Byte = new ByteArraySerializableComparator();
+
   public static SerializableComparator getComparator(DataType dataType) {
     if (dataType == DataTypes.BOOLEAN) {
-      return new BooleanSerializableComparator();
+      return Boolean;
     } else if (dataType == DataTypes.INT) {
-      return new IntSerializableComparator();
+      return Int;
     } else if (dataType == DataTypes.SHORT) {
-      return new ShortSerializableComparator();
+      return Short;
     } else if (dataType == DataTypes.DOUBLE) {
-      return new DoubleSerializableComparator();
+      return Double;
     } else if (dataType == DataTypes.FLOAT) {
-      return new FloatSerializableComparator();
+      return Float;
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.DATE
         || dataType == DataTypes.TIMESTAMP) {
-      return new LongSerializableComparator();
+      return Long;
     } else if (DataTypes.isDecimal(dataType)) {
-      return new BigDecimalSerializableComparator();
+      return Decimal;
     } else {
-      return new ByteArraySerializableComparator();
+      return Byte;
     }
   }
 
@@ -54,21 +64,21 @@ public final class Comparator {
    */
   public static SerializableComparator getComparatorByDataTypeForMeasure(DataType dataType) {
     if (dataType == DataTypes.BOOLEAN) {
-      return new BooleanSerializableComparator();
+      return Boolean;
     } else if (dataType == DataTypes.INT) {
-      return new IntSerializableComparator();
+      return Int;
     } else if (dataType == DataTypes.SHORT) {
-      return new ShortSerializableComparator();
+      return Short;
     } else if (dataType == DataTypes.LONG) {
-      return new LongSerializableComparator();
+      return Long;
     } else if (dataType == DataTypes.DOUBLE) {
-      return new DoubleSerializableComparator();
+      return Double;
     } else if (dataType == DataTypes.FLOAT) {
-      return new FloatSerializableComparator();
+      return Float;
     } else if (DataTypes.isDecimal(dataType)) {
-      return new BigDecimalSerializableComparator();
+      return Decimal;
     } else if (dataType == DataTypes.BYTE) {
-      return new ByteArraySerializableComparator();
+      return Byte;
     } else {
       throw new IllegalArgumentException("Unsupported data type: " + dataType.getName());
     }
