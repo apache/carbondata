@@ -261,31 +261,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("drop table carbontable")
   }
 
-  ignore("test mdt file path with configured paths") {
-    sql(s"create database carbon location '$dblocation'")
-    sql("use carbon")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER, "/tmp/carbondata1/carbondata2/")
-    val (timestampFile, timestampFileType) = getMdtFileAndType()
-    FileFactory.deleteFile(timestampFile, timestampFileType)
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
-    sql("drop table carbontable")
-    // perform file check
-    assert(FileFactory.isFileExist(timestampFile, true) ||
-           CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore)
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
-        CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT)
-    val (timestampFile2, timestampFileType2) = getMdtFileAndType()
-    FileFactory.deleteFile(timestampFile2, timestampFileType2)
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
-    sql("drop table carbontable")
-    // perform file check
-    assert(FileFactory.isFileExist(timestampFile, true) ||
-           CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore)
-  }
-
   override def afterEach {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,

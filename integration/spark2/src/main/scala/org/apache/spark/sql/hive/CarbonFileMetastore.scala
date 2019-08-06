@@ -19,13 +19,13 @@ package org.apache.spark.sql.hive
 
 import java.io.IOException
 import java.net.URI
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.{Lock, ReentrantReadWriteLock}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -38,7 +38,6 @@ import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -230,49 +229,48 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tableName = identifier.getCarbonTableIdentifier.getTableName
     val tableUniqueName = CarbonTable.buildUniqueName(dbName, tableName)
     val tablePath = identifier.getTablePath
-    var schemaRefreshTime = 0L
+    var schemaRefreshTime = System.currentTimeMillis()
     val wrapperTableInfo =
-    if (inferSchema) {
-      val carbonTbl = CarbonMetadata.getInstance().getCarbonTable(dbName, tableName)
-      val tblInfoFromCache = if (carbonTbl != null) {
-        carbonTbl.getTableInfo
-      } else {
-        null
-      }
+      if (inferSchema) {
+        val carbonTbl = CarbonMetadata.getInstance().getCarbonTable(dbName, tableName)
+        val tblInfoFromCache = if (carbonTbl != null) {
+          carbonTbl.getTableInfo
+        } else {
+          null
+        }
 
-      val thriftTableInfo : TableInfo = if (tblInfoFromCache != null) {
-        // In case the TableInfo is present in the Carbon Metadata Cache
-        // then get the tableinfo from the cache rather than infering from
-        // the CarbonData file.
-        schemaConverter
-          .fromWrapperToExternalTableInfo(tblInfoFromCache, dbName, tableName)
-      } else {
-        schemaConverter
-          .fromWrapperToExternalTableInfo(SchemaReader
-                      .inferSchema(identifier, false),
-            dbName, tableName)
-      }
-      schemaRefreshTime = System.currentTimeMillis()
-      val wrapperTableInfo =
-        schemaConverter
-          .fromExternalToWrapperTableInfo(thriftTableInfo, dbName, tableName, tablePath)
-      wrapperTableInfo.getFactTable.getTableProperties.put("_external", "true")
-      wrapperTableInfo.setTransactionalTable(false)
-      Some(wrapperTableInfo)
-    } else {
-      val tableMetadataFile = CarbonTablePath.getSchemaFilePath(tablePath)
-      schemaRefreshTime = FileFactory
-        .getCarbonFile(CarbonTablePath.getSchemaFilePath(tablePath)).getLastModifiedTime
-      val fileType = FileFactory.getFileType(tableMetadataFile)
-      if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
-        val tableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
+        val thriftTableInfo: TableInfo = if (tblInfoFromCache != null) {
+          // In case the TableInfo is present in the Carbon Metadata Cache
+          // then get the tableinfo from the cache rather than infering from
+          // the CarbonData file.
+          schemaConverter
+            .fromWrapperToExternalTableInfo(tblInfoFromCache, dbName, tableName)
+        } else {
+          schemaConverter
+            .fromWrapperToExternalTableInfo(SchemaReader
+              .inferSchema(identifier, false),
+              dbName, tableName)
+        }
         val wrapperTableInfo =
-          schemaConverter.fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
+          schemaConverter
+            .fromExternalToWrapperTableInfo(thriftTableInfo, dbName, tableName, tablePath)
+        wrapperTableInfo.getFactTable.getTableProperties.put("_external", "true")
+        wrapperTableInfo.setTransactionalTable(false)
         Some(wrapperTableInfo)
       } else {
-        None
+        val tableMetadataFile = CarbonTablePath.getSchemaFilePath(tablePath)
+        schemaRefreshTime = FileFactory
+          .getCarbonFile(CarbonTablePath.getSchemaFilePath(tablePath)).getLastModifiedTime
+        val fileType = FileFactory.getFileType(tableMetadataFile)
+        if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
+          val tableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
+          val wrapperTableInfo =
+            schemaConverter.fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
+          Some(wrapperTableInfo)
+        } else {
+          None
+        }
       }
-    }
     wrapperTableInfo.map { tableInfo =>
       updateSchemasUpdatedTime(tableInfo.getFactTable.getTableId,
         schemaRefreshTime)
@@ -407,7 +405,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
       tableInfo: table.TableInfo,
       absoluteTableIdentifier: AbsoluteTableIdentifier): Unit = {
     val identifier = absoluteTableIdentifier.getCarbonTableIdentifier
-    CarbonMetadata.getInstance.removeTable(tableInfo.getTableUniqueName)
     removeTableFromMetadata(identifier.getDatabaseName, identifier.getTableName)
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
   }
@@ -566,11 +563,13 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tablesList = sparkSession.sessionState.catalog.listDatabases().flatMap {
       database =>
         sparkSession.sessionState.catalog.listTables(database)
-          .map(table => s"${ database }_${ table }")
+          .map(table => s"${ database }_${ table }".toLowerCase(Locale.getDefault()))
     }
     val invalidTableIds = CarbonMetadata.getInstance().getAllTables.asScala.collect {
-      case carbonTable if !tablesList.contains(carbonTable.getTableUniqueName) =>
-        CarbonMetadata.getInstance().removeTable(carbonTable.getTableUniqueName)
+      case carbonTable if !tablesList.contains(carbonTable.getTableUniqueName
+        .toLowerCase(Locale.getDefault())) =>
+        CarbonMetadata.getInstance()
+          .removeTable(carbonTable.getTableUniqueName.toLowerCase(Locale.getDefault()))
         carbonTable.getTableId
     }
     CarbonFileMetastore.removeStaleEntries(invalidTableIds.toList)

@@ -18,10 +18,15 @@
 package org.apache.carbondata.core.datamap;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
@@ -39,7 +44,49 @@ public class DataMapFilter implements Serializable {
   public DataMapFilter(CarbonTable table, Expression expression) {
     this.table = table;
     this.expression = expression;
+    if (expression != null) {
+      checkIfFilterColumnExistsInTable();
+    }
     resolve();
+  }
+
+  private Set<String> extractColumnExpressions(Expression expression) {
+    Set<String> columnExpressionList = new HashSet<>();
+    for (Expression expressions: expression.getChildren()) {
+      if (expressions != null && expressions.getChildren() != null
+          && expressions.getChildren().size() > 0) {
+        columnExpressionList.addAll(extractColumnExpressions(expressions));
+      } else if (expressions instanceof ColumnExpression) {
+        columnExpressionList.add(((ColumnExpression) expressions).getColumnName());
+      }
+    }
+    return columnExpressionList;
+  }
+
+  private void checkIfFilterColumnExistsInTable() {
+    Set<String> columnExpressionList = extractColumnExpressions(expression);
+    for (String colExpression : columnExpressionList) {
+      if (colExpression.equalsIgnoreCase("positionid")) {
+        continue;
+      }
+      boolean exists = false;
+      for (CarbonMeasure carbonMeasure : table.getAllMeasures()) {
+        if (!carbonMeasure.isInvisible() && carbonMeasure.getColName()
+            .equalsIgnoreCase(colExpression)) {
+          exists = true;
+        }
+      }
+      for (CarbonDimension carbonDimension : table.getAllDimensions()) {
+        if (!carbonDimension.isInvisible() && carbonDimension.getColName()
+            .equalsIgnoreCase(colExpression)) {
+          exists = true;
+        }
+      }
+      if (!exists) {
+        throw new RuntimeException(
+            "Column " + colExpression + " not found in table " + table.getTableUniqueName());
+      }
+    }
   }
 
   public DataMapFilter(FilterResolverIntf resolver) {
