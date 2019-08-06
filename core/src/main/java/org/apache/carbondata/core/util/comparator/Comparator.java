@@ -25,24 +25,23 @@ import org.apache.carbondata.core.util.ByteUtil;
 
 public final class Comparator {
 
+  //Comparators are made static so that only one instance is generated
+  private static final SerializableComparator BOOLEAN  = new BooleanSerializableComparator();
+  private static final SerializableComparator INT = new IntSerializableComparator();
+  private static final SerializableComparator SHORT = new ShortSerializableComparator();
+  private static final SerializableComparator DOUBLE = new DoubleSerializableComparator();
+  private static final SerializableComparator FLOAT = new FloatSerializableComparator();
+  private static final SerializableComparator LONG = new LongSerializableComparator();
+  private static final SerializableComparator DECIMAL  = new BigDecimalSerializableComparator();
+  private static final SerializableComparator BYTE = new ByteArraySerializableComparator();
+
   public static SerializableComparator getComparator(DataType dataType) {
-    if (dataType == DataTypes.BOOLEAN) {
-      return new BooleanSerializableComparator();
-    } else if (dataType == DataTypes.INT) {
-      return new IntSerializableComparator();
-    } else if (dataType == DataTypes.SHORT) {
-      return new ShortSerializableComparator();
-    } else if (dataType == DataTypes.DOUBLE) {
-      return new DoubleSerializableComparator();
-    } else if (dataType == DataTypes.FLOAT) {
-      return new FloatSerializableComparator();
-    } else if (dataType == DataTypes.LONG || dataType == DataTypes.DATE
-        || dataType == DataTypes.TIMESTAMP) {
-      return new LongSerializableComparator();
-    } else if (DataTypes.isDecimal(dataType)) {
-      return new BigDecimalSerializableComparator();
+    if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+      return LONG;
+    } else if (dataType == DataTypes.STRING) {
+      return BYTE;
     } else {
-      return new ByteArraySerializableComparator();
+      return getComparatorByDataTypeForMeasure(dataType);
     }
   }
 
@@ -54,21 +53,21 @@ public final class Comparator {
    */
   public static SerializableComparator getComparatorByDataTypeForMeasure(DataType dataType) {
     if (dataType == DataTypes.BOOLEAN) {
-      return new BooleanSerializableComparator();
+      return BOOLEAN;
     } else if (dataType == DataTypes.INT) {
-      return new IntSerializableComparator();
+      return INT;
     } else if (dataType == DataTypes.SHORT) {
-      return new ShortSerializableComparator();
+      return SHORT;
     } else if (dataType == DataTypes.LONG) {
-      return new LongSerializableComparator();
+      return LONG;
     } else if (dataType == DataTypes.DOUBLE) {
-      return new DoubleSerializableComparator();
+      return DOUBLE;
     } else if (dataType == DataTypes.FLOAT) {
-      return new FloatSerializableComparator();
+      return FLOAT;
     } else if (DataTypes.isDecimal(dataType)) {
-      return new BigDecimalSerializableComparator();
+      return DECIMAL;
     } else if (dataType == DataTypes.BYTE) {
-      return new ByteArraySerializableComparator();
+      return BYTE;
     } else {
       throw new IllegalArgumentException("Unsupported data type: " + dataType.getName());
     }
