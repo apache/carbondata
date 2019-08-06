@@ -19,6 +19,8 @@ package org.apache.carbondata.processing.sort.sortdata;
 
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
@@ -32,10 +34,27 @@ public class NewRowComparator implements Comparator<Object[]>, Serializable {
 
   private boolean[] noDicSortColumnMapping;
 
+  private Map<DataType, SerializableComparator> comparator_map;
+
   public NewRowComparator(boolean[] noDicSortColumnMapping,
       DataType[] noDicDataTypes) {
     this.noDicSortColumnMapping = noDicSortColumnMapping;
     this.noDicDataTypes = noDicDataTypes;
+    int noDicSortIdx = 0;
+    int dataTypeIdx = 0;
+    comparator_map = new HashMap<>();
+    for (int i = 0; i < noDicSortColumnMapping.length; i++) {
+      if (noDicSortColumnMapping[noDicSortIdx++]) {
+        if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[dataTypeIdx])) {
+          if (!comparator_map.containsKey(noDicDataTypes[dataTypeIdx])) {
+            comparator_map.put(noDicDataTypes[dataTypeIdx],
+                org.apache.carbondata.core.util.comparator.Comparator
+                    .getComparator(noDicDataTypes[dataTypeIdx]));
+          }
+        }
+        dataTypeIdx++;
+      }
+    }
   }
 
   /**
@@ -50,8 +69,7 @@ public class NewRowComparator implements Comparator<Object[]>, Serializable {
       if (noDicSortColumnMapping[noDicSortIdx++]) {
         if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[dataTypeIdx])) {
           // use data types based comparator for the no dictionary measure columns
-          SerializableComparator comparator = org.apache.carbondata.core.util.comparator.Comparator
-              .getComparator(noDicDataTypes[dataTypeIdx]);
+          SerializableComparator comparator = comparator_map.get(noDicDataTypes[dataTypeIdx]);
           int difference = comparator.compare(rowA[index], rowB[index]);
           if (difference != 0) {
             return difference;

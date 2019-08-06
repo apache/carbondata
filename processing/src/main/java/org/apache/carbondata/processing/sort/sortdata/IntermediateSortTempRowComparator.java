@@ -18,6 +18,8 @@
 package org.apache.carbondata.processing.sort.sortdata;
 
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
@@ -36,6 +38,8 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
 
   private DataType[] noDicSortDataTypes;
 
+  private Map<DataType, SerializableComparator> comparator_map;
+
   /**
    * @param isSortColumnNoDictionary isSortColumnNoDictionary
    */
@@ -43,6 +47,21 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
       DataType[] noDicSortDataTypes) {
     this.isSortColumnNoDictionary = isSortColumnNoDictionary;
     this.noDicSortDataTypes = noDicSortDataTypes;
+    comparator_map = new HashMap<>();
+    int noDicTypeIdx = 0;
+
+    for (boolean isNoDictionary : isSortColumnNoDictionary) {
+      if (isNoDictionary) {
+        if (DataTypeUtil.isPrimitiveColumn(noDicSortDataTypes[noDicTypeIdx])) {
+          if (!comparator_map.containsKey(noDicSortDataTypes[noDicTypeIdx])) {
+            comparator_map.put(noDicSortDataTypes[noDicTypeIdx],
+                org.apache.carbondata.core.util.comparator.Comparator
+                    .getComparator(noDicSortDataTypes[noDicTypeIdx]));
+          }
+        }
+        noDicTypeIdx++;
+      }
+    }
   }
 
   /**
@@ -59,8 +78,7 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
       if (isNoDictionary) {
         if (DataTypeUtil.isPrimitiveColumn(noDicSortDataTypes[noDicTypeIdx])) {
           // use data types based comparator for the no dictionary measure columns
-          SerializableComparator comparator = org.apache.carbondata.core.util.comparator.Comparator
-              .getComparator(noDicSortDataTypes[noDicTypeIdx]);
+          SerializableComparator comparator = comparator_map.get(noDicSortDataTypes[noDicTypeIdx]);
           int difference = comparator.compare(rowA.getNoDictSortDims()[nonDictIndex],
               rowB.getNoDictSortDims()[nonDictIndex]);
           if (difference != 0) {
