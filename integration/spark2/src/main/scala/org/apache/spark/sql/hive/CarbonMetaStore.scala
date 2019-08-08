@@ -135,7 +135,8 @@ trait CarbonMetaStore {
   def dropTable(tableIdentifier: AbsoluteTableIdentifier)
     (sparkSession: SparkSession)
 
-  def isSchemaRefreshed(tableUniqueId: String, schemaFilePath: String): Boolean
+  def isSchemaRefreshed(absoluteTableIdentifier: AbsoluteTableIdentifier,
+      sparkSession: SparkSession): Boolean
 
   def isReadFromHiveMetaStore: Boolean
 

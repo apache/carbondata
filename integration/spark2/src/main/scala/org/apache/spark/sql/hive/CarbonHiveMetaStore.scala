@@ -63,7 +63,8 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     carbonRelation
   }
 
-  override def isSchemaRefreshed(tableUniqueId: String, schemaFilePath: String): Boolean = true
+  override def isSchemaRefreshed(absoluteTableIdentifier: AbsoluteTableIdentifier,
+      sparkSession: SparkSession): Boolean = true
 
   override def isTablePathExists(tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): Boolean = {

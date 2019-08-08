@@ -240,19 +240,9 @@ object CarbonEnv {
     if (table == null) {
       true
     } else {
-      if (carbonEnv.carbonMetaStore
-        .isSchemaRefreshed(table.getTableId, table.getTablePath)) {
-        CarbonMetadata.getInstance().removeTable(table.getTableUniqueName)
-        sparkSession.sessionState.catalog.refreshTable(identifier)
-        val tablePath = table.getTablePath
-        DataMapStoreManager.getInstance().
-          clearDataMaps(AbsoluteTableIdentifier.from(tablePath,
-            identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
-            identifier.table, table.getTableInfo.getFactTable.getTableId))
-        true
-      } else {
-        false
-      }
+      carbonEnv.carbonMetaStore.isSchemaRefreshed(AbsoluteTableIdentifier.from(table.getTablePath,
+          identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
+          identifier.table, table.getTableInfo.getFactTable.getTableId), sparkSession)
     }
   }
 
