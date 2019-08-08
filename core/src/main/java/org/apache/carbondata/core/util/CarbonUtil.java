@@ -2741,12 +2741,28 @@ public final class CarbonUtil {
     try {
       CarbonFile localCarbonFile =
           FileFactory.getCarbonFile(localFilePath, FileFactory.getFileType(localFilePath));
+      if (localCarbonFile.getSize() == 0l) {
+        LOGGER.error("The file size of local carbon file: " + localFilePath + " is 0.");
+        throw new CarbonDataWriterException(
+            "The file size of local carbon file is 0.");
+      }
       String carbonFilePath = carbonDataDirectoryPath + localFilePath
           .substring(localFilePath.lastIndexOf(File.separator));
       copyLocalFileToCarbonStore(carbonFilePath, localFilePath,
           CarbonCommonConstants.BYTEBUFFER_SIZE,
           getMaxOfBlockAndFileSize(fileSizeInBytes, localCarbonFile.getSize()));
-    } catch (IOException e) {
+      CarbonFile targetCarbonFile =
+          FileFactory.getCarbonFile(carbonFilePath, FileFactory.getFileType(carbonFilePath));
+      if (targetCarbonFile.getSize() == 0l
+          || (targetCarbonFile.getSize() != localCarbonFile.getSize())) {
+        LOGGER.error("The file size of carbon file: " + carbonFilePath + " is 0 "
+            + "or is not the same as the file size of local carbon file: ("
+            + "carbon file size=" + targetCarbonFile.getSize()
+            + ", local carbon file size=" + localCarbonFile.getSize() + ")");
+        throw new CarbonDataWriterException("The file size of carbon file is 0 "
+            + "or is not the same as the file size of local carbon file.");
+      }
+    } catch (Exception e) {
       throw new CarbonDataWriterException(
           "Problem while copying file from local store to carbon store", e);
     }
