@@ -105,7 +105,7 @@ public class NewRowComparatorTest {
     int res = new_comparator.compare(arr, arr1);
     Assert.assertTrue(res < 0);
   }
-  
+ 
   @Test public void comparemixed() {
     DataType noDicDataTypes[] = { DataTypes.INT, DataTypes.FLOAT, DataTypes.BOOLEAN };
     boolean noDicSortColumnMapping[] = { true, true, true };
