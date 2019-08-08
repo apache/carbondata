@@ -101,7 +101,7 @@ public class NewRowComparatorTest {
     boolean noDicSortColumnMapping[] = { true };
     new_comparator = new NewRowComparator(noDicSortColumnMapping, noDicDataTypes);
     Byte arr[] = { 1, 2, 3 };
-    Byte arr1[] = { 4, 5, 6 }
+    Byte arr1[] = { 4, 5, 6 };
     int res = new_comparator.compare(arr, arr1);
     Assert.assertTrue(res < 0);
   }
