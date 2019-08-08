@@ -2741,7 +2741,7 @@ public final class CarbonUtil {
     try {
       CarbonFile localCarbonFile =
           FileFactory.getCarbonFile(localFilePath, FileFactory.getFileType(localFilePath));
-      if (localCarbonFile.getSize() == 0l) {
+      if (localCarbonFile.getSize() == 0L) {
         LOGGER.error("The file size of local carbon file: " + localFilePath + " is 0.");
         throw new CarbonDataWriterException(
             "The file size of local carbon file is 0.");
@@ -2753,7 +2753,7 @@ public final class CarbonUtil {
           getMaxOfBlockAndFileSize(fileSizeInBytes, localCarbonFile.getSize()));
       CarbonFile targetCarbonFile =
           FileFactory.getCarbonFile(carbonFilePath, FileFactory.getFileType(carbonFilePath));
-      if (targetCarbonFile.getSize() == 0l
+      if (targetCarbonFile.getSize() == 0L
           || (targetCarbonFile.getSize() != localCarbonFile.getSize())) {
         LOGGER.error("The file size of carbon file: " + carbonFilePath + " is 0 "
             + "or is not the same as the file size of local carbon file: ("
