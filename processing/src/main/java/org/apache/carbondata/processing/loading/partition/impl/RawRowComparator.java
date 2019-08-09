@@ -44,6 +44,11 @@ public class RawRowComparator implements Comparator<CarbonRow> {
     this.isSortColumnNoDict = isSortColumnNoDict;
     this.noDicDataTypes = noDicDataTypes;
     comparator_map = new HashMap<>();
+    /**
+    *Comparator_map is used to store the Serializeablecomparator for primitive
+    *datatypes. This map is used to reduce the number of times a new 
+    *SerializableComparator is created.
+    */
     int i = 0;
     int noDicIdx = 0;
     for (int colIdx : sortColumnIndices) {
