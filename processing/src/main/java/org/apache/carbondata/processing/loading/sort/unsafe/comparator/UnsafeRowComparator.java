@@ -43,7 +43,11 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
     this.dictSizeInMemory = tableFieldStat.getDictSortDimCnt() * 4;
     int noDicSortIdx = 0;
     comparator_map = new HashMap<>();
-
+    /**
+    *Comparator_map is used to store the Serializeablecomparator for primitive
+    *datatypes. This map is used to reduce the number of times a new 
+    *SerializableComparator is created.
+    */
     for (boolean isNoDictionary : tableFieldStat.getIsSortColNoDictFlags()) {
       if (isNoDictionary) {
         DataType dataType = tableFieldStat.getNoDictDataType()[noDicSortIdx++];
