@@ -713,9 +713,10 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             prExp.transform {
               case attr: AttributeReference =>
                 updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
-            }
+            }.asInstanceOf[NamedExpression]
+          } else {
+            prExp
           }
-          prExp
         }
         Project(prExps, p.child)
       case wd: Window if relations.nonEmpty =>
