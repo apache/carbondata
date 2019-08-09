@@ -43,6 +43,11 @@ public class NewRowComparator implements Comparator<Object[]>, Serializable {
     int noDicSortIdx = 0;
     int dataTypeIdx = 0;
     comparator_map = new HashMap<>();
+    /**
+    *Comparator_map is used to store the Serializeablecomparator for primitive
+    *datatypes. This map is used to reduce the number of times a new 
+    *SerializableComparator is created.
+    */
     for (int i = 0; i < noDicSortColumnMapping.length; i++) {
       if (noDicSortColumnMapping[noDicSortIdx++]) {
         if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[dataTypeIdx])) {
