@@ -21,6 +21,7 @@ import java.io.File
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util
+import java.util.UUID
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
@@ -777,8 +778,10 @@ object CommonUtil {
     val isCarbonUseYarnLocalDir = CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR,
       CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR_DEFAULT).equalsIgnoreCase("true")
-    val tmpLocationSuffix =
-      s"${File.separator}carbon${System.nanoTime()}${CarbonCommonConstants.UNDERSCORE}$index"
+    val tmpLocationSuffix = s"${ File.separator }carbon${
+      UUID.randomUUID().toString
+        .replace("-", "")
+    }${ CarbonCommonConstants.UNDERSCORE }$index"
     if (isCarbonUseYarnLocalDir) {
       val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
 
