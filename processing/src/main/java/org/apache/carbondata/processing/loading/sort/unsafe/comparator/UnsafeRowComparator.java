@@ -45,7 +45,7 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
     comparator_map = new HashMap<>();
     /**
     *Comparator_map is used to store the Serializeablecomparator for primitive
-    *datatypes. This map is used to reduce the number of times a new 
+    *datatypes. This map is used to reduce the number of times a new
     *SerializableComparator is created.
     */
     for (boolean isNoDictionary : tableFieldStat.getIsSortColNoDictFlags()) {
