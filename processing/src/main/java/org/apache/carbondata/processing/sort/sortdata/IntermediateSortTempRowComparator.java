@@ -51,7 +51,7 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
     int noDicTypeIdx = 0;
     /**
     *Comparator_map is used to store the Serializeablecomparator for primitive
-    *datatypes. This map is used to reduce the number of times a new 
+    *datatypes. This map is used to reduce the number of times a new
     *SerializableComparator is created.
     */
 
