@@ -54,6 +54,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 /**
@@ -71,12 +72,15 @@ public class SegmentUpdateStatusManager {
   private LoadMetadataDetails[] segmentDetails;
   private SegmentUpdateDetails[] updateDetails;
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
-  private boolean isStandardTable;
+  /**
+   * It contains the mapping of segment path and corresponding delete delta file paths,
+   * avoiding listing these files for every query
+   */
+  private Map<String, List<String>> segmentDeleteDeltaListMap = new HashMap<>();
 
   public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails) {
     this.identifier = table.getAbsoluteTableIdentifier();
-    this.isStandardTable = CarbonUtil.isStandardCarbonTable(table);
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     this.segmentDetails = segmentDetails;
@@ -86,7 +90,6 @@ public class SegmentUpdateStatusManager {
 
   public SegmentUpdateStatusManager(CarbonTable table) {
     this.identifier = table.getAbsoluteTableIdentifier();
-    this.isStandardTable = CarbonUtil.isStandardCarbonTable(table);
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     if (!table.getTableInfo().isTransactionalTable()) {
@@ -251,23 +254,23 @@ public class SegmentUpdateStatusManager {
    * @throws Exception
    */
   public String[] getDeleteDeltaFilePath(String blockFilePath, String segmentId) throws Exception {
-    CarbonFile file = FileFactory.getCarbonFile(blockFilePath);
-    return getDeltaFiles(file, segmentId)
+    return getDeltaFiles(blockFilePath, segmentId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
         .toArray(new String[0]);
   }
 
   /**
    * Returns all delta file paths of specified block
    */
-  private List<String> getDeltaFiles(CarbonFile file, String segmentId) throws Exception {
-    String completeBlockName = file.getName();
+  private List<String> getDeltaFiles(String blockPath, String segment, String extension)
+      throws Exception {
+    Path path = new Path(blockPath);
+    String completeBlockName = path.getName();
     String blockNameWithoutExtn =
         completeBlockName.substring(0, completeBlockName.lastIndexOf('.'));
     //blockName without timestamp
     final String blockNameFromTuple =
         blockNameWithoutExtn.substring(0, blockNameWithoutExtn.lastIndexOf("-"));
-    return getDeltaFiles(file, blockNameFromTuple, CarbonCommonConstants.DELETE_DELTA_FILE_EXT,
-        segmentId);
+    return getDeltaFiles(path.getParent().toString(), blockNameFromTuple, extension, segment);
   }
 
   /**
@@ -310,7 +313,7 @@ public class SegmentUpdateStatusManager {
    * @param segment the segment name
    * @return the list of delete file
    */
-  private List<String> getDeltaFiles(CarbonFile blockDir, final String blockNameFromTuple,
+  private List<String> getDeltaFiles(String blockDir, final String blockNameFromTuple,
       final String extension, String segment) throws IOException {
     List<String> deleteFileList = new ArrayList<>();
     for (SegmentUpdateDetails block : updateDetails) {
@@ -323,50 +326,69 @@ public class SegmentUpdateStatusManager {
           return deleteFileList;
         }
         final long deltaEndTimeStamp = getEndTimeOfDeltaFile(extension, block);
-
-        // final long deltaEndTimeStamp = block.getDeleteDeltaEndTimeAsLong();
-        // final long deltaStartTimestamp = block.getDeleteDeltaStartTimeAsLong();
-        return getFilePaths(blockDir, blockNameFromTuple, extension, deleteFileList,
-            deltaStartTimestamp, deltaEndTimeStamp);
+        // If start and end time is same then it has only one delta file so construct the file
+        // directly with available information with out listing
+        if (block.getDeleteDeltaStartTimestamp().equals(block.getDeleteDeltaEndTimestamp())) {
+          deleteFileList.add(
+              new StringBuilder(blockDir).append(CarbonCommonConstants.FILE_SEPARATOR)
+                  .append(block.getBlockName()).append("-")
+                  .append(block.getDeleteDeltaStartTimestamp()).append(extension).toString());
+          // If deltatimestamps list has data then it has multiple delta file so construct the file
+          // directly with list of deltas with out listing
+        } else if (block.getDeltaFileStamps() != null && block.getDeltaFileStamps().size() > 0) {
+          for (String delta : block.getDeltaFileStamps()) {
+            deleteFileList.add(
+                new StringBuilder(blockDir).append(CarbonCommonConstants.FILE_SEPARATOR)
+                    .append(block.getBlockName()).append("-").append(delta).append(extension)
+                    .toString());
+          }
+        } else {
+          // It is for backward compatability.It lists the files.
+          return getFilePaths(blockDir, blockNameFromTuple, extension, deleteFileList,
+              deltaStartTimestamp, deltaEndTimeStamp);
+        }
       }
     }
     return deleteFileList;
   }
 
-  private List<String> getFilePaths(CarbonFile blockDir, final String blockNameFromTuple,
+  private List<String> getFilePaths(String blockDir, final String blockNameFromTuple,
       final String extension, List<String> deleteFileList, final long deltaStartTimestamp,
       final long deltaEndTimeStamp) throws IOException {
-    if (null != blockDir.getParentFile()) {
-      CarbonFile[] files = blockDir.getParentFile().listFiles(new CarbonFileFilter() {
-
-        @Override
-        public boolean accept(CarbonFile pathName) {
+    List<String> deltaList = segmentDeleteDeltaListMap.get(blockDir);
+    if (deltaList == null) {
+      CarbonFile[] files = FileFactory.getCarbonFile(blockDir).listFiles(new CarbonFileFilter() {
+        @Override public boolean accept(CarbonFile pathName) {
           String fileName = pathName.getName();
           if (fileName.endsWith(extension) && pathName.getSize() > 0) {
-            String firstPart = fileName.substring(0, fileName.lastIndexOf('.'));
-            String blockName =
-                firstPart.substring(0, firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN));
-            long timestamp = Long.parseLong(firstPart
-                .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
-                    firstPart.length()));
-            if (blockNameFromTuple.equals(blockName) && (
-                (Long.compare(timestamp, deltaEndTimeStamp) <= 0) && (
-                    Long.compare(timestamp, deltaStartTimestamp) >= 0))) {
-              return true;
-            }
+            return true;
           }
           return false;
         }
       });
-
+      deltaList = new ArrayList<>(files.length);
       for (CarbonFile cfile : files) {
-        if (null == deleteFileList) {
-          deleteFileList = new ArrayList<String>(files.length);
-        }
-        deleteFileList.add(cfile.getCanonicalPath());
+        deltaList.add(cfile.getCanonicalPath());
       }
-    } else {
-      throw new IOException("Parent file could not found");
+      segmentDeleteDeltaListMap.put(blockDir, deltaList);
+    }
+    for (String deltaFile : deltaList) {
+      String deltaFilePathName = new Path(deltaFile).getName();
+      String firstPart = deltaFilePathName.substring(0, deltaFilePathName.lastIndexOf('.'));
+      String blockName =
+          firstPart.substring(0, firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN));
+      long timestamp = Long.parseLong(firstPart
+          .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1, firstPart.length()));
+      // It compares whether this delta file belongs to this block or not. And also checks that
+      // corresponding delta file is valid or not by considering its load start and end time with
+      // the file timestamp.
+      if (blockNameFromTuple.equals(blockName) && ((Long.compare(timestamp, deltaEndTimeStamp) <= 0)
+          && (Long.compare(timestamp, deltaStartTimestamp) >= 0))) {
+        if (null == deleteFileList) {
+          deleteFileList = new ArrayList<String>();
+        }
+        deleteFileList.add(deltaFile);
+      }
     }
     return deleteFileList;
   }
