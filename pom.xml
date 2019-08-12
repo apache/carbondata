@@ -96,7 +96,6 @@
 
   <modules>
     <module>common</module>
-    <module>format</module>
     <module>core</module>
     <module>processing</module>
     <module>hadoop</module>
@@ -108,6 +107,8 @@
     <module>store/sdk</module>
     <module>assembly</module>
     <module>tools/cli</module>
+    <module>datamap/bloom</module>
+    <module>datamap/lucene</module>
     <module>datamap/mv/plan</module>
     <module>datamap/mv/core</module>
     <module>examples/spark2</module>

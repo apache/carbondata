@@ -858,6 +858,19 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists date_parquet_table")
   }
 
+  test("test date filter datatype") {
+    spark.sql("drop table if exists date_table")
+    spark.sql("drop table if exists date_parquet_table")
+    spark.sql("create table date_table(empno int, empname string, projdate Date) using carbon")
+    spark.sql("insert into  date_table select 11, 'ravi', '2017-11-11'")
+    spark.sql("select * from date_table where projdate=cast('2017-11-11' as date)").show()
+    spark.sql("create table date_parquet_table(empno int, empname string, projdate Date) using parquet")
+    spark.sql("insert into  date_parquet_table select 11, 'ravi', '2017-11-11'")
+    checkAnswer(spark.sql("select * from date_table where projdate=cast('2017-11-11' as date)"), spark.sql("select * from date_parquet_table where projdate=cast('2017-11-11' as date)"))
+    spark.sql("drop table if exists date_table")
+    spark.sql("drop table if exists date_parquet_table")
+  }
+
   test("test read and write with date datatype with wrong format") {
     spark.sql("drop table if exists date_table")
     spark.sql("drop table if exists date_parquet_table")

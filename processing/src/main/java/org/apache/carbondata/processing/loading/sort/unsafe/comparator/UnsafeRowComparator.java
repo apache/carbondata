@@ -18,6 +18,8 @@
 package org.apache.carbondata.processing.loading.sort.unsafe.comparator;
 
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -33,11 +35,31 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
   private Object baseObject;
   private TableFieldStat tableFieldStat;
   private int dictSizeInMemory;
+  private Map<DataType, SerializableComparator> comparator_map;
 
   public UnsafeRowComparator(UnsafeCarbonRowPage rowPage) {
     this.baseObject = rowPage.getDataBlock().getBaseObject();
     this.tableFieldStat = rowPage.getTableFieldStat();
     this.dictSizeInMemory = tableFieldStat.getDictSortDimCnt() * 4;
+    int noDicSortIdx = 0;
+    comparator_map = new HashMap<>();
+    /**
+    *Comparator_map is used to store the Serializeablecomparator for primitive
+    *datatypes. This map is used to reduce the number of times a new
+    *SerializableComparator is created.
+    */
+    for (boolean isNoDictionary : tableFieldStat.getIsSortColNoDictFlags()) {
+      if (isNoDictionary) {
+        DataType dataType = tableFieldStat.getNoDictDataType()[noDicSortIdx++];
+        if (DataTypeUtil.isPrimitiveColumn(dataType)) {
+          if (!comparator_map.containsKey(dataType)) {
+            comparator_map.put(dataType,
+                org.apache.carbondata.core.util.comparator.Comparator
+                    .getComparator(dataType));
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -86,8 +108,7 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
             sizeInNonDictPartB += lengthB;
           }
           // use the data type based comparator for the no dictionary encoded columns
-          SerializableComparator comparator =
-              org.apache.carbondata.core.util.comparator.Comparator.getComparator(dataType);
+          SerializableComparator comparator = comparator_map.get(dataType);
           int difference = comparator.compare(data1, data2);
           if (difference != 0) {
             return difference;

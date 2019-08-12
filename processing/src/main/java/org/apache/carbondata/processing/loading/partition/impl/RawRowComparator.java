@@ -18,6 +18,8 @@
 package org.apache.carbondata.processing.loading.partition.impl;
 
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -34,12 +36,34 @@ public class RawRowComparator implements Comparator<CarbonRow> {
   private int[] sortColumnIndices;
   private boolean[] isSortColumnNoDict;
   private DataType[] noDicDataTypes;
+  private Map<DataType, SerializableComparator> comparator_map;
 
   public RawRowComparator(int[] sortColumnIndices, boolean[] isSortColumnNoDict,
       DataType[] noDicDataTypes) {
     this.sortColumnIndices = sortColumnIndices;
     this.isSortColumnNoDict = isSortColumnNoDict;
     this.noDicDataTypes = noDicDataTypes;
+    comparator_map = new HashMap<>();
+    /**
+    *Comparator_map is used to store the Serializeablecomparator for primitive
+    *datatypes. This map is used to reduce the number of times a new
+    *SerializableComparator is created.
+    */
+    int i = 0;
+    int noDicIdx = 0;
+    for (int colIdx : sortColumnIndices) {
+      if (isSortColumnNoDict[i]) {
+        if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[noDicIdx])) {
+          if (!comparator_map.containsKey(noDicDataTypes[noDicIdx])) {
+            comparator_map.put(noDicDataTypes[noDicIdx],
+                org.apache.carbondata.core.util.comparator.Comparator
+                    .getComparator(noDicDataTypes[noDicIdx]));
+          }
+        }
+        noDicIdx++;
+      }
+      i++;
+    }
   }
 
   @Override
@@ -51,8 +75,7 @@ public class RawRowComparator implements Comparator<CarbonRow> {
       if (isSortColumnNoDict[i]) {
         if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[noDicIdx])) {
           // for no dictionary numeric column get comparator based on the data type
-          SerializableComparator comparator = org.apache.carbondata.core.util.comparator.Comparator
-              .getComparator(noDicDataTypes[noDicIdx]);
+          SerializableComparator comparator = comparator_map.get(noDicDataTypes[noDicIdx]);
           int difference = comparator.compare(o1.getObject(colIdx), o2.getObject(colIdx));
           if (difference != 0) {
             return difference;

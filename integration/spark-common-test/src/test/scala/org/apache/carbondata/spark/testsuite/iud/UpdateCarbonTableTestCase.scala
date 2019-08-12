@@ -788,12 +788,52 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud.dest33_part""")
   }
 
-    override def afterAll {
+  test("[CARBONDATA-3477] deal line break chars correctly after 'select' in 'update ... select columns' sql") {
+    sql("""drop table if exists iud.dest11""").show
+    sql("""create table iud.dest11 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest11""")
+    sql("""update iud.dest11 d set (d.c3, d.c5 ) = (select
+           s.c33,s.c55 from iud.source2 s where d.c1 = s.c11) where 1 = 1""").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","Disco"),Row("RGK","Music"))
+    )
+    sql("update iud.dest11 d set (d.c3, d.c5 ) = (select\ns.c33,s.c66 from iud.source2 s where d.c1 = s.c11) where 1 = 1").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","10"),Row("RGK","8"))
+    )
+    sql("update iud.dest11 d set (d.c3, d.c5 ) = (select\r\ns.c55,s.c66 from iud.source2 s where d.c1 = s.c11) where 1 = 1").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("Disco","10"),Row("Music","8"))
+    )
+    sql("update iud.dest11 d set (d.c3, d.c5 ) = (select\rs.c33,s.c66 from iud.source2 s where d.c1 = s.c11) where 1 = 1").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","10"),Row("RGK","8"))
+    )
+    sql("update iud.dest11 d set (d.c3, d.c5 ) = (select\ts.c33,s.c55 from iud.source2 s where d.c1 = s.c11) where 1 = 1").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","Disco"),Row("RGK","Music"))
+    )
+    sql("update iud.dest11 d set (d.c3, d.c5 ) = (select\t\ns.c33,s.c55 from iud.source2 s where d.c1 = s.c11) where 1 = 1").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","Disco"),Row("RGK","Music"))
+    )
+    sql("""drop table iud.dest11""").show
+  }
+
+  override def afterAll {
     sql("use default")
     sql("drop database  if exists iud cascade")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE , "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM, "1")
   }
 }
