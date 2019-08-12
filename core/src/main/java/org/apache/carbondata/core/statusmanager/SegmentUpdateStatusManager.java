@@ -73,7 +73,8 @@ public class SegmentUpdateStatusManager {
   private SegmentUpdateDetails[] updateDetails;
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
   /**
-   * It contains the mapping of segment path and corresponding delete delta files.
+   * It contains the mapping of segment path and corresponding delete delta file paths,
+   * avoiding listing these files for every query
    */
   private Map<String, List<String>> segmentDeleteDeltaListMap = new HashMap<>();
 
@@ -362,6 +363,9 @@ public class SegmentUpdateStatusManager {
           firstPart.substring(0, firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN));
       long timestamp = Long.parseLong(firstPart
           .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1, firstPart.length()));
+      // It compares whether this delta file belongs to this block or not. And also checks that
+      // corresponding delta file is valid or not by considering its load start and end time with
+      // the file timestamp.
       if (blockNameFromTuple.equals(blockName) && ((Long.compare(timestamp, deltaEndTimeStamp) <= 0)
           && (Long.compare(timestamp, deltaStartTimestamp) >= 0))) {
         if (null == deleteFileList) {
