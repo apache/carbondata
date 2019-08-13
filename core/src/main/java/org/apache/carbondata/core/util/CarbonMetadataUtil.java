@@ -392,6 +392,7 @@ public class CarbonMetadataUtil {
       if (blockIndexInfo.getBlockletInfo() != null) {
         blockIndex.setBlocklet_info(getBlocletInfo3(blockIndexInfo.getBlockletInfo()));
       }
+      blockIndex.setFile_size(blockIndexInfo.getFileSize());
       thriftBlockIndexList.add(blockIndex);
     }
     return thriftBlockIndexList;
