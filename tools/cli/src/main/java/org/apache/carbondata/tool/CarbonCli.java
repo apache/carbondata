@@ -22,7 +22,6 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -44,12 +43,6 @@ import org.apache.commons.cli.PosixParser;
 @InterfaceStability.Unstable
 public class CarbonCli {
 
-  // List to collect all the outputs of option details
-  private static List<String> outPuts;
-
-  // a boolean variable to decide whether to print the output in console or return the list,
-  // by default true, and it will be set to false if the cli is trigerred via sql command
-  private static boolean isPrintInConsole = true;
 
   static class OptionsHolder {
     static Options instance = buildOptions();
@@ -117,47 +110,45 @@ public class CarbonCli {
     run(args, System.out);
   }
 
-  public static void run(String[] args, ArrayList<String> e) {
-    // this boolean to check whether to print in console or not
-    isPrintInConsole = false;
-    outPuts = e;
+
+  /**
+   * adapter to run CLI and print to stream
+   * @param args input arguments
+   * @param out output stream
+   */
+  public static void run(String[] args, PrintStream out) {
+    ArrayList<String> outputs = new ArrayList<String>();
+    run(args, outputs, true);
+    for (String line: outputs) {
+      out.println(line);
+    }
+  }
+
+
+  /**
+   * run CLI and fill result into array
+   * @param args input arguments
+   * @param outPuts array for filling result
+   * @param isPrintInConsole flag to decide whether to print error in console or return the list
+   */
+  public static void run(String[] args, ArrayList<String> outPuts, boolean isPrintInConsole) {
     Options options = OptionsHolder.instance;
     CommandLineParser parser = new PosixParser();
 
-    CommandLine line;
+    CommandLine line = null;
     try {
       line = parser.parse(options, args);
     } catch (ParseException ex) {
-      throw new RuntimeException("Parsing failed. Reason: " + ex.getMessage(), ex);
-    }
-
-    runCli(System.out, options, line);
-  }
-
-  public static void run(String[] args, PrintStream out) {
-    Options options = OptionsHolder.instance;
-    CommandLineParser parser = new PosixParser();
-
-    CommandLine line;
-    try {
-      line = parser.parse(options, args);
-    } catch (ParseException exp) {
-      out.println("Parsing failed. Reason: " + exp.getMessage());
-      return;
-    }
-
-    runCli(out, options, line);
-  }
-
-  private static void  runCli(PrintStream out, Options options, CommandLine line) {
-    if (outPuts == null) {
-      outPuts = new ArrayList<>();
-    }
-    if (line.hasOption("h")) {
-      collectHelpInfo(options);
-      for (String output : outPuts) {
-        out.println(output);
+      if (isPrintInConsole) {
+        outPuts.add("Parsing failed. Reason: " + ex.getMessage());
+        return;
+      } else {
+        throw new RuntimeException("Parsing failed. Reason: " + ex.getMessage(), ex);
       }
+    }
+
+    if (line.hasOption("h")) {
+      outPuts.add(collectHelpInfo(options));
       return;
     }
 
@@ -180,46 +171,29 @@ public class CarbonCli {
         } catch (IOException e) {
           e.printStackTrace();
         }
-        for (String output : outPuts) {
-          out.println(output);
-        }
       }
       return;
     } else {
-      out.println("command " + cmd + " is not supported");
       outPuts.add("command " + cmd + " is not supported");
-      collectHelpInfo(options);
-      for (String output : outPuts) {
-        out.println(output);
-      }
+      outPuts.add(collectHelpInfo(options));
       return;
     }
 
     try {
       command.run(line);
-      if (isPrintInConsole) {
-        for (String output : outPuts) {
-          out.println(output);
-        }
-      }
-      out.flush();
     } catch (IOException | MemoryException e) {
       e.printStackTrace();
     }
   }
 
-  private static void collectHelpInfo(Options options) {
+  private static String collectHelpInfo(Options options) {
     HelpFormatter formatter = new HelpFormatter();
     StringWriter stringWriter = new StringWriter();
     PrintWriter printWriter = new PrintWriter(stringWriter);
     formatter.printHelp(printWriter, formatter.getWidth(), "CarbonCli", null, options,
         formatter.getLeftPadding(), formatter.getDescPadding(), null, false);
     printWriter.flush();
-    outPuts.add(stringWriter.toString());
-  }
-
-  public static void cleanOutPuts() {
-    outPuts = null;
+    return stringWriter.toString();
   }
 
 }
