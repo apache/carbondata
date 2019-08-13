@@ -51,6 +51,11 @@ public class BlockIndexInfo {
   private BlockletInfo blockletInfo;
 
   /**
+   * file size
+   */
+  private long fileSize;
+
+  /**
    * Constructor
    *
    * @param numberOfRows  number of rows
@@ -78,6 +83,12 @@ public class BlockIndexInfo {
       BlockletIndex blockletIndex, BlockletInfo blockletInfo) {
     this(numberOfRows, fileName, offset, blockletIndex);
     this.blockletInfo = blockletInfo;
+  }
+
+  public BlockIndexInfo(long numberOfRows, String fileName, long offset,
+      BlockletIndex blockletIndex, BlockletInfo blockletInfo, long fileSize) {
+    this(numberOfRows, fileName, offset, blockletIndex, blockletInfo);
+    this.fileSize = fileSize;
   }
 
   /**
@@ -113,5 +124,12 @@ public class BlockIndexInfo {
    */
   public BlockletInfo getBlockletInfo() {
     return blockletInfo;
+  }
+
+  /**
+   * @return file size
+   */
+  public long getFileSize() {
+    return fileSize;
   }
 }

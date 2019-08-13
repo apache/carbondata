@@ -365,10 +365,11 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    *
    * @param numberOfRows    number of rows in file
    * @param carbonDataFileName The name of carbonData file
-   * @param currentPosition current offset
+   * @param footerOffset footer offset
+   * @param fileSize
    */
   protected abstract void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
-      long currentPosition);
+      long footerOffset, long fileSize);
 
   public static List<org.apache.carbondata.format.ColumnSchema> getColumnSchemaListAndCardinality(
       List<Integer> cardinality, int[] dictionaryColumnCardinality,
