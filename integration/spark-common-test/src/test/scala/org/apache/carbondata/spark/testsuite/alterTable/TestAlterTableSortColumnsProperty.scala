@@ -601,7 +601,6 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
       val out: ByteArrayOutputStream = new ByteArrayOutputStream
       val stream: PrintStream = new PrintStream(out)
       CarbonCli.run(args, stream)
-      CarbonCli.cleanOutPuts()
       val output: String = new String(out.toByteArray)
       if (segmentId == 2) {
         assertResult(s"Input Folder: $segmentPath\nsorted by intfield,stringfield\n")(output)
