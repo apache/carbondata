@@ -326,11 +326,25 @@ public class SegmentUpdateStatusManager {
           return deleteFileList;
         }
         final long deltaEndTimeStamp = getEndTimeOfDeltaFile(extension, block);
-
-        // final long deltaEndTimeStamp = block.getDeleteDeltaEndTimeAsLong();
-        // final long deltaStartTimestamp = block.getDeleteDeltaStartTimeAsLong();
-        return getFilePaths(blockDir, blockNameFromTuple, extension, deleteFileList,
-            deltaStartTimestamp, deltaEndTimeStamp);
+        // If start and end time is same then it has only one delta file so construct the file
+        // directly with available information with out listing
+        if (block.getDeleteDeltaStartTimestamp().equals(block.getDeleteDeltaEndTimestamp())) {
+          deleteFileList.add(
+              blockDir + CarbonCommonConstants.FILE_SEPARATOR + block.getBlockName() + "-" + block
+                  .getDeleteDeltaStartTimestamp() + extension);
+          // If deltatimestamps list has data then it has multiple delta file so construct the file
+          // directly with list of deltas with out listing
+        } else if (block.getDeltaFileStamps() != null && block.getDeltaFileStamps().size() > 0) {
+          for (String delta : block.getDeltaFileStamps()) {
+            deleteFileList.add(
+                blockDir + CarbonCommonConstants.FILE_SEPARATOR + block.getBlockName() + "-" + delta
+                    + extension);
+          }
+        } else {
+          // It is for backward compatability.It lists the files.
+          return getFilePaths(blockDir, blockNameFromTuple, extension, deleteFileList,
+              deltaStartTimestamp, deltaEndTimeStamp);
+        }
       }
     }
     return deleteFileList;

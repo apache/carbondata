@@ -145,6 +145,15 @@ public class CarbonUpdateUtil {
             blockDetail.setDeleteDeltaEndTimestamp(newBlockEntry.getDeleteDeltaEndTimestamp());
             blockDetail.setSegmentStatus(newBlockEntry.getSegmentStatus());
             blockDetail.setDeletedRowsInBlock(newBlockEntry.getDeletedRowsInBlock());
+            // If the start and end time is different then the delta is there in multiple files so
+            // add them to the list to get the delta files easily with out listing.
+            if (!blockDetail.getDeleteDeltaStartTimestamp()
+                .equals(blockDetail.getDeleteDeltaEndTimestamp())) {
+              blockDetail.setDeltaFileStamp(blockDetail.getDeleteDeltaStartTimestamp());
+              blockDetail.setDeltaFileStamp(blockDetail.getDeleteDeltaEndTimestamp());
+            } else {
+              blockDetail.setDeltaFileStamps(null);
+            }
           } else {
             // add the new details to the list.
             oldList.add(newBlockEntry);

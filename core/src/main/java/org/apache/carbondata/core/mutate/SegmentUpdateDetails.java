@@ -18,6 +18,8 @@
 package org.apache.carbondata.core.mutate;
 
 import java.io.Serializable;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
@@ -35,6 +37,8 @@ public class SegmentUpdateDetails implements Serializable {
   private SegmentStatus segmentStatus;
   private String deleteDeltaEndTimestamp = "";
   private String deleteDeltaStartTimestamp = "";
+  // Set of delta timestamps to avoid listing the filesystem.
+  private Set<String> deltaFileStamps;
   private String actualBlockName;
   private String deletedRowsInBlock = "0";
 
@@ -82,6 +86,21 @@ public class SegmentUpdateDetails implements Serializable {
 
   public SegmentStatus getSegmentStatus() {
     return this.segmentStatus;
+  }
+
+  public Set<String> getDeltaFileStamps() {
+    return deltaFileStamps;
+  }
+
+  public void setDeltaFileStamp(String deltaFileStamp) {
+    if (deltaFileStamps == null) {
+      deltaFileStamps = new LinkedHashSet<>();
+    }
+    deltaFileStamps.add(deltaFileStamp);
+  }
+
+  public void setDeltaFileStamps(Set<String> deltaFileStamps) {
+    this.deltaFileStamps = deltaFileStamps;
   }
 
   @Override public int hashCode() {
@@ -175,4 +194,6 @@ public class SegmentUpdateDetails implements Serializable {
   public void setDeletedRowsInBlock(String deletedRowsInBlock) {
     this.deletedRowsInBlock = deletedRowsInBlock;
   }
+
+
 }
