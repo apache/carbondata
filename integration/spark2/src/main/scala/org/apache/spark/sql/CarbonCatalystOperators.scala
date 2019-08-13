@@ -68,8 +68,8 @@ case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attr
 case class ProjectForUpdate(
     table: UnresolvedRelation,
     columns: List[String],
-    children: Seq[LogicalPlan] ) extends LogicalPlan {
-  override def output: Seq[AttributeReference] = Seq.empty
+    children: Seq[LogicalPlan]) extends LogicalPlan {
+  override def output: Seq[Attribute] = Seq.empty
 }
 
 case class UpdateTable(
@@ -79,7 +79,7 @@ case class UpdateTable(
     alias: Option[String] = None,
     filer: String) extends LogicalPlan {
   override def children: Seq[LogicalPlan] = Seq.empty
-  override def output: Seq[AttributeReference] = Seq.empty
+  override def output: Seq[Attribute] = Seq.empty
 }
 
 case class DeleteRecords(
