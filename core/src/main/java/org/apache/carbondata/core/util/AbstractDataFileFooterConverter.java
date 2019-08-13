@@ -244,6 +244,9 @@ public abstract class AbstractDataFileFooterConverter {
     }
     fileName = (CarbonCommonConstants.FILE_SEPARATOR + fileName).replaceAll("//", "/");
     tableBlockInfo.setFilePath(parentPath + fileName);
+    if (readBlockIndexInfo.isSetFile_size()) {
+      tableBlockInfo.setFileSize(readBlockIndexInfo.getFile_size());
+    }
     return tableBlockInfo;
   }
 

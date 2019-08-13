@@ -38,9 +38,11 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.filesystem.AbstractDFSCarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.S3CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
@@ -124,7 +126,8 @@ public class BlockletDataMapUtil {
       }
       String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
       if (null == blockMetaInfoMap.get(blockPath)) {
-        BlockMetaInfo blockMetaInfo = createBlockMetaInfo(fileNameToMetaInfoMapping, blockPath);
+        BlockMetaInfo blockMetaInfo = createBlockMetaInfo(
+            fileNameToMetaInfoMapping, footer.getBlockInfo().getTableBlockInfo());
         // if blockMetaInfo is null that means the file has been deleted from the file system.
         // This can happen in case IUD scenarios where after deleting or updating the data the
         // complete block is deleted but the entry still exists in index or merge index file
@@ -148,7 +151,7 @@ public class BlockletDataMapUtil {
       String segmentFilePath, Configuration configuration) throws IOException {
     Map<String, BlockMetaInfo> fileNameToMetaInfoMapping = new TreeMap();
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFilePath, configuration);
-    if (carbonFile instanceof AbstractDFSCarbonFile) {
+    if (carbonFile instanceof AbstractDFSCarbonFile && !(carbonFile instanceof S3CarbonFile)) {
       PathFilter pathFilter = new PathFilter() {
         @Override public boolean accept(Path path) {
           return CarbonTablePath.isCarbonDataFile(path.getName());
@@ -166,11 +169,19 @@ public class BlockletDataMapUtil {
   }
 
   private static BlockMetaInfo createBlockMetaInfo(
-      Map<String, BlockMetaInfo> fileNameToMetaInfoMapping, String carbonDataFile)
+      Map<String, BlockMetaInfo> fileNameToMetaInfoMapping, TableBlockInfo blockInfo)
       throws IOException {
+    String carbonDataFile = blockInfo.getFilePath();
     FileFactory.FileType fileType = FileFactory.getFileType(carbonDataFile);
     switch (fileType) {
+      case S3:
       case LOCAL:
+        // consider backward compatibility
+        // when the file size in blockInfo is not zero, use this file size in blockInfo.
+        if (blockInfo.getFileSize() != 0) {
+          return new BlockMetaInfo(new String[] { "localhost" }, blockInfo.getFileSize());
+        }
+        // when the file size in blockInfo is zero, get the size of this file.
         if (!FileFactory.isFileExist(carbonDataFile)) {
           return null;
         }

@@ -54,6 +54,11 @@ public class TableBlockInfo implements Distributable, Serializable {
   private String filePath;
 
   /**
+   * file size of the block
+   */
+  private long fileSize;
+
+  /**
    * block offset in the file
    */
   private long blockOffset;
@@ -437,6 +442,14 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setFilePath(String filePath) {
     this.filePath = filePath;
+  }
+
+  public long getFileSize() {
+    return fileSize;
+  }
+
+  public void setFileSize(long fileSize) {
+    this.fileSize = fileSize;
   }
 
   public BlockletDetailInfo getDetailInfo() {
