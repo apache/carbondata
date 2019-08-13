@@ -76,22 +76,20 @@ class updateResultImpl
 }
 
 trait DeleteDelataResult[K, V] extends Serializable {
-  def getKey(key: SegmentStatus, value: (SegmentUpdateDetails, ExecutionErrors)): (K, V)
+  def getKey(key: SegmentStatus, value: (SegmentUpdateDetails, ExecutionErrors, Long)): (K, V)
 }
 
 class DeleteDelataResultImpl
-  extends DeleteDelataResult[SegmentStatus, (SegmentUpdateDetails, ExecutionErrors)] {
+  extends DeleteDelataResult[SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long)] {
   override def getKey(key: SegmentStatus,
-      value: (SegmentUpdateDetails, ExecutionErrors)): (SegmentStatus, (SegmentUpdateDetails,
-    ExecutionErrors)) = {
+      value: (SegmentUpdateDetails, ExecutionErrors, Long)): (SegmentStatus, (SegmentUpdateDetails,
+    ExecutionErrors, Long)) = {
     (key, value)
   }
 }
 
-
 trait PartitionResult[K, V] extends Serializable {
   def getKey(key: Int, value: Boolean): (K, V)
-
 }
 
 class PartitionResultImpl extends PartitionResult[Int, Boolean] {

@@ -26,6 +26,7 @@ import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
+import org.apache.spark.sql.catalyst.analysis.Analyzer
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
@@ -380,5 +381,20 @@ object CarbonReflectionUtils {
     val nameField = caseObj.getClass.getDeclaredField(fieldName)
     nameField.setAccessible(true)
     nameField.set(caseObj, objToSet)
+  }
+
+  def invokeAnalyzerExecute(analyzer: Analyzer,
+      plan: LogicalPlan): LogicalPlan = {
+    if (SparkUtil.isSparkVersionEqualTo("2.1") || SparkUtil.isSparkVersionEqualTo("2.2")) {
+      val method: Method = analyzer.getClass
+        .getMethod("execute", classOf[LogicalPlan])
+      method.invoke(analyzer, plan).asInstanceOf[LogicalPlan]
+    } else if (SparkUtil.isSparkVersionEqualTo("2.3")) {
+      val method: Method = analyzer.getClass
+        .getMethod("executeAndCheck", classOf[LogicalPlan])
+      method.invoke(analyzer, plan).asInstanceOf[LogicalPlan]
+    } else {
+      throw new UnsupportedOperationException("Spark version not supported")
+    }
   }
 }

@@ -826,6 +826,39 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table iud.dest11""").show
   }
 
+  test("[CARBONDATA-3491] Return updated/deleted rows count when execute update/delete sql") {
+    sql("drop table if exists test_return_row_count")
+    sql("drop table if exists test_return_row_count_source")
+
+    sql("create table test_return_row_count (a string, b string, c string) stored by 'carbondata'").show()
+    sql("insert into test_return_row_count select 'bbb','bbb','ccc'").show()
+    sql("insert into test_return_row_count select 'ccc','bbb','ccc'").show()
+    sql("insert into test_return_row_count select 'ccc','bbb','ccc'").show()
+
+    sql("create table test_return_row_count_source (a string, b string, c string) stored by 'carbondata'").show()
+    sql("insert into test_return_row_count_source select 'aaa','eee','ccc'").show()
+    sql("insert into test_return_row_count_source select 'bbb','bbb','ccc'").show()
+    sql("insert into test_return_row_count_source select 'ccc','bbb','ccc'").show()
+    sql("insert into test_return_row_count_source select 'ccc','bbb','ccc'").show()
+
+    checkAnswer(sql("update test_return_row_count set (b) = ('ddd') where a = 'ccc'"),
+        Seq(Row(2))
+    )
+    checkAnswer(sql("select * from test_return_row_count"),
+        Seq(Row("bbb", "bbb", "ccc"), Row("ccc", "ddd", "ccc"), Row("ccc", "ddd", "ccc"))
+    )
+
+    checkAnswer(sql("update test_return_row_count t set (t.b) = (select s.b from test_return_row_count_source s where s.a = 'aaa') where t.a = 'ccc'"),
+        Seq(Row(2))
+    )
+    checkAnswer(sql("select * from test_return_row_count"),
+        Seq(Row("bbb", "bbb", "ccc"), Row("ccc", "eee", "ccc"), Row("ccc", "eee", "ccc"))
+    )
+
+    sql("drop table if exists test_return_row_count")
+    sql("drop table if exists test_return_row_count_source")
+  }
+
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud cascade")

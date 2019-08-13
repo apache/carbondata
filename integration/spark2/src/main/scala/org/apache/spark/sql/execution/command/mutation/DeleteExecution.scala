@@ -64,14 +64,15 @@ object DeleteExecution {
       dataRdd: RDD[Row],
       timestamp: String,
       isUpdateOperation: Boolean,
-      executorErrors: ExecutionErrors): Seq[Segment] = {
+      executorErrors: ExecutionErrors): (Seq[Segment], Long) = {
 
-    var res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] = null
+    var res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]] = null
     val database = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val tablePath = absoluteTableIdentifier.getTablePath
     var segmentsTobeDeleted = Seq.empty[Segment]
+    var operatedRowCount = 0L
 
     val deleteRdd = if (isUpdateOperation) {
       val schema =
@@ -97,7 +98,7 @@ object DeleteExecution {
 
     // if no loads are present then no need to do anything.
     if (keyRdd.partitions.length == 0) {
-      return segmentsTobeDeleted
+      return (segmentsTobeDeleted, operatedRowCount)
     }
     val blockMappingVO =
       carbonInputFormat.getBlockRowCount(
@@ -124,9 +125,9 @@ object DeleteExecution {
     val rdd = rowContRdd.join(keyRdd)
     res = rdd.mapPartitionsWithIndex(
       (index: Int, records: Iterator[((String), (RowCountDetailsVO, Iterable[Row]))]) =>
-        Iterator[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] {
+        Iterator[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]] {
           ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
-          var result = List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]()
+          var result = List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]()
           while (records.hasNext) {
             val ((key), (rowCountDetailsVO, groupedRows)) = records.next
             val segmentId = key.substring(0, key.indexOf(CarbonCommonConstants.FILE_SEPARATOR))
@@ -143,7 +144,7 @@ object DeleteExecution {
 
     // if no loads are present then no need to do anything.
     if (res.flatten.isEmpty) {
-      return segmentsTobeDeleted
+      return (segmentsTobeDeleted, operatedRowCount)
     }
 
     // update new status file
@@ -217,7 +218,7 @@ object DeleteExecution {
         timestamp: String,
         rowCountDetailsVO: RowCountDetailsVO,
         isStandardTable: Boolean
-    ): Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))] = {
+    ): Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))] = {
 
       val result = new DeleteDelataResultImpl()
       var deleteStatus = SegmentStatus.LOAD_FAILURE
@@ -228,7 +229,8 @@ object DeleteExecution {
           CarbonTablePath.addDataPartPrefix(key.split(CarbonCommonConstants.FILE_SEPARATOR)(1)))
       val segmentId = key.split(CarbonCommonConstants.FILE_SEPARATOR)(0)
       val deleteDeltaBlockDetails: DeleteDeltaBlockDetails = new DeleteDeltaBlockDetails(blockName)
-      val resultIter = new Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))] {
+      val resultIter =
+        new Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))] {
         val segmentUpdateDetails = new SegmentUpdateDetails()
         var TID = ""
         var countOfRows = 0
@@ -305,15 +307,18 @@ object DeleteExecution {
           }
         }
 
-        override def next(): (SegmentStatus, (SegmentUpdateDetails, ExecutionErrors)) = {
+        override def next(): (SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long)) = {
           finished = true
-          result.getKey(deleteStatus, (segmentUpdateDetails, executorErrors))
+          result.getKey(deleteStatus, (segmentUpdateDetails, executorErrors, countOfRows.toLong))
         }
       }
       resultIter
     }
 
-    segmentsTobeDeleted
+    if (executorErrors.failureCauses == FailureCauses.NONE) {
+       operatedRowCount = res.flatten.map(_._2._3).sum
+    }
+    (segmentsTobeDeleted, operatedRowCount)
   }
 
   def clearDistributedSegmentCache(carbonTable: CarbonTable,

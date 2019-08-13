@@ -40,6 +40,8 @@ import org.apache.carbondata.core.util.CarbonUtil
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   private lazy val parser = sparkSession.sessionState.sqlParser
+  private lazy val optimizer = sparkSession.sessionState.optimizer
+  private lazy val analyzer = sparkSession.sessionState.analyzer
 
   private def processUpdateQuery(
       table: UnresolvedRelation,
@@ -181,7 +183,15 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
     }
     val destinationTable = CarbonReflectionUtils.getUnresolvedRelation(table.tableIdentifier, alias)
 
-    ProjectForUpdate(destinationTable, columns, Seq(finalPlan))
+    // In Spark 2.1 and 2.2, it uses Analyzer.execute method to transform LogicalPlan
+    // but in Spark 2.3, it uses Analyzer.executeAndCheck method
+    val analyzedPlan = CarbonReflectionUtils.invokeAnalyzerExecute(
+        analyzer, ProjectForUpdate(destinationTable, columns, Seq(finalPlan)))
+    // For all commands, they execute eagerly, and will be transformed to
+    // logical plan 'LocalRelation' in analyze phase(please see the code in 'Dataset.logicalPlan'),
+    // so it needs to return logical plan 'CarbonProjectForUpdateCommand' here
+    // instead of 'ProjectForUpdate'
+    optimizer.execute(analyzedPlan)
   }
 
 
