@@ -619,6 +619,21 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     }
   }
 
+  private def needDataTypeUpdate(exp: Expression): Boolean = {
+    var needChangeDatatype: Boolean = true
+    exp.transform {
+      case attr: AttributeReference => attr
+      case a@Alias(attr: AttributeReference, _) => a
+      case others =>
+        // datatype need to change for dictionary columns if only alias
+        // or attribute ref present.
+        // If anything else present, no need to change data type.
+        needChangeDatatype = false
+        others
+    }
+    needChangeDatatype
+  }
+
   private def updateTempDecoder(plan: LogicalPlan,
       aliasMapOriginal: CarbonAliasDecoderRelation,
       attrMap: java.util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation]):
@@ -650,44 +665,71 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         cd
       case sort: Sort =>
         val sortExprs = sort.order.map { s =>
-          s.transform {
-            case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
-          }.asInstanceOf[SortOrder]
+          if (needDataTypeUpdate(s)) {
+            s.transform {
+              case attr: AttributeReference =>
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            }.asInstanceOf[SortOrder]
+          } else {
+            s
+          }
         }
         Sort(sortExprs, sort.global, sort.child)
       case agg: Aggregate if !agg.child.isInstanceOf[CarbonDictionaryCatalystDecoder] =>
         val aggExps = agg.aggregateExpressions.map { aggExp =>
-          aggExp.transform {
-            case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+          if (needDataTypeUpdate(aggExp)) {
+            aggExp.transform {
+              case attr: AttributeReference =>
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            }
+          } else {
+            aggExp
           }
         }.asInstanceOf[Seq[NamedExpression]]
-
         val grpExps = agg.groupingExpressions.map { gexp =>
-          gexp.transform {
-            case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+          if (needDataTypeUpdate(gexp)) {
+            gexp.transform {
+              case attr: AttributeReference =>
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            }
+          } else {
+            gexp
           }
         }
         Aggregate(grpExps, aggExps, agg.child)
       case expand: Expand =>
-        val ex = expand.transformExpressions {
-          case attr: AttributeReference =>
-            updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+        // can't use needDataTypeUpdate here as argument is of type Expand
+        var needChangeDatatype: Boolean = true
+        expand.transformExpressions {
+          case attr: AttributeReference => attr
+          case a@Alias(attr: AttributeReference, _) => a
+          case others =>
+            // datatype need to change for dictionary columns if only alias
+            // or attribute ref present.
+            // If anything else present, no need to change data type.
+            needChangeDatatype = false
+            others
         }
-        // Update the datatype of literal type as per the output type, otherwise codegen fails.
-        val updatedProj = ex.projections.map { projs =>
-          projs.zipWithIndex.map { case(p, index) =>
-            p.transform {
-              case l: Literal
-                if l.dataType != ex.output(index).dataType &&
-                   !isComplexColumn(ex.output(index), ex.child.output) =>
-                Literal(l.value, ex.output(index).dataType)
+        if (needChangeDatatype) {
+          val ex = expand.transformExpressions {
+            case attr: AttributeReference =>
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+          }
+          // Update the datatype of literal type as per the output type, otherwise codegen fails.
+          val updatedProj = ex.projections.map { projs =>
+            projs.zipWithIndex.map { case (p, index) =>
+              p.transform {
+                case l: Literal
+                  if l.dataType != ex.output(index).dataType &&
+                     !isComplexColumn(ex.output(index), ex.child.output) =>
+                  Literal(l.value, ex.output(index).dataType)
+              }
             }
           }
+          Expand(updatedProj, ex.output, ex.child)
+        } else {
+          expand
         }
-        Expand(updatedProj, ex.output, ex.child)
       case filter: Filter =>
         filter
       case j: Join =>
@@ -698,18 +740,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         u
       case p: Project if relations.nonEmpty =>
         val prExps = p.projectList.map { prExp =>
-          var needChangeDatatype = true
-          prExp.transform {
-            case attr: AttributeReference => attr
-            case a@Alias(attr: AttributeReference, _) => a
-            case others =>
-              // datatype need to change for dictionary columns if only alias
-              // or attribute ref present.
-              // If anything else present, no need to change data type.
-              needChangeDatatype = false
-              others
-          }
-          if (needChangeDatatype) {
+          if (needDataTypeUpdate(prExp)) {
             prExp.transform {
               case attr: AttributeReference =>
                 updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
@@ -721,27 +752,43 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         Project(prExps, p.child)
       case wd: Window if relations.nonEmpty =>
         val prExps = wd.output.map { prExp =>
-          prExp.transform {
-            case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+          if (needDataTypeUpdate(prExp)) {
+            prExp.transform {
+              case attr: AttributeReference =>
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            }
+          } else {
+            prExp
           }
         }.asInstanceOf[Seq[Attribute]]
         val wdExps = wd.windowExpressions.map { gexp =>
-          gexp.transform {
-            case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+          if (needDataTypeUpdate(gexp)) {
+            gexp.transform {
+              case attr: AttributeReference =>
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            }
+          } else {
+            gexp
           }
         }.asInstanceOf[Seq[NamedExpression]]
         val partitionSpec = wd.partitionSpec.map{ exp =>
-          exp.transform {
-            case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+          if (needDataTypeUpdate(exp)) {
+            exp.transform {
+              case attr: AttributeReference =>
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            }
+          } else {
+            exp
           }
         }
         val orderSpec = wd.orderSpec.map { exp =>
-          exp.transform {
-            case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+          if (needDataTypeUpdate(exp)) {
+            exp.transform {
+              case attr: AttributeReference =>
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            }
+          } else {
+            exp
           }
         }.asInstanceOf[Seq[SortOrder]]
         Window(wdExps, partitionSpec, orderSpec, wd.child)
