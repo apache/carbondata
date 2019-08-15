@@ -136,11 +136,9 @@ The Index Server is a long running service therefore the 'spark.yarn.keytab' and
 | Name     |      Default Value    |  Description |
 |:----------:|:-------------:|:------:       |
 | carbon.enable.index.server       |  false | Enable the use of index server for pruning for the whole application.       |
-| carbon.index.server.ip |    NA   |   Specify the IP/HOST on which the server is started. Better to
- specify the private IP. |
+| carbon.index.server.ip |    NA   |   Specify the IP/HOST on which the server is started. Better to specify the private IP. |
 | carbon.index.server.port | NA | The port on which the index server is started. |
-| carbon.disable.index.server.fallback | false | Whether to enable/disable fallback for index server
-. Should be used for testing purposes only. Refer: [Fallback](#Fallback)|
+| carbon.disable.index.server.fallback | false | Whether to enable/disable fallback for index server. Should be used for testing purposes only. Refer: [Fallback](#Fallback)|
 |carbon.index.server.max.jobname.length|NA|The max length of the job to show in the index server service UI. For bigger queries this may impact performance as the whole string would be sent from JDBCServer to IndexServer.|
 
 

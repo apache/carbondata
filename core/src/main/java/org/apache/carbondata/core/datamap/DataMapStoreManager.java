@@ -598,6 +598,11 @@ public final class DataMapStoreManager {
    */
   public void deleteDataMap(AbsoluteTableIdentifier identifier, String dataMapName) {
     CarbonTable carbonTable = getCarbonTable(identifier);
+    if (carbonTable == null) {
+      // If carbon table is null then it means table is already deleted, therefore return without
+      // doing any further changes.
+      return;
+    }
     String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
     if (CarbonProperties.getInstance()
         .isDistributedPruningEnabled(identifier.getDatabaseName(), identifier.getTableName())) {
@@ -613,7 +618,7 @@ public final class DataMapStoreManager {
       if (tableIndices != null) {
         int i = 0;
         for (TableDataMap tableDataMap : tableIndices) {
-          if (carbonTable != null && tableDataMap != null && dataMapName
+          if (tableDataMap != null && dataMapName
               .equalsIgnoreCase(tableDataMap.getDataMapSchema().getDataMapName())) {
             try {
               DataMapUtil
