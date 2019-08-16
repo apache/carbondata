@@ -26,16 +26,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileReader;
-import org.apache.carbondata.core.scan.collector.ResultCollectorFactory;
-import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
-import org.apache.carbondata.core.scan.scanner.BlockletScanner;
-import org.apache.carbondata.core.scan.scanner.impl.BlockletFilterScanner;
-import org.apache.carbondata.core.scan.scanner.impl.BlockletFullScanner;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
 import org.apache.carbondata.core.util.TaskMetricsMap;
 
@@ -51,17 +45,6 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
   private BlockletIterator blockletIterator;
 
   /**
-   * result collector which will be used to aggregate the scanned result
-   */
-  private ScannedResultCollector scannerResultAggregator;
-
-  /**
-   * processor which will be used to process the block processing can be
-   * filter processing or non filter processing
-   */
-  private BlockletScanner blockletScanner;
-
-  /**
    * batch size of result
    */
   private int batchSize;
@@ -74,41 +57,35 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
 
   private BlockletScannedResult scannedResult;
 
-  private BlockExecutionInfo blockExecutionInfo;
-
   private FileReader fileReader;
 
   private AtomicBoolean nextBlock;
 
   private AtomicBoolean nextRead;
 
-  public DataBlockIterator(BlockExecutionInfo blockExecutionInfo, FileReader fileReader,
+  private boolean isPrefetchBlocklet;
+
+  public DataBlockIterator(List<BlockExecutionInfo> blockExecutionInfos, FileReader fileReader,
       int batchSize, QueryStatisticsModel queryStatisticsModel, ExecutorService executorService) {
-    this.blockExecutionInfo = blockExecutionInfo;
-    this.blockExecutionInfo.setQueryStatisticsModel(queryStatisticsModel);
-    this.fileReader = fileReader;
-    blockletIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
-        blockExecutionInfo.getNumberOfBlockToScan());
-    if (blockExecutionInfo.getFilterExecuterTree() != null) {
-      blockletScanner = new BlockletFilterScanner(blockExecutionInfo, queryStatisticsModel);
-    } else {
-      blockletScanner = new BlockletFullScanner(blockExecutionInfo, queryStatisticsModel);
+    for (BlockExecutionInfo executionInfo : blockExecutionInfos) {
+      executionInfo.setQueryStatisticsModel(queryStatisticsModel);
     }
-    this.scannerResultAggregator =
-        ResultCollectorFactory.getScannedResultCollector(blockExecutionInfo);
+    this.fileReader = fileReader;
+    this.isPrefetchBlocklet = blockExecutionInfos.get(0).isPrefetchBlocklet();
+    blockletIterator = new BlockletIterator(blockExecutionInfos);
     this.batchSize = batchSize;
     this.executorService = executorService;
     this.nextBlock = new AtomicBoolean(false);
     this.nextRead = new AtomicBoolean(false);
   }
 
-  @Override
-  public List<Object[]> next() {
+  @Override public List<Object[]> next() {
     List<Object[]> collectedResult = null;
     if (updateScanner()) {
-      collectedResult = this.scannerResultAggregator.collectResultInRow(scannedResult, batchSize);
+      collectedResult = scannedResult.getDataRefNodeWrapper().scannerResultAggregator
+          .collectResultInRow(scannedResult, batchSize);
       while (collectedResult.size() < batchSize && updateScanner()) {
-        List<Object[]> data = this.scannerResultAggregator
+        List<Object[]> data = scannedResult.getDataRefNodeWrapper().scannerResultAggregator
             .collectResultInRow(scannedResult, batchSize - collectedResult.size());
         collectedResult.addAll(data);
       }
@@ -118,8 +95,7 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
     return collectedResult;
   }
 
-  @Override
-  public boolean hasNext() {
+  @Override public boolean hasNext() {
     if (scannedResult != null && scannedResult.hasNext()) {
       return true;
     } else {
@@ -156,7 +132,7 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
 
   private BlockletScannedResult processNextBlocklet() throws Exception {
     BlockletScannedResult result = null;
-    if (blockExecutionInfo.isPrefetchBlocklet()) {
+    if (isPrefetchBlocklet) {
       if (blockletIterator.hasNext() || nextBlock.get() || nextRead.get()) {
         if (future == null) {
           future = scanNextBlockletAsync();
@@ -172,7 +148,8 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
       if (blockletIterator.hasNext()) {
         RawBlockletColumnChunks rawChunks = readNextBlockletColumnChunks();
         if (rawChunks != null) {
-          result = blockletScanner.scanBlocklet(rawChunks);
+          result = rawChunks.getNodeWrapper().blockletScanner.scanBlocklet(rawChunks);
+          result.setDataRefNodeWrapper(rawChunks.getNodeWrapper());
         }
       }
     }
@@ -182,7 +159,8 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
   private RawBlockletColumnChunks readNextBlockletColumnChunks() throws IOException {
     RawBlockletColumnChunks rawBlockletColumnChunks = getNextBlockletColumnChunks();
     if (rawBlockletColumnChunks != null) {
-      blockletScanner.readBlocklet(rawBlockletColumnChunks);
+      rawBlockletColumnChunks.getNodeWrapper().blockletScanner
+          .readBlocklet(rawBlockletColumnChunks);
       return rawBlockletColumnChunks;
     }
     return null;
@@ -191,11 +169,10 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
   private RawBlockletColumnChunks getNextBlockletColumnChunks() {
     RawBlockletColumnChunks rawBlockletColumnChunks = null;
     do {
-      DataRefNode dataBlock = blockletIterator.next();
-      if (dataBlock.getColumnsMaxValue() == null || blockletScanner.isScanRequired(dataBlock)) {
-        rawBlockletColumnChunks =  RawBlockletColumnChunks.newInstance(
-            blockExecutionInfo.getTotalNumberDimensionToRead(),
-            blockExecutionInfo.getTotalNumberOfMeasureToRead(), fileReader, dataBlock);
+      BlockletIterator.DataRefNodeWrapper nodeWrapper = blockletIterator.next();
+      if (nodeWrapper.datablock.getColumnsMaxValue() == null || nodeWrapper.blockletScanner
+          .isScanRequired(nodeWrapper.datablock)) {
+        rawBlockletColumnChunks = RawBlockletColumnChunks.newInstance(nodeWrapper, fileReader);
       }
     } while (rawBlockletColumnChunks == null && blockletIterator.hasNext());
     return rawBlockletColumnChunks;
@@ -215,7 +192,10 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
             nextRead.set(true);
             futureIo = readNextBlockletAsync();
           }
-          return blockletScanner.scanBlocklet(rawBlockletColumnChunks);
+          BlockletScannedResult result = rawBlockletColumnChunks.getNodeWrapper().blockletScanner
+              .scanBlocklet(rawBlockletColumnChunks);
+          result.setDataRefNodeWrapper(rawBlockletColumnChunks.getNodeWrapper());
+          return result;
         }
         return null;
       }
@@ -242,10 +222,10 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
 
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {
     if (updateScanner()) {
-      this.scannerResultAggregator.collectResultInColumnarBatch(scannedResult, columnarBatch);
+      scannedResult.getDataRefNodeWrapper().scannerResultAggregator
+          .collectResultInColumnarBatch(scannedResult, columnarBatch);
     }
   }
-
 
   /**
    * Close the resources

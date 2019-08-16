@@ -1247,6 +1247,13 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
 
+  /**
+   * The batch size of blocks given to iterator.
+   */
+  @CarbonProperty
+  public static final String BLOCK_BATCH_SIZE = "carbon.block.batch.size";
+
+
   public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 100;
 
   /**

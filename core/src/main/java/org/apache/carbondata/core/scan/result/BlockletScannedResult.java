@@ -36,6 +36,7 @@ import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.mutate.TupleIdEnum;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
+import org.apache.carbondata.core.scan.processor.BlockletIterator;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -153,6 +154,8 @@ public abstract class BlockletScannedResult {
   private ReusableDataBuffer[] dimensionReusableBuffer;
 
   private ReusableDataBuffer[] measureReusableBuffer;
+
+  private BlockletIterator.DataRefNodeWrapper dataRefNodeWrapper;
 
   public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
@@ -885,5 +888,13 @@ public abstract class BlockletScannedResult {
 
   public int getBlockletNumber() {
     return Integer.parseInt(blockletNumber);
+  }
+
+  public BlockletIterator.DataRefNodeWrapper getDataRefNodeWrapper() {
+    return dataRefNodeWrapper;
+  }
+
+  public void setDataRefNodeWrapper(BlockletIterator.DataRefNodeWrapper dataRefNodeWrapper) {
+    this.dataRefNodeWrapper = dataRefNodeWrapper;
   }
 }

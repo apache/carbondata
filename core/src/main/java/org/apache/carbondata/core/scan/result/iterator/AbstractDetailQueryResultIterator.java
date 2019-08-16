@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.scan.result.iterator;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,6 +82,8 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
    * number of cores which can be used
    */
   protected int batchSize;
+
+  protected int blockBatchSize;
   /**
    * queryStatisticsModel to store query statistics object
    */
@@ -89,6 +92,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {
     batchSize = CarbonProperties.getQueryBatchSize();
+    blockBatchSize = CarbonProperties.getBlockBatchSize();
     this.recorder = queryModel.getStatisticsRecorder();
     this.blockExecutionInfos = infos;
     this.fileReader = FileFactory.getFileHolder(
@@ -128,7 +132,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
    */
   private Map<String, DeleteDeltaVo> getDeleteDeltaDetails(AbstractIndex dataBlock,
       DeleteDeltaInfo deleteDeltaInfo) {
-    // if datablock deleted delta timestamp is more then the current delete delta files timestamp
+    // if nodeWrapper deleted delta timestamp is more then the current delete delta files timestamp
     // then return the current deleted rows
     if (dataBlock.getDeleteDeltaTimestamp() >= deleteDeltaInfo
         .getLatestDeleteDeltaFileTimestamp()) {
@@ -223,9 +227,11 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
       throw new RuntimeException(e);
     }
     if (blockExecutionInfos.size() > 0) {
-      BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
-      blockExecutionInfos.remove(executionInfo);
-      return new DataBlockIterator(executionInfo, fileReader, batchSize, queryStatisticsModel,
+      List<BlockExecutionInfo> infos = new ArrayList<>(blockBatchSize);
+      while (infos.size() < blockBatchSize && blockExecutionInfos.size() > 0) {
+        infos.add(blockExecutionInfos.remove(0));
+      }
+      return new DataBlockIterator(infos, fileReader, batchSize, queryStatisticsModel,
           execService);
     }
     return null;

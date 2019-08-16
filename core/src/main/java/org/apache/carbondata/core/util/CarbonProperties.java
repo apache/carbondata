@@ -1109,6 +1109,23 @@ public final class CarbonProperties {
     return batchSize;
   }
 
+  public static int getBlockBatchSize() {
+    int batchSize;
+    String batchSizeString =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.BLOCK_BATCH_SIZE);
+    if (null != batchSizeString) {
+      try {
+        batchSize = Integer.parseInt(batchSizeString);
+      } catch (NumberFormatException ne) {
+        LOGGER.error("Invalid inmemory records size. Using default value");
+        batchSize = 20;
+      }
+    } else {
+      batchSize = 20;
+    }
+    return batchSize;
+  }
+
   public long getHandoffSize() {
     Long handoffSize;
     try {

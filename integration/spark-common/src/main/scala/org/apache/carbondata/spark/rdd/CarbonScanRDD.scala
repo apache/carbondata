@@ -427,6 +427,9 @@ class CarbonScanRDD[T: ClassTag](
       val model = format.createQueryModel(inputSplit, attemptContext, filterExpression)
       // one query id per table
       model.setQueryId(queryId)
+      model.setPreFetchData(
+        CarbonProperties.getInstance().getProperty("carbon.query.prefetch.blocklet",
+        "true").toBoolean)
       // get RecordReader by FileFormat
       var reader: RecordReader[Void, Object] = inputSplit.getFileFormat match {
         case FileFormat.ROW_V1 =>
