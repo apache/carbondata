@@ -22,6 +22,7 @@ import junit.framework.TestCase;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
@@ -1125,6 +1126,46 @@ public class ImageTest extends TestCase {
       }
       writer.close();
     }
+  }
+
+  @Test public void testBinaryWithComplexType()
+      throws IOException, InvalidLoadOptionException, InterruptedException {
+    int num = 1;
+    int rows = 1;
+    String path = "./target/binary";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    Field[] fields = new Field[4];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("arrayField", DataTypes.createArrayType(DataTypes.BINARY));
+    ArrayList<StructField> structFields = new ArrayList<>();
+    structFields.add(new StructField("b", DataTypes.BINARY));
+    fields[3] = new Field("structField", DataTypes.createStructType(structFields));
+
+    // read and write image data
+    for (int j = 0; j < num; j++) {
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withCsvInput(new Schema(fields))
+          .writtenBy("BinaryExample").withPageSizeInMb(1).build();
+
+      for (int i = 0; i < rows; i++) {
+        // write data
+        writer.write(new String[] { "robot" + (i % 10), String.valueOf(i), "binary1", "binary2" });
+      }
+      writer.close();
+    }
+    CarbonReader reader = CarbonReader.builder(path, "_temp").build();
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      Object[] arrayResult = (Object[]) row[1];
+      Object[] structResult = (Object[]) row[2];
+      assert (new String((byte[]) arrayResult[0]).equalsIgnoreCase("binary1"));
+      assert (new String((byte[]) structResult[0]).equalsIgnoreCase("binary2"));
+    }
+    reader.close();
   }
 
 }

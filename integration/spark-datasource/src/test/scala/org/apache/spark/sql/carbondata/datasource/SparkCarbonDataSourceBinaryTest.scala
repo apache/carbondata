@@ -17,6 +17,7 @@
 package org.apache.spark.sql.carbondata.datasource
 
 import java.io.File
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.sdk.util.BinaryUtil
@@ -24,6 +25,7 @@ import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.util.SparkUtil
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
@@ -633,6 +635,92 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
             sql("DELETE FROM carbon_table WHERE id = 1").show()
         }
         assert(exception.getMessage.contains("Operation not allowed: DELETE FROM"))
+    }
+
+    test("test array of binary data type with sparkfileformat ") {
+        sql("drop table if exists carbon_table")
+        sql("drop table if exists parquet_table")
+        sql("create table if not exists carbon_table(id int, label boolean, name string," +
+            "binaryField array<binary>, autoLabel boolean) using carbon")
+        sql("insert into carbon_table values(1,true,'abc',array('binary'),false)")
+        sql("create table if not exists parquet_table(id int, label boolean, name string," +
+            "binaryField array<binary>, autoLabel boolean) using parquet")
+        sql("insert into parquet_table values(1,true,'abc',array('binary'),false)")
+        checkAnswer(sql("SELECT binaryField[0] FROM carbon_table"),
+            sql("SELECT binaryField[0] FROM parquet_table"))
+        sql("drop table if exists carbon_table")
+        sql("drop table if exists parquet_table")
+    }
+
+    test("test struct of binary data type with sparkfileformat ") {
+        sql("drop table if exists carbon_table")
+        sql("drop table if exists parquet_table")
+        sql("create table if not exists carbon_table(id int, label boolean, name string," +
+            "binaryField struct<b:binary>, autoLabel boolean) using carbon")
+        sql("insert into carbon_table values(1,true,'abc',named_struct('b','binary'),false)")
+        sql("create table if not exists parquet_table(id int, label boolean, name string," +
+            "binaryField struct<b:binary>, autoLabel boolean) using parquet")
+        sql("insert into parquet_table values(1,true,'abc',named_struct('b','binary'),false)")
+        checkAnswer(sql("SELECT binaryField.b FROM carbon_table"),
+            sql("SELECT binaryField.b FROM parquet_table"))
+        sql("drop table if exists carbon_table")
+        sql("drop table if exists parquet_table")
+    }
+
+    test("test map of binary data type with sparkfileformat") {
+        sql("drop table if exists carbon_table")
+        sql("drop table if exists parquet_table")
+        sql("create table if not exists parquet_table(id int, label boolean, name string," +
+            "binaryField map<int, binary>, autoLabel boolean) using parquet")
+        sql("insert into parquet_table values(1,true,'abc',map(1,'binary'),false)")
+        sql("create table if not exists carbon_table(id int, label boolean, name string," +
+            "binaryField map<int, binary>, autoLabel boolean) using carbon")
+        sql("insert into carbon_table values(1,true,'abc',map(1,'binary'),false)")
+        checkAnswer(sql("SELECT binaryField[1] FROM carbon_table"),
+            sql("SELECT binaryField[1] FROM parquet_table"))
+        sql("drop table if exists carbon_table")
+        sql("drop table if exists parquet_table")
+    }
+
+    test("test map of array and struct binary data type with sparkfileformat") {
+        sql("drop table if exists carbon_table")
+        sql("drop table if exists parquet_table")
+        sql("create table if not exists parquet_table(id int, label boolean, name string," +
+            "binaryField1 map<int, array<binary>>, binaryField2 map<int, struct<b:binary>> ) " +
+            "using parquet")
+        sql("insert into parquet_table values(1,true,'abc',map(1,array('binary')),map(1," +
+            "named_struct('b','binary')))")
+        sql("create table if not exists carbon_table(id int, label boolean, name string," +
+            "binaryField1 map<int, array<binary>>, binaryField2 map<int, struct<b:binary>> ) " +
+            "using carbon")
+        sql("insert into carbon_table values(1,true,'abc',map(1,array('binary')),map(1," +
+            "named_struct('b','binary')))")
+        checkAnswer(sql("SELECT binaryField1[1][1] FROM carbon_table"),
+            sql("SELECT binaryField1[1][1] FROM parquet_table"))
+        checkAnswer(sql("SELECT binaryField2[1].b FROM carbon_table"),
+            sql("SELECT binaryField2[1].b FROM parquet_table"))
+        sql("drop table if exists carbon_table")
+    }
+
+    test("test of array of struct and struct of array of binary data type with sparkfileformat") {
+        sql("drop table if exists carbon_table")
+        sql("drop table if exists parquet_table")
+        sql("create table if not exists parquet_table(id int, label boolean, name string," +
+            "binaryField1 array<struct<b1:binary>>, binaryField2 struct<b2:array<binary>> ) " +
+            "using parquet")
+        sql("insert into parquet_table values(1,true,'abc',array(named_struct('b1','binary'))," +
+            "named_struct('b2',array('binary')))")
+        sql("create table if not exists carbon_table(id int, label boolean, name string," +
+            "binaryField1 array<struct<b1:binary>>, binaryField2 struct<b2:array<binary>> ) " +
+            "using carbon")
+        sql("insert into carbon_table values(1,true,'abc',array(named_struct('b1','binary'))," +
+            "named_struct('b2',array('binary')))")
+        checkAnswer(sql("SELECT binaryField1[1].b1 FROM carbon_table"),
+            sql("SELECT  binaryField1[1].b1 FROM parquet_table"))
+        checkAnswer(sql("SELECT binaryField2.b2[0] FROM carbon_table"),
+            sql("SELECT binaryField2.b2[0] FROM parquet_table"))
+        sql("drop table if exists carbon_table")
+        sql("drop table if exists parquet_table")
     }
 
 }

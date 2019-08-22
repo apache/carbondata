@@ -530,6 +530,7 @@ public final class DataTypeUtil {
   public static boolean isFixedSizeDataType(DataType dataType) {
     if (dataType == DataTypes.STRING ||
         dataType == DataTypes.VARCHAR ||
+        dataType == DataTypes.BINARY ||
         DataTypes.isDecimal(dataType)) {
       return false;
     } else {
@@ -1019,6 +1020,8 @@ public final class DataTypeUtil {
       return DataTypes.BYTE_ARRAY;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
       return DataTypes.BYTE_ARRAY;
+    } else if (DataTypes.BINARY.getName().equalsIgnoreCase(name)) {
+      return DataTypes.BINARY;
     } else if (name.equalsIgnoreCase("decimal")) {
       return DataTypes.createDefaultDecimalType();
     } else if (name.equalsIgnoreCase("array")) {
