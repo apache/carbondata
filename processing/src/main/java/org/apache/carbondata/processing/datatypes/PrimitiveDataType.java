@@ -378,6 +378,9 @@ public class PrimitiveDataType implements GenericDataType<Object> {
                 } else {
                   value = ByteUtil.toXorBytes(Long.parseLong(parsedValue));
                 }
+              } else if (this.carbonDimension.getDataType().equals(DataTypes.BINARY)) {
+                value = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(input,
+                    this.carbonDimension.getDataType());
               } else {
                 value = DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(parsedValue,
                     this.carbonDimension.getDataType(), dateFormat);

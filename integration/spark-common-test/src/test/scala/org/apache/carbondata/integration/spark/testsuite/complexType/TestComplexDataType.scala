@@ -1013,4 +1013,118 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select id,name,structField.intval,name,structField.stringval from table1"),Seq(Row(null,"aaa",23,"aaa","bb")))
   }
 
+  test("test array of binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists hive_table")
+    sql("create table if not exists hive_table(id int, label boolean, name string," +
+        "binaryField array<binary>, autoLabel boolean) row format delimited fields terminated by ','")
+    sql("insert into hive_table values(1,true,'abc',array('binary'),false)")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField array<binary>, autoLabel boolean) stored by 'carbondata'")
+    sql("insert into carbon_table values(1,true,'abc',array('binary'),false)")
+    checkAnswer(sql("SELECT binaryField[0] FROM carbon_table"),
+      sql("SELECT binaryField[0] FROM hive_table"))
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists hive_table")
+  }
+
+  test("test struct of binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists parquet_table")
+    sql("create table if not exists parquet_table(id int, label boolean, name string," +
+        "binaryField struct<b:binary>, autoLabel boolean) using parquet")
+    sql("insert into parquet_table values(1,true,'abc',named_struct('b','binary'),false)")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField struct<b:binary>, autoLabel boolean) stored by 'carbondata'")
+    sql("insert into carbon_table values(1,true,'abc',named_struct('b','binary'),false)")
+    sql("SELECT binaryField.b FROM carbon_table").show(false)
+    checkAnswer(sql("SELECT binaryField.b FROM carbon_table"),
+      sql("SELECT binaryField.b FROM parquet_table"))
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists hive_table")
+  }
+
+  test("test map of binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists hive_table")
+    sql("create table if not exists hive_table(id int, label boolean, name string," +
+        "binaryField map<int, binary>, autoLabel boolean) row format delimited fields terminated by ','")
+    sql("insert into hive_table values(1,true,'abc',map(1,'binary'),false)")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField map<int, binary>, autoLabel boolean) stored by 'carbondata'")
+    sql("insert into carbon_table values(1,true,'abc',map(1,'binary'),false)")
+    checkAnswer(sql("SELECT binaryField[1] FROM carbon_table"),
+      sql("SELECT binaryField[1] FROM hive_table"))
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists hive_table")
+  }
+
+  test("test map of array and struct binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists parquet_table")
+    sql("create table if not exists parquet_table(id int, label boolean, name string," +
+        "binaryField1 map<int, array<binary>>, binaryField2 map<int, struct<b:binary>> ) " +
+        "using parquet")
+    sql("insert into parquet_table values(1,true,'abc',map(1,array('binary')),map(1," +
+        "named_struct('b','binary')))")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField1 map<int, array<binary>>, binaryField2 map<int, struct<b:binary>> ) " +
+        "stored by 'carbondata'")
+    sql("insert into carbon_table values(1,true,'abc',map(1,array('binary')),map(1," +
+        "named_struct('b','binary')))")
+    checkAnswer(sql("SELECT binaryField1[1][1] FROM carbon_table"),
+      sql("SELECT binaryField1[1][1] FROM parquet_table"))
+    checkAnswer(sql("SELECT binaryField2[1].b FROM carbon_table"),
+      sql("SELECT binaryField2[1].b FROM parquet_table"))
+    sql("drop table if exists hive_table")
+    sql("drop table if exists carbon_table")
+  }
+
+  test("test of array of struct and struct of array of binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists hive_table")
+    sql("create table if not exists hive_table(id int, label boolean, name string," +
+        "binaryField1 array<struct<b1:binary>>, binaryField2 struct<b2:array<binary>> ) " +
+        "row format delimited fields terminated by ','")
+    sql("insert into hive_table values(1,true,'abc',array(named_struct('b1','binary'))," +
+        "named_struct('b2',array('binary')))")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField1 array<struct<b1:binary>>, binaryField2 struct<b2:array<binary>> ) " +
+        "stored by 'carbondata'")
+    sql("insert into carbon_table values(1,true,'abc',array(named_struct('b1','binary'))," +
+        "named_struct('b2',array('binary')))")
+    checkAnswer(sql("SELECT binaryField1[1].b1 FROM carbon_table"),
+      sql("SELECT  binaryField1[1].b1 FROM hive_table"))
+    checkAnswer(sql("SELECT binaryField2.b2[0] FROM carbon_table"),
+      sql("SELECT binaryField2.b2[0] FROM hive_table"))
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists hive_table")
+  }
+
+  test("test dataload to complex of binary type column using load ddl ") {
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists hive_table")
+    sql("create table if not exists hive_table(id int, label boolean, name string," +
+        "binaryField1 array<binary>, binaryField2 struct<b2:binary>, binaryField3 map<int," +
+        "binary>) row format delimited fields terminated by ','")
+    sql(
+      "insert into hive_table values(1,true,'abc',array('binary1','binary2'), named_struct('b2'," +
+      "'binary1'), map(1,'binary1'))")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField1 array<binary>, binaryField2 struct<b2:binary>, binaryField3 map<int,binary>) " +
+        "stored by 'carbondata'")
+    sql(
+      "load data inpath '" + resourcesPath + "/complexbinary.csv' into table carbon_table options" +
+      "('delimiter'=',',  'quotechar'='\\','fileheader'='id,label,name,binaryField1,binaryField2," +
+      "binaryField3','complex_delimiter_level_1'='$', 'complex_delimiter_level_2'='&')")
+    checkAnswer(sql("SELECT binaryField1[0] FROM carbon_table where id=1"),
+      sql("SELECT  binaryField1[0] FROM hive_table where id=1"))
+    checkAnswer(sql("SELECT binaryField2.b2 FROM carbon_table where id=1"),
+      sql("SELECT  binaryField2.b2 FROM hive_table where id=1"))
+    checkAnswer(sql("SELECT binaryField3[1] FROM carbon_table where id=1"),
+      sql("SELECT binaryField3[1] FROM hive_table where id=1"))
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists hive_table")
+  }
+
 }
