@@ -43,7 +43,9 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
    */
   protected FileTypeInterface customFileTypeProvider = null;
 
-  protected boolean customFileTypeProviderInitialized = false;
+  protected Boolean customFileTypeProviderInitialized = false;
+
+  private final Object lock = new Object();
 
   public DefaultFileTypeProvider() {
   }
@@ -52,17 +54,22 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
    * This method is required apart from Constructor to handle the below circular dependency.
    * CarbonProperties-->FileFactory-->DefaultTypeProvider-->CarbonProperties
    */
-  private void initializeCustomFileprovider() {
+  private void initializeCustomFileProvider() {
     if (!customFileTypeProviderInitialized) {
-      customFileTypeProviderInitialized = true;
-      String customFileProvider =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CUSTOM_FILE_PROVIDER);
-      if (customFileProvider != null && !customFileProvider.trim().isEmpty()) {
-        try {
-          customFileTypeProvider =
-              (FileTypeInterface) Class.forName(customFileProvider).newInstance();
-        } catch (Exception e) {
-          LOGGER.error("Unable load configured FileTypeInterface class. Ignored.", e);
+      // This initialization can happen in concurrent threads.
+      synchronized (lock) {
+        if (!customFileTypeProviderInitialized) {
+          String customFileProvider = CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CUSTOM_FILE_PROVIDER);
+          if (customFileProvider != null && !customFileProvider.trim().isEmpty()) {
+            try {
+              customFileTypeProvider =
+                  (FileTypeInterface) Class.forName(customFileProvider).newInstance();
+            } catch (Exception e) {
+              LOGGER.error("Unable load configured FileTypeInterface class. Ignored.", e);
+            }
+            customFileTypeProviderInitialized = true;
+          }
         }
       }
     }
@@ -77,7 +84,7 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
    * @return true if supported by the custom
    */
   @Override public boolean isPathSupported(String path) {
-    initializeCustomFileprovider();
+    initializeCustomFileProvider();
     if (customFileTypeProvider != null) {
       return customFileTypeProvider.isPathSupported(path);
     }
