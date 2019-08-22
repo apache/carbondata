@@ -57,7 +57,6 @@ private[sql] case class CarbonProjectForDeleteCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-    var deletedRowCount = 0L
     setAuditTable(carbonTable)
     setAuditInfo(Map("plan" -> plan.simpleString))
     if (!carbonTable.getTableInfo.isTransactionalTable) {
@@ -111,7 +110,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
       // handle the clean up of IUD.
       CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
-      val (deletedSegments, deletedRowCountTemp) = DeleteExecution.deleteDeltaExecution(
+      val (deletedSegments, deletedRowCount) = DeleteExecution.deleteDeltaExecution(
         databaseNameOp,
         tableName,
         sparkSession,
@@ -120,12 +119,11 @@ private[sql] case class CarbonProjectForDeleteCommand(
         isUpdateOperation = false,
         executorErrors)
 
-      // check whether it fails before execute horizontal compaction
+      // Check for any failures occured during delete delta execution
       if (executorErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executorErrors.errorMsg)
       }
 
-      deletedRowCount = deletedRowCountTemp
       // call IUD Compaction.
       HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable,
         isUpdateOperation = false)
@@ -144,11 +142,13 @@ private[sql] case class CarbonProjectForDeleteCommand(
       val deleteFromTablePostEvent: DeleteFromTablePostEvent =
         DeleteFromTablePostEvent(sparkSession, carbonTable)
       OperationListenerBus.getInstance.fireEvent(deleteFromTablePostEvent, operationContext)
+      Seq(Row(deletedRowCount))
     } catch {
       case e: HorizontalCompactionException =>
         LOGGER.error("Delete operation passed. Exception in Horizontal Compaction." +
                      " Please check logs. " + e.getMessage)
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
+        Seq(Row(0L))
 
       case e: Exception =>
         LOGGER.error("Exception in Delete data operation " + e.getMessage, e)
@@ -170,7 +170,6 @@ private[sql] case class CarbonProjectForDeleteCommand(
       updateLock.unlock()
       compactionLock.unlock()
     }
-    Seq(Row(deletedRowCount))
   }
 
   override protected def opName: String = "DELETE DATA"
