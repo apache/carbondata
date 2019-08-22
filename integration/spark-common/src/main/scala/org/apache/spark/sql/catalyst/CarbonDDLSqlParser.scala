@@ -1511,6 +1511,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     field.dataType.getOrElse("NIL") match {
       case "String" => Field(parentName + "." + field.column, Some("String"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "binary" => Field(parentName + "." + field.column, Some("Binary"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "SmallInt" => Field(parentName + "." + field.column, Some("SmallInt"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Integer" => Field(parentName + "." + field.column, Some("Integer"),

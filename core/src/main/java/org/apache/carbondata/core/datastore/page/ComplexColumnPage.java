@@ -124,6 +124,7 @@ public class ComplexColumnPage {
             DataTypes.isMapType(dataType) ||
             (dataType == DataTypes.STRING) ||
             (dataType == DataTypes.VARCHAR) ||
+            (dataType == DataTypes.BINARY) ||
             (dataType == DataTypes.DATE) ||
             DataTypes.isDecimal(dataType))))) {
       // For all these above condition the ColumnPage should be Taken as BYTE_ARRAY
