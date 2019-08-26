@@ -27,15 +27,16 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactor
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
-class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableName: String)
+class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableUniqueId: String)
   extends CarbonRDD[String](ss, Nil) {
 
-  val executorsList: Array[String] = DistributionUtil.getExecutors(ss.sparkContext).flatMap {
-    case (host, executors) =>
-      executors.map {
-        executor => s"executor_${host}_$executor"
-      }
-  }.toArray
+  val executorsList: Array[String] = DistributionUtil
+    .getExecutors(ss.sparkContext).flatMap {
+      case (host, executors) =>
+        executors.map { executor =>
+          s"executor_${ host }_$executor"
+        }
+    }.toArray
 
   override protected def getPreferredLocations(split: Partition): Seq[String] = {
     if (split.asInstanceOf[DataMapRDDPartition].getLocations != null) {
@@ -57,19 +58,23 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableName
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[String] = {
     val dataMaps = DataMapStoreManager.getInstance().getAllDataMaps.asScala
-    val tableList = tableName.split(",").map(_.replace("-", "_"))
+    val tableList = tableUniqueId.split(",")
     val iterator = dataMaps.collect {
-      case (table, tableDataMaps) if tableName.isEmpty || tableList.contains(table) =>
+      case (tableId, tableDataMaps) if tableUniqueId.isEmpty || tableList.contains(tableId) =>
         val sizeAndIndexLengths = tableDataMaps.asScala
           .map { dataMap =>
             val dataMapName = if (dataMap.getDataMapFactory.isInstanceOf[BlockletDataMapFactory]) {
-              table
+              dataMap
+                .getDataMapFactory
+                .asInstanceOf[BlockletDataMapFactory]
+                .getCarbonTable
+                .getTableUniqueName
             } else {
               dataMap.getDataMapSchema.getRelationIdentifier.getDatabaseName + "_" + dataMap
               .getDataMapSchema.getDataMapName
             }
             s"${ dataMapName }:${ dataMap.getDataMapFactory.getCacheSize }:${
-              dataMap.getDataMapSchema.getProviderName} "
+              dataMap.getDataMapSchema.getProviderName}"
           }
         sizeAndIndexLengths
     }.flatten.toIterator

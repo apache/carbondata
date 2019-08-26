@@ -51,7 +51,7 @@ trait ServerInterface {
   /**
    * Get the cache size for the specified tables.
    */
-  def showCache(tableNames: String) : Array[String]
+  def showCache(tableIds: String) : Array[String]
 
   /**
    * Invalidate the cache for the specified segments only. Used in case of compaction/Update/Delete.
@@ -138,14 +138,14 @@ object IndexServer extends ServerInterface {
     }
   }
 
-  override def showCache(tableName: String = ""): Array[String] = doAs {
-    val jobgroup: String = "Show Cache for " + (tableName match {
+  override def showCache(tableId: String = ""): Array[String] = doAs {
+    val jobgroup: String = "Show Cache " + (tableId match {
       case "" => "for all tables"
       case table => s"for $table"
     })
     sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", UUID.randomUUID().toString)
     sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
-    new DistributedShowCacheRDD(sparkSession, tableName).collect()
+    new DistributedShowCacheRDD(sparkSession, tableId).collect()
   }
 
   def main(args: Array[String]): Unit = {
@@ -187,6 +187,10 @@ object IndexServer extends ServerInterface {
       .getOrCreateCarbonSession(CarbonProperties.getStorePath)
     SparkSession.setActiveSession(spark)
     SparkSession.setDefaultSession(spark)
+    if (spark.sparkContext.getConf
+      .get("spark.dynamicAllocation.enabled", "false").equalsIgnoreCase("true")) {
+      throw new RuntimeException("Index server is not supported with dynamic allocation enabled")
+    }
     spark
   }
 

@@ -54,7 +54,7 @@ object ShowCachePreAggEventListener extends OperationEventListener {
             case childSchema if childSchema.getRelationIdentifier != null =>
               (s"${ childSchema.getRelationIdentifier.getDatabaseName }-${
                 childSchema.getRelationIdentifier.getTableName
-              }", childSchema.getProviderName)
+              }", childSchema.getProviderName, childSchema.getRelationIdentifier.getTableId)
           }.toList ++ childTables)
         }
     }
@@ -92,16 +92,18 @@ object ShowCacheDataMapEventListener extends OperationEventListener {
   }
 
   private def filterDataMaps(dataMaps: List[DataMapSchema],
-      filter: String): List[(String, String)] = {
+      filter: String): List[(String, String, String)] = {
     dataMaps.collect {
       case dataMap if dataMap.getProviderName
         .equalsIgnoreCase(filter) =>
         if (filter.equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName)) {
           (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${
-            dataMap.getDataMapName}", dataMap.getProviderName)
+            dataMap.getDataMapName}", dataMap.getProviderName,
+            dataMap.getRelationIdentifier.getTableId)
         } else {
           (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${
-            dataMap.getRelationIdentifier.getTableName}", dataMap.getProviderName)
+            dataMap.getRelationIdentifier.getTableName}", dataMap.getProviderName,
+            dataMap.getRelationIdentifier.getTableId)
         }
     }
   }

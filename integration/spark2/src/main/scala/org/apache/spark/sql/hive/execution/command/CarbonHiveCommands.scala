@@ -23,9 +23,12 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, SessionParams}
 
 case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
@@ -99,6 +102,15 @@ object CarbonSetCommand {
       sessionParams.addProperty(key.toLowerCase(), value)
     } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
       if (key.split("\\.").length == 6) {
+        val keyArray = key.split("\\.")
+        val dbName = keyArray(keyArray.length - 3)
+        val tableName = keyArray(keyArray.length - 2)
+        val table = CarbonEnv.getCarbonTable(Some(dbName), tableName)(SparkSQLUtil.getSparkSession)
+        val isValid = DataMapStoreManager.getInstance
+          .isDataMapExist(table.getTableId, keyArray(keyArray.length - 1))
+        if (!isValid) throw new InvalidConfigurationException(String.format(
+          "Invalid configuration of %s, datamap does not exist",
+          key))
         sessionParams.addProperty(key.toLowerCase, value)
       } else {
         throw new MalformedCarbonCommandException("property should be in " +
