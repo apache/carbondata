@@ -37,6 +37,7 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
@@ -318,23 +319,23 @@ public final class DataMapStoreManager {
    * Get the datamap for reading data.
    */
   public TableDataMap getDataMap(CarbonTable table, DataMapSchema dataMapSchema) {
-    String tableUniqueName =
-        table.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableUniqueName();
-    List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
+    String tableId =
+        table.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableId();
+    List<TableDataMap> tableIndices = allDataMaps.get(table.getTableId());
     if (tableIndices == null) {
       String keyUsingTablePath = getKeyUsingTablePath(table.getTablePath());
       if (keyUsingTablePath != null) {
-        tableUniqueName = keyUsingTablePath;
-        tableIndices = allDataMaps.get(tableUniqueName);
+        tableId = keyUsingTablePath;
+        tableIndices = allDataMaps.get(tableId);
       }
     }
     // in case of fileformat or sdk, when table is dropped or schema is changed the datamaps are
     // not cleared, they need to be cleared by using API, so compare the columns, if not same, clear
     // the datamaps on that table
-    if (allDataMaps.size() > 0 && !CollectionUtils.isEmpty(allDataMaps.get(tableUniqueName))
-        && !allDataMaps.get(tableUniqueName).get(0).getTable().getTableInfo().getFactTable()
+    if (allDataMaps.size() > 0 && !CollectionUtils.isEmpty(allDataMaps.get(tableId))
+        && !allDataMaps.get(tableId).get(0).getTable().getTableInfo().getFactTable()
         .getListOfColumns().equals(table.getTableInfo().getFactTable().getListOfColumns())) {
-      clearDataMaps(tableUniqueName);
+      clearDataMaps(table.getCarbonTableIdentifier());
       tableIndices = null;
     }
     TableDataMap dataMap = null;
@@ -342,8 +343,8 @@ public final class DataMapStoreManager {
       dataMap = getTableDataMap(dataMapSchema.getDataMapName(), tableIndices);
     }
     if (dataMap == null) {
-      synchronized (tableUniqueName.intern()) {
-        tableIndices = allDataMaps.get(tableUniqueName);
+      synchronized (tableId.intern()) {
+        tableIndices = allDataMaps.get(tableId);
         if (tableIndices != null) {
           dataMap = getTableDataMap(dataMapSchema.getDataMapName(), tableIndices);
         }
@@ -417,12 +418,12 @@ public final class DataMapStoreManager {
     String tableUniqueName = table.getCarbonTableIdentifier().getTableUniqueName();
     // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(table);
-    List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
+    List<TableDataMap> tableIndices = allDataMaps.get(table.getTableId());
     if (tableIndices == null) {
       String keyUsingTablePath = getKeyUsingTablePath(table.getTablePath());
       if (keyUsingTablePath != null) {
         tableUniqueName = keyUsingTablePath;
-        tableIndices = allDataMaps.get(tableUniqueName);
+        tableIndices = allDataMaps.get(table.getTableId());
       }
     }
     if (tableIndices == null) {
@@ -441,8 +442,8 @@ public final class DataMapStoreManager {
         dataMapSchema, dataMapFactory, blockletDetailsFetcher, segmentPropertiesFetcher);
 
     tableIndices.add(dataMap);
-    allDataMaps.put(tableUniqueName, tableIndices);
-    tablePathMap.put(tableUniqueName, table.getTablePath());
+    allDataMaps.put(table.getTableId(), tableIndices);
+    tablePathMap.put(table.getTableId(), table.getTablePath());
     return dataMap;
   }
 
@@ -512,7 +513,7 @@ public final class DataMapStoreManager {
    * @param identifier Table identifier
    */
   public void clearDataMaps(AbsoluteTableIdentifier identifier, boolean launchJob) {
-    String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
+    String tableId = identifier.getCarbonTableIdentifier().getTableId();
     if (launchJob) {
       // carbon table need to lookup only if launch job is set.
       CarbonTable carbonTable = getCarbonTable(identifier);
@@ -537,17 +538,18 @@ public final class DataMapStoreManager {
       CarbonMetadata.getInstance()
           .removeTable(identifier.getDatabaseName(), identifier.getTableName());
     }
-    List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
+    List<TableDataMap> tableIndices =
+        allDataMaps.get(identifier.getCarbonTableIdentifier().getTableId());
     if (tableIndices == null) {
       String keyUsingTablePath = getKeyUsingTablePath(identifier.getTablePath());
       if (keyUsingTablePath != null) {
-        tableUniqueName = keyUsingTablePath;
+        tableId = keyUsingTablePath;
       }
     }
-    segmentRefreshMap.remove(identifier.uniqueName());
-    clearDataMaps(tableUniqueName);
-    allDataMaps.remove(tableUniqueName);
-    tablePathMap.remove(tableUniqueName);
+    segmentRefreshMap.remove(tableId);
+    clearDataMaps(identifier.getCarbonTableIdentifier());
+    allDataMaps.remove(tableId);
+    tablePathMap.remove(tableId);
   }
 
   /**
@@ -575,8 +577,8 @@ public final class DataMapStoreManager {
   /**
    * this methods clears the datamap of table from memory
    */
-  public void clearDataMaps(String tableUniqName) {
-    List<TableDataMap> tableIndices = allDataMaps.get(tableUniqName);
+  public void clearDataMaps(CarbonTableIdentifier carbonTableIdentifier) {
+    List<TableDataMap> tableIndices = allDataMaps.get(carbonTableIdentifier.getTableId());
     if (tableIndices != null) {
       for (TableDataMap tableDataMap : tableIndices) {
         if (tableDataMap != null) {
@@ -587,8 +589,8 @@ public final class DataMapStoreManager {
         }
       }
     }
-    allDataMaps.remove(tableUniqName);
-    tablePathMap.remove(tableUniqName);
+    allDataMaps.remove(carbonTableIdentifier.getTableId());
+    tablePathMap.remove(carbonTableIdentifier.getTableId());
   }
 
   /**
@@ -603,7 +605,7 @@ public final class DataMapStoreManager {
       // doing any further changes.
       return;
     }
-    String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
+    String tableId = identifier.getCarbonTableIdentifier().getTableId();
     if (CarbonProperties.getInstance()
         .isDistributedPruningEnabled(identifier.getDatabaseName(), identifier.getTableName())) {
       try {
@@ -614,7 +616,7 @@ public final class DataMapStoreManager {
         // ignoring the exception
       }
     } else {
-      List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
+      List<TableDataMap> tableIndices = allDataMaps.get(tableId);
       if (tableIndices != null) {
         int i = 0;
         for (TableDataMap tableDataMap : tableIndices) {
@@ -634,7 +636,7 @@ public final class DataMapStoreManager {
           }
           i++;
         }
-        allDataMaps.put(tableUniqueName, tableIndices);
+        allDataMaps.put(tableId, tableIndices);
       }
     }
   }
@@ -643,8 +645,8 @@ public final class DataMapStoreManager {
    * is datamap exist
    * @return true if exist, else return false
    */
-  public boolean isDataMapExist(String dbName, String tableName, String dmName) {
-    List<TableDataMap> tableDataMaps = allDataMaps.get(dbName + '_' + tableName);
+  public boolean isDataMapExist(String tableId, String dmName) {
+    List<TableDataMap> tableDataMaps = allDataMaps.get(tableId);
     if (tableDataMaps != null) {
       for (TableDataMap dm : tableDataMaps) {
         if (dm != null && dmName.equalsIgnoreCase(dm.getDataMapSchema().getDataMapName())) {
@@ -679,11 +681,11 @@ public final class DataMapStoreManager {
    * Get the TableSegmentRefresher for the table. If not existed then add one and return.
    */
   public TableSegmentRefresher getTableSegmentRefresher(CarbonTable table) {
-    String uniqueName = table.getAbsoluteTableIdentifier().uniqueName();
-    if (segmentRefreshMap.get(uniqueName) == null) {
-      segmentRefreshMap.put(uniqueName, new TableSegmentRefresher(table));
+    String tableId = table.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableId();
+    if (segmentRefreshMap.get(tableId) == null) {
+      segmentRefreshMap.put(tableId, new TableSegmentRefresher(table));
     }
-    return segmentRefreshMap.get(uniqueName);
+    return segmentRefreshMap.get(tableId);
   }
 
   /**
@@ -771,9 +773,9 @@ public final class DataMapStoreManager {
           remainingDataMaps.add(tableDataMap);
         }
       }
-      getAllDataMaps().put(carbonTable.getTableUniqueName(), remainingDataMaps);
+      allDataMaps.put(carbonTable.getTableId(), remainingDataMaps);
     } else {
-      clearDataMaps(carbonTable.getTableUniqueName());
+      clearDataMaps(carbonTable.getCarbonTableIdentifier());
       // clear the segment properties cache from executor
       SegmentPropertiesAndSchemaHolder.getInstance()
           .invalidate(carbonTable.getAbsoluteTableIdentifier());

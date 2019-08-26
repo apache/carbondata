@@ -64,7 +64,7 @@ public class DataMapWriterListener {
       String taskNo, SegmentProperties segmentProperties) {
     // clear cache in executor side
     DataMapStoreManager.getInstance()
-        .clearDataMaps(carbonTable.getCarbonTableIdentifier().getTableUniqueName());
+        .clearDataMaps(carbonTable.getCarbonTableIdentifier());
     List<TableDataMap> tableIndices;
     try {
       tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
