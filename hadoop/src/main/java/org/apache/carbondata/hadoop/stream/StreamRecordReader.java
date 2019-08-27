@@ -81,6 +81,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
   protected CarbonTable carbonTable;
   private CarbonColumn[] storageColumns;
   private boolean[] isRequired;
+  private boolean[] dimensionsIsVarcharTypeMap;
   private DataType[] measureDataTypes;
   private int dimensionCount;
   private int measureCount;
@@ -161,6 +162,14 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
       if (storageColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         directDictionaryGenerators[i] = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(storageColumns[i].getDataType());
+      }
+    }
+    dimensionsIsVarcharTypeMap = new boolean[dimensionCount];
+    for (int i = 0; i < dimensionCount; i++) {
+      if (storageColumns[i].getDataType() == DataTypes.VARCHAR) {
+        dimensionsIsVarcharTypeMap[i] = true;
+      } else {
+        dimensionsIsVarcharTypeMap[i] = false;
       }
     }
     measureDataTypes = new DataType[measureCount];
@@ -387,7 +396,12 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
         }
       } else {
         if (isNoDictColumn[colCount]) {
-          int v = input.readShort();
+          int v = 0;
+          if (dimensionsIsVarcharTypeMap[colCount]) {
+            v = input.readInt();
+          } else {
+            v = input.readShort();
+          }
           if (isRequired[colCount]) {
             byte[] b = input.readBytes(v);
             if (isFilterRequired[colCount]) {
@@ -561,7 +575,12 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
         outputValues[colCount] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
       } else {
         if (isNoDictColumn[colCount]) {
-          int v = input.readShort();
+          int v = 0;
+          if (dimensionsIsVarcharTypeMap[colCount]) {
+            v = input.readInt();
+          } else {
+            v = input.readShort();
+          }
           outputValues[colCount] = input.readBytes(v);
         } else {
           outputValues[colCount] = input.readInt();

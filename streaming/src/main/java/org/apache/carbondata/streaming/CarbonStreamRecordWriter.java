@@ -91,6 +91,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private boolean[] isNoDictionaryDimensionColumn;
   private int dimensionWithComplexCount;
   private int measureCount;
+  private boolean[] dimensionsIsVarcharTypeMap;
   private DataType[] measureDataTypes;
   private StreamBlockletWriter output = null;
   private String compressorName;
@@ -147,6 +148,14 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     dimensionWithComplexCount = configuration.getDimensionCount();
     measureCount = configuration.getMeasureCount();
     dataFields = configuration.getDataFields();
+    dimensionsIsVarcharTypeMap = new boolean[dimensionWithComplexCount];
+    for (int i = 0; i < dimensionWithComplexCount; i++) {
+      if (dataFields[i].getColumn().getDataType() == DataTypes.VARCHAR) {
+        dimensionsIsVarcharTypeMap[i] = true;
+      } else {
+        dimensionsIsVarcharTypeMap[i] = false;
+      }
+    }
     measureDataTypes = new DataType[measureCount];
     for (int i = 0; i < measureCount; i++) {
       measureDataTypes[i] =
@@ -234,7 +243,11 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
         if (null != columnValue) {
           if (isNoDictionaryDimensionColumn[dimCount]) {
             byte[] col = (byte[]) columnValue;
-            output.writeShort(col.length);
+            if (dimensionsIsVarcharTypeMap[dimCount]) {
+              output.writeInt(col.length);
+            } else {
+              output.writeShort(col.length);
+            }
             output.writeBytes(col);
             output.dimStatsCollectors[dimCount].update(col);
           } else {

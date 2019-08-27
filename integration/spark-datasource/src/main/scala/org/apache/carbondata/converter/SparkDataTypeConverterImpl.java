@@ -114,7 +114,8 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
 
   private static org.apache.spark.sql.types.DataType convertCarbonToSparkDataType(
       DataType carbonDataType) {
-    if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.STRING) {
+    if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.STRING
+        || carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.VARCHAR) {
       return DataTypes.StringType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT) {
       return DataTypes.ShortType;
@@ -170,7 +171,8 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.INT
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG
-            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BINARY) {
+            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BINARY
+            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.VARCHAR) {
           fields[i] = new StructField(carbonColumn.getColName(),
               convertCarbonToSparkDataType(dataType), true, null);
         } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(dataType)) {
