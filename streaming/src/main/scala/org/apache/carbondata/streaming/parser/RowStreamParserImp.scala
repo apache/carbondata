@@ -36,6 +36,7 @@ import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConst
 class RowStreamParserImp extends CarbonStreamParser {
 
   var configuration: Configuration = null
+  var isVarcharTypeMapping: Array[Boolean] = null
   var structType: StructType = null
   var encoder: ExpressionEncoder[Row] = null
 
@@ -44,10 +45,12 @@ class RowStreamParserImp extends CarbonStreamParser {
   var complexDelimiters: util.ArrayList[String] = new util.ArrayList[String]()
   var serializationNullFormat: String = null
 
-  override def initialize(configuration: Configuration, structType: StructType): Unit = {
+  override def initialize(configuration: Configuration,
+      structType: StructType, isVarcharTypeMapping: Array[Boolean]): Unit = {
     this.configuration = configuration
     this.structType = structType
     this.encoder = RowEncoder.apply(this.structType).resolveAndBind()
+    this.isVarcharTypeMapping = isVarcharTypeMapping
 
     this.timeStampFormat = new SimpleDateFormat(
       this.configuration.get(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
@@ -62,12 +65,12 @@ class RowStreamParserImp extends CarbonStreamParser {
   }
 
   override def parserRow(value: InternalRow): Array[Object] = {
-    this.encoder.fromRow(value).toSeq.map { x => {
+    this.encoder.fromRow(value).toSeq.zipWithIndex.map { case (x, i) =>
       FieldConverter.objectToString(
         x, serializationNullFormat, complexDelimiters,
-        timeStampFormat, dateFormat)
+        timeStampFormat, dateFormat,
+        isVarcharType = i < this.isVarcharTypeMapping.length && this.isVarcharTypeMapping(i))
     } }.toArray
-  }
 
   override def close(): Unit = {
   }

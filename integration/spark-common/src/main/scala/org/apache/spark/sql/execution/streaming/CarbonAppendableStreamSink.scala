@@ -40,6 +40,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonProperties
@@ -261,6 +262,15 @@ object CarbonAppendableStreamSink {
         }
 
         val rowSchema = queryExecution.analyzed.schema
+        val isVarcharTypeMapping = {
+          val col2VarcharType = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+            .getCreateOrderColumn(carbonLoadModel.getTableName).asScala
+            .map(c => c.getColName -> (c.getDataType == DataTypes.VARCHAR)).toMap
+          rowSchema.fieldNames.map(c => {
+            val r = col2VarcharType.get(c.toLowerCase)
+            r.isDefined && r.get
+          })
+        }
         // write data file
         result = sparkSession.sparkContext.runJob(queryExecution.toRdd,
           (taskContext: TaskContext, iterator: Iterator[InternalRow]) => {
@@ -272,7 +282,8 @@ object CarbonAppendableStreamSink {
               sparkAttemptNumber = taskContext.attemptNumber(),
               committer,
               iterator,
-              rowSchema
+              rowSchema,
+              isVarcharTypeMapping
             )
           })
 
@@ -319,7 +330,8 @@ object CarbonAppendableStreamSink {
       sparkAttemptNumber: Int,
       committer: FileCommitProtocol,
       iterator: Iterator[InternalRow],
-      rowSchema: StructType): (TaskCommitMessage, StreamFileIndex) = {
+      rowSchema: StructType,
+      isVarcharTypeMapping: Array[Boolean]): (TaskCommitMessage, StreamFileIndex) = {
 
     val jobId = CarbonInputFormatUtil.getJobId(new Date, sparkStageId)
     val taskId = new TaskID(jobId, TaskType.MAP, sparkPartitionId)
@@ -350,7 +362,8 @@ object CarbonAppendableStreamSink {
 
         val streamParser =
           Class.forName(parserName).newInstance.asInstanceOf[CarbonStreamParser]
-        streamParser.initialize(taskAttemptContext.getConfiguration, rowSchema)
+        streamParser.initialize(taskAttemptContext.getConfiguration,
+            rowSchema, isVarcharTypeMapping)
 
         blockIndex = StreamSegment.appendBatchData(new InputIterator(iterator, streamParser),
           taskAttemptContext, carbonLoadModel)
