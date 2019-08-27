@@ -443,9 +443,9 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
       case (_, _, sum, provider) =>
         provider.toLowerCase match {
           case `bloomFilterIdentifier` =>
-            allIndexSize += sum
-          case _ =>
             allDatamapSize += sum
+          case _ =>
+            allIndexSize += sum
         }
     }
     (allIndexSize, allDatamapSize)
