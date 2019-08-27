@@ -36,7 +36,8 @@ public interface CarbonStreamParser {
 
   String CARBON_STREAM_PARSER_DEFAULT = CARBON_STREAM_PARSER_ROW_PARSER;
 
-  void initialize(Configuration configuration, StructType structType);
+  void initialize(Configuration configuration,
+      StructType structType, boolean[] isVarcharTypeMapping);
 
   Object[] parserRow(InternalRow value);
 
