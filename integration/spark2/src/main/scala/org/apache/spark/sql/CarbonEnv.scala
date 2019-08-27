@@ -20,7 +20,7 @@ package org.apache.spark.sql
 import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
 import org.apache.spark.sql.execution.command.cache._
@@ -262,6 +262,23 @@ object CarbonEnv {
       databaseNameOp: Option[String]
   )(sparkSession: SparkSession): String = {
     databaseNameOp.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase)
+  }
+
+  /**
+   * Returns true with the database folder exists in file system. False in all other scenarios.
+   */
+  def databaseLocationExists(dbName: String,
+      sparkSession: SparkSession, ifExists: Boolean): Boolean = {
+    try {
+      FileFactory.getCarbonFile(getDatabaseLocation(dbName, sparkSession)).exists()
+    } catch {
+      case e: NoSuchDatabaseException =>
+        if (ifExists) {
+          false
+        } else {
+          throw e
+        }
+    }
   }
 
   /**

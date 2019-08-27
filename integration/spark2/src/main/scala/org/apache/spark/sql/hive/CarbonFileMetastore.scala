@@ -288,13 +288,13 @@ class CarbonFileMetastore extends CarbonMetaStore {
         Some(wrapperTableInfo)
       } else {
         val tableMetadataFile = CarbonTablePath.getSchemaFilePath(tablePath)
-        schemaRefreshTime = FileFactory
-          .getCarbonFile(CarbonTablePath.getSchemaFilePath(tablePath)).getLastModifiedTime
         val fileType = FileFactory.getFileType(tableMetadataFile)
         if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
           val tableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
           val wrapperTableInfo =
             schemaConverter.fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
+          schemaRefreshTime = FileFactory
+            .getCarbonFile(tableMetadataFile).getLastModifiedTime
           Some(wrapperTableInfo)
         } else {
           None
