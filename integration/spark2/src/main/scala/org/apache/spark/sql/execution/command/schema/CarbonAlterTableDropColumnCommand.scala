@@ -23,7 +23,7 @@ import scala.collection.mutable.ListBuffer
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableDropColumnModel, MetadataCommand}
 import org.apache.spark.sql.hive.CarbonSessionCatalog
-import org.apache.spark.util.AlterTableUtil
+import org.apache.spark.util.{AlterTableUtil, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -63,6 +63,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
           "alter table drop column is not supported for index datamap")
       }
       val partitionInfo = carbonTable.getPartitionInfo(tableName)
+      val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
       if (partitionInfo != null) {
         val partitionColumnSchemaList = partitionInfo.getColumnSchemaList.asScala
           .map(_.getColumnName)
@@ -74,9 +75,18 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
           throwMetadataException(dbName, tableName, "Partition columns cannot be dropped: " +
                                                   s"$partitionColumns")
         }
+
+        // this check is added because, when table have only two columns, one is partition and one
+        // is non partition, then dropping one column means, having table with only partition
+        // column, which is wrong
+        if (tableColumns.filterNot(col => alterTableDropColumnModel.columns
+          .contains(col.getColName)).map(_.getColName).equals(partitionColumnSchemaList)) {
+          throw new MalformedCarbonCommandException(
+            "alter table drop column is failed, cannot have the table with all columns as " +
+            "partition columns")
+        }
       }
 
-      val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
       var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
       .ColumnSchema]()
       // TODO: if deleted column list includes bucketted column throw an error
@@ -139,11 +149,24 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         schemaEvolutionEntry,
         tableInfo)(sparkSession)
       // get the columns in schema order and filter the dropped column in the column set
-      val cols = Some(carbonTable.getCreateOrderColumn(carbonTable.getTableName).asScala
-        .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema}
-        .filterNot(column => delCols.contains(column)))
+      val cols = carbonTable.getCreateOrderColumn(carbonTable.getTableName).asScala
+        .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema }
+        .filterNot(column => delCols.contains(column))
+      // In case of spark2.2 and above and , when we call
+      // alterExternalCatalogForTableWithUpdatedSchema to update the new schema to external catalog
+      // in case of drop column, spark gets the catalog table and then it itself adds the partition
+      // columns if the table is partition table for all the new data schema sent by carbon,
+      // so there will be duplicate partition columns, so send the columns without partition columns
+      val columns = if (SparkUtil.isSparkVersionXandAbove("2.2") &&
+                        carbonTable.isHivePartitionTable) {
+        val partitionColumns = partitionInfo.getColumnSchemaList.asScala
+        val carbonColumnsWithoutPartition = cols.filterNot(col => partitionColumns.contains(col))
+        Some(carbonColumnsWithoutPartition)
+      } else {
+        Some(cols)
+      }
       sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
-        .alterDropColumns(tableIdentifier, schemaParts, cols)
+        .alterDropColumns(tableIdentifier, schemaParts, columns)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       // TODO: 1. add check for deletion of index tables
       // delete dictionary files for dictionary column and clear dictionary cache from memory

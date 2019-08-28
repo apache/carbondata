@@ -21,10 +21,9 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, DataTypeInfo,
-  MetadataCommand}
+import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, DataTypeInfo, MetadataCommand}
 import org.apache.spark.sql.hive.CarbonSessionCatalog
-import org.apache.spark.util.AlterTableUtil
+import org.apache.spark.util.{AlterTableUtil, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -162,6 +161,18 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         isDataTypeChange = true
       }
       if (isDataTypeChange) {
+        // if column datatype change operation is on partition column, then fail the datatype change
+        // operation
+        if (SparkUtil.isSparkVersionXandAbove("2.2") && null != carbonTable.getPartitionInfo) {
+          val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList
+          partitionColumns.asScala.foreach {
+            col =>
+              if (col.getColumnName.equalsIgnoreCase(oldColumnName)) {
+                throw new MalformedCarbonCommandException(
+                  s"Alter datatype of the partition column $newColumnName is not allowed")
+              }
+          }
+        }
         validateColumnDataType(alterTableColRenameAndDataTypeChangeModel.dataTypeInfo,
           oldCarbonColumn.head)
       }
@@ -257,7 +268,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
    * @param carbonTable              carbonTable
    * @param tableInfo                tableInfo
    * @param addColumnSchema          added column schema
-   * @param schemaEvolutionEntryList new SchemaEvolutionEntry
+   * @param schemaEvolutionEntry     new SchemaEvolutionEntry
    */
   private def updateSchemaAndRefreshTable(sparkSession: SparkSession,
       carbonTable: CarbonTable,
@@ -275,12 +286,27 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
     // update the schema changed column at the specific index in carbonColumns based on schema order
     carbonColumns
       .update(schemaOrdinal, schemaConverter.fromExternalToWrapperColumnSchema(addColumnSchema))
+    // In case of spark2.2 and above and , when we call
+    // alterExternalCatalogForTableWithUpdatedSchema to update the new schema to external catalog
+    // in case of rename column or change datatype, spark gets the catalog table and then it itself
+    // adds the partition columns if the table is partition table for all the new data schema sent
+    // by carbon, so there will be duplicate partition columns, so send the columns without
+    // partition columns
+    val columns = if (SparkUtil.isSparkVersionXandAbove("2.2") &&
+                      carbonTable.isHivePartitionTable) {
+      val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList.asScala
+      val carbonColumnsWithoutPartition = carbonColumns.filterNot(col => partitionColumns.contains(
+        col))
+      Some(carbonColumnsWithoutPartition)
+    } else {
+      Some(carbonColumns)
+    }
     val (tableIdentifier, schemaParts) = AlterTableUtil.updateSchemaInfo(
       carbonTable,
       schemaEvolutionEntry,
       tableInfo)(sparkSession)
     sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
-      .alterColumnChangeDataTypeOrRename(tableIdentifier, schemaParts, Some(carbonColumns))
+      .alterColumnChangeDataTypeOrRename(tableIdentifier, schemaParts, columns)
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
   }
 
