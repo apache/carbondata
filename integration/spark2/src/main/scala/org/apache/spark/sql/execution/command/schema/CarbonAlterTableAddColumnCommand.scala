@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableColumnSchemaGenerator, MetadataCommand}
 import org.apache.spark.sql.hive.CarbonSessionCatalog
-import org.apache.spark.util.AlterTableUtil
+import org.apache.spark.util.{AlterTableUtil, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -102,12 +102,24 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
           carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
           thriftTable)(sparkSession)
+      // In case of spark2.2 and above and , when we call
+      // alterExternalCatalogForTableWithUpdatedSchema to update the new schema to external catalog
+      // in case of add column, spark gets the catalog table and then it itself adds the partition
+      // columns if the table is partition table for all the new data schema sent by carbon,
+      // so there will be duplicate partition columns, so send the columns without partition columns
+      val cols = if (SparkUtil.isSparkVersionXandAbove("2.2") && carbonTable.isHivePartitionTable) {
+        val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList.asScala
+        val carbonColumnsWithoutPartition = carbonColumns.filterNot(col => partitionColumns.contains
+        (col))
+        Some(carbonColumnsWithoutPartition ++ sortedColsBasedActualSchemaOrder)
+      } else {
+        Some(carbonColumns ++ sortedColsBasedActualSchemaOrder)
+      }
       sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].alterAddColumns(
-        tableIdentifier, schemaParts, Some(carbonColumns ++ sortedColsBasedActualSchemaOrder))
+        tableIdentifier, schemaParts, cols)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       val alterTablePostExecutionEvent: AlterTableAddColumnPostEvent =
-        new AlterTableAddColumnPostEvent(sparkSession,
-          carbonTable, alterTableAddColumnsModel)
+        AlterTableAddColumnPostEvent(sparkSession, carbonTable, alterTableAddColumnsModel)
       OperationListenerBus.getInstance.fireEvent(alterTablePostExecutionEvent, operationContext)
       LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
     } catch {

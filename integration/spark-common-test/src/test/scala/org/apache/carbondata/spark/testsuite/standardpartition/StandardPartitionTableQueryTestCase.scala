@@ -23,6 +23,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, Row}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
@@ -439,18 +440,26 @@ test("Creation of partition table should fail if the colname in table schema and
 
   test("validate data in partition table after dropping and adding a column") {
     sql("drop table if exists par")
-    sql("create table par(name string) partitioned by (age double) stored by " +
+    sql("create table par(name string, add string) partitioned by (age double) stored by " +
               "'carbondata' TBLPROPERTIES('cache_level'='blocklet')")
-    sql(s"load data local inpath '$resourcesPath/uniqwithoutheader.csv' into table par options" +
-        s"('header'='false')")
+    sql("insert into par select 'joey','NY',32 union all select 'chandler','NY',32")
     sql("alter table par drop columns(name)")
     sql("alter table par add columns(name string)")
-    sql(s"load data local inpath '$resourcesPath/uniqwithoutheader.csv' into table par options" +
-        s"('header'='false')")
-    checkAnswer(sql("select name from par"), Seq(Row("a"),Row("b"), Row(null), Row(null)))
+    sql("insert into par select 'joey','NY',32 union all select 'joey','NY',32")
+    checkAnswer(sql("select name from par"), Seq(Row("NY"),Row("NY"), Row(null), Row(null)))
     sql("drop table if exists par")
   }
 
+  test("test drop column when after dropping only partition column remains") {
+    sql("drop table if exists onlyPart")
+    sql("create table onlyPart(name string) partitioned by (age double) stored by " +
+        "'carbondata' TBLPROPERTIES('cache_level'='blocklet')")
+    val ex = intercept[MalformedCarbonCommandException] {
+      sql("alter table onlyPart drop columns(name)")
+    }
+    assert(ex.getMessage.contains("alter table drop column is failed, cannot have the table with all columns as partition column"))
+    sql("drop table if exists onlyPart")
+  }
 
   private def verifyPartitionInfo(frame: DataFrame, partitionNames: Seq[String]) = {
     val plan = frame.queryExecution.sparkPlan
@@ -488,6 +497,7 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop table if exists staticpartitionextlocload_new")
     sql("drop table if exists staticpartitionlocloadother_new")
     sql("drop table if exists par")
+    sql("drop table if exists onlyPart")
   }
 
 }
