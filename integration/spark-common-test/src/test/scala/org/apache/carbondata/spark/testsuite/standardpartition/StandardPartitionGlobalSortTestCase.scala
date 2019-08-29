@@ -19,8 +19,7 @@ package org.apache.carbondata.spark.testsuite.standardpartition
 import java.util
 import java.util.concurrent.{Callable, ExecutorService, Executors}
 
-import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
@@ -1088,6 +1087,5 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partitiondatadelete")
     sql("drop table if exists comp_dt2")
     sql("drop table if exists partitionNoColumn")
-    sql("drop table if exists part_alter")
   }
 }
