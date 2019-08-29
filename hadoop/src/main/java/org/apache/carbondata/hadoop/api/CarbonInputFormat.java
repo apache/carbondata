@@ -573,19 +573,29 @@ m filterExpression
       if (cgDataMapExprWrapper != null) {
         // Prune segments from already pruned blocklets
         DataMapUtil.pruneSegments(segmentIds, prunedBlocklets);
-        List<ExtendedBlocklet> cgPrunedBlocklets;
+        List<ExtendedBlocklet> cgPrunedBlocklets = new ArrayList<>();
+        boolean isCGPruneFallback = false;
         // Again prune with CG datamap.
-        if (distributedCG && dataMapJob != null) {
-          cgPrunedBlocklets = DataMapUtil
-              .executeDataMapJob(carbonTable, filter.getResolver(), dataMapJob, partitionsToPrune,
-                  segmentIds, invalidSegments, DataMapLevel.CG, true, new ArrayList<String>());
-        } else {
-          cgPrunedBlocklets = cgDataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+        try {
+          if (distributedCG && dataMapJob != null) {
+            cgPrunedBlocklets = DataMapUtil
+                .executeDataMapJob(carbonTable, filter.getResolver(), dataMapJob, partitionsToPrune,
+                    segmentIds, invalidSegments, DataMapLevel.CG, true, new ArrayList<String>());
+          } else {
+            cgPrunedBlocklets = cgDataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+          }
+        } catch (Exception e) {
+          isCGPruneFallback = true;
+          LOG.error("CG datamap pruning failed.", e);
         }
-        // since index datamap prune in segment scope,
-        // the result need to intersect with previous pruned result
-        prunedBlocklets =
-            intersectFilteredBlocklets(carbonTable, prunedBlocklets, cgPrunedBlocklets);
+        // If isCGPruneFallback = true, it means that CG datamap pruning failed,
+        // hence no need to do intersect and simply pass the prunedBlocklets from default datamap
+        if (!isCGPruneFallback) {
+          // since index datamap prune in segment scope,
+          // the result need to intersect with previous pruned result
+          prunedBlocklets =
+              intersectFilteredBlocklets(carbonTable, prunedBlocklets, cgPrunedBlocklets);
+        }
         if (ExplainCollector.enabled()) {
           ExplainCollector.recordCGDataMapPruning(
               DataMapWrapperSimpleInfo.fromDataMapWrapper(cgDataMapExprWrapper),
