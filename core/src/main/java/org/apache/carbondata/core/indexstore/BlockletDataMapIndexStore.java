@@ -80,7 +80,7 @@ public class BlockletDataMapIndexStore
     return get(identifierWrapper, null);
   }
 
-  private BlockletDataMapIndexWrapper get(TableBlockIndexUniqueIdentifierWrapper identifierWrapper,
+  public BlockletDataMapIndexWrapper get(TableBlockIndexUniqueIdentifierWrapper identifierWrapper,
       Map<String, Map<String, BlockMetaInfo>> segInfoCache) throws IOException {
     TableBlockIndexUniqueIdentifier identifier =
         identifierWrapper.getTableBlockIndexUniqueIdentifier();
