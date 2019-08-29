@@ -567,9 +567,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         }
         val tableLocation = catalogTable.storage.locationUri match {
           case tableLoc@Some(uri) =>
-            if (tableLoc.get.isInstanceOf[URI]) {
-              FileFactory.getUpdatedFilePath(tableLoc.get.asInstanceOf[URI].getPath)
-            }
+            FileFactory.getUpdatedFilePath(tableLoc.get.toString)
           case None =>
             CarbonEnv.getTablePath(tableIdentifier.database, tableIdentifier.table)(sparkSession)
         }
