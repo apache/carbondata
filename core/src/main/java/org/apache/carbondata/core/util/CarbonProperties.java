@@ -1773,4 +1773,20 @@ public final class CarbonProperties {
       }
     }
   }
+
+  /**
+   * Validate and get query prefetch enable
+   *
+   * @return boolean prefetch value
+   */
+  public static Boolean getQueryPrefetchEnable() {
+    String prefetchEnable = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_QUERY_PREFETCH_ENABLE);
+    if (prefetchEnable == null) {
+      return Boolean.parseBoolean(CarbonCommonConstants.CARBON_QUERY_PREFETCH_ENABLE_DEFAULT);
+    } else {
+      // return false only if false is set. any other case return true
+      return !prefetchEnable.equalsIgnoreCase("false");
+    }
+  }
 }

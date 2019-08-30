@@ -1483,6 +1483,15 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT = "4";
 
+  /*
+   * whether to enable prefetch for query
+   */
+  @CarbonProperty
+  public static final String CARBON_QUERY_PREFETCH_ENABLE =
+      "carbon.query.prefetch.enable";
+
+  public static final String CARBON_QUERY_PREFETCH_ENABLE_DEFAULT = "true";
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Datamap parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////
