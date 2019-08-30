@@ -34,6 +34,7 @@ import org.apache.carbondata.core.scan.expression.UnknownExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
@@ -110,7 +111,7 @@ public class QueryModel {
   // whether to clear/free unsafe memory or not
   private boolean freeUnsafeMemory = true;
 
-  private boolean preFetchData = true;
+  private boolean preFetchData;
 
   /**
    * It fills the vector directly from decoded column page with out any staging and conversions.
@@ -125,6 +126,7 @@ public class QueryModel {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     this.table = carbonTable;
     this.queryId = String.valueOf(System.nanoTime());
+    this.preFetchData = CarbonProperties.getQueryPrefetchEnable();
   }
 
   public static QueryModel newInstance(CarbonTable carbonTable) {

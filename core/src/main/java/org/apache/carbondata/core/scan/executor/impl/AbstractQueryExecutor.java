@@ -493,7 +493,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             segmentProperties.getDimensionOrdinalToChunkMapping().size());
     if (queryModel.isReadPageByPage()) {
       blockExecutionInfo.setPrefetchBlocklet(false);
+      LOGGER.info("Query prefetch is: false, read page by page");
     } else {
+      LOGGER.info("Query prefetch is: " + queryModel.isPreFetchData());
       blockExecutionInfo.setPrefetchBlocklet(queryModel.isPreFetchData());
     }
     // In case of fg datamap it should not go to direct fill.
