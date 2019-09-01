@@ -87,8 +87,7 @@ public final class DataMapStoreManager {
 
   private Map<String, TableSegmentRefresher> segmentRefreshMap = new ConcurrentHashMap<>();
 
-  private DataMapSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
-      CarbonProperties.getInstance().getSystemFolderLocation());
+  private DataMapSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider();
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataMapStoreManager.class.getName());

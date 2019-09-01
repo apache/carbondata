@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
  * example: bloom datamap, Lucene datamap
  */
 case class CreateDataMapPostExecutionEvent(sparkSession: SparkSession,
-    storePath: String, tableIdentifier: Option[TableIdentifier], dmProviderName: String)
+    systemPath: String, tableIdentifier: Option[TableIdentifier], dmProviderName: String)
   extends Event with CreateDataMapEventsInfo
 
 /**
@@ -35,7 +35,7 @@ case class CreateDataMapPostExecutionEvent(sparkSession: SparkSession,
  * example: bloom datamap, Lucene datamap
  */
 case class UpdateDataMapPreExecutionEvent(sparkSession: SparkSession,
-    storePath: String, tableIdentifier: TableIdentifier)
+    systemPath: String, tableIdentifier: TableIdentifier)
   extends Event with CreateDataMapEventsInfo
 
 /**
@@ -44,7 +44,7 @@ case class UpdateDataMapPreExecutionEvent(sparkSession: SparkSession,
  * example: bloom datamap, Lucene datamap
  */
 case class UpdateDataMapPostExecutionEvent(sparkSession: SparkSession,
-    storePath: String, tableIdentifier: TableIdentifier)
+    systemPath: String, tableIdentifier: TableIdentifier)
   extends Event with CreateDataMapEventsInfo
 
 /**
@@ -76,6 +76,6 @@ case class BuildDataMapPostExecutionEvent(sparkSession: SparkSession,
  * example: bloom datamap, Lucene datamap
  */
 case class CreateDataMapPreExecutionEvent(sparkSession: SparkSession,
-    storePath: String, tableIdentifier: TableIdentifier)
+    systemPath: String, tableIdentifier: TableIdentifier)
   extends Event with CreateDataMapEventsInfo
 

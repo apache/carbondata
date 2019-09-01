@@ -140,8 +140,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     val extraTableTuple = (cols, external, tableIdentifier, ifNotExists, colNames, tablePath,
       tableProperties, properties, partitionByStructFields, partitionFields,
       parser, sparkSession, selectQuery)
-    CarbonSparkSqlParserUtil
-      .createCarbonTable(createTableTuple, extraTableTuple)
+    CarbonSparkSqlParserUtil.createCarbonTable(createTableTuple, extraTableTuple)
   }
 }
 

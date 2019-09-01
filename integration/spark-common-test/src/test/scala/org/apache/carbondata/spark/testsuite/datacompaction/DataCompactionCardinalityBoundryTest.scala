@@ -18,7 +18,7 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
@@ -76,7 +76,7 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
 
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
           AbsoluteTableIdentifier.from(
-            CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
+            CarbonEnv.getWarehousePath(sqlContext.sparkSession),
             new CarbonTableIdentifier("default", "cardinalityTest", "1")
           )
       )

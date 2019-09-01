@@ -51,8 +51,7 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
         FileFactory.getCarbonFile(CarbonProperties.getInstance().getSystemFolderLocation()));
   }
 
-  private DiskBasedDMSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
-      CarbonProperties.getInstance().getSystemFolderLocation());
+  private DiskBasedDMSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider();
 
   @Test public void testSaveSchema() throws IOException, NoSuchDataMapException {
     DataMapSchema dataMapSchema = createDataMapSchema("dm1", "table1");
@@ -101,8 +100,7 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
     Thread.sleep(400);
     provider.saveSchema(dataMapSchema2);
     Thread.sleep(400);
-    DiskBasedDMSchemaStorageProvider provider1 = new DiskBasedDMSchemaStorageProvider(
-        CarbonProperties.getInstance().getSystemFolderLocation());
+    DiskBasedDMSchemaStorageProvider provider1 = new DiskBasedDMSchemaStorageProvider();
     provider1.saveSchema(dataMapSchema3);
     Thread.sleep(400);
 
@@ -128,8 +126,7 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
     provider.saveSchema(dataMapSchema3);
     Thread.sleep(400);
 
-    DiskBasedDMSchemaStorageProvider provider1 = new DiskBasedDMSchemaStorageProvider(
-        CarbonProperties.getInstance().getSystemFolderLocation());
+    DiskBasedDMSchemaStorageProvider provider1 = new DiskBasedDMSchemaStorageProvider();
     provider1.dropSchema(dataMapSchema3.getDataMapName());
     Thread.sleep(400);
 

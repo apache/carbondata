@@ -1861,7 +1861,7 @@ public final class CarbonUtil {
    * @param badRecordsLocation
    * @return
    */
-  public static boolean isValidBadStorePath(String badRecordsLocation) {
+  public static boolean isValidBadRecordPath(String badRecordsLocation) {
     if (StringUtils.isEmpty(badRecordsLocation)) {
       return false;
     } else {

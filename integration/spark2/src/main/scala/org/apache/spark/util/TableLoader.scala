@@ -54,13 +54,6 @@ object TableLoader {
     immutable.Map(map.toSeq: _*)
   }
 
-  def extractStorePath(map: immutable.Map[String, String]): String = {
-    map.get(CarbonCommonConstants.STORE_LOCATION) match {
-      case Some(path) => path
-      case None => throw new Exception(s"${CarbonCommonConstants.STORE_LOCATION} can't be empty")
-    }
-  }
-
   def loadTable(spark: SparkSession, dbName: Option[String], tableName: String, inputPaths: String,
       options: scala.collection.immutable.Map[String, String]): Unit = {
     CarbonLoadDataCommand(dbName, tableName, inputPaths, Nil, options, false).run(spark)
@@ -68,14 +61,13 @@ object TableLoader {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
-      System.err.println("Usage: TableLoader <properties file> <table name> <input files>")
+      System.err.println("Usage: TableLoader <properties file> <store path> <table name> <input files>")
       System.exit(1)
     }
     System.out.println("parameter list:")
     args.foreach(System.out.println)
     val map = extractOptions(TableAPIUtil.escape(args(0)))
-    val storePath = extractStorePath(map)
-    System.out.println(s"${CarbonCommonConstants.STORE_LOCATION}:$storePath")
+    val storePath = TableAPIUtil.escape(args(1))
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     System.out.println(s"table name: $dbName.$tableName")
     val inputPaths = TableAPIUtil.escape(args(2))

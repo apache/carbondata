@@ -64,7 +64,7 @@ trait CarbonMetaStore {
    * @param newTableIdentifier
    * @param thriftTableInfo
    * @param schemaEvolutionEntry
-   * @param carbonStorePath
+   * @param tablePath
    * @param sparkSession
    */
   def updateTableSchemaForAlter(
@@ -72,20 +72,20 @@ trait CarbonMetaStore {
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      carbonStorePath: String)(sparkSession: SparkSession): String
+      tablePath: String)(sparkSession: SparkSession): String
 
   /**
    * This method will overwrite the existing schema and update it with the given details
    *
    * @param newTableIdentifier
    * @param thriftTableInfo
-   * @param carbonStorePath
+   * @param tablePath
    * @param sparkSession
    */
   def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      carbonStorePath: String)(sparkSession: SparkSession): String
+      tablePath: String)(sparkSession: SparkSession): String
 
   /**
    * This method will is used to remove the evolution entry in case of failure.

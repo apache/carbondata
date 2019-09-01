@@ -798,13 +798,6 @@ public final class CarbonProperties {
   }
 
   /**
-   * Return the store path
-   */
-  public static String getStorePath() {
-    return getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION);
-  }
-
-  /**
    * This method will be used to get the properties value
    *
    * @param key property key
@@ -1509,12 +1502,10 @@ public final class CarbonProperties {
     String systemLocation = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION);
     if (systemLocation == null) {
-      systemLocation = getStorePath();
+      throw new RuntimeException("carbon.system.folder.location property is required");
     }
-    if (systemLocation != null) {
-      systemLocation = CarbonUtil.checkAndAppendFileSystemURIScheme(systemLocation);
-      systemLocation = FileFactory.getUpdatedFilePath(systemLocation);
-    }
+    systemLocation = CarbonUtil.checkAndAppendFileSystemURIScheme(systemLocation);
+    systemLocation = FileFactory.getUpdatedFilePath(systemLocation);
     return systemLocation + CarbonCommonConstants.FILE_SEPARATOR + "_system";
   }
 

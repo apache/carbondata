@@ -179,9 +179,9 @@ class CarbonFileMetastore extends CarbonMetaStore {
   def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      carbonStorePath: String)(sparkSession: SparkSession): String = {
+      tablePath: String)(sparkSession: SparkSession): String = {
     updateTableSchemaForAlter(newTableIdentifier,
-      oldTableIdentifier, thriftTableInfo, null, carbonStorePath) (sparkSession)
+      oldTableIdentifier, thriftTableInfo, null, tablePath) (sparkSession)
   }
 
   def lookupRelation(dbName: Option[String], tableName: String)

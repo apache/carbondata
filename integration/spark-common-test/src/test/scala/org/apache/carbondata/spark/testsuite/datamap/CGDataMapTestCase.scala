@@ -349,7 +349,6 @@ class CGDataMapWriter(
 class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/compaction/fil2.csv"
-  val systemFolderStoreLocation = CarbonProperties.getInstance().getSystemFolderLocation
 
   override protected def beforeAll(): Unit = {
     //n should be about 5000000 of reset if size is default 1024
@@ -487,7 +486,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
          |dmproperties('index_columns'='name')
        """.stripMargin)
 
-    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap")
+    val loc = new DiskBasedDMSchemaStorageProvider().getSchemaPath("test_cg_datamap")
 
     assert(FileFactory.isFileExist(loc))
   }
@@ -509,7 +508,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
          |dmproperties('index_columns'='name')
        """.stripMargin)
 
-    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap1")
+    val loc = new DiskBasedDMSchemaStorageProvider().getSchemaPath("test_cg_datamap1")
 
     assert(FileFactory.isFileExist(loc))
 
@@ -535,7 +534,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
          |dmproperties('index_columns'='name')
        """.stripMargin)
 
-    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation,"test_cg_datamap2")
+    val loc = new DiskBasedDMSchemaStorageProvider().getSchemaPath("test_cg_datamap2")
 
     assert(FileFactory.isFileExist(loc))
 

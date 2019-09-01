@@ -335,9 +335,9 @@ object CarbonStore {
   def isSegmentValid(
       dbName: String,
       tableName: String,
-      storePath: String,
+      tablePath: String,
       segmentId: String): Boolean = {
-    val identifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName, tableName)
+    val identifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName, tableName)
     val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
         SegmentStatusManager(
           identifier).getValidAndInvalidSegments

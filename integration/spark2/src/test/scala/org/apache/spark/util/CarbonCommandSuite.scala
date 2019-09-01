@@ -23,6 +23,7 @@ import java.util.Date
 
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.common.util.Spark2QueryTest
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.api.CarbonStore
@@ -108,7 +109,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   private lazy val location =
-    CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
+    CarbonEnv.getWarehousePath(TestQueryExecutor.INSTANCE.sqlContext.sparkSession)
 
 
   test("delete segment by id") {

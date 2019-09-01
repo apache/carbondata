@@ -80,11 +80,11 @@ public class TableProcessingOperations {
             .getSegmentIdFromPath(listFiles[k].getAbsolutePath() + "/dummy");
         if (isCompactionFlow) {
           if (segmentId.contains(".")) {
-            CarbonLoaderUtil.deleteStorePath(listFiles[k].getAbsolutePath());
+            CarbonLoaderUtil.deleteRecursively(listFiles[k].getAbsolutePath());
           }
         } else {
           if (!segmentId.contains(".")) {
-            CarbonLoaderUtil.deleteStorePath(listFiles[k].getAbsolutePath());
+            CarbonLoaderUtil.deleteRecursively(listFiles[k].getAbsolutePath());
           }
         }
       }

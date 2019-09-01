@@ -133,19 +133,19 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
    *
    * @param newTableIdentifier
    * @param thriftTableInfo
-   * @param carbonTablePath
+   * @param tablePath
    * @param sparkSession
    */
   override def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      carbonTablePath: String)(sparkSession: SparkSession): String = {
+      tablePath: String)(sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     updateHiveMetaStoreForAlter(
       newTableIdentifier,
       oldTableIdentifier,
       thriftTableInfo,
-      carbonTablePath,
+      tablePath,
       sparkSession,
       schemaConverter)
   }

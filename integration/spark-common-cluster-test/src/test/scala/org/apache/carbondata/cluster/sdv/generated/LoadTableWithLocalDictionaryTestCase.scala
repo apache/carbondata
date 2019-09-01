@@ -43,7 +43,7 @@ class LoadTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAfter
 
   val file2 = resourcesPath + "/local_dictionary_complex_data.csv"
 
-  val storePath = warehouse + "/local2/Fact/Part0/Segment_0"
+  val segmentPath = warehouse + "/local2/Fact/Part0/Segment_0"
 
   override protected def beforeAll(): Unit = {
     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.BLOCKLET_SIZE, "10000")
@@ -238,7 +238,7 @@ class LoadTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAfter
    * @return
    */
   private def getDimRawChunk(blockindex: Int): util.ArrayList[DimensionRawColumnChunk] = {
-    val dataFiles = FileFactory.getCarbonFile(storePath)
+    val dataFiles = FileFactory.getCarbonFile(segmentPath)
       .listFiles(new CarbonFileFilter() {
         override def accept(file: CarbonFile): Boolean = {
           if (file.getName

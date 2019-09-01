@@ -187,7 +187,7 @@ trait SessionEventInfo {
  */
 trait CreateDataMapEventsInfo {
   val sparkSession: SparkSession
-  val storePath: String
+  val systemPath: String
 }
 
 /**

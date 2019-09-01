@@ -36,6 +36,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
@@ -48,7 +49,7 @@ import org.apache.hadoop.fs.permission.FsPermission;
  */
 public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStorageProvider {
 
-  private String storePath;
+  private String systemPath;
 
   private String mdtFilePath;
 
@@ -56,16 +57,17 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
   private Set<DataMapSchema> dataMapSchemas = new HashSet<>();
 
-  public DiskBasedDMSchemaStorageProvider(String storePath) {
-    this.storePath = CarbonUtil.checkAndAppendHDFSUrl(storePath);
-    this.mdtFilePath = storePath + CarbonCommonConstants.FILE_SEPARATOR + "datamap.mdtfile";
+  public DiskBasedDMSchemaStorageProvider() {
+    String path = CarbonProperties.getInstance().getSystemFolderLocation();
+    this.systemPath = CarbonUtil.checkAndAppendHDFSUrl(path);
+    this.mdtFilePath = this.systemPath + CarbonCommonConstants.FILE_SEPARATOR + "datamap.mdtfile";
   }
 
   @Override public void saveSchema(DataMapSchema dataMapSchema) throws IOException {
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();
-    String schemaPath = getSchemaPath(storePath, dataMapSchema.getDataMapName());
+    String schemaPath = getSchemaPath(dataMapSchema.getDataMapName());
     FileFactory.FileType fileType = FileFactory.getFileType(schemaPath);
     if (FileFactory.isFileExist(schemaPath, fileType)) {
       throw new IOException(
@@ -73,7 +75,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     }
     // write the datamap shema in json format.
     try {
-      FileFactory.mkdirs(storePath, fileType);
+      FileFactory.mkdirs(systemPath, fileType);
       FileFactory.createNewFile(schemaPath, fileType);
       dataOutputStream =
           FileFactory.getDataOutputStream(schemaPath, fileType);
@@ -132,7 +134,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
   private Set<DataMapSchema> retrieveAllSchemasInternal() throws IOException {
     Set<DataMapSchema> dataMapSchemas = new HashSet<>();
-    CarbonFile carbonFile = FileFactory.getCarbonFile(storePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(systemPath);
     CarbonFile[] carbonFiles = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
         return file.getName().endsWith(".dmschema");
@@ -162,7 +164,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
   @Override public void dropSchema(String dataMapName)
       throws IOException {
-    String schemaPath = getSchemaPath(storePath, dataMapName);
+    String schemaPath = getSchemaPath(dataMapName);
     if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
       throw new IOException("DataMap with name " + dataMapName + " does not exists in storage");
     }
@@ -195,9 +197,8 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   }
 
   private void touchMDTFile() throws IOException {
-    if (!FileFactory.isFileExist(storePath)) {
-      FileFactory.createDirectoryAndSetPermission(
-          storePath,
+    if (!FileFactory.isFileExist(systemPath)) {
+      FileFactory.createDirectoryAndSetPermission(systemPath,
           new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
     }
     if (!FileFactory.isFileExist(mdtFilePath)) {
@@ -214,12 +215,11 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
   /**
    * it returns the schema path for the datamap
-   * @param storePath
    * @param dataMapName
    * @return
    */
-  public static String getSchemaPath(String storePath, String dataMapName) {
-    String schemaPath =  storePath + CarbonCommonConstants.FILE_SEPARATOR + dataMapName
+  public String getSchemaPath(String dataMapName) {
+    String schemaPath =  systemPath + CarbonCommonConstants.FILE_SEPARATOR + dataMapName
         + ".dmschema";;
     return schemaPath;
   }

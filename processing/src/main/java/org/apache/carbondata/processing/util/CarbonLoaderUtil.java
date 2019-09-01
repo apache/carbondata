@@ -97,7 +97,7 @@ public final class CarbonLoaderUtil {
   public static void deleteSegment(CarbonLoadModel loadModel, int currentLoad) {
     String segmentPath = CarbonTablePath.getSegmentPath(
         loadModel.getTablePath(), currentLoad + "");
-    deleteStorePath(segmentPath);
+    deleteRecursively(segmentPath);
   }
 
   /**
@@ -136,7 +136,7 @@ public final class CarbonLoaderUtil {
     return true;
   }
 
-  public static void deleteStorePath(String path) {
+  public static void deleteRecursively(String path) {
     try {
       FileType fileType = FileFactory.getFileType(path);
       if (FileFactory.isFileExist(path, fileType)) {

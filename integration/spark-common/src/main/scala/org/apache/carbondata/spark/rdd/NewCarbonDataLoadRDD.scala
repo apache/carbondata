@@ -66,7 +66,6 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
 
 class SparkPartitionLoader(model: CarbonLoadModel,
     splitIndex: Long,
-    storePath: String,
     loadMetadataDetails: LoadMetadataDetails) {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -137,7 +136,6 @@ class NewCarbonDataLoadRDD[K, V](
         val recordReaders = getInputIterators
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
-          null,
           loadMetadataDetails)
         // Initialize to set carbon properties
         loader.initialize()
@@ -278,7 +276,6 @@ class NewDataFrameLoaderRDD[K, V](
         }
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
-          null,
           loadMetadataDetails)
         // Initialize to set carbon properties
         loader.initialize()
@@ -476,7 +473,6 @@ class PartitionTableDataLoaderRDD[K, V](
 
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
-          null,
           loadMetadataDetails)
         // Initialize to set carbon properties
         loader.initialize()

@@ -109,7 +109,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           CarbonEnv.getDatabaseLocation(dbName, sparkSession)
         } catch {
           case e: NoSuchDatabaseException =>
-            CarbonProperties.getStorePath
+            CarbonEnv.getWarehousePath(sparkSession)
         }
         ThreadLocalSessionInfo
           .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())

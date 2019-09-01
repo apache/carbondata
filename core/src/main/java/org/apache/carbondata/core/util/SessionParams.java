@@ -178,7 +178,7 @@ public class SessionParams implements Serializable, Cloneable {
         }
         break;
       case CARBON_OPTIONS_BAD_RECORD_PATH:
-        isValid = CarbonUtil.isValidBadStorePath(value);
+        isValid = CarbonUtil.isValidBadRecordPath(value);
         if (!isValid) {
           throw new InvalidConfigurationException("Invalid bad records location.");
         }

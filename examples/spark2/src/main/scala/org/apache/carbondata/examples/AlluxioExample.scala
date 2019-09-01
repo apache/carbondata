@@ -38,8 +38,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
  */
 object AlluxioExample {
   def main (args: Array[String]) {
-    val carbon = ExampleUtils.createCarbonSession("AlluxioExample",
-      storePath = "alluxio://localhost:19998/carbondata")
+    val carbon = ExampleUtils.createCarbonSession("AlluxioExample")
     val runShell: Boolean = if (null != args && args.length > 0) {
       args(0).toBoolean
     } else {

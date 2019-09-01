@@ -35,12 +35,6 @@ public final class CarbonCommonConstants {
   // property value
 
   /**
-   * location of the carbon member, hierarchy and fact files
-   */
-  @CarbonProperty
-  public static final String STORE_LOCATION = "carbon.storelocation";
-
-  /**
    * blocklet size in carbon file
    */
   @CarbonProperty

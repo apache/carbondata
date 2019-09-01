@@ -216,7 +216,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       if (parameters.contains("tablePath")) {
         (parameters("tablePath"), parameters)
       } else if (!sparkSession.isInstanceOf[CarbonSession]) {
-        (CarbonProperties.getStorePath + "/" + dbName + "/" + tableName, parameters)
+        (CarbonEnv.getWarehousePath(sparkSession) + "/" + dbName + "/" + tableName, parameters)
       } else {
         (CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession), parameters)
       }

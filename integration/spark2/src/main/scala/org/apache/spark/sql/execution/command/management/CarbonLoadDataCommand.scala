@@ -396,7 +396,7 @@ case class CarbonLoadDataCommand(
     } finally {
       releaseConcurrentLoadLock(concurrentLoadLock, LOGGER)
       // Once the data load is successful delete the unwanted partition files
-      val partitionLocation = CarbonProperties.getStorePath + "/partition/" +
+      val partitionLocation = CarbonEnv.getWarehousePath(sparkSession) + "/partition/" +
                               table.getDatabaseName + "/" +
                               table.getTableName + "/"
       val fileType = FileFactory.getFileType(partitionLocation)

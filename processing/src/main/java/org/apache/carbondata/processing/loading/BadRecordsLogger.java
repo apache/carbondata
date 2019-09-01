@@ -56,7 +56,7 @@ public class BadRecordsLogger {
   /**
    * Store path
    */
-  private String storePath;
+  private String badRecordStorePath;
   /**
    * FileChannel
    */
@@ -91,13 +91,13 @@ public class BadRecordsLogger {
 
   // private final Object syncObject =new Object();
 
-  public BadRecordsLogger(String key, String fileName, String storePath,
+  public BadRecordsLogger(String key, String fileName, String badRecordStorePath,
       boolean badRecordsLogRedirect, boolean badRecordLoggerEnable,
       boolean badRecordConvertNullDisable, boolean isDataLoadFail) {
     // Initially no bad rec
     taskKey = key;
     this.fileName = fileName;
-    this.storePath = storePath;
+    this.badRecordStorePath = badRecordStorePath;
     this.badRecordsLogRedirect = badRecordsLogRedirect;
     this.badRecordLoggerEnable = badRecordLoggerEnable;
     this.badRecordConvertNullDisable = badRecordConvertNullDisable;
@@ -172,15 +172,16 @@ public class BadRecordsLogger {
       throws CarbonDataLoadingException {
     if (null == logFilePath) {
       logFilePath =
-          this.storePath + File.separator + this.fileName + CarbonCommonConstants.LOG_FILE_EXTENSION
+          this.badRecordStorePath + File.separator + this.fileName +
+              CarbonCommonConstants.LOG_FILE_EXTENSION
               + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     }
     try {
       if (null == bufferedWriter) {
-        FileType fileType = FileFactory.getFileType(storePath);
-        if (!FileFactory.isFileExist(this.storePath, fileType)) {
+        FileType fileType = FileFactory.getFileType(badRecordStorePath);
+        if (!FileFactory.isFileExist(this.badRecordStorePath, fileType)) {
           // create the folders if not exist
-          FileFactory.mkdirs(this.storePath, fileType);
+          FileFactory.mkdirs(this.badRecordStorePath, fileType);
 
           // create the files
           FileFactory.createNewFile(logFilePath, fileType);
@@ -212,15 +213,16 @@ public class BadRecordsLogger {
       throws CarbonDataLoadingException {
     if (null == csvFilePath) {
       csvFilePath =
-          this.storePath + File.separator + this.fileName + CarbonCommonConstants.CSV_FILE_EXTENSION
+          this.badRecordStorePath + File.separator + this.fileName
+              + CarbonCommonConstants.CSV_FILE_EXTENSION
               + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     }
     try {
       if (null == bufferedCSVWriter) {
-        FileType fileType = FileFactory.getFileType(storePath);
-        if (!FileFactory.isFileExist(this.storePath, fileType)) {
+        FileType fileType = FileFactory.getFileType(badRecordStorePath);
+        if (!FileFactory.isFileExist(this.badRecordStorePath, fileType)) {
           // create the folders if not exist
-          FileFactory.mkdirs(this.storePath, fileType);
+          FileFactory.mkdirs(this.badRecordStorePath, fileType);
 
           // create the files
           FileFactory.createNewFile(csvFilePath, fileType);
