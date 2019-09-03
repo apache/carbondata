@@ -172,6 +172,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     isValidPlan
   }
   override def apply(plan: LogicalPlan): LogicalPlan = {
+    updatedExpression.clear()
     var needAnalysis = true
     plan.transformExpressions {
       // first check if any preAgg scala function is applied it is present is in plan
