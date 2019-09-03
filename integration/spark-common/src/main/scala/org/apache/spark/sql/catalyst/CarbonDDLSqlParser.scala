@@ -124,6 +124,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val PARTITIONS = carbonKeyWord("PARTITIONS")
   protected val QUOTECHAR = carbonKeyWord("QUOTECHAR")
   protected val RELATION = carbonKeyWord("RELATION")
+  protected val REPEATED = carbonKeyWord("REPEATED")
   protected val SCHEMA = carbonKeyWord("SCHEMA")
   protected val SCHEMAS = carbonKeyWord("SCHEMAS")
   protected val SET = Keyword("SET")

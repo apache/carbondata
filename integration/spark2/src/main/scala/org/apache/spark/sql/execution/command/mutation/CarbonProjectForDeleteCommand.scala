@@ -19,10 +19,12 @@ package org.apache.spark.sql.execution.command.mutation
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{Join, LogicalPlan}
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.LongType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -50,6 +52,40 @@ private[sql] case class CarbonProjectForDeleteCommand(
     timestamp: String)
   extends DataCommand {
 
+  var isDeleteRepeat = false
+  var deleteSegment: String = null
+  var repeatedSegments: String = null
+
+  def getDataRdd(
+      sparkSession: SparkSession,
+      plan: LogicalPlan): RDD[Row] = {
+    val newPlan = if (isDeleteRepeat) {
+      Dataset.ofRows(sparkSession, plan).queryExecution.optimizedPlan transform {
+        case Join(left, right, j, c) =>
+          val newLeft = left transform {
+            case LogicalRelation(relation: CarbonDatasourceHadoopRelation, o, c, s) =>
+              val r = relation.copy()
+              r.segmentsForDelete = deleteSegment
+              LogicalRelation(r, o, c, s)
+            case other => other
+          }
+          val newRight = right transform {
+            case LogicalRelation(relation: CarbonDatasourceHadoopRelation, o, c, s) =>
+              val r = relation.copy()
+              r.segmentsForDelete = repeatedSegments
+              LogicalRelation(r, o, c, s)
+            case other => other
+          }
+          Join(newLeft, newRight, j, c)
+        case other => other
+      }
+    } else {
+      plan
+    }
+    val dataFrame = Dataset.ofRows(sparkSession, newPlan)
+    dataFrame.rdd
+  }
+
   override val output: Seq[Attribute] = {
     Seq(AttributeReference("Deleted Row Count", LongType, nullable = false)())
   }
@@ -73,8 +109,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
     }
 
     IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
-    val dataFrame = Dataset.ofRows(sparkSession, plan)
-    val dataRdd = dataFrame.rdd
+    val dataRdd = getDataRdd(sparkSession, plan)
 
     // trigger event for Delete from table
     val operationContext = new OperationContext

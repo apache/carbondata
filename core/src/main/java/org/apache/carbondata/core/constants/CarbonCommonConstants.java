@@ -2254,4 +2254,7 @@ public final class CarbonCommonConstants {
    * hive column-name maximum length
    */
   public static final int MAXIMUM_CHAR_LENGTH = 128;
+
+  public static final String DELETE_REPEATED_SEGMENT_NUMBER = "delete.repeated.segment.number";
+  public static final String DELETE_REPEATED_SEGMENT_NUMBER_DEFAULT = "10";
 }

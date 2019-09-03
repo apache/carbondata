@@ -78,7 +78,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
     alterPartition | datamapManagement | alterTableFinishStreaming | stream | cli |
-    cacheManagement | alterDataMap
+    cacheManagement | alterDataMap | deleteRepeated
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -322,7 +322,18 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         rel
     }
 
-
+  protected lazy val deleteRepeated: Parser[LogicalPlan] = {
+    DELETE ~> REPEATED ~> ident ~
+    (FROM ~> (ident <~ ".").?) ~ ident ~
+    (WHERE ~> SEGMENT ~> "." ~> ID ~> "=" ~> segmentId) ^^ {
+      case column ~ database ~ table ~ segmentId =>
+        CarbonDeleteRepeatedCommand(
+          database,
+          table,
+          column,
+          segmentId)
+    }
+  }
 
   private def updateRelation(
       r: UnresolvedRelation,

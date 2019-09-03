@@ -344,7 +344,7 @@ object CarbonStore {
     validAndInvalidSegments.getValidSegments.contains(segmentId)
   }
 
-  private def validateTimeFormat(timestamp: String): Long = {
+  def validateTimeFormat(timestamp: String): Long = {
     try {
       DateTimeUtils.stringToTimestamp(UTF8String.fromString(timestamp)).get
     } catch {
