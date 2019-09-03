@@ -18,10 +18,13 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.parser.ParserInterface
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
 import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonPreAggregateDataLoadingRules, CarbonPreAggregateQueryRules, CarbonPreInsertionCasts}
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
+import org.apache.spark.util.CarbonReflectionUtils
 
 class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
 
@@ -47,6 +50,19 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
     extensions
       .injectPostHocResolutionRule(
         (session: SparkSession) => new CarbonPreAggregateQueryRules(session))
+    extensions
+      .injectPostHocResolutionRule(
+        (session: SparkSession) => {
+          try {
+            CarbonReflectionUtils.createObject(
+              "org.apache.carbondata.mv.datamap.MVAnalyzerRule",
+              session)._1.asInstanceOf[Rule[LogicalPlan]]
+          } catch {
+            case e: Exception =>
+              null
+          }
+        })
+
 
     // carbon extra optimizations
     extensions
