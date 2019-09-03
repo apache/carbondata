@@ -24,7 +24,7 @@ import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStr
 import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonPreAggregateDataLoadingRules, CarbonPreAggregateQueryRules, CarbonPreInsertionCasts}
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
-import org.apache.spark.util.CarbonReflectionUtils
+import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
 
@@ -50,19 +50,28 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
     extensions
       .injectPostHocResolutionRule(
         (session: SparkSession) => new CarbonPreAggregateQueryRules(session))
-    extensions
-      .injectPostHocResolutionRule(
-        (session: SparkSession) => {
-          try {
-            CarbonReflectionUtils.createObject(
-              "org.apache.carbondata.mv.datamap.MVAnalyzerRule",
-              session)._1.asInstanceOf[Rule[LogicalPlan]]
-          } catch {
-            case e: Exception =>
-              null
-          }
-        })
 
+    val mv = try {
+      Utils.classForName("org.apache.carbondata.mv.datamap.MVAnalyzerRule")
+    } catch {
+      case e: Exception =>
+        null
+    }
+
+    if(mv != null) {
+      extensions
+        .injectPostHocResolutionRule(
+          (session: SparkSession) => {
+            try {
+              CarbonReflectionUtils.createObject(
+                "org.apache.carbondata.mv.datamap.MVAnalyzerRule",
+                session)._1.asInstanceOf[Rule[LogicalPlan]]
+            } catch {
+              case e: Exception =>
+                null
+            }
+          })
+    }
 
     // carbon extra optimizations
     extensions
