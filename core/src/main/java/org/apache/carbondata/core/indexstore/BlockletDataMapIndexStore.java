@@ -65,6 +65,13 @@ public class BlockletDataMapIndexStore
   private Map<String, Object> segmentLockMap;
 
   /**
+   * map of segmentPath to the map of index/ merge index file path to its
+   * corresponding block info. While querying the table this map will be useful while creating the
+   * block info for the index or merge index file.
+   */
+  private Map<String, Map<String, BlockMetaInfo>> segInfoCache;
+
+  /**
    * constructor to initialize the SegmentTaskIndexStore
    *
    * @param lruCache
@@ -72,16 +79,12 @@ public class BlockletDataMapIndexStore
   public BlockletDataMapIndexStore(CarbonLRUCache lruCache) {
     this.lruCache = lruCache;
     segmentLockMap = new ConcurrentHashMap<String, Object>();
+    segInfoCache = new HashMap<>();
   }
 
   @Override
   public BlockletDataMapIndexWrapper get(TableBlockIndexUniqueIdentifierWrapper identifierWrapper)
       throws IOException {
-    return get(identifierWrapper, null);
-  }
-
-  private BlockletDataMapIndexWrapper get(TableBlockIndexUniqueIdentifierWrapper identifierWrapper,
-      Map<String, Map<String, BlockMetaInfo>> segInfoCache) throws IOException {
     TableBlockIndexUniqueIdentifier identifier =
         identifierWrapper.getTableBlockIndexUniqueIdentifier();
     String lruCacheKey = identifier.getUniqueTableSegmentIdentifier();
@@ -94,9 +97,6 @@ public class BlockletDataMapIndexStore
             new SegmentIndexFileStore(identifierWrapper.getConfiguration());
         Set<String> filesRead = new HashSet<>();
         String segmentFilePath = identifier.getIndexFilePath();
-        if (segInfoCache == null) {
-          segInfoCache = new HashMap<>();
-        }
         Map<String, BlockMetaInfo> carbonDataFileBlockMetaInfoMapping =
             segInfoCache.get(segmentFilePath);
         if (carbonDataFileBlockMetaInfoMapping == null) {
@@ -161,9 +161,6 @@ public class BlockletDataMapIndexStore
   @Override public List<BlockletDataMapIndexWrapper> getAll(
       List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiers)
       throws IOException {
-    Map<String, Map<String, BlockMetaInfo>> segInfoCache
-        = new HashMap<String, Map<String, BlockMetaInfo>>();
-
     List<BlockletDataMapIndexWrapper> blockletDataMapIndexWrappers =
         new ArrayList<>(tableSegmentUniqueIdentifiers.size());
     List<TableBlockIndexUniqueIdentifierWrapper> missedIdentifiersWrapper = new ArrayList<>();
@@ -182,7 +179,7 @@ public class BlockletDataMapIndexStore
       }
       if (missedIdentifiersWrapper.size() > 0) {
         for (TableBlockIndexUniqueIdentifierWrapper identifierWrapper : missedIdentifiersWrapper) {
-          blockletDataMapIndexWrapper = get(identifierWrapper, segInfoCache);
+          blockletDataMapIndexWrapper = get(identifierWrapper);
           blockletDataMapIndexWrappers.add(blockletDataMapIndexWrapper);
         }
       }
@@ -234,6 +231,10 @@ public class BlockletDataMapIndexStore
                 tableSegmentUniqueIdentifierWrapper.isAddTableBlockToUnsafeAndLRUCache());
       }
     }
+    String segmentPath =
+        tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier().getIndexFilePath();
+    // remove the segment block info
+    segInfoCache.remove(segmentPath);
     lruCache.remove(tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
         .getUniqueTableSegmentIdentifier());
   }
