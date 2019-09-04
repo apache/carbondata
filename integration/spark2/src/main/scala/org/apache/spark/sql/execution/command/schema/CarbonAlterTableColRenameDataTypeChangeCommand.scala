@@ -161,6 +161,18 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         isDataTypeChange = true
       }
       if (isDataTypeChange) {
+        // if column datatype change operation is on partition column, then fail the datatype change
+        // operation
+        if (SparkUtil.isSparkVersionXandAbove("2.2") && null != carbonTable.getPartitionInfo) {
+          val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList
+          partitionColumns.asScala.foreach {
+            col =>
+              if (col.getColumnName.equalsIgnoreCase(oldColumnName)) {
+                throw new MalformedCarbonCommandException(
+                  s"Alter datatype of the partition column $newColumnName is not allowed")
+              }
+          }
+        }
         validateColumnDataType(alterTableColRenameAndDataTypeChangeModel.dataTypeInfo,
           oldCarbonColumn.head)
       }

@@ -450,14 +450,18 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop table if exists par")
   }
 
-  test("test drop column when after dropping only partition column remains") {
+  test("test drop column when after dropping only partition column remains and datatype change on partition column") {
     sql("drop table if exists onlyPart")
-    sql("create table onlyPart(name string) partitioned by (age double) stored by " +
+    sql("create table onlyPart(name string) partitioned by (age int) stored by " +
         "'carbondata' TBLPROPERTIES('cache_level'='blocklet')")
-    val ex = intercept[MalformedCarbonCommandException] {
+    val ex1 = intercept[MalformedCarbonCommandException] {
       sql("alter table onlyPart drop columns(name)")
     }
-    assert(ex.getMessage.contains("alter table drop column is failed, cannot have the table with all columns as partition column"))
+    assert(ex1.getMessage.contains("alter table drop column is failed, cannot have the table with all columns as partition column"))
+    val ex2 = intercept[MalformedCarbonCommandException] {
+      sql("alter table onlyPart change age age bigint")
+    }
+    assert(ex2.getMessage.contains("Alter datatype of the partition column age is not allowed"))
     sql("drop table if exists onlyPart")
   }
 
