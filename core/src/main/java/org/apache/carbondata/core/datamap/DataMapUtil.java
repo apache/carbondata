@@ -113,18 +113,10 @@ public class DataMapUtil {
     for (Segment segment : validAndInvalidSegmentsInfo.getInvalidSegments()) {
       invalidSegment.add(segment.getSegmentNo());
     }
-    DistributableDataMapFormat dataMapFormat = new DistributableDataMapFormat(carbonTable,
-        validAndInvalidSegmentsInfo.getValidSegments(), invalidSegment, true,
-        dataMapToClear);
-    try {
-      dataMapJob.execute(dataMapFormat);
-    } catch (Exception e) {
-      if (dataMapJob.getClass().getName().equalsIgnoreCase(DISTRIBUTED_JOB_NAME)) {
-        LOGGER.warn("Failed to clear distributed cache.", e);
-      } else {
-        throw e;
-      }
-    }
+    DistributableDataMapFormat dataMapFormat =
+        new DistributableDataMapFormat(carbonTable, validAndInvalidSegmentsInfo.getValidSegments(),
+            invalidSegment, true, dataMapToClear);
+    dataMapJob.execute(dataMapFormat);
   }
 
   public static void executeClearDataMapJob(CarbonTable carbonTable, String jobClassName)

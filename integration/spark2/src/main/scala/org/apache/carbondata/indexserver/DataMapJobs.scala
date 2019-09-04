@@ -130,7 +130,7 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
       .getCarbonTable.getTablePath, dataMapFormat.getQueryId, dataMapFormat.isCountStarJob)
     // Fire a job to clear the cache from executors as Embedded mode does not maintain the cache.
     IndexServer.invalidateSegmentCache(dataMapFormat.getCarbonTable, dataMapFormat
-      .getValidSegmentIds.asScala.toArray)
+      .getValidSegmentIds.asScala.toArray, isFallBack = true)
     spark.sparkContext.setLocalProperty("spark.job.description", originalJobDesc)
     splits
   }
