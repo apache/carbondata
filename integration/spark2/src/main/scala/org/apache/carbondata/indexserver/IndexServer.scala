@@ -25,9 +25,10 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.LongWritable
-import org.apache.hadoop.ipc.{ProtocolInfo, RPC}
+import org.apache.hadoop.ipc.{ProtocolInfo, RPC, Server}
 import org.apache.hadoop.net.NetUtils
-import org.apache.hadoop.security.{KerberosInfo, SecurityUtil, UserGroupInformation}
+import org.apache.hadoop.security.{KerberosInfo, UserGroupInformation}
+import org.apache.hadoop.security.authorize.{PolicyProvider, Service}
 import org.apache.spark.SparkConf
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.{CarbonSession, SparkSession}
@@ -38,10 +39,13 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DistributableDataMapFormat
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.ExtendedBlockletWrapperContainer
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.events.{IndexServerEvent, OperationContext, OperationListenerBus}
 
-@ProtocolInfo(protocolName = "Server", protocolVersion = 1)
+@ProtocolInfo(protocolName = "org.apache.carbondata.indexserver.ServerInterface",
+  protocolVersion = 1)
 @KerberosInfo(serverPrincipal = "spark.carbon.indexserver.principal",
   clientPrincipal = "spark.carbon.indexserver.principal")
 trait ServerInterface {
@@ -59,7 +63,7 @@ trait ServerInterface {
    * Invalidate the cache for the specified segments only. Used in case of compaction/Update/Delete.
    */
   def invalidateSegmentCache(carbonTable: CarbonTable,
-      segmentIds: Array[String], jobGroupId: String = ""): Unit
+  segmentIds: Array[String], jobGroupId: String = "", isFallBack: Boolean = false): Unit
 
   def getCount(request: DistributableDataMapFormat): LongWritable
 
@@ -96,7 +100,7 @@ object IndexServer extends ServerInterface {
   private val isExecutorLRUConfigured: Boolean =
     CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE) != null
-
+  private val operationContext: OperationContext = new OperationContext
   /**
    * Getting sparkSession from ActiveSession because in case of embedded mode the session would
    * have already been created whereas in case of distributed mode the session would be
@@ -104,6 +108,9 @@ object IndexServer extends ServerInterface {
    */
   private lazy val sparkSession: SparkSession = SparkSQLUtil.getSparkSession
 
+  /**
+   * Perform the operation 'f' on behalf of the login user.
+   */
   private def doAs[T](f: => T): T = {
     UserGroupInformation.getLoginUser.doAs(new PrivilegedAction[T] {
       override def run(): T = {
@@ -134,6 +141,10 @@ object IndexServer extends ServerInterface {
         }
         new LongWritable(splits.map(_._2.toLong).sum)
       }
+      // Fire Generic Event like ACLCheck..etc
+      val indexServerEvent = IndexServerEvent(sparkSession, request.getCarbonTable,
+        Server.getRemoteUser.getShortUserName)
+      OperationListenerBus.getInstance().fireEvent(indexServerEvent, operationContext)
       if (request.ifAsyncCall) {
         submitAsyncTask(getCountTask)
         new LongWritable(0)
@@ -149,6 +160,10 @@ object IndexServer extends ServerInterface {
         sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
         sparkSession.sparkContext
           .setLocalProperty("spark.job.description", request.getTaskGroupDesc)
+        // Fire Generic Event like ACLCheck..etc
+        val indexServerEvent = IndexServerEvent(sparkSession, request.getCarbonTable,
+          Server.getRemoteUser.getShortUserName)
+        OperationListenerBus.getInstance().fireEvent(indexServerEvent, operationContext)
       }
       if (!request.getInvalidSegments.isEmpty) {
         DistributedRDDUtils
@@ -167,18 +182,26 @@ object IndexServer extends ServerInterface {
   }
 
   override def invalidateSegmentCache(carbonTable: CarbonTable,
-      segmentIds: Array[String], jobGroupId: String = ""): Unit = doAs {
-    val databaseName = carbonTable.getDatabaseName
-    val tableName = carbonTable.getTableName
-    val jobgroup: String = " Invalided Segment Cache for " + databaseName + "." + tableName
-    sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
-    sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", jobGroupId)
-    new InvalidateSegmentCacheRDD(sparkSession, carbonTable, segmentIds.toList)
-      .collect()
-    if (segmentIds.nonEmpty) {
-      DistributedRDDUtils
-        .invalidateSegmentMapping(s"${databaseName}_$tableName",
-          segmentIds)
+      segmentIds: Array[String], jobGroupId: String = "", isFallBack: Boolean = false): Unit = {
+    doAs {
+      val databaseName = carbonTable.getDatabaseName
+      val tableName = carbonTable.getTableName
+      val jobgroup: String = " Invalided Segment Cache for " + databaseName + "." + tableName
+      sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
+      sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", jobGroupId)
+      if (!isFallBack) {
+        val indexServerEvent = IndexServerEvent(sparkSession,
+          carbonTable,
+          Server.getRemoteUser.getShortUserName)
+        OperationListenerBus.getInstance().fireEvent(indexServerEvent, operationContext)
+      }
+      new InvalidateSegmentCacheRDD(sparkSession, carbonTable, segmentIds.toList)
+        .collect()
+      if (segmentIds.nonEmpty) {
+        DistributedRDDUtils
+          .invalidateSegmentMapping(s"${databaseName}_$tableName",
+            segmentIds)
+      }
     }
   }
 
@@ -208,8 +231,8 @@ object IndexServer extends ServerInterface {
         .setNumHandlers(numHandlers)
         .setProtocol(classOf[ServerInterface]).build
       server.start()
-      SecurityUtil.login(sparkSession.asInstanceOf[CarbonSession].sessionState.newHadoopConf(),
-        "spark.carbon.indexserver.keytab", "spark.carbon.indexserver.principal")
+      // Define the Authorization Policy provider
+      server.refreshServiceAcl(conf, new IndexServerPolicyProvider)
       sparkSession.sparkContext.addSparkListener(new SparkListener {
         override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
           LOGGER.info("Spark Application has ended. Stopping the Index Server")
@@ -244,16 +267,22 @@ object IndexServer extends ServerInterface {
   def getClient: ServerInterface = {
     val configuration = SparkSQLUtil.sessionState(sparkSession).newHadoopConf()
     import org.apache.hadoop.ipc.RPC
-    val indexServerUser = sparkSession.sparkContext.getConf
-      .get("spark.carbon.indexserver.principal", "")
-    val indexServerKeyTab = sparkSession.sparkContext.getConf
-      .get("spark.carbon.indexserver.keytab", "")
-    val ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(indexServerUser,
-      indexServerKeyTab)
-    LOGGER.info("Login successful for user " + indexServerUser)
-    RPC.getProxy(classOf[ServerInterface],
+    RPC.getProtocolProxy(classOf[ServerInterface],
       RPC.getProtocolVersion(classOf[ServerInterface]),
-      new InetSocketAddress(serverIp, serverPort), ugi,
-      FileFactory.getConfiguration, NetUtils.getDefaultSocketFactory(configuration))
+      new InetSocketAddress(serverIp, serverPort),
+      UserGroupInformation.getLoginUser, configuration,
+      NetUtils.getDefaultSocketFactory(configuration)).getProxy
+  }
+
+  /**
+   * This class to define the acl for indexserver ,similar to HDFSPolicyProvider.
+   * key in Service can be configured in hadoop-policy.xml or in  Configuration().This ACL
+   * will be used for Authorization in
+   * org.apache.hadoop.security.authorize.ServiceAuthorizationManager#authorize
+   */
+  class IndexServerPolicyProvider extends PolicyProvider {
+    override def getServices: Array[Service] = {
+      Array(new Service("security.indexserver.protocol.acl", classOf[ServerInterface]))
+    }
   }
 }

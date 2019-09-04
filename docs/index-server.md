@@ -119,16 +119,6 @@ be written to file.
 The user can set the location for these file by using 'carbon.indexserver.temp.path'. By default
 table path would be used to write the files.
 
-## Security
-The security for the index server is controlled through 'spark.carbon.indexserver.keytab' and 'spark
-.carbon.indexserver.principal'. These allow the RPC framework to login using the principal. It is
-recommended that the principal should be a super user, and the user should be exclusive for index
-server so that it does not grant access to any other service. Internally the operations would be
-executed  as a Privileged Action using the login user.
-
-The Index Server is a long running service therefore the 'spark.yarn.keytab' and 'spark.yarn
-.principal' should be configured.
-
 ## Configurations
 
 ##### carbon.properties(JDBCServer) 
@@ -160,8 +150,6 @@ The Index Server is a long running service therefore the 'spark.yarn.keytab' and
 
 | Name     |      Default Value    |  Description |
 |:----------:|:-------------:|:------:       |
-| spark.carbon.indexserver.principal |  NA | Used for authentication, whether a valid service is  trying to connect to the server or not. Set in both IndexServer and JDBCServer.     |
-| spark.carbon.indexserver.keytab |    NA   |   Specify the path to the keytab file through which authentication would happen. Set in both IndexServer and JDBCServer. |
 | spark.dynamicAllocation.enabled | true | Set to false, so that spark does not kill the executor, If executors are killed, cache would be lost. Applicable only for Index Server. |
 | spark.yarn.principal | NA | Should be set to the same user used for JDBCServer. Required only for IndexServer.   |
 |spark.yarn.keytab| NA | Should be set to the same as JDBCServer.   |
@@ -180,6 +168,12 @@ that will authenticate the user to access the index server and no other service.
 | Name     |      Default Value    |  Description |
 |:----------:|:-------------:|:------:       |
 | ipc.client.rpc-timeout.ms |  NA | Set the above property to some appropriate value based on your estimated query time. The best option is to set this to the same value as spark.network.timeout. |
+| hadoop.security.authorization |  false | Property to enable the hadoop security which is required only on the server side. |
+| hadoop.proxyuser.<indexserver_user>.users |  NA | Property to set Proxy User list for which IndexServer permission were to be given ,check https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/Superusers.html|
+| hadoop.proxyuser.<indexserver_user>.hosts |  NA | Property to set hosts list for which IndexServer permission were to be given ,check https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/Superusers.html|
+| hadoop.proxyuser.<indexserver_user>.groups |  NA | Property to set groups list for which IndexServer permission to be given ,check https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/Superusers.html|
+| security.indexserver.protocol.acl |  * | Property to set List of User to be Authorized for Other than proxy Spark Application |
+
 
 ##### dynamic-properties(set command)
 
@@ -205,11 +199,6 @@ Q. **Index Server is throwing Large response size exception.**
 A. The exception would show the size of response it is trying to send over the
 network. Use ipc.maximum.response.length to a value bigger than the
 response size.
-
-Q. **Index server is throwing Kerberos principal not set exception**
-
-A. Set spark.carbon.indexserver.principal to the correct principal in both IndexServer and
-JDBCServer configurations.
 
 Q. **Unable to connect to index server**
 

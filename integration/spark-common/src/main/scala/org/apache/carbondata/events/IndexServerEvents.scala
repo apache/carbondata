@@ -25,5 +25,9 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 case class IndexServerLoadEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,
     segment: List[Segment],
-    invalidsegment: List[String])
+    invalidsegment: List[String]) extends Event with IndexServerEventInfo
+
+case class IndexServerEvent(sparkSession: SparkSession,
+    carbonTable: CarbonTable,
+    username: String)
   extends Event with IndexServerEventInfo
