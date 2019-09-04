@@ -18,6 +18,7 @@ package org.apache.carbondata.spark.testsuite.iud
 
 
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 
 class DeleteRepeatedTestCase extends QueryTest with BeforeAndAfterAll {
@@ -30,23 +31,24 @@ class DeleteRepeatedTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into t1 (select 'a', 1 union all select 'e', 14 ) ").collect()
     sql("insert into t1 (select 'b', 2 union all select 'b', 15 ) ").collect()
     sql("insert into t1 (select 'e', 3 union all select 'a', 16 )").collect()
-    sql("insert into t1 (select 'c', 3 union all select 'b', 16 )").collect()
-    sql("insert into t1 (select 'e', 3 union all select 'f', 16 )").collect()
+    sql("insert into t1 (select 'c', 3 union all select 'b', 17 )").collect()
+    sql("insert into t1 (select 'e', 3 union all select 'f', 18 )").collect()
   }
 
   test("test merge ") {
-    sql("select * from t1 order by col1").show(100, false)
+    checkAnswer(sql("select count(*) from t1"), Seq(Row(10)))
     sql(
       """
         | delete repeated col1
         | from t1
         | where segment.id = 3
-      """.stripMargin).show(100, false)
-    sql("select * from t1 order by col1").show(100, false)
+      """.stripMargin)
+    checkAnswer(sql("select count(*) from t1"), Seq(Row(9)))
+    checkAnswer(sql("select count(*) from t1 where col2 = 17"), Seq(Row(0)))
   }
 
   override def afterAll {
-    // sql("use default")
-    // sql("drop database if exists dr_db cascade")
+     sql("use default")
+     sql("drop database if exists dr_db cascade")
   }
 }

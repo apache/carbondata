@@ -19,11 +19,11 @@ package org.apache.spark.sql.execution.command.management
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Checker}
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
-import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Checker}
 import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCommand
 import org.apache.spark.sql.hive.CarbonIUDAnalysisRule
 import org.apache.spark.sql.types.LongType
