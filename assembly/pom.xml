@@ -107,6 +107,7 @@
               <exclude>org.apache.spark:*</exclude>
               <exclude>org.apache.zookeeper:*</exclude>
               <exclude>org.apache.avro:*</exclude>
+              <exclude>org.apache.hive:*</exclude>
               <exclude>com.google.guava:guava</exclude>
               <exclude>org.xerial.snappy:snappy-java</exclude>
               <!--add more items to be excluded from the assembly-->
