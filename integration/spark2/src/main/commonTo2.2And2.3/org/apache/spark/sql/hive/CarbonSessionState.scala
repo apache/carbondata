@@ -19,11 +19,14 @@ package org.apache.spark.sql.hive
 import java.util.concurrent.Callable
 
 import org.apache.hadoop.fs.Path
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{QualifiedTableName, TableIdentifier}
+import org.apache.spark.sql.catalyst.analysis.Analyzer
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.internal.SessionState
 
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -170,4 +173,24 @@ object CarbonSessionCatalogUtil {
       dbName: String): CatalogStorageFormat = {
     storage.copy(locationUri = Some(path.toUri))
   }
+}
+
+
+/**
+ * Session state implementation to override sql parser and adding strategies
+ *
+ * @param sparkSession
+ */
+class CarbonSessionStateBuilder(sparkSession: SparkSession,
+                                parentState: Option[SessionState] = None)
+  extends HiveSessionStateBuilder(sparkSession, parentState) {
+
+  override protected def analyzer: Analyzer = {
+    new CarbonAnalyzer(catalog,
+      conf,
+      sparkSession,
+      super.analyzer)
+  }
+
+
 }
