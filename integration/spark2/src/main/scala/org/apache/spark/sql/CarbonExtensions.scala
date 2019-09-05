@@ -18,13 +18,10 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.parser.ParserInterface
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
-import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonPreAggregateDataLoadingRules, CarbonPreAggregateQueryRules, CarbonPreInsertionCasts}
+import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonPreInsertionCasts}
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
-import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
 
@@ -43,35 +40,10 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
       .injectResolutionRule((session: SparkSession) => CarbonPreInsertionCasts(session))
 
 
-    // carbon post adhoc resolution rules
-    extensions
-      .injectPostHocResolutionRule(
-        (session: SparkSession) => new CarbonPreAggregateDataLoadingRules(session))
-    extensions
-      .injectPostHocResolutionRule(
-        (session: SparkSession) => new CarbonPreAggregateQueryRules(session))
-
-    val mv = try {
-      Utils.classForName("org.apache.carbondata.mv.datamap.MVAnalyzerRule")
-    } catch {
-      case e: Exception =>
-        null
-    }
-
-    if(mv != null) {
-      extensions
-        .injectPostHocResolutionRule(
-          (session: SparkSession) => {
-            try {
-              CarbonReflectionUtils.createObject(
-                "org.apache.carbondata.mv.datamap.MVAnalyzerRule",
-                session)._1.asInstanceOf[Rule[LogicalPlan]]
-            } catch {
-              case e: Exception =>
-                null
-            }
-          })
-    }
+    // Carbon Pre optimization rules
+    // TODO: CarbonPreAggregateDataLoadingRules
+    // TODO: CarbonPreAggregateQueryRules
+    // TODO: MVAnalyzerRule
 
     // carbon extra optimizations
     extensions

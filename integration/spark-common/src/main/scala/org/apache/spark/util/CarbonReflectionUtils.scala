@@ -205,6 +205,35 @@ object CarbonReflectionUtils {
       sqlParser, sparkSession)._1.asInstanceOf[AstBuilder]
   }
 
+  def getSessionState(sparkContext: SparkContext,
+                      carbonSession: Object,
+                      useHiveMetaStore: Boolean): Any = {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+      val className = sparkContext.conf.get(
+        CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
+        "org.apache.spark.sql.hive.CarbonSessionState")
+      createObject(className, carbonSession)._1
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      if (useHiveMetaStore) {
+        val className = sparkContext.conf.get(
+          CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
+          "org.apache.spark.sql.hive.CarbonSessionStateBuilder")
+        val tuple = createObject(className, carbonSession, None)
+        val method = tuple._2.getMethod("build")
+        method.invoke(tuple._1)
+      } else {
+        val className = sparkContext.conf.get(
+          CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
+          "org.apache.spark.sql.hive.CarbonInMemorySessionStateBuilder")
+        val tuple = createObject(className, carbonSession, None)
+        val method = tuple._2.getMethod("build")
+        method.invoke(tuple._1)
+      }
+    } else {
+      throw new UnsupportedOperationException("Spark version not supported")
+    }
+  }
+
   def hasPredicateSubquery(filterExp: Expression) : Boolean = {
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       val tuple = Class.forName("org.apache.spark.sql.catalyst.expressions.PredicateSubquery")
@@ -350,6 +379,16 @@ object CarbonReflectionUtils {
    */
   def setFieldToCaseClass(caseObj: Object, fieldName: String, objToSet: Object): Unit = {
     val nameField = caseObj.getClass.getDeclaredField(fieldName)
+    nameField.setAccessible(true)
+    nameField.set(caseObj, objToSet)
+  }
+
+
+  /**
+   * This method updates the field of case class through reflection.
+   */
+  def setSuperFieldToClass(caseObj: Object, fieldName: String, objToSet: Object): Unit = {
+    val nameField = caseObj.getClass.getSuperclass.getDeclaredField(fieldName)
     nameField.setAccessible(true)
     nameField.set(caseObj, objToSet)
   }
