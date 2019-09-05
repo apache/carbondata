@@ -150,11 +150,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     dataFields = configuration.getDataFields();
     dimensionsIsVarcharTypeMap = new boolean[dimensionWithComplexCount];
     for (int i = 0; i < dimensionWithComplexCount; i++) {
-      if (dataFields[i].getColumn().getDataType() == DataTypes.VARCHAR) {
-        dimensionsIsVarcharTypeMap[i] = true;
-      } else {
-        dimensionsIsVarcharTypeMap[i] = false;
-      }
+      dimensionsIsVarcharTypeMap[i] = dataFields[i].getColumn().getDataType() == DataTypes.VARCHAR;
     }
     measureDataTypes = new DataType[measureCount];
     for (int i = 0; i < measureCount; i++) {

@@ -166,11 +166,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     }
     dimensionsIsVarcharTypeMap = new boolean[dimensionCount];
     for (int i = 0; i < dimensionCount; i++) {
-      if (storageColumns[i].getDataType() == DataTypes.VARCHAR) {
-        dimensionsIsVarcharTypeMap[i] = true;
-      } else {
-        dimensionsIsVarcharTypeMap[i] = false;
-      }
+      dimensionsIsVarcharTypeMap[i] = storageColumns[i].getDataType() == DataTypes.VARCHAR;
     }
     measureDataTypes = new DataType[measureCount];
     for (int i = 0; i < measureCount; i++) {
