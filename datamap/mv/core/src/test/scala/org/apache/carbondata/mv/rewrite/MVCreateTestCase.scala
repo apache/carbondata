@@ -19,13 +19,13 @@ package org.apache.carbondata.mv.rewrite
 import java.io.File
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
+class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     drop()
