@@ -22,7 +22,7 @@ import java.util
 
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -34,7 +34,7 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 /**
  * Test Class for MV Datamap to verify all scenerios
  */
-class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
+class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   override def beforeEach(): Unit = {
     sql("drop table IF EXISTS maintable")

@@ -19,9 +19,9 @@ package org.apache.carbondata.mv.rewrite
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 
-class SelectAllColumnsSuite extends QueryTest {
+class SelectAllColumnsSuite extends CarbonQueryTest {
 
   test ("table select all columns mv") {
     sql("drop datamap if exists all_table_mv")
