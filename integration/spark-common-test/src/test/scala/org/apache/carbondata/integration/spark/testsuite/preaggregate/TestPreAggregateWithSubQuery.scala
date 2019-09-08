@@ -19,11 +19,11 @@ package org.apache.carbondata.integration.spark.testsuite.preaggregate
 import org.apache.spark.sql.CarbonDatasourceHadoopRelation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 
-class TestPreAggregateWithSubQuery extends QueryTest with BeforeAndAfterAll {
+class TestPreAggregateWithSubQuery extends CarbonQueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     sql("DROP TABLE IF EXISTS mainTable")

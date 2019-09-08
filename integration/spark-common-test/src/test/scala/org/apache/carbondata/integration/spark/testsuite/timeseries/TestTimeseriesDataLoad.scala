@@ -19,7 +19,7 @@ package org.apache.carbondata.integration.spark.testsuite.timeseries
 import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.BeforeAndAfterAll
 
@@ -28,7 +28,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TestTimeseriesDataLoad extends QueryTest with BeforeAndAfterAll {
+class TestTimeseriesDataLoad extends CarbonQueryTest with BeforeAndAfterAll {
 
   val timeSeries = TIMESERIES.toString
   var timestampFormat: String = _

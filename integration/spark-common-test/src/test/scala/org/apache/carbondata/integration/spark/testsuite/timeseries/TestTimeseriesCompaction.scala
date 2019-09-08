@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.timeseries
 
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers._
@@ -25,7 +25,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TestTimeseriesCompaction extends QueryTest with BeforeAndAfterAll {
+class TestTimeseriesCompaction extends CarbonQueryTest with BeforeAndAfterAll {
 
   var isCompactionEnabled = false
   val timeSeries = TIMESERIES.toString

@@ -27,7 +27,7 @@ import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation, 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -37,7 +37,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
+class TestPreAggCreateCommand extends CarbonQueryTest with BeforeAndAfterAll {
 
   val timeSeries = TIMESERIES.toString
 
