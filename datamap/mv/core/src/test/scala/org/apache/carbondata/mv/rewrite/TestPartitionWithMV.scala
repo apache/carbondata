@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
@@ -30,7 +30,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 /**
  * Test class for MV to verify partition scenarios
  */
-class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
+class TestPartitionWithMV extends CarbonQueryTest with BeforeAndAfterAll {
 
   val testData = s"$resourcesPath/sample.csv"
 

@@ -19,10 +19,10 @@ package org.apache.carbondata.mv.rewrite
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
+class MVMultiJoinTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
   override def beforeAll(){
     drop
