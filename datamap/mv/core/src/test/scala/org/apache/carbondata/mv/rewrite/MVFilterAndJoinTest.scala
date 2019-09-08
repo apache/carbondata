@@ -17,10 +17,10 @@
 package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class MVFilterAndJoinTest extends QueryTest with BeforeAndAfterAll {
+class MVFilterAndJoinTest extends CarbonQueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     drop
