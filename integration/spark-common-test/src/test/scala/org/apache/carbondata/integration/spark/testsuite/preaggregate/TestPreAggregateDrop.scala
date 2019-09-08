@@ -17,13 +17,13 @@
 
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
-class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
+class TestPreAggregateDrop extends CarbonQueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists maintable")

@@ -22,14 +22,14 @@ import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TestTimeSeriesMatchStrategySuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+class TestTimeSeriesMatchStrategySuite extends CarbonQueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
 
   var timestampFormat: String = _
 
