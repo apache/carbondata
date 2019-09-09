@@ -23,13 +23,12 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
-class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
+class TestCarbonDropCacheCommand extends CarbonQueryTest with BeforeAndAfterAll {
 
   val dbName = "cache_db"
 
@@ -43,50 +42,6 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql(s"use default")
     sql(s"DROP DATABASE $dbName CASCADE")
   }
-
-
-  test("Test dictionary") {
-    val tableName = "t1"
-
-    sql(s"CREATE TABLE $tableName(empno int, empname String, designation String, " +
-        s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
-        s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
-        s"attendance int,utilization int, salary int) stored by 'carbondata' " +
-        s"TBLPROPERTIES('DICTIONARY_INCLUDE'='designation, workgroupcategoryname')")
-    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
-    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
-    sql(s"SELECT * FROM $tableName").collect()
-
-    val droppedCacheKeys = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
-
-    sql(s"DROP METACACHE ON TABLE $tableName")
-
-    val cacheAfterDrop = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
-    droppedCacheKeys.removeAll(cacheAfterDrop)
-
-    val tableIdentifier = new TableIdentifier(tableName, Some(dbName))
-    val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
-    val tablePath = carbonTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
-    val dictIds = carbonTable.getAllDimensions.asScala.filter(_.isGlobalDictionaryEncoding)
-      .map(_.getColumnId).toArray
-
-    // Check if table index entries are dropped
-    assert(droppedCacheKeys.asScala.exists(key => key.startsWith(tablePath)))
-
-    // check if cache does not have any more table index entries
-    assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(tablePath)))
-
-    // check if table dictionary entries are dropped
-    for (dictId <- dictIds) {
-      assert(droppedCacheKeys.asScala.exists(key => key.contains(dictId)))
-    }
-
-    // check if cache does not have any more table dictionary entries
-    for (dictId <- dictIds) {
-      assert(!cacheAfterDrop.asScala.exists(key => key.contains(dictId)))
-    }
-  }
-
 
   test("Test preaggregate datamap") {
     val tableName = "t2"
@@ -190,7 +145,6 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
     }.getMessage
     assert(fail_message.contains("Operation not allowed on child table."))
   }
-
 
   def clone(oldSet: util.Set[String]): util.HashSet[String] = {
     val newSet = new util.HashSet[String]
