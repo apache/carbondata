@@ -48,7 +48,6 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
-import org.apache.carbondata.core.mutate.TupleIdEnum;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -252,49 +251,23 @@ public class SegmentUpdateStatusManager {
    * @throws Exception
    */
   public String[] getDeleteDeltaFilePath(String blockFilePath, String segmentId) throws Exception {
-    String blockId =
-        CarbonUtil.getBlockId(identifier, blockFilePath, segmentId, true, isStandardTable);
-    String tupleId;
-    if (!isStandardTable) {
-      tupleId = CarbonTablePath.getShortBlockIdForPartitionTable(blockId);
-    } else {
-      tupleId = CarbonTablePath.getShortBlockId(blockId);
-    }
-    return getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+    CarbonFile file = FileFactory.getCarbonFile(blockFilePath);
+    return getDeltaFiles(file, segmentId)
         .toArray(new String[0]);
   }
 
   /**
    * Returns all delta file paths of specified block
    */
-  private List<String> getDeltaFiles(String tupleId, String extension)
-      throws Exception {
-    String segment = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID);
-    String completeBlockName = CarbonTablePath.addDataPartPrefix(
-        CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.BLOCK_ID)
-            + CarbonCommonConstants.FACT_FILE_EXT);
-
-    String blockPath;
-    if (!isStandardTable) {
-      blockPath = identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR
-          + CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.PART_ID)
-          .replace("#", "/") + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
-    } else {
-      String carbonDataDirectoryPath = CarbonTablePath.getSegmentPath(
-          identifier.getTablePath(), segment);
-      blockPath =
-          carbonDataDirectoryPath + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
-    }
-    CarbonFile file = FileFactory.getCarbonFile(blockPath, FileFactory.getFileType(blockPath));
-    if (!file.exists()) {
-      throw new Exception("Invalid tuple id " + tupleId);
-    }
+  private List<String> getDeltaFiles(CarbonFile file, String segmentId) throws Exception {
+    String completeBlockName = file.getName();
     String blockNameWithoutExtn =
         completeBlockName.substring(0, completeBlockName.lastIndexOf('.'));
     //blockName without timestamp
     final String blockNameFromTuple =
         blockNameWithoutExtn.substring(0, blockNameWithoutExtn.lastIndexOf("-"));
-    return getDeltaFiles(file, blockNameFromTuple, extension, segment);
+    return getDeltaFiles(file, blockNameFromTuple, CarbonCommonConstants.DELETE_DELTA_FILE_EXT,
+        segmentId);
   }
 
   /**

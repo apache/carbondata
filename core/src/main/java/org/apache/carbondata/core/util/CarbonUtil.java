@@ -2595,7 +2595,7 @@ public final class CarbonUtil {
   }
 
   // Get the total size of carbon data and the total size of carbon index
-  private static HashMap<String, Long> getDataSizeAndIndexSize(SegmentFileStore fileStore)
+  public static HashMap<String, Long> getDataSizeAndIndexSize(SegmentFileStore fileStore)
       throws IOException {
     long carbonDataSize = 0L;
     long carbonIndexSize = 0L;
@@ -2633,15 +2633,25 @@ public final class CarbonUtil {
       Set<String> carbonindexFiles = folderDetails.getFiles();
       String mergeFileName = folderDetails.getMergeFileName();
       if (null != mergeFileName) {
-        String mergeIndexPath =
-            fileStore.getTablePath() + entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR
-                + mergeFileName;
+        String mergeIndexPath;
+        if (entry.getValue().isRelative()) {
+          mergeIndexPath =
+              fileStore.getTablePath() + entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR
+                  + mergeFileName;
+        } else {
+          mergeIndexPath = entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR + mergeFileName;
+        }
         carbonIndexSize += FileFactory.getCarbonFile(mergeIndexPath).getSize();
       }
       for (String indexFile : carbonindexFiles) {
-        String indexPath =
-            fileStore.getTablePath() + entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR
-                + indexFile;
+        String indexPath;
+        if (entry.getValue().isRelative()) {
+          indexPath =
+              fileStore.getTablePath() + entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR
+                  + indexFile;
+        } else {
+          indexPath = entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR + indexFile;
+        }
         carbonIndexSize += FileFactory.getCarbonFile(indexPath).getSize();
       }
     }

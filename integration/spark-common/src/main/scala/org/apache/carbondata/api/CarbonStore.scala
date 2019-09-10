@@ -98,7 +98,7 @@ object CarbonStore {
               new java.sql.Timestamp(load.getLoadEndTime).toString
             }
 
-          val (dataSize, indexSize) = if (load.getFileFormat == FileFormat.ROW_V1) {
+          val (dataSize, indexSize) = if (load.getFileFormat.equals(FileFormat.ROW_V1)) {
             // for streaming segment, we should get the actual size from the index file
             // since it is continuously inserting data
             val segmentDir = CarbonTablePath.getSegmentPath(tablePath, load.getLoadName)

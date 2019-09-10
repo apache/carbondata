@@ -618,7 +618,7 @@ object CarbonDataRDDFactory {
   /**
    * clear datamap files for segment
    */
-  private def clearDataMapFiles(carbonTable: CarbonTable, segmentId: String): Unit = {
+  def clearDataMapFiles(carbonTable: CarbonTable, segmentId: String): Unit = {
     try {
       val segments = List(new Segment(segmentId)).asJava
       DataMapStoreManager.getInstance().getAllDataMap(carbonTable).asScala
@@ -646,14 +646,16 @@ object CarbonDataRDDFactory {
       SegmentStatusManager.readTableStatusFile(
         CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath))
     val segmentFiles = segmentDetails.asScala.map { seg =>
-      val segmentFile =
-        metadataDetails.find(_.getLoadName.equals(seg.getSegmentNo)).get.getSegmentFile
+      val load =
+        metadataDetails.find(_.getLoadName.equals(seg.getSegmentNo)).get
+      val segmentFile = load.getSegmentFile
       var segmentFiles: Seq[CarbonFile] = Seq.empty[CarbonFile]
 
       val file = SegmentFileStore.writeSegmentFile(
         carbonTable,
         seg.getSegmentNo,
-        String.valueOf(System.currentTimeMillis()))
+        String.valueOf(System.currentTimeMillis()),
+        load.getPath)
 
       if (segmentFile != null) {
         segmentFiles ++= FileFactory.getCarbonFile(

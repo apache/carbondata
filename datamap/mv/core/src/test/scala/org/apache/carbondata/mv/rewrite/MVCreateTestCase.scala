@@ -17,13 +17,16 @@
 package org.apache.carbondata.mv.rewrite
 
 import java.io.File
+import java.nio.file.{Files, Paths}
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -1240,6 +1243,117 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists limit_fail")
     sql("drop table IF EXISTS mv_like")
     sql("drop table IF EXISTS maintable")
+  }
+
+  test("test create datamap with add segment") {
+    sql("drop table if exists fact_table_addseg")
+    sql("drop table if exists fact_table_addseg1")
+    sql(
+      """
+        | CREATE TABLE fact_table_addseg (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table_addseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    sql(
+      """
+        | CREATE TABLE fact_table_addseg1 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table_addseg1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    sql("drop datamap if exists datamap_addseg")
+    sql("create datamap datamap_addseg using 'mv' as select empname, designation from fact_table_addseg")
+    val df = sql("select empname,designation from fact_table_addseg")
+    val analyzed = df.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_addseg"))
+    assert(df.collect().length == 90)
+    val table = CarbonEnv.getCarbonTable(None, "fact_table_addseg1") (sqlContext.sparkSession)
+    val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
+    val newPath = storeLocation + "/" + "addsegtest"
+    copy(path, newPath)
+
+    sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").show()
+    sql("select empname,designation from fact_table_addseg").show()
+    val df1 = sql("select empname,designation from fact_table_addseg")
+    val analyzed1 = df1.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed1, "datamap_addseg"))
+    assert(df1.collect().length == 180)
+    sql(s"drop datamap datamap_addseg")
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    sql("drop table if exists fact_table_addseg")
+    sql("drop table if exists fact_table_addseg1")
+  }
+
+  test("test create datamap with add segment with deffered rebuild") {
+    sql("drop table if exists fact_table_addseg")
+    sql("drop table if exists fact_table_addseg1")
+    sql(
+      """
+        | CREATE TABLE fact_table_addseg (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table_addseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    sql(
+      """
+        | CREATE TABLE fact_table_addseg1 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table_addseg1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    sql("drop datamap if exists datamap_addseg")
+    sql("create datamap datamap_addseg using 'mv' WITH DEFERRED REBUILD as select empname, designation from fact_table_addseg")
+    sql("rebuild datamap datamap_addseg")
+    val df = sql("select empname,designation from fact_table_addseg")
+    val analyzed = df.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_addseg"))
+    assert(df.collect().length == 90)
+    val table = CarbonEnv.getCarbonTable(None, "fact_table_addseg1") (sqlContext.sparkSession)
+    val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
+    val newPath = storeLocation + "/" + "addsegtest"
+    copy(path, newPath)
+
+    sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").show()
+    val df1 = sql("select empname,designation from fact_table_addseg")
+    val analyzed1 = df1.queryExecution.analyzed
+    assert(!TestUtil.verifyMVDataMap(analyzed1, "datamap_addseg"))
+    assert(df1.collect().length == 180)
+
+    sql("rebuild datamap datamap_addseg")
+
+    val df2 = sql("select empname,designation from fact_table_addseg")
+    val analyzed2 = df2.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed2, "datamap_addseg"))
+    assert(df2.collect().length == 180)
+
+    sql(s"drop datamap datamap_addseg")
+    sql("drop table if exists fact_table_addseg")
+    sql("drop table if exists fact_table_addseg1")
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+  }
+
+
+
+  def copy(oldLoc: String, newLoc: String): Unit = {
+    val oldFolder = FileFactory.getCarbonFile(oldLoc)
+    FileFactory.mkdirs(newLoc, FileFactory.getConfiguration)
+    val oldFiles = oldFolder.listFiles
+    for (file <- oldFiles) {
+      Files.copy(Paths.get(file.getParentFile.getPath, file.getName), Paths.get(newLoc, file.getName))
+    }
   }
 
   override def afterAll {
