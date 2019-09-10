@@ -29,14 +29,18 @@ public class RawRowComparatorTest {
   private RawRowComparator new_comparator;
 
   @Test public void checkTypes() {
-    DataType noDicDataTypes[] = { DataTypes.INT };
-    SerializableComparator comparator = org.apache.carbondata.core.util.comparator.Comparator
-        .getComparator(noDicDataTypes[0]);
-    SerializableComparator comparator1 = org.apache.carbondata.core.util.comparator.Comparator
-        .getComparator(noDicDataTypes[0]);
-    Assert.assertTrue(comparator1==comparator);
+    DataType noDicDataTypes[] =
+        { DataTypes.INT, DataTypes.SHORT, DataTypes.LONG, DataTypes.BOOLEAN, DataTypes.BYTE,
+            DataTypes.FLOAT };
+    for (int i = 0; i < noDicDataTypes.length; i++) {
+      SerializableComparator comparator = org.apache.carbondata.core.util.comparator.Comparator
+          .getComparator(noDicDataTypes[i]);
+      SerializableComparator comparator1 = org.apache.carbondata.core.util.comparator.Comparator
+          .getComparator(noDicDataTypes[i]);
+      Assert.assertTrue(comparator1==comparator);
+    }
   }
- 
+
   @Test public void compareint() {
     DataType noDicDataTypes[] = { DataTypes.INT };
     boolean noDicSortColumnMapping[] = { true };
