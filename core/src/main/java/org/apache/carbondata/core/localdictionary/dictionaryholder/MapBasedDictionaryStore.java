@@ -20,7 +20,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryByteArrayWrapper;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Map based dictionary holder class, it will use map to hold
@@ -51,6 +53,11 @@ public class MapBasedDictionaryStore implements DictionaryStore {
   private int dictionaryThreshold;
 
   /**
+   * dictionary threshold size in bytes
+   */
+  private long dictionarySizeThresholdInBytes;
+
+  /**
    * for checking threshold is reached or not
    */
   private boolean isThresholdReached;
@@ -62,6 +69,8 @@ public class MapBasedDictionaryStore implements DictionaryStore {
 
   public MapBasedDictionaryStore(int dictionaryThreshold) {
     this.dictionaryThreshold = dictionaryThreshold;
+    this.dictionarySizeThresholdInBytes = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB)) << 20;
     this.dictionary = new ConcurrentHashMap<>();
     this.referenceDictionaryArray = new DictionaryByteArrayWrapper[dictionaryThreshold];
   }
@@ -93,7 +102,7 @@ public class MapBasedDictionaryStore implements DictionaryStore {
           value = ++lastAssignValue;
           currentSize += data.length;
           // if new value is greater than threshold
-          if (value > dictionaryThreshold || currentSize >= Integer.MAX_VALUE) {
+          if (value > dictionaryThreshold || currentSize > dictionarySizeThresholdInBytes) {
             // set the threshold boolean to true
             isThresholdReached = true;
             // throw exception
@@ -111,9 +120,10 @@ public class MapBasedDictionaryStore implements DictionaryStore {
 
   private void checkIfThresholdReached() throws DictionaryThresholdReachedException {
     if (isThresholdReached) {
-      if (currentSize >= Integer.MAX_VALUE) {
+      if (currentSize > dictionarySizeThresholdInBytes) {
         throw new DictionaryThresholdReachedException(
-            "Unable to generate dictionary. Dictionary Size crossed 2GB limit");
+            "Unable to generate dictionary. Dictionary Size crossed bytes: "
+                + dictionarySizeThresholdInBytes);
       } else {
         throw new DictionaryThresholdReachedException(
             "Unable to generate dictionary value. Dictionary threshold reached");
