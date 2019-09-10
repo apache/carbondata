@@ -202,6 +202,9 @@ public final class CarbonProperties {
       case CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD:
         validateIndexServerSerializationThreshold();
         break;
+      case CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB:
+        validateAndGetLocalDictionarySizeThresholdInMB();
+        break;
       // TODO : Validation for carbon.lock.type should be handled for addProperty flow
       default:
         // none
@@ -268,6 +271,7 @@ public final class CarbonProperties {
     validateStringCharacterLimit();
     validateDetailQueryBatchSize();
     validateIndexServerSerializationThreshold();
+    validateAndGetLocalDictionarySizeThresholdInMB();
   }
 
   /**
@@ -1789,4 +1793,43 @@ public final class CarbonProperties {
       return !prefetchEnable.equalsIgnoreCase("false");
     }
   }
+
+  /**
+   * get local dictionary size threshold in mb.
+   */
+  private void validateAndGetLocalDictionarySizeThresholdInMB() {
+    String sizeStr = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB);
+    String defaultValue = Integer
+        .toString(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB_DEFAULT);
+    if (sizeStr == null) {
+      carbonProperties
+          .setProperty(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB,
+              defaultValue);
+    } else {
+      try {
+        int size = Integer.parseInt(sizeStr);
+        if (size < 0 || size == 0
+            || size > CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB_MAX) {
+          LOGGER.info("using default value of carbon.local.dictionary.size.threshold.inmb = "
+              + defaultValue);
+          carbonProperties
+              .setProperty(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB,
+                  defaultValue);
+        } else {
+          LOGGER.info("using carbon.local.dictionary.size.threshold.inmb = " + size);
+          carbonProperties
+              .setProperty(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB,
+                  Integer.toString(size));
+        }
+      } catch (Exception ex) {
+        LOGGER.info(
+            "using default value of carbon.local.dictionary.size.threshold.inmb = " + defaultValue);
+        carbonProperties
+            .setProperty(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB,
+                defaultValue);
+      }
+    }
+  }
+
 }

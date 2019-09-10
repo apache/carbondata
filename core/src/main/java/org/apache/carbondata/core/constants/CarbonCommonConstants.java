@@ -1209,6 +1209,17 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_ENABLE_RANGE_COMPACTION_DEFAULT = "true";
 
+  @CarbonProperty
+  /**
+   * size based threshold for local dictionary in mb.
+   */
+  public static final String CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB =
+      "carbon.local.dictionary.size.threshold.inmb";
+
+  public static final int CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB_DEFAULT = 4;
+
+  public static final int CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB_MAX = 16;
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Query parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////

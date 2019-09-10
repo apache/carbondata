@@ -96,6 +96,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.minmax.allowed.byte.count | 200 | CarbonData will write the min max values for string/varchar types column using the byte count specified by this configuration. Max value is 1000 bytes(500 characters) and Min value is 10 bytes(5 characters). **NOTE:** This property is useful for reducing the store size thereby improving the query performance but can lead to query degradation if value is not configured properly. | |
 | carbon.merge.index.failure.throw.exception | true | It is used to configure whether or not merge index failure should result in data load failure also. |
 | carbon.binary.decoder | None | Support configurable decode for loading. Two decoders supported: base64 and hex |
+| carbon.local.dictionary.size.threshold.inmb | 4 | size based threshold for local dictionary in MB, maximum allowed size is 16 MB. |
 
 ## Compaction Configuration
 
