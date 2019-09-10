@@ -428,8 +428,9 @@ class CarbonScanRDD[T: ClassTag](
       // one query id per table
       model.setQueryId(queryId)
       // get RecordReader by FileFormat
-      var reader: RecordReader[Void, Object] = inputSplit.getFileFormat match {
-        case FileFormat.ROW_V1 =>
+
+      var reader: RecordReader[Void, Object] =
+        if (inputSplit.getFileFormat.equals(FileFormat.ROW_V1)) {
           // create record reader for row format
           DataTypeUtil.setDataTypeConverter(dataTypeConverterClz.newInstance())
           val inputFormat = new CarbonStreamInputFormat
@@ -441,7 +442,7 @@ class CarbonScanRDD[T: ClassTag](
           val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
             .asInstanceOf[RecordReader[Void, Object]]
           streamReader
-        case _ =>
+        } else {
           // create record reader for CarbonData file format
           if (vectorReader) {
             model.setDirectVectorFill(directFill)
@@ -461,7 +462,7 @@ class CarbonScanRDD[T: ClassTag](
               format.getReadSupportClass(attemptContext.getConfiguration),
               inputMetricsStats, attemptContext.getConfiguration)
           }
-      }
+        }
 
       val closeReader = () => {
         if (reader != null) {

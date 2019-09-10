@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
@@ -220,6 +221,16 @@ public final class DataLoadProcessBuilder {
     configuration.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     configuration.setHeader(loadModel.getCsvHeaderColumns());
     configuration.setSegmentId(loadModel.getSegmentId());
+    List<LoadMetadataDetails> loadMetadataDetails = loadModel.getLoadMetadataDetails();
+    if (loadMetadataDetails != null) {
+      for (LoadMetadataDetails detail : loadMetadataDetails) {
+        if (detail.getLoadName().equals(loadModel.getSegmentId()) && StringUtils
+            .isNotEmpty(detail.getPath())) {
+          configuration.setSegmentPath(detail.getPath());
+        }
+      }
+    }
+
     configuration.setTaskNo(loadModel.getTaskNo());
     String[] complexDelimiters = new String[loadModel.getComplexDelimiters().size()];
     loadModel.getComplexDelimiters().toArray(complexDelimiters);

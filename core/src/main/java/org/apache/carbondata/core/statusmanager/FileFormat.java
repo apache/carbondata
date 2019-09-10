@@ -17,16 +17,33 @@
 
 package org.apache.carbondata.core.statusmanager;
 
+import java.io.Serializable;
+import java.util.Objects;
+
 /**
  * The data file format supported in carbondata project
  */
-public enum FileFormat {
+public class FileFormat implements Serializable {
 
-  // carbondata columnar file format, optimized for read
-  COLUMNAR_V3,
+  public static final FileFormat COLUMNAR_V3 = new FileFormat("COLUMNAR_V3", 0);
+  public static final FileFormat ROW_V1 = new FileFormat("ROW_V1", 1);
 
-  // carbondata row file format, optimized for write
-  ROW_V1;
+  private String format;
+
+  private int ordinal;
+
+  public FileFormat(String format) {
+    this.format = format;
+  }
+
+  public FileFormat(String format, int ordinal) {
+    this.format = format;
+    this.ordinal = ordinal;
+  }
+
+  public int ordinal() {
+    return ordinal;
+  }
 
   public static FileFormat getByOrdinal(int ordinal) {
     switch (ordinal) {
@@ -37,5 +54,20 @@ public enum FileFormat {
     }
 
     return COLUMNAR_V3;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    FileFormat that = (FileFormat) o;
+    return Objects.equals(format, that.format);
+  }
+
+  @Override public int hashCode() {
+    return Objects.hash(format);
+  }
+
+  @Override public String toString() {
+    return format;
   }
 }

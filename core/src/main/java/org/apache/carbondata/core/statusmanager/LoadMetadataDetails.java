@@ -122,7 +122,12 @@ public class LoadMetadataDetails implements Serializable {
   /**
    * the file format of this segment
    */
-  private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
+  private String fileFormat = FileFormat.COLUMNAR_V3.toString();
+
+  /**
+   * Segment path if the segment is added externally.
+   */
+  private String path;
 
   /**
    * Segment file name where it has the information of partition information.
@@ -420,11 +425,11 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public FileFormat getFileFormat() {
-    return fileFormat;
+    return new FileFormat(fileFormat);
   }
 
   public void setFileFormat(FileFormat fileFormat) {
-    this.fileFormat = fileFormat;
+    this.fileFormat = fileFormat.toString();
   }
 
   public String getSegmentFile() {
@@ -446,5 +451,13 @@ public class LoadMetadataDetails implements Serializable {
 
   public void setExtraInfo(String extraInfo) {
     this.extraInfo = extraInfo;
+  }
+
+  public String getPath() {
+    return path;
+  }
+
+  public void setPath(String path) {
+    this.path = path;
   }
 }

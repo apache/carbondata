@@ -133,8 +133,11 @@ public class BlockDataMap extends CoarseGrainDataMap
     // structure
     byte[] filePath = null;
     boolean isPartitionTable = blockletDataMapInfo.getCarbonTable().isHivePartitionTable();
-    if (isPartitionTable || !blockletDataMapInfo.getCarbonTable().isTransactionalTable()
-        || blockletDataMapInfo.getCarbonTable().isSupportFlatFolder()) {
+    if (isPartitionTable || !blockletDataMapInfo.getCarbonTable().isTransactionalTable() ||
+        blockletDataMapInfo.getCarbonTable().isSupportFlatFolder() ||
+        // if the segment data is written in tablepath then no need to store whole path of file.
+        !blockletDataMapInfo.getFilePath().startsWith(
+            blockletDataMapInfo.getCarbonTable().getTablePath())) {
       filePath = path.getParent().toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
       isFilePathStored = true;
     }
