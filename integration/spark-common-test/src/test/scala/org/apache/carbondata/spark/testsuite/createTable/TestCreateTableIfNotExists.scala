@@ -45,14 +45,6 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test blocking of create table like command") {
-    sql("create table sourceTable(name string) stored by 'carbondata'")
-    val exception = intercept[MalformedCarbonCommandException] {
-      sql("create table targetTable like sourceTable")
-    }
-    assert(exception.getMessage.contains("Operation not allowed, when source table is carbon table"))
-  }
-
   test("test create table if not exist concurrently") {
 
     val executorService: ExecutorService = Executors.newFixedThreadPool(10)
