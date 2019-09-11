@@ -800,35 +800,6 @@ class TestCarbonStreamingTableOpName extends CarbonQueryTest with BeforeAndAfter
       " AS SELECT c1, sum(c2) FROM source GROUP BY c1")
   }
 
-  test("test if major compaction is successful for streaming and preaggregate tables") {
-    sql("drop table if exists agg_table2")
-    createTable(tableName = "agg_table2", streaming = true, withBatchLoad = false)
-    sql("create datamap p1 on table agg_table2 using 'preaggregate' as select name, sum(salary) from agg_table2 group by name")
-    loadData()
-    sql("alter table agg_table2 finish streaming")
-    sql("alter table agg_table2 compact 'streaming'")
-    loadData()
-    sql("alter table agg_table2 finish streaming")
-    sql("alter table agg_table2 compact 'streaming'")
-    loadData()
-    sql("alter table agg_table2 finish streaming")
-    sql("alter table agg_table2 compact 'streaming'")
-    loadData()
-    sql("alter table agg_table2 finish streaming")
-    sql("alter table agg_table2 compact 'streaming'")
-    sql("alter table agg_table2 compact 'major'")
-    checkAnswer(sql("select * from agg_table2_p1"),
-      Seq(
-        Row("name_10", 800000.0),
-        Row("name_11", 880000.0),
-        Row("name_12", 960000.0),
-        Row("name_13", 1040000.0),
-        Row("name_14", 1120000.0)))
-    assert(sql("show segments for table agg_table2").collect().map(_.get(0)).contains("1.1"))
-    assert(sql("show segments for table agg_table2_p1").collect().map(_.get(0)).contains("0.1"))
-    sql("drop table if exists agg_table2")
-  }
-
   test("test if timeseries load is successful when created on streaming table with day granularity") {
     sql("drop table if exists timeseries_table")
     createTable(tableName = "timeseries_table", streaming = true, withBatchLoad = false)
@@ -881,5 +852,34 @@ class TestCarbonStreamingTableOpName extends CarbonQueryTest with BeforeAndAfter
     sql("alter table timeseries_table finish streaming")
     sql("alter table timeseries_table compact 'streaming'")
     checkAnswer( sql("select * FROM timeseries_table_agg0_second"), Seq(Row(Timestamp.valueOf("2010-01-01 10:01:01.0"), 120)))
+  }
+
+  test("test if major compaction is successful for streaming and preaggregate tables") {
+    sql("drop table if exists agg_table2")
+    createTable(tableName = "agg_table2", streaming = true, withBatchLoad = false)
+    sql("create datamap p1 on table agg_table2 using 'preaggregate' as select name, sum(salary) from agg_table2 group by name")
+    loadData()
+    sql("alter table agg_table2 finish streaming")
+    sql("alter table agg_table2 compact 'streaming'")
+    loadData()
+    sql("alter table agg_table2 finish streaming")
+    sql("alter table agg_table2 compact 'streaming'")
+    loadData()
+    sql("alter table agg_table2 finish streaming")
+    sql("alter table agg_table2 compact 'streaming'")
+    loadData()
+    sql("alter table agg_table2 finish streaming")
+    sql("alter table agg_table2 compact 'streaming'")
+    sql("alter table agg_table2 compact 'major'")
+    checkAnswer(sql("select * from agg_table2_p1"),
+      Seq(
+        Row("name_10", 800000.0),
+        Row("name_11", 880000.0),
+        Row("name_12", 960000.0),
+        Row("name_13", 1040000.0),
+        Row("name_14", 1120000.0)))
+    assert(sql("show segments for table agg_table2").collect().map(_.get(0)).contains("1.1"))
+    assert(sql("show segments for table agg_table2_p1").collect().map(_.get(0)).contains("0.1"))
+    sql("drop table if exists agg_table2")
   }
 }
