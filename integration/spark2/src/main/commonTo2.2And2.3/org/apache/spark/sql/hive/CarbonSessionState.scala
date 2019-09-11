@@ -45,7 +45,6 @@ object CarbonSessionCatalogUtil {
     rtnRelation
   }
 
-
   /**
    * Method used to update the table name
    * @param oldTableIdentifier old table identifier
@@ -191,6 +190,4 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
       sparkSession,
       super.analyzer)
   }
-
-
 }
