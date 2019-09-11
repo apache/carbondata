@@ -74,7 +74,7 @@ If user perform following command on the main table, system will return failure.
    `ALTER TABLE RENAME`. Note that adding a new column is supported, and for dropping columns and
    change datatype command, CarbonData will check whether it will impact the pre-aggregate table, if
     not, the operation is allowed, otherwise operation will be rejected by throwing exception.
-3. Partition management command: `ALTER TABLE ADD/DROP PARTITION
+3. Partition management command: `ALTER TABLE ADD/DROP PARTITION`.
 
 If user do want to perform above operations on the main table, user can first drop the datamap, perform the operation, and re-create the datamap again.
 
