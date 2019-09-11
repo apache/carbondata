@@ -26,7 +26,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand, CarbonLoadDataCommand, RefreshCarbonTableCommand}
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableAddHivePartitionCommand, CarbonAlterTableDropHivePartitionCommand, CarbonShowCarbonPartitionsCommand}
 import org.apache.spark.sql.execution.command.schema._
-import org.apache.spark.sql.execution.command.table.{CarbonDescribeFormattedCommand, CarbonDropTableCommand}
+import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDescribeFormattedCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
 import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable}
@@ -37,8 +37,6 @@ import org.apache.spark.util.{CarbonReflectionUtils, DataMapUtil, FileUtils, Spa
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.util.Util
 
@@ -97,8 +95,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
           .tableExists(createLikeTable.sourceTable)(sparkSession)
         if (isCarbonTable) {
-          throw new MalformedCarbonCommandException(
-            "Operation not allowed, when source table is carbon table")
+          ExecutedCommandExec(CarbonCreateTableLikeCommand(createLikeTable.sourceTable,
+            createLikeTable.targetTable, createLikeTable.ifNotExists)) :: Nil
         } else {
           ExecutedCommandExec(createLikeTable) :: Nil
         }

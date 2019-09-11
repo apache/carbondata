@@ -16,11 +16,7 @@
  */
 package org.apache.carbondata.core.metadata.schema.table;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +36,7 @@ import com.google.gson.annotations.SerializedName;
 /**
  * Persisting the table information
  */
-public class TableSchema implements Serializable, Writable {
+public class TableSchema implements Serializable, Writable, Cloneable {
 
   /**
    * serialization version
@@ -71,7 +67,7 @@ public class TableSchema implements Serializable, Writable {
   private SchemaEvolution schemaEvolution;
 
   /**
-   * contains all key value pairs for table properties set by user in craete DDL
+   * contains all key value pairs for table properties set by user in create DDL
    */
   private Map<String, String> tableProperties;
 
@@ -309,6 +305,27 @@ public class TableSchema implements Serializable, Writable {
    */
   public static TableSchemaBuilder builder() {
     return new TableSchemaBuilder();
+  }
+
+  /**
+   * make a deep copy of TableSchema
+   */
+  @Override
+  public Object clone() throws CloneNotSupportedException {
+    try {
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      DataOutputStream dos = new DataOutputStream(bos);
+      this.write(dos);
+      dos.close();
+      bos.close();
+
+      DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bos.toByteArray()));
+      TableSchema tableSchema = (TableSchema) super.clone();
+      tableSchema.readFields(dis);
+      return tableSchema;
+    } catch (IOException e) {
+      throw new RuntimeException("Error occur while cloning TableSchema", e);
+    }
   }
 
 }
