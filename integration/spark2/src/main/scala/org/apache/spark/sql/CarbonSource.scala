@@ -126,7 +126,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       parameters: Map[String, String],
       dataSchema: StructType): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
-    addLateDecodeOptimization(sqlContext.sparkSession)
+    // addLateDecodeOptimization(sqlContext.sparkSession)
     val newParameters =
       CaseInsensitiveMap[String](CarbonScalaUtil.getDeserializedParameters(parameters))
     val dbName: String =

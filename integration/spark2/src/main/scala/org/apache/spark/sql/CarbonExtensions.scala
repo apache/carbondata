@@ -18,6 +18,8 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.parser.ParserInterface
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
 import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonPreInsertionCasts}
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
@@ -34,11 +36,15 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
         new CarbonSparkSqlParser(new SQLConf, sparkSession))
 
     // carbon analyzer rules
+    val udf = new CarbonUDFTransformRule
     extensions
       .injectResolutionRule((session: SparkSession) => CarbonIUDAnalysisRule(session))
     extensions
       .injectResolutionRule((session: SparkSession) => CarbonPreInsertionCasts(session))
-
+    // TODO: Make CarbonUDFTransformRule injectable Rule
+    extensions
+      .injectResolutionRule((sparkSession: SparkSession) =>
+        CarbonUDFTransformRuleWrapper(sparkSession, udf))
 
     // Carbon Pre optimization rules
     // TODO: CarbonPreAggregateDataLoadingRules
@@ -49,21 +55,45 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
     extensions
       .injectOptimizerRule((_: SparkSession) => new CarbonIUDRule)
     extensions
-      .injectOptimizerRule((_: SparkSession) => new CarbonUDFTransformRule)
-    extensions
       .injectOptimizerRule((_: SparkSession) => new CarbonLateDecodeRule)
 
     // carbon planner strategies
-    extensions
-      .injectPlannerStrategy((session: SparkSession) => new StreamingTableStrategy(session))
-    extensions
-      .injectPlannerStrategy((_: SparkSession) => new CarbonLateDecodeStrategy)
-    extensions
-      .injectPlannerStrategy((session: SparkSession) => new DDLStrategy(session))
+    var streamingTableStratergy : StreamingTableStrategy = null
+    val decodeStrategy = new CarbonLateDecodeStrategy
+    var ddlStrategy : DDLStrategy = null
 
+    extensions
+      .injectPlannerStrategy((session: SparkSession) => {
+        if (streamingTableStratergy == null) {
+          streamingTableStratergy = new StreamingTableStrategy(session)
+        }
+        streamingTableStratergy
+      })
+
+    extensions
+      .injectPlannerStrategy((_: SparkSession) => decodeStrategy)
+
+    extensions
+      .injectPlannerStrategy((sparkSession: SparkSession) => {
+        if (ddlStrategy == null) {
+          ddlStrategy = new DDLStrategy(sparkSession)
+        }
+        ddlStrategy
+      })
   }
 }
 
 object CarbonExtensions {
   CarbonEnv.init
+}
+
+case class CarbonUDFTransformRuleWrapper(session: SparkSession, rule: Rule[LogicalPlan])
+  extends Rule[LogicalPlan] {
+
+  override def apply(plan: LogicalPlan): LogicalPlan = {
+    if (session.sessionState.experimentalMethods.extraOptimizations.isEmpty) {
+      session.sessionState.experimentalMethods.extraOptimizations = Seq(rule)
+    }
+  plan
+}
 }
