@@ -21,6 +21,7 @@ import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -458,10 +459,12 @@ test("Creation of partition table should fail if the colname in table schema and
       sql("alter table onlyPart drop columns(name)")
     }
     assert(ex1.getMessage.contains("alter table drop column is failed, cannot have the table with all columns as partition column"))
-    val ex2 = intercept[MalformedCarbonCommandException] {
-      sql("alter table onlyPart change age age bigint")
+    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      val ex2 = intercept[MalformedCarbonCommandException] {
+        sql("alter table onlyPart change age age bigint")
+      }
+      assert(ex2.getMessage.contains("Alter datatype of the partition column age is not allowed"))
     }
-    assert(ex2.getMessage.contains("Alter datatype of the partition column age is not allowed"))
     sql("drop table if exists onlyPart")
   }
 
