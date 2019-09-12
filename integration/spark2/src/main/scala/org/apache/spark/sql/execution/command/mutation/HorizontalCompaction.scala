@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompact
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
@@ -106,6 +106,13 @@ object HorizontalCompaction {
       segmentUpdateStatusManager,
       deleteTimeStamp,
       segLists)
+
+    // If there are already index and data files are present for old update operation, then the
+    // cache will be loaded for those files during current update, but once after horizontal
+    // compaction is finished, new compacted files are generated, so the segments inside cache are
+    // now invalid, so clear the cache of invalid segment after horizontal compaction.
+    DataMapStoreManager.getInstance()
+      .clearInvalidSegments(carbonTable, segLists.asScala.map(_.getSegmentNo).asJava)
   }
 
   /**
