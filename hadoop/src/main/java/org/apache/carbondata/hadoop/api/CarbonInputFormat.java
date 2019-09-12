@@ -422,7 +422,7 @@ m filterExpression
       List<PartitionSpec> partitionNames, List<Segment> validSegments) throws IOException {
     DistributableDataMapFormat dataMapFormat =
         new DistributableDataMapFormat(table, null, validSegments, new ArrayList<String>(),
-            partitionNames, false, null, false);
+            partitionNames, false, null, false, false);
     dataMapFormat.setIsWriteToFile(false);
     try {
       DataMapJob dataMapJob =

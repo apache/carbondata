@@ -41,14 +41,15 @@ import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{StructField, StructType}
-import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat, CarbonTableOutputFormat}
 import org.apache.carbondata.hadoop.CarbonProjection
+import org.apache.carbondata.indexserver.DistributedRDDUtils
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -340,6 +341,24 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       } else {
         LOGGER.info(s"Compaction request completed for table " +
                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+
+        // Prepriming index for compaction
+        val segmentsForPriming = if (compactionType.equals(CompactionType.IUD_DELETE_DELTA) ||
+            compactionType.equals(CompactionType.IUD_UPDDEL_DELTA)) {
+            validSegments.asScala.map(_.getSegmentNo).toList
+        } else if (compactionType.equals(CompactionType.MAJOR) ||
+                   compactionType.equals(CompactionType.MINOR) ||
+                   compactionType.equals(CompactionType.CUSTOM)) {
+            scala.List(mergedLoadNumber)
+        } else {
+          scala.List()
+        }
+        DistributedRDDUtils.triggerPrepriming(sqlContext.sparkSession,
+          carbonTable,
+          validSegments.asScala.map(_.getSegmentNo).toList,
+          operationContext,
+          FileFactory.getConfiguration,
+          segmentsForPriming)
       }
     } else {
       LOGGER.error(s"Compaction request failed for table " +

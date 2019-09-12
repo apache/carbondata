@@ -19,6 +19,7 @@ package org.apache.carbondata.indexserver
 import java.net.InetSocketAddress
 import java.security.PrivilegedAction
 import java.util.UUID
+import java.util.concurrent.{Executors, ExecutorService}
 
 import scala.collection.JavaConverters._
 
@@ -84,6 +85,14 @@ object IndexServer extends ServerInterface {
 
   private val numHandlers: Int = CarbonProperties.getInstance().getNumberOfHandlersForIndexServer
 
+  private lazy val indexServerExecutorService: Option[ExecutorService] = {
+    if (CarbonProperties.getInstance().isDistributedPruningEnabled("", "")) {
+      Some(Executors.newFixedThreadPool(1))
+    } else {
+      None
+    }
+  }
+
   private val isExecutorLRUConfigured: Boolean =
     CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE) != null
@@ -103,18 +112,34 @@ object IndexServer extends ServerInterface {
     })
   }
 
+  private def submitAsyncTask[T](t: => Unit): Unit = {
+    indexServerExecutorService.get.submit(new Runnable {
+      override def run(): Unit = {
+        t
+      }
+    })
+  }
+
   def getCount(request: DistributableDataMapFormat): LongWritable = {
     doAs {
-      if (!request.isFallbackJob) {
-        sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
-        sparkSession.sparkContext
-          .setLocalProperty("spark.job.description", request.getTaskGroupDesc)
+      lazy val getCountTask = {
+        if (!request.isFallbackJob) {
+          sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
+          sparkSession.sparkContext
+            .setLocalProperty("spark.job.description", request.getTaskGroupDesc)
+        }
+        val splits = new DistributedCountRDD(sparkSession, request).collect()
+        if (!request.isFallbackJob) {
+          DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
+        }
+        new LongWritable(splits.map(_._2.toLong).sum)
       }
-      val splits = new DistributedCountRDD(sparkSession, request).collect()
-      if (!request.isFallbackJob) {
-        DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
+      if (request.ifAsyncCall) {
+        submitAsyncTask(getCountTask)
+        new LongWritable(0)
+      } else {
+        getCountTask
       }
-      new LongWritable(splits.map(_._2.toLong).sum)
     }
   }
 
