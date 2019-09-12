@@ -1676,6 +1676,15 @@ public final class CarbonProperties {
     return isServerEnabledByUser;
   }
 
+  /**
+   * Check if user has enabled/disabled the use of pre-priming for index server
+   */
+  public boolean isIndexServerPrePrimingEnabled() {
+    String configuredValue = carbonProperties.getProperty(
+            CarbonCommonConstants.CARBON_INDEXSEVER_ENABLE_PREPRIMING);
+    return Boolean.parseBoolean(configuredValue);
+  }
+
   public String getIndexServerIP() {
     return carbonProperties.getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_IP, "");
   }

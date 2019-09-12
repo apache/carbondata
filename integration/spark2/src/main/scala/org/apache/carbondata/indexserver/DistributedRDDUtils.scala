@@ -22,13 +22,26 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hdfs.DFSClient.Conf
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.spark.Partition
+import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DataMapDistributable, Segment}
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.readcommitter.{LatestFilesReadCommittedScope, TableStatusReadCommittedScope}
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+
 
 object DistributedRDDUtils {
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
   // Segment number to executorNode mapping
   val tableToExecutorMapping: ConcurrentHashMap[String, ConcurrentHashMap[String, String]] =
     new ConcurrentHashMap[String, ConcurrentHashMap[String, String]]()
@@ -338,4 +351,46 @@ object DistributedRDDUtils {
     formatter.format(new Date())
   }
 
+  /**
+   * This function creates an event for prepriming of the index server
+   */
+  def triggerPrepriming(sparkSession: SparkSession,
+      carbonTable: CarbonTable,
+      invalidSegments: Seq[String],
+      operationContext: OperationContext,
+      conf: Configuration,
+      segmentId: List[String]): Unit = {
+    if (carbonTable.isTransactionalTable) {
+      val readCommittedScope = new TableStatusReadCommittedScope(AbsoluteTableIdentifier.from(
+        carbonTable.getTablePath), conf)
+      val validSegments: Seq[Segment] = segmentId.map {
+        segmentToPrime =>
+          val loadDetailsForCurrentSegment = readCommittedScope
+            .getSegmentList.find(_.getLoadName.equalsIgnoreCase(segmentToPrime)).get
+
+          new Segment(segmentToPrime,
+            loadDetailsForCurrentSegment.getSegmentFile,
+            readCommittedScope,
+            loadDetailsForCurrentSegment)
+      }
+      val indexServerEnabled = CarbonProperties.getInstance().isDistributedPruningEnabled(
+        carbonTable.getDatabaseName, carbonTable.getTableName)
+      val prePrimingEnabled = CarbonProperties.getInstance().isIndexServerPrePrimingEnabled
+      if (indexServerEnabled && prePrimingEnabled) {
+        LOGGER.info(s" Loading segments for the table: ${ carbonTable.getTableName } in the cache")
+        val indexServerLoadEvent: IndexServerLoadEvent =
+          IndexServerLoadEvent(
+            sparkSession,
+            carbonTable,
+            validSegments.toList,
+            invalidSegments.toList
+          )
+        OperationListenerBus.getInstance().fireEvent(indexServerLoadEvent, operationContext)
+        LOGGER.info(s" Segments for the table: ${ carbonTable.getTableName } loaded in the cache")
+      } else {
+        LOGGER.info(s" Unable to load segments for the table: ${ carbonTable.getTableName }" +
+                    s" in the cache")
+      }
+    }
+  }
 }

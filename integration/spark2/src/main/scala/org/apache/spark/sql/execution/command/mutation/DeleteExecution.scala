@@ -42,11 +42,13 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
 import org.apache.carbondata.core.mutate.data.RowCountDetailsVO
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager, SegmentUpdateStatusManager}
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
+import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
-import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.spark.DeleteDelataResultImpl
@@ -328,18 +330,35 @@ object DeleteExecution {
     (segmentsTobeDeleted, operatedRowCount)
   }
 
-  def clearDistributedSegmentCache(carbonTable: CarbonTable,
-      segmentsToBeCleared: Seq[Segment])(sparkSession: SparkSession): Unit = {
-    if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable
-      .getDatabaseName, carbonTable.getTableName)) {
-      try {
-        IndexServer.getClient
-          .invalidateSegmentCache(carbonTable, segmentsToBeCleared.map(_.getSegmentNo)
-          .toArray, SparkSQLUtil.getTaskGroupId(sparkSession))
-      } catch {
-        case _: Exception =>
-          LOGGER.warn(s"Clearing of invalid segments for ${
-            carbonTable.getTableUniqueName} has failed")
+  /**
+   * This function fires an event for pre-priming in the index server
+   */
+  def reloadDistributedSegmentCache(carbonTable: CarbonTable, deletedSegments: Seq[Segment],
+      operationContext: OperationContext)(sparkSession: SparkSession): Unit = {
+    if (carbonTable.isTransactionalTable) {
+      val readCommittedScope = new TableStatusReadCommittedScope(AbsoluteTableIdentifier.from(
+        carbonTable.getTablePath), FileFactory.getConfiguration)
+      deletedSegments.foreach(_.setReadCommittedScope(readCommittedScope))
+      val indexServerEnabled = CarbonProperties.getInstance().isDistributedPruningEnabled(
+        carbonTable.getDatabaseName, carbonTable.getTableName)
+      val prePrimingEnabled = CarbonProperties.getInstance().isIndexServerPrePrimingEnabled()
+      if (indexServerEnabled && prePrimingEnabled) {
+        LOGGER.info(s"Loading segments for table: ${ carbonTable.getTableName } in the cache")
+        val indexServerLoadEvent: IndexServerLoadEvent =
+          IndexServerLoadEvent(
+            sparkSession,
+            carbonTable,
+            deletedSegments.toList,
+            deletedSegments.map(_.getSegmentNo).toList
+          )
+        OperationListenerBus.getInstance().fireEvent(indexServerLoadEvent, operationContext)
+        LOGGER.info(s"Segments for table: ${
+          carbonTable
+            .getTableName
+        } has been loaded in the cache")
+      } else {
+        LOGGER.info(
+          s"Segments for table:" + s" ${ carbonTable.getTableName } not loaded in the cache")
       }
     }
   }

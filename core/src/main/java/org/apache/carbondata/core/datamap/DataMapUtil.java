@@ -250,7 +250,7 @@ public class DataMapUtil {
     invalidSegmentNo.addAll(segmentsToBeRefreshed);
     DistributableDataMapFormat dataMapFormat =
         new DistributableDataMapFormat(carbonTable, resolver, validSegments, invalidSegmentNo,
-            partitionsToPrune, false, level, isFallbackJob);
+            partitionsToPrune, false, level, isFallbackJob, false);
     if (isCountJob) {
       dataMapFormat.setCountStarJob();
       dataMapFormat.setIsWriteToFile(false);

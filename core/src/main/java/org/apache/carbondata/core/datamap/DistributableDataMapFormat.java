@@ -92,6 +92,9 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private boolean isCountStarJob = false;
 
+  // Whether AsyncCall to the Index Server(true in the case of prepriming)
+  private boolean isAsyncCall;
+
   DistributableDataMapFormat() {
 
   }
@@ -100,14 +103,14 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
       List<Segment> validSegments, List<String> invalidSegments, boolean isJobToClearDataMaps,
       String dataMapToClear) throws IOException {
     this(table, null, validSegments, invalidSegments, null,
-        isJobToClearDataMaps, null, false);
+        isJobToClearDataMaps, null, false, false);
     this.dataMapToClear = dataMapToClear;
   }
 
   public DistributableDataMapFormat(CarbonTable table, FilterResolverIntf filterResolverIntf,
       List<Segment> validSegments, List<String> invalidSegments, List<PartitionSpec> partitions,
-      boolean isJobToClearDataMaps, DataMapLevel dataMapLevel, boolean isFallbackJob)
-      throws IOException {
+      boolean isJobToClearDataMaps, DataMapLevel dataMapLevel, boolean isFallbackJob,
+      boolean isAsyncCall) throws IOException {
     this.table = table;
     this.filterResolverIntf = filterResolverIntf;
     this.validSegments = validSegments;
@@ -119,6 +122,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     this.isJobToClearDataMaps = isJobToClearDataMaps;
     this.dataMapLevel = dataMapLevel;
     this.isFallbackJob = isFallbackJob;
+    this.isAsyncCall = isAsyncCall;
   }
 
   @Override
@@ -242,6 +246,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     out.writeUTF(queryId);
     out.writeBoolean(isWriteToFile);
     out.writeBoolean(isCountStarJob);
+    out.writeBoolean(isAsyncCall);
   }
 
   @Override
@@ -288,6 +293,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     this.queryId = in.readUTF();
     this.isWriteToFile = in.readBoolean();
     this.isCountStarJob = in.readBoolean();
+    this.isAsyncCall = in.readBoolean();
   }
 
   private void initReadCommittedScope() throws IOException {
@@ -309,6 +315,13 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
    */
   public boolean isFallbackJob() {
     return isFallbackJob;
+  }
+
+  /**
+   * @return Whether asyncCall to the IndexServer.
+   */
+  public boolean ifAsyncCall() {
+    return isAsyncCall;
   }
 
   /**

@@ -33,14 +33,17 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
+import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
 import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.loading.FailureCauses
 
@@ -166,8 +169,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
             executionErrors,
             segmentsToBeDeleted)
 
-          DeleteExecution
-            .clearDistributedSegmentCache(carbonTable, segmentsToBeDeleted)(sparkSession)
+          // prepriming for update command
+          DeleteExecution.reloadDistributedSegmentCache(carbonTable,
+            segmentsToBeDeleted, operationContext)(sparkSession)
 
         } else {
           throw new ConcurrentOperationException(carbonTable, "compaction", "update")

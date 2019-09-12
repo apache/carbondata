@@ -2207,6 +2207,12 @@ public final class CarbonCommonConstants {
   public static final String CARBON_ENABLE_INDEX_SERVER = "carbon.enable.index.server";
 
   /**
+   * Configured property to enable/disable prepriming in index server
+   */
+  public static final String CARBON_INDEXSEVER_ENABLE_PREPRIMING =
+          "carbon.indexserver.enable.prepriming";
+
+  /**
    * Property is used to enable/disable fallback for indexserver.
    * Used for testing purposes only.
    */

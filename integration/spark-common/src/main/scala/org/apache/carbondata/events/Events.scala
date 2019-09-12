@@ -198,3 +198,12 @@ trait BuildDataMapEventsInfo {
   val identifier: AbsoluteTableIdentifier
   val dataMapNames: scala.collection.mutable.Seq[String]
 }
+
+/**
+ * EventInfo for prepriming on IndexServer. This event is used to
+ * fire a call to the index serevr when the load is complete.
+ */
+trait IndexServerEventInfo {
+  val carbonTable: CarbonTable
+  val sparkSession: SparkSession
+}

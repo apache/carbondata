@@ -84,6 +84,11 @@ class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: Distributa
     } else {
       0L
     }
+    if (dataMapFormat.ifAsyncCall()) {
+      // to clear cache of invalid segments during pre-priming in index server
+      DataMapStoreManager.getInstance().clearInvalidSegments(dataMapFormat.getCarbonTable,
+        dataMapFormat.getInvalidSegments)
+    }
     Iterator((executorIP + "_" + cacheSize.toString, results.map(_._2.toLong).sum.toString))
   }
 

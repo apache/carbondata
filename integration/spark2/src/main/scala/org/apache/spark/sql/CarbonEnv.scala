@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTa
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
 import org.apache.spark.sql.execution.command.cache._
+import org.apache.spark.sql.execution.command.indexserver.PrePrimingEventListener
 import org.apache.spark.sql.execution.command.mv._
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
@@ -169,6 +170,7 @@ object CarbonEnv {
       .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
       .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
       .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[IndexServerLoadEvent], PrePrimingEventListener)
       .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
       .addListener(classOf[AlterTableRenamePreEvent], RenameTablePreListener)
       .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
