@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.command.table
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
@@ -36,6 +37,7 @@ import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.events._
 
@@ -232,6 +234,10 @@ case class CarbonDropTableCommand(
       // delete table data only if it is not external table
       if (FileFactory.isFileExist(tablePath, fileType) &&
           !(carbonTable.isExternalTable || carbonTable.isFileLevelFormat)) {
+
+        // if it is managed table, we should delete all external segment folders
+        deleteExternalSegments(carbonTable, sparkSession.sessionState.newHadoopConf())
+
         val file = FileFactory.getCarbonFile(tablePath, fileType)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
       }
@@ -251,6 +257,13 @@ case class CarbonDropTableCommand(
       childDropDataMapCommands.foreach(_.processData(sparkSession))
     }
     Seq.empty
+  }
+
+  private def deleteExternalSegments(table: CarbonTable, conf: Configuration): Unit = {
+    val externalSegmentFolders = table.getAllExternalSegmentFolders
+    externalSegmentFolders.asScala.foreach { folder =>
+      CarbonUtil.deleteFoldersAndFilesSilent(FileFactory.getCarbonFile(folder, conf))
+    }
   }
 
   override protected def opName: String = "DROP TABLE"

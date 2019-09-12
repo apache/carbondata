@@ -185,8 +185,56 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("Test add segment and drop table should deletes all segments") {
+    val tableName = "add_segment_test"
+    sql(s"drop table if exists $tableName")
+    sql(
+      s"""
+         | CREATE TABLE $tableName (empno int, empname string, designation String, doj Timestamp,
+         | workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+         | projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+         | utilization int,salary int)
+         | STORED AS carbondata
+      """.stripMargin)
 
-  test("Test update on added segment") {
+    sql(
+      s"""
+         |LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE $tableName
+         |OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+      """.stripMargin)
+    var count = 10
+
+    // write 3 external segments
+    (1 to 3).foreach { i =>
+      val externalSegmentPath = s"$storeLocation/external_segment$i"
+      FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+
+      val writer = CarbonWriter.builder
+        .outputPath(externalSegmentPath)
+        .withSchemaFile(s"$storeLocation/$tableName/Metadata/schema")
+        .writtenBy("AddSegmentTestCase")
+        .withCsvInput()
+        .build()
+      val source = Source.fromFile(s"$resourcesPath/data.csv")
+      for (line <- source.getLines()) {
+        if (count != 0) {
+          writer.write(line.split(","))
+        }
+        count = count + 1
+      }
+      writer.close()
+      sql(s"alter table $tableName add segment options('path'='$externalSegmentPath', 'format'='carbon')").show()
+    }
+    checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(count)))
+    sql(s"drop table $tableName")
+
+    // drop table should have deleted all external segment folders
+    (1 to 3).foreach { i =>
+      assertResult(false)(new File(s"$storeLocation/external_segment$i").exists())
+    }
+  }
+
+  test("Test update on added segment ") {
     sql("drop table if exists addsegment1")
     sql(
       """
