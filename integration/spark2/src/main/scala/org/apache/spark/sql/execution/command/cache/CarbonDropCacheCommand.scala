@@ -25,7 +25,7 @@ import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.DataMapUtil
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, DataMapUtil}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{DropTableCacheEvent, OperationContext, OperationListenerBus}
@@ -55,13 +55,11 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
         carbonTable.getTableName)) {
         DataMapUtil.executeClearDataMapJob(carbonTable, DataMapUtil.DISTRIBUTED_JOB_NAME)
       } else {
-        val allIndexFiles = CacheUtil.getAllIndexFiles(carbonTable)(sparkSession)
         // Extract dictionary keys for the table and create cache keys from those
         val dictKeys: List[String] = CacheUtil.getAllDictCacheKeys(carbonTable)
-
         // Remove elements from cache
-        val keysToRemove = allIndexFiles ++ dictKeys
-        cache.removeAll(keysToRemove.asJava)
+        cache.removeAll(dictKeys.asJava)
+        DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getAbsoluteTableIdentifier)
       }
     }
     LOGGER.info("Drop cache request served for table " + carbonTable.getTableUniqueName)
