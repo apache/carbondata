@@ -59,6 +59,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table IF EXISTS maintable")
     sql("drop table IF EXISTS testtable")
     sql("drop table if exists par_table")
+    sql("drop table if exists mv_Case_InSenSitive")
   }
 
   test("test alter add column on maintable") {
@@ -612,6 +613,20 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
 
     // check if cache does not have any more mv index entries
     assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(mvPath)))
+  }
+
+  test("test case insensitive create & drop mv command") {
+    sql("drop table IF EXISTS mv_case_insensitive")
+    sql("create table mv_Case_InSenSitive(name string, age int) stored by 'carbondata'")
+    sql("insert into mv_case_insensitive select 'aa',20")
+    sql("insert into mv_Case_InSenSitive select 'aa',20")
+    sql("drop datamap if exists dm_InSenSitive ")
+    sql("create datamap dm_InSenSiTive using 'mv' as select name from mv_case_insensitive group by name")
+    val query: String = "select name from mv_case_insensitive group by name"
+    val df1 = sql(s"$query")
+    val analyzed1 = df1.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed1, "dm_insensitive"))
+    sql("drop datamap dm_InSenSitive ")
   }
 
   def clone(oldSet: util.Set[String]): util.HashSet[String] = {

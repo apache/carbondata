@@ -66,6 +66,17 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test case insensitive create & drop preaggregate datamap command") {
+    sql("drop table IF EXISTS mtcaseinsensitive")
+    sql("create table mtCaSeInSenSitive(name string, age int) stored by 'carbondata'")
+    sql("insert into mtcaseinsensitive select 'aa',20")
+    sql("insert into mtCaSeInSenSitive select 'aa',21")
+    sql("create datamap preagginsensitive on table mtCaSeInSenSitive using 'preaggregate' as select count(*) from mtcaseinsensitive")
+    checkExistence(sql("show datamap on table mtcaseinsensitive"), true, "preagginsensitive")
+    sql("drop datamap preAggInSenSitive on table mtCaSeInSenSitive")
+    checkExistence(sql("show datamap on table mtcaseinsensitive"), false, "preagginsensitive")
+  }
+
   test("test datamap create with preagg") {
     sql("drop datamap if exists datamap3 on table datamaptest")
     sql(
@@ -202,6 +213,18 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       assert(frame.collect().length == 1)
       checkExistence(frame, true, "datamap2", "(NA)", newClass)
     }
+  }
+
+  test("test case insensitive create & drop bloom datamap command") {
+    sql("drop table IF EXISTS mtcaseinsensitive")
+    sql("create table mtCaSeInSenSitive(name string, age int) stored by 'carbondata'")
+    sql("insert into mtcaseinsensitive select 'aa',20")
+    sql("insert into mtCaSeInSenSitive select 'aa',21")
+    sql("create datamap bloominsensitive on table mtCaSeInSenSitive using 'bloomfilter' DMPROPERTIES ('index_columns'='name', 'bloom_size'='32000', 'bloom_fpp'='0.001')")
+    checkAnswer(sql(s"select Count(*) from mtcaseinsensitive where name='aa'"),
+      Seq(Row(2)))
+    sql("drop datamap blooMInSenSitive on table mtCaSeInSenSitive")
+    checkExistence(sql("show datamap on table mtcaseinsensitive"), false, "bloominsensitive")
   }
 
   test("test show datamap: show datamap property related information") {
@@ -587,5 +610,6 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
     sql("drop table if exists datamaptest")
     sql("drop table if exists datamapshowtest")
+    sql("drop table if exists mtcaseinsensitive")
   }
 }

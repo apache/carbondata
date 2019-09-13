@@ -38,6 +38,10 @@ class TestBetweenFilter extends QueryTest with BeforeAndAfterAll {
     sql(s"""
            LOAD DATA LOCAL INPATH '$csvFilePath' into table carbonTableBetween OPTIONS('BAD_RECORDS_ACTION'='FORCE')
            """)
+    sql("DROP TABLE IF EXISTS carbonRangeFilter")
+    sql("create table if not exists carbonRangeFilter (a1 int, a2 string) stored by 'carbondata'")
+    sql("insert into carbonRangeFilter values (1,'a'),(2,'b'),(3,'c'),(4,'d'),(5,'e')")
+    sql("insert into carbonRangeFilter values (6,'f'),(7,'g'),(8,'h'),(9,'i'),(10,'j')")
   }
 
 
@@ -65,9 +69,56 @@ class TestBetweenFilter extends QueryTest with BeforeAndAfterAll {
       Seq(Row("1"),Row("2"),Row("3")))
   }
 
+  test("range filter on one column with one and condition") {
+    checkAnswer(
+      sql("SELECT * FROM carbonRangeFilter where a1 between 1 and 5 and a1 between 3 and 7"),
+      Seq(Row(4,"d"),Row(5,"e"),Row(3,"c")))
+  }
 
+  test("range filter on one column with one or condition") {
+    checkAnswer(
+      sql("SELECT * FROM carbonRangeFilter where a1 between 1 and 5 or a1 between 3 and 7"),
+      Seq(Row(1,"a"),Row(4,"d"),Row(5,"e"),Row(3,"c"),Row(2,"b"),Row(7,"g"),Row(6,"f")))
+  }
+
+  test("range filter on two column with and condition between filter columns") {
+    checkAnswer(
+      sql("SELECT * FROM carbonRangeFilter where a1 between 1 and 5 and a2 between 'c' and 'h'"),
+      Seq(Row(4,"d"),Row(5,"e"),Row(3,"c")))
+  }
+
+  test("range filter on two column with or condition between filter columns") {
+    checkAnswer(
+      sql("SELECT * FROM carbonRangeFilter where a1 between 1 and 5 or a2 between 'c' and 'h'"),
+      Seq(Row(1,"a"),Row(4,"d"),Row(5,"e"),Row(3,"c"),Row(2,"b"),Row(7,"g"),Row(8,"h"),Row(6,"f")))
+  }
+
+  test("range filter on two column with and condition and subcondition with and filter") {
+    checkAnswer(
+      sql("SELECT * FROM carbonRangeFilter where (a1 between 1 and 5 and a1 between 2 and 9) and (a2 between 'b' and 'g' and a2 between 'd' and 'j')"),
+      Seq(Row(4,"d"),Row(5,"e")))
+  }
+
+  test("range filter on two column with and condition and subcondition with or filter") {
+    checkAnswer(
+      sql("SELECT * FROM carbonRangeFilter where (a1 between 1 and 5 and a1 between 2 and 9) and (a2 between 'b' and 'g' or a2 between 'd' and 'j')"),
+      Seq(Row(4,"d"),Row(5,"e"),Row(3,"c"),Row(2,"b")))
+  }
+
+  test("range filter on two column with or condition and subcondition with and filter") {
+    checkAnswer(
+      sql("SELECT * FROM carbonRangeFilter where (a1 between 1 and 5 and a1 between 2 and 9) or (a2 between 'b' and 'g' and  a2 between 'd' and 'j')"),
+      Seq(Row(4,"d"),Row(5,"e"),Row(3,"c"),Row(2,"b"),Row(7,"g"),Row(6,"f")))
+  }
+
+  test("range filter on two column with or condition and subcondition with or filter") {
+    checkAnswer(
+      sql("SELECT * FROM carbonRangeFilter where (a1 between 1 and 5 and a1 between 2 and 9) or (a2 between 'b' and 'g' or  a2 between 'd' and 'j')"),
+      Seq(Row(4,"d"),Row(5,"e"),Row(3,"c"),Row(2,"b"),Row(7,"g"),Row(8,"h"),Row(9,"i"),Row(10,"j"),Row(6,"f")))
+  }
 
   override def afterAll {
     sql("drop table if exists carbonTableBetween")
+    sql("drop table if exists carbonRangeFilter")
   }
 }

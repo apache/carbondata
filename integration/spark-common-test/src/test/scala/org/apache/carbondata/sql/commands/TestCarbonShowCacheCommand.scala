@@ -24,6 +24,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
@@ -161,6 +162,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
 
   override protected def afterAll(): Unit = {
     sql("use default").collect()
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER, "false")
     dropTable
   }
 
@@ -230,5 +233,28 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     val result5 = sql("show metacache on table cache_5").collect()
     assertResult(2)(result5.length)
     assertResult("5/5 index files cached")(result5(0).getString(2))
+  }
+
+  test("show cache in case of fallback in index server") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER, "true")
+      .addProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_IP, "localhost")
+      .addProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_PORT, "8080")
+      .addProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_WORKER_THREADS, "-1")
+    sql("drop table if exists nocache_table")
+    sql("create table if not exists nocache_table (a1 int) stored by 'carbondata'")
+    sql("insert into nocache_table select 1111")
+    sql("insert into nocache_table select 2222")
+    sql("insert into nocache_table select 3333")
+    sql("insert into nocache_table select 4444")
+    var result = sql("show metacache on table nocache_table").collect()
+    assertResult("0/4 index files cached")(result(0).getString(2))
+    assertResult("INDEX SERVER")(result(2).getString(3))
+    sql("select * from nocache_table").show(false)
+    var result1 = sql("show metacache on table nocache_table").collect()
+    assertResult("0/4 index files cached")(result1(2).getString(2))
+    assertResult("INDEX SERVER")(result1(2).getString(3))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER, "false")
   }
 }
