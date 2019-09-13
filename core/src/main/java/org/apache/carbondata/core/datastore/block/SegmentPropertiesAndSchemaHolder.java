@@ -295,6 +295,8 @@ public class SegmentPropertiesAndSchemaHolder {
     // of maintaining 2 variables
     private CarbonRowSchema[] taskSummarySchemaForBlock;
     private CarbonRowSchema[] taskSummarySchemaForBlocklet;
+    private CarbonRowSchema[] taskSummarySchemaForBlockWithOutFilePath;
+    private CarbonRowSchema[] taskSummarySchemaForBlockletWithOutFilePath;
     private CarbonRowSchema[] fileFooterEntrySchemaForBlock;
     private CarbonRowSchema[] fileFooterEntrySchemaForBlocklet;
 
@@ -325,6 +327,8 @@ public class SegmentPropertiesAndSchemaHolder {
 
       taskSummarySchemaForBlock = null;
       taskSummarySchemaForBlocklet = null;
+      taskSummarySchemaForBlockWithOutFilePath = null;
+      taskSummarySchemaForBlockletWithOutFilePath = null;
       fileFooterEntrySchemaForBlock = null;
       fileFooterEntrySchemaForBlocklet = null;
     }
@@ -393,7 +397,7 @@ public class SegmentPropertiesAndSchemaHolder {
 
     public CarbonRowSchema[] getTaskSummarySchemaForBlock(boolean storeBlockletCount,
         boolean filePathToBeStored) throws MemoryException {
-      if (null == taskSummarySchemaForBlock) {
+      if (null == taskSummarySchemaForBlock && filePathToBeStored) {
         synchronized (taskSchemaLock) {
           if (null == taskSummarySchemaForBlock) {
             taskSummarySchemaForBlock = SchemaGenerator
@@ -401,13 +405,26 @@ public class SegmentPropertiesAndSchemaHolder {
                     storeBlockletCount, filePathToBeStored);
           }
         }
+      } else if (null == taskSummarySchemaForBlockWithOutFilePath && !filePathToBeStored) {
+        synchronized (taskSchemaLock) {
+          if (null == taskSummarySchemaForBlockWithOutFilePath) {
+            taskSummarySchemaForBlockWithOutFilePath = SchemaGenerator
+                .createTaskSummarySchema(segmentProperties, getMinMaxCacheColumns(),
+                    storeBlockletCount, filePathToBeStored);
+          }
+        }
       }
-      return taskSummarySchemaForBlock;
+      if (filePathToBeStored) {
+        return taskSummarySchemaForBlock;
+      } else {
+        return taskSummarySchemaForBlockWithOutFilePath;
+      }
+
     }
 
     public CarbonRowSchema[] getTaskSummarySchemaForBlocklet(boolean storeBlockletCount,
         boolean filePathToBeStored) throws MemoryException {
-      if (null == taskSummarySchemaForBlocklet) {
+      if (null == taskSummarySchemaForBlocklet && filePathToBeStored) {
         synchronized (taskSchemaLock) {
           if (null == taskSummarySchemaForBlocklet) {
             taskSummarySchemaForBlocklet = SchemaGenerator
@@ -415,8 +432,20 @@ public class SegmentPropertiesAndSchemaHolder {
                     storeBlockletCount, filePathToBeStored);
           }
         }
+      } else if (null == taskSummarySchemaForBlockletWithOutFilePath && !filePathToBeStored) {
+        synchronized (taskSchemaLock) {
+          if (null == taskSummarySchemaForBlockletWithOutFilePath) {
+            taskSummarySchemaForBlockletWithOutFilePath = SchemaGenerator
+                .createTaskSummarySchema(segmentProperties, getMinMaxCacheColumns(),
+                    storeBlockletCount, filePathToBeStored);
+          }
+        }
       }
-      return taskSummarySchemaForBlocklet;
+      if (filePathToBeStored) {
+        return taskSummarySchemaForBlocklet;
+      } else {
+        return taskSummarySchemaForBlockletWithOutFilePath;
+      }
     }
 
     public CarbonRowSchema[] getBlockFileFooterEntrySchema() {

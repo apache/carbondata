@@ -86,7 +86,7 @@ public class StreamSegment {
                 CarbonTablePath.getMetadataPath(table.getTablePath()));
         LoadMetadataDetails streamSegment = null;
         for (LoadMetadataDetails detail : details) {
-          if (FileFormat.ROW_V1 == detail.getFileFormat()) {
+          if (FileFormat.ROW_V1.equals(detail.getFileFormat())) {
             if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
               streamSegment = detail;
               break;

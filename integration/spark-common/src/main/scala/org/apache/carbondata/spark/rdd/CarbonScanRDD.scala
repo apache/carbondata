@@ -146,7 +146,7 @@ class CarbonScanRDD[T: ClassTag](
       val streamSplits = new ArrayBuffer[InputSplit]()
       splits.asScala.foreach { split =>
         val carbonInputSplit = split.asInstanceOf[CarbonInputSplit]
-        if (FileFormat.ROW_V1 == carbonInputSplit.getFileFormat) {
+        if (FileFormat.ROW_V1.equals(carbonInputSplit.getFileFormat)) {
           streamSplits += split
         } else {
           columnarSplits.add(split)

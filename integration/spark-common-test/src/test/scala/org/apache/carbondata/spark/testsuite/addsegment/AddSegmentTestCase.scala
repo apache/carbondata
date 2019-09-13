@@ -143,6 +143,49 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
+  test("Test compact on multiple added segments") {
+    sql("drop table if exists addsegment1")
+    sql(
+      """
+        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    sql("select count(*) from addsegment1").show()
+    val table = CarbonEnv.getCarbonTable(None, "addsegment1") (sqlContext.sparkSession)
+    val path = CarbonTablePath.getSegmentPath(table.getTablePath, "1")
+    val newPath = storeLocation + "/" + "addsegtest"
+    for (i <- 0 until 10) {
+      copy(path, newPath+i)
+    }
+
+    sql("delete from table addsegment1 where segment.id in (1)")
+    sql("clean files for table addsegment1")
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
+    for (i <- 0 until 10) {
+      sql(s"alter table addsegment1 add segment options('path'='${newPath+i}', 'format'='carbon')").show()
+
+    }
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(110)))
+    checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(110)))
+    sql("alter table addsegment1 compact 'minor'").show()
+    checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(110)))
+    sql("clean files for table addsegment1")
+    val oldFolder = FileFactory.getCarbonFile(newPath)
+    assert(oldFolder.listFiles.length == 0, "Added segment path should be deleted when clean files are called")
+    for (i <- 0 until 10) {
+      FileFactory.deleteAllFilesOfDir(new File(newPath+i))
+    }
+  }
+
+
   test("Test update on added segment") {
     sql("drop table if exists addsegment1")
     sql(
