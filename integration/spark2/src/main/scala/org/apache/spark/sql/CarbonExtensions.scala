@@ -24,6 +24,7 @@ import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStr
 import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonPreInsertionCasts}
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
+import org.apache.spark.util.CarbonReflectionUtils
 
 class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
 
@@ -85,6 +86,7 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
 
 object CarbonExtensions {
   CarbonEnv.init
+  CarbonReflectionUtils.updateCarbonSerdeInfo
 }
 
 case class CarbonUDFTransformRuleWrapper(session: SparkSession, rule: Rule[LogicalPlan])
