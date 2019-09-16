@@ -407,6 +407,43 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT * FROM target_table"), Seq(Row("shenzhen", 24.5)))
   }
 
+  test("test duplicate columns with select query") {
+    sql("DROP TABLE IF EXISTS target_table")
+    sql("DROP TABLE IF EXISTS source_table")
+    // create carbon table and insert data
+    sql(
+      """
+        | CREATE TABLE source_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        |     STORED BY 'carbondata'
+        |     """.stripMargin)
+    sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
+    val e = intercept[AnalysisException] {
+      sql(
+        """
+          | CREATE TABLE target_table
+          | STORED BY 'carbondata'
+          | AS
+          |   SELECT t1.city, t2.city
+          |   FROM source_table t1, source_table t2 where t1.city=t2.city and t1.city = 'shenzhen'
+      """.stripMargin)
+    }
+    e.getMessage().toString.contains("Duplicated column names found in table definition of " +
+                                     "`target_table`: [\"city\"]")
+    sql(
+      """
+        | CREATE TABLE target_table
+        | STORED BY 'carbondata'
+        | AS
+        |   SELECT t1.city as a, t2.city as b
+        |   FROM source_table t1, source_table t2 where t1.city=t2.city and t1.city = 'shenzhen'
+      """.stripMargin)
+    checkAnswer(sql("select * from target_table"), Seq(Row("shenzhen", "shenzhen")))
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS carbon_ctas_test")
     sql("DROP TABLE IF EXISTS parquet_ctas_test")
