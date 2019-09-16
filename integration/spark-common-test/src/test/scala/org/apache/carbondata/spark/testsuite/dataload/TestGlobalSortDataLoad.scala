@@ -85,6 +85,9 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql("DROP TABLE IF EXISTS carbon_globalsort2")
     sql("DROP TABLE IF EXISTS carbon_globalsort_partitioned")
     sql("DROP TABLE IF EXISTS carbon_globalsort_difftypes")
+    sql("DROP TABLE IF EXISTS carbon_globalsort_minor")
+    sql("DROP TABLE IF EXISTS carbon_globalsort_major")
+    sql("DROP TABLE IF EXISTS carbon_globalsort_custom")
   }
 
   // ----------------------------------- Compare Result -----------------------------------
@@ -181,6 +184,95 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(24)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
       sql("SELECT * FROM carbon_localsort_twice ORDER BY name, id"))
+  }
+
+  test("Compaction GLOBAL_SORT: minor") {
+    sql("DROP TABLE IF EXISTS carbon_globalsort_minor")
+    sql(
+      """
+        | CREATE TABLE carbon_globalsort_minor(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES(
+        | 'SORT_SCOPE'='GLOBAL_SORT',
+        | 'sort_columns' = 'name, city',
+        | 'AUTO_LOAD_MERGE'='false',
+        | 'COMPACTION_LEVEL_THRESHOLD'='3,0', 'GLOBAL_SORT_PARTITIONS'='3')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_minor")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_minor")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_minor")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_minor")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    assertResult(4)(sql("show segments for table carbon_globalsort_minor").count())
+    sql("ALTER TABLE carbon_globalsort_minor COMPACT 'MINOR'")
+    assertResult(5)(sql("show segments for table carbon_globalsort_minor").count())
+    assertResult(3)(
+      sql("show segments for table carbon_globalsort_minor").rdd.filter(_.get(1).equals("Compacted")).count())
+    assert(getIndexFileCount("carbon_globalsort_minor", "0.1") === 3)
+    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort_minor"), Seq(Row(48)))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort_minor ORDER BY name, id"),
+      sql("SELECT * FROM carbon_globalsort ORDER BY name, id"))
+  }
+
+  test("Compaction GLOBAL_SORT: major") {
+    sql("DROP TABLE IF EXISTS carbon_globalsort_major")
+    sql(
+      """
+        | CREATE TABLE carbon_globalsort_major(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES(
+        | 'SORT_SCOPE'='GLOBAL_SORT',
+        | 'sort_columns' = 'name, city',
+        | 'AUTO_LOAD_MERGE'='false',
+        | 'MAJOR_COMPACTION_SIZE'='1024', 'GLOBAL_SORT_PARTITIONS'='4')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_major")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_major")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_major")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_major")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    assertResult(4)(sql("show segments for table carbon_globalsort_major").count())
+    sql("ALTER TABLE carbon_globalsort_major COMPACT 'major'")
+    assertResult(5)(sql("show segments for table carbon_globalsort_major").count())
+    assertResult(4)(
+      sql("show segments for table carbon_globalsort_major").rdd.filter(_.get(1).equals("Compacted")).count())
+    assert(getIndexFileCount("carbon_globalsort_major", "0.1") === 4)
+    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort_major"), Seq(Row(48)))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort_major ORDER BY name, id"),
+      sql("SELECT * FROM carbon_globalsort ORDER BY name, id"))
+  }
+
+  test("Compaction GLOBAL_SORT: custom") {
+    sql("DROP TABLE IF EXISTS carbon_globalsort_custom")
+    sql(
+      """
+        | CREATE TABLE carbon_globalsort_custom(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES(
+        | 'SORT_SCOPE'='GLOBAL_SORT',
+        | 'sort_columns' = 'name, city',
+        | 'AUTO_LOAD_MERGE'='false', 'GLOBAL_SORT_PARTITIONS'='3')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_custom")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_custom")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_custom")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_custom")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    assertResult(4)(sql("show segments for table carbon_globalsort_custom").count())
+    sql("ALTER TABLE carbon_globalsort_custom COMPACT 'custom' WHERE SEGMENT.ID IN (0,1,2)")
+    assertResult(5)(sql("show segments for table carbon_globalsort_custom").count())
+    assertResult(3)(
+      sql("show segments for table carbon_globalsort_custom").rdd.filter(_.get(1).equals("Compacted")).count())
+    assert(getIndexFileCount("carbon_globalsort_custom", "0.1") === 3)
+    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort_custom"), Seq(Row(48)))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort_custom ORDER BY name, id"),
+      sql("SELECT * FROM carbon_globalsort_custom ORDER BY name, id"))
   }
 
   // ----------------------------------- Check Configurations -----------------------------------

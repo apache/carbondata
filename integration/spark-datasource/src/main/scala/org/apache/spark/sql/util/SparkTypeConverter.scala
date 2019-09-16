@@ -29,7 +29,7 @@ import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, ColumnSchema}
 
-private[spark] object SparkTypeConverter {
+object SparkTypeConverter {
 
   def createSparkSchema(table: CarbonTable, columns: Seq[String]): StructType = {
     Objects.requireNonNull(table)

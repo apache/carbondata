@@ -42,7 +42,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       """
         | CREATE TABLE compaction_globalsort(id INT, name STRING, city STRING, age INT)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT', 'GLOBAL_SORT_PARTITIONS'='1')
       """.stripMargin)
 
     sql("DROP TABLE IF EXISTS carbon_localsort")
@@ -68,6 +68,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort")
     sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort")
 
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
 
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
@@ -108,6 +109,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
 
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'MINOR'")
 
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), false, "Compacted")
@@ -138,6 +140,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
 
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'MINOR'")
 
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
@@ -174,6 +177,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
 
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'MINOR'")
 
     val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
@@ -206,6 +210,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
 
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'MINOR'")
 
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
@@ -245,6 +250,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
 
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'major'")
     sql("clean files for table compaction_globalsort")
 
@@ -279,7 +285,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
 
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
-
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'minor'")
     sql("clean files for table compaction_globalsort")
 
@@ -312,6 +318,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
 
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'major'")
     sql("clean files for table compaction_globalsort")
 
@@ -347,6 +354,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
 
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='2')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'major'")
     sql("clean files for table compaction_globalsort")
 
@@ -378,7 +386,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
 
     checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
-
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='2')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'major'")
     sql("clean files for table compaction_globalsort")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), false, "Compacted")
@@ -438,6 +446,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE compaction_globalsort")
     }
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='2')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
 
     assert(getIndexFileCount("compaction_globalsort", "0.1") === 2)
@@ -453,6 +462,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort")
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE compaction_globalsort")
     }
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='2')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'MINOR'")
 
     assert(getIndexFileCount("compaction_globalsort", "0.1") === 2)
@@ -479,6 +489,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort")
     sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort")
 
+    sql("alter table compaction_globalsort set tblproperties('global_sort_partitions'='1')")
     sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
     sql("clean files for table compaction_globalsort")
 
@@ -503,7 +514,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
       """
         | CREATE TABLE compaction_globalsort2(id INT, name STRING, city STRING, age INT)
         | STORED BY 'org.apache.carbondata.format'
-        |  TBLPROPERTIES('SORT_COLUMNS'='id','SORT_SCOPE'='GLOBAL_SORT')
+        |  TBLPROPERTIES('SORT_COLUMNS'='id','SORT_SCOPE'='GLOBAL_SORT', 'global_sort_partitions'='1')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort2")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort2")

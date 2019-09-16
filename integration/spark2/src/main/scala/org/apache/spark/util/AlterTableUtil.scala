@@ -518,7 +518,8 @@ object AlterTableUtil {
       "LOAD_MIN_SIZE_INMB",
       "RANGE_COLUMN",
       "SORT_SCOPE",
-      "SORT_COLUMNS")
+      "SORT_COLUMNS",
+      "GLOBAL_SORT_PARTITIONS")
     supportedOptions.contains(propKey.toUpperCase)
   }
 
