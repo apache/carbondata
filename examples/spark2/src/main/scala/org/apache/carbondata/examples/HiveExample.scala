@@ -19,7 +19,7 @@ package org.apache.carbondata.examples
 import java.io.File
 import java.sql.{DriverManager, ResultSet, Statement}
 
-import com.google.common.io.Files
+import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 
@@ -103,11 +103,9 @@ object HiveExample {
 
     val metaFolder = new File(metaStoreLoc)
     if (metaFolder.exists()) {
-      metaFolder.delete()
+      FileUtils.deleteDirectory(metaFolder)
     }
-
-    Files.move(new File(rootPath+"/metastore_db"), metaFolder)
-
+    FileUtils.moveDirectory(new File(rootPath+"/metastore_db"), metaFolder)
   }
 
   def checkAndDeleteDBLock: Unit = {
