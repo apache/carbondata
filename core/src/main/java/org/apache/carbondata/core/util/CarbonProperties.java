@@ -757,38 +757,30 @@ public final class CarbonProperties {
    * memory
    */
   private void loadProperties() {
-    String property = System.getProperty(CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH);
-    if (null == property) {
-      property = CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH_DEFAULT;
-    }
-    File file = new File(property);
-    LOGGER.info("Property file path: " + file.getAbsolutePath());
+    String propertyPath = System.getProperty(CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH,
+            CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH_DEFAULT);
+
+    File propertyFile = new File(propertyPath);
+    LOGGER.info("Property file path: " + propertyFile.getAbsolutePath());
 
     FileInputStream fis = null;
     try {
-      if (file.exists()) {
-        fis = new FileInputStream(file);
+      if (propertyFile.exists()) {
+        fis = new FileInputStream(propertyFile);
 
         carbonProperties.load(fis);
       }
     } catch (FileNotFoundException e) {
-      LOGGER.error(
-          "The file: " + FileFactory.getCarbonFile(CarbonCommonConstants
-              .CARBON_PROPERTIES_FILE_PATH_DEFAULT).getAbsolutePath()
-              + " does not exist");
+      LOGGER.error("The file: " + propertyFile.getAbsolutePath() + " does not exist");
     } catch (IOException e) {
-      LOGGER.error(
-          "Error while reading the file: "
-              + FileFactory.getCarbonFile(CarbonCommonConstants
-              .CARBON_PROPERTIES_FILE_PATH_DEFAULT).getAbsolutePath());
+      LOGGER.error("Error while reading the file: " + propertyFile.getAbsolutePath());
     } finally {
       if (null != fis) {
         try {
           fis.close();
         } catch (IOException e) {
           LOGGER.error("Error while closing the file stream for file: "
-              + FileFactory.getCarbonFile(CarbonCommonConstants
-              .CARBON_PROPERTIES_FILE_PATH_DEFAULT).getAbsolutePath());
+              + propertyFile.getAbsolutePath());
         }
       }
     }
