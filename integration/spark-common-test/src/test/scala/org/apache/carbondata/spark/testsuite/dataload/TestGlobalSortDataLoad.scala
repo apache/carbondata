@@ -85,6 +85,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql("DROP TABLE IF EXISTS carbon_globalsort2")
     sql("DROP TABLE IF EXISTS carbon_globalsort_partitioned")
     sql("DROP TABLE IF EXISTS carbon_globalsort_difftypes")
+    sql("DROP TABLE IF EXISTS carbon_globalsort_minor")
   }
 
   // ----------------------------------- Compare Result -----------------------------------
@@ -181,6 +182,35 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(24)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
       sql("SELECT * FROM carbon_localsort_twice ORDER BY name, id"))
+  }
+
+  test("Compaction GLOBAL_SORT: minor") {
+    sql("DROP TABLE IF EXISTS carbon_globalsort_minor")
+    sql(
+      """
+        | CREATE TABLE carbon_globalsort_minor(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES(
+        | 'SORT_SCOPE'='GLOBAL_SORT',
+        | 'sort_columns' = 'name, city',
+        | 'AUTO_LOAD_MERGE'='false',
+        | 'COMPACTION_LEVEL_THRESHOLD'='3,0')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_minor")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_minor")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_minor")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_minor")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql("describe formatted carbon_globalsort_minor").show(100, false)
+    sql("show segments for table carbon_globalsort_minor").show(100, false)
+    sql("ALTER TABLE carbon_globalsort_minor COMPACT 'MINOR'")
+    sql("show segments for table carbon_globalsort_minor").show(100, false)
+    assert(getIndexFileCount("carbon_globalsort_minor") === 2)
+    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort_minor"), Seq(Row(48)))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort_minor ORDER BY name, id"),
+      sql("SELECT * FROM carbon_globalsort ORDER BY name, id"))
   }
 
   // ----------------------------------- Check Configurations -----------------------------------

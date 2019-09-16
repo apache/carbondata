@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SparkSession, SQLContext}
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
 import org.apache.spark.util.MergeIndexUtil
 
@@ -36,9 +36,11 @@ import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
+import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.spark.MergeResultImpl
+import org.apache.carbondata.spark.{MergeResultImpl, SegmentUtils}
+import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 
 /**
  * This class is used to perform compaction on carbon table.
@@ -195,6 +197,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           carbonLoadModel,
           carbonMergerMapping
         ).collect
+      } else if (CompactionType.MINOR == compactionType &&
+                 SortScope.GLOBAL_SORT.equals(carbonTable.getSortScope)) {
+        globalSortForMinor(sc.sparkSession, carbonLoadModel, carbonMergerMapping)
       } else {
         new CarbonMergerRDD(
           sc.sparkSession,
@@ -325,4 +330,26 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     }
   }
 
+  def globalSortForMinor(
+      sparkSession: SparkSession,
+      carbonLoadModel: CarbonLoadModel,
+      carbonMergerMapping: CarbonMergerMapping): Array[(String, Boolean)] = {
+    val dataFrame = SegmentUtils.dataFrameOfSegments(
+      sparkSession,
+      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+      carbonMergerMapping.validSegments)
+    val outputModel = SegmentUtils.getLoadModel(
+      sparkSession, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+      carbonMergerMapping.validSegments)
+    outputModel.setSegmentId(carbonMergerMapping.mergedLoadName.split("_")(1))
+    DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
+      sparkSession,
+      Option(dataFrame),
+      outputModel,
+      sparkSession.sessionState.newHadoopConf()
+    )
+      .map { row =>
+        (row._1, FailureCauses.NONE == row._2._2.failureCauses)
+      }
+  }
 }
