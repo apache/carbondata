@@ -119,6 +119,8 @@ object CarbonSparkSqlParserUtil {
       case _ =>
       // ignore this case
     }
+    val columnNames = fields.map(_.name.get)
+    checkIfDuplicateColumnExists(columns, tableIdentifier, columnNames)
     if (partitionFields.nonEmpty && options.isStreaming) {
       operationNotAllowed("Streaming is not allowed on partitioned table", partitionColumns)
     }
@@ -355,16 +357,29 @@ object CarbonSparkSqlParserUtil {
 
     // Ensuring whether no duplicate name is used in table definition
     val colNames: Seq[String] = cols.map(_.name)
+    checkIfDuplicateColumnExists(columns, tableIdentifier, colNames)
+    colNames
+  }
+
+  private def checkIfDuplicateColumnExists(columns: ColTypeListContext,
+      tableIdentifier: TableIdentifier,
+      colNames: Seq[String]): Unit = {
     if (colNames.length != colNames.distinct.length) {
       val duplicateColumns = colNames.groupBy(identity).collect {
         case (x, ys) if ys.length > 1 => "\"" + x + "\""
       }
-      operationNotAllowed(s"Duplicated column names found in table definition of " +
-                          s"$tableIdentifier: ${ duplicateColumns.mkString("[", ",", "]") }",
-        columns)
+      val errorMessage = s"Duplicated column names found in table definition of " +
+                         s"$tableIdentifier: ${ duplicateColumns.mkString("[", ",", "]") }"
+      // In case of create table as select, ColTypeListContext will be null. Check if
+      // duplicateColumns present in column names list, If yes, throw exception
+      if (null != columns) {
+        operationNotAllowed(errorMessage, columns)
+      } else {
+        throw new UnsupportedOperationException(errorMessage)
+      }
     }
-    colNames
   }
+
   /**
    * The method return's the storage type
    * @param createFileFormat
