@@ -191,7 +191,7 @@ that will authenticate the user to access the index server and no other service.
   
 ## Starting the Server
 ``` 
-./bin/spark-submit --master [yarn/local] --[o ptional parameters] --class org.apache.carbondata.indexserver.IndexServer [path to carbondata-spark2-<version>.jar]
+./bin/spark-submit --master [yarn/local] --[optional parameters] --class org.apache.carbondata.indexserver.IndexServer [path to carbondata-spark2-<version>.jar]
 ```
 Or 
 ``` 
