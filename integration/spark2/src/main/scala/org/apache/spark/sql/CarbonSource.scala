@@ -216,7 +216,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       if (parameters.contains("tablePath")) {
         (parameters("tablePath"), parameters)
       } else {
-        if("default".equalsIgnoreCase(dbName)) {
+        if ("default".equalsIgnoreCase(dbName)) {
           (CarbonProperties.getStorePath + "/" + tableName, parameters)
         } else {
           (CarbonProperties.getStorePath + "/" + dbName + "/" + tableName, parameters)
