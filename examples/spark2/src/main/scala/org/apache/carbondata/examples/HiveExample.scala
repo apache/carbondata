@@ -105,12 +105,12 @@ object HiveExample {
     if (metaFolder.exists()) {
       FileUtils.deleteDirectory(metaFolder)
     }
-    FileUtils.moveDirectory(new File(rootPath+"/metastore_db"), metaFolder)
+    FileUtils.moveDirectory(new File("metastore_db"), metaFolder)
   }
 
   def checkAndDeleteDBLock: Unit = {
-    val dbLockPath = FileFactory.getUpdatedFilePath(s"$rootPath/metastore_db/db.lck")
-    val dbexLockPath = FileFactory.getUpdatedFilePath(s"$rootPath/metastore_db/dbex.lck")
+    val dbLockPath = FileFactory.getUpdatedFilePath(s"metastore_db/db.lck")
+    val dbexLockPath = FileFactory.getUpdatedFilePath(s"metastore_db/dbex.lck")
     if(FileFactory.isFileExist(dbLockPath)) {
       FileFactory.deleteFile(dbLockPath, FileFactory.getFileType(dbLockPath))
     }
