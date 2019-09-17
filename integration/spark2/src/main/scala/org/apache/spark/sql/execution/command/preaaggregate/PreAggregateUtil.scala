@@ -20,7 +20,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSession, SparkSession, _}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonUtils, SparkSession, _}
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.CarbonExpressions.MatchCastExpression
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -573,16 +573,16 @@ object PreAggregateUtil {
       loadCommand: CarbonLoadDataCommand,
       isOverwrite: Boolean,
       sparkSession: SparkSession): Boolean = {
-    CarbonSession.threadSet(
+    CarbonUtils.threadSet(
       CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
       parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
       parentTableIdentifier.table,
       segmentToLoad)
-    CarbonSession.threadSet(
+    CarbonUtils.threadSet(
       CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
       parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
       parentTableIdentifier.table, validateSegments.toString)
-    CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+    CarbonUtils.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
       "true")
     try {
       loadCommand.processData(sparkSession)
@@ -592,11 +592,11 @@ object PreAggregateUtil {
         LOGGER.error("Data Load failed for DataMap: ", ex)
         false
     } finally {
-      CarbonSession.threadUnset(
+      CarbonUtils.threadUnset(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
         parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
         parentTableIdentifier.table)
-      CarbonSession.threadUnset(
+      CarbonUtils.threadUnset(
         CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
         parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
         parentTableIdentifier.table)

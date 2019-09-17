@@ -20,7 +20,7 @@ import java.io.IOException
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonSession, SparkSession}
+import org.apache.spark.sql.{CarbonUtils, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
@@ -184,7 +184,7 @@ class MVDataMapProvider(
    */
   private def setSegmentsToLoadDataMap(tableUniqueName: String,
       mainTableSegmentList: java.util.List[String]): Unit = {
-    CarbonSession
+    CarbonUtils
       .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
                  tableUniqueName, mainTableSegmentList.asScala.mkString(","))
   }
@@ -192,7 +192,7 @@ class MVDataMapProvider(
   private def unsetMainTableSegments(): Unit = {
     val relationIdentifiers = dataMapSchema.getParentTables.asScala
     for (relationIdentifier <- relationIdentifiers) {
-      CarbonSession
+      CarbonUtils
         .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
                      relationIdentifier.getDatabaseName + "." +
                      relationIdentifier.getTableName)

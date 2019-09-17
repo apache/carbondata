@@ -127,7 +127,6 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       .addProperty("carbon.custom.distribution", "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,"FORCE")
-    import org.apache.spark.sql.CarbonSession._
 
     val spark = SparkSession
       .builder()
@@ -137,7 +136,8 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       .config("spark.network.timeout", "600s")
       .config("spark.executor.heartbeatInterval", "600s")
       .config("carbon.enable.vector.reader","false")
-      .getOrCreateCarbonSession(storeLocation, metaStoreDB)
+      .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+      .getOrCreate()
     val catalog = CarbonEnv.getInstance(spark).carbonMetaStore
     sampleRelation = catalog.lookupRelation(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       "sample")(spark).asInstanceOf[CarbonRelation]

@@ -22,9 +22,8 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.examples.util.ExampleUtils;
 
-import org.apache.spark.sql.CarbonSession;
+import org.apache.spark.sql.CarbonEnv;
 import org.apache.spark.sql.SparkSession;
 
 public class JavaCarbonSessionExample {
@@ -40,10 +39,12 @@ public class JavaCarbonSessionExample {
     SparkSession.Builder builder = SparkSession.builder()
         .master("local")
         .appName("JavaCarbonSessionExample")
-        .config("spark.driver.host", "localhost");
+        .config("spark.driver.host", "localhost")
+        .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions");
 
-    SparkSession carbon = new CarbonSession.CarbonBuilder(builder)
-        .getOrCreateCarbonSession();
+    SparkSession carbon = builder.getOrCreate();
+
+    CarbonEnv.getInstance(carbon);
 
     exampleBody(carbon);
     carbon.close();

@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.{CarbonInputMetrics, SparkConf}
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.CarbonSession._
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.core.datastore.row.CarbonRow
@@ -52,7 +51,9 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
       .config(sparkConf)
       .appName("SparkCarbonStore-" + storeName)
       .config("spark.sql.warehouse.dir", storeLocation)
-      .getOrCreateCarbonSession()
+      .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+      .getOrCreate()
+    CarbonEnv.getInstance(session)
   }
 
   def this(sparkSession: SparkSession) = {

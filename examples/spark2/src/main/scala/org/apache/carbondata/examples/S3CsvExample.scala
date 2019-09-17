@@ -19,7 +19,7 @@ package org.apache.carbondata.examples
 import java.io.File
 
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, SECRET_KEY}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
 
 object S3CsvExample {
@@ -35,21 +35,25 @@ object S3CsvExample {
                             + "../../../..").getCanonicalPath
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-    import org.apache.spark.sql.CarbonSession._
+    import org.apache.spark.sql.CarbonUtils._
     if (args.length != 4) {
       logger.error("Usage: java CarbonS3Example <access-key> <secret-key>" +
                    "<s3.csv.location> <spark-master>")
       System.exit(0)
     }
 
-    val spark = SparkSession
+    val spark =
+      SparkSession
       .builder()
       .master(args(3))
       .appName("S3CsvExample")
       .config("spark.driver.host", "localhost")
       .config("spark.hadoop." + ACCESS_KEY, args(0))
       .config("spark.hadoop." + SECRET_KEY, args(1))
-      .getOrCreateCarbonSession()
+      .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+      .getOrCreate()
+
+    CarbonEnv.getInstance(spark)
 
     spark.sparkContext.setLogLevel("INFO")
 

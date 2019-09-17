@@ -22,7 +22,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableDropColumnModel, MetadataCommand}
-import org.apache.spark.sql.hive.CarbonSessionCatalog
+import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.apache.spark.util.{AlterTableUtil, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -165,8 +165,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       } else {
         Some(cols)
       }
-      sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
-        .alterDropColumns(tableIdentifier, schemaParts, columns)
+      CarbonSessionCatalogUtil
+        .alterDropColumns(tableIdentifier, schemaParts, columns, sparkSession)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       // TODO: 1. add check for deletion of index tables
       // delete dictionary files for dictionary column and clear dictionary cache from memory

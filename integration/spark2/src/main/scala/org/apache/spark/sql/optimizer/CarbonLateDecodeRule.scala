@@ -61,7 +61,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
       Profiler.invokeIfEnable {
         Profiler.send(
           Optimizer(
-            CarbonSession.threadStatementId.get(),
+            CarbonUtils.threadStatementId.get(),
             queryStatistic.getStartTime,
             queryStatistic.getTimeTaken
           )
