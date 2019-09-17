@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.optimizer
 
-import java.util
+import java.util.ArrayList
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -31,7 +31,7 @@ import org.apache.spark.sql.CarbonEndsWith
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.hive.CarbonSessionCatalog
+import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -48,8 +48,6 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
-
-
 
 /**
  * All filter conversions are done here.
@@ -526,8 +524,7 @@ object CarbonFilters {
           sparkSession.sessionState.catalog.listPartitionsByFilter(identifier, partitionFilters)
         } else {
           // Read partitions alternatively by first get all partitions then filter them
-          sparkSession.sessionState.catalog.
-            asInstanceOf[CarbonSessionCatalog].getPartitionsAlternate(
+          CarbonSessionCatalogUtil.getPartitionsAlternate(
             partitionFilters,
             sparkSession,
             identifier)
@@ -535,8 +532,7 @@ object CarbonFilters {
       } catch {
         case e: Exception =>
           // Get partition information alternatively.
-          sparkSession.sessionState.catalog.
-            asInstanceOf[CarbonSessionCatalog].getPartitionsAlternate(
+          CarbonSessionCatalogUtil.getPartitionsAlternate(
             partitionFilters,
             sparkSession,
             identifier)
@@ -544,7 +540,7 @@ object CarbonFilters {
     }
     Some(partitions.map { partition =>
       new PartitionSpec(
-        new util.ArrayList[String]( partition.spec.seq.map{case (column, value) =>
+        new ArrayList[String]( partition.spec.seq.map{case (column, value) =>
           column + "=" + value}.toList.asJava), partition.location)
     })
   }

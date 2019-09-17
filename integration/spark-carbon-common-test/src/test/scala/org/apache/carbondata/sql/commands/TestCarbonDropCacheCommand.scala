@@ -23,13 +23,12 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
-class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
+class TestCarbonDropCacheCommand extends CarbonQueryTest with BeforeAndAfterAll {
 
   val dbName = "cache_db"
 
@@ -43,8 +42,6 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql(s"use default")
     sql(s"DROP DATABASE $dbName CASCADE")
   }
-
-
   test("Test dictionary") {
     val tableName = "t1"
 

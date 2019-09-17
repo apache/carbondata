@@ -171,7 +171,7 @@ object TestQueryExecutor {
     jarsLocal
   }
 
-  val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
+  lazy val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
     .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, badStoreLocation)
@@ -180,8 +180,13 @@ object TestQueryExecutor {
     .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, systemFolderPath)
 
   private def lookupQueryExecutor: Class[_] = {
+    import scala.collection.JavaConverters._
     ServiceLoader.load(classOf[TestQueryExecutorRegister], Utils.getContextOrSparkClassLoader)
-      .iterator().next().getClass
+      .asScala
+      .filter(instance => instance
+        .getClass
+        .getName.equals("org.apache.spark.sql.test.Spark2TestQueryExecutor"))
+      .head.getClass
   }
 
   private def createDirectory(badStoreLocation: String) = {

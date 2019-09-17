@@ -20,7 +20,7 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 
 import org.apache.spark.sql.{CarbonEnv, Row}
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -30,7 +30,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
-class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
+class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     drop()

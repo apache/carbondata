@@ -24,13 +24,13 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand, CarbonLoadDataCommand, RefreshCarbonTableCommand}
+import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand, CarbonInsertIntoHadoopFsRelationCommand, CarbonLoadDataCommand, RefreshCarbonTableCommand}
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableAddHivePartitionCommand, CarbonAlterTableDropHivePartitionCommand}
 import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDescribeFormattedCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
-import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable}
+import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, RefreshResource, RefreshTable}
 import org.apache.spark.sql.hive.{CarbonRelation, CreateCarbonSourceTableAsSelectCommand}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.types.StructField
@@ -277,7 +277,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           || table.provider.get.equalsIgnoreCase("carbondata")) =>
         val updatedCatalog = CarbonSource
           .updateCatalogTableWithCarbonSchema(table, sparkSession)
-        val cmd = CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists)
+        val cmd = new CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists)
         ExecutedCommandExec(cmd) :: Nil
       case AlterTableSetPropertiesCommand(tableName, properties, isView)
         if CarbonEnv.getInstance(sparkSession).carbonMetaStore
@@ -372,6 +372,17 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         } else {
           ExecutedCommandExec(alterSetLoc) :: Nil
         }
+      case iihrc@InsertIntoHadoopFsRelationCommand(
+      outputPath, staticPartitions, ifPartitionNotExists, partitionColumns,
+      bucketSpec, fileFormat, options, query, mode, catalogTable, fileIndex, outputColumnNames)
+        if (catalogTable.isDefined && CarbonEnv.getInstance(sparkSession).carbonMetaStore
+          .tableExists(catalogTable.get.identifier)(sparkSession)) =>
+        DataWritingCommandExec(
+          CarbonInsertIntoHadoopFsRelationCommand(
+            outputPath, staticPartitions, ifPartitionNotExists, partitionColumns,
+            bucketSpec, fileFormat, options, query, mode, catalogTable, fileIndex,
+            outputColumnNames),
+          planLater(iihrc.query)) :: Nil
       case _ => Nil
     }
   }

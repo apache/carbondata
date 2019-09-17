@@ -22,7 +22,7 @@ import java.io.{File, FilenameFilter}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
@@ -34,7 +34,7 @@ import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
-class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
+class TestDataMapCommand extends CarbonQueryTest with BeforeAndAfterAll {
 
   val testData = s"$resourcesPath/sample.csv"
 

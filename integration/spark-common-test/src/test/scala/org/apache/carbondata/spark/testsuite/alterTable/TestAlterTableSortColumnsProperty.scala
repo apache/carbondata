@@ -577,5 +577,4 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
       }
     }
   }
-
 }

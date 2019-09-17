@@ -22,7 +22,7 @@ import scala.collection.mutable
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, DataTypeInfo, MetadataCommand}
-import org.apache.spark.sql.hive.CarbonSessionCatalog
+import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.apache.spark.util.{AlterTableUtil, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -33,8 +33,7 @@ import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverte
 import org.apache.carbondata.core.metadata.datatype.DecimalType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.events.{AlterTableColRenameAndDataTypeChangePostEvent,
-  AlterTableColRenameAndDataTypeChangePreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{AlterTableColRenameAndDataTypeChangePostEvent, AlterTableColRenameAndDataTypeChangePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
@@ -305,8 +304,8 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       carbonTable,
       schemaEvolutionEntry,
       tableInfo)(sparkSession)
-    sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
-      .alterColumnChangeDataTypeOrRename(tableIdentifier, schemaParts, columns)
+    CarbonSessionCatalogUtil
+      .alterColumnChangeDataTypeOrRename(tableIdentifier, schemaParts, columns, sparkSession)
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
   }
 
