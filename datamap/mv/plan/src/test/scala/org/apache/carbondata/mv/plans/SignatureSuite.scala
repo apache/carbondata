@@ -18,7 +18,7 @@
 package org.apache.carbondata.mv.plans
 
 import org.apache.spark.sql.catalyst.util._
-import org.apache.spark.sql.hive.CarbonSessionCatalog
+import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.mv.dsl.Plans._
 import org.apache.carbondata.mv.plans.modular.ModularPlanSignatureGenerator
@@ -30,7 +30,7 @@ class SignatureSuite extends ModularPlanTest with BeforeAndAfterAll {
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
-  val hiveClient = SparkSQLUtil.sessionState(spark.sparkSession).catalog.asInstanceOf[CarbonSessionCatalog].getClient()
+  val hiveClient = CarbonSessionCatalogUtil.getClient(spark.sparkSession)
   
   ignore("test signature computing") {
 

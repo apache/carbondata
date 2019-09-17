@@ -45,9 +45,6 @@ object Spark2TestQueryExecutor {
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
 
-
-  import org.apache.spark.sql.CarbonSession._
-
   val conf = new SparkConf()
   if (!TestQueryExecutor.masterUrl.startsWith("local")) {
     conf.setJars(TestQueryExecutor.jars).
@@ -72,7 +69,11 @@ object Spark2TestQueryExecutor {
     .enableHiveSupport()
     .config("spark.sql.warehouse.dir", warehouse)
     .config("spark.sql.crossJoin.enabled", "true")
-    .getOrCreateCarbonSession(null, TestQueryExecutor.metaStoreDB)
+    .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+    .getOrCreate()
+
+  CarbonEnv.getInstance(spark)
+
   if (warehouse.startsWith("hdfs://")) {
     System.setProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, warehouse)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,

@@ -19,7 +19,7 @@ package org.apache.carbondata.examples.util
 
 import java.io.File
 
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, SaveMode, SparkSession}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -55,7 +55,6 @@ object ExampleUtils {
     } else {
       "local[" + workThreadNum.toString() + "]"
     }
-    import org.apache.spark.sql.CarbonSession._
 
     val spark = SparkSession
       .builder()
@@ -64,7 +63,10 @@ object ExampleUtils {
       .config("spark.sql.warehouse.dir", warehouse)
       .config("spark.driver.host", "localhost")
       .config("spark.sql.crossJoin.enabled", "true")
-      .getOrCreateCarbonSession(storeLocation, metaStoreDB)
+      .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+      .getOrCreate()
+
+    CarbonEnv.getInstance(spark)
 
     spark.sparkContext.setLogLevel("ERROR")
     spark

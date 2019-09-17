@@ -166,6 +166,9 @@ class CarbonEnv {
   }
 }
 
+/**
+ * @Deprecated
+ */
 object CarbonEnv {
 
   lazy val MV_SKIP_RULE_UDF = "mv"
@@ -175,9 +178,6 @@ object CarbonEnv {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   def getInstance(sparkSession: SparkSession): CarbonEnv = {
-    if (sparkSession.isInstanceOf[CarbonSession]) {
-      sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].getCarbonEnv
-    } else {
       var carbonEnv: CarbonEnv = carbonEnvMap.get(sparkSession)
       if (carbonEnv == null) {
         carbonEnv = new CarbonEnv
@@ -185,7 +185,6 @@ object CarbonEnv {
         carbonEnvMap.put(sparkSession, carbonEnv)
       }
       carbonEnv
-    }
   }
 
   /**
