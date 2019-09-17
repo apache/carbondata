@@ -17,7 +17,7 @@
 package org.apache.carbondata.examples
 
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes
@@ -81,7 +81,7 @@ object S3UsingSdkExample {
   def main(args: Array[String]) {
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-    import org.apache.spark.sql.CarbonSession._
+    import org.apache.spark.sql.CarbonUtils._
     if (args.length < 2 || args.length > 6) {
       logger.error("Usage: java CarbonS3Example <access-key> <secret-key>" +
         "[table-path-on-s3] [s3-endpoint] [number-of-rows] [spark-master]")
@@ -97,7 +97,10 @@ object S3UsingSdkExample {
       .config(accessKey, args(0))
       .config(secretKey, args(1))
       .config(endpoint, CarbonSparkUtil.getS3EndPoint(args))
-      .getOrCreateCarbonSession()
+      .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+      .getOrCreate()
+
+    CarbonEnv.getInstance(spark)
 
     spark.sparkContext.setLogLevel("WARN")
     val path = if (args.length < 3) {

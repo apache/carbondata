@@ -19,14 +19,12 @@ package org.apache.carbondata.spark.thriftserver
 
 import java.io.File
 
-import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 import org.slf4j.{Logger, LoggerFactory}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -39,7 +37,7 @@ object CarbonThriftServer {
 
   def main(args: Array[String]): Unit = {
 
-    import org.apache.spark.sql.CarbonSession._
+    import org.apache.spark.sql.CarbonUtils._
 
     val sparkConf = new SparkConf(loadDefaults = true)
 
@@ -54,6 +52,7 @@ object CarbonThriftServer {
       .config(sparkConf)
       .appName("Carbon Thrift Server(uses CarbonSession)")
       .enableHiveSupport()
+      .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
 
     if (!sparkConf.contains("carbon.properties.filepath")) {
       val sparkHome = System.getenv.get("SPARK_HOME")
@@ -71,14 +70,15 @@ object CarbonThriftServer {
     val storePath = if (args.length > 0) args.head else null
 
     val spark = if (args.length <= 1) {
-      builder.getOrCreateCarbonSession(storePath)
+      builder.getOrCreate()
     } else {
       val (accessKey, secretKey, endpoint) = CarbonSparkUtil.getKeyOnPrefix(args(0))
       builder.config(accessKey, args(1))
         .config(secretKey, args(2))
         .config(endpoint, CarbonSparkUtil.getS3EndPoint(args))
-        .getOrCreateCarbonSession(storePath)
+        .getOrCreate()
     }
+    CarbonEnv.getInstance(spark)
 
     val warmUpTime = CarbonProperties.getInstance().getProperty("carbon.spark.warmUpTime", "5000")
     try {

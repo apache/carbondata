@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutorService
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonSession, SQLContext}
+import org.apache.spark.sql.{CarbonUtils, SQLContext}
 import org.apache.spark.sql.execution.command.CompactionModel
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.preaaggregate.{CommitPreAggregateListener, PreAggregateUtil}
@@ -58,12 +58,12 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
 
     if (segments.nonEmpty) {
       val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadMetaDataDetails).split("_")(1)
-      CarbonSession.threadSet(
+      CarbonUtils.threadSet(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
         carbonLoadModel.getDatabaseName + "." +
         carbonLoadModel.getTableName,
         segments.mkString(","))
-      CarbonSession.threadSet(
+      CarbonUtils.threadSet(
         CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
         carbonLoadModel.getDatabaseName + "." +
         carbonLoadModel.getTableName, "false")
@@ -77,7 +77,7 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         loadCommand.dataFrame =
                   Some(PreAggregateUtil.getDataFrame(
                     sqlContext.sparkSession, loadCommand.logicalPlan.get))
-        CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+        CarbonUtils.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
           "true")
         loadCommand.processData(sqlContext.sparkSession)
         // After load is completed for child table the UUID table status will have 0.1 as success
@@ -129,11 +129,11 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
             executeCompaction()
           }
         }
-        CarbonSession
+        CarbonUtils
           .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
                        carbonLoadModel.getDatabaseName + "." +
                        carbonLoadModel.getTableName)
-        CarbonSession.threadUnset(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+        CarbonUtils.threadUnset(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
                                   carbonLoadModel.getDatabaseName + "." +
                                   carbonLoadModel.getTableName)
         LOGGER

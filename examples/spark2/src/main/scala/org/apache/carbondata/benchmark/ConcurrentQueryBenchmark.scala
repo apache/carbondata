@@ -25,7 +25,7 @@ import java.util.concurrent.{Callable, Executors, Future, TimeUnit}
 
 import scala.util.Random
 
-import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SaveMode, SparkSession}
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonVersionConstants}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -515,7 +515,7 @@ object ConcurrentQueryBenchmark {
       .addProperty("carbon.blockletgroup.size.in.mb", "32")
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION, "false")
-    import org.apache.spark.sql.CarbonSession._
+    import org.apache.spark.sql.CarbonUtils._
 
     // 1. initParameters
     initParameters(args)
@@ -537,14 +537,17 @@ object ConcurrentQueryBenchmark {
         .appName(parameters)
         .master("local[8]")
         .enableHiveSupport()
-        .getOrCreateCarbonSession(storeLocation)
+        .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+        .getOrCreate()
     } else {
       SparkSession
         .builder()
         .appName(parameters)
         .enableHiveSupport()
-        .getOrCreateCarbonSession(storeLocation)
+        .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+        .getOrCreate()
     }
+    CarbonEnv.getInstance(spark)
     spark.sparkContext.setLogLevel("ERROR")
     println("\nEnvironment information:")
     val env = Array(

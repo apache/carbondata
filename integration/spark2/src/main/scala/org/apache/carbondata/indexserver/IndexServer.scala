@@ -29,7 +29,7 @@ import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.security.{KerberosInfo, SecurityUtil, UserGroupInformation}
 import org.apache.spark.SparkConf
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
-import org.apache.spark.sql.{CarbonSession, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -183,7 +183,7 @@ object IndexServer extends ServerInterface {
         .setNumHandlers(numHandlers)
         .setProtocol(classOf[ServerInterface]).build
       server.start()
-      SecurityUtil.login(sparkSession.asInstanceOf[CarbonSession].sessionState.newHadoopConf(),
+      SecurityUtil.login(sparkSession.sessionState.newHadoopConf(),
         "spark.carbon.indexserver.keytab", "spark.carbon.indexserver.principal")
       sparkSession.sparkContext.addSparkListener(new SparkListener {
         override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
@@ -198,12 +198,14 @@ object IndexServer extends ServerInterface {
   }
 
   private def createCarbonSession(): SparkSession = {
-    import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
       .builder().config(new SparkConf())
       .appName("DistributedIndexServer")
       .enableHiveSupport()
-      .getOrCreateCarbonSession(CarbonProperties.getStorePath)
+      .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+      .getOrCreate()
+    CarbonEnv.getInstance(spark)
+
     SparkSession.setActiveSession(spark)
     SparkSession.setDefaultSession(spark)
     spark

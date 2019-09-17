@@ -18,90 +18,70 @@ package org.apache.spark.sql.hive
 
 import java.util.concurrent.Callable
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{QualifiedTableName, TableIdentifier}
-import org.apache.spark.sql.catalyst.analysis.{Analyzer, FunctionRegistry}
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.optimizer.Optimizer
-import org.apache.spark.sql.catalyst.parser.ParserInterface
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
-import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.datasources.{FindDataSourceTable, PreWriteCheck, ResolveSQLOnFile, _}
-import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
-import org.apache.spark.sql.hive.client.HiveClient
-import org.apache.spark.sql.internal.{SQLConf, SessionState}
-import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
-import org.apache.spark.sql.parser.CarbonSparkSqlParser
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
-/**
- * This class will have carbon catalog and refresh the relation from cache if the carbontable in
- * carbon catalog is not same as cached carbon relation's carbon table
- *
- * @param externalCatalog
- * @param globalTempViewManager
- * @param sparkSession
- * @param functionResourceLoader
- * @param functionRegistry
- * @param conf
- * @param hadoopConf
- */
-class CarbonHiveSessionCatalog(
-    externalCatalog: HiveExternalCatalog,
-    globalTempViewManager: GlobalTempViewManager,
-    functionRegistry: FunctionRegistry,
-    sparkSession: SparkSession,
-    conf: SQLConf,
-    hadoopConf: Configuration,
-    parser: ParserInterface,
-    functionResourceLoader: FunctionResourceLoader)
-  extends HiveSessionCatalog (
-    externalCatalog,
-    globalTempViewManager,
-    new HiveMetastoreCatalog(sparkSession),
-    functionRegistry,
-    conf,
-    hadoopConf,
-    parser,
-    functionResourceLoader
-  ) with CarbonSessionCatalog {
+object CarbonSessionCatalogUtil {
 
-  private lazy val carbonEnv = {
-    val env = new CarbonEnv
-    env.init(sparkSession)
-    env
-  }
-  /**
-   * return's the carbonEnv instance
-   * @return
-   */
-  override def getCarbonEnv() : CarbonEnv = {
-    carbonEnv
-  }
-
-  // Initialize all listeners to the Operation bus.
-  CarbonEnv.init
-
-  override def lookupRelation(name: TableIdentifier): LogicalPlan = {
-    var rtnRelation = super.lookupRelation(name)
+  def lookupRelation(name: TableIdentifier, sparkSession: SparkSession): LogicalPlan = {
+    var rtnRelation = sparkSession.sessionState.catalog.lookupRelation(name)
     val isRelationRefreshed =
       CarbonSessionUtil.refreshRelationAndSetStats(rtnRelation, name)(sparkSession)
     if (isRelationRefreshed) {
-      rtnRelation = super.lookupRelation(name)
+      rtnRelation = sparkSession.sessionState.catalog.lookupRelation(name)
       // Reset the stats after lookup.
       CarbonSessionUtil.refreshRelationAndSetStats(rtnRelation, name)(sparkSession)
     }
     rtnRelation
   }
 
-  override def getCachedPlan(t: QualifiedTableName,
-      c: Callable[LogicalPlan]): LogicalPlan = {
-    val plan = super.getCachedPlan(t, c)
+
+  /**
+   * Method used to update the table name
+   * @param oldTableIdentifier old table identifier
+   * @param newTableIdentifier new table identifier
+   * @param newTablePath new table path
+   */
+  def alterTableRename(oldTableIdentifier: TableIdentifier,
+                       newTableIdentifier: TableIdentifier,
+                       newTablePath: String,
+                       sparkSession: SparkSession): Unit = {
+    getClient(sparkSession).runSqlHive(
+      s"ALTER TABLE ${ oldTableIdentifier.database.get }.${ oldTableIdentifier.table } " +
+        s"RENAME TO ${ oldTableIdentifier.database.get }.${ newTableIdentifier.table }")
+    getClient(sparkSession).runSqlHive(
+      s"ALTER TABLE ${ oldTableIdentifier.database.get }.${ newTableIdentifier.table } " +
+        s"SET SERDEPROPERTIES" +
+        s"('tableName'='${ newTableIdentifier.table }', " +
+        s"'dbName'='${ oldTableIdentifier.database.get }', 'tablePath'='${ newTablePath }')")
+  }
+
+  /**
+   * Below method will be used to update serd properties
+   * @param tableIdentifier table identifier
+   * @param schemaParts schema parts
+   * @param cols cols
+   */
+  def alterTable(tableIdentifier: TableIdentifier,
+                 schemaParts: String,
+                 cols: Option[Seq[ColumnSchema]],
+                 sparkSession: SparkSession): Unit = {
+    getClient(sparkSession)
+      .runSqlHive(s"ALTER TABLE ${ tableIdentifier.database.get }.${ tableIdentifier.table } " +
+        s"SET TBLPROPERTIES(${ schemaParts })")
+  }
+
+
+  def getCachedPlan(t: QualifiedTableName,
+      c: Callable[LogicalPlan], sparkSession: SparkSession): LogicalPlan = {
+    val plan = sparkSession.sessionState.catalog.getCachedPlan(t, c)
     CarbonSessionUtil.updateCachedPlan(plan)
   }
 
@@ -110,27 +90,27 @@ class CarbonHiveSessionCatalog(
    *
    * @return
    */
-  override def getClient(): org.apache.spark.sql.hive.client.HiveClient = {
-    sparkSession.asInstanceOf[CarbonSession].sharedState.externalCatalog
+  def getClient(sparkSession: SparkSession): org.apache.spark.sql.hive.client.HiveClient = {
+    sparkSession.sharedState.externalCatalog
       .asInstanceOf[HiveExternalCatalog].client
   }
 
-  override def alterAddColumns(tableIdentifier: TableIdentifier,
+  def alterAddColumns(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[ColumnSchema]]): Unit = {
-    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols)
+      cols: Option[Seq[ColumnSchema]], sparkSession: SparkSession): Unit = {
+    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols, sparkSession)
   }
 
-  override def alterDropColumns(tableIdentifier: TableIdentifier,
+  def alterDropColumns(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[ColumnSchema]]): Unit = {
-    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols)
+      cols: Option[Seq[ColumnSchema]], sparkSession: SparkSession): Unit = {
+    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols, sparkSession)
   }
 
-  override def alterColumnChangeDataTypeOrRename(tableIdentifier: TableIdentifier,
+  def alterColumnChangeDataTypeOrRename(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[ColumnSchema]]): Unit = {
-    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols)
+      cols: Option[Seq[ColumnSchema]], sparkSession: SparkSession): Unit = {
+    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols, sparkSession)
   }
 
   /**
@@ -143,8 +123,8 @@ class CarbonHiveSessionCatalog(
    */
   private def updateCatalogTableForAlter(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[ColumnSchema]]): Unit = {
-    alterTable(tableIdentifier, schemaParts, cols)
+      cols: Option[Seq[ColumnSchema]], sparkSession: SparkSession): Unit = {
+    alterTable(tableIdentifier, schemaParts, cols, sparkSession)
     CarbonSessionUtil
       .alterExternalCatalogForTableWithUpdatedSchema(tableIdentifier,
         cols,
@@ -152,17 +132,17 @@ class CarbonHiveSessionCatalog(
         sparkSession)
   }
 
-  override def createPartitions(
+  def createPartitions(
       tableName: TableIdentifier,
       parts: Seq[CatalogTablePartition],
-      ignoreIfExists: Boolean): Unit = {
+      ignoreIfExists: Boolean, sparkSession: SparkSession): Unit = {
     try {
       val table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
       val updatedParts = CarbonScalaUtil.updatePartitions(parts, table)
-      super.createPartitions(tableName, updatedParts, ignoreIfExists)
+      sparkSession.sessionState.catalog.createPartitions(tableName, updatedParts, ignoreIfExists)
     } catch {
       case e: Exception =>
-        super.createPartitions(tableName, parts, ignoreIfExists)
+        sparkSession.sessionState.catalog.createPartitions(tableName, parts, ignoreIfExists)
     }
   }
 
@@ -174,7 +154,7 @@ class CarbonHiveSessionCatalog(
    * @param identifier
    * @return
    */
-  override def getPartitionsAlternate(partitionFilters: Seq[Expression],
+  def getPartitionsAlternate(partitionFilters: Seq[Expression],
       sparkSession: SparkSession,
       identifier: TableIdentifier) = {
     CarbonSessionUtil.prunePartitionsByFilter(partitionFilters, sparkSession, identifier)
@@ -183,95 +163,11 @@ class CarbonHiveSessionCatalog(
   /**
    * Update the storageformat with new location information
    */
-  override def updateStorageLocation(
+  def updateStorageLocation(
       path: Path,
       storage: CatalogStorageFormat,
       newTableName: String,
       dbName: String): CatalogStorageFormat = {
     storage.copy(locationUri = Some(path.toUri))
   }
-}
-
-/**
- * Session state implementation to override sql parser and adding strategies
- *
- * @param sparkSession
- */
-class CarbonSessionStateBuilder(sparkSession: SparkSession,
-    parentState: Option[SessionState] = None)
-  extends HiveSessionStateBuilder(sparkSession, parentState) {
-
-  override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf, sparkSession)
-
-  experimentalMethods.extraStrategies =
-    Seq(new StreamingTableStrategy(sparkSession),
-        new CarbonLateDecodeStrategy,
-        new DDLStrategy(sparkSession)
-    )
-  experimentalMethods.extraOptimizations = Seq(new CarbonIUDRule,
-    new CarbonUDFTransformRule,
-    new CarbonLateDecodeRule)
-
-  /**
-   * Internal catalog for managing table and database states.
-   */
-  /**
-   * Create a [[CarbonSessionStateBuilder]].
-   */
-  override protected lazy val catalog: CarbonHiveSessionCatalog = {
-    val catalog = new CarbonHiveSessionCatalog(
-      externalCatalog,
-      session.sharedState.globalTempViewManager,
-      functionRegistry,
-      sparkSession,
-      conf,
-      SessionState.newHadoopConf(session.sparkContext.hadoopConfiguration, conf),
-      sqlParser,
-      resourceLoader)
-    parentState.foreach(_.catalog.copyStateTo(catalog))
-    catalog
-  }
-
-  private def externalCatalog: HiveExternalCatalog =
-    session.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog]
-
-  /**
-   * Create a Hive aware resource loader.
-   */
-  override protected lazy val resourceLoader: HiveSessionResourceLoader = {
-    val client: HiveClient = externalCatalog.client.newSession()
-    new HiveSessionResourceLoader(session, client)
-  }
-
-  override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
-
-  override protected def analyzer: Analyzer = {
-    new CarbonAnalyzer(catalog,
-      conf,
-      sparkSession,
-      getAnalyzer(super.analyzer))
-  }
-
-  /**
-   * This method adds carbon rules to Hive Analyzer and returns new analyzer
-   * @param analyzer hiveSessionStateBuilder analyzer
-   * @return
-   */
-  def getAnalyzer(analyzer: Analyzer): Analyzer = {
-    new Analyzer(catalog, conf) {
-
-      override val extendedResolutionRules: Seq[Rule[LogicalPlan]] =
-        analyzer.extendedResolutionRules ++
-        Seq(CarbonIUDAnalysisRule(sparkSession)) ++
-        Seq(CarbonPreInsertionCasts(sparkSession)) ++ customResolutionRules
-
-      override val extendedCheckRules: Seq[LogicalPlan => Unit] =
-        analyzer.extendedCheckRules
-
-      override val postHocResolutionRules: Seq[Rule[LogicalPlan]] =
-        analyzer.postHocResolutionRules
-    }
-  }
-
-  override protected def newBuilder: NewBuilder = new CarbonSessionStateBuilder(_, _)
 }

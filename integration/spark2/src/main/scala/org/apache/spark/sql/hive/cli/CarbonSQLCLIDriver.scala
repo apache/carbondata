@@ -17,8 +17,8 @@
 
 package org.apache.spark.sql.hive.cli
 
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.{SparkSession, SQLContext}
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.{CarbonEnv, SparkSession, SQLContext}
 import org.apache.spark.sql.hive.thriftserver.{SparkSQLCLIDriver, SparkSQLEnv}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -39,9 +39,6 @@ object CarbonSQLCLIDriver {
 
   def init() {
     if (hiveContext == null) {
-
-      import org.apache.spark.sql.CarbonSession._
-
       val storePath = System.getenv("CARBON_HOME") + "/bin/carbonsqlclistore"
       val warehouse = System.getenv("CARBON_HOME") + "/warehouse"
       val carbon = SparkSession
@@ -49,7 +46,9 @@ object CarbonSQLCLIDriver {
           .master(System.getProperty("spark.master"))
           .appName("CarbonSQLCLIDriver")
           .config("spark.sql.warehouse.dir", warehouse)
-          .getOrCreateCarbonSession(storePath)
+          .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+          .getOrCreate()
+      CarbonEnv.getInstance(carbon)
 
       hiveContext = carbon.sqlContext
       hiveContext.conf.getAllConfs.toSeq.sorted.foreach { case (k, v) =>

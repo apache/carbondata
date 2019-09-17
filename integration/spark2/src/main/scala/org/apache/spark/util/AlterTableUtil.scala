@@ -27,7 +27,8 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
+import org.apache.spark.sql.catalyst.catalog.SessionCatalog
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
 import org.apache.spark.sql.hive.HiveExternalCatalog._
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -393,7 +394,7 @@ object AlterTableUtil {
    */
   def modifyTableProperties(tableIdentifier: TableIdentifier, properties: Map[String, String],
       propKeys: Seq[String], set: Boolean)
-    (sparkSession: SparkSession, catalog: CarbonSessionCatalog): Unit = {
+    (sparkSession: SparkSession, catalog: SessionCatalog): Unit = {
     val tableName = tableIdentifier.table
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
@@ -488,7 +489,7 @@ object AlterTableUtil {
       val (tableIdentifier, schemParts) = updateSchemaInfo(
         carbonTable = carbonTable,
         thriftTable = thriftTable)(sparkSession)
-      catalog.alterTable(tableIdentifier, schemParts, None)
+      CarbonSessionCatalogUtil.alterTable(tableIdentifier, schemParts, None, sparkSession)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       // check and clear the block/blocklet cache
       checkAndClearBlockletCache(carbonTable,

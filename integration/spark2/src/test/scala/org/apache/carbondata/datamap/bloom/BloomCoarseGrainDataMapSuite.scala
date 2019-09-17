@@ -22,7 +22,7 @@ import java.util.UUID
 
 import scala.util.Random
 
-import org.apache.spark.sql.{CarbonSession, DataFrame, Row}
+import org.apache.spark.sql.{CarbonUtils, DataFrame, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -32,7 +32,7 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
 class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
-  val carbonSession = sqlContext.sparkSession.asInstanceOf[CarbonSession]
+  val carbonSession = sqlContext.sparkSession
   val bigFile = s"$resourcesPath/bloom_datamap_input_big.csv"
   val smallFile = s"$resourcesPath/bloom_datamap_input_small.csv"
   val normalTable = "carbon_normal"
