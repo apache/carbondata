@@ -103,6 +103,7 @@
     <module>integration/spark-datasource</module>
     <module>integration/spark2</module>
     <module>integration/spark-common-test</module>
+    <module>integration/spark-carbon-common-test</module>
     <module>datamap/examples</module>
     <module>store/sdk</module>
     <module>assembly</module>

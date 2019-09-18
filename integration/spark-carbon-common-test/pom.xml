@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.apache.carbondata</groupId>
+    <artifactId>carbondata-parent</artifactId>
+    <version>1.6.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>carbondata-spark-carbon-common-test</artifactId>
+  <name>Apache CarbonData :: Spark Common Test</name>
+
+  <properties>
+    <dev.path>${basedir}/../../dev</dev.path>
+    <jacoco.append>true</jacoco.append>
+    <build.directory.projectCommon>../../common/target</build.directory.projectCommon>
+    <build.directory.projectCore>../../core/target</build.directory.projectCore>
+    <build.directory.projectProcessing>../../processing/target</build.directory.projectProcessing>
+    <build.directory.projectHadoop>../../hadoop/target</build.directory.projectHadoop>
+    <build.directory.projectFormat>../../format/target</build.directory.projectFormat>
+    <build.directory.projectSpark>../../integration/spark/target</build.directory.projectSpark>
+    <build.directory.projectSpark2>../../integration/spark2/target</build.directory.projectSpark2>
+    <build.directory.projectSparkCommon>../../integration/spark-common/target</build.directory.projectSparkCommon>
+    <build.directory.projectSparkCommonTest>../../integration/spark-common-test/target</build.directory.projectSparkCommonTest>
+    <!--<build.directory.projectHive>../../integration/hive/target</build.directory.projectHive>-->
+    <!--<build.directory.projectPresto>../../integration/presto/target</build.directory.projectPresto>-->
+    <build.directory.projectStoreSdk>../../store/sdk/target</build.directory.projectStoreSdk>
+    <build.directory.projectStreaming>../../streaming/target</build.directory.projectStreaming>
+    <build.directory.projectBloom>../../datamap/bloom/target</build.directory.projectBloom>
+    <build.directory.projectLucene>../../datamap/lucene/target</build.directory.projectLucene>
+
+    <classes.directory.projectCommon>../../common/target/classes</classes.directory.projectCommon>
+    <classes.directory.projectCore>../../core/target/classes</classes.directory.projectCore>
+    <classes.directory.projectProcessing>../../processing/target/classes</classes.directory.projectProcessing>
+    <classes.directory.projectHadoop>../../hadoop/target/classes</classes.directory.projectHadoop>
+    <classes.directory.projectFormat>../../format/target/classes</classes.directory.projectFormat>
+    <classes.directory.projectSpark>../../integration/spark/target/classes</classes.directory.projectSpark>
+    <classes.directory.projectSpark2>../../integration/spark2/target/classes</classes.directory.projectSpark2>
+    <classes.directory.projectSparkCommon>../../integration/spark-common/target/classes</classes.directory.projectSparkCommon>
+    <classes.directory.projectSparkCommonTest>../../integration/spark-common-test/target/classes</classes.directory.projectSparkCommonTest>
+    <!--<classes.directory.projectHive>../../integration/hive/target/classes</classes.directory.projectHive>-->
+    <!--<classes.directory.projectPresto>../../integration/presto/target/classes</classes.directory.projectPresto>-->
+    <classes.directory.projectStoreSdk>../../store/sdk/target/classes</classes.directory.projectStoreSdk>
+    <classes.directory.projectStreaming>../../streaming/target/classes</classes.directory.projectStreaming>
+    <classes.directory.projectBloom>../../datamap/bloom/target/classes</classes.directory.projectBloom>
+    <classes.directory.projectLucene>../../datamap/lucene/target/classes</classes.directory.projectLucene>
+
+    <sources.directory.projectCommon>../../common/src/main/java</sources.directory.projectCommon>
+    <sources.directory.projectCore>../../core/src/main/java</sources.directory.projectCore>
+    <sources.directory.projectProcessing>../../processing/src/main/java</sources.directory.projectProcessing>
+    <sources.directory.projectHadoop>../../hadoop/src/main/java</sources.directory.projectHadoop>
+    <sources.directory.projectFormat>../../format/src/main/thrift</sources.directory.projectFormat>
+    <sources.directory.projectSpark>../../integration/spark/src/main/scala</sources.directory.projectSpark>
+    <sources.directory.projectSpark>../../integration/spark/src/main/java</sources.directory.projectSpark>
+    <sources.directory.projectSpark2>../../integration/spark2/src/main/java</sources.directory.projectSpark2>
+    <sources.directory.projectSpark2>../../integration/spark2/src/main/scala</sources.directory.projectSpark2>
+    <sources.directory.projectSparkCommon>../../integration/spark-common/src/main/java</sources.directory.projectSparkCommon>
+    <sources.directory.projectSparkCommon>../../integration/spark-common/src/main/scala</sources.directory.projectSparkCommon>
+    <!--<sources.directory.projectHive>../../integration/hive/src/main/java</sources.directory.projectHive>-->
+    <!--<sources.directory.projectHive>../../integration/hive/src/main/scala</sources.directory.projectHive>-->
+    <!--<sources.directory.projectPresto>../../integration/presto/src/main/java</sources.directory.projectPresto>-->
+    <!--<sources.directory.projectPresto>../../integration/presto/src/main/scala</sources.directory.projectPresto>-->
+    <sources.directory.projectStoreSdk>../../store/sdk/src/main/java</sources.directory.projectStoreSdk>
+    <sources.directory.projectStreaming>../../streaming/src/main/java</sources.directory.projectStreaming>
+    <sources.directory.projectStreaming>../../streaming/src/main/scala</sources.directory.projectStreaming>
+    <sources.directory.projectBloom>../../datamap/bloom/src/main/java</sources.directory.projectBloom>
+    <sources.directory.projectLucene>../../datamap/lucene/src/main/java</sources.directory.projectLucene>
+
+    <generated-sources.directory.projectCommon>../../common/target/generated-sources/annotations</generated-sources.directory.projectCommon>
+    <generated-sources.directory.projectCore>../../core/target/generated-sources/annotations</generated-sources.directory.projectCore>
+    <generated-sources.directory.projectProcessing>../../processing/target/generated-sources/annotations</generated-sources.directory.projectProcessing>
+    <generated-sources.directory.projectHadoop>../../hadoop/target/generated-sources/annotations</generated-sources.directory.projectHadoop>
+    <generated-sources.directory.projectFormat>../../format/target/generated-sources/annotations</generated-sources.directory.projectFormat>
+    <generated-sources.directory.projectSpark>../../integration/spark/target/generated-sources/annotations</generated-sources.directory.projectSpark>
+    <generated-sources.directory.projectSpark2>../../integration/spark2/target/generated-sources/annotations</generated-sources.directory.projectSpark2>
+    <generated-sources.directory.projectSparkCommon>../../integration/spark-common/target/generated-sources/annotations</generated-sources.directory.projectSparkCommon>
+    <generated-sources.directory.projectSparkCommonTest>../../integration/spark-common-test/target/generated-sources/annotations</generated-sources.directory.projectSparkCommonTest>
+    <!--<generated-sources.directory.projectHive>../../integration/hive/target/generated-sources/annotations</generated-sources.directory.projectHive>-->
+    <!--<generated-sources.directory.projectPresto>../../integration/presto/target/generated-sources/annotations</generated-sources.directory.projectPresto>-->
+    <generated-sources.directory.projectStoreSdk>../../store/sdk/target/generated-sources/annotations</generated-sources.directory.projectStoreSdk>
+    <generated-sources.directory.projectStreaming>../../streaming/target/generated-sources/annotations</generated-sources.directory.projectStreaming>
+    <generated-sources.directory.projectBloom>../../datamap/bloom/target/generated-sources/annotations</generated-sources.directory.projectBloom>
+    <generated-sources.directory.projectLucene>../../datamap/lucene/target/generated-sources/annotations</generated-sources.directory.projectLucene>
+
+  </properties>
+
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-spark2</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.hive</groupId>
+          <artifactId>hive-exec</artifactId>
+        </exclusion>
+      </exclusions>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-spark-common-test</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-lucene</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-bloom</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-store-sdk</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <!-- spark catalyst added runtime dependency on spark-core,so
+      while executing the testcases spark-core should be present else it
+      will fail to execute -->
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-core_${scala.binary.version}</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <!-- need to Exclude Avro jar from this project,spark core is using
+        the version 1.7.4 which is not compatible with Carbon -->
+        <exclusion>
+          <groupId>org.apache.avro</groupId>
+          <artifactId>avro</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_${scala.binary.version}</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jmockit</groupId>
+      <artifactId>jmockit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/resources</directory>
+      </resource>
+      <resource>
+        <directory>.</directory>
+        <includes>
+          <include>CARBON_SPARK_INTERFACELogResource.properties</include>
+        </includes>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <version>2.15.2</version>
+        <executions>
+          <execution>
+            <id>compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <phase>compile</phase>
+          </execution>
+          <execution>
+            <id>testCompile</id>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+            <phase>test</phase>
+          </execution>
+          <execution>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.18</version>
+        <!-- Note config is repeated in scalatest config -->
+        <configuration>
+          <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+          <argLine>-Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m</argLine>
+          <systemProperties>
+            <java.awt.headless>true</java.awt.headless>
+            <spark.carbon.hive.schema.store>${carbon.hive.based.metastore}</spark.carbon.hive.schema.store>
+          </systemProperties>
+          <failIfNoTests>false</failIfNoTests>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest-maven-plugin</artifactId>
+        <version>1.0</version>
+        <!-- Note config is repeated in surefire config -->
+        <configuration>
+          <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+          <junitxml>.</junitxml>
+          <filereports>CarbonTestSuite.txt</filereports>
+          <argLine> ${argLine} -ea -Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
+          </argLine>
+          <stderr />
+          <environmentVariables>
+          </environmentVariables>
+          <systemProperties>
+            <java.awt.headless>true</java.awt.headless>
+            <spark.carbon.hive.schema.store>${carbon.hive.based.metastore}</spark.carbon.hive.schema.store>
+          </systemProperties>
+        </configuration>
+        <executions>
+          <execution>
+            <id>test</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <!-- Copy the ant tasks jar. Needed for ts.jacoco.report-ant . -->
+          <execution>
+            <id>jacoco-dependency-ant</id>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <phase>process-test-resources</phase>
+            <inherited>false</inherited>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.jacoco</groupId>
+                  <artifactId>org.jacoco.ant</artifactId>
+                  <version>0.7.9</version>
+                </artifactItem>
+              </artifactItems>
+              <stripVersion>true</stripVersion>
+              <outputDirectory>${basedir}/target/jacoco-jars</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.6</version>
+        <executions>
+          <execution>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <echo message="Generating JaCoCo Reports" />
+                <taskdef name="report" classname="org.jacoco.ant.ReportTask">
+                  <classpath path="${basedir}/target/jacoco-jars/org.jacoco.ant.jar" />
+                </taskdef>
+                <mkdir dir="${basedir}/target/coverage-report" />
+                <report>
+                  <executiondata>
+                    <fileset dir="${build.directory.projectCommon}">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectCore}">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectProcessing}">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectHadoop}">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectFormat}" erroronmissingdir="false">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectSpark}" erroronmissingdir="false">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectSpark2}" erroronmissingdir="false">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectSparkCommon}">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectSparkCommonTest}">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <!--<fileset dir="${build.directory.projectHive}" erroronmissingdir="false">
+                      <include name="jacoco.exec" />
+                    </fileset>-->
+                    <!--<fileset dir="${build.directory.projectPresto}" erroronmissingdir="false">
+                      <include name="jacoco.exec" />
+                    </fileset>-->
+                    <fileset dir="${build.directory.projectStoreSdk}" erroronmissingdir="false">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectStreaming}" erroronmissingdir="false">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectBloom}" erroronmissingdir="false">
+                      <include name="jacoco.exec" />
+                    </fileset>
+                    <fileset dir="${build.directory.projectLucene}" erroronmissingdir="false">
+                      <include name="jacoco.exec" />
+                    </fileset>
+
+                  </executiondata>
+                  <structure name="jacoco-CarbonData Coverage Project">
+                    <group name="carbondata-coverage">
+                      <classfiles>
+                        <fileset dir="${classes.directory.projectCommon}" />
+                        <fileset dir="${classes.directory.projectCore}" />
+                        <fileset dir="${classes.directory.projectProcessing}" />
+                        <fileset dir="${classes.directory.projectHadoop}" />
+                        <!--<fileset dir="${classes.directory.projectFormat}" erroronmissingdir="false"/>-->
+                        <fileset dir="${classes.directory.projectSpark}" erroronmissingdir="false"/>
+                        <fileset dir="${classes.directory.projectSpark2}" erroronmissingdir="false"/>
+                        <fileset dir="${classes.directory.projectSparkCommon}" />
+                        <fileset dir="${classes.directory.projectSparkCommonTest}" />
+                        <!--<fileset dir="${classes.directory.projectHive}" erroronmissingdir="false" />-->
+                        <!--<fileset dir="${classes.directory.projectPresto}" erroronmissingdir="false" />-->
+                        <fileset dir="${classes.directory.projectStoreSdk}" erroronmissingdir="false" />
+                        <fileset dir="${classes.directory.projectStreaming}" erroronmissingdir="false" />
+                        <fileset dir="${classes.directory.projectBloom}" erroronmissingdir="false" />
+                        <fileset dir="${classes.directory.projectLucene}" erroronmissingdir="false" />
+                      </classfiles>
+                      <sourcefiles encoding="UTF-8">
+                        <fileset dir="${sources.directory.projectCommon}" />
+                        <fileset dir="${sources.directory.projectCore}" />
+                        <fileset dir="${sources.directory.projectProcessing}" />
+                        <fileset dir="${sources.directory.projectHadoop}" />
+                        <!--<fileset dir="${sources.directory.projectFormat}" erroronmissingdir="false"/>-->
+                        <fileset dir="${sources.directory.projectSpark}" erroronmissingdir="false"/>
+                        <fileset dir="${sources.directory.projectSpark2}" erroronmissingdir="false"/>
+                        <fileset dir="${sources.directory.projectSparkCommon}" />
+                        <!--<fileset dir="${sources.directory.projectHive}" erroronmissingdir="false" />-->
+                        <!--<fileset dir="${sources.directory.projectPresto}" erroronmissingdir="false" />-->
+                        <fileset dir="${sources.directory.projectStoreSdk}" erroronmissingdir="false" />
+                        <fileset dir="${sources.directory.projectStreaming}" erroronmissingdir="false" />
+                        <fileset dir="${sources.directory.projectBloom}" erroronmissingdir="false" />
+                        <fileset dir="${sources.directory.projectLucene}" erroronmissingdir="false" />
+
+                      </sourcefiles>
+                    </group>
+                  </structure>
+                  <html destdir="../../target/carbondata-coverage-report/html" />
+                  <xml destfile="../../target/carbondata-coverage-report/carbondata-coverage-report.xml" />
+                  <csv destfile="../../target/carbondata-coverage-report/carbondata-coverage-report.csv" />
+                </report>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.ant</artifactId>
+            <version>0.7.9</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+  <profiles>
+    <profile>
+      <id>sdvtest</id>
+      <properties>
+        <maven.test.skip>true</maven.test.skip>
+      </properties>
+    </profile>
+    <profile>
+      <id>build-all</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>
