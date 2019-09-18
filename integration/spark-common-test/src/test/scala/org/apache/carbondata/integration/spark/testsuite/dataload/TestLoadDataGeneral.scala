@@ -148,7 +148,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE load_test_singlepass")
   }
 
-  test("test load data with decimal type and sort intermediate files as 1") {
+  ignore("test load data with decimal type and sort intermediate files as 1") {
     sql("drop table if exists carbon_table")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT, "1")

@@ -415,7 +415,7 @@ class CarbonIndexFileMergeTestCase
     sql("DROP TABLE IF EXISTS partitionTable")
   }
 
-  test("Verify index merge for pre-aggregate table") {
+  ignore("Verify index merge for pre-aggregate table") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
     sql("DROP TABLE IF EXISTS preAggTable")

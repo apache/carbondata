@@ -105,7 +105,7 @@ object HiveExample {
     if (metaFolder.exists()) {
       FileUtils.deleteDirectory(metaFolder)
     }
-    FileUtils.moveDirectory(new File("metastore_db"), metaFolder)
+    FileUtils.copyDirectory(new File("metastore_db"), metaFolder)
   }
 
   def checkAndDeleteDBLock: Unit = {

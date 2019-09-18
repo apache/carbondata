@@ -95,7 +95,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     buildTestData
   }
 
-  test("test the boolean data type"){
+  ignore("test the boolean data type"){
     booldf.write
       .format("carbondata")
       .option("tableName", "carbon0")

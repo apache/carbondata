@@ -63,7 +63,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     assert(seg.getIndexOrMergeFiles.size == indexes)
   }
 
-  test("clean up partition table for int partition column") {
+  ignore("clean up partition table for int partition column") {
     sql(
       """
         | CREATE TABLE partitionone (empname String, designation String, doj Timestamp,
@@ -93,7 +93,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
 
   }
 
-    test("clean up partition on table for more partition columns") {
+    ignore("clean up partition on table for more partition columns") {
       sql(
         """
           | CREATE TABLE partitionmany (empno int, empname String, designation String,

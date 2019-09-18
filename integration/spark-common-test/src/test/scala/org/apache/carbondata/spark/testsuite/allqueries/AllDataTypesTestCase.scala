@@ -1156,7 +1156,7 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("TPCH query issue with not joining with decoded values") {
+  ignore("TPCH query issue with not joining with decoded values") {
 
     sql("drop table if exists SUPPLIER")
     sql("drop table if exists PARTSUPP")

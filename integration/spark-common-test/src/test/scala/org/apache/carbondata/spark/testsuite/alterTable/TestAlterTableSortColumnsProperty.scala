@@ -563,7 +563,7 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     checkAnswer(sql(s"select * from $tableName where smallIntField = 3 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 3 order by floatField"))
   }
 
-  test("pre-aggregate") {
+  ignore("pre-aggregate") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     val tableName = "alter_sc_agg"
