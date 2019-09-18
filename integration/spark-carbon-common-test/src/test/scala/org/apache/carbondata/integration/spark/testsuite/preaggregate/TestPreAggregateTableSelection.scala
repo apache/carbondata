@@ -27,9 +27,9 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.util.SparkQueryTest
+import org.apache.carbondata.spark.util.CarbonSparkQueryTest
 
-class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterAll {
+class TestPreAggregateTableSelection extends CarbonSparkQueryTest with BeforeAndAfterAll {
 
   val timeSeries = TIMESERIES.toString
 

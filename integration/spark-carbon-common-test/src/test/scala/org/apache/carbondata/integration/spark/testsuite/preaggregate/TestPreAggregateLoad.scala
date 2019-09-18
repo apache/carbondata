@@ -26,9 +26,9 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.util.SparkQueryTest
+import org.apache.carbondata.spark.util.CarbonSparkQueryTest
 
-class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with BeforeAndAfterEach{
+class TestPreAggregateLoad extends CarbonSparkQueryTest with BeforeAndAfterAll with BeforeAndAfterEach{
 
   val testData = s"$resourcesPath/sample.csv"
   val p1 = CarbonProperties.getInstance()

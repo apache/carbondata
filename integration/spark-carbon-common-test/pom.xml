@@ -27,7 +27,7 @@
   </parent>
 
   <artifactId>carbondata-spark-carbon-common-test</artifactId>
-  <name>Apache CarbonData :: Spark Common Test</name>
+  <name>Apache CarbonData :: Spark Carbon Common Test</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>

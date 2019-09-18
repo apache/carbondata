@@ -22,7 +22,7 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{DataFrame, SaveMode}
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -94,7 +94,7 @@ class C2DataMapFactory(
   }
 }
 
-class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
+class DataMapWriterSuite extends CarbonQueryTest with BeforeAndAfterAll {
   def buildTestData(numRows: Int): DataFrame = {
     import sqlContext.implicits._
     sqlContext.sparkContext.parallelize(1 to numRows, 1)

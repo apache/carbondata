@@ -21,13 +21,13 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.rpc.RpcEndpointRef
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class ProfilerSuite extends QueryTest with BeforeAndAfterAll {
+class ProfilerSuite extends CarbonQueryTest with BeforeAndAfterAll {
   var setupEndpointRef: RpcEndpointRef = _
   var statementMessages: ArrayBuffer[ProfilerMessage] = _
   var executionMessages: ArrayBuffer[ProfilerMessage] = _
