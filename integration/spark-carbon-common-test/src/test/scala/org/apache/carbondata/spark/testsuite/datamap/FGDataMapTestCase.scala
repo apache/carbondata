@@ -25,7 +25,7 @@ import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.hadoop.conf.Configuration
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
@@ -427,7 +427,7 @@ class FGDataMapWriter(carbonTable: CarbonTable,
   }
 }
 
-class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
+class FGDataMapTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/compaction/fil2.csv"
 

@@ -22,7 +22,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
@@ -39,7 +39,7 @@ import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
 
-class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
+class TestDataMapStatus extends CarbonQueryTest with BeforeAndAfterAll {
 
   val testData = s"$resourcesPath/sample.csv"
 

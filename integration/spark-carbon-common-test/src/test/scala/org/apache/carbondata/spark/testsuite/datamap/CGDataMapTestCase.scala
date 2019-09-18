@@ -23,7 +23,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -346,7 +346,7 @@ class CGDataMapWriter(
 
 }
 
-class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
+class CGDataMapTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/compaction/fil2.csv"
   val systemFolderStoreLocation = CarbonProperties.getInstance().getSystemFolderLocation
