@@ -324,6 +324,13 @@ public class Segment implements Serializable, Writable {
     this.options = options;
   }
 
+  public boolean isCarbonSegment() {
+    if (loadMetadataDetails != null) {
+      return loadMetadataDetails.isCarbonFormat();
+    }
+    return true;
+  }
+
   @Override public void write(DataOutput out) throws IOException {
     out.writeUTF(segmentNo);
     boolean writeSegmentFileName = segmentFileName != null;

@@ -460,4 +460,9 @@ public class LoadMetadataDetails implements Serializable {
   public void setPath(String path) {
     this.path = path;
   }
+
+  public boolean isCarbonFormat() {
+    return getFileFormat().equals(FileFormat.COLUMNAR_V3)
+        || getFileFormat().equals(FileFormat.ROW_V1);
+  }
 }

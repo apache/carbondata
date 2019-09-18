@@ -24,8 +24,9 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.carbondata.execution.datasources.SparkCarbonFileFormat
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil.convertSparkToCarbonDataType
 import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
+import org.apache.spark.sql.execution.strategy.MixedFormatHandler
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types.StructType
 
@@ -36,6 +37,7 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.metadata.SegmentFileStore
+import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -43,7 +45,9 @@ import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMa
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
+import org.apache.carbondata.sdk.file.{Field, Schema}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.clearDataMapFiles
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 
 /**
@@ -73,6 +77,14 @@ case class CarbonAddLoadCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
+    if (carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala.exists(
+      c => c.hasEncoding(Encoding.DICTIONARY) && !c.hasEncoding(Encoding.DIRECT_DICTIONARY))) {
+      throw new MalformedCarbonCommandException(
+        "Unsupported operation on global dictionary columns table")
+    }
+    if (carbonTable.isChildTable || carbonTable.isChildDataMap) {
+      throw new MalformedCarbonCommandException("Unsupported operation on MV/Pre-aggrergated table")
+    }
     // if insert overwrite in progress, do not allow add segment
     if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "delete segment")
@@ -80,10 +92,20 @@ case class CarbonAddLoadCommand(
     val segmentPath = options.getOrElse(
       "path", throw new UnsupportedOperationException("PATH is manadatory"))
 
-    // TODO use the fileformat based on the format.
-    val segSchema = new SparkCarbonFileFormat().inferSchema(sparkSession, options, Seq.empty).get
+    val segSchema = MixedFormatHandler.getSchema(sparkSession, options, segmentPath)
 
-    if (!tableSchema.equals(segSchema)) {
+    val segCarbonSchema = new Schema(segSchema.fields.map { field =>
+      val dataType = convertSparkToCarbonDataType(field.dataType)
+      new Field(field.name, dataType)
+    })
+
+    val tableCarbonSchema = new Schema(tableSchema.fields.map { field =>
+      val dataType = convertSparkToCarbonDataType(field.dataType)
+      new Field(field.name, dataType)
+    })
+
+
+    if (!tableCarbonSchema.getFields.forall(f => segCarbonSchema.getFields.exists(_.equals(f)))) {
       throw new AnalysisException(s"Schema is not same. Table schema is : " +
                                   s"${tableSchema} and segment schema is : ${segSchema}")
     }
@@ -121,7 +143,8 @@ case class CarbonAddLoadCommand(
       false)
     newLoadMetaEntry.setPath(segmentPath)
     val format = options.getOrElse("format", "carbondata")
-    if (!(format.equals("carbondata") || format.equals("carbon"))) {
+    val isCarbonFormat = format.equals("carbondata") || format.equals("carbon")
+    if (!isCarbonFormat) {
       newLoadMetaEntry.setFileFormat(new FileFormat(format))
     }
 
@@ -133,7 +156,11 @@ case class CarbonAddLoadCommand(
       segmentPath,
       new util.HashMap[String, String](options.asJava))
     val writeSegment =
-      SegmentFileStore.writeSegmentFile(carbonTable, segment)
+      if (isCarbonFormat) {
+        SegmentFileStore.writeSegmentFile(carbonTable, segment)
+      } else {
+        SegmentFileStore.writeSegmentFileForOthers(carbonTable, segment)
+      }
 
     operationContext.setProperty(carbonTable.getTableUniqueName + "_Segment",
       model.getSegmentId)
@@ -200,6 +227,8 @@ case class CarbonAddLoadCommand(
     }
     Seq.empty
   }
+
+
 
   override protected def opName: String = "ADD SEGMENT WITH PATH"
 }

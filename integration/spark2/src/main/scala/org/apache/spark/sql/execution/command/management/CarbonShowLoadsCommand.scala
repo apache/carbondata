@@ -43,7 +43,8 @@ case class CarbonShowLoadsCommand(
         AttributeReference("File Format", StringType, nullable = false)(),
         AttributeReference("Visibility", StringType, nullable = false)(),
         AttributeReference("Data Size", StringType, nullable = false)(),
-        AttributeReference("Index Size", StringType, nullable = false)())
+        AttributeReference("Index Size", StringType, nullable = false)(),
+        AttributeReference("Path", StringType, nullable = false)())
     } else {
       Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
         AttributeReference("Status", StringType, nullable = false)(),
@@ -52,7 +53,8 @@ case class CarbonShowLoadsCommand(
         AttributeReference("Merged To", StringType, nullable = false)(),
         AttributeReference("File Format", StringType, nullable = false)(),
         AttributeReference("Data Size", StringType, nullable = false)(),
-        AttributeReference("Index Size", StringType, nullable = false)())
+        AttributeReference("Index Size", StringType, nullable = false)(),
+        AttributeReference("Path", StringType, nullable = false)())
     }
   }
 

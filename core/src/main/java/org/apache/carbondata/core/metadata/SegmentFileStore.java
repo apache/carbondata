@@ -230,6 +230,39 @@ public class SegmentFileStore {
     return false;
   }
 
+  public static boolean writeSegmentFileForOthers(CarbonTable carbonTable, Segment segment)
+      throws IOException {
+    String tablePath = carbonTable.getTablePath();
+    CarbonFile segmentFolder = FileFactory.getCarbonFile(segment.getSegmentPath());
+    CarbonFile[] otherFiles = segmentFolder.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return (!file.getName().equals("_SUCCESS") && !file.getName().endsWith(".crc"));
+      }
+    });
+    if (otherFiles != null && otherFiles.length > 0) {
+      SegmentFile segmentFile = new SegmentFile();
+      segmentFile.setOptions(segment.getOptions());
+      FolderDetails folderDetails = new FolderDetails();
+      folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
+      folderDetails.setRelative(false);
+      segmentFile.addPath(segment.getSegmentPath(), folderDetails);
+      for (CarbonFile file : otherFiles) {
+        folderDetails.getFiles().add(file.getName());
+      }
+      String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
+      CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
+      if (!carbonFile.exists()) {
+        carbonFile.mkdirs(segmentFileFolder);
+      }
+      // write segment info to new file.
+      writeSegmentFile(segmentFile,
+          segmentFileFolder + File.separator + segment.getSegmentFileName());
+
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Write segment file to the metadata folder of the table selecting only the current load files
    *

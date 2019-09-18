@@ -21,6 +21,7 @@ import java.lang.Long
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.util.CarbonException
@@ -84,6 +85,13 @@ object CarbonStore {
               "NA"
             }
 
+          val path =
+            if (StringUtils.isNotEmpty(load.getPath)) {
+              load.getPath
+            } else {
+              "NA"
+            }
+
           val startTime =
             if (load.getLoadStartTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
               "NA"
@@ -124,10 +132,11 @@ object CarbonStore {
               startTime,
               endTime,
               mergedTo,
-              load.getFileFormat.toString,
+              load.getFileFormat.toString.toUpperCase,
               load.getVisibility,
               Strings.formatSize(dataSize.toFloat),
-              Strings.formatSize(indexSize.toFloat))
+              Strings.formatSize(indexSize.toFloat),
+              path)
           } else {
             Row(
               load.getLoadName,
@@ -135,9 +144,10 @@ object CarbonStore {
               startTime,
               endTime,
               mergedTo,
-              load.getFileFormat.toString,
+              load.getFileFormat.toString.toUpperCase,
               Strings.formatSize(dataSize.toFloat),
-              Strings.formatSize(indexSize.toFloat))
+              Strings.formatSize(indexSize.toFloat),
+              path)
           }
         }.toSeq
     } else {
