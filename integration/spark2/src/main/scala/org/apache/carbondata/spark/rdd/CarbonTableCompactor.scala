@@ -69,7 +69,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
 
   override def executeCompaction(): Unit = {
     val sortedSegments: util.List[LoadMetadataDetails] = new util.ArrayList[LoadMetadataDetails](
-      carbonLoadModel.getLoadMetadataDetails
+      carbonLoadModel.getLoadMetadataDetails.asScala.filter(_.isCarbonSegment).asJava
     )
     CarbonDataMergerUtil.sortSegments(sortedSegments)
 

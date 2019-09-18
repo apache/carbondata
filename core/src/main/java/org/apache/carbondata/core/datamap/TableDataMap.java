@@ -106,13 +106,14 @@ public final class TableDataMap extends OperationEventListener {
   /**
    * Pass the valid segments and prune the datamap using filter expression
    *
-   * @param segments
+   * @param allsegments
    * @param filter
    * @return
    */
-  public List<ExtendedBlocklet> prune(List<Segment> segments, final DataMapFilter filter,
+  public List<ExtendedBlocklet> prune(List<Segment> allsegments, final DataMapFilter filter,
       final List<PartitionSpec> partitions) throws IOException {
     final List<ExtendedBlocklet> blocklets = new ArrayList<>();
+    List<Segment> segments = getCarbonSegments(allsegments);
     final Map<Segment, List<DataMap>> dataMaps = dataMapFactory.getDataMaps(segments);
     // for non-filter queries
     // for filter queries
@@ -141,6 +142,16 @@ public final class TableDataMap extends OperationEventListener {
     List<ExtendedBlocklet> extendedBlocklets = pruneMultiThread(
         segments, filter, partitions, blocklets, dataMaps, totalFiles);
     return extendedBlocklets;
+  }
+
+  private List<Segment> getCarbonSegments(List<Segment> allsegments) {
+    List<Segment> segments = new ArrayList<>();
+    for (Segment segment : allsegments) {
+      if (segment.isCarbonSegment()) {
+        segments.add(segment);
+      }
+    }
+    return segments;
   }
 
   private List<ExtendedBlocklet> pruneWithoutFilter(List<Segment> segments,
@@ -343,8 +354,9 @@ public final class TableDataMap extends OperationEventListener {
    *
    * @return
    */
-  public List<DataMapDistributable> toDistributable(List<Segment> segments) throws IOException {
+  public List<DataMapDistributable> toDistributable(List<Segment> allsegments) throws IOException {
     List<DataMapDistributable> distributables = new ArrayList<>();
+    List<Segment> segments = getCarbonSegments(allsegments);
     for (Segment segment : segments) {
       distributables.addAll(dataMapFactory.toDistributable(segment));
     }
@@ -423,7 +435,8 @@ public final class TableDataMap extends OperationEventListener {
   /**
    * delete only the datamaps of the segments
    */
-  public void deleteDatamapData(List<Segment> segments) throws IOException {
+  public void deleteDatamapData(List<Segment> allsegments) throws IOException {
+    List<Segment> segments = getCarbonSegments(allsegments);
     for (Segment segment: segments) {
       dataMapFactory.deleteDatamapData(segment);
     }
@@ -457,14 +470,15 @@ public final class TableDataMap extends OperationEventListener {
   /**
    * Prune the datamap of the given segments and return the Map of blocklet path and row count
    *
-   * @param segments
+   * @param allsegments
    * @param partitions
    * @return
    * @throws IOException
    */
-  public Map<String, Long> getBlockRowCount(List<Segment> segments,
+  public Map<String, Long> getBlockRowCount(List<Segment> allsegments,
       final List<PartitionSpec> partitions, TableDataMap defaultDataMap)
       throws IOException {
+    List<Segment> segments = getCarbonSegments(allsegments);
     Map<String, Long> blockletToRowCountMap = new HashMap<>();
     for (Segment segment : segments) {
       List<CoarseGrainDataMap> dataMaps = defaultDataMap.getDataMapFactory().getDataMaps(segment);
@@ -478,13 +492,14 @@ public final class TableDataMap extends OperationEventListener {
   /**
    * Prune the datamap of the given segments and return the Map of blocklet path and row count
    *
-   * @param segments
+   * @param allsegments
    * @param partitions
    * @return
    * @throws IOException
    */
-  public long getRowCount(List<Segment> segments, final List<PartitionSpec> partitions,
+  public long getRowCount(List<Segment> allsegments, final List<PartitionSpec> partitions,
       TableDataMap defaultDataMap) throws IOException {
+    List<Segment> segments = getCarbonSegments(allsegments);
     long totalRowCount = 0L;
     for (Segment segment : segments) {
       List<CoarseGrainDataMap> dataMaps = defaultDataMap.getDataMapFactory().getDataMaps(segment);
