@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.integration.spark.testsuite.timeseries
+package org.apache.carbondata.integration.spark.testsuite.timeseries.timeseries
 
 import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.apache.spark.util.SparkUtil4Test

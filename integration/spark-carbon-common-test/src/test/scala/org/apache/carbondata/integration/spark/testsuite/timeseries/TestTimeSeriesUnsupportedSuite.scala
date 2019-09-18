@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.integration.spark.testsuite.timeseries
+package org.apache.carbondata.integration.spark.testsuite.timeseries.timeseries
 
 import java.sql.Timestamp
 
