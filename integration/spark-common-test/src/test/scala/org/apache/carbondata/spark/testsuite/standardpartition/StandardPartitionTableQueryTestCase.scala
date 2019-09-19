@@ -315,7 +315,7 @@ test("Creation of partition table should fail if the colname in table schema and
     checkAnswer(sql("select email from partitionTable"), Seq(Row("def"), Row("abc")))
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location))
   }
-
+  
   test("sdk write and add partition based on location on partition table"){
     sql("drop table if exists partitionTable")
     sql("create table partitionTable (id int,name String) partitioned by(email string) stored as carbondata")
@@ -362,7 +362,7 @@ test("Creation of partition table should fail if the colname in table schema and
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath))
   }
 
-  test("add partition with static column partition with load command") {
+  ignore("add partition with static column partition with load command") {
     sql(
       """
         | CREATE TABLE staticpartitionlocload (empno int, designation String,
@@ -407,7 +407,7 @@ test("Creation of partition table should fail if the colname in table schema and
     FileFactory.deleteAllCarbonFilesOfDir(file)
   }
 
-  test("add external partition with static column partition with load command with diffrent schema") {
+  ignore("add external partition with static column partition with load command with diffrent schema") {
 
     sql(
       """
