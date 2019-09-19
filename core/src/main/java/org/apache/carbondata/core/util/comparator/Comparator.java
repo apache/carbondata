@@ -38,7 +38,7 @@ public final class Comparator {
   public static SerializableComparator getComparator(DataType dataType) {
     if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
       return LONG;
-    } else if(dataType == DataTypes.STRING){
+    } else if (dataType == DataTypes.STRING) {
       return BYTE;
     } else {
       return getComparatorByDataTypeForMeasure(dataType);
