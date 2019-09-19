@@ -233,7 +233,7 @@ class TestHybridCompaction extends QueryTest with BeforeAndAfterEach with Before
   }
 
 
-  test("PREAGG") {
+  ignore("PREAGG") {
     loadSortedData()
     loadUnsortedData()
     val datamapName = "d1"
