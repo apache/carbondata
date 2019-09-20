@@ -817,7 +817,7 @@ Users can specify which columns to include and exclude for local dictionary gene
        ```
 
        **NOTE:**
-        * The future version will enhance "custom" compaction to sort the old segment one by one.
+        * The "custom" compaction support re-sorting the old segment one by one in version 1.6 or later.
         * The streaming table is not supported for SORT_COLUMNS modification.
         * If the inverted index columns are removed from the new SORT_COLUMNS, they will not 
         create the inverted index. But the old configuration of INVERTED_INDEX will be kept.
