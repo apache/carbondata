@@ -1018,8 +1018,6 @@ public final class DataTypeUtil {
       return DataTypes.NULL;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
       return DataTypes.BYTE_ARRAY;
-    } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
-      return DataTypes.BYTE_ARRAY;
     } else if (DataTypes.BINARY.getName().equalsIgnoreCase(name)) {
       return DataTypes.BINARY;
     } else if (name.equalsIgnoreCase("decimal")) {
@@ -1068,8 +1066,6 @@ public final class DataTypeUtil {
       return DataTypes.VARCHAR;
     } else if (DataTypes.NULL.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.NULL;
-    } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.BYTE_ARRAY;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.BYTE_ARRAY;
     } else if (DataTypes.BINARY.getName().equalsIgnoreCase(dataType.getName())) {
