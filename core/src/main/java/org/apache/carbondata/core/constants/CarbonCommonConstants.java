@@ -81,7 +81,7 @@ public final class CarbonCommonConstants {
    * default carbon properties file path
    */
   public static final String CARBON_PROPERTIES_FILE_PATH_DEFAULT =
-      "conf/carbon.properties";
+      "../../../conf/carbon.properties";
 
   /**
    * CARBON_DDL_BASE_HDFS_URL
