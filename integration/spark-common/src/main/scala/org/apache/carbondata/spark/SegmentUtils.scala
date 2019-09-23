@@ -98,32 +98,4 @@ object SegmentUtils {
       }
     sparkSession.createDataFrame(rdd, schema)
   }
-
-  def getLoadModel(
-      sparkSession: SparkSession,
-      carbonTable: CarbonTable,
-      segments: Array[Segment]
-  ): CarbonLoadModel = {
-    val conf = SparkSQLUtil.sessionState(sparkSession).newHadoopConf()
-    CarbonTableOutputFormat.setDatabaseName(conf, carbonTable.getDatabaseName)
-    CarbonTableOutputFormat.setTableName(conf, carbonTable.getTableName)
-    CarbonTableOutputFormat.setCarbonTable(conf, carbonTable)
-    val fieldList = carbonTable
-      .getCreateOrderColumn(carbonTable.getTableName)
-      .asScala
-      .map { column =>
-        new StructField(column.getColName, column.getDataType)
-      }
-    CarbonTableOutputFormat.setInputSchema(conf, new StructType(fieldList.asJava))
-    val loadModel = CarbonTableOutputFormat.getLoadModel(conf)
-    loadModel.setSerializationNullFormat(
-      TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + ",\\N")
-    loadModel.setBadRecordsLoggerEnable(
-      TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + ",false")
-    loadModel.setBadRecordsAction(
-      TableOptionConstant.BAD_RECORDS_ACTION.getName() + ",force")
-    loadModel.setIsEmptyDataBadRecord(
-      DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + ",false")
-    loadModel
-  }
 }

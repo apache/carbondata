@@ -26,19 +26,25 @@ import scala.collection.mutable
 
 import org.apache.spark.sql.{SparkSession, SQLContext}
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.datatype.{StructField, StructType}
 import org.apache.carbondata.core.metadata.SegmentFileStore
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
+import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat
 import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
+import org.apache.carbondata.processing.util.TableOptionConstant
 import org.apache.carbondata.spark.{MergeResultImpl, SegmentUtils}
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 
@@ -197,9 +203,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           carbonLoadModel,
           carbonMergerMapping
         ).collect
-      } else if (CompactionType.MINOR == compactionType &&
-                 SortScope.GLOBAL_SORT.equals(carbonTable.getSortScope)) {
-        globalSortForMinor(sc.sparkSession, carbonLoadModel, carbonMergerMapping)
+      } else if (SortScope.GLOBAL_SORT == carbonTable.getSortScope) {
+        compactSegmentsByGlobalSort(sc.sparkSession, carbonLoadModel, carbonMergerMapping)
       } else {
         new CarbonMergerRDD(
           sc.sparkSession,
@@ -330,7 +335,10 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     }
   }
 
-  def globalSortForMinor(
+  /**
+   * compact segments by global sort
+   */
+  def compactSegmentsByGlobalSort(
       sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
       carbonMergerMapping: CarbonMergerMapping): Array[(String, Boolean)] = {
@@ -338,7 +346,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       sparkSession,
       carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
       carbonMergerMapping.validSegments)
-    val outputModel = SegmentUtils.getLoadModel(
+    val outputModel = getLoadModelForGlobalSort(
       sparkSession, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
       carbonMergerMapping.validSegments)
     outputModel.setSegmentId(carbonMergerMapping.mergedLoadName.split("_")(1))
@@ -351,5 +359,36 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       .map { row =>
         (row._1, FailureCauses.NONE == row._2._2.failureCauses)
       }
+  }
+
+  /**
+   * create CarbonLoadModel for global_sort compaction
+   */
+  def getLoadModelForGlobalSort(
+      sparkSession: SparkSession,
+      carbonTable: CarbonTable,
+      segments: Array[Segment]
+  ): CarbonLoadModel = {
+    val conf = SparkSQLUtil.sessionState(sparkSession).newHadoopConf()
+    CarbonTableOutputFormat.setDatabaseName(conf, carbonTable.getDatabaseName)
+    CarbonTableOutputFormat.setTableName(conf, carbonTable.getTableName)
+    CarbonTableOutputFormat.setCarbonTable(conf, carbonTable)
+    val fieldList = carbonTable
+      .getCreateOrderColumn(carbonTable.getTableName)
+      .asScala
+      .map { column =>
+        new StructField(column.getColName, column.getDataType)
+      }
+    CarbonTableOutputFormat.setInputSchema(conf, new StructType(fieldList.asJava))
+    val loadModel = CarbonTableOutputFormat.getLoadModel(conf)
+    loadModel.setSerializationNullFormat(
+      TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + ",\\N")
+    loadModel.setBadRecordsLoggerEnable(
+      TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + ",false")
+    loadModel.setBadRecordsAction(
+      TableOptionConstant.BAD_RECORDS_ACTION.getName() + ",force")
+    loadModel.setIsEmptyDataBadRecord(
+      DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + ",false")
+    loadModel
   }
 }
