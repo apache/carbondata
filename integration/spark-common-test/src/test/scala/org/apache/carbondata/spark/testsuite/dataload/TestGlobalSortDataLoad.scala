@@ -210,7 +210,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     assertResult(5)(sql("show segments for table carbon_globalsort_minor").count())
     assertResult(3)(
       sql("show segments for table carbon_globalsort_minor").rdd.filter(_.get(1).equals("Compacted")).count())
-    assert(getIndexFileCount("carbon_globalsort_minor") === 2)
+    assert(getIndexFileCount("carbon_globalsort_minor", "0.1") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort_minor"), Seq(Row(48)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort_minor ORDER BY name, id"),
       sql("SELECT * FROM carbon_globalsort ORDER BY name, id"))
@@ -240,7 +240,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     assertResult(5)(sql("show segments for table carbon_globalsort_major").count())
     assertResult(4)(
       sql("show segments for table carbon_globalsort_major").rdd.filter(_.get(1).equals("Compacted")).count())
-    assert(getIndexFileCount("carbon_globalsort_major") === 2)
+    assert(getIndexFileCount("carbon_globalsort_major", "0.1") === 4)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort_major"), Seq(Row(48)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort_major ORDER BY name, id"),
       sql("SELECT * FROM carbon_globalsort ORDER BY name, id"))
@@ -269,7 +269,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     assertResult(5)(sql("show segments for table carbon_globalsort_custom").count())
     assertResult(3)(
       sql("show segments for table carbon_globalsort_custom").rdd.filter(_.get(1).equals("Compacted")).count())
-    assert(getIndexFileCount("carbon_globalsort_custom") === 2)
+    assert(getIndexFileCount("carbon_globalsort_custom", "0.1") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort_custom"), Seq(Row(48)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort_custom ORDER BY name, id"),
       sql("SELECT * FROM carbon_globalsort_custom ORDER BY name, id"))

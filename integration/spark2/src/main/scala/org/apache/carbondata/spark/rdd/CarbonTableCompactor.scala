@@ -38,6 +38,7 @@ import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -203,7 +204,10 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           carbonLoadModel,
           carbonMergerMapping
         ).collect
-      } else if (SortScope.GLOBAL_SORT == carbonTable.getSortScope) {
+      } else if (SortScope.GLOBAL_SORT == carbonTable.getSortScope &&
+                 !carbonTable.getSortColumns.isEmpty &&
+                 carbonTable.getRangeColumn == null &&
+                 CarbonUtil.isStandardCarbonTable(carbonTable)) {
         compactSegmentsByGlobalSort(sc.sparkSession, carbonLoadModel, carbonMergerMapping)
       } else {
         new CarbonMergerRDD(
@@ -389,6 +393,11 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       TableOptionConstant.BAD_RECORDS_ACTION.getName() + ",force")
     loadModel.setIsEmptyDataBadRecord(
       DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + ",false")
+    val globalSortPartitions =
+      carbonTable.getTableInfo.getFactTable.getTableProperties.get("global_sort_partitions")
+    if (globalSortPartitions != null) {
+      loadModel.setGlobalSortPartitions(globalSortPartitions)
+    }
     loadModel
   }
 }
