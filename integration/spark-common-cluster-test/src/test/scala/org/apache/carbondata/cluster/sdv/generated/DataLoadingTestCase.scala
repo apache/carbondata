@@ -295,7 +295,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""drop table IF EXISTS T_Carbn01""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""create table T_Hive1(Active_status String, Item_type_cd INT, Qty_day_avg INT, Qty_total INT, Sell_price BIGINT, Sell_pricep DOUBLE, Discount_price DOUBLE , Profit DECIMAL(3,2), Item_code STRING, Item_name VARCHAR(50), Outlet_name CHAR(100), Update_time TIMESTAMP, Create_date String)row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
-   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' overwrite into table T_Hive1""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive1_hive1.csv' overwrite into table T_Hive1""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive1""").collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
       s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Hive1 order by update_time""", "DataLoadingTestCase-Insert_Func_005")
@@ -347,7 +347,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("Insert_Func_008", Include) {
      sql(s"""drop table IF EXISTS t_hive2""").collect
    sql(s"""create table T_Hive2(Active_status String, Item_type_cd INT, Qty_day_avg SMALLINT, Qty_total INT, Sell_price BIGINT, Sell_pricep DOUBLE, Discount_price DOUBLE , Profit DECIMAL(3,2),  Item_code STRING, Item_name VARCHAR(50), Outlet_name CHAR(100), Update_time TIMESTAMP, Create_date String,Profit_perc DECIMAL(4,3),name string)row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
-   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive2.csv' overwrite into table T_Hive2""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive2_hive2.csv' overwrite into table T_Hive2""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg SMALLINT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive2""").collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
@@ -427,8 +427,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""drop table IF EXISTS T_Carbn01""").collect
    sql(s"""create table T_Hive4(Item_code STRING, Item_name VARCHAR(50))row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
    sql(s"""create table T_Hive5(Item_code STRING, Profit DECIMAL(3,2))row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
-   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive4.csv' overwrite into table T_Hive4""").collect
-   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive5.csv' overwrite into table T_Hive5""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive4_hive4.csv' overwrite into table T_Hive4""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive5_hive5.csv' overwrite into table T_Hive5""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""insert into T_carbn01 select x.Active_status,x.Item_type_cd,x.Qty_day_avg,x.Qty_total,x.Sell_price,x.Sell_pricep,x.Discount_price,z.Profit,x.Item_code,y.Item_name,x.Outlet_name,x.Update_time,x.Create_date from T_Hive1 x,T_Hive4 y, T_Hive5 z where x.Item_code = y.Item_code and x.Item_code = z.Item_code""").collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
@@ -442,8 +442,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table IF EXISTS t_hive7""").collect
     sql(s"""drop table IF EXISTS T_Carbn01""").collect
    sql(s"""create table T_Hive7(Active_status1 BOOLEAN, Item_type_cd1 TINYINT, Qty_day_avg1 SMALLINT, Qty_total1 INT, Sell_price1 BIGINT, Sell_pricep1 FLOAT, Discount_price1 DOUBLE , Profit1 DECIMAL(3,2), Item_code1 STRING, Item_name1 VARCHAR(50), Outlet_name1 CHAR(100), Update_time TIMESTAMP, Create_date DATE)row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
-   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' overwrite into table T_Hive7""").collect
-   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv'  into table T_Hive7""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive1_hive0.csv' overwrite into table T_Hive7""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive1_hive3.csv'  into table T_Hive7""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive7""").collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
@@ -484,7 +484,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\','FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""create table T_Hive_1(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String) row format delimited fields terminated by ',' collection items terminated by '\n'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Hive_1""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1_hive6.csv' INTO table T_Hive_1""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive_1""").collect
     checkAnswer(s"""select count(*) from T_Carbn01""",
       Seq(Row(20)), "DataLoadingTestCase-Insert_Func_027")
@@ -520,7 +520,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table IF EXISTS t_hive5""").collect
     sql(s"""drop table IF EXISTS T_Carbn01""").collect
    sql(s"""create table T_Hive5(Item_code STRING, Profit DECIMAL(3,2))row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
-   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive5.csv' overwrite into table T_Hive5""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive5_hive7.csv' overwrite into table T_Hive5""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive1 x where exists (select * from T_Hive5 y where x.Item_code= y.Item_code) """).collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
@@ -534,7 +534,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists t_hive4""").collect
     sql(s"""drop table IF EXISTS T_Carbn01""").collect
    sql(s"""create table T_Hive4(Item_code STRING, Item_name VARCHAR(50))row format delimited fields terminated by ','""").collect
-   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive4.csv' overwrite into table T_Hive4""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive4_hive8.csv' overwrite into table T_Hive4""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive1 a where a.Item_code in (select b.item_code from T_Hive4 b)""").collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
@@ -657,7 +657,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""drop table if exists T_Hive1""").collect
    sql(s"""create table T_Hive1(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String) row format delimited fields terminated by ',' collection items terminated by '\n'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Hive1""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1_hive9.csv' INTO table T_Hive1""").collect
    sql(s"""Insert into T_Carbn01 select * from T_Hive1""").collect
    sql(s"""delete from table T_Carbn01 where segment.id in (0)""").collect
    sql(s"""select count(*)  from T_Carbn01""").collect
@@ -696,7 +696,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""create table T_Hive14(Item_code STRING,  Profit DECIMAL(3,2)) partitioned by (Qty_total INT, Item_type_cd TINYINT) row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
    sql(s"""drop table IF EXISTS T_Carbn014""").collect
    sql(s"""create table T_Carbn014(Item_code STRING, Profit DECIMAL(3,2), Qty_total INT, Item_type_cd INT) STORED BY 'org.apache.carbondata.format'""").collect
-   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive14.csv' overwrite into table T_Hive14 partition(Qty_total=100, Item_type_cd=2)""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive14_hive1.csv' overwrite into table T_Hive14 partition(Qty_total=100, Item_type_cd=2)""").collect
    sql(s"""insert into T_carbn014 select * from T_Hive14 where Qty_total =100""").collect
     checkAnswer(s"""select item_code, profit from T_Carbn014 order by item_code, profit""",
       Seq(Row("BE3423ee",4.99),Row("BE3423ee",4.99),Row("SE3423ee",4.99),Row("SE3423ee",4.99),Row("SE3423ee",4.99),Row("SE3423ee",4.99)), "DataLoadingTestCase-Insert_Func_109")
@@ -790,7 +790,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check for insert into carbon table with select from Hive table where only Measures columns are present.
   test("Insert_Func_066", Include) {
      sql(s"""create table Measures_Dataload_H (Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE Measures_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct_hive1.csv' INTO TABLE Measures_Dataload_H""").collect
    sql(s"""create table Measures_Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
    sql(s"""insert into Measures_Dataload_C select * from Measures_Dataload_H""").collect
     checkAnswer(s"""select count(*) from Measures_Dataload_C""",
@@ -819,8 +819,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check for insert into carbon table with select statement having logical operators
   test("Insert_Func_043", Include) {
      sql(s"""create table Logical_Dataload_H (Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Logical_Dataload_H""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Logical_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures_hive2.csv' INTO TABLE Logical_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures_hive3.csv' INTO TABLE Logical_Dataload_H""").collect
    sql(s"""create table Logical_Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
    sql(s"""insert into Logical_Dataload_C select * from Logical_Dataload_H where Item_Code != 'D' and Qty < 40""").collect
     checkAnswer(s"""select count(*) from Logical_Dataload_C""",
@@ -833,7 +833,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check that select query fetches the correct data after doing insert and load .
   test("Insert_Func_073", Include) {
      sql(s"""create table Dataload_H (Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures_hive4.csv' INTO TABLE Dataload_H""").collect
    sql(s"""create table Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
 
 
@@ -849,7 +849,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("Insert_Func_111", Include) {
      sql(s"""create database insert1""").collect
    sql(s"""create table insert1.DiffDB_Dataload_H(Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE insert1.DiffDB_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures_hive5.csv' INTO TABLE insert1.DiffDB_Dataload_H""").collect
    sql(s"""create database insert2""").collect
    sql(s"""create table insert2.DiffDB_Dataload_C(Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
    sql(s"""insert into insert2.DiffDB_Dataload_C select * from insert1.DiffDB_Dataload_H""").collect
@@ -863,7 +863,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check for insert into carbon table with select from Hive table where only Dimension columns are present.
   ignore("Insert_Func_065", Include) {
      sql(s"""create table Dimension_Dataload_H (Item_code STRING)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Dimension_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures_hive1.csv' INTO TABLE Dimension_Dataload_H""").collect
    sql(s"""create table Dimension_Dataload_C (Item_code STRING)stored by 'org.apache.carbondata.format'""").collect
    sql(s"""insert into Dimension_Dataload_C select * from Dimension_Dataload_H""").collect
     checkAnswer(s"""select count(*) from Dimension_Dataload_C""",
@@ -1418,18 +1418,16 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("Insert_Func_023_01", Include) {
     dropTable("Norecords_Dataload_C")
     dropTable("Norecords_Dataload_H")
-    intercept[Exception] {
-      sql(s"""create table Norecords_Dataload_H (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
-      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code,Qty')""").collect
-      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code,Qty')""").collect
-      sql(s"""create table Norecords_Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
-      sql(s"""delete from table Norecords_Dataload_H where segment.id in (0,1)""").collect
-      sql(s"""insert into Norecords_Dataload_C select * from Norecords_Dataload_H""").collect
-      checkAnswer(s"""select count(*) from Norecords_Dataload_C""",
-        Seq(Row(0)), "DataLoadingTestCase-Insert_Func_023_01")
-    }
-     dropTable("Norecords_Dataload_C")
-     dropTable("Norecords_Dataload_H")
+    sql(s"""create table Norecords_Dataload_H (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code,Qty')""").collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code,Qty')""").collect
+    sql(s"""create table Norecords_Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
+    sql(s"""delete from table Norecords_Dataload_H where segment.id in (0,1)""").collect
+    sql(s"""insert into Norecords_Dataload_C select * from Norecords_Dataload_H""").collect
+    checkAnswer(s"""select count(*) from Norecords_Dataload_C""",
+      Seq(Row(0)), "DataLoadingTestCase-Insert_Func_023_01")
+    dropTable("Norecords_Dataload_C")
+    dropTable("Norecords_Dataload_H")
   }
 
 
@@ -1458,7 +1456,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop database if exists insertInto CASCADE""").collect
    sql(s"""create database insertInto""").collect
    sql(s"""create table insertInto.Norecords_Dataload_H (Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect 
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE insertInto.Norecords_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct_hive2.csv' INTO TABLE insertInto.Norecords_Dataload_H""").collect
    sql(s"""use insertInto""").collect
    sql(s"""drop table if exists Norecords_Dataload_Carbon""").collect
    sql(s"""create table Norecords_Dataload_Carbon (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect

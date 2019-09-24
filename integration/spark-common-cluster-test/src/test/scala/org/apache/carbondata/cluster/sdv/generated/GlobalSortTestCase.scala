@@ -19,19 +19,23 @@
 package org.apache.carbondata.cluster.sdv.generated
 
 import org.apache.spark.sql.common.util._
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 /**
   * Test Class for globalsort1TestCase to verify all scenerios
   */
 
-class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll {
+class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach{
 
   override def beforeAll {
     sql(s"""drop table if exists uniqdata11""").collect
     sql(s"""drop table if exists uniqdataquery1""").collect
   }
 
+  override def beforeEach(): Unit = {
+    sql(s"""drop table if exists uniqdata11""").collect
+    sql(s"""drop table if exists uniqdataquery1""").collect
+  }
 
   //Carbon-Loading-Optimizations-Global-Sort-01-01-01
   test("Carbon-Loading-Optimizations-Global-Sort-01-01-01", Include) {
@@ -234,7 +238,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists uniqdata_h""").collect
     sql(s"""drop table if exists uniqdata_c""").collect
     sql(s"""CREATE TABLE uniqdata_h (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
-    sql(s"""load data inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata_h""").collect
+    sql(s"""load data inpath '$resourcesPath/Data/uniqdata/2000_UniqData_hive2.csv' into table uniqdata_h""").collect
     sql(s"""CREATE TABLE uniqdata_c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
     sql(s"""insert into uniqdata_c select * from uniqdata_h""").collect
 
@@ -615,6 +619,11 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll: Unit = {
+    sql(s"""drop table if exists uniqdata11""").collect
+    sql(s"""drop table if exists uniqdataquery1""").collect
+  }
+
+  override def afterEach: Unit = {
     sql(s"""drop table if exists uniqdata11""").collect
     sql(s"""drop table if exists uniqdataquery1""").collect
   }

@@ -52,7 +52,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
 
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata_hive """).collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData_hive1.csv' into table uniqdata_hive """).collect
 
 
   }
@@ -71,7 +71,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/4000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
 
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/4000_UniqData.csv' into table uniqdata_hive """).collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/4000_UniqData_hive1.csv' into table uniqdata_hive """).collect
 
 
   }
@@ -89,7 +89,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/6000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
 
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/6000_UniqData.csv' into table uniqdata_hive """).collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/6000_UniqData_hive1.csv' into table uniqdata_hive """).collect
 
 
   }
@@ -100,7 +100,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
 
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata_hive """).collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData_hive1.csv' into table uniqdata_hive """).collect
 
 
   }
@@ -111,7 +111,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/3000_1_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
 
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/3000_1_UniqData.csv' into table uniqdata_hive """).collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/3000_1_UniqData_hive1.csv' into table uniqdata_hive """).collect
   }
 
   test("UNIQDATA_DeleteLoad1_3", Include) {
@@ -5304,7 +5304,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/HiveData/100_hive_test.csv' INTO TABLE Carbon_automation OPTIONS('DELIMITER'=',','QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription,imei_count')""").collect
 
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/HiveData/100_hive_test.csv' INTO TABLE Carbon_automation_hive """).collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/HiveData/100_hive_test_hive1.csv' INTO TABLE Carbon_automation_hive """).collect
   }
 
 
@@ -13093,7 +13093,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/100_VMALL_1_Day_DATA_2015-09-15.csv' INTO table pushupfilter options('DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='imei,uuid,MAC,device_color,device_shell_color,device_name,product_name,ram,rom,cpu_clock,series,check_date,check_year,check_month,check_day,check_hour,bom,inside_name,packing_date,packing_year,packing_month,packing_day,packing_hour,customer_name,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,packing_list_no,order_no,Active_check_time,Active_check_year,Active_check_month,Active_check_day,Active_check_hour,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,Active_network,Active_firmware_version,Active_emui_version,Active_os_version,Latest_check_time,Latest_check_year,Latest_check_month,Latest_check_day,Latest_check_hour,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_firmware_version,Latest_emui_version,Latest_os_version,Latest_network,site,site_desc,product,product_desc')""").collect
 
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/100_VMALL_1_Day_DATA_2015-09-15.csv' INTO table pushupfilter_hive """).collect
+    sql(s"""insert overwrite table pushupfilter_hive select * from pushupfilter""").collect
 
 
   }
