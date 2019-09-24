@@ -81,9 +81,9 @@ class DataLoadingIUDTestCase extends QueryTest with BeforeAndAfterAll with Befor
 //NA
 test("IUD-01-01-01_001-001", Include) {
    sql("create table T_Hive1(Active_status BOOLEAN, Item_type_cd TINYINT, Qty_day_avg SMALLINT, Qty_total INT, Sell_price BIGINT, Sell_pricep FLOAT, Discount_price DOUBLE , Profit DECIMAL(3,2), Item_code STRING, Item_name VARCHAR(50), Outlet_name CHAR(100), Update_time TIMESTAMP, Create_date DATE) row format delimited fields terminated by ',' collection items terminated by '$'")
- sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' overwrite into table T_Hive1""").collect
+ sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1_hive10.csv' overwrite into table T_Hive1""").collect
  sql("create table T_Hive6(Item_code STRING, Sub_item_cd ARRAY<string>)row format delimited fields terminated by ',' collection items terminated by '$'")
- sql(s"""load data inpath '$resourcesPath/Data/InsertData/T_Hive1.csv' overwrite into table T_Hive6""").collect
+ sql(s"""load data inpath '$resourcesPath/Data/InsertData/T_Hive1_hive11.csv' overwrite into table T_Hive6""").collect
  sql(s"""create table t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
  sql(s"""insert into t_carbn02 select * from default.t_carbn01b limit 4""").collect
   checkAnswer(s"""select count(*) from t_carbn01b""",

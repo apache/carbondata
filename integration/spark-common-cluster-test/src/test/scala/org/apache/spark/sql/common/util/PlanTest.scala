@@ -28,7 +28,7 @@ class PlanTest extends CarbonFunSuite {
 
   /** Fails the test if the two expressions do not match */
   protected def compareExpressions(e1: Expression, e2: Expression): Unit = {
-    comparePlans(Filter(e1, OneRowRelation), Filter(e2, OneRowRelation))
+    comparePlans(Filter(e1, OneRowRelation.apply()), Filter(e2, OneRowRelation.apply()))
   }
 
   /** Fails the test if the two plans do not match */

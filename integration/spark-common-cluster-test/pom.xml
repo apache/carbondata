@@ -69,6 +69,18 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty</artifactId>
+      <version>3.9.9.Final</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-all</artifactId>
+      <version>4.1.17.Final</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-spark2</artifactId>
       <version>${project.version}</version>
@@ -180,7 +192,7 @@
             <spark.master.url>${spark.master.url}</spark.master.url>
             <hdfs.url>${hdfs.url}</hdfs.url>
             <presto.jdbc.url>${presto.jdbc.url}</presto.jdbc.url>
-            <spark.hadoop.hive.metastore.uris>${spark.hadoop.hive.metastore.uris}</spark.hadoop.hive.metastore.uris>
+            <!--<spark.hadoop.hive.metastore.uris>${spark.hadoop.hive.metastore.uris}</spark.hadoop.hive.metastore.uris>-->
             <spark.carbon.hive.schema.store>${carbon.hive.based.metastore}</spark.carbon.hive.schema.store>
           </systemProperties>
         </configuration>

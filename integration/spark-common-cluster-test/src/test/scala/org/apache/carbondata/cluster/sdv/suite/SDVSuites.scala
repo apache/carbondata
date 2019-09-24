@@ -29,44 +29,44 @@ import org.apache.carbondata.spark.testsuite.localdictionary.LoadTableWithLocalD
  */
 class SDVSuites extends Suites with BeforeAndAfterAll {
 
-  val suites =                new AlterTableTestCase ::
-                              new BadRecordTestCase ::
-                              new BatchSortLoad1TestCase ::
-                              new BatchSortLoad2TestCase ::
-                              new BatchSortQueryTestCase ::
-                              new ColumndictTestCase ::
-                              new CreateTableAsSelectTestCase ::
-                              new DataLoadingTestCase ::
-                              new DataLoadingV3TestCase ::
-                              new InvertedindexTestCase ::
-                              new OffheapQuery1TestCase ::
-                              new OffheapQuery2TestCase ::
-                              new OffheapSort1TestCase ::
-                              new OffheapSort2TestCase ::
-                              new PartitionTestCase ::
-                              new QueriesBasicTestCase ::
-                              new QueriesBVATestCase ::
-                              new QueriesCompactionTestCase ::
-                              new QueriesExcludeDictionaryTestCase ::
-                              new QueriesIncludeDictionaryTestCase ::
-                              new QueriesNormalTestCase ::
-                              new QueriesRangeFilterTestCase ::
-                              new QueriesSparkBlockDistTestCase ::
-                              new ShowLoadsTestCase ::
-                              new SinglepassTestCase ::
-                              new SortColumnTestCase ::
-                              new TableCommentAlterTableTestCase ::
-                              new TimestamptypesTestCase ::
-                              new V3offheapvectorTestCase ::
-                              new StandardPartitionTestCase ::
-                              new Vector1TestCase ::
-                              new Vector2TestCase ::
-                              new PreAggregateTestCase ::
-                              new TimeSeriesPreAggregateTestCase ::
-                              new TestPartitionWithGlobalSort ::
-                              new PartitionWithPreAggregateTestCase ::
-                              new CreateTableWithLocalDictionaryTestCase ::
-                              new LoadTableWithLocalDictionaryTestCase :: Nil
+  val suites = new AlterTableTestCase ::
+               new BadRecordTestCase ::
+               new BatchSortLoad1TestCase ::
+               new BatchSortLoad2TestCase ::
+               new BatchSortQueryTestCase ::
+               new ColumndictTestCase ::
+               new CreateTableAsSelectTestCase ::
+               new DataLoadingTestCase ::
+               new DataLoadingV3TestCase ::
+               new InvertedindexTestCase ::
+               new OffheapQuery1TestCase ::
+               new OffheapQuery2TestCase ::
+               new OffheapSort1TestCase ::
+               new OffheapSort2TestCase ::
+               new PartitionTestCase ::
+               new QueriesBasicTestCase ::
+               new QueriesBVATestCase ::
+               new QueriesCompactionTestCase ::
+               new QueriesExcludeDictionaryTestCase ::
+               new QueriesIncludeDictionaryTestCase ::
+               new QueriesNormalTestCase ::
+               new QueriesRangeFilterTestCase ::
+               new QueriesSparkBlockDistTestCase ::
+               new ShowLoadsTestCase ::
+               new SinglepassTestCase ::
+               new SortColumnTestCase ::
+               new TableCommentAlterTableTestCase ::
+               new TimestamptypesTestCase ::
+               new V3offheapvectorTestCase ::
+               new StandardPartitionTestCase ::
+               new Vector1TestCase ::
+               new Vector2TestCase ::
+               new PreAggregateTestCase ::
+               new TimeSeriesPreAggregateTestCase ::
+               new TestPartitionWithGlobalSort ::
+               new PartitionWithPreAggregateTestCase ::
+               new CreateTableWithLocalDictionaryTestCase ::
+               new LoadTableWithLocalDictionaryTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -82,17 +82,17 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
  */
 class SDVSuites1 extends Suites with BeforeAndAfterAll {
 
-  val suites =     new BadRecordTestCase ::
-                   new ComplexDataTypeTestCase ::
-                   new BatchSortLoad1TestCase ::
-                   new BatchSortQueryTestCase ::
-                   new DataLoadingTestCase ::
-                   new OffheapSort2TestCase ::
-                   new PartitionTestCase ::
-                   new QueriesBasicTestCase ::
-                   new BatchSortLoad3TestCase ::
-                   new GlobalSortTestCase ::
-                   new MergeIndexTestCase :: Nil
+  val suites = new BadRecordTestCase ::
+               new ComplexDataTypeTestCase ::
+               new BatchSortLoad1TestCase ::
+               new BatchSortQueryTestCase ::
+               new DataLoadingTestCase ::
+               new OffheapSort2TestCase ::
+               new PartitionTestCase ::
+               new QueriesBasicTestCase ::
+               new BatchSortLoad3TestCase ::
+               new GlobalSortTestCase ::
+               new MergeIndexTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -108,10 +108,9 @@ class SDVSuites1 extends Suites with BeforeAndAfterAll {
  */
 class SDVSuites2 extends Suites with BeforeAndAfterAll {
 
-  val suites =      new QueriesBVATestCase ::
-                    new QueriesCompactionTestCase ::
-                    new QueriesExcludeDictionaryTestCase ::
-                    new DataLoadingIUDTestCase :: Nil
+  val suites = new QueriesBVATestCase ::
+               new QueriesExcludeDictionaryTestCase ::
+               new DataLoadingIUDTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -127,39 +126,55 @@ class SDVSuites2 extends Suites with BeforeAndAfterAll {
  */
 class SDVSuites3 extends Suites with BeforeAndAfterAll {
 
-  val suites =      new AlterTableTestCase ::
-                    new BatchSortLoad2TestCase ::
-                    new BucketingTestCase ::
-                    new CreateTableAsSelectTestCase ::
-                    new InvertedindexTestCase ::
-                    new OffheapQuery1TestCase ::
-                    new OffheapQuery2TestCase ::
-                    new OffheapSort1TestCase ::
-                    new ShowLoadsTestCase ::
-                    new SinglepassTestCase ::
-                    new SortColumnTestCase ::
-                    new TimestamptypesTestCase ::
-                    new V3offheapvectorTestCase ::
-                    new Vector1TestCase ::
-                    new Vector2TestCase ::
-                    new QueriesNormalTestCase ::
-                    new ColumndictTestCase ::
-                    new QueriesRangeFilterTestCase ::
-                    new QueriesSparkBlockDistTestCase ::
-                    new DataLoadingV3TestCase ::
-                    new QueriesIncludeDictionaryTestCase ::
-                    new TestRegisterCarbonTable ::
-                    new TableCommentAlterTableTestCase ::
-                    new StandardPartitionTestCase ::
-                    new PreAggregateTestCase ::
-                    new LuceneTestCase ::
-                    new TimeSeriesPreAggregateTestCase :: 
-                    new TestPartitionWithGlobalSort ::
-                    new SDKwriterTestCase ::
-                    new SetParameterTestCase ::
-                    new PartitionWithPreAggregateTestCase ::
-                    new CreateTableWithLocalDictionaryTestCase ::
-                    new LoadTableWithLocalDictionaryTestCase :: Nil
+  val suites = new QueriesCompactionTestCase :: Nil
+
+  override val nestedSuites = suites.toIndexedSeq
+
+  override protected def afterAll() = {
+    println("---------------- Stopping spark -----------------")
+    TestQueryExecutor.INSTANCE.stop()
+    println("---------------- Stopped spark -----------------")
+  }
+}
+
+/**
+ * Suite class for all tests.
+ */
+class SDVSuites4 extends Suites with BeforeAndAfterAll {
+
+  val suites = new AlterTableTestCase ::
+               new BatchSortLoad2TestCase ::
+               new BucketingTestCase ::
+               new CreateTableAsSelectTestCase ::
+               new InvertedindexTestCase ::
+               new OffheapQuery1TestCase ::
+               new OffheapQuery2TestCase ::
+               new OffheapSort1TestCase ::
+               new ShowLoadsTestCase ::
+               new SinglepassTestCase ::
+               new SortColumnTestCase ::
+               new TimestamptypesTestCase ::
+               new V3offheapvectorTestCase ::
+               new Vector1TestCase ::
+               new Vector2TestCase ::
+               new QueriesNormalTestCase ::
+               new ColumndictTestCase ::
+               new QueriesRangeFilterTestCase ::
+               new QueriesSparkBlockDistTestCase ::
+               new DataLoadingV3TestCase ::
+               new QueriesIncludeDictionaryTestCase ::
+               new TestRegisterCarbonTable ::
+               new TableCommentAlterTableTestCase ::
+               new StandardPartitionTestCase ::
+               new PreAggregateTestCase ::
+               new LuceneTestCase ::
+               new TimeSeriesPreAggregateTestCase ::
+               new TestPartitionWithGlobalSort ::
+               new SDKwriterTestCase ::
+               new SetParameterTestCase ::
+               new PartitionWithPreAggregateTestCase ::
+               new CreateTableWithLocalDictionaryTestCase ::
+               new LoadTableWithLocalDictionaryTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -173,11 +188,11 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
 /**
  * Suite class for compatabiity tests
  */
-class SDVSuites4 extends Suites with BeforeAndAfterAll {
+class SDVSuites5 extends Suites with BeforeAndAfterAll {
 
-  val suites =     new CreateTableUsingSparkCarbonFileFormatTestCase ::
-                   new SparkCarbonDataSourceTestCase ::
-                   new CarbonV1toV3CompatabilityTestCase :: Nil
+  val suites = new CreateTableUsingSparkCarbonFileFormatTestCase ::
+               new SparkCarbonDataSourceTestCase ::
+               new CarbonV1toV3CompatabilityTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -191,9 +206,9 @@ class SDVSuites4 extends Suites with BeforeAndAfterAll {
 /**
  * Suite class for presto tests
  */
-class SDVSuites5 extends Suites with BeforeAndAfterAll {
+class SDVSuites6 extends Suites with BeforeAndAfterAll {
 
-  val suites =  new PrestoSampleTestCase :: Nil
+  val suites = new PrestoSampleTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 

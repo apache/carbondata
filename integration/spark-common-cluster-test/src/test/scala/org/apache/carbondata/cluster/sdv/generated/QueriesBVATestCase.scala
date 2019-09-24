@@ -54,7 +54,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/Test_Data1.csv' INTO table Test_Boundary OPTIONS('DELIMITER'=',','QUOTECHAR'='', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc')""").collect
 
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/Test_Data1.csv' INTO table Test_Boundary_hive """).collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/Test_Data1_hive1.csv' INTO table Test_Boundary_hive """).collect
 
 
   }
@@ -78,7 +78,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s""" LOAD DATA INPATH '$resourcesPath/Data/Test_Data1.csv' INTO table Test_Boundary1 OPTIONS('DELIMITER'=',','QUOTECHAR'='', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc')""").collect
 
-    sql(s""" LOAD DATA INPATH '$resourcesPath/Data/Test_Data1.csv' INTO table Test_Boundary1_hive """).collect
+    sql(s""" LOAD DATA INPATH '$resourcesPath/Data/Test_Data1_hive2.csv' INTO table Test_Boundary1_hive """).collect
 
 
   }

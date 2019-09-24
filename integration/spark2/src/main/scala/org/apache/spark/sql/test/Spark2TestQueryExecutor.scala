@@ -51,8 +51,8 @@ object Spark2TestQueryExecutor {
   val conf = new SparkConf()
   if (!TestQueryExecutor.masterUrl.startsWith("local")) {
     conf.setJars(TestQueryExecutor.jars).
-      set("spark.driver.memory", "6g").
-      set("spark.executor.memory", "4g").
+      set("spark.driver.memory", "14g").
+      set("spark.executor.memory", "8g").
       set("spark.executor.cores", "2").
       set("spark.executor.instances", "2").
       set("spark.cores.max", "4")

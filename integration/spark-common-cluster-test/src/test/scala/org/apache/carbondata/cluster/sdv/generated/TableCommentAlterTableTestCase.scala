@@ -74,10 +74,9 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   //Check create table with comment after stored by clause
+  //This behavior is okay in Spark-2.3 but may fail with earlier spark versions.
   test("TableCommentAlterTable_001_06", Include) {
-    intercept[AnalysisException] {
-      sql("create table table_comment_afterstoredby (id int, name string) STORED BY 'carbondata' comment 'This is table comment'")
-    }
+    sql("create table table_comment_afterstoredby (id int, name string) STORED BY 'carbondata' comment 'This is table comment'")
   }
 
   //Check the comment by "describe formatted"

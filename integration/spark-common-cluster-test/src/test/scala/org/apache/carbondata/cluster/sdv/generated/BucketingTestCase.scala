@@ -22,7 +22,7 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.common.util._
-import org.apache.spark.sql.execution.exchange.ShuffleExchange
+import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.scalatest.BeforeAndAfterAll
 
 class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
@@ -100,7 +100,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: ShuffleExchangeExec => shuffleExists = true
     }
     assert(!shuffleExists, "shuffle should not exist on bucket column join")
   }
@@ -121,7 +121,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
     var shuffleExists = false
 
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: ShuffleExchangeExec => shuffleExists = true
     }
     assert(shuffleExists, "shuffle should exist on non-bucket column join")
   }
@@ -145,7 +145,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: ShuffleExchangeExec => shuffleExists = true
     }
     assert(!shuffleExists, "shuffle should not exist on bucket tables")
   }
@@ -167,7 +167,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: ShuffleExchangeExec => shuffleExists = true
     }
     assert(!shuffleExists, "shuffle should not exist on bucket tables")
   }
