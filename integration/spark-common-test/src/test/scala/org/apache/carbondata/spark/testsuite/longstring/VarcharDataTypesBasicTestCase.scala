@@ -389,6 +389,16 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
 
     sql("DROP TABLE IF EXISTS varchar_complex_table")
   }
+  
+  test("update table with long string column") {
+    prepareTable()
+    // update non-varchar column
+    sql(s"update $longStringTable set(id)=(0) where name is not null").show()
+    // update varchar column
+    sql(s"update $longStringTable set(description)=('empty') where name is not null").show()
+    // update non-varchar&varchar column
+    sql(s"update $longStringTable set(description, id)=('sth.', 1) where name is not null").show()
+  }
 
     // ignore this test in CI, because it will need at least 4GB memory to run successfully
   ignore("Exceed 2GB per column page for varchar datatype") {
