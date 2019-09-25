@@ -348,6 +348,9 @@ class NewRddIterator(rddIter: Iterator[Row],
   private val isVarcharTypeMapping =
     carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn(
       carbonLoadModel.getTableName).asScala.map(_.getDataType == DataTypes.VARCHAR)
+  private val isComplexTypeMapping =
+    carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn(
+      carbonLoadModel.getTableName).asScala.map(_.isComplex())
   def hasNext: Boolean = rddIter.hasNext
 
   def next: Array[AnyRef] = {
@@ -356,7 +359,8 @@ class NewRddIterator(rddIter: Iterator[Row],
     for (i <- 0 until columns.length) {
       columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
         complexDelimiters, timeStampFormat, dateFormat,
-        isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i))
+        isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i),
+        isComplexType = i < isComplexTypeMapping.size && isComplexTypeMapping(i))
     }
     columns
   }
