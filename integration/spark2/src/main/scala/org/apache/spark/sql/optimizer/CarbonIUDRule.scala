@@ -39,7 +39,7 @@ class CarbonIUDRule extends Rule[LogicalPlan] with PredicateHelper {
         var isTransformed = false
         val newPlan = updatePlan transform {
           case Project(pList, child) if !isTransformed =>
-            val (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
+            var (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
               .splitAt(pList.size - cols.size)
             // check complex column
             cols.foreach { col =>
@@ -60,7 +60,7 @@ class CarbonIUDRule extends Rule[LogicalPlan] with PredicateHelper {
               val colName = col.name.substring(0,
                 col.name.lastIndexOf(CarbonCommonConstants.UPDATED_COL_EXTENSION))
               val updateIdx = dest.indexWhere(_.name.equalsIgnoreCase(colName))
-              dest.updated(updateIdx, col)
+              dest = dest.updated(updateIdx, col)
             }
             Project(dest, child)
         }
