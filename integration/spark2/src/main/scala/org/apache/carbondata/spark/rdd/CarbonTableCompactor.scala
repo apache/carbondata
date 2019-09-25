@@ -358,7 +358,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       sparkSession,
       Option(dataFrame),
       outputModel,
-      sparkSession.sessionState.newHadoopConf()
+      SparkSQLUtil.sessionState(sparkSession).newHadoopConf()
     )
       .map { row =>
         (row._1, FailureCauses.NONE == row._2._2.failureCauses)
