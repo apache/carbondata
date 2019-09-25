@@ -42,12 +42,13 @@ object FieldConverter {
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
       isVarcharType: Boolean = false,
+      isComplexType: Boolean = false,
       level: Int = 0): String = {
     if (value == null) {
       serializationNullFormat
     } else {
       value match {
-        case s: String => if (!isVarcharType &&
+        case s: String => if (!isVarcharType && !isComplexType &&
                               s.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
           throw new Exception("Dataload failed, String length cannot exceed " +
                               CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
@@ -69,7 +70,7 @@ object FieldConverter {
           val builder = new StringBuilder()
           s.foreach { x =>
             builder.append(objectToString(x, serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level + 1))
+              timeStampFormat, dateFormat, isVarcharType, level = level + 1))
               .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())
@@ -81,10 +82,10 @@ object FieldConverter {
           val builder = new StringBuilder()
           m.foreach { x =>
             builder.append(objectToString(x._1, serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level + 2))
+              timeStampFormat, dateFormat, isVarcharType, level = level + 2))
               .append(keyValueDelimiter)
             builder.append(objectToString(x._2, serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level + 2))
+              timeStampFormat, dateFormat, isVarcharType, level = level + 2))
               .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())
@@ -93,7 +94,7 @@ object FieldConverter {
           val builder = new StringBuilder()
           for (i <- 0 until r.length) {
             builder.append(objectToString(r(i), serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level + 1))
+              timeStampFormat, dateFormat, isVarcharType, level = level + 1))
               .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())
