@@ -30,6 +30,7 @@ import org.apache.spark.sql.internal.SessionState
 
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.spark.sql.catalyst.optimizer.Optimizer
 
 object CarbonSessionCatalogUtil {
 
@@ -183,6 +184,8 @@ object CarbonSessionCatalogUtil {
 class CarbonSessionStateBuilder(sparkSession: SparkSession,
                                 parentState: Option[SessionState] = None)
   extends HiveSessionStateBuilder(sparkSession, parentState) {
+
+  override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
 
   override protected def analyzer: Analyzer = {
     new CarbonAnalyzer(catalog,

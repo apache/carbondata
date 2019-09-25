@@ -563,23 +563,6 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     checkAnswer(sql(s"select * from $tableName where smallIntField = 3 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 3 order by floatField"))
   }
 
-  ignore("pre-aggregate") {
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
-    val tableName = "alter_sc_agg"
-    val dataMapName = "alter_sc_agg_dm1"
-    val baseTableName = "alter_sc_agg_base"
-    loadData(tableName, baseTableName)
-    checkExistence(sql(s"SHOW DATAMAP ON TABLE $tableName"), true, "preaggregate", dataMapName)
-    checkExistence(sql(s"EXPLAIN select stringField,sum(intField) as sum from $tableName where stringField = 'abc2' group by stringField"), true, "preaggregate", dataMapName)
-    checkAnswer(sql(s"select stringField,sum(intField) as sum from $tableName where stringField = 'abc2' group by stringField"), sql(s"select stringField,sum(intField) as sum from $baseTableName where stringField = 'abc2' group by stringField"))
-
-    sql(s"alter table $tableName set tblproperties('sort_scope'='global_sort', 'sort_columns'='smallIntField, charField')")
-    loadData(tableName, baseTableName)
-    checkExistence(sql(s"EXPLAIN select stringField,max(intField) as sum from $tableName where stringField = 'abc2' group by stringField"), true, "preaggregate", dataMapName)
-    checkAnswer(sql(s"select stringField,max(intField) as sum from $tableName where stringField = 'abc2' group by stringField"), sql(s"select stringField,max(intField) as sum from $baseTableName where stringField = 'abc2' group by stringField"))
-  }
-
   test("carboncli -cmd sort_columns -p <segment folder>") {
     val tableName = "alter_sc_cli"
     // no_sort
@@ -609,5 +592,4 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
       }
     }
   }
-
 }

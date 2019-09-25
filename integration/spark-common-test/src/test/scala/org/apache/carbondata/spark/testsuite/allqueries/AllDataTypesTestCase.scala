@@ -17,8 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.allqueries
 
-import org.apache.spark.sql.catalyst.plans.logical.Join
-import org.apache.spark.sql.{CarbonDictionaryCatalystDecoder, Row, SaveMode}
+import org.apache.spark.sql.{Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -1154,49 +1153,6 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
        SUB_QRY ) Carbon_automation_test_hive1 ON Carbon_automation_test_hive.gamePointId = Carbon_automation_test_hive1
        .gamePointId WHERE Carbon_automation_test_hive.AMSize > "5RAM size" """))
 
-  }
-
-  ignore("TPCH query issue with not joining with decoded values") {
-
-    sql("drop table if exists SUPPLIER")
-    sql("drop table if exists PARTSUPP")
-    sql("drop table if exists CUSTOMER")
-    sql("drop table if exists NATION")
-    sql("drop table if exists REGION")
-    sql("drop table if exists PART")
-    sql("drop table if exists LINEITEM")
-    sql("drop table if exists ORDERS")
-    sql("create table if not exists SUPPLIER(S_COMMENT string,S_SUPPKEY string,S_NAME string, S_ADDRESS string, S_NATIONKEY string, S_PHONE string, S_ACCTBAL double) STORED BY 'org.apache.carbondata.format'TBLPROPERTIES ('DICTIONARY_EXCLUDE'='S_COMMENT, S_SUPPKEY, S_NAME, S_ADDRESS, S_NATIONKEY, S_PHONE','table_blocksize'='300','SORT_COLUMNS'='')")
-    sql("create table if not exists PARTSUPP (  PS_PARTKEY int,  PS_SUPPKEY  string,  PS_AVAILQTY  int,  PS_SUPPLYCOST  double,  PS_COMMENT  string) STORED BY 'org.apache.carbondata.format'TBLPROPERTIES ('DICTIONARY_EXCLUDE'='PS_SUPPKEY,PS_COMMENT', 'table_blocksize'='300', 'no_inverted_index'='PS_SUPPKEY, PS_COMMENT','SORT_COLUMNS'='')")
-    sql("create table if not exists CUSTOMER(  C_MKTSEGMENT string,  C_NATIONKEY string,  C_CUSTKEY string,  C_NAME string,  C_ADDRESS string,  C_PHONE string,  C_ACCTBAL double,  C_COMMENT string) STORED BY 'org.apache.carbondata.format'TBLPROPERTIES ('DICTIONARY_INCLUDE'='C_MKTSEGMENT,C_NATIONKEY','DICTIONARY_EXCLUDE'='C_CUSTKEY,C_NAME,C_ADDRESS,C_PHONE,C_COMMENT', 'table_blocksize'='300', 'no_inverted_index'='C_CUSTKEY,C_NAME,C_ADDRESS,C_PHONE,C_COMMENT','SORT_COLUMNS'='C_MKTSEGMENT')")
-    sql("create table if not exists NATION (  N_NAME string,  N_NATIONKEY string,  N_REGIONKEY string,  N_COMMENT  string) STORED BY 'org.apache.carbondata.format'TBLPROPERTIES ('DICTIONARY_INCLUDE'='N_REGIONKEY','DICTIONARY_EXCLUDE'='N_COMMENT', 'table_blocksize'='300','no_inverted_index'='N_COMMENT','SORT_COLUMNS'='N_NAME')")
-    sql("create table if not exists REGION(  R_NAME string,  R_REGIONKEY string,  R_COMMENT string) STORED BY 'org.apache.carbondata.format'TBLPROPERTIES ('DICTIONARY_INCLUDE'='R_NAME,R_REGIONKEY','DICTIONARY_EXCLUDE'='R_COMMENT', 'table_blocksize'='300','no_inverted_index'='R_COMMENT','SORT_COLUMNS'='R_NAME')")
-    sql("create table if not exists PART(  P_BRAND string,  P_SIZE int,  P_CONTAINER string,  P_TYPE string,  P_PARTKEY INT ,  P_NAME string,  P_MFGR string,  P_RETAILPRICE double,  P_COMMENT string) STORED BY 'org.apache.carbondata.format'TBLPROPERTIES ('DICTIONARY_INCLUDE'='P_BRAND,P_SIZE,P_CONTAINER,P_MFGR','DICTIONARY_EXCLUDE'='P_NAME, P_COMMENT', 'table_blocksize'='300','no_inverted_index'='P_NAME,P_COMMENT,P_MFGR','SORT_COLUMNS'='P_SIZE,P_TYPE,P_NAME,P_BRAND,P_CONTAINER')")
-    sql("create table if not exists LINEITEM(  L_SHIPDATE date,  L_SHIPMODE string,  L_SHIPINSTRUCT string,  L_RETURNFLAG string,  L_RECEIPTDATE date,  L_ORDERKEY INT ,  L_PARTKEY INT ,  L_SUPPKEY   string,  L_LINENUMBER int,  L_QUANTITY double,  L_EXTENDEDPRICE double,  L_DISCOUNT double,  L_TAX double,  L_LINESTATUS string,  L_COMMITDATE date,  L_COMMENT  string) STORED BY 'org.apache.carbondata.format'TBLPROPERTIES ('DICTIONARY_INCLUDE'='L_SHIPDATE,L_SHIPMODE,L_SHIPINSTRUCT,L_RECEIPTDATE,L_COMMITDATE,L_RETURNFLAG,L_LINESTATUS','DICTIONARY_EXCLUDE'='L_SUPPKEY, L_COMMENT', 'table_blocksize'='300', 'no_inverted_index'='L_SUPPKEY,L_COMMENT','SORT_COLUMNS'='L_SHIPDATE,L_RETURNFLAG,L_SHIPMODE,L_RECEIPTDATE,L_SHIPINSTRUCT')")
-    sql("create table if not exists ORDERS(  O_ORDERDATE date,  O_ORDERPRIORITY string,  O_ORDERSTATUS string,  O_ORDERKEY int,  O_CUSTKEY string,  O_TOTALPRICE double,  O_CLERK string,  O_SHIPPRIORITY int,  O_COMMENT string) STORED BY 'org.apache.carbondata.format'TBLPROPERTIES ('DICTIONARY_INCLUDE'='O_ORDERDATE,O_ORDERSTATUS','DICTIONARY_EXCLUDE'='O_ORDERPRIORITY, O_CUSTKEY, O_CLERK, O_COMMENT', 'table_blocksize'='300','no_inverted_index'='O_ORDERPRIORITY, O_CUSTKEY, O_CLERK, O_COMMENT', 'SORT_COLUMNS'='O_ORDERDATE')")
-    val df = sql(
-      "select s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment from " +
-      "part, supplier, partsupp, nation, region where p_partkey = ps_partkey and s_suppkey = " +
-      "ps_suppkey and p_size = 15 and p_type like '%BRASS' and s_nationkey = n_nationkey and " +
-      "n_regionkey = r_regionkey and r_name = 'EUROPE' and ps_supplycost = ( select min" +
-      "(ps_supplycost) from partsupp, supplier,nation, region where p_partkey = ps_partkey and " +
-      "s_suppkey = ps_suppkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and " +
-      "r_name = 'EUROPE' ) order by s_acctbal desc, n_name, s_name, p_partkey limit 100")
-
-    val decoders = df.queryExecution.optimizedPlan.collect {
-      case p: CarbonDictionaryCatalystDecoder => p
-    }
-
-    assertResult(5)(decoders.length)
-
-    sql("drop table if exists SUPPLIER")
-    sql("drop table if exists PARTSUPP")
-    sql("drop table if exists CUSTOMER")
-    sql("drop table if exists NATION")
-    sql("drop table if exists REGION")
-    sql("drop table if exists PART")
-    sql("drop table if exists LINEITEM")
-    sql("drop table if exists ORDERS")
   }
 
   test("test self join query fail") {

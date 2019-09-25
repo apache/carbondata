@@ -37,26 +37,23 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
         new CarbonSparkSqlParser(new SQLConf, sparkSession))
 
     // carbon analyzer rules
-    val udf = new CarbonUDFTransformRule
     extensions
       .injectResolutionRule((session: SparkSession) => CarbonIUDAnalysisRule(session))
     extensions
       .injectResolutionRule((session: SparkSession) => CarbonPreInsertionCasts(session))
-    // TODO: Make CarbonUDFTransformRule injectable Rule
-    extensions
-      .injectResolutionRule((sparkSession: SparkSession) =>
-        CarbonUDFTransformRuleWrapper(sparkSession, udf))
 
     // Carbon Pre optimization rules
+    // TODO: Make CarbonOptimizerRule injectable Rule
+    val optimizerRules = Seq(new CarbonIUDRule,
+      new CarbonUDFTransformRule, new CarbonLateDecodeRule)
+    extensions
+      .injectResolutionRule((sparkSession: SparkSession) => {
+        CarbonUDFTransformRuleWrapper(sparkSession, optimizerRules)
+      })
+
     // TODO: CarbonPreAggregateDataLoadingRules
     // TODO: CarbonPreAggregateQueryRules
     // TODO: MVAnalyzerRule
-
-    // carbon extra optimizations
-    extensions
-      .injectOptimizerRule((_: SparkSession) => new CarbonIUDRule)
-    extensions
-      .injectOptimizerRule((_: SparkSession) => new CarbonLateDecodeRule)
 
     // carbon planner strategies
     var streamingTableStratergy : StreamingTableStrategy = null
@@ -89,12 +86,13 @@ object CarbonExtensions {
   CarbonReflectionUtils.updateCarbonSerdeInfo
 }
 
-case class CarbonUDFTransformRuleWrapper(session: SparkSession, rule: Rule[LogicalPlan])
+case class CarbonUDFTransformRuleWrapper(session: SparkSession,
+                                         rules: Seq[Rule[LogicalPlan]])
   extends Rule[LogicalPlan] {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
     if (session.sessionState.experimentalMethods.extraOptimizations.isEmpty) {
-      session.sessionState.experimentalMethods.extraOptimizations = Seq(rule)
+      session.sessionState.experimentalMethods.extraOptimizations = rules
     }
   plan
 }
