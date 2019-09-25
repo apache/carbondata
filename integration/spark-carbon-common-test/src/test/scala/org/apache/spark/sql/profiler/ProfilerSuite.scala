@@ -115,7 +115,7 @@ class ProfilerSuite extends CarbonQueryTest with BeforeAndAfterAll {
     cleanMessages()
   }
 
-  test("collect messages to driver side") {
+  ignore("collect messages to driver side") {
     // drop table
     checkCommand("DROP TABLE IF EXISTS mobile")
     checkCommand("DROP TABLE IF EXISTS emp")
