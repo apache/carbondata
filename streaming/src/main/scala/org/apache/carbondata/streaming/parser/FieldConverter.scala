@@ -42,12 +42,13 @@ object FieldConverter {
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
       isVarcharType: Boolean = false,
+      isComplexType: Boolean = false,
       level: Int = 0): String = {
     if (value == null) {
       serializationNullFormat
     } else {
       value match {
-        case s: String => if (!isVarcharType &&
+        case s: String => if (!isVarcharType && !isComplexType &&
                               s.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
           throw new Exception("Dataload failed, String length cannot exceed " +
                               CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
@@ -68,23 +69,25 @@ object FieldConverter {
           val delimiter = complexDelimiters.get(level)
           val builder = new StringBuilder()
           s.foreach { x =>
+            val nextLevel = level + 1
             builder.append(objectToString(x, serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level + 1))
+              timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
               .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())
         // First convert the 'key' of Map and then append the keyValueDelimiter and then convert
         // the 'value of the map and append delimiter
         case m: scala.collection.Map[_, _] =>
+          val nextLevel = level + 2
           val delimiter = complexDelimiters.get(level)
           val keyValueDelimiter = complexDelimiters.get(level + 1)
           val builder = new StringBuilder()
           m.foreach { x =>
             builder.append(objectToString(x._1, serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level + 2))
+              timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
               .append(keyValueDelimiter)
             builder.append(objectToString(x._2, serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level + 2))
+              timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
               .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())
@@ -92,8 +95,9 @@ object FieldConverter {
           val delimiter = complexDelimiters.get(level)
           val builder = new StringBuilder()
           for (i <- 0 until r.length) {
+            val nextLevel = level + 1
             builder.append(objectToString(r(i), serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level + 1))
+              timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
               .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())

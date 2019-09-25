@@ -1127,4 +1127,56 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hive_table")
   }
 
+  test("[CARBONDATA-3527] Fix 'String length cannot exceed 32000 characters' issue when load data with 'GLOBAL_SORT' from csv files which include big complex type data") {
+    val tableName = "complexdata3_table"
+    sql(s"drop table if exists ${tableName}")
+    sql(
+      s"""
+         |CREATE TABLE IF NOT EXISTS ${tableName} (
+         | begin_time LONG,
+         | id string,
+         | phone string,
+         | other_phone string,
+         | vtl LONG,
+         | gender string,
+         | lang string,
+         | lang_dec string,
+         | phone_country string,
+         | phone_province string,
+         | phone_city string,
+         | other_phone_country string,
+         | other_phone_province string,
+         | other_phone_city string,
+         | call_type INT,
+         | begin_hhmm INT,
+         | ds string,
+         | voice_flag INT,
+         | dss string,
+         | dur LONG,
+         | modela array < array < FLOAT >>, modelb array < array < FLOAT >>, modela_pk array < array < FLOAT >>, modelb_pk array < array < FLOAT >>, modela_ms array < array < FLOAT >>, modelb_ms array < array < FLOAT >>, tl LONG,
+         | lang_sc FLOAT,
+         | nlp_sc FLOAT,
+         | create_time LONG,
+         | cdr_create_time LONG,
+         | fulltext string,
+         | tag_label string,
+         | tag_memo string,
+         | tag_listen string,
+         | tag_imp string,
+         | prop string,
+         | files string
+         | )
+         | STORED AS carbondata TBLPROPERTIES (
+         | 'SORT_COLUMNS' = 'begin_time,id,phone,other_phone,vtl,gender,lang,lang_dec,phone_country,phone_province,phone_city,other_phone_country,other_phone_province,other_phone_city,call_type,begin_hhmm,ds,voice_flag',
+         | 'SORT_SCOPE' = 'GLOBAL_SORT','LONG_STRING_COLUMNS' = 'fulltext,files')""".stripMargin)
+    sql(s"""LOAD DATA inpath '${resourcesPath}/complexdata3.csv' INTO table ${tableName}
+        options('DELIMITER'='\t','QUOTECHAR'='"','COMMENTCHAR'='#','HEADER'='false',
+                'FILEHEADER'='id,phone,phone_country,phone_province,phone_city,other_phone,other_phone_country,other_phone_province,other_phone_city,call_type,begin_time,begin_hhmm,ds,dss,dur,voice_flag,modela,modelb,modela_pk,modelb_pk,modela_ms,modelb_ms,lang,lang_dec,lang_sc,gender,nlp_sc,tl,vtl,create_time,cdr_create_time,fulltext,tag_label,tag_memo,tag_listen,tag_imp,prop,files',
+                'MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='\\001','COMPLEX_DELIMITER_LEVEL_2'='\\002',
+                'SINGLE_PASS'='TRUE')""")
+    checkAnswer(sql(s"select count(1) from ${tableName}"), Seq(Row(10)))
+    checkAnswer(sql(s"select modela[0][0], modela_ms[0][1] from ${tableName} where id = 'e01a1773-bd37-40be-a1de-d7e74837a281'"),
+      Seq(Row(0.0, 0.10781755)))
+    sql(s"drop table if exists ${tableName}")
+  }
 }
