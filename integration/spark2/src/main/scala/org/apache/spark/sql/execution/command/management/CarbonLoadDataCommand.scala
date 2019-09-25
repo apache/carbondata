@@ -1060,7 +1060,7 @@ case class CarbonLoadDataCommand(
     val dropAttributes = df.logicalPlan.output.dropRight(1)
     val finalOutput = catalogTable.schema.map { attr =>
       dropAttributes.find { d =>
-        val index = d.name.lastIndexOf("-updatedColumn")
+        val index = d.name.lastIndexOf(CarbonCommonConstants.UPDATED_COL_EXTENSION)
         if (index > 0) {
           d.name.substring(0, index).equalsIgnoreCase(attr.name)
         } else {

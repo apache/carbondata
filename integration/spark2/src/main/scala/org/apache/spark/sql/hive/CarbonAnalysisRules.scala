@@ -122,9 +122,9 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         val renamedProjectList = projectList.zip(columns).map { case (attr, col) =>
           attr match {
             case UnresolvedAlias(child22, _) =>
-              UnresolvedAlias(Alias(child22, col + "-updatedColumn")())
+              UnresolvedAlias(Alias(child22, col + CarbonCommonConstants.UPDATED_COL_EXTENSION)())
             case UnresolvedAttribute(_) =>
-              UnresolvedAlias(Alias(attr, col + "-updatedColumn")())
+              UnresolvedAlias(Alias(attr, col + CarbonCommonConstants.UPDATED_COL_EXTENSION)())
             case _ => attr
           }
         }
