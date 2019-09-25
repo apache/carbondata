@@ -195,7 +195,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
         | 'SORT_SCOPE'='GLOBAL_SORT',
         | 'sort_columns' = 'name, city',
         | 'AUTO_LOAD_MERGE'='false',
-        | 'COMPACTION_LEVEL_THRESHOLD'='3,0')
+        | 'COMPACTION_LEVEL_THRESHOLD'='3,0', 'GLOBAL_SORT_PARTITIONS'='3')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_minor")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_minor")
@@ -225,7 +225,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
         | 'SORT_SCOPE'='GLOBAL_SORT',
         | 'sort_columns' = 'name, city',
         | 'AUTO_LOAD_MERGE'='false',
-        | 'MAJOR_COMPACTION_SIZE'='1024')
+        | 'MAJOR_COMPACTION_SIZE'='1024', 'GLOBAL_SORT_PARTITIONS'='4')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_major")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_major")
@@ -254,7 +254,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
         | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES(
         | 'SORT_SCOPE'='GLOBAL_SORT',
         | 'sort_columns' = 'name, city',
-        | 'AUTO_LOAD_MERGE'='false')
+        | 'AUTO_LOAD_MERGE'='false', 'GLOBAL_SORT_PARTITIONS'='3')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_custom")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_custom")
