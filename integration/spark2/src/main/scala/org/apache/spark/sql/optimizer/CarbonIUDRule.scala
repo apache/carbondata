@@ -56,7 +56,7 @@ class CarbonIUDRule extends Rule[LogicalPlan] with PredicateHelper {
             }
             // modify plan for updated column *in place*
             isTransformed = true
-            source.foreach{ col =>
+            source.foreach { col =>
               val colName = col.name.substring(0,
                 col.name.lastIndexOf(CarbonCommonConstants.UPDATED_COL_EXTENSION))
               val updateIdx = dest.indexWhere(_.name.equalsIgnoreCase(colName))
