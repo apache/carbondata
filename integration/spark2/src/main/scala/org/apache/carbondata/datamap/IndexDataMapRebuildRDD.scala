@@ -489,11 +489,13 @@ class IndexDataMapRebuildRDD[K, V](
       job.getConfiguration,
       tableInfo.getFactTable.getTableName)
 
+    // make the partitions based on block path so that all the CarbonInputSplits in a
+    // MultiBlockSplit are used for bloom reading. This means 1 task for 1 shard(unique block path).
     format
       .getSplits(job)
       .asScala
       .map(_.asInstanceOf[CarbonInputSplit])
-      .groupBy(p => (p.getSegmentId, p.taskId))
+      .groupBy(p => (p.getSegmentId, p.taskId, p.getBlockPath))
       .map { group =>
         new CarbonMultiBlockSplit(
           group._2.asJava,
