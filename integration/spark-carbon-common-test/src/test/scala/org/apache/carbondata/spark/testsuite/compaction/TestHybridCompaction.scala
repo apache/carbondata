@@ -6,7 +6,7 @@ import scala.collection.mutable.ListBuffer
 
 import au.com.bytecode.opencsv.CSVWriter
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.junit.Assert
 import org.scalatest.Matchers._
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -15,7 +15,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 
-class TestHybridCompaction extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
+class TestHybridCompaction extends CarbonQueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
 
   val rootPath = new File(this.getClass.getResource("/").getPath + "../../../..").getCanonicalPath
 
@@ -135,100 +135,32 @@ class TestHybridCompaction extends QueryTest with BeforeAndAfterEach with Before
 
 
   def dropTable(): Unit = {
-    sql(s"DROP TABLE IF EXISTS $tableName")
+    sql(s"DROP TABLE IF E XISTS $tableName")
   }
 
-
-  test("SORTED LOADS") {
-    loadSortedData(2)
-    sql(s"ALTER TABLE $tableName COMPACT 'major'")
-
-    val out = sql(s"SELECT state, age FROM $tableName").collect()
-    out.map(_.get(0).toString) should
-    equal(Array("CT", "CT", "IA", "IA", "ME", "ME", "ND", "ND", "WA", "WA"))
-  }
-
-
-  test("UNSORTED LOADS") {
-    loadUnsortedData(2)
-    sql(s"ALTER TABLE $tableName COMPACT 'major'")
-
-    val out = sql(s"SELECT state, age FROM $tableName").collect()
-    out.map(_.get(0).toString) should
-    equal(Array("AL", "AL", "CT", "CT", "KS", "KS", "MT", "MT", "WA", "WA"))
-  }
-
-
-  test("MIXED LOADS") {
+  test("PREAGG") {
     loadSortedData()
     loadUnsortedData()
-    sql(s"ALTER TABLE $tableName COMPACT 'major'")
-    val out = sql(s"SELECT state, age FROM $tableName").collect()
-    out.map(_.get(0).toString) should
-    equal(Array("AL", "CT", "CT", "IA", "KS", "ME", "MT", "ND", "WA", "WA"))
-    out.map(_.get(1).toString) should
-    equal(Array("61", "37", "44", "60", "54", "23", "39", "42", "20", "54"))
-  }
+    val datamapName = "d1"
+    val tableNameDatamapName = tableName + "_" + datamapName
 
-
-  test("INSERT") {
-    loadSortedData()
-    loadUnsortedData()
     sql(
       s"""
-         | INSERT INTO $tableName
-         | VALUES('20', 'Naman', 'Rastogi', '23', 'Bengaluru', 'ZZ', '12/28/2018')
+         | CREATE DATAMAP $datamapName
+         | ON TABLE $tableName
+         | USING 'preaggregate'
+         | AS
+         |   SELECT AVG(age), state
+         |   FROM $tableName
+         |   GROUP BY state
       """.stripMargin)
-    sql(s"ALTER TABLE $tableName COMPACT 'major'")
 
-    val out = sql(s"SELECT state FROM $tableName").collect()
-    out.map(_.get(0).toString) should equal(
-      Array("AL", "CT", "CT", "IA", "KS", "ME", "MT", "ND", "WA", "WA", "ZZ"))
-  }
-
-
-  test("UPDATE") {
     loadSortedData()
     loadUnsortedData()
-    sql(s"UPDATE  $tableName SET (state)=('CT') WHERE seq='13'").collect()
+
     sql(s"ALTER TABLE $tableName COMPACT 'major'")
-
-    val out = sql(s"SELECT state FROM $tableName WHERE seq='13'").collect()
-    out.map(_.get(0).toString) should equal(Array("CT"))
-  }
-
-  test("DELETE") {
-    loadSortedData()
-    loadUnsortedData()
-    sql(s"DELETE FROM $tableName WHERE seq='13'").collect()
-    sql(s"ALTER TABLE $tableName COMPACT 'major'")
-
-    val out = sql(s"SELECT state FROM $tableName").collect()
-    out.map(_.get(0).toString) should equal(
-      Array("AL", "CT", "CT", "IA", "KS", "MT", "ND", "WA", "WA"))
-  }
-
-
-  test("RESTRUCTURE TABLE REMOVE COLUMN NOT IN SORT_COLUMNS") {
-    loadSortedData()
-    loadUnsortedData()
-    sql(s"ALTER TABLE $tableName DROP COLUMNS(city)")
-    sql(s"ALTER TABLE $tableName COMPACT 'major'")
-
-    val out = sql(s"SELECT age FROM $tableName").collect()
-    out.map(_.get(0).toString) should equal(
-      Array("61", "37", "44", "60", "54", "23", "39", "42", "20", "54"))
-  }
-
-
-  test("RESTRUCTURE TABLE REMOVE COLUMN IN SORT_COLUMNS") {
-    loadSortedData()
-    loadUnsortedData()
-    sql(s"ALTER TABLE $tableName DROP COLUMNS(state)")
-    sql(s"ALTER TABLE $tableName COMPACT 'major'")
-
-    val out = sql(s"SELECT age FROM $tableName").collect()
-    out.map(_.get(0).toString) should equal(
-      Array("20", "23", "37", "39", "42", "44", "54", "54", "60", "61"))
+    val out = sql(s"SELECT * FROM $tableNameDatamapName").collect()
+    out.map(_.get(2).toString) should equal(
+      Array("AL", "CT", "IA", "KS", "ME", "MT", "ND", "WA"))
   }
 }
