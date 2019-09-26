@@ -604,7 +604,7 @@ m filterExpression
 
       if (cgDataMapExprWrapper != null) {
         // Prune segments from already pruned blocklets
-        DataMapUtil.pruneSegments(segmentIds, prunedBlocklets);
+        DataMapUtil.pruneSegments(segmentIds, prunedBlocklets, false);
         List<ExtendedBlocklet> cgPrunedBlocklets = new ArrayList<>();
         boolean isCGPruneFallback = false;
         // Again prune with CG datamap.
@@ -644,7 +644,7 @@ m filterExpression
         List<ExtendedBlocklet> fgPrunedBlocklets;
         if (fgDataMapExprWrapper != null) {
           // Prune segments from already pruned blocklets
-          DataMapUtil.pruneSegments(segmentIds, prunedBlocklets);
+          DataMapUtil.pruneSegments(segmentIds, prunedBlocklets, true);
           // Prune segments from already pruned blocklets
           fgPrunedBlocklets = DataMapUtil
               .executeDataMapJob(carbonTable, filter.getResolver(), dataMapJob, partitionsToPrune,

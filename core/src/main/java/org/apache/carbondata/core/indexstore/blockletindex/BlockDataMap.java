@@ -912,6 +912,9 @@ public class BlockDataMap extends CoarseGrainDataMap
         if (diff < 0) {
           relativeBlockletId = (short) (diff + blockletCount);
           break;
+        } else if (diff == 0) {
+          relativeBlockletId++;
+          break;
         }
         rowIndex++;
       }
