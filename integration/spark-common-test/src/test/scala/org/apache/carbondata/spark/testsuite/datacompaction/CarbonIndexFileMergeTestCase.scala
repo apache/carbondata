@@ -415,24 +415,6 @@ class CarbonIndexFileMergeTestCase
     sql("DROP TABLE IF EXISTS partitionTable")
   }
 
-  ignore("Verify index merge for pre-aggregate table") {
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
-    sql("DROP TABLE IF EXISTS preAggTable")
-    sql(
-      """
-        | CREATE TABLE preAggTable(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name')
-      """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE preAggTable OPTIONS('header'='false')")
-    assert(getIndexFileCount("default_preAggTable", "0") == 0)
-    sql("create datamap preAggSum on table preAggTable using 'preaggregate' as " +
-        "select city,sum(age) as sum from preAggTable group by city")
-    assert(getIndexFileCount("default_preAggTable_preAggSum", "0") == 0)
-    sql("DROP TABLE IF EXISTS partitionTable")
-  }
-
   test("Verify index merge for streaming table") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
