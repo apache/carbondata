@@ -20,8 +20,10 @@ package org.apache.carbondata.core.datamap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -152,18 +154,26 @@ public class DataMapUtil {
    * Prune the segments from the already pruned blocklets.
    */
   public static void pruneSegments(List<Segment> segments, List<ExtendedBlocklet> prunedBlocklets) {
-    Set<Segment> validSegments = new HashSet<>();
+    Map<Segment, Set<String>> validSegments = new HashMap<>();
     for (ExtendedBlocklet blocklet : prunedBlocklets) {
-      // Clear the old pruned index files if any present
-      blocklet.getSegment().getFilteredIndexShardNames().clear();
       // Set the pruned index file to the segment
       // for further pruning.
       String shardName = CarbonTablePath.getShardName(blocklet.getFilePath());
-      blocklet.getSegment().setFilteredIndexShardName(shardName);
-      validSegments.add(blocklet.getSegment());
+      // Add the existing shards to corresponding segments
+      Set<String> existingShards = validSegments.get(blocklet.getSegment());
+      if (existingShards == null) {
+        existingShards = new HashSet<>();
+        validSegments.put(blocklet.getSegment(), existingShards);
+      }
+      existingShards.add(shardName);
+    }
+    // override the shards list in the segments.
+    for (Map.Entry<Segment, Set<String>> entry : validSegments.entrySet()) {
+      entry.getKey().setFilteredIndexShardNames(entry.getValue());
     }
     segments.clear();
-    segments.addAll(validSegments);
+    // add the new segments to the segments list.
+    segments.addAll(validSegments.keySet());
   }
 
   static List<ExtendedBlocklet> pruneDataMaps(CarbonTable table,

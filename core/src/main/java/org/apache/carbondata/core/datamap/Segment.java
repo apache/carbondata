@@ -274,8 +274,8 @@ public class Segment implements Serializable, Writable {
     return filteredIndexShardNames;
   }
 
-  public void setFilteredIndexShardName(String filteredIndexShardName) {
-    this.filteredIndexShardNames.add(filteredIndexShardName);
+  public void setFilteredIndexShardNames(Set<String> filteredIndexShardNames) {
+    this.filteredIndexShardNames = filteredIndexShardNames;
   }
 
   @Override
