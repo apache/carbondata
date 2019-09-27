@@ -27,7 +27,7 @@
   </parent>
 
   <artifactId>carbondata-presto</artifactId>
-  <name>Apache CarbonData :: presto</name>
+  <name>Apache CarbonData :: Presto</name>
   <packaging>presto-plugin</packaging>
 
   <properties>
