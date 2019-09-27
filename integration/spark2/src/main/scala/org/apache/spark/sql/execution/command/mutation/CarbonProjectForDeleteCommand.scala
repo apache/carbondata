@@ -53,7 +53,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
   extends DataCommand {
 
   var isDeleteRepeat = false
-  var deleteSegment: String = null
+  var deleteSegments: String = null
   var repeatedSegments: String = null
 
   def getDataRdd(
@@ -65,7 +65,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
           val newLeft = left transform {
             case LogicalRelation(relation: CarbonDatasourceHadoopRelation, o, c, s) =>
               val r = relation.copy()
-              r.segmentsForDelete = deleteSegment
+              r.segmentsForDelete = deleteSegments
               LogicalRelation(r, o, c, s)
             case other => other
           }

@@ -29,9 +29,10 @@ import org.apache.spark.sql.hive.CarbonIUDAnalysisRule
 import org.apache.spark.sql.types.LongType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * combine insert, update and delete operations into a single statement,
@@ -41,11 +42,18 @@ case class CarbonDeleteRepeatedCommand(
     database: Option[String],
     tableName: String,
     columnName: String,
-    segmentId: String
+    newSegmentRange: (String, String),
+    oldSegmentRange: Option[(String, String)]
 ) extends AtomicRunnableCommand {
 
   override val output: Seq[Attribute] = {
     Seq(AttributeReference("Deleted Row Count", LongType, nullable = false)())
+  }
+
+  private def getSegmentRange(segmentRange: (String, String)): (Float, Float) = {
+    val newStart =  java.lang.Float.valueOf(segmentRange._1)
+    val newEnd =  java.lang.Float.valueOf(segmentRange._2)
+    (Math.min(newStart, newEnd), Math.max(newStart, newEnd))
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -61,33 +69,46 @@ case class CarbonDeleteRepeatedCommand(
       .getValidAndInvalidSegments
       .getValidSegments
       .asScala
+      .map{ segment =>
+        (segment, java.lang.Float.valueOf(segment.getSegmentNo))
+      }
     if (segments.isEmpty) {
-      throw new MalformedCarbonCommandException(s"table has no data")
+      throw new MalformedCarbonCommandException(s"table has no segments")
     }
-    val segment = segments.find(_.getSegmentNo.equals(segmentId))
-    if (segment.isEmpty) {
-      throw new MalformedCarbonCommandException(s"Invalid segment id: $segmentId")
+    val updatedSegmentRange = getSegmentRange(newSegmentRange)
+    val newSegments =
+      segments.filter { segment =>
+        segment._2 >= updatedSegmentRange._1 && segment._2 <= updatedSegmentRange._2
+      }
+        .map(_._1)
+    if (newSegments.isEmpty) {
+      Seq.empty[Row]
+    } else {
+      val oldSegments =
+        if (oldSegmentRange.isDefined) {
+          val updatedOldSegmentRange = getSegmentRange(oldSegmentRange.get)
+          segments.filter { segment =>
+            segment._2 >= updatedOldSegmentRange._1 && segment._2 <= updatedOldSegmentRange._2
+          }.map(_._1)
+        } else {
+          segments.filter { segment =>
+            segment._2 > updatedSegmentRange._2 || segment._2 < updatedSegmentRange._1
+          }.map(_._1)
+        }
+      if (oldSegments.isEmpty) {
+        Seq.empty[Row]
+      } else {
+        deduplicate(sparkSession, carbonTable, carbonColumn, newSegments, oldSegments)
+      }
     }
-    // get the segment with repeated data
-    val loadEndTime = segment.get.getLoadMetadataDetails.getLoadEndTime
-    val oldSegments = segments
-      .filter(_.getLoadMetadataDetails.getLoadStartTime <= loadEndTime)
-      .filter(!_.getSegmentNo.equals(segment.get.getSegmentNo))
-    if (oldSegments.isEmpty) {
-      throw new MalformedCarbonCommandException(
-        s"table has no other segments before the specify segment")
-    }
-    val segmentNumber = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.DELETE_REPEATED_SEGMENT_NUMBER,
-      CarbonCommonConstants.DELETE_REPEATED_SEGMENT_NUMBER_DEFAULT).toInt
+  }
 
-    val repeatedSegment =
-      oldSegments
-        .sortBy(-_.getLoadMetadataDetails.getLoadStartTime)
-        .take(segmentNumber)
-        .map(_.getSegmentNo)
-        .mkString(",")
-
+  private def deduplicate(
+      sparkSession: SparkSession,
+      carbonTable: CarbonTable,
+      carbonColumn: CarbonColumn,
+      newSegments: Seq[Segment],
+      oldSegments: Seq[Segment]): Seq[Row] = {
     val fullName = carbonTable.getDatabaseName + "." + carbonTable.getTableName
     val colName = carbonColumn.getColName
     val selectSQL =
@@ -99,12 +120,12 @@ case class CarbonDeleteRepeatedCommand(
     val relation = UnresolvedRelation(TableIdentifier(
       carbonTable.getTableName, Option(carbonTable.getDatabaseName)))
     val deleteCommand =
-    CarbonIUDAnalysisRule(sparkSession)
-      .processDeleteRecordsQuery(selectSQL, Some("t"), relation)
-      .asInstanceOf[CarbonProjectForDeleteCommand]
+      CarbonIUDAnalysisRule(sparkSession)
+        .processDeleteRecordsQuery(selectSQL, Some("t"), relation)
+        .asInstanceOf[CarbonProjectForDeleteCommand]
     deleteCommand.isDeleteRepeat = true
-    deleteCommand.deleteSegment = segment.get.getSegmentNo
-    deleteCommand.repeatedSegments = repeatedSegment
+    deleteCommand.deleteSegments = newSegments.mkString(",")
+    deleteCommand.repeatedSegments = oldSegments.mkString(",")
     deleteCommand.run(sparkSession)
   }
 

@@ -325,13 +325,44 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val deleteRepeated: Parser[LogicalPlan] = {
     DELETE ~> REPEATED ~> ident ~
     (FROM ~> (ident <~ ".").?) ~ ident ~
-    (WHERE ~> SEGMENT ~> "." ~> ID ~> "=" ~> segmentId) ^^ {
-      case column ~ database ~ table ~ segmentId =>
+    (WHERE ~> (NEW | OLD)) ~ ("." ~> segmentIdRange) ~
+    ((AND ~> (OLD | NEW)) ~ ("." ~> segmentIdRange)).? ^^ {
+      case column ~ database ~ table ~ newOrOld1 ~ segmentIds1 ~ segmentIds2 => {
+        var newSegments: (String, String) = null
+        var oldSegments: Option[(String, String)] = None
+        if (segmentIds2.isEmpty ) {
+          if (!newOrOld1.equalsIgnoreCase("new")) {
+            throw new MalformedCarbonCommandException(s"not found the range of new.segment.id")
+          }
+          newSegments = segmentIds1
+        } else {
+          if (newOrOld1.equalsIgnoreCase(segmentIds2.get._1)) {
+            if (newOrOld1.equalsIgnoreCase("new")) {
+              throw new MalformedCarbonCommandException(s"not found the range of old.segment.id")
+            } else {
+              throw new MalformedCarbonCommandException(s"not found the range of new.segment.id")
+            }
+          }
+          if (newOrOld1.equalsIgnoreCase("new")) {
+            newSegments = segmentIds1
+          } else {
+            oldSegments = Option(segmentIds2.get._2)
+          }
+        }
         CarbonDeleteRepeatedCommand(
           database,
           table,
           column,
-          segmentId)
+          newSegments,
+          oldSegments)
+      }
+    }
+  }
+
+  private lazy val segmentIdRange: Parser[(String, String)] = {
+    SEGMENT ~> "." ~> ID ~> BETWEEN ~> segmentId ~ (AND ~> segmentId) ^^ {
+      case start ~ end =>
+        (start, end)
     }
   }
 

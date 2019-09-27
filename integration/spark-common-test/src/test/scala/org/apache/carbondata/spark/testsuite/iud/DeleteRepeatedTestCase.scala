@@ -21,6 +21,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+
 class DeleteRepeatedTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("use default")
@@ -35,16 +37,57 @@ class DeleteRepeatedTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into t1 (select 'e', 3 union all select 'f', 18 )").collect()
   }
 
-  test("test merge ") {
+  test("test deduplicate ") {
     checkAnswer(sql("select count(*) from t1"), Seq(Row(10)))
     sql(
       """
         | delete repeated col1
         | from t1
-        | where segment.id = 3
+        | where new.segment.id between 3 and 4
+        | and old.segment.id between 0 and 2
       """.stripMargin)
-    checkAnswer(sql("select count(*) from t1"), Seq(Row(9)))
+    checkAnswer(sql("select count(*) from t1"), Seq(Row(8)))
     checkAnswer(sql("select count(*) from t1 where col2 = 17"), Seq(Row(0)))
+
+    sql(
+      """
+        | delete repeated col1
+        | from t1
+        | where new.segment.id between 2 and 2
+      """.stripMargin)
+    checkAnswer(sql("select count(*) from t1"), Seq(Row(6)))
+    checkAnswer(sql("select count(*) from t1 where col2 = 16"), Seq(Row(0)))
+  }
+
+  test("test deduplicate failure case") {
+    val exception1 = intercept[MalformedCarbonCommandException](
+      sql(
+        """
+          | delete repeated col1
+          | from t1
+          | where new.segment.id between 3 and 4
+          | and new.segment.id between 0 and 2
+        """.stripMargin))
+    assert(exception1.getMessage.contains("not found the range of old.segment.id"))
+
+    val exception2 = intercept[MalformedCarbonCommandException](
+      sql(
+        """
+          | delete repeated col1
+          | from t1
+          | where old.segment.id between 3 and 4
+          | and old.segment.id between 0 and 2
+        """.stripMargin))
+    assert(exception2.getMessage.contains("not found the range of new.segment.id"))
+
+    val exception3 = intercept[MalformedCarbonCommandException](
+      sql(
+        """
+          | delete repeated col1
+          | from t1
+          | where old.segment.id between 3 and 4
+        """.stripMargin))
+    assert(exception3.getMessage.contains("not found the range of new.segment.id"))
   }
 
   override def afterAll {
