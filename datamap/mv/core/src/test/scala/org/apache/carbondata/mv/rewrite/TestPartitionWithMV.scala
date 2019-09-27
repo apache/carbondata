@@ -502,6 +502,13 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     assert(intercept[Exception] {
       sql("alter table p1_table add partition(c=1)")
     }.getMessage.equals("Cannot add partition directly on non partitioned table"))
+    sql("drop datamap if exists p1")
+    sql(
+      "create datamap p1 on table partitionone using 'mv' as select empname, year from " +
+      "partitionone")
+    assert(intercept[Exception] {
+      sql("alter table p1_table add partition(partitionone_year=1)")
+    }.getMessage.equals("Cannot add partition directly on child tables"))
   }
 
   test("test if alter rename is blocked on partition table with mv") {
