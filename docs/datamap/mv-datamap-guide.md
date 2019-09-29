@@ -23,6 +23,7 @@
 * [Querying Data](#querying-data)
 * [Compaction](#compacting-mv-datamap)
 * [Data Management](#data-management-with-mv-tables)
+* [MV TimeSeries Support](#mv-timeseries-support)
 
 ## Quick example
 
@@ -208,3 +209,25 @@ release, user can do as following:
 2. Carry out the data management operation on main table
 3. Create the mv datamap table again by `CREATE DATAMAP` command
 Basically, user can manually trigger the operation by re-building the datamap.
+
+## MV TimeSeries Support
+MV non-lazy datamap support's TimeSeries queries. Supported granularities strings are: year, month, day, week,
+hour,thirty_minute, fifteen_minute, minute and second.
+
+ User can create MV datamap with timeseries queries like the below example:
+
+  ```
+  CREATE DATAMAP agg_sales
+  ON TABLE sales
+  USING "MV"
+  AS
+    SELECT timeseries(order_time,'second'),avg(price)
+    FROM sales
+    GROUP BY timeseries(order_time,'second')
+  ```
+Supported columns that can be provided in timeseries udf should be of TimeStamp/Date type.
+Timeseries queries with Date type support's only year, month, day and week granularities.
+
+ **NOTE**:
+ 1. Multiple timeseries udf functions cannot be defined in Select statement with different timestamp 
+ columns or different granularities.

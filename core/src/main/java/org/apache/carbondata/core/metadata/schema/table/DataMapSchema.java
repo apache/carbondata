@@ -91,6 +91,11 @@ public class DataMapSchema implements Serializable, Writable {
    */
   private Map<Integer, String> columnsOrderMap;
 
+  /**
+   * timeseries query
+   */
+  private boolean isTimeSeries;
+
   public DataMapSchema(String dataMapName, String providerName) {
     this.dataMapName = dataMapName;
     this.providerName = providerName;
@@ -278,5 +283,13 @@ public class DataMapSchema implements Serializable, Writable {
 
   public void setColumnsOrderMap(Map<Integer, String> columnsOrderMap) {
     this.columnsOrderMap = columnsOrderMap;
+  }
+
+  public boolean isTimeSeries() {
+    return isTimeSeries;
+  }
+
+  public void setTimeSeries(boolean timeSeries) {
+    isTimeSeries = timeSeries;
   }
 }

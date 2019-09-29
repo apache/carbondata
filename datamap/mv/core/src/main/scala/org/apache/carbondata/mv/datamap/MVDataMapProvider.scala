@@ -58,7 +58,11 @@ class MVDataMapProvider(
       throw new MalformedDataMapCommandException(
         "select statement is mandatory")
     }
-    MVHelper.createMVDataMap(sparkSession, dataMapSchema, ctasSqlStatement, true)
+    MVHelper.createMVDataMap(sparkSession,
+      dataMapSchema,
+      ctasSqlStatement,
+      true,
+      mainTable)
     try {
       DataMapStoreManager.getInstance.registerDataMapCatalog(this, dataMapSchema)
       if (dataMapSchema.isLazy) {
