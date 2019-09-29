@@ -400,8 +400,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       null,
       null,
       classOf[CarbonRowReadSupport],
-      splitsOfSegments(sparkSession, carbonTable, segments)
-    )
+      splitsOfSegments(sparkSession, carbonTable, segments))
       .map { row =>
         new GenericRow(row.getData.asInstanceOf[Array[Any]])
       }
