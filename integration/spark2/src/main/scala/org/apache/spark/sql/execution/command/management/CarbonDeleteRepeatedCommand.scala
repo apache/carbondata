@@ -51,8 +51,8 @@ case class CarbonDeleteRepeatedCommand(
   }
 
   private def getSegmentRange(segmentRange: (String, String)): (Float, Float) = {
-    val newStart =  java.lang.Float.valueOf(segmentRange._1)
-    val newEnd =  java.lang.Float.valueOf(segmentRange._2)
+    val newStart = java.lang.Float.valueOf(segmentRange._1)
+    val newEnd = java.lang.Float.valueOf(segmentRange._2)
     (Math.min(newStart, newEnd), Math.max(newStart, newEnd))
   }
 

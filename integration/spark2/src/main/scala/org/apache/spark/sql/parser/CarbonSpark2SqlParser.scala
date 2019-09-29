@@ -327,10 +327,10 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (FROM ~> (ident <~ ".").?) ~ ident ~
     (WHERE ~> (NEW | OLD)) ~ ("." ~> segmentIdRange) ~
     ((AND ~> (OLD | NEW)) ~ ("." ~> segmentIdRange)).? ^^ {
-      case column ~ database ~ table ~ newOrOld1 ~ segmentIds1 ~ segmentIds2 => {
+      case column ~ database ~ table ~ newOrOld1 ~ segmentIds1 ~ segmentIds2 =>
         var newSegments: (String, String) = null
         var oldSegments: Option[(String, String)] = None
-        if (segmentIds2.isEmpty ) {
+        if (segmentIds2.isEmpty) {
           if (!newOrOld1.equalsIgnoreCase("new")) {
             throw new MalformedCarbonCommandException(s"not found the range of new.segment.id")
           }
@@ -355,7 +355,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           column,
           newSegments,
           oldSegments)
-      }
     }
   }
 
