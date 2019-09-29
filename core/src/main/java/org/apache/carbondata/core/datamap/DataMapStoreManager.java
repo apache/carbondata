@@ -94,6 +94,8 @@ public final class DataMapStoreManager {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataMapStoreManager.class.getName());
 
+  private final Object lockObject = new Object();
+
   private DataMapStoreManager() {
 
   }
@@ -233,19 +235,24 @@ public final class DataMapStoreManager {
    * @param dataMapProvider
    * @param dataMapSchema
    */
-  public synchronized void registerDataMapCatalog(DataMapProvider dataMapProvider,
+  public void registerDataMapCatalog(DataMapProvider dataMapProvider,
       DataMapSchema dataMapSchema) throws IOException {
-    initializeDataMapCatalogs(dataMapProvider);
-    String name = dataMapSchema.getProviderName();
-    DataMapCatalog dataMapCatalog = dataMapCatalogs.get(name);
-    if (dataMapCatalog == null) {
-      dataMapCatalog = dataMapProvider.createDataMapCatalog();
-      if (dataMapCatalog != null) {
-        dataMapCatalogs.put(name.toLowerCase(), dataMapCatalog);
+    synchronized (lockObject) {
+      initializeDataMapCatalogs(dataMapProvider);
+      String name = dataMapSchema.getProviderName().toLowerCase();
+      DataMapCatalog dataMapCatalog = dataMapCatalogs.get(name);
+      if (dataMapCatalog == null) {
+        dataMapCatalog = dataMapProvider.createDataMapCatalog();
+        // If MVDataMapProvider, then createDataMapCatalog will return summaryDatasetCatalog
+        // instance, which needs to be added to dataMapCatalogs.
+        // For other datamaps, createDataMapCatalog will return null, so no need to register
+        if (dataMapCatalog != null) {
+          dataMapCatalogs.put(name, dataMapCatalog);
+          dataMapCatalog.registerSchema(dataMapSchema);
+        }
+      } else {
         dataMapCatalog.registerSchema(dataMapSchema);
       }
-    } else {
-      dataMapCatalog.registerSchema(dataMapSchema);
     }
   }
 
@@ -257,7 +264,7 @@ public final class DataMapStoreManager {
     if (dataMapCatalogs == null) {
       return;
     }
-    String name = dataMapSchema.getProviderName();
+    String name = dataMapSchema.getProviderName().toLowerCase();
     DataMapCatalog dataMapCatalog = dataMapCatalogs.get(name);
     if (dataMapCatalog != null) {
       dataMapCatalog.unregisterSchema(dataMapSchema.getDataMapName());
@@ -272,7 +279,7 @@ public final class DataMapStoreManager {
   public synchronized DataMapCatalog getDataMapCatalog(DataMapProvider dataMapProvider,
       String providerName) throws IOException {
     initializeDataMapCatalogs(dataMapProvider);
-    return dataMapCatalogs.get(providerName);
+    return dataMapCatalogs.get(providerName.toLowerCase());
   }
 
   /**
@@ -286,7 +293,8 @@ public final class DataMapStoreManager {
       for (DataMapSchema schema : dataMapSchemas) {
         if (schema.getProviderName()
             .equalsIgnoreCase(dataMapProvider.getDataMapSchema().getProviderName())) {
-          DataMapCatalog dataMapCatalog = dataMapCatalogs.get(schema.getProviderName());
+          DataMapCatalog dataMapCatalog =
+              dataMapCatalogs.get(schema.getProviderName().toLowerCase());
           if (dataMapCatalog == null) {
             dataMapCatalog = dataMapProvider.createDataMapCatalog();
             if (null == dataMapCatalog) {
