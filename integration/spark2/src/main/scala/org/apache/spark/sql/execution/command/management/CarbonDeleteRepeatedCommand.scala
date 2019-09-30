@@ -28,10 +28,11 @@ import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCom
 import org.apache.spark.sql.hive.CarbonIUDAnalysisRule
 import org.apache.spark.sql.types.LongType
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 
 /**
@@ -42,21 +43,16 @@ case class CarbonDeleteRepeatedCommand(
     database: Option[String],
     tableName: String,
     columnName: String,
-    newSegmentRange: (String, String),
-    oldSegmentRange: Option[(String, String)]
+    newSegmentIds: SegmentIds,
+    oldSegmentIds: Option[SegmentIds]
 ) extends AtomicRunnableCommand {
 
   override val output: Seq[Attribute] = {
     Seq(AttributeReference("Deleted Row Count", LongType, nullable = false)())
   }
 
-  private def getSegmentRange(segmentRange: (String, String)): (Float, Float) = {
-    val newStart = java.lang.Float.valueOf(segmentRange._1)
-    val newEnd = java.lang.Float.valueOf(segmentRange._2)
-    (Math.min(newStart, newEnd), Math.max(newStart, newEnd))
-  }
-
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     // validate parameter
     Checker.validateTableExists(database, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(database, tableName)(sparkSession)
@@ -64,45 +60,95 @@ case class CarbonDeleteRepeatedCommand(
     if (carbonColumn == null) {
       throw new NoSuchFieldException(columnName)
     }
-    val ssm = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-    val segments = ssm
+    val segmentRanges =
+      prepareSegmentRanges(getValidSegments(carbonTable.getAbsoluteTableIdentifier))
+    if (segmentRanges._1.isEmpty || segmentRanges._2.isEmpty) {
+      LOGGER.warn("not delete repeated data, because there are no segments to process.")
+      Seq.empty[Row]
+    } else {
+      LOGGER.info(
+        s"""delete repeated column ${ carbonColumn.getColName } from table
+           | ${ carbonTable.getDatabaseName }.${ carbonTable.getTableName },
+           | new segments: ${ segmentRanges._1.map(_.getSegmentNo.mkString(",")) }
+           | old segments: ${ segmentRanges._2.map(_.getSegmentNo.mkString(",")) }
+           | """.stripMargin)
+      deduplicate(
+        sparkSession,
+        carbonTable,
+        carbonColumn,
+        segmentRanges._1,
+        segmentRanges._2)
+    }
+  }
+
+  /**
+   * get valid segments of the table
+   */
+  private def getValidSegments(identifier: AbsoluteTableIdentifier): Seq[Segment] = {
+    val ssm = new SegmentStatusManager(identifier)
+    ssm
       .getValidAndInvalidSegments
       .getValidSegments
       .asScala
-      .map{ segment =>
-        (segment, java.lang.Float.valueOf(segment.getSegmentNo))
-      }
-    if (segments.isEmpty) {
-      throw new MalformedCarbonCommandException(s"table has no segments")
-    }
-    val updatedSegmentRange = getSegmentRange(newSegmentRange)
-    val newSegments =
-      segments.filter { segment =>
-        segment._2 >= updatedSegmentRange._1 && segment._2 <= updatedSegmentRange._2
-      }
-        .map(_._1)
+  }
+
+  /**
+   * prepare newSegments and oldSegments for deduplicate
+   */
+  private def prepareSegmentRanges(segments: Seq[Segment]): (Seq[Segment], Seq[Segment]) = {
+    val newSegments = getSegmentsByIds(segments, newSegmentIds)
     if (newSegments.isEmpty) {
-      Seq.empty[Row]
+      (Seq.empty[Segment], Seq.empty[Segment])
     } else {
       val oldSegments =
-        if (oldSegmentRange.isDefined) {
-          val updatedOldSegmentRange = getSegmentRange(oldSegmentRange.get)
-          segments.filter { segment =>
-            segment._2 >= updatedOldSegmentRange._1 && segment._2 <= updatedOldSegmentRange._2
-          }.map(_._1)
+        if (oldSegmentIds.isDefined) {
+          getSegmentsByIds(segments, oldSegmentIds.get)
         } else {
+          val segmentMap = newSegments.map { segment =>
+            (segment.getSegmentNo, segment)
+          }.toMap
           segments.filter { segment =>
-            segment._2 > updatedSegmentRange._2 || segment._2 < updatedSegmentRange._1
-          }.map(_._1)
+            !segmentMap.contains(segment.getSegmentNo)
+          }
         }
-      if (oldSegments.isEmpty) {
-        Seq.empty[Row]
+      (newSegments, oldSegments)
+    }
+  }
+
+  /**
+   * get Segment Seq from segment id Seq
+   */
+  private def getSegmentsByIds(
+      segments: Seq[Segment],
+      segmentIds: SegmentIds): Seq[Segment] = {
+    if (segmentIds.isRange) {
+      val newStart = new java.math.BigDecimal(segmentIds.segmentRange._1)
+      val newEnd = new java.math.BigDecimal(segmentIds.segmentRange._2)
+      val updatedSegmentRange = if (newStart.compareTo(newEnd) <= 0) {
+        (newStart, newEnd)
       } else {
-        deduplicate(sparkSession, carbonTable, carbonColumn, newSegments, oldSegments)
+        (newEnd, newStart)
+      }
+      segments
+        .map { segment =>
+          (segment, new java.math.BigDecimal(segment.getSegmentNo))
+        }
+        .filter { segment =>
+          segment._2.compareTo(updatedSegmentRange._1) >= 0 &&
+          segment._2.compareTo(updatedSegmentRange._2) <= 0
+        }
+        .map(_._1)
+    } else {
+      val segmentIdsMap = segmentIds.segments.map((_, true)).toMap
+      segments.filter { segment =>
+        segmentIdsMap.contains(segment.getSegmentNo)
       }
     }
   }
 
+  /**
+   * delete repeated data from newSegments if the data also exist in oldSegments
+   */
   private def deduplicate(
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
@@ -124,8 +170,8 @@ case class CarbonDeleteRepeatedCommand(
         .processDeleteRecordsQuery(selectSQL, Some("t"), relation)
         .asInstanceOf[CarbonProjectForDeleteCommand]
     deleteCommand.isDeleteRepeat = true
-    deleteCommand.deleteSegments = newSegments.mkString(",")
-    deleteCommand.repeatedSegments = oldSegments.mkString(",")
+    deleteCommand.deleteSegments = newSegments.map(_.getSegmentNo).mkString(",")
+    deleteCommand.repeatedSegments = oldSegments.map(_.getSegmentNo).mkString(",")
     deleteCommand.run(sparkSession)
   }
 
@@ -135,3 +181,8 @@ case class CarbonDeleteRepeatedCommand(
 
   override protected def opName: String = "ALTER TABLE DISTINCT"
 }
+
+/**
+ * wrap segment id range and set
+ */
+case class SegmentIds(isRange: Boolean, segmentRange: (String, String), segments: Seq[String])

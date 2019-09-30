@@ -29,15 +29,20 @@ class DeleteRepeatedTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists dr_db cascade")
     sql("create database dr_db")
     sql("use dr_db")
-    sql("create table t1 (col1 string, col2 int) STORED BY 'org.apache.carbondata.format'")
-    sql("insert into t1 (select 'a', 1 union all select 'e', 14 ) ").collect()
-    sql("insert into t1 (select 'b', 2 union all select 'b', 15 ) ").collect()
-    sql("insert into t1 (select 'e', 3 union all select 'a', 16 )").collect()
-    sql("insert into t1 (select 'c', 3 union all select 'b', 17 )").collect()
-    sql("insert into t1 (select 'e', 3 union all select 'f', 18 )").collect()
+    prepareTable("t1")
+    prepareTable("t2")
   }
 
-  test("test deduplicate ") {
+  private def prepareTable(tableName: String): Unit = {
+    sql(s"create table $tableName (col1 string, col2 int) STORED BY 'org.apache.carbondata.format'")
+    sql(s"insert into $tableName (select 'a', 1 union all select 'e', 14 ) ").collect()
+    sql(s"insert into $tableName (select 'b', 2 union all select 'b', 15 ) ").collect()
+    sql(s"insert into $tableName (select 'e', 3 union all select 'a', 16 )").collect()
+    sql(s"insert into $tableName (select 'c', 3 union all select 'b', 17 )").collect()
+    sql(s"insert into $tableName (select 'e', 3 union all select 'f', 18 )").collect()
+  }
+
+  test("test deduplicate1 ") {
     checkAnswer(sql("select count(*) from t1"), Seq(Row(10)))
     sql(
       """
@@ -53,11 +58,50 @@ class DeleteRepeatedTestCase extends QueryTest with BeforeAndAfterAll {
       """
         | delete repeated col1
         | from t1
-        | where new.segment.id between 2 and 2
+        | where new.segment.id = 2
       """.stripMargin)
     checkAnswer(sql("select count(*) from t1"), Seq(Row(6)))
     checkAnswer(sql("select count(*) from t1 where col2 = 16"), Seq(Row(0)))
   }
+
+  test("test deduplicate2") {
+    checkAnswer(sql("select count(*) from t2"), Seq(Row(10)))
+    sql(
+      """
+        | delete repeated col1
+        | from t2
+        | where new.segment.id in (3,4)
+        | and old.segment.id between 0 and 2
+      """.stripMargin)
+    checkAnswer(sql("select count(*) from t2"), Seq(Row(8)))
+    checkAnswer(sql("select count(*) from t2 where col2 = 17"), Seq(Row(0)))
+
+    sql(
+      """
+        | delete repeated col1
+        | from t2
+        | where new.segment.id in (2)
+      """.stripMargin)
+    checkAnswer(sql("select count(*) from t2"), Seq(Row(6)))
+    checkAnswer(sql("select count(*) from t2 where col2 = 16"), Seq(Row(0)))
+  }
+
+  test("test deduplicate3") {
+    sql(s"create table t3 (col1 string, col2 int) STORED BY 'org.apache.carbondata.format'")
+    try {
+      sql(
+        """
+          | delete repeated col1
+          | from t3
+          | where new.segment.id in (2)
+        """.stripMargin)
+    } catch {
+      case _ =>
+        assert(false, "no need to throw exception for empty table")
+    }
+    checkAnswer(sql("select count(*) from t2"), Seq(Row(0)))
+  }
+
 
   test("test deduplicate failure case") {
     val exception1 = intercept[MalformedCarbonCommandException](

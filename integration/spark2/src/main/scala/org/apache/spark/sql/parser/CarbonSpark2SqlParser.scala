@@ -325,11 +325,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val deleteRepeated: Parser[LogicalPlan] = {
     DELETE ~> REPEATED ~> ident ~
     (FROM ~> (ident <~ ".").?) ~ ident ~
-    (WHERE ~> (NEW | OLD)) ~ ("." ~> segmentIdRange) ~
-    ((AND ~> (OLD | NEW)) ~ ("." ~> segmentIdRange)).? ^^ {
+    (WHERE ~> (NEW | OLD)) ~ ("." ~> segmentIdCondition ) ~
+    ((AND ~> (OLD | NEW)) ~ ("." ~> segmentIdCondition)).? ^^ {
       case column ~ database ~ table ~ newOrOld1 ~ segmentIds1 ~ segmentIds2 =>
-        var newSegments: (String, String) = null
-        var oldSegments: Option[(String, String)] = None
+        var newSegments: SegmentIds = null
+        var oldSegments: Option[SegmentIds] = None
         if (segmentIds2.isEmpty) {
           if (!newOrOld1.equalsIgnoreCase("new")) {
             throw new MalformedCarbonCommandException(s"not found the range of new.segment.id")
@@ -345,8 +345,10 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           }
           if (newOrOld1.equalsIgnoreCase("new")) {
             newSegments = segmentIds1
-          } else {
             oldSegments = Option(segmentIds2.get._2)
+          } else {
+            newSegments = segmentIds2.get._2
+            oldSegments = Option(segmentIds1)
           }
         }
         CarbonDeleteRepeatedCommand(
@@ -358,10 +360,27 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
   }
 
-  private lazy val segmentIdRange: Parser[(String, String)] = {
-    SEGMENT ~> "." ~> ID ~> BETWEEN ~> segmentId ~ (AND ~> segmentId) ^^ {
+  private lazy val segmentIdCondition: Parser[SegmentIds] =
+    SEGMENT ~> "." ~> ID ~> (segmentIdRange | segmentIdSet | oneSegmentId)
+
+  private lazy val segmentIdRange: Parser[SegmentIds] = {
+    BETWEEN ~> segmentId ~ (AND ~> segmentId) ^^ {
       case start ~ end =>
-        (start, end)
+        SegmentIds(true, (start, end), null)
+    }
+  }
+
+  private lazy val segmentIdSet: Parser[SegmentIds] = {
+    IN ~> "(" ~> repsep(segmentId, ",") <~ ")" ^^ {
+      case ids =>
+        SegmentIds(false, null, ids)
+    }
+  }
+
+  private lazy val oneSegmentId: Parser[SegmentIds] = {
+    "=" ~> segmentId ^^ {
+      case oneSegmentId =>
+        SegmentIds(false, null, Seq(oneSegmentId))
     }
   }
 
