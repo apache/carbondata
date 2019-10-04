@@ -626,6 +626,33 @@ object MVHelper {
             case Alias(agg@AggregateExpression(fun@Count(Seq(child)), _, _, _), name) =>
               val uFun = Sum(right)
               Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
+            case Alias(agg@AggregateExpression(fun@Corr(l, r), _, _, _), name) =>
+              val uFun = Sum(right)
+              Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
+            case Alias(agg@AggregateExpression(fun@VariancePop(child), _, _, _), name) =>
+              val uFun = Sum(right)
+              Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
+            case Alias(agg@AggregateExpression(fun@VarianceSamp(child), _, _, _), name) =>
+              val uFun = Sum(right)
+              Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
+            case Alias(agg@AggregateExpression(fun@StddevSamp(child), _, _, _), name) =>
+              val uFun = Sum(right)
+              Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
+            case Alias(agg@AggregateExpression(fun@StddevPop(child), _, _, _), name) =>
+              val uFun = Sum(right)
+              Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
+            case Alias(agg@AggregateExpression(fun@CovPopulation(l, r), _, _, _), name) =>
+              val uFun = Sum(right)
+              Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
+            case Alias(agg@AggregateExpression(fun@CovSample(l, r), _, _, _), name) =>
+              val uFun = Sum(right)
+              Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
+            case Alias(agg@AggregateExpression(fun@Skewness(child), _, _, _), name) =>
+              val uFun = Sum(right)
+              Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
+            case Alias(agg@AggregateExpression(fun@Kurtosis(child), _, _, _), name) =>
+              val uFun = Sum(right)
+              Alias(agg.copy(aggregateFunction = uFun), left.name)(exprId = left.exprId)
             case _ =>
               if (left.name != right.name) Alias(right, left.name)(exprId = left.exprId) else right
           }
