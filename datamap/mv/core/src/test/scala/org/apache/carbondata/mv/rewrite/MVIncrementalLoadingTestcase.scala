@@ -596,6 +596,41 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     assert(TestUtil.verifyMVDataMap(analyzed, "datamap_com"))
   }
 
+  test("test all aggregate functions") {
+    createTableFactTable("test_table")
+    createTableFactTable("test_table1")
+    loadDataToFactTable("test_table")
+    loadDataToFactTable("test_table1")
+    sql("drop datamap if exists datamap1")
+    sql(
+      "create datamap datamap_agg using 'mv' as select variance(workgroupcategory),var_samp" +
+      "(projectcode), var_pop(projectcode), stddev(projectcode),stddev_samp(workgroupcategory)," +
+      "corr(projectcode,workgroupcategory),skewness(workgroupcategory)," +
+      "kurtosis(workgroupcategory),covar_pop(projectcode,workgroupcategory),covar_samp" +
+      "(projectcode,workgroupcategory),projectjoindate from test_table group by projectjoindate")
+    val df = sql(
+      "select variance(workgroupcategory),var_samp(projectcode), var_pop(projectcode), stddev" +
+      "(projectcode),stddev_samp(workgroupcategory),corr(projectcode,workgroupcategory)," +
+      "skewness(workgroupcategory),kurtosis(workgroupcategory),covar_pop(projectcode," +
+      "workgroupcategory),covar_samp(projectcode,workgroupcategory),projectjoindate from " +
+      "test_table group by projectjoindate")
+    val analyzed = df.queryExecution.analyzed
+    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_agg"))
+    checkAnswer(sql(
+      "select variance(workgroupcategory),var_samp(projectcode), var_pop(projectcode), stddev" +
+      "(projectcode),stddev_samp(workgroupcategory),corr(projectcode,workgroupcategory)," +
+      "skewness(workgroupcategory),kurtosis(workgroupcategory),covar_pop(projectcode," +
+      "workgroupcategory),covar_samp(projectcode,workgroupcategory),projectjoindate from " +
+      "test_table group by projectjoindate"),
+      sql(
+        "select variance(workgroupcategory),var_samp(projectcode), var_pop(projectcode), stddev" +
+        "(projectcode),stddev_samp(workgroupcategory),corr(projectcode,workgroupcategory)," +
+        "skewness(workgroupcategory),kurtosis(workgroupcategory),covar_pop(projectcode," +
+        "workgroupcategory),covar_samp(projectcode,workgroupcategory),projectjoindate from " +
+        "test_table1 group by projectjoindate"))
+  }
+
+
   override def afterAll(): Unit = {
     sql("drop table if exists products")
     sql("drop table if exists sales")
