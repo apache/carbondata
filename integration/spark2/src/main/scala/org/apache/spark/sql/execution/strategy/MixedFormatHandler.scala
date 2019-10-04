@@ -22,13 +22,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.fs.{Path, PathFilter}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{execution, MixedFormatHandlerUtil, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.SparkCarbonFileFormat
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, AttributeSet, Expression, ExpressionSet, NamedExpression}
-import org.apache.spark.sql.execution.FileSourceScanExec
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, AttributeSet, Expression, ExpressionSet, NamedExpression, SubqueryExpression}
 import org.apache.spark.sql.execution.datasources.{FileFormat, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
 import org.apache.spark.sql.execution.datasources.csv.CSVFileFormat
 import org.apache.spark.sql.execution.datasources.json.JsonFileFormat
@@ -247,7 +245,7 @@ object MixedFormatHandler {
     val outputAttributes = readDataColumns ++ partitionColumns
 
     val scan =
-      FileSourceScanExec(
+      MixedFormatHandlerUtil.getScanForSegments(
         fsRelation,
         outputAttributes,
         outputSchema,
