@@ -21,6 +21,7 @@ import java.nio.file.{Files, Paths}
 
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row}
 import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -287,11 +288,12 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""insert into addsegment2 select * from addsegment1""")
 
     sql("select * from addsegment2").show()
-    val table = sqlContext.sparkSession.sessionState.catalog.getTableMetadata(TableIdentifier( "addsegment2"))
-    val path = table.location.getPath
+    val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
+      .getTableMetadata(TableIdentifier("addsegment2"))
+    val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path, newPath)
+    copy(path.toString, newPath)
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
 
     sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='parquet')").show()
@@ -347,6 +349,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select empname from addsegment1 where empname='arvind'"), Seq(Row("arvind"),Row("arvind"),Row("arvind")))
     checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(30)))
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
+    assert(sql("select deptname, deptno from addsegment1 where empname = 'arvind'")
+             .collect().length == 3)
     FileFactory.deleteAllFilesOfDir(new File(newPath1))
     FileFactory.deleteAllFilesOfDir(new File(newPath2))
   }
@@ -438,11 +442,12 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""insert into addsegment2 select * from addsegment1""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    val table = sqlContext.sparkSession.sessionState.catalog.getTableMetadata(TableIdentifier( "addsegment2"))
-    val path = table.location.getPath
+    val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
+      .getTableMetadata(TableIdentifier("addsegment2"))
+    val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path, newPath)
+    copy(path.toString, newPath)
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
 
     sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='parquet')").show()
@@ -478,12 +483,12 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"""insert into addsegment2 select * from addsegment1""")
 
-    val table = sqlContext.sparkSession.sessionState.catalog
+    val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("addsegment2"))
-    val path = table.location.getPath
+    val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path, newPath)
+    copy(path.toString, newPath)
 
     val res1 = sql("select empname, deptname from addsegment1 where deptno=10")
 
@@ -529,11 +534,12 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""insert into addsegment2 select * from addsegment1""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    val table = sqlContext.sparkSession.sessionState.catalog.getTableMetadata(TableIdentifier( "addsegment2"))
-    val path = table.location.getPath
+    val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
+      .getTableMetadata(TableIdentifier("addsegment2"))
+    val path = table.location
     val newPath = storeLocation + "/" + "addsegtest"
     FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path, newPath)
+    copy(path.toString, newPath)
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
 
     sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='parquet')").show()
@@ -558,18 +564,18 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into addSegParless values (3)")
     sql("insert into addSegParmore values (4,'c', 'x')")
 
-    val table1 = sqlContext.sparkSession.sessionState.catalog
+    val table1 = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("addSegPar"))
-    val table2 = sqlContext.sparkSession.sessionState.catalog
+    val table2 = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("addSegParless"))
-    val table3 = sqlContext.sparkSession.sessionState.catalog
+    val table3 = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("addSegParmore"))
 
-    sql(s"alter table addSegCar add segment options('path'='${table1.location.getPath}', 'format'='parquet')")
+    sql(s"alter table addSegCar add segment options('path'='${table1.location}', 'format'='parquet')")
     intercept[Exception] {
-      sql(s"alter table addSegCar add segment options('path'='${table2.location.getPath}', 'format'='parquet')")
+      sql(s"alter table addSegCar add segment options('path'='${table2.location}', 'format'='parquet')")
     }
-    sql(s"alter table addSegCar add segment options('path'='${table3.location.getPath}', 'format'='parquet')")
+    sql(s"alter table addSegCar add segment options('path'='${table3.location}', 'format'='parquet')")
 
     assert(sql("select * from addSegCar").collect().length == 3)
 
@@ -580,11 +586,12 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   private def copyseg(tableName: String, pathName: String): String = {
-    val table1 = sqlContext.sparkSession.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
-    val path1 = table1.location.getPath
+    val table1 = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
+      .getTableMetadata(TableIdentifier(tableName))
+    val path1 = table1.location
     val newPath1 = storeLocation + "/" + pathName
     FileFactory.deleteAllFilesOfDir(new File(newPath1))
-    copy(path1, newPath1)
+    copy(path1.toString, newPath1)
     newPath1
   }
 

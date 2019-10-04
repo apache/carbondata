@@ -22,13 +22,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.fs.{Path, PathFilter}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{execution, MixedFormatHandlerUtil, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.SparkCarbonFileFormat
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, AttributeSet, Expression, ExpressionSet, NamedExpression}
-import org.apache.spark.sql.execution.FileSourceScanExec
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Cast, Expression, ExpressionSet, NamedExpression, SubqueryExpression}
 import org.apache.spark.sql.execution.datasources.{FileFormat, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
 import org.apache.spark.sql.execution.datasources.csv.CSVFileFormat
 import org.apache.spark.sql.execution.datasources.json.JsonFileFormat
@@ -236,8 +234,8 @@ object MixedFormatHandler {
     LOGGER.info(s"Post-Scan Filters: ${ afterScanFilters.mkString(",") }")
     val filterAttributes = AttributeSet(afterScanFilters)
     val requiredExpressions = new util.LinkedHashSet[NamedExpression](
-        (projects.map(p => dataColumns.find(_.exprId == p.exprId).get) ++
-         filterAttributes.map(p => dataColumns.find(_.exprId == p.exprId).get)).asJava
+      (projects.flatMap(p => findAttribute(dataColumns, p)) ++
+       filterAttributes.map(p => dataColumns.find(_.exprId.equals(p.exprId)).get)).asJava
     ).asScala.toSeq
     val readDataColumns =
       requiredExpressions.filterNot(partitionColumns.contains).asInstanceOf[Seq[Attribute]]
@@ -247,7 +245,7 @@ object MixedFormatHandler {
     val outputAttributes = readDataColumns ++ partitionColumns
 
     val scan =
-      FileSourceScanExec(
+      MixedFormatHandlerUtil.getScanForSegments(
         fsRelation,
         outputAttributes,
         outputSchema,
@@ -262,6 +260,33 @@ object MixedFormatHandler {
       execution.ProjectExec(projects, withFilter)
     }
     (withProjections.inputRDDs().head, fileFormat.supportBatch(sparkSession, outputSchema))
+  }
+
+  // This function is used to get the unique columns based on expression Id from
+  // filters and the projections list
+  def findAttribute(dataColumns: Seq[Attribute], p: Expression): Seq[Attribute] = {
+    dataColumns.find {
+      x =>
+        val attr = findAttributeReference(p)
+        attr.isDefined && x.exprId.equals(attr.get.exprId)
+    } match {
+      case Some(c) => Seq(c)
+      case None => Seq()
+    }
+  }
+
+  private def findAttributeReference(p: Expression): Option[NamedExpression] = {
+    p match {
+      case a: AttributeReference =>
+        Some(a)
+      case al =>
+        if (al.children.nonEmpty) {
+          al.children.map(findAttributeReference).head
+        } else {
+          None
+        }
+      case _ => None
+    }
   }
 
   def getSegmentsToAccess(identifier: AbsoluteTableIdentifier): Seq[String] = {
