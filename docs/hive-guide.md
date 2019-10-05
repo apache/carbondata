@@ -116,6 +116,5 @@ select * from hive_carbon_1 order by id;
 
 ### Note
  - Partition table support is not handled
- - Map data type is not supported
 
 
