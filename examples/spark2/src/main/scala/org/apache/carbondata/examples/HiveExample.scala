@@ -94,6 +94,15 @@ object HiveExample {
         "'QUOTECHAR'='\"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='c1_int,c2_Bigint," +
         "c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc')")
 
+    carbonSession.sql("""DROP TABLE IF EXISTS complexMap""".stripMargin)
+
+    carbonSession.sql("create table complexMap(name map<string,string>) stored by 'carbondata'")
+
+    carbonSession
+      .sql(
+        "insert into complexMap values(map('Manish','Nalla','Shardul','Singh','Vishal','Kumar'," +
+        "'EmptyVal','','NullVal', 'null'))")
+
     carbonSession.close()
 
     // delete the already existing lock on metastore so that new derby instance
@@ -265,6 +274,35 @@ object HiveExample {
     println(" ********** Total Rows Fetched When Aggregate Query **********" +
             s"$resultAggQueryFetched")
     assert(resultAggQueryFetched == 1)
+
+    val resultComplexQuery = statement
+      .executeQuery(
+        "SELECT name FROM complexMap")
+
+    var resultComplex = 0
+
+    var name = ""
+
+    while (resultComplexQuery.next) {
+      if (resultComplex == 0) {
+        println("+------------------------------------------------------------------------------" +
+                "------+")
+        println("| name                                                                          " +
+                "     |")
+
+        println("+-------------------------------------------------------------------------------" +
+                "-----+")
+
+        name = resultComplexQuery.getString("name")
+
+        println(s"|$name|")
+        println("+-------------------------------------------------------------------------------" +
+                "-----+")      }
+      resultComplex = resultComplex + 1
+    }
+    println(" ********** Total Rows Fetched When Complex Query **********" +
+            s"$resultComplex")
+    assert(resultComplex == 1)
 
     hiveEmbeddedServer2.stop()
   }

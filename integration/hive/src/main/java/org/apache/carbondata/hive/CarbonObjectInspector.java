@@ -28,6 +28,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.WritableHiveVarcharObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.ListTypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.MapTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
@@ -88,6 +89,11 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
       return new WritableHiveVarcharObjectInspector((VarcharTypeInfo) typeInfo);
     } else if (typeInfo.equals(TypeInfoFactory.binaryTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableBinaryObjectInspector;
+    } else if (typeInfo instanceof MapTypeInfo) {
+      MapTypeInfo mapTypeInfo = (MapTypeInfo) typeInfo;
+      ObjectInspector mapKeyObjectIns = getObjectInspector(mapTypeInfo.getMapKeyTypeInfo());
+      ObjectInspector mapValObjectIns = getObjectInspector(mapTypeInfo.getMapValueTypeInfo());
+      return new CarbonMapInspector(mapKeyObjectIns, mapValObjectIns);
     } else {
       throw new UnsupportedOperationException("Unknown field type: " + typeInfo);
     }

@@ -143,6 +143,8 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       return createStruct(obj, carbonColumn);
     } else if (DataTypes.isArrayType(dataType)) {
       return createArray(obj, carbonColumn);
+    } else if (DataTypes.isMapType(dataType)) {
+      return createMap(obj, carbonColumn);
     } else {
       return createWritablePrimitive(obj, carbonColumn);
     }
@@ -207,6 +209,48 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
   }
 
   /**
+   * Create the Map data for Map Datatype
+   *
+   * @param obj
+   * @param carbonColumn
+   * @return
+   * @throws IOException
+   */
+  private ArrayWritable createMap(Object obj, CarbonColumn carbonColumn) throws IOException {
+    Object[] objArray = (Object[]) obj;
+    List<CarbonDimension> childCarbonDimensions = null;
+    CarbonDimension mapDimension = null;
+    List<ArrayWritable> writablesList = new ArrayList<>();
+    if (carbonColumn.isDimension() && carbonColumn.getColumnSchema().getNumberOfChild() > 0) {
+      childCarbonDimensions = ((CarbonDimension) carbonColumn).getListOfChildDimensions();
+      // get the map dimension wrapped inside the carbon dimension
+      mapDimension = childCarbonDimensions.get(0);
+      // get the child dimenesions of the map dimensions, child dimensions are - Key and Value
+      if (null != mapDimension) {
+        childCarbonDimensions = mapDimension.getListOfChildDimensions();
+      }
+    }
+    if (null != childCarbonDimensions && childCarbonDimensions.size() == 2) {
+      Object[] keyObjects = (Object[]) objArray[0];
+      Object[] valObjects = (Object[]) objArray[1];
+      for (int i = 0; i < keyObjects.length; i++) {
+        Writable keyWritable = createWritableObject(keyObjects[i], childCarbonDimensions.get(0));
+        Writable valWritable = createWritableObject(valObjects[i], childCarbonDimensions.get(1));
+        Writable[] arr = new Writable[2];
+        arr[0] = keyWritable;
+        arr[1] = valWritable;
+        writablesList.add(new ArrayWritable(Writable.class, arr));
+      }
+      if (writablesList.size() > 0) {
+        final ArrayWritable subArray = new ArrayWritable(ArrayWritable.class,
+            writablesList.toArray(new ArrayWritable[writablesList.size()]));
+        return new ArrayWritable(Writable.class, new Writable[] {subArray});
+      }
+    }
+    return null;
+  }
+
+  /**
    * This method will create the Writable Objects for primitives.
    *
    * @param obj
@@ -256,6 +300,8 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       return createArray(obj, carbonColumn);
     } else if (DataTypes.isStructType(dataType)) {
       return createStruct(obj, carbonColumn);
+    } else if (DataTypes.isMapType(dataType)) {
+      return createMap(obj, carbonColumn);
     } else if (DataTypes.isDecimal(dataType)) {
       return new HiveDecimalWritable(HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
     } else {
