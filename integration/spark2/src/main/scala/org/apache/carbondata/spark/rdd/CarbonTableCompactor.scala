@@ -54,9 +54,8 @@ import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConst
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.util.TableOptionConstant
-import org.apache.carbondata.spark.MergeResultImpl
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
-import .splitsOfSegments
+import org.apache.carbondata.spark.MergeResultImpl
 import org.apache.carbondata.store.CarbonRowReadSupport
 
 /**
