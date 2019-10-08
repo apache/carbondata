@@ -99,7 +99,7 @@ class DeleteRepeatedTestCase extends QueryTest with BeforeAndAfterAll {
       case _ =>
         assert(false, "no need to throw exception for empty table")
     }
-    checkAnswer(sql("select count(*) from t2"), Seq(Row(0)))
+    checkAnswer(sql("select count(*) from t3"), Seq(Row(0)))
   }
 
 
