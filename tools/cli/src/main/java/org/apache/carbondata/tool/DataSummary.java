@@ -108,7 +108,9 @@ class DataSummary implements Command {
         collectColumnChunkMeta(columName);
       }
     }
-
+    if (line.hasOption("C")) {
+      printAllColumnStats();
+    }
     collector.close();
     for (DataFile file : dataFiles.values()) {
       file.close();
@@ -369,6 +371,32 @@ class DataSummary implements Command {
       }
     }
     printer.collectFormattedData();
+  }
+
+  private void printAllColumnStats() {
+    if (!dataFiles.isEmpty()) {
+      outPuts.add("");
+      outPuts.add("## Statistics for All Columns");
+      String[] header =
+          new String[] { "Block", "Blocklet", "Column Name", "Meta Size", "Data Size" };
+      ShardPrinter printer = new ShardPrinter(header, outPuts);
+      for (Map.Entry<String, DataFile> entry : dataFiles.entrySet()) {
+        DataFile dataFile = entry.getValue();
+        List<ColumnSchema> columns = dataFile.getSchema();
+        int columnNum = columns.size();
+        int blockletNum = dataFile.getNumBlocklet();
+        for (int j = 0; j < blockletNum; j++) {
+          for (int i = 0; i < columnNum; i++) {
+            printer.addRow(dataFile.getShardName(),
+                new String[] { dataFile.getPartNo(), String.valueOf(j),
+                    columns.get(i).getColumnName(),
+                    Strings.formatSize(dataFile.getColumnMetaSizeInBytes(j, i)),
+                    Strings.formatSize(dataFile.getColumnDataSizeInBytes(j, i)) });
+          }
+        }
+      }
+      printer.collectFormattedData();
+    }
   }
 
   private void collectStats(String columnName) throws IOException, MemoryException {

@@ -57,7 +57,14 @@ class FileCollector {
   void collectFiles(String dataFolder) throws IOException {
     Set<String> shards = new HashSet<>();
     CarbonFile folder = FileFactory.getCarbonFile(dataFolder);
-    List<CarbonFile> files = folder.listFiles(true);
+    List<CarbonFile> files = new ArrayList<>();
+    if (folder.exists()) {
+      if (folder.isDirectory()) {
+        files = folder.listFiles(true);
+      } else {
+        files.add(folder);
+      }
+    }
     List<DataFile> unsortedFiles = new ArrayList<>();
     for (CarbonFile file : files) {
       if (isColumnarFile(file.getName())) {

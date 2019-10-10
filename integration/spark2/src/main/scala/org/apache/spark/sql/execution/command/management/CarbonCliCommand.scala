@@ -49,12 +49,22 @@ case class CarbonCliCommand(
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     setAuditTable(carbonTable)
     setAuditInfo(Map("options" -> commandOptions))
-    val commandArgs: Seq[String] = commandOptions.split("\\s+")
-    val finalCommands = commandArgs.collect {
-      case a if a.trim.equalsIgnoreCase("summary") || a.trim.equalsIgnoreCase("benchmark") =>
-        Seq(a, "-p", carbonTable.getTablePath)
-      case x => Seq(x.trim)
-    }.flatten
+    val commandArgs: Seq[String] = commandOptions.split("\\s+").map(_.trim)
+    commandArgs.exists { comand =>
+      comand.equalsIgnoreCase("-p")
+    }
+    val finalCommands = if (commandArgs.exists(_.equalsIgnoreCase("-p"))) {
+      commandArgs
+    } else {
+      val needPath = commandArgs.exists { command =>
+        command.equalsIgnoreCase("summary") || command.equalsIgnoreCase("benchmark")
+      }
+      if (needPath) {
+        commandArgs ++ Seq("-p", carbonTable.getTablePath)
+      } else {
+        commandArgs
+      }
+    }
     val summaryOutput = new util.ArrayList[String]()
     CarbonCli.run(finalCommands.toArray, summaryOutput, false)
     summaryOutput.asScala.map(x =>
