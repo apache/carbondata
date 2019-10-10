@@ -62,22 +62,8 @@ private[sql] case class CarbonProjectForDeleteCommand(
     val newPlan = if (isDeleteRepeat) {
       Dataset.ofRows(sparkSession, plan).queryExecution.optimizedPlan transform {
         case Join(left, right, j, c) =>
-          val newLeft = left transform {
-            case lr: LogicalRelation
-              if (lr.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) =>
-              val r = lr.relation.asInstanceOf[CarbonDatasourceHadoopRelation].copy()
-              r.segmentsForDelete = deleteSegments
-              LogicalRelation(r)
-            case other => other
-          }
-          val newRight = right transform {
-            case lr: LogicalRelation
-              if (lr.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) =>
-              val r = lr.relation.asInstanceOf[CarbonDatasourceHadoopRelation].copy()
-              r.segmentsForDelete = repeatedSegments
-              LogicalRelation(r)
-            case other => other
-          }
+          val newLeft = CarbonToSparkAdapter.addInputSegments(left, deleteSegments)
+          val newRight = CarbonToSparkAdapter.addInputSegments(right, repeatedSegments)
           Join(newLeft, newRight, j, c)
         case other => other
       }

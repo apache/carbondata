@@ -23,12 +23,13 @@ import java.net.URI
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
 import org.apache.spark.sql.catalyst.optimizer.OptimizeCodegen
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.ExplainCommand
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{DataType, Metadata}
 
 object CarbonToSparkAdapter {
@@ -86,5 +87,15 @@ object CarbonToSparkAdapter {
 
   def getOptimizeCodegenRule(conf :SQLConf): Seq[Rule[LogicalPlan]] = {
     Seq(OptimizeCodegen(conf))
+  }
+
+  def addInputSegments(plan: LogicalPlan, inputSegments: String): LogicalPlan = {
+    plan transform {
+      case LogicalRelation(r: CarbonDatasourceHadoopRelation, o, t) =>
+        val newRelation = r.copy()
+        newRelation.segmentsForDelete = inputSegments
+        LogicalRelation(newRelation, o, t)
+      case other => other
+    }
   }
 }

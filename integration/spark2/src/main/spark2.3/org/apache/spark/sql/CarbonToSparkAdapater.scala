@@ -23,10 +23,11 @@ import java.net.URI
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, SubqueryExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.ExplainCommand
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{DataType, Metadata}
 
@@ -89,5 +90,15 @@ object CarbonToSparkAdapter {
       map: Map[String, String],
       tablePath: String): CatalogStorageFormat = {
     storageFormat.copy(properties = map, locationUri = Some(new URI(tablePath)))
+  }
+
+  def addInputSegments(plan: LogicalPlan, inputSegments: String): LogicalPlan = {
+    plan transform {
+      case LogicalRelation(r: CarbonDatasourceHadoopRelation, o, t, s) =>
+        val newRelation = r.copy()
+        newRelation.segmentsForDelete = inputSegments
+        LogicalRelation(newRelation, o, t, s)
+      case other => other
+    }
   }
 }
