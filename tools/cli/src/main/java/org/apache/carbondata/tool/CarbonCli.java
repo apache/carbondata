@@ -79,6 +79,10 @@ public class CarbonCli {
         .withDescription("column to print statistics")
         .withLongOpt("column")
         .create("c");
+    Option columns = OptionBuilder
+        .withDescription("print statistics for all columns")
+        .withLongOpt("columns")
+        .create("C");
 
     Option blockletDetail = OptionBuilder.withArgName("limitSize").hasOptionalArg()
         .withDescription("print blocklet size detail").withLongOpt("limitSize")
@@ -101,6 +105,7 @@ public class CarbonCli {
     options.addOption(blockletDetail);
     options.addOption(columnMeta);
     options.addOption(columnName);
+    options.addOption(columns);
     options.addOption(version);
     options.addOption(blockLevelDetail);
     return options;
