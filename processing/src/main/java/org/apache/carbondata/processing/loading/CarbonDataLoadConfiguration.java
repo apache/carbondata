@@ -129,6 +129,11 @@ public class CarbonDataLoadConfiguration {
 
   private int numberOfLoadingCores;
 
+  /**
+   * the index of deduplicateByColumn in dataFields array
+   */
+  private int deduplicateByColumn = -1;
+
   public CarbonDataLoadConfiguration() {
   }
 
@@ -453,5 +458,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setSegmentPath(String segmentPath) {
     this.segmentPath = segmentPath;
+  }
+
+  public int getDeduplicateByColumn() {
+    return deduplicateByColumn;
+  }
+
+  public void setDeduplicateByColumn(int deduplicateByColumn) {
+    this.deduplicateByColumn = deduplicateByColumn;
   }
 }

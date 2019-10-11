@@ -1026,6 +1026,16 @@ public class CarbonTable implements Serializable, Writable {
     }
   }
 
+  public CarbonColumn getDeduplicateByColumn() {
+    String deduplicateBy =
+        tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.DEDUPLICATE_BY);
+    if (deduplicateBy == null) {
+      return null;
+    } else {
+      return getColumnByName(getTableName(), deduplicateBy);
+    }
+  }
+
   public TableInfo getTableInfo() {
     return tableInfo;
   }

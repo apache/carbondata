@@ -43,7 +43,7 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.sort.sortdata.{NewRowComparator, NewRowComparatorForNormalDims, SortParameters}
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CommonUtil, DeduplicateHelper}
 
 /**
  * Use sortBy operator in spark to load the data
@@ -124,13 +124,25 @@ object DataLoadProcessBuilderOnSpark {
     import scala.reflect.classTag
     val sortRDD = convertRDD
       .sortBy(_.getData, numPartitions = numPartitions)(RowOrdering, classTag[Array[AnyRef]])
+
+    // deduplicate, base on sort_columns and unique_column
+    val deduplicateByColumn = configuration.getDeduplicateByColumn
+    val deduplicateRDD = if (deduplicateByColumn == -1) {
+      sortRDD
+    } else {
+      sortRDD.mapPartitions { rows =>
+        DataLoadProcessorStepOnSpark.deduplicate(rows, rowComparator, deduplicateByColumn)
+      }
+    }
+
+    val sortRDDWith3Parts = deduplicateRDD
       .mapPartitionsWithIndex { case (index, rows) =>
         DataLoadProcessorStepOnSpark.convertTo3Parts(rows, index, modelBroadcast,
           sortStepRowCounter)
       }
 
     // 4. Write
-    sc.runJob(sortRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
+    sc.runJob(sortRDDWith3Parts, (context: TaskContext, rows: Iterator[CarbonRow]) => {
       setTaskListener()
       DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, modelBroadcast,
         writeStepRowCounter, conf.value.value)

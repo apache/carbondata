@@ -517,6 +517,7 @@ object AlterTableUtil {
       "LOCAL_DICTIONARY_EXCLUDE",
       "LOAD_MIN_SIZE_INMB",
       "RANGE_COLUMN",
+      "DEDUPLICATE_BY",
       "SORT_SCOPE",
       "SORT_COLUMNS",
       "GLOBAL_SORT_PARTITIONS")

@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.load
 
 import java.util
+import java.util.Comparator
 
 import com.univocity.parsers.common.TextParsingException
 import org.apache.hadoop.conf.Configuration
@@ -45,7 +46,7 @@ import org.apache.carbondata.processing.sort.sortdata.SortParameters
 import org.apache.carbondata.processing.store.{CarbonFactHandler, CarbonFactHandlerFactory}
 import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil}
 import org.apache.carbondata.spark.rdd.{NewRddIterator, StringArrayRow}
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CommonUtil, DeduplicateHelper}
 
 object DataLoadProcessorStepOnSpark {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -259,6 +260,46 @@ object DataLoadProcessorStepOnSpark {
     }
     if (rowConverter != null) {
       rowConverter.finish()
+    }
+  }
+
+  def deduplicate(
+      rows: Iterator[CarbonRow],
+      sortComparator: Comparator[Array[AnyRef]],
+      uniqueColumnIndex: Int
+  ): Iterator[CarbonRow] = {
+    new Iterator[CarbonRow] {
+      val deduplicateHelper = new DeduplicateHelper(sortComparator, uniqueColumnIndex, 1024)
+      var currentRow: CarbonRow = null
+      var usedCurrentRow: Boolean = true
+      private def getNextRow(): Unit = {
+        if (rows.hasNext) {
+          val tempRow = rows.next()
+          if (deduplicateHelper.isDuplicate(tempRow.getData)) {
+            getNextRow()
+          } else {
+            currentRow = tempRow
+          }
+        } else {
+          currentRow = null
+        }
+      }
+
+      override def hasNext: Boolean = {
+        if (usedCurrentRow) {
+          getNextRow()
+          usedCurrentRow = false
+        }
+        if (currentRow == null) {
+          deduplicateHelper.close()
+        }
+        currentRow != null
+      }
+
+      override def next(): CarbonRow = {
+        usedCurrentRow = true
+        currentRow
+      }
     }
   }
 

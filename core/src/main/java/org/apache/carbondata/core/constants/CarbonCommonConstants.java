@@ -440,6 +440,7 @@ public final class CarbonCommonConstants {
   public static final String SORT_COLUMNS = "sort_columns";
   public static final String SORT_SCOPE = "sort_scope";
   public static final String RANGE_COLUMN = "range_column";
+  public static final String DEDUPLICATE_BY = "deduplicate_by";
   public static final String PARTITION_TYPE = "partition_type";
   public static final String NUM_PARTITIONS = "num_partitions";
   public static final String RANGE_INFO = "range_info";

@@ -329,6 +329,17 @@ public final class DataLoadProcessBuilder {
     configuration.setNumberOfLoadingCores(CarbonProperties.getInstance().getNumberOfLoadingCores());
 
     configuration.setColumnCompressor(loadModel.getColumnCompressor());
+
+    CarbonColumn deduplicateBy = carbonTable.getDeduplicateByColumn();
+    if (deduplicateBy != null) {
+      configuration.setDeduplicateByColumn(-1);
+      for (int i = 0; i < dataFields.size(); i++) {
+        if (dataFields.get(i).getColumn() == deduplicateBy) {
+          configuration.setDeduplicateByColumn(i);
+          break;
+        }
+      }
+    }
     return configuration;
   }
 
