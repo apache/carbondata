@@ -48,7 +48,7 @@ case class CarbonDatasourceHadoopRelation(
     parameters: Map[String, String],
     tableSchema: Option[StructType],
     isSubquery: ArrayBuffer[Boolean] = new ArrayBuffer[Boolean](),
-    @transient var segmentsForDelete: String = null)
+    @transient var querySegments: String = null)
   extends BaseRelation with InsertableRelation {
 
   val caseInsensitiveMap: Map[String, String] = parameters.map(f => (f._1.toLowerCase, f._2))
@@ -191,7 +191,7 @@ case class CarbonDatasourceHadoopRelation(
       carbonTable.getTableInfo,
       inputMetricsStats,
       partitions,
-      segmentsForDelete = segmentsForDelete)
+      querySegments = querySegments)
   }
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)

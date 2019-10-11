@@ -96,7 +96,7 @@ object CarbonToSparkAdapter {
     plan transform {
       case LogicalRelation(r: CarbonDatasourceHadoopRelation, o, t, s) =>
         val newRelation = r.copy()
-        newRelation.segmentsForDelete = inputSegments
+        newRelation.querySegments = inputSegments
         LogicalRelation(newRelation, o, t, s)
       case other => other
     }

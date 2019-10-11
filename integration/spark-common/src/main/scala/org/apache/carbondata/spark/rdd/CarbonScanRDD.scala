@@ -84,7 +84,7 @@ class CarbonScanRDD[T: ClassTag](
     val dataTypeConverterClz: Class[_ <: DataTypeConverter] = classOf[SparkDataTypeConverterImpl],
     val readSupportClz: Class[_ <: CarbonReadSupport[_]] = SparkReadSupport.readSupportClass,
     @transient var splits: java.util.List[InputSplit] = null,
-    @transient var segmentsForDelete: String = null)
+    @transient var querySegments: String = null)
   extends CarbonRDDWithTableInfo[T](spark, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
@@ -674,9 +674,9 @@ class CarbonScanRDD[T: ClassTag](
             .getProperty(inputSegmentsKey, carbonSessionInfo.getSessionParams
               .getProperty(inputSegmentsKey,
               CarbonProperties.getInstance().getProperty(inputSegmentsKey, "*"))))
-      if (segmentsForDelete != null) {
+      if (querySegments != null) {
         CarbonInputFormat.setValidateSegmentsToAccess(conf, true)
-        CarbonInputFormat.setQuerySegment(conf, segmentsForDelete)
+        CarbonInputFormat.setQuerySegment(conf, querySegments)
       }
       if (queryOnPreAggStreaming) {
         CarbonInputFormat.setAccessStreamingSegments(conf, queryOnPreAggStreaming)
