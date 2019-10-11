@@ -81,6 +81,7 @@ public class CarbonCli {
         .create("c");
     Option columns = OptionBuilder
         .withDescription("print statistics for all columns")
+        .withLongOpt("columns")
         .create("C");
 
     Option blockletDetail = OptionBuilder.withArgName("limitSize").hasOptionalArg()
