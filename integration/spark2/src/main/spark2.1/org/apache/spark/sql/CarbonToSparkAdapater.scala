@@ -89,11 +89,11 @@ object CarbonToSparkAdapter {
     Seq(OptimizeCodegen(conf))
   }
 
-  def addInputSegments(plan: LogicalPlan, inputSegments: String): LogicalPlan = {
+  def addQuerySegments(plan: LogicalPlan, querySegments: String): LogicalPlan = {
     plan transform {
       case LogicalRelation(r: CarbonDatasourceHadoopRelation, o, t) =>
         val newRelation = r.copy()
-        newRelation.segmentsForDelete = inputSegments
+        newRelation.querySegments = querySegments
         LogicalRelation(newRelation, o, t)
       case other => other
     }

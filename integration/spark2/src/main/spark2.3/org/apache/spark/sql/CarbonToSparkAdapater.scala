@@ -92,11 +92,11 @@ object CarbonToSparkAdapter {
     storageFormat.copy(properties = map, locationUri = Some(new URI(tablePath)))
   }
 
-  def addInputSegments(plan: LogicalPlan, inputSegments: String): LogicalPlan = {
+  def addQuerySegments(plan: LogicalPlan, querySegments: String): LogicalPlan = {
     plan transform {
       case LogicalRelation(r: CarbonDatasourceHadoopRelation, o, t, s) =>
         val newRelation = r.copy()
-        newRelation.querySegments = inputSegments
+        newRelation.querySegments = querySegments
         LogicalRelation(newRelation, o, t, s)
       case other => other
     }

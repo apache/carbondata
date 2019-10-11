@@ -62,8 +62,8 @@ private[sql] case class CarbonProjectForDeleteCommand(
     val newPlan = if (isDeleteRepeat) {
       Dataset.ofRows(sparkSession, plan).queryExecution.optimizedPlan transform {
         case Join(left, right, j, c) =>
-          val newLeft = CarbonToSparkAdapter.addInputSegments(left, deleteSegments)
-          val newRight = CarbonToSparkAdapter.addInputSegments(right, repeatedSegments)
+          val newLeft = CarbonToSparkAdapter.addQuerySegments(left, deleteSegments)
+          val newRight = CarbonToSparkAdapter.addQuerySegments(right, repeatedSegments)
           Join(newLeft, newRight, j, c)
         case other => other
       }
