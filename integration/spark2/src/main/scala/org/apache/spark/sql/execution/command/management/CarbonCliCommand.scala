@@ -50,20 +50,19 @@ case class CarbonCliCommand(
     setAuditTable(carbonTable)
     setAuditInfo(Map("options" -> commandOptions))
     val commandArgs: Seq[String] = commandOptions.split("\\s+").map(_.trim)
-    commandArgs.exists { comand =>
-      comand.equalsIgnoreCase("-p")
-    }
-    val finalCommands = if (commandArgs.exists(_.equalsIgnoreCase("-p"))) {
-      commandArgs
-    } else {
-      val needPath = commandArgs.exists { command =>
-        command.equalsIgnoreCase("summary") || command.equalsIgnoreCase("benchmark")
-      }
-      if (needPath) {
-        commandArgs ++ Seq("-p", carbonTable.getTablePath)
-      } else {
+    val finalCommands = commandArgs.exists(_.equalsIgnoreCase("-p")) match {
+      case true =>
         commandArgs
-      }
+      case false =>
+        val needPath = commandArgs.exists { command =>
+          command.equalsIgnoreCase("summary") || command.equalsIgnoreCase("benchmark")
+        }
+        needPath match {
+          case true =>
+            commandArgs ++ Seq("-p", carbonTable.getTablePath)
+          case false =>
+            commandArgs
+        }
     }
     val summaryOutput = new util.ArrayList[String]()
     CarbonCli.run(finalCommands.toArray, summaryOutput, false)
