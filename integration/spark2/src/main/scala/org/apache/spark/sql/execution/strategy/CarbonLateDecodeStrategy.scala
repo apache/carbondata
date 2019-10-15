@@ -434,15 +434,20 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         // revert for row scan
         updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       }
+      val newRequestedColumns = if (!vectorPushRowFilters && extraRdd.isDefined) {
+        extractUniqueAttributes(projectsAttr, filterSet.toSeq)
+      } else {
+        updateRequestedColumns.asInstanceOf[Seq[Attribute]]
+      }
       val scan = getDataSourceScan(relation,
-        (updateRequestedColumns.asInstanceOf[Seq[Attribute]], partitions),
+        (newRequestedColumns, partitions),
         scanBuilder,
         candidatePredicates,
         pushedFilters,
         handledFilters,
         metadata,
         needDecoder,
-        updateRequestedColumns.asInstanceOf[Seq[Attribute]], extraRdd)
+        newRequestedColumns, extraRdd)
       // Check whether spark should handle row filters in case of vector flow.
       if (!vectorPushRowFilters && scan.isInstanceOf[CarbonDataSourceScan]
           && !implicitExisted && !hasDictionaryFilterCols && !hasMoreDictionaryCols) {
@@ -470,6 +475,26 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan))
       }
 
+    }
+  }
+
+  /*
+    This function is used to get the Unique attributes from filter set
+    and projection set based on their semantics.
+   */
+  private def extractUniqueAttributes(projections: Seq[Attribute],
+      filter: Seq[Attribute]): Seq[Attribute] = {
+    def checkSemanticEquals(filter: Attribute): Option[Attribute] = {
+      projections.find(_.semanticEquals(filter))
+    }
+
+    filter.toList match {
+      case head :: tail =>
+        checkSemanticEquals(head) match {
+          case Some(_) => extractUniqueAttributes(projections, tail)
+          case None => extractUniqueAttributes(projections :+ head, tail)
+        }
+      case Nil => projections
     }
   }
 
