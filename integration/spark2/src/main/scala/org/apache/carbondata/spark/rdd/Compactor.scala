@@ -51,7 +51,7 @@ abstract class Compactor(carbonLoadModel: CarbonLoadModel,
       .identifySegmentsToBeMerged(carbonLoadModel,
         compactionModel.compactionSize,
         new util.ArrayList(
-          carbonLoadModel.getLoadMetadataDetails.asScala.filter(_.isCarbonSegment).asJava),
+          carbonLoadModel.getLoadMetadataDetails.asScala.filter(_.isCarbonFormat).asJava),
         compactionModel.compactionType,
         customSegmentIds)
   }

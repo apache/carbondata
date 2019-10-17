@@ -326,7 +326,7 @@ public class Segment implements Serializable, Writable {
 
   public boolean isCarbonSegment() {
     if (loadMetadataDetails != null) {
-      return loadMetadataDetails.isCarbonSegment();
+      return loadMetadataDetails.isCarbonFormat();
     }
     return true;
   }

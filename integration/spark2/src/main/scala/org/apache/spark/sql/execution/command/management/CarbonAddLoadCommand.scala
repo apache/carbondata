@@ -37,6 +37,7 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.metadata.SegmentFileStore
+import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -76,6 +77,11 @@ case class CarbonAddLoadCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
+    if (carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala.exists(
+      c => c.hasEncoding(Encoding.DICTIONARY) && !c.hasEncoding(Encoding.DIRECT_DICTIONARY))) {
+      throw new MalformedCarbonCommandException(
+        "Unsupported operation on global dictionary columns table")
+    }
     if (carbonTable.isChildTable || carbonTable.isChildDataMap) {
       throw new MalformedCarbonCommandException("Unsupported operation on MV/Pre-aggrergated table")
     }

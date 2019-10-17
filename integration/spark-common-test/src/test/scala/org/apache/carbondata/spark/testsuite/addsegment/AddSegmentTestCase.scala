@@ -483,11 +483,16 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='parquet')")
 
     val res2 = sql("select * from addsegment1 where deptno=10")
-    res2.show()
     assert(res1.collect().length == 6)
     assert(res2.collect().length == 6)
     assert(sql("select empname, deptname, deptno from addsegment1 where empname = 'arvind'")
       .collect().length == 2)
+
+    // For testing filter columns not in projection list
+    assert(sql("select deptname, deptno from addsegment1 where empname = 'arvind'")
+             .collect().length == 2)
+
+    assert(sql("select deptname, sum(salary) from addsegment1 where empname = 'arvind' group by deptname").collect().length == 1)
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 

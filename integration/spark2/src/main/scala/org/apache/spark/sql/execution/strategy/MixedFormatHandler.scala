@@ -27,7 +27,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.carbondata.execution.datasources.SparkCarbonFileFormat
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, AttributeSet, Expression, ExpressionSet, NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, AttributeSet, Expression, ExpressionSet, NamedExpression}
 import org.apache.spark.sql.execution.FileSourceScanExec
 import org.apache.spark.sql.execution.datasources.{FileFormat, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
 import org.apache.spark.sql.execution.datasources.csv.CSVFileFormat
@@ -43,7 +43,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
-import org.apache.carbondata.core.statusmanager.{FileFormat => CarbonFileFormat, SegmentStatus}
+import org.apache.carbondata.core.statusmanager.{FileFormat => FileFormatName, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -73,10 +73,18 @@ object MixedFormatHandler {
           !path.getName.equals("_SUCCESS") && !path.getName.endsWith(".crc")
         }
       })
-      getFileFormat(new CarbonFileFormat(format)).inferSchema(sparkSession, options, status).get
+      getFileFormat(new FileFormatName(format)).inferSchema(sparkSession, options, status).get
     }
   }
 
+  /**
+   * Generates the RDD for non carbon segments. It uses the spark underlying fileformats and
+   * generates the RDD in its native format without changing any of its flow to keep the original
+   * performance and features.
+   *
+   * If multiple segments are with different formats like parquet , orc etc then it creates RDD for
+   * each format segments and union them.
+   */
   def extraRDD(l: LogicalRelation,
       projects: Seq[NamedExpression],
       filters: Seq[Expression],
@@ -86,8 +94,8 @@ object MixedFormatHandler {
     val loadMetadataDetails = readCommittedScope.getSegmentList
     val segsToAccess = getSegmentsToAccess(identier)
     val rdds = loadMetadataDetails.filterNot(l =>
-      l.getFileFormat.equals(CarbonFileFormat.COLUMNAR_V3) ||
-      l.getFileFormat.equals(CarbonFileFormat.ROW_V1) &&
+      l.getFileFormat.equals(FileFormatName.COLUMNAR_V3) ||
+      l.getFileFormat.equals(FileFormatName.ROW_V1) &&
       (!(l.getSegmentStatus.equals(SegmentStatus.SUCCESS) &&
          l.getSegmentStatus.equals(SegmentStatus.LOAD_PARTIAL_SUCCESS))))
       .filter(l => segsToAccess.isEmpty || segsToAccess.contains(l.getLoadName))
@@ -97,11 +105,10 @@ object MixedFormatHandler {
           SegmentFileStore.readSegmentFile(CarbonTablePath.getSegmentFilePath(readCommittedScope
             .getFilePath, d.getSegmentFile)).getLocationMap.asScala.flatMap { case (p, f) =>
             f.getFiles.asScala.map { ef =>
-              p + CarbonCommonConstants.FILE_SEPARATOR + ef
+              new Path(p + CarbonCommonConstants.FILE_SEPARATOR + ef)
             }.toSeq
           }.toSeq
-        }.map(new Path(_))
-
+        }
         val fileFormat = getFileFormat(format, supportBatch)
         getRDDForExternalSegments(l, projects, filters, fileFormat, paths)
       }
@@ -128,16 +135,16 @@ object MixedFormatHandler {
     }
   }
 
-  def getFileFormat(fileFormat: CarbonFileFormat, supportBatch: Boolean = true): FileFormat = {
-    if (fileFormat.equals(new CarbonFileFormat("parquet"))) {
+  def getFileFormat(fileFormat: FileFormatName, supportBatch: Boolean = true): FileFormat = {
+    if (fileFormat.equals(new FileFormatName("parquet"))) {
       new ExtendedParquetFileFormat(supportBatch)
-    } else if (fileFormat.equals(new CarbonFileFormat("orc"))) {
+    } else if (fileFormat.equals(new FileFormatName("orc"))) {
       new ExtendedOrcFileFormat(supportBatch)
-    } else if (fileFormat.equals(new CarbonFileFormat("json"))) {
+    } else if (fileFormat.equals(new FileFormatName("json"))) {
       new JsonFileFormat
-    } else if (fileFormat.equals(new CarbonFileFormat("csv"))) {
+    } else if (fileFormat.equals(new FileFormatName("csv"))) {
       new CSVFileFormat
-    } else if (fileFormat.equals(new CarbonFileFormat("text"))) {
+    } else if (fileFormat.equals(new FileFormatName("text"))) {
       new TextFileFormat
     } else {
       throw new UnsupportedOperationException("Format not supported " + fileFormat)
@@ -156,8 +163,10 @@ object MixedFormatHandler {
     }
   }
 
-
-  def getRDDForExternalSegments(l: LogicalRelation,
+  /**
+   * Generates the RDD using the spark fileformat.
+   */
+  private def getRDDForExternalSegments(l: LogicalRelation,
       projects: Seq[NamedExpression],
       filters: Seq[Expression],
       fileFormat: FileFormat,

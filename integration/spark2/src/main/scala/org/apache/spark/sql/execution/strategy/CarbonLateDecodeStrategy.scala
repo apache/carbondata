@@ -121,7 +121,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       relation.carbonRelation.metaData.carbonTable)
     val updateDeltaMetadata = segmentUpdateStatusManager.readLoadMetadata()
     val hasNonCarbonSegment =
-      segmentUpdateStatusManager.getLoadMetadataDetails.exists(!_.isCarbonSegment)
+      segmentUpdateStatusManager.getLoadMetadataDetails.exists(!_.isCarbonFormat)
     if (hasNonCarbonSegment || updateDeltaMetadata != null && updateDeltaMetadata.nonEmpty) {
       false
     } else if (relation.carbonTable.isStreamingSink) {
@@ -320,7 +320,12 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     // In case of more dictionary columns spark code gen needs generate lot of code and that slows
     // down the query, so we limit the direct fill in case of more dictionary columns.
     val hasMoreDictionaryCols = hasMoreDictionaryColumnsOnProjection(projectSet, table)
-    val vectorPushRowFilters = CarbonProperties.getInstance().isPushRowFiltersForVector
+    var vectorPushRowFilters = CarbonProperties.getInstance().isPushRowFiltersForVector
+    // In case of mixed format, make the vectorPushRowFilters always false as other formats
+    // filtering happens in spark layer.
+    if (vectorPushRowFilters && extraRdd.isDefined) {
+      vectorPushRowFilters = false
+    }
     if (projects.map(_.toAttribute) == projects &&
         projectSet.size == projects.size &&
         filterSet.subsetOf(projectSet)) {

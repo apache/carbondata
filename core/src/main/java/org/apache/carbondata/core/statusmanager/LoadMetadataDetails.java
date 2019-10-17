@@ -461,7 +461,7 @@ public class LoadMetadataDetails implements Serializable {
     this.path = path;
   }
 
-  public boolean isCarbonSegment() {
+  public boolean isCarbonFormat() {
     return getFileFormat().equals(FileFormat.COLUMNAR_V3)
         || getFileFormat().equals(FileFormat.ROW_V1);
   }
