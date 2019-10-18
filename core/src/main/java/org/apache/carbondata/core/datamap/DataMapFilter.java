@@ -25,7 +25,6 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -121,16 +120,6 @@ public class DataMapFilter implements Serializable {
   }
 
   public boolean isResolvedOnSegment(SegmentProperties segmentProperties) {
-    if (expression == null || table == null) {
-      return true;
-    }
-    if (!table.isTransactionalTable()) {
-      return false;
-    }
-    if (table.hasColumnDrift() && RestructureUtil
-        .hasColumnDriftOnSegment(table, segmentProperties)) {
-      return false;
-    }
-    return true;
+    return false;
   }
 }
