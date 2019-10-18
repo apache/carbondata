@@ -103,6 +103,7 @@ public class ColumnExpression extends LeafExpression {
     measure = null;
     isDimension = false;
     isMeasure = false;
+    carbonColumn = null;
   }
 
   @Override

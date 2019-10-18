@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datamap;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,6 +30,7 @@ import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
 /**
  * the filter of DataMap
@@ -41,13 +43,33 @@ public class DataMapFilter implements Serializable {
 
   private FilterResolverIntf resolver;
 
+  private String serializedExpression;
+
   public DataMapFilter(CarbonTable table, Expression expression) {
     this.table = table;
     this.expression = expression;
     if (expression != null) {
       checkIfFilterColumnExistsInTable();
+      try {
+        this.serializedExpression = ObjectSerializationUtil.convertObjectToString(expression);
+      } catch (IOException e) {
+        throw new RuntimeException("Error while serializing the exception", e);
+      }
     }
     resolve();
+  }
+
+  public Expression getNewCopyOfExpression() {
+    if (expression != null) {
+      try {
+        return (Expression) ObjectSerializationUtil
+            .convertStringToObject(this.serializedExpression);
+      } catch (IOException e) {
+        throw new RuntimeException("Error while deserializing the exception", e);
+      }
+    } else {
+      return null;
+    }
   }
 
   private Set<String> extractColumnExpressions(Expression expression) {

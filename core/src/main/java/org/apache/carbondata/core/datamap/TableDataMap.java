@@ -289,7 +289,7 @@ public final class TableDataMap extends OperationEventListener {
               for (int i = segmentDataMapGroup.getFromIndex();
                    i <= segmentDataMapGroup.getToIndex(); i++) {
                 List<Blocklet> dmPruneBlocklets = dataMapList.get(i).prune(
-                    filter.getExpression(), segmentProperties, partitions, table);
+                    filter.getNewCopyOfExpression(), segmentProperties, partitions, table);
                 pruneBlocklets.addAll(addSegmentId(
                     blockletDetailsFetcher.getExtendedBlocklets(dmPruneBlocklets, segment),
                     segment));
