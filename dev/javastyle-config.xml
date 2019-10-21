@@ -170,82 +170,81 @@
         <module name="ParenPad"/>
         <module name="WhitespaceAround"/>
 
+        <!-- Checks for @Overrider in one line -->
+        <module name="RegexpSinglelineJava">
+            <property name="severity" value="info"/>
+            <property name="format" value="^\s*@Override\s+.+$"/>
+            <property name="ignoreComments" value="true"/>
+            <property name="message" value="@Override should at one line"/>
+        </module>
 
-      <!-- Checks for @Overrider in one line -->
-      <module name="RegexpSinglelineJava">
-        <property name="severity" value="info"/>
-        <property name="format" value="^\s*@Override\s+.+$"/>
-        <property name="ignoreComments" value="true"/>
-        <property name="message" value="@Override should at one line"/>
-      </module>
+        <!-- Checks for redundant imports. -->
+        <module name="RedundantImport">
+            <property name="severity" value="info"/>
+            <message key="import.redundancy" value="Redundant import {0}."/>
+        </module>
 
-      <!-- Checks for redundant imports. -->
-      <module name="RedundantImport">
-        <property name="severity" value="info"/>
-        <message key="import.redundancy" value="Redundant import {0}."/>
-      </module>
+        <!-- Checks for star import. -->
+        <module name="AvoidStarImport">
+            <property name="severity" value="info"/>
+        </module>
 
-      <!-- Checks for star import. -->
-      <module name="AvoidStarImport">
-        <property name="severity" value="info"/>
-      </module>
+        <!-- Checks for placement of the left curly brace ('{'). -->
+        <module name="LeftCurly">
+            <property name="severity" value="info"/>
+        </module>
 
-      <!-- Checks for placement of the left curly brace ('{'). -->
-      <module name="LeftCurly">
-        <property name="severity" value="info"/>
-      </module>
+        <!-- Checks for complicated boolean expressions. -->
+        <module name="SimplifyBooleanExpression">
+            <property name="severity" value="info"/>
+        </module>
 
-      <!-- Checks for complicated boolean expressions. -->
-      <module name="SimplifyBooleanExpression">
-        <property name="severity" value="info"/>
-      </module>
+        <!-- Checks for empty statements. -->
+        <module name="EmptyStatement">
+            <property name="severity" value="info"/>
+        </module>
 
-      <!-- Checks for empty statements. -->
-      <module name="EmptyStatement">
-        <property name="severity" value="info"/>
-      </module>
+        <!-- Checks for consecutive semicolons. -->
+        <module name="RegexpSinglelineJava">
+            <property name="severity" value="info"/>
+            <property name="format" value=";{2,}"/>
+            <property name="message" value="Please use one semicolon"/>
+            <property name="ignoreComments" value="true"/>
+        </module>
 
-      <!-- Checks for consecutive semicolons. -->
-      <module name="RegexpSinglelineJava">
-        <property name="severity" value="info"/>
-        <property name="format" value=";{2,}"/>
-        <property name="message" value="Please use one semicolon"/>
-        <property name="ignoreComments" value="true"/>
-      </module>
+        <!-- Checks for empty line separator between tokens. -->
+        <module name="EmptyLineSeparator">
+            <property name="severity" value="info"/>
+            <property name="allowMultipleEmptyLines" value="false"/>
+            <property name="tokens" value="PACKAGE_DEF, IMPORT, CLASS_DEF, INTERFACE_DEF, ENUM_DEF,
+                                         STATIC_INIT, INSTANCE_INIT, METHOD_DEF,CTOR_DEF"/>
+        </module>
 
-      <!-- Checks for empty line separator between tokens. -->
-      <module name="EmptyLineSeparator">
-        <property name="severity" value="info"/>
-        <property name="allowMultipleEmptyLines" value="false"/>
-        <property name="tokens" value="PACKAGE_DEF, IMPORT, CLASS_DEF, INTERFACE_DEF, ENUM_DEF,
-                                     STATIC_INIT, INSTANCE_INIT, METHOD_DEF,CTOR_DEF"/>
-      </module>
+        <!-- Checks for commas, semicolons and typecasts are followed by whitespace. -->
+        <module name="WhitespaceAfter">
+            <property name="severity" value="info"/>
+            <property name="tokens" value="COMMA, SEMI, TYPECAST"/>
+        </module>
 
-      <!-- Checks for commas, semicolons and typecasts are followed by whitespace. -->
-      <module name="WhitespaceAfter">
-        <property name="severity" value="info"/>
-        <property name="tokens" value="COMMA, SEMI, TYPECAST"/>
-      </module>
+        <!-- Checks for there is no whitespace after unary operators. -->
+        <module name="NoWhitespaceAfter">
+            <property name="severity" value="info"/>
+            <property name="tokens" value="BNOT, DEC, DOT, INC, LNOT, UNARY_MINUS, UNARY_PLUS"/>
+            <property name="allowLineBreaks" value="true"/>
+        </module>
 
-      <!-- Checks for there is no whitespace after unary operators. -->
-      <module name="NoWhitespaceAfter">
-        <property name="severity" value="info"/>
-        <property name="tokens" value="BNOT, DEC, DOT, INC, LNOT, UNARY_MINUS, UNARY_PLUS"/>
-        <property name="allowLineBreaks" value="true"/>
-      </module>
+        <!-- Checks for there is no whitespace before unary operators. -->
+        <module name="NoWhitespaceBefore">
+            <property name="severity" value="info"/>
+            <property name="tokens" value="SEMI, DOT, POST_DEC, POST_INC"/>
+            <property name="allowLineBreaks" value="true"/>
+        </module>
 
-      <!-- Checks for there is no whitespace before unary operators. -->
-      <module name="NoWhitespaceBefore">
-        <property name="severity" value="info"/>
-        <property name="tokens" value="SEMI, DOT, POST_DEC, POST_INC"/>
-        <property name="allowLineBreaks" value="true"/>
-      </module>
-
-      <!-- Checks for assign operators are at the end of the line. -->
-      <module name="OperatorWrap">
-        <property name="severity" value="info"/>
-        <property name="option" value="eol"/>
-        <property name="tokens" value="ASSIGN"/>
-      </module>
+        <!-- Checks for assign operators are at the end of the line. -->
+        <module name="OperatorWrap">
+            <property name="severity" value="info"/>
+            <property name="option" value="eol"/>
+            <property name="tokens" value="ASSIGN"/>
+        </module>
     </module>
 </module>
