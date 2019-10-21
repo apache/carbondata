@@ -41,6 +41,7 @@ public class CarbonRowReadSupport extends DictionaryDecodeReadSupport<CarbonRow>
         Calendar c = Calendar.getInstance();
         c.setTime(new Date(0));
         c.add(Calendar.DAY_OF_YEAR, (Integer) data[i]);
+        c.add(Calendar.DATE, 1);
         data[i] = new Date(c.getTime().getTime());
       } else if (dataTypes[i] == DataTypes.TIMESTAMP) {
         data[i] = new Timestamp((long) data[i] / 1000);

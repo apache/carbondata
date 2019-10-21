@@ -79,6 +79,8 @@ public class CarbonLoadModelBuilder {
         columns[i] = csvHeader.get(i).getColName();
       }
       optionsFinal.put("fileheader", Strings.mkString(columns, ","));
+    } else {
+      optionsFinal.put("fileheader", options.get("fileheader"));
     }
     optionsFinal.put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options, table));
     optionsFinal.put("sort_scope",
