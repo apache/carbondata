@@ -38,6 +38,7 @@ import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeFinalMe
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeInmemoryHolder;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeSortTempFileChunkHolder;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
+import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 
 import org.apache.log4j.Logger;
 
@@ -117,7 +118,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
       // create record holder heap
       createRecordHolderQueue();
-
+      TableFieldStat tableFieldStat = new TableFieldStat(parameters);
       // iterate over file list and create chunk holder and add to heap
       LOGGER.info("Started adding first record from each page");
       for (final UnsafeCarbonRowPage rowPage : rowPages) {
@@ -133,7 +134,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       for (final UnsafeInMemoryIntermediateDataMerger merger : merges) {
 
         SortTempChunkHolder sortTempFileChunkHolder =
-            new UnsafeFinalMergePageHolder(merger, parameters.getNoDictionarySortColumn());
+            new UnsafeFinalMergePageHolder(merger, tableFieldStat);
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -144,7 +145,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       for (final File file : filesToMergeSort) {
 
         SortTempChunkHolder sortTempFileChunkHolder =
-            new UnsafeSortTempFileChunkHolder(file, parameters, true);
+            new UnsafeSortTempFileChunkHolder(file, parameters, true, tableFieldStat);
 
         // initialize
         sortTempFileChunkHolder.readRow();

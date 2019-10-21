@@ -439,12 +439,42 @@ public final class CarbonDataProcessorUtil {
         }
       }
     }
-    Boolean[] mapping = noDicSortColMap.toArray(new Boolean[noDicSortColMap.size()]);
+    Boolean[] mapping = noDicSortColMap.toArray(new Boolean[0]);
     boolean[] noDicSortColMapping = new boolean[mapping.length];
     for (int i = 0; i < mapping.length; i++) {
-      noDicSortColMapping[i] = mapping[i].booleanValue();
+      noDicSortColMapping[i] = mapping[i];
     }
     return noDicSortColMapping;
+  }
+
+  /**
+   * If the dimension is added in older version 1.1, by default it will be sort column, So during
+   * initial sorting, carbonrow will be in order where added sort column is at the beginning, But
+   * before final merger of sort, the data should be in schema order
+   * (org.apache.carbondata.processing.sort.SchemaBasedRowUpdater updates the carbonRow in schema
+   * order), so This method helps to find the index of no dictionary sort column in the carbonrow
+   * data.
+   */
+  public static int[] getColumnIdxBasedOnSchemaInRow(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
+    List<Integer> noDicSortColMap = new ArrayList<>();
+    int counter = 0;
+    for (CarbonDimension dimension : dimensions) {
+      if (dimension.hasEncoding(Encoding.DICTIONARY)) {
+        continue;
+      }
+      if (dimension.isSortColumn() && DataTypeUtil.isPrimitiveColumn(dimension.getDataType())) {
+        noDicSortColMap.add(counter);
+      }
+      counter++;
+    }
+    Integer[] mapping = noDicSortColMap.toArray(new Integer[0]);
+    int[] columnIdxBasedOnSchemaInRow = new int[mapping.length];
+    for (int i = 0; i < mapping.length; i++) {
+      columnIdxBasedOnSchemaInRow[i] = mapping[i];
+    }
+    return columnIdxBasedOnSchemaInRow;
   }
 
   /**
