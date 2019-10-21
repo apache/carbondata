@@ -39,6 +39,8 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
 import org.apache.commons.lang3.StringUtils;
@@ -65,6 +67,7 @@ public class CarbonReaderBuilder {
   private InputSplit inputSplit;
   private boolean useArrowReader;
   private List fileLists;
+  private Class<? extends CarbonReadSupport> readSupportClass;
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -129,6 +132,16 @@ public class CarbonReaderBuilder {
     List fileLists = new ArrayList();
     fileLists.add(file);
     return withFileLists(fileLists);
+  }
+
+  /**
+   * set read support class
+   * @param readSupportClass read support class
+   * @return CarbonReaderBuilder object
+   */
+  public CarbonReaderBuilder withReadSupport(Class<? extends CarbonReadSupport> readSupportClass) {
+    this.readSupportClass = readSupportClass;
+    return this;
   }
 
   /**
@@ -240,11 +253,11 @@ public class CarbonReaderBuilder {
           ((CarbonInputSplit) inputSplit).getSegment().getReadCommittedScope().getFilePath();
       tableName = "UnknownTable" + UUID.randomUUID();
     }
-    CarbonTable table;
-    // now always infer schema. TODO:Refactor in next version.
     if (null == this.fileLists && null == tablePath) {
       throw new IllegalArgumentException("Please set table path first.");
     }
+    // infer schema
+    CarbonTable table;
     if (null != this.fileLists) {
       if (fileLists.size() < 1) {
         throw new IllegalArgumentException("fileLists must have one file in list as least!");
@@ -341,6 +354,7 @@ public class CarbonReaderBuilder {
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }
+    CarbonTableInputFormat.setCarbonReadSupport(hadoopConf, readSupportClass);
     final Job job = new Job(new JobConf(hadoopConf));
     CarbonFileInputFormat format = prepareFileInputFormat(job, false, true);
     try {
@@ -371,6 +385,7 @@ public class CarbonReaderBuilder {
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }
+    CarbonTableInputFormat.setCarbonReadSupport(hadoopConf, readSupportClass);
     final Job job = new Job(new JobConf(hadoopConf));
     CarbonFileInputFormat format = prepareFileInputFormat(job, false, true);
     format.setAllColumnProjectionIfNotConfigured(job,

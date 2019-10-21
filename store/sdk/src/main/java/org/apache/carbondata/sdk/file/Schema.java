@@ -20,7 +20,9 @@ package org.apache.carbondata.sdk.file;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -41,12 +43,23 @@ public class Schema {
 
   private Field[] fields;
 
+  private Map<String, String> properties;
+
   /**
    * construct a schema with fields
    * @param fields
    */
   public Schema(Field[] fields) {
+    this(fields, new HashMap<String, String>());
+  }
+
+  /**
+   * construct a schema with fields
+   * @param fields
+   */
+  public Schema(Field[] fields, Map<String, String> properties) {
     this.fields = fields;
+    this.properties = properties;
   }
 
   /**
@@ -55,10 +68,20 @@ public class Schema {
    * @param columnSchemaList column schema list
    */
   public Schema(List<ColumnSchema> columnSchemaList) {
+    this(columnSchemaList, new HashMap<String, String>());
+  }
+
+  /**
+   * construct a schema with List<ColumnSchema>
+   *
+   * @param columnSchemaList column schema list
+   */
+  public Schema(List<ColumnSchema> columnSchemaList, Map<String, String> properties) {
     fields = new Field[columnSchemaList.size()];
     for (int i = 0; i < columnSchemaList.size(); i++) {
       fields[i] = new Field(columnSchemaList.get(i));
     }
+    this.properties = properties;
   }
 
   /**
@@ -150,6 +173,10 @@ public class Schema {
       }
     });
     return this;
+  }
+
+  public Map<String, String> getProperties() {
+    return properties;
   }
 
   @Override

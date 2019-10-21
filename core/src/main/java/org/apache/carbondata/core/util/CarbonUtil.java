@@ -2040,13 +2040,19 @@ public final class CarbonUtil {
    */
   public static org.apache.carbondata.format.TableInfo readSchemaFile(String schemaFilePath)
       throws IOException {
+    return readSchemaFile(schemaFilePath, FileFactory.getConfiguration());
+  }
+
+  public static org.apache.carbondata.format.TableInfo readSchemaFile(String schemaFilePath,
+      Configuration conf)
+      throws IOException {
     TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
       public org.apache.thrift.TBase<org.apache.carbondata.format.TableInfo,
           org.apache.carbondata.format.TableInfo._Fields> create() {
         return new org.apache.carbondata.format.TableInfo();
       }
     };
-    ThriftReader thriftReader = new ThriftReader(schemaFilePath, createTBase);
+    ThriftReader thriftReader = new ThriftReader(schemaFilePath, createTBase, conf);
     thriftReader.open();
     org.apache.carbondata.format.TableInfo tableInfo =
         (org.apache.carbondata.format.TableInfo) thriftReader.read();
@@ -2541,12 +2547,14 @@ public final class CarbonUtil {
   }
 
   // Get the total size of carbon data and the total size of carbon index
-  private static HashMap<String, Long> getDataSizeAndIndexSize(String tablePath,
-      String segmentId) throws IOException {
+  public static HashMap<String, Long> getDataSizeAndIndexSize(
+      String segmentPath) throws IOException {
+    if (segmentPath == null) {
+      throw new IllegalArgumentException("Argument [segmentPath] is null.");
+    }
     long carbonDataSize = 0L;
     long carbonIndexSize = 0L;
     HashMap<String, Long> dataAndIndexSize = new HashMap<String, Long>();
-    String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     FileFactory.FileType fileType = FileFactory.getFileType(segmentPath);
     switch (fileType) {
       case HDFS:
@@ -2592,6 +2600,12 @@ public final class CarbonUtil {
     dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE, carbonDataSize);
     dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE, carbonIndexSize);
     return dataAndIndexSize;
+  }
+
+  // Get the total size of carbon data and the total size of carbon index
+  private static HashMap<String, Long> getDataSizeAndIndexSize(String tablePath,
+      String segmentId) throws IOException {
+    return getDataSizeAndIndexSize(CarbonTablePath.getSegmentPath(tablePath, segmentId));
   }
 
   // Get the total size of carbon data and the total size of carbon index

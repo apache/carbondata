@@ -24,13 +24,18 @@ import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row}
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport
+import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
+import org.junit.Assert
+
+import scala.io.Source
 
 class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -256,6 +261,157 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     }
     assert(ex.getMessage.contains("Schema is not same"))
     FileFactory.deleteAllFilesOfDir(new File(newPath))
+  }
+
+  test("Test add segment by carbon written by sdk") {
+    val tableName = "add_segment_test"
+    sql(s"drop table if exists $tableName")
+    sql(
+      s"""
+        | CREATE TABLE $tableName (empno int, empname string, designation String, doj Timestamp,
+        | workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        | projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        | utilization int,salary int)
+        | STORED AS carbondata
+        |""".stripMargin)
+
+    val externalSegmentPath = storeLocation + "/" + "external_segment"
+    FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+
+    // write into external segment folder
+    val schemaFilePath = s"$storeLocation/$tableName/Metadata/schema"
+    val writer = CarbonWriter.builder
+      .outputPath(externalSegmentPath)
+      .withSchemaFile(schemaFilePath)
+      .writtenBy("AddSegmentTestCase")
+      .withCsvInput()
+      .build()
+    val source = Source.fromFile(s"$resourcesPath/data.csv")
+    var count = 0
+    for (line <- source.getLines()) {
+      if (count != 0) {
+        writer.write(line.split(","))
+      }
+      count = count + 1
+    }
+    writer.close()
+
+    sql(s"alter table $tableName add segment options('path'='$externalSegmentPath', 'format'='carbon')").show()
+    checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(10)))
+    sql(s"select * from $tableName").show()
+
+    expectSameResultBySchema(externalSegmentPath, schemaFilePath, tableName)
+    expectSameResultInferSchema(externalSegmentPath, tableName)
+
+    FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+    sql(s"drop table $tableName")
+  }
+
+  /**
+   * use sdk to read the specified path using specified schema file
+   * and compare result with select * from tableName
+   */
+  def expectSameResultBySchema(pathToRead: String, schemaFilePath: String, tableName: String): Unit = {
+    val tableRows = sql(s"select * from $tableName").collectAsList()
+    val projection = Seq("empno", "empname", "designation", "doj",
+      "workgroupcategory", "workgroupcategoryname", "deptno", "deptname",
+      "projectcode", "projectjoindate", "projectenddate", "attendance",
+      "utilization", "salary").toArray
+    val reader = CarbonReader.builder(pathToRead)
+      .withRowRecordReader()
+      .withReadSupport(classOf[CarbonRowReadSupport])
+      .projection(projection)
+      .build()
+
+    var count = 0
+    while (reader.hasNext) {
+      val row = reader.readNextRow.asInstanceOf[CarbonRow]
+      val tableRow = tableRows.get(count)
+      var columnIndex = 0
+      for (column <- row.getData) {
+        val tableRowColumn = tableRow.get(columnIndex)
+        Assert.assertEquals(s"cell[$count, $columnIndex] not equal", tableRowColumn.toString, column.toString)
+        columnIndex = columnIndex + 1
+      }
+      count += 1
+    }
+    reader.close()
+  }
+
+  /**
+   * use sdk to read the specified path by inferring schema
+   * and compare result with select * from tableName
+   */
+  def expectSameResultInferSchema(pathToRead: String, tableName: String): Unit = {
+    val tableRows = sql(s"select * from $tableName").collectAsList()
+    val projection = Seq("empno", "empname", "designation", "doj",
+      "workgroupcategory", "workgroupcategoryname", "deptno", "deptname",
+      "projectcode", "projectjoindate", "projectenddate", "attendance",
+      "utilization", "salary").toArray
+    val reader = CarbonReader.builder(pathToRead)
+      .withRowRecordReader()
+      .withReadSupport(classOf[CarbonRowReadSupport])
+      .projection(projection)
+      .build()
+
+    var count = 0
+    while (reader.hasNext) {
+      val row = reader.readNextRow.asInstanceOf[CarbonRow]
+      val tableRow = tableRows.get(count)
+      var columnIndex = 0
+      for (column <- row.getData) {
+        val tableRowColumn = tableRow.get(columnIndex)
+        Assert.assertEquals(s"cell[$count, $columnIndex] not equal", tableRowColumn.toString, column.toString)
+        columnIndex = columnIndex + 1
+      }
+      count += 1
+    }
+    reader.close()
+  }
+
+  test("Test add segment by carbon written by sdk, and 1 load") {
+    val tableName = "add_segment_test"
+    sql(s"drop table if exists $tableName")
+    sql(
+      s"""
+         | CREATE TABLE $tableName (empno int, empname string, designation String, doj Timestamp,
+         | workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+         | projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+         | utilization int,salary int)
+         | STORED AS carbondata
+         |""".stripMargin)
+
+    sql(
+      s"""
+        |LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE $tableName
+        |OPTIONS('DELIMITER'=',', 'QUOTECHAR'='"')
+        |""".stripMargin)
+
+    val externalSegmentPath = storeLocation + "/" + "external_segment"
+    FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+
+    // write into external segment folder
+    val writer = CarbonWriter.builder
+      .outputPath(externalSegmentPath)
+      .withSchemaFile(s"$storeLocation/$tableName/Metadata/schema")
+      .writtenBy("AddSegmentTestCase")
+      .withCsvInput()
+      .build()
+    val source = Source.fromFile(s"$resourcesPath/data.csv")
+    var count = 0
+    for (line <- source.getLines()) {
+      if (count != 0) {
+        writer.write(line.split(","))
+      }
+      count = count + 1
+    }
+    writer.close()
+
+    sql(s"alter table $tableName add segment options('path'='$externalSegmentPath', 'format'='carbon')").show()
+    checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(20)))
+    checkAnswer(sql(s"select sum(empno) from $tableName where empname = 'arvind' "), Seq(Row(22)))
+    FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
+    sql(s"drop table $tableName")
   }
 
   def copy(oldLoc: String, newLoc: String): Unit = {

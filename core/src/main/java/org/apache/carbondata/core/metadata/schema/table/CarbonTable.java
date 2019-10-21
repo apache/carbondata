@@ -1152,6 +1152,7 @@ public class CarbonTable implements Serializable, Writable {
 
   public void setTransactionalTable(boolean transactionalTable) {
     isTransactionalTable = transactionalTable;
+    getTableInfo().setTransactionalTable(transactionalTable);
   }
 
   /**
