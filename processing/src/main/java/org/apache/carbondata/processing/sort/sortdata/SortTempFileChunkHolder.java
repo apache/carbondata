@@ -105,9 +105,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
   public SortTempFileChunkHolder(SortParameters sortParameters) {
     this.tableFieldStat = new TableFieldStat(sortParameters);
-    this.comparator =
-        new IntermediateSortTempRowComparator(tableFieldStat.getIsSortColNoDictFlags(),
-            tableFieldStat.getNoDictDataType());
+    this.comparator = new FileMergeSortComparator(tableFieldStat.getIsSortColNoDictFlags(),
+        tableFieldStat.getNoDictDataType(), tableFieldStat.getNoDictSortColumnSchemaOrderMapping());
     this.sortTempRowUpdater = tableFieldStat.getSortTempRowUpdater();
   }
 
@@ -130,6 +129,15 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName,
                 true));
     this.convertToActualField = convertToActualField;
+    if (this.convertToActualField) {
+      this.comparator = new FileMergeSortComparator(
+          tableFieldStat.getIsSortColNoDictFlags(), tableFieldStat.getNoDictDataType(),
+          tableFieldStat.getNoDictSortColumnSchemaOrderMapping());
+    } else {
+      this.comparator =
+          new IntermediateSortTempRowComparator(tableFieldStat.getIsSortColNoDictFlags(),
+              tableFieldStat.getNoDictDataType());
+    }
   }
 
   /**

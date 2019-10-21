@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.sort.sortdata;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -71,6 +72,11 @@ public class TableFieldStat implements Serializable {
 
   private SortTempRowUpdater sortTempRowUpdater;
 
+  /**
+   * Index of the no dict Sort columns in the carbonRow for final merge step of sorting.
+   */
+  private int[] noDictSortColumnSchemaOrderMapping;
+
   public TableFieldStat(SortParameters sortParameters) {
     int noDictDimCnt = sortParameters.getNoDictionaryCount();
     int dictDimCnt = sortParameters.getDimColCount() - noDictDimCnt;
@@ -105,6 +111,8 @@ public class TableFieldStat implements Serializable {
     this.complexDimIdx = new int[complexDimCnt];
     this.varcharDimIdx = new int[varcharDimCnt];
     this.measureIdx = new int[measureCnt];
+    this.noDictSortColumnSchemaOrderMapping =
+        sortParameters.getNoDictSortColumnSchemaOrderMapping();
 
     int tmpNoDictSortCnt = 0;
     int tmpNoDictNoSortCnt = 0;
@@ -115,9 +123,9 @@ public class TableFieldStat implements Serializable {
 
     List<CarbonDimension> allDimensions =
         sortParameters.getCarbonTable().getDimensionByTableName(sortParameters.getTableName());
-
-    for (int i = 0; i < allDimensions.size(); i++) {
-      CarbonDimension carbonDimension = allDimensions.get(i);
+    List<CarbonDimension> updatedDimensions = updateDimensionsBasedOnSortColumns(allDimensions);
+    for (int i = 0; i < updatedDimensions.size(); i++) {
+      CarbonDimension carbonDimension = updatedDimensions.get(i);
       if (carbonDimension.hasEncoding(Encoding.DICTIONARY) && !carbonDimension.isComplex()) {
         if (carbonDimension.isSortColumn()) {
           dictSortDimIdx[tmpDictSortCnt++] = i;
@@ -140,7 +148,7 @@ public class TableFieldStat implements Serializable {
     dictNoSortDimCnt = tmpDictNoSortCnt;
     noDictNoSortDimCnt = tmpNoDictNoSortCnt;
 
-    int base = allDimensions.size();
+    int base = updatedDimensions.size();
 
     // indices for measure columns
     for (int i = 0; i < measureCnt; i++) {
@@ -223,6 +231,10 @@ public class TableFieldStat implements Serializable {
     return measureIdx;
   }
 
+  public int[] getNoDictSortColumnSchemaOrderMapping() {
+    return noDictSortColumnSchemaOrderMapping;
+  }
+
   @Override public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof TableFieldStat)) return false;
@@ -256,5 +268,31 @@ public class TableFieldStat implements Serializable {
 
   public SortTempRowUpdater getSortTempRowUpdater() {
     return sortTempRowUpdater;
+  }
+
+  private static List<CarbonDimension> updateDimensionsBasedOnSortColumns(
+      List<CarbonDimension> carbonDimensions) {
+    return getCarbonDimensions(carbonDimensions);
+  }
+
+  /**
+   * This method rearrange the dimensions where all the sort columns are added at first. Because
+   * if the column gets added in old version like carbon1.1, it will be added at last, so if it is
+   * sort column, this method will bring it to first.
+   */
+  private static List<CarbonDimension> getCarbonDimensions(List<CarbonDimension> carbonDimensions) {
+    List<CarbonDimension> updatedDataFields = new ArrayList<>();
+    List<CarbonDimension> sortFields = new ArrayList<>();
+    List<CarbonDimension> nonSortFields = new ArrayList<>();
+    for (CarbonDimension carbonDimension : carbonDimensions) {
+      if (carbonDimension.getColumnSchema().isSortColumn()) {
+        sortFields.add(carbonDimension);
+      } else {
+        nonSortFields.add(carbonDimension);
+      }
+    }
+    updatedDataFields.addAll(sortFields);
+    updatedDataFields.addAll(nonSortFields);
+    return updatedDataFields;
   }
 }

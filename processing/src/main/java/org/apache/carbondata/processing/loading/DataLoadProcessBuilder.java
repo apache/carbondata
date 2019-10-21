@@ -302,7 +302,8 @@ public final class DataLoadProcessBuilder {
         dataFields.add(new DataField(column));
       }
     }
-    configuration.setDataFields(dataFields.toArray(new DataField[dataFields.size()]));
+    configuration.setDataFields(
+        updateDataFieldsBasedOnSortColumns(dataFields).toArray(new DataField[dataFields.size()]));
     configuration.setBucketingInfo(carbonTable.getBucketingInfo(carbonTable.getTableName()));
     // configuration for one pass load: dictionary server info
     configuration.setUseOnePass(loadModel.getUseOnePass());
@@ -398,5 +399,26 @@ public final class DataLoadProcessBuilder {
         sortColumnBounds,
         CarbonLoadOptionConstants.SORT_COLUMN_BOUNDS_FIELD_DELIMITER);
     configuration.setSortColumnRangeInfo(sortColumnRangeInfo);
+  }
+
+  /**
+   * This method rearrange the data fields where all the sort columns are added at first. Because
+   * if the column gets added in old version like carbon1.1, it will be added at last, so if it is
+   * sort column, bring it to first.
+   */
+  private static List<DataField> updateDataFieldsBasedOnSortColumns(List<DataField> dataFields) {
+    List<DataField> updatedDataFields = new ArrayList<>();
+    List<DataField> sortFields = new ArrayList<>();
+    List<DataField> nonSortFields = new ArrayList<>();
+    for (DataField dataField : dataFields) {
+      if (dataField.getColumn().getColumnSchema().isSortColumn()) {
+        sortFields.add(dataField);
+      } else {
+        nonSortFields.add(dataField);
+      }
+    }
+    updatedDataFields.addAll(sortFields);
+    updatedDataFields.addAll(nonSortFields);
+    return updatedDataFields;
   }
 }
