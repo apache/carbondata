@@ -42,229 +42,210 @@
  -->
 
 <module name = "Checker">
-  <property name="charset" value="UTF-8"/>
+    <property name="charset" value="UTF-8"/>
 
-  <property name="severity" value="error"/>
+    <property name="severity" value="error"/>
 
-  <property name="fileExtensions" value="java, properties, xml"/>
+    <property name="fileExtensions" value="java, properties, xml"/>
 
-  <!-- Checks for whitespace -->
-  <module name="FileTabCharacter">
-    <property name="eachLine" value="true"/>
-  </module>
-
-  <!-- Checks for trailing whitespace -->
-  <module name="RegexpSingleline">
-    <property name="format" value="\s+$"/>
-    <property name="message" value="No trailing whitespace allowed."/>
-  </module>
-
-  <!-- Checks for header file -->
-  <module name="Header">
-    <property name="headerFile" value="${checkstyle.header.file}"/>
-    <property name="fileExtensions" value="java"/>
-  </module>
-
-  <!-- walker for java file -->
-  <module name="TreeWalker">
-
-    <module name="OuterTypeFilename"/>
-
-    <module name="OneStatementPerLine"/>
-
-    <module name="ArrayTypeStyle"/>
-
-    <module name="FallThrough"/>
-
-    <module name="UpperEll"/>
-
-    <module name="ModifierOrder"/>
-
-    <module name="CommentsIndentation"/>
-
-    <module name="UnusedImports"/>
-
-    <module name="ParenPad"/>
-
-    <module name="WhitespaceAround"/>
-
-    <module name="NoLineWrap"/>
-
-    <module name="NoFinalizer"/>
-
-    <module name="MethodParamPad"/>
-
-    <module name="IllegalTokenText">
-        <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL"/>
-        <property name="format" value="\\u00(08|09|0(a|A)|0(c|C)|0(d|D)|22|27|5(C|c))|\\(0(10|11|12|14|15|42|47)|134)"/>
-        <property name="message" value="Avoid using corresponding octal or Unicode escape."/>
+    <!-- Checks for whitespace                               -->
+    <!-- See http://checkstyle.sf.net/config_whitespace.html -->
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true"/>
     </module>
 
-    <module name="AvoidEscapedUnicodeCharacters">
-        <property name="allowEscapesForControlCharacters" value="true"/>
-        <property name="allowByTailComment" value="true"/>
-        <property name="allowNonPrintableEscapes" value="true"/>
+    <module name="RegexpSingleline">
+        <!-- \s matches whitespace character, $ matches end of line. -->
+        <property name="format" value="\s+$"/>
+        <property name="message" value="No trailing whitespace allowed."/>
     </module>
 
-    <!-- TODO: 11/09/15 disabled - the lengths are currently > 100 in many places -->
-    <module name="LineLength">
-        <property name="max" value="100"/>
-        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+    <module name="Header">
+        <property name="headerFile" value="${checkstyle.header.file}"/>
+        <property name="fileExtensions" value="java"/>
     </module>
 
-    <module name="EmptyBlock">
-        <property name="option" value="TEXT"/>
-        <property name="tokens" value="LITERAL_TRY, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_SWITCH"/>
-    </module>
+    <module name="TreeWalker">
+        <module name="OuterTypeFilename"/>
+        <module name="IllegalTokenText">
+            <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL"/>
+            <property name="format" value="\\u00(08|09|0(a|A)|0(c|C)|0(d|D)|22|27|5(C|c))|\\(0(10|11|12|14|15|42|47)|134)"/>
+            <property name="message" value="Avoid using corresponding octal or Unicode escape."/>
+        </module>
+        <module name="AvoidEscapedUnicodeCharacters">
+            <property name="allowEscapesForControlCharacters" value="true"/>
+            <property name="allowByTailComment" value="true"/>
+            <property name="allowNonPrintableEscapes" value="true"/>
+        </module>
+        <!-- TODO: 11/09/15 disabled - the lengths are currently > 100 in many places -->
 
-    <module name="NeedBraces">
-        <property name="allowSingleLineStatement" value="true"/>
-    </module>
+        <module name="LineLength">
+            <property name="max" value="100"/>
+            <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+        </module>
 
-    <module name="SeparatorWrap">
-      <property name="tokens" value="DOT"/>
-      <property name="option" value="nl"/>
-    </module>
+        <module name="NoLineWrap"/>
+        <module name="EmptyBlock">
+            <property name="option" value="TEXT"/>
+            <property name="tokens" value="LITERAL_TRY, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_SWITCH"/>
+        </module>
+        <module name="NeedBraces">
+            <property name="allowSingleLineStatement" value="true"/>
+        </module>
+        <module name="OneStatementPerLine"/>
+        <module name="ArrayTypeStyle"/>
+        <module name="FallThrough"/>
+        <module name="UpperEll"/>
+        <module name="ModifierOrder"/>
+        <module name="SeparatorWrap">
+            <property name="tokens" value="DOT"/>
+            <property name="option" value="nl"/>
+        </module>
+        <module name="SeparatorWrap">
+            <property name="tokens" value="COMMA"/>
+            <property name="option" value="EOL"/>
+        </module>
+        <module name="PackageName">
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+            <message key="name.invalidPattern"
+             value="Package name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="ClassTypeParameterName">
+            <property name="format" value="([A-Z][a-zA-Z0-9]*$)"/>
+            <message key="name.invalidPattern"
+             value="Class type name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="MethodTypeParameterName">
+            <property name="format" value="([A-Z][a-zA-Z0-9]*)"/>
+            <message key="name.invalidPattern"
+             value="Method type name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="NoFinalizer"/>
+        <module name="GenericWhitespace">
+            <message key="ws.followed"
+             value="GenericWhitespace ''{0}'' is followed by whitespace."/>
+             <message key="ws.preceded"
+             value="GenericWhitespace ''{0}'' is preceded with whitespace."/>
+             <message key="ws.illegalFollow"
+             value="GenericWhitespace ''{0}'' should followed by whitespace."/>
+             <message key="ws.notPreceded"
+             value="GenericWhitespace ''{0}'' is not preceded with whitespace."/>
+        </module>
+        <module name="Indentation">
+            <property name="basicOffset" value="2"/>
+            <property name="braceAdjustment" value="0"/>
+            <property name="caseIndent" value="2"/>
+            <property name="throwsIndent" value="2"/>
+            <property name="lineWrappingIndentation" value="4"/>
+            <property name="arrayInitIndent" value="4"/>
+        </module>
 
-    <module name="SeparatorWrap">
-      <property name="tokens" value="COMMA"/>
-      <property name="option" value="EOL"/>
-    </module>
+        <!-- TODO: 11/09/15 disabled - order is currently wrong in many places -->
 
-    <module name="PackageName">
-      <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
-      <message key="name.invalidPattern" value="Package name ''{0}'' must match pattern ''{1}''."/>
-    </module>
+        <module name="ImportOrder">
+            <property name="separated" value="true"/>
+            <!--<property name="ordered" value="true"/>-->
+            <property name="groups" value="/^javax?\./,org.apache.carbondata,*"/>
+        </module>
 
-    <module name="ClassTypeParameterName">
-      <property name="format" value="([A-Z][a-zA-Z0-9]*$)"/>
-      <message key="name.invalidPattern" value="Class type name ''{0}'' must match pattern ''{1}''."/>
-    </module>
+        <module name="MethodParamPad"/>
+        <module name="AnnotationLocation">
+            <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF"/>
+        </module>
+        <module name="AnnotationLocation">
+            <property name="tokens" value="VARIABLE_DEF"/>
+            <property name="allowSamelineMultipleAnnotations" value="true"/>
+        </module>
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9_]*$"/>
+            <message key="name.invalidPattern"
+             value="Method name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="EmptyCatchBlock">
+            <property name="exceptionVariableName" value="expected"/>
+        </module>
+        <module name="CommentsIndentation"/>
+        <module name="UnusedImports"/>
 
-    <module name="MethodTypeParameterName">
-      <property name="format" value="([A-Z][a-zA-Z0-9]*)"/>
-      <message key="name.invalidPattern" value="Method type name ''{0}'' must match pattern ''{1}''."/>
-    </module>
-
-    <module name="GenericWhitespace">
-      <message key="ws.followed" value="GenericWhitespace ''{0}'' is followed by whitespace."/>
-      <message key="ws.preceded" value="GenericWhitespace ''{0}'' is preceded with whitespace."/>
-      <message key="ws.illegalFollow" value="GenericWhitespace ''{0}'' should followed by whitespace."/>
-      <message key="ws.notPreceded" value="GenericWhitespace ''{0}'' is not preceded with whitespace."/>
-    </module>
-
-    <module name="Indentation">
-      <property name="basicOffset" value="2"/>
-      <property name="braceAdjustment" value="0"/>
-      <property name="caseIndent" value="2"/>
-      <property name="throwsIndent" value="2"/>
-      <property name="lineWrappingIndentation" value="4"/>
-      <property name="arrayInitIndent" value="4"/>
-    </module>
-
-    <!-- TODO: 11/09/15 disabled - order is currently wrong in many places -->
-    <module name="ImportOrder">
-      <property name="separated" value="true"/>
-      <!--<property name="ordered" value="true"/>-->
-      <property name="groups" value="/^javax?\./,org.apache.carbondata,*"/>
-    </module>
-
-    <module name="AnnotationLocation">
-        <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF"/>
-    </module>
-
-    <module name="AnnotationLocation">
-        <property name="tokens" value="VARIABLE_DEF"/>
-        <property name="allowSamelineMultipleAnnotations" value="true"/>
-    </module>
-
-    <module name="MethodName">
-        <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9_]*$"/>
-        <message key="name.invalidPattern"
-         value="Method name ''{0}'' must match pattern ''{1}''."/>
-    </module>
-
-    <module name="EmptyCatchBlock">
-        <property name="exceptionVariableName" value="expected"/>
-    </module>
+        <module name="ParenPad"/>
+        <module name="WhitespaceAround"/>
 
 
-    <!-- Checks for @Overrider in one line -->
-    <module name="RegexpSinglelineJava">
-      <property name="severity" value="info"/>
-      <property name="format" value="^\s*@Override\s+.+$"/>
-      <property name="ignoreComments" value="true"/>
-      <property name="message" value="@Override should at one line"/>
-    </module>
+      <!-- Checks for @Overrider in one line -->
+      <module name="RegexpSinglelineJava">
+        <property name="severity" value="info"/>
+        <property name="format" value="^\s*@Override\s+.+$"/>
+        <property name="ignoreComments" value="true"/>
+        <property name="message" value="@Override should at one line"/>
+      </module>
 
-    <!-- Checks for redundant imports. -->
-    <module name="RedundantImport">
-      <property name="severity" value="info"/>
-      <message key="import.redundancy" value="Redundant import {0}."/>
-    </module>
+      <!-- Checks for redundant imports. -->
+      <module name="RedundantImport">
+        <property name="severity" value="info"/>
+        <message key="import.redundancy" value="Redundant import {0}."/>
+      </module>
 
-    <!-- Checks for star import. -->
-    <module name="AvoidStarImport">
-      <property name="severity" value="info"/>
-    </module>
+      <!-- Checks for star import. -->
+      <module name="AvoidStarImport">
+        <property name="severity" value="info"/>
+      </module>
 
-    <!-- Checks for placement of the left curly brace ('{'). -->
-    <module name="LeftCurly">
-      <property name="severity" value="info"/>
-    </module>
+      <!-- Checks for placement of the left curly brace ('{'). -->
+      <module name="LeftCurly">
+        <property name="severity" value="info"/>
+      </module>
 
-    <!-- Checks for complicated boolean expressions. -->
-    <module name="SimplifyBooleanExpression">
-      <property name="severity" value="info"/>
-    </module>
+      <!-- Checks for complicated boolean expressions. -->
+      <module name="SimplifyBooleanExpression">
+        <property name="severity" value="info"/>
+      </module>
 
-    <!-- Checks for empty statements. -->
-    <module name="EmptyStatement">
-      <property name="severity" value="info"/>
-    </module>
+      <!-- Checks for empty statements. -->
+      <module name="EmptyStatement">
+        <property name="severity" value="info"/>
+      </module>
 
-    <!-- Checks for consecutive semicolons. -->
-    <module name="RegexpSinglelineJava">
-      <property name="severity" value="info"/>
-      <property name="format" value=";{2,}"/>
-      <property name="message" value="Please use one semicolon"/>
-      <property name="ignoreComments" value="true"/>
-    </module>
+      <!-- Checks for consecutive semicolons. -->
+      <module name="RegexpSinglelineJava">
+        <property name="severity" value="info"/>
+        <property name="format" value=";{2,}"/>
+        <property name="message" value="Please use one semicolon"/>
+        <property name="ignoreComments" value="true"/>
+      </module>
 
-    <!-- Checks for empty line separator between tokens. -->
-    <module name="EmptyLineSeparator">
-      <property name="severity" value="info"/>
-      <property name="allowMultipleEmptyLines" value="false"/>
-      <property name="tokens" value="PACKAGE_DEF, IMPORT, CLASS_DEF, INTERFACE_DEF, ENUM_DEF,
+      <!-- Checks for empty line separator between tokens. -->
+      <module name="EmptyLineSeparator">
+        <property name="severity" value="info"/>
+        <property name="allowMultipleEmptyLines" value="false"/>
+        <property name="tokens" value="PACKAGE_DEF, IMPORT, CLASS_DEF, INTERFACE_DEF, ENUM_DEF,
                                      STATIC_INIT, INSTANCE_INIT, METHOD_DEF,CTOR_DEF"/>
-    </module>
+      </module>
 
-    <!-- Checks for commas, semicolons and typecasts are followed by whitespace. -->
-    <module name="WhitespaceAfter">
-      <property name="severity" value="info"/>
-      <property name="tokens" value="COMMA, SEMI, TYPECAST"/>
-    </module>
+      <!-- Checks for commas, semicolons and typecasts are followed by whitespace. -->
+      <module name="WhitespaceAfter">
+        <property name="severity" value="info"/>
+        <property name="tokens" value="COMMA, SEMI, TYPECAST"/>
+      </module>
 
-    <!-- Checks for there is no whitespace after unary operators. -->
-    <module name="NoWhitespaceAfter">
-      <property name="severity" value="info"/>
-      <property name="tokens" value="BNOT, DEC, DOT, INC, LNOT, UNARY_MINUS, UNARY_PLUS"/>
-      <property name="allowLineBreaks" value="true"/>
-    </module>
+      <!-- Checks for there is no whitespace after unary operators. -->
+      <module name="NoWhitespaceAfter">
+        <property name="severity" value="info"/>
+        <property name="tokens" value="BNOT, DEC, DOT, INC, LNOT, UNARY_MINUS, UNARY_PLUS"/>
+        <property name="allowLineBreaks" value="true"/>
+      </module>
 
-    <!-- Checks for there is no whitespace before unary operators. -->
-    <module name="NoWhitespaceBefore">
-      <property name="severity" value="info"/>
-      <property name="tokens" value="SEMI, DOT, POST_DEC, POST_INC"/>
-      <property name="allowLineBreaks" value="true"/>
-    </module>
+      <!-- Checks for there is no whitespace before unary operators. -->
+      <module name="NoWhitespaceBefore">
+        <property name="severity" value="info"/>
+        <property name="tokens" value="SEMI, DOT, POST_DEC, POST_INC"/>
+        <property name="allowLineBreaks" value="true"/>
+      </module>
 
-    <!-- Checks for assign operators are at the end of the line. -->
-    <module name="OperatorWrap">
-      <property name="severity" value="info"/>
-      <property name="option" value="eol"/>
-      <property name="tokens" value="ASSIGN"/>
+      <!-- Checks for assign operators are at the end of the line. -->
+      <module name="OperatorWrap">
+        <property name="severity" value="info"/>
+        <property name="option" value="eol"/>
+        <property name="tokens" value="ASSIGN"/>
+      </module>
     </module>
-
-  </module>
 </module>
