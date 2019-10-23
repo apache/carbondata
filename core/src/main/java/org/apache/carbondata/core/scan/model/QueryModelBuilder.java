@@ -25,12 +25,11 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
 import org.apache.log4j.Logger;
@@ -39,7 +38,7 @@ public class QueryModelBuilder {
 
   private CarbonTable table;
   private QueryProjection projection;
-  private Expression filterExpression;
+  private DataMapFilter dataMapFilter;
   private DataTypeConverter dataTypeConverter;
   private boolean forcedDetailRawQuery;
   private boolean readPageByPage;
@@ -287,8 +286,8 @@ public class QueryModelBuilder {
     return this;
   }
 
-  public QueryModelBuilder filterExpression(Expression filterExpression) {
-    this.filterExpression = filterExpression;
+  public QueryModelBuilder filterExpression(DataMapFilter filterExpression) {
+    this.dataMapFilter = filterExpression;
     return this;
   }
 
@@ -326,21 +325,18 @@ public class QueryModelBuilder {
       // set the filter to the query model in order to filter blocklet before scan
       boolean[] isFilterDimensions = new boolean[table.getDimensionOrdinalMax()];
       boolean[] isFilterMeasures = new boolean[table.getAllMeasures().size()];
-      // In case of Dictionary Include Range Column we donot optimize the range expression
-      if (isConvertToRangeFilter()) {
-        table.processFilterExpression(filterExpression, isFilterDimensions, isFilterMeasures);
-      } else {
-        table.processFilterExpressionWithoutRange(filterExpression, isFilterDimensions,
-            isFilterMeasures);
-      }
       queryModel.setIsFilterDimensions(isFilterDimensions);
       queryModel.setIsFilterMeasures(isFilterMeasures);
-      FilterResolverIntf filterIntf =
-          CarbonTable.resolveFilter(filterExpression, table.getAbsoluteTableIdentifier());
-      queryModel.setFilterExpressionResolverTree(filterIntf);
-    } else {
-      queryModel.setFilterExpression(filterExpression);
+      // In case of Dictionary Include Range Column we donot optimize the range expression
+      if (dataMapFilter != null) {
+        if (isConvertToRangeFilter()) {
+          dataMapFilter.processFilterExpression(isFilterDimensions, isFilterMeasures);
+        } else {
+          dataMapFilter.processFilterExpressionWithoutRange(isFilterDimensions, isFilterMeasures);
+        }
+      }
     }
+    queryModel.setDataMapFilter(dataMapFilter);
     return queryModel;
   }
 }

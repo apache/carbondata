@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -40,6 +41,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.testutil.StoreCreator;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -57,6 +59,8 @@ import org.junit.Test;
 public class CarbonTableInputFormatTest {
   // changed setUp to static init block to avoid un wanted multiple time store creation
   private static StoreCreator creator;
+
+  private static CarbonLoadModel loadModel;
   static {
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
@@ -67,7 +71,7 @@ public class CarbonTableInputFormatTest {
     try {
       creator = new StoreCreator(new File("target/store").getAbsolutePath(),
           new File("../hadoop/src/test/resources/data.csv").getCanonicalPath());
-      creator.createCarbonStore();
+      loadModel = creator.createCarbonStore();
     } catch (Exception e) {
       Assert.fail("create table failed: " + e.getMessage());
     }
@@ -84,7 +88,8 @@ public class CarbonTableInputFormatTest {
     CarbonTableInputFormat.setTableName(job.getConfiguration(), creator.getAbsoluteTableIdentifier().getTableName());
     Expression expression = new EqualToExpression(new ColumnExpression("country", DataTypes.STRING),
         new LiteralExpression("china", DataTypes.STRING));
-    CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(), expression);
+    CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(),
+        new DataMapFilter(loadModel.getCarbonDataLoadSchema().getCarbonTable(), expression));
     List splits = carbonInputFormat.getSplits(job);
 
     Assert.assertTrue(splits != null);
@@ -256,7 +261,8 @@ public class CarbonTableInputFormatTest {
       CarbonTableInputFormat.setColumnProjection(job.getConfiguration(), projection);
     }
     if (filter != null) {
-      CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(), filter);
+      CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(),
+          new DataMapFilter(loadModel.getCarbonDataLoadSchema().getCarbonTable(), filter));
     }
     CarbonTableInputFormat.setDatabaseName(job.getConfiguration(),
         abs.getCarbonTableIdentifier().getDatabaseName());

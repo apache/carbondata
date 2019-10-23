@@ -132,7 +132,7 @@ public final class TableDataMap extends OperationEventListener {
       // As 0.1 million files block pruning can take only 1 second.
       // Doing multi-thread for smaller values is not recommended as
       // driver should have minimum threads opened to support multiple concurrent queries.
-      if (filter.isEmpty()) {
+      if (filter == null || filter.isEmpty()) {
         // if filter is not passed, then return all the blocklets.
         return pruneWithoutFilter(segments, partitions, blocklets);
       }

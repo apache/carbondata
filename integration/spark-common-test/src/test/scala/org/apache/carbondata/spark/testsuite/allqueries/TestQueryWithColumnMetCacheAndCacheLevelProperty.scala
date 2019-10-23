@@ -27,13 +27,11 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.DataMap
-import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapStoreManager, Segment, TableDataMap}
-import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
+import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapFilter, DataMapStoreManager, Segment, TableDataMap}
 import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.indexstore.blockletindex.{BlockDataMap, BlockletDataMap, BlockletDataMapRowIndexes}
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression
@@ -282,8 +280,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     val notEqualsExpression = new NotEqualsExpression(columnExpression, literalNullExpression)
     val equalsExpression = new NotEqualsExpression(columnExpression, literalValueExpression)
     val andExpression = new AndExpression(notEqualsExpression, equalsExpression)
-    val resolveFilter: FilterResolverIntf =
-      CarbonTable.resolveFilter(andExpression, carbonTable.getAbsoluteTableIdentifier)
+    val resolveFilter: FilterResolverIntf = new DataMapFilter(carbonTable, andExpression).getResolver()
     val exprWrapper = DataMapChooser.getDefaultDataMap(carbonTable, resolveFilter)
     val segment = new Segment("0", new TableStatusReadCommittedScope(carbonTable
       .getAbsoluteTableIdentifier, new Configuration(false)))

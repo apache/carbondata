@@ -230,8 +230,9 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @para    DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
 m filterExpression
    */
-  public static void setFilterPredicates(Configuration configuration, Expression filterExpression) {
-    if (filterExpression == null) {
+  public static void setFilterPredicates(Configuration configuration,
+      DataMapFilter filterExpression) {
+    if (filterExpression == null || filterExpression.getExpression() == null) {
       return;
     }
     try {
@@ -472,14 +473,19 @@ m filterExpression
     }
   }
 
-  protected Expression getFilterPredicates(Configuration configuration) {
+  protected DataMapFilter getFilterPredicates(Configuration configuration) {
     try {
       String filterExprString = configuration.get(FILTER_PREDICATE);
       if (filterExprString == null) {
         return null;
       }
-      Object filter = ObjectSerializationUtil.convertStringToObject(filterExprString);
-      return (Expression) filter;
+      DataMapFilter filter =
+          (DataMapFilter) ObjectSerializationUtil.convertStringToObject(filterExprString);
+      if (filter != null) {
+        CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
+        filter.setTable(carbonTable);
+      }
+      return filter;
     } catch (IOException e) {
       throw new RuntimeException("Error while reading filter expression", e);
     }
@@ -489,7 +495,7 @@ m filterExpression
    * get data blocks of given segment
    */
   protected List<CarbonInputSplit> getDataBlocksOfSegment(JobContext job, CarbonTable carbonTable,
-      Expression expression, BitSet matchedPartitions, List<Segment> segmentIds,
+      DataMapFilter expression, BitSet matchedPartitions, List<Segment> segmentIds,
       PartitionInfo partitionInfo, List<Integer> oldPartitionIdList,
       List<Segment> invalidSegments, List<String> segmentsToBeRefreshed)
       throws IOException {
@@ -557,11 +563,12 @@ m filterExpression
    * First pruned with default blocklet datamap, then pruned with CG and FG datamaps
    */
   private List<ExtendedBlocklet> getPrunedBlocklets(JobContext job, CarbonTable carbonTable,
-      Expression expression, List<Segment> segmentIds, List<Segment> invalidSegments,
+      DataMapFilter filter, List<Segment> segmentIds, List<Segment> invalidSegments,
       List<String> segmentsToBeRefreshed) throws IOException {
     ExplainCollector.addPruningInfo(carbonTable.getTableName());
-    final DataMapFilter filter = new DataMapFilter(carbonTable, expression);
-    ExplainCollector.setFilterStatement(expression == null ? "none" : expression.getStatement());
+    filter = filter == null ? new DataMapFilter(carbonTable, null) : filter;
+    ExplainCollector.setFilterStatement(
+        filter.getExpression() == null ? "none" : filter.getExpression().getStatement());
     boolean distributedCG = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
             CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
@@ -712,7 +719,7 @@ m filterExpression
   }
 
   public QueryModel createQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext,
-      Expression filterExpression) throws IOException {
+      DataMapFilter dataMapFilter) throws IOException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
 
@@ -724,13 +731,14 @@ m filterExpression
     } else {
       projectColumns = new String[]{};
     }
-    checkAndAddImplicitExpression(filterExpression, inputSplit);
-    QueryModel queryModel = new QueryModelBuilder(carbonTable)
+    if (dataMapFilter != null) {
+      checkAndAddImplicitExpression(dataMapFilter.getExpression(), inputSplit);
+    }
+    return new QueryModelBuilder(carbonTable)
         .projectColumns(projectColumns)
-        .filterExpression(filterExpression)
+        .filterExpression(dataMapFilter)
         .dataConverter(getDataTypeConverter(configuration))
         .build();
-    return queryModel;
   }
 
   /**

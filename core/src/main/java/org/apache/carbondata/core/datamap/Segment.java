@@ -316,6 +316,11 @@ public class Segment implements Serializable, Writable {
   }
 
   public String getSegmentPath() {
+    if (segmentPath == null) {
+      if (loadMetadataDetails != null) {
+        segmentPath = loadMetadataDetails.getPath();
+      }
+    }
     return segmentPath;
   }
 

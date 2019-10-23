@@ -25,6 +25,7 @@ import java.util.Locale;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapJob;
 import org.apache.carbondata.core.datamap.DataMapUtil;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
@@ -102,13 +103,13 @@ public class CarbonInputFormatUtil {
         .setTransactionalTable(conf, carbonTable.getTableInfo().isTransactionalTable());
     CarbonProjection columnProjection = new CarbonProjection(projectionColumns);
     return createInputFormat(conf, carbonTable.getAbsoluteTableIdentifier(),
-        filterExpression, columnProjection, dataMapJob);
+        new DataMapFilter(carbonTable, filterExpression, true), columnProjection, dataMapJob);
   }
 
   private static <V> CarbonTableInputFormat<V> createInputFormat(
       Configuration conf,
       AbsoluteTableIdentifier identifier,
-      Expression filterExpression,
+      DataMapFilter dataMapFilter,
       CarbonProjection columnProjection,
       DataMapJob dataMapJob) throws InvalidConfigurationException, IOException {
     CarbonTableInputFormat<V> format = new CarbonTableInputFormat<>();
@@ -116,7 +117,7 @@ public class CarbonInputFormatUtil {
         conf,
         identifier.appendWithLocalPrefix(identifier.getTablePath()));
     CarbonInputFormat.setQuerySegment(conf, identifier);
-    CarbonInputFormat.setFilterPredicates(conf, filterExpression);
+    CarbonInputFormat.setFilterPredicates(conf, dataMapFilter);
     CarbonInputFormat.setColumnProjection(conf, columnProjection);
     if (dataMapJob != null) {
       DataMapUtil.setDataMapJob(conf, dataMapJob);

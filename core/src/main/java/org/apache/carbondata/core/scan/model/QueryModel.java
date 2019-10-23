@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -32,7 +33,6 @@ import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.UnknownExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -58,15 +58,11 @@ public class QueryModel {
    * query id
    */
   private String queryId;
-  /**
-   * filter tree
-   */
-  private FilterResolverIntf filterExpressionResolverTree;
 
   /**
    * filter expression tree
    */
-  private Expression filterExpression;
+  private DataMapFilter dataMapFilter;
 
   /**
    * table block information in which query will be executed
@@ -276,23 +272,12 @@ public class QueryModel {
     this.tableBlockInfos = tableBlockInfos;
   }
 
-  /**
-   * @return the filterEvaluatorTree
-   */
-  public FilterResolverIntf getFilterExpressionResolverTree() {
-    return filterExpressionResolverTree;
+  public DataMapFilter getDataMapFilter() {
+    return dataMapFilter;
   }
 
-  public void setFilterExpressionResolverTree(FilterResolverIntf filterExpressionResolverTree) {
-    this.filterExpressionResolverTree = filterExpressionResolverTree;
-  }
-
-  public Expression getFilterExpression() {
-    return filterExpression;
-  }
-
-  public void setFilterExpression(Expression filterExpression) {
-    this.filterExpression = filterExpression;
+  public void setDataMapFilter(DataMapFilter dataMapFilter) {
+    this.dataMapFilter = dataMapFilter;
   }
 
   /**
@@ -416,7 +401,7 @@ public class QueryModel {
     return String.format("scan on table %s.%s, %d projection columns with filter (%s)",
         table.getDatabaseName(), table.getTableName(),
         projection.getDimensions().size() + projection.getMeasures().size(),
-        filterExpressionResolverTree.getFilterExpression().toString());
+        dataMapFilter.getExpression().toString());
   }
 
   public boolean isFreeUnsafeMemory() {

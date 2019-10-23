@@ -25,6 +25,7 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -83,7 +84,8 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
     CarbonInputFormat
         .setColumnProjection(job.getConfiguration(), new CarbonProjection(projectColumns));
     if (filter != null) {
-      CarbonInputFormat.setFilterPredicates(job.getConfiguration(), filter);
+      CarbonInputFormat
+          .setFilterPredicates(job.getConfiguration(), new DataMapFilter(table, filter));
     }
 
     final List<InputSplit> splits =

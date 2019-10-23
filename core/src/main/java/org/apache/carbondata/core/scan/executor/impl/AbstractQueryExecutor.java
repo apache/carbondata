@@ -33,6 +33,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
@@ -56,10 +57,8 @@ import org.apache.carbondata.core.scan.executor.exception.QueryExecutionExceptio
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
-import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
-import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -147,9 +146,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // and measure column start index
     queryProperties.filterMeasures = new HashSet<>();
     queryProperties.complexFilterDimension = new HashSet<>();
-    QueryUtil.getAllFilterDimensionsAndMeasures(queryModel.getFilterExpressionResolverTree(),
-        queryProperties.complexFilterDimension, queryProperties.filterMeasures);
-
+    if (queryModel.getDataMapFilter() != null) {
+      QueryUtil.getAllFilterDimensionsAndMeasures(queryModel.getDataMapFilter().getResolver(),
+          queryProperties.complexFilterDimension, queryProperties.filterMeasures);
+    }
     CarbonTable carbonTable = queryModel.getTable();
 
     queryStatistic = new QueryStatistic();
@@ -329,18 +329,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   private void createFilterExpression(QueryModel queryModel, SegmentProperties properties) {
-    Expression expression = queryModel.getFilterExpression();
-    if (expression != null) {
-      QueryModel.FilterProcessVO processVO = new QueryModel.FilterProcessVO(
-          properties.getDimensions(),
-          properties.getMeasures(),
-          new ArrayList<CarbonDimension>());
-      QueryModel.processFilterExpression(processVO, expression, null, null, queryModel.getTable());
-      // Optimize Filter Expression and fit RANGE filters is conditions apply.
-      FilterOptimizer rangeFilterOptimizer = new RangeFilterOptmizer(expression);
-      rangeFilterOptimizer.optimizeFilter();
-      queryModel.setFilterExpressionResolverTree(
-          CarbonTable.resolveFilter(expression, queryModel.getAbsoluteTableIdentifier()));
+    if (queryModel.getDataMapFilter() != null) {
+      if (!queryModel.getDataMapFilter().isResolvedOnSegment(properties)) {
+        DataMapFilter expression = new DataMapFilter(properties, queryModel.getTable(),
+            queryModel.getDataMapFilter().getExpression());
+        queryModel.setDataMapFilter(expression);
+      }
     }
   }
 
@@ -520,10 +514,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             queryProperties.columnToDictionaryMapping, queryProperties.complexFilterDimension));
     IndexKey startIndexKey = null;
     IndexKey endIndexKey = null;
-    if (null != queryModel.getFilterExpressionResolverTree()) {
+    if (null != queryModel.getDataMapFilter()) {
+      FilterResolverIntf filterResolverIntf;
       // loading the filter executor tree for filter evaluation
-      blockExecutionInfo.setFilterExecuterTree(FilterUtil
-          .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), segmentProperties,
+      filterResolverIntf = queryModel.getDataMapFilter().getResolver();
+      blockExecutionInfo.setFilterExecuterTree(
+          FilterUtil.getFilterExecuterTree(filterResolverIntf, segmentProperties,
               blockExecutionInfo.getComlexDimensionInfoMap()));
     }
     try {

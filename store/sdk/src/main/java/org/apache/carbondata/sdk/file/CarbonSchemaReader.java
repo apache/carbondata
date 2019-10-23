@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.sdk.file;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -28,22 +27,24 @@ import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
-import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.FileFooter3;
+import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.CARBON_DATA_EXT;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.INDEX_FILE_EXT;
+import static org.apache.carbondata.core.util.path.CarbonTablePath.MERGE_INDEX_FILE_EXT;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -193,7 +194,14 @@ public class CarbonSchemaReader {
         throw new CarbonDataLoadingException("No carbonindex file in this path.");
       }
     } else {
-      String indexFilePath = getCarbonFile(path, INDEX_FILE_EXT, conf)[0].getAbsolutePath();
+      String indexFilePath;
+      indexFilePath = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter() {
+        @Override
+        public boolean accept(CarbonFile file) {
+          return file.getName().endsWith(INDEX_FILE_EXT) || file.getName()
+              .endsWith(MERGE_INDEX_FILE_EXT);
+        }
+      })[0].getAbsolutePath();
       return readSchemaFromIndexFile(indexFilePath, conf);
     }
   }
@@ -284,37 +292,17 @@ public class CarbonSchemaReader {
    * @return carbon data Schema
    * @throws IOException
    */
-  private static Schema readSchemaFromIndexFile(String indexFilePath, Configuration conf)
-      throws IOException {
-    CarbonFile indexFile =
-        FileFactory.getCarbonFile(indexFilePath, conf);
-    if (!indexFile.getName().endsWith(INDEX_FILE_EXT)) {
-      throw new IOException("Not an index file name");
-    }
-    // read schema from the first index file
-    DataInputStream dataInputStream =
-        FileFactory.getDataInputStream(indexFilePath, FileFactory.getFileType(indexFilePath), conf);
-    byte[] bytes = new byte[(int) indexFile.getSize()];
-    try {
-      //get the file in byte buffer
-      dataInputStream.readFully(bytes);
-      CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
-      // read from byte buffer.
-      indexReader.openThriftReader(bytes);
-      // get the index header
-      org.apache.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
-      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-      List<org.apache.carbondata.format.ColumnSchema> table_columns =
-          readIndexHeader.getTable_columns();
-      for (org.apache.carbondata.format.ColumnSchema columnSchema : table_columns) {
-        if (!(columnSchema.column_name.contains("."))) {
-          columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(columnSchema));
-        }
+  private static Schema readSchemaFromIndexFile(String indexFilePath, Configuration conf) {
+    IndexHeader readIndexHeader = SegmentIndexFileStore.readIndexHeader(indexFilePath, conf);
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    List<org.apache.carbondata.format.ColumnSchema> table_columns =
+        readIndexHeader.getTable_columns();
+    for (org.apache.carbondata.format.ColumnSchema columnSchema : table_columns) {
+      if (!(columnSchema.column_name.contains("."))) {
+        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(columnSchema));
       }
-      return new Schema(columnSchemaList);
-    } finally {
-      dataInputStream.close();
     }
+    return new Schema(columnSchemaList);
   }
 
   /**

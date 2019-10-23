@@ -29,6 +29,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
@@ -47,7 +48,6 @@ import org.apache.carbondata.core.profiler.ExplainCollector;
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
-import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.statusmanager.FileFormat;
@@ -174,15 +174,17 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
             readCommittedScope);
 
     // process and resolve the expression
-    Expression filter = getFilterPredicates(job.getConfiguration());
+    DataMapFilter dataMapFilter = getFilterPredicates(job.getConfiguration());
     // this will be null in case of corrupt schema file.
     PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
 
+    if (dataMapFilter != null) {
+      dataMapFilter.resolve(false);
+    }
     // prune partitions for filter query on partition table
     BitSet matchedPartitions = null;
     if (partitionInfo != null && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
-      carbonTable.processFilterExpression(filter, null, null);
-      matchedPartitions = setMatchedPartitions(null, filter, partitionInfo, null);
+      matchedPartitions = setMatchedPartitions(null, dataMapFilter, partitionInfo, null);
       if (matchedPartitions != null) {
         if (matchedPartitions.cardinality() == 0) {
           return new ArrayList<InputSplit>();
@@ -194,7 +196,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
     // do block filtering and get split
     List<InputSplit> splits =
-        getSplits(job, filter, filteredSegmentToAccess, matchedPartitions, partitionInfo,
+        getSplits(job, dataMapFilter, filteredSegmentToAccess, matchedPartitions, partitionInfo,
             null, updateStatusManager, segments.getInvalidSegments());
     // add all splits of streaming
     List<InputSplit> splitsOfStreaming = getSplitsOfStreaming(job, streamSegments, carbonTable);
@@ -290,11 +292,10 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       long maxSize = getMaxSplitSize(job);
       if (filterResolverIntf == null) {
         if (carbonTable != null) {
-          Expression filter = getFilterPredicates(job.getConfiguration());
+          DataMapFilter filter = getFilterPredicates(job.getConfiguration());
           if (filter != null) {
-            carbonTable.processFilterExpression(filter, null, null);
-            filterResolverIntf =
-                CarbonTable.resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier());
+            filter.processFilterExpression();
+            filterResolverIntf = filter.getResolver();
           }
         }
       }
@@ -364,13 +365,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       setSegmentsToAccess(job.getConfiguration(), segmentList);
 
       // process and resolve the expression
-      Expression filter = getFilterPredicates(job.getConfiguration());
+      DataMapFilter filter = getFilterPredicates(job.getConfiguration());
       CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
       // this will be null in case of corrupt schema file.
       if (null == carbonTable) {
         throw new IOException("Missing/Corrupt schema file for table.");
       }
-      carbonTable.processFilterExpression(filter, null, null);
+      if (filter != null) {
+        filter.processFilterExpression();
+      }
       // prune partitions for filter query on partition table
       String partitionIds = job.getConfiguration().get(ALTER_PARTITION_ID);
       // matchedPartitions records partitionIndex, not partitionId
@@ -405,7 +408,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * @param oldPartitionIdList  only used in alter table command
    * @return
    */
-  private BitSet setMatchedPartitions(String partitionIds, Expression filter,
+  private BitSet setMatchedPartitions(String partitionIds, DataMapFilter filter,
       PartitionInfo partitionInfo, List<Integer> oldPartitionIdList) {
     BitSet matchedPartitions = null;
     if (null != partitionIds) {
@@ -418,8 +421,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       }
     } else {
       if (null != filter) {
-        matchedPartitions =
-            new FilterExpressionProcessor().getFilteredPartitions(filter, partitionInfo);
+        matchedPartitions = new FilterExpressionProcessor()
+            .getFilteredPartitions(filter.getExpression(), partitionInfo);
       }
     }
     return matchedPartitions;
@@ -432,7 +435,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * @return
    * @throws IOException
    */
-  private List<InputSplit> getSplits(JobContext job, Expression expression,
+  private List<InputSplit> getSplits(JobContext job, DataMapFilter expression,
       List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
       List<Integer> oldPartitionIdList, SegmentUpdateStatusManager updateStatusManager,
       List<Segment> invalidSegments) throws IOException {
