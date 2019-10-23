@@ -16,7 +16,7 @@
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
     <lucene.version>6.3.0</lucene.version>
-    <solr.version>6.3.0</solr.version>
+    <solr.version>8.2.0</solr.version>
   </properties>
 
   <dependencies>
