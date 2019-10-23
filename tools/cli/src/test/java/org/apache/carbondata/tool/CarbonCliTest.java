@@ -25,6 +25,7 @@ import java.io.PrintStream;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonVersionConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -275,8 +276,13 @@ public class CarbonCliTest {
   @Test
   public void testSummaryAllColumnsForOneFile() {
     CarbonFile folder = FileFactory.getCarbonFile(path);
-    CarbonFile[] carbonFiles =
-        folder.listFiles(file -> file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT));
+    CarbonFile[] carbonFiles = folder.listFiles(new CarbonFileFilter() {
+
+      @Override public boolean accept(CarbonFile file) {
+        return file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT);
+      }
+    });
+
     String[] args = { "-cmd", "summary", "-p", carbonFiles[0].getCanonicalPath(), "-C" };
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(out);
