@@ -392,7 +392,8 @@ public class SegmentFileStore {
    */
   public static boolean updateSegmentFile(CarbonTable carbonTable, String segmentId,
       String segmentFile, String tableId, SegmentFileStore segmentFileStore) throws IOException {
-    return updateSegmentFile(carbonTable, segmentId, segmentFile, tableId, segmentFileStore, null);
+    return updateSegmentFile(carbonTable, segmentId, segmentFile, tableId, segmentFileStore, null,
+        false);
   }
 
   /**
@@ -403,7 +404,7 @@ public class SegmentFileStore {
    */
   public static boolean updateSegmentFile(CarbonTable carbonTable, String segmentId,
       String segmentFile, String tableId, SegmentFileStore segmentFileStore,
-      SegmentStatus segmentStatus) throws IOException {
+      SegmentStatus segmentStatus, boolean makeInternalSeg) throws IOException {
     boolean status = false;
     String tablePath = carbonTable.getTablePath();
     String tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath);
@@ -444,6 +445,9 @@ public class SegmentFileStore {
             } else {
               detail.setIndexSize(String.valueOf(CarbonUtil
                   .getCarbonIndexSize(segmentFileStore, segmentFileStore.getLocationMap())));
+            }
+            if (makeInternalSeg) {
+              detail.setPath(null);
             }
             break;
           }

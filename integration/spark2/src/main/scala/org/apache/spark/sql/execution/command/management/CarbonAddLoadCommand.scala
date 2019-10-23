@@ -150,7 +150,7 @@ case class CarbonAddLoadCommand(
         segment.getSegmentFileName,
         carbonTable.getCarbonTableIdentifier.getTableId,
         new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName),
-        SegmentStatus.SUCCESS)
+        SegmentStatus.SUCCESS, false)
     } else {
       false
     }
