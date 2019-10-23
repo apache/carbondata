@@ -55,10 +55,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
-import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -1117,26 +1114,6 @@ public class CarbonTable implements Serializable, Writable {
       indexSize = 0L;
     }
     return dataSize + indexSize;
-  }
-
-  public void processFilterExpression(Expression filterExpression, boolean[] isFilterDimensions,
-      boolean[] isFilterMeasures) {
-    processFilterExpressionWithoutRange(filterExpression, isFilterDimensions, isFilterMeasures);
-    if (null != filterExpression) {
-      // Optimize Filter Expression and fit RANGE filters is conditions apply.
-      FilterOptimizer rangeFilterOptimizer = new RangeFilterOptmizer(filterExpression);
-      rangeFilterOptimizer.optimizeFilter();
-    }
-  }
-
-  public void processFilterExpressionWithoutRange(Expression filterExpression,
-      boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
-    QueryModel.FilterProcessVO processVO =
-        new QueryModel.FilterProcessVO(getDimensionByTableName(getTableName()),
-            getMeasureByTableName(getTableName()), getImplicitDimensionByTableName(getTableName()));
-    QueryModel
-        .processFilterExpression(processVO, filterExpression, isFilterDimensions, isFilterMeasures,
-            this);
   }
 
   public boolean isTransactionalTable() {

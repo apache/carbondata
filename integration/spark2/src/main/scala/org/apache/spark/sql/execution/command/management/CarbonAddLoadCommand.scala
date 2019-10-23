@@ -227,6 +227,7 @@ case class CarbonAddLoadCommand(
     model.setDatabaseName(carbonTable.getDatabaseName)
     model.setTableName(carbonTable.getTableName)
     val operationContext = new OperationContext
+    operationContext.setProperty("isLoadOrCompaction", false)
     val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
       new LoadTablePreExecutionEvent(
         carbonTable.getCarbonTableIdentifier,

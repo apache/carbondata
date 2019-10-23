@@ -397,4 +397,8 @@ public class TableInfo implements Serializable, Writable {
   public boolean hasColumnDrift() {
     return hasColumnDrift;
   }
+
+  public String getTablePath() {
+    return tablePath;
+  }
 }

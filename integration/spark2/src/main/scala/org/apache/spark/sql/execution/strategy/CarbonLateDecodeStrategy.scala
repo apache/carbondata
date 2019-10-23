@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.execution.strategy
 
+import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

@@ -181,9 +181,10 @@ public class StoreCreator {
   /**
    * Create store without any restructure
    */
-  public void createCarbonStore() throws Exception {
+  public CarbonLoadModel createCarbonStore() throws Exception {
     CarbonLoadModel loadModel = createTableAndLoadModel();
     loadData(loadModel, storePath);
+    return loadModel;
   }
 
   /**

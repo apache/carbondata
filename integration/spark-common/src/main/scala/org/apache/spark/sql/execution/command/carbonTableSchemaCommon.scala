@@ -40,7 +40,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationId
 import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CompactionType
@@ -650,6 +650,9 @@ class TableNewProcessor(cm: TableModel) {
             columnRelation.parentDatabaseName,
             columnRelation.parentTableName,
             columnRelation.parentTableId)
+          if (cm.parentTable.isDefined) {
+            relationIdentifier.setTablePath(cm.parentTable.get.getTablePath)
+          }
           val parentColumnTableRelation = new ParentColumnTableRelation(
             relationIdentifier,
             columnRelation.parentColumnId,

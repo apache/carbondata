@@ -33,22 +33,23 @@ import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark._
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
 import org.apache.spark.sql.execution.SQLExecution
+import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.profiler.{GetPartition, Profiler}
 import org.apache.spark.sql.util.SparkSQLUtil.sessionState
-import org.apache.spark.util.TaskCompletionListener
+import org.apache.spark.util.{SparkUtil, TaskCompletionListener}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
+import org.apache.carbondata.core.datamap.DataMapFilter
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.ImplicitExpression
 import org.apache.carbondata.core.scan.filter.FilterUtil
@@ -58,8 +59,7 @@ import org.apache.carbondata.core.statusmanager.FileFormat
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop._
-import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat}
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.hadoop.stream.CarbonStreamInputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
@@ -75,7 +75,7 @@ import org.apache.carbondata.spark.util.Util
 class CarbonScanRDD[T: ClassTag](
     @transient private val spark: SparkSession,
     val columnProjection: CarbonProjection,
-    var filterExpression: Expression,
+    var dataMapFilter: DataMapFilter,
     identifier: AbsoluteTableIdentifier,
     @transient private val serializedTableInfo: Array[Byte],
     @transient private val tableInfo: TableInfo,
@@ -208,7 +208,11 @@ class CarbonScanRDD[T: ClassTag](
               numBlocks,
               distributeStartTime,
               distributeEndTime,
-              if (filterExpression == null) "" else filterExpression.getStatement,
+              if (dataMapFilter == null) {
+                ""
+              } else {
+                dataMapFilter.getExpression.getStatement
+              },
               if (columnProjection == null) "" else columnProjection.getAllColumns.mkString(",")
             )
           )
@@ -424,7 +428,7 @@ class CarbonScanRDD[T: ClassTag](
     TaskMetricsMap.getInstance().registerThreadCallback()
     inputMetricsStats.initBytesReadCallback(context, inputSplit, inputMetricsInterval)
     val iterator = if (inputSplit.getAllSplits.size() > 0) {
-      val model = format.createQueryModel(inputSplit, attemptContext, filterExpression)
+      val model = format.createQueryModel(inputSplit, attemptContext, dataMapFilter)
       // one query id per table
       model.setQueryId(queryId)
       // get RecordReader by FileFormat
@@ -576,6 +580,7 @@ class CarbonScanRDD[T: ClassTag](
 
   def prepareInputFormatForDriver(conf: Configuration): CarbonTableInputFormat[Object] = {
     CarbonInputFormat.setTableInfo(conf, tableInfo)
+    CarbonInputFormat.setFilterPredicates(conf, dataMapFilter)
     CarbonInputFormat.setDatabaseName(conf, tableInfo.getDatabaseName)
     CarbonInputFormat.setTableName(conf, tableInfo.getFactTable.getTableName)
     if (partitionNames != null) {
@@ -600,6 +605,10 @@ class CarbonScanRDD[T: ClassTag](
     CarbonInputFormat.setCarbonReadSupport(conf, readSupportClz)
     val tableInfo1 = getTableInfo
     CarbonInputFormat.setTableInfo(conf, tableInfo1)
+    if (dataMapFilter != null) {
+      dataMapFilter.setTable(CarbonTable.buildFromTableInfo(tableInfo1))
+    }
+    CarbonInputFormat.setFilterPredicates(conf, dataMapFilter)
     CarbonInputFormat.setDatabaseName(conf, tableInfo1.getDatabaseName)
     CarbonInputFormat.setTableName(conf, tableInfo1.getFactTable.getTableName)
     CarbonInputFormat.setDataTypeConverter(conf, dataTypeConverterClz)
@@ -611,7 +620,7 @@ class CarbonScanRDD[T: ClassTag](
     CarbonInputFormat.setTablePath(conf,
       identifier.appendWithLocalPrefix(identifier.getTablePath))
     CarbonInputFormat.setQuerySegment(conf, identifier)
-    CarbonInputFormat.setFilterPredicates(conf, filterExpression)
+    CarbonInputFormat.setFilterPredicates(conf, dataMapFilter)
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
     CarbonInputFormatUtil.setDataMapJobIfConfigured(conf)
 
@@ -651,7 +660,6 @@ class CarbonScanRDD[T: ClassTag](
     CarbonInputFormat.setTablePath(conf,
       identifier.appendWithLocalPrefix(identifier.getTablePath))
     CarbonInputFormat.setQuerySegment(conf, identifier)
-    CarbonInputFormat.setFilterPredicates(conf, filterExpression)
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
     CarbonInputFormatUtil.setDataMapJobIfConfigured(conf)
     // when validate segments is disabled in thread local update it to CarbonTableInputFormat
@@ -701,13 +709,13 @@ class CarbonScanRDD[T: ClassTag](
    */
   private def checkAndRemoveInExpressinFromFilterExpression(
       identifiedPartitions: mutable.Buffer[Partition]) = {
-    if (null != filterExpression) {
+    if (null != dataMapFilter) {
       if (identifiedPartitions.nonEmpty &&
           !checkForBlockWithoutBlockletInfo(identifiedPartitions)) {
-        FilterUtil.removeInExpressionNodeWithPositionIdColumn(filterExpression)
+        FilterUtil.removeInExpressionNodeWithPositionIdColumn(dataMapFilter.getExpression)
       } else if (identifiedPartitions.nonEmpty) {
         // the below piece of code will serialize only the required blocklet ids
-        val filterValues = FilterUtil.getImplicitFilterExpression(filterExpression)
+        val filterValues = FilterUtil.getImplicitFilterExpression(dataMapFilter.getExpression)
         if (null != filterValues) {
           val implicitExpression = filterValues.asInstanceOf[ImplicitExpression]
           identifiedPartitions.foreach { partition =>
@@ -730,7 +738,7 @@ class CarbonScanRDD[T: ClassTag](
           }
           // remove the right child of the expression here to prevent serialization of
           // implicit filter values to executor
-          FilterUtil.setTrueExpressionAsRightChild(filterExpression)
+          FilterUtil.setTrueExpressionAsRightChild(dataMapFilter.getExpression)
         }
       }
     }

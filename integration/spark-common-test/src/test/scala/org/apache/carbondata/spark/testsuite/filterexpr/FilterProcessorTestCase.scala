@@ -392,4 +392,11 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
+
+  test("test if query is giving empty results for table with no segments") {
+    sql("drop table if exists q1")
+    sql("create table q1(a string) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='a')")
+    assert(sql("select * from q1 where a > 10").count() == 0)
+    sql("drop table if exists q1")
+  }
 }

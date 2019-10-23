@@ -29,6 +29,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
@@ -53,7 +54,6 @@ import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.profiler.ExplainCollector;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -61,10 +61,7 @@ import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
-import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
@@ -777,19 +774,8 @@ public class BlockDataMap extends CoarseGrainDataMap
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties properties,
       List<PartitionSpec> partitions, CarbonTable carbonTable) throws IOException {
-    FilterResolverIntf filterResolverIntf = null;
-    if (expression != null) {
-      QueryModel.FilterProcessVO processVO =
-          new QueryModel.FilterProcessVO(properties.getDimensions(), properties.getMeasures(),
-              new ArrayList<CarbonDimension>());
-      QueryModel.processFilterExpression(processVO, expression, null, null, carbonTable);
-      // Optimize Filter Expression and fit RANGE filters is conditions apply.
-      FilterOptimizer rangeFilterOptimizer = new RangeFilterOptmizer(expression);
-      rangeFilterOptimizer.optimizeFilter();
-      filterResolverIntf =
-          CarbonTable.resolveFilter(expression, carbonTable.getAbsoluteTableIdentifier());
-    }
-    return prune(filterResolverIntf, properties, partitions);
+    return prune(new DataMapFilter(properties, carbonTable, expression).getResolver(), properties,
+        partitions);
   }
 
   @Override

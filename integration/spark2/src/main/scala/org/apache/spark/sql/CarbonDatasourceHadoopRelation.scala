@@ -29,10 +29,11 @@ import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation}
-import org.apache.spark.sql.types.{ArrayType, StructType}
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapFilter
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -40,7 +41,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.hadoop.CarbonProjection
-import org.apache.carbondata.spark.rdd.{CarbonScanRDD, SparkReadSupport}
+import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 case class CarbonDatasourceHadoopRelation(
     sparkSession: SparkSession,
@@ -184,7 +185,7 @@ case class CarbonDatasourceHadoopRelation(
     new CarbonScanRDD(
       sparkSession,
       projection,
-      filterExpression.orNull,
+      filterExpression.map(new DataMapFilter(carbonTable, _, true)).orNull,
       identifier,
       carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo,

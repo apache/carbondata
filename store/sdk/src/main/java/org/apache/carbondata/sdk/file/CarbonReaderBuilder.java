@@ -27,6 +27,7 @@ import java.util.UUID;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -287,7 +288,8 @@ public class CarbonReaderBuilder {
     format.setTableName(job.getConfiguration(), table.getTableName());
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
     if (filterExpression != null) {
-      format.setFilterPredicates(job.getConfiguration(), filterExpression);
+      format.setFilterPredicates(job.getConfiguration(),
+          new DataMapFilter(table, filterExpression, true));
     }
     if (null != this.fileLists) {
       format.setFileLists(this.fileLists);

@@ -21,7 +21,6 @@ import java.net.URI
 import java.util.UUID
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
@@ -34,7 +33,7 @@ import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.memory.MemoryMode
 import org.apache.spark.sql._
 import org.apache.spark.sql.carbondata.execution.datasources.readsupport.SparkUnsafeRowReadSuport
-import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.{CarbonLoadTaskCompletionListener, CarbonLoadTaskCompletionListenerImpl, CarbonQueryTaskCompletionListener, CarbonQueryTaskCompletionListenerImpl}
+import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.{CarbonLoadTaskCompletionListenerImpl, CarbonQueryTaskCompletionListenerImpl}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.JoinedRow
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
@@ -43,12 +42,13 @@ import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.sources.{DataSourceRegister, Filter}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.SparkTypeConverter
-import org.apache.spark.util.{SerializableConfiguration, TaskCompletionListener}
+import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceStability}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonVersionConstants}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapFilter
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
@@ -379,7 +379,9 @@ class SparkCarbonFileFormat extends FileFormat
     CarbonInputFormat.setTransactionalTable(hadoopConf, false)
     CarbonInputFormat.setColumnProjection(hadoopConf, carbonProjection)
     filter match {
-      case Some(c) => CarbonInputFormat.setFilterPredicates(hadoopConf, c)
+      case Some(c) => CarbonInputFormat
+        .setFilterPredicates(hadoopConf,
+          new DataMapFilter(model.getCarbonDataLoadSchema.getCarbonTable, c, true))
       case None => None
     }
     val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]
