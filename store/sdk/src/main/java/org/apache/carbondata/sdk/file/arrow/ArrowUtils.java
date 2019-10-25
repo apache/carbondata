@@ -27,6 +27,8 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.datatype.StructType;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.sdk.file.Field;
 import org.apache.carbondata.sdk.file.Schema;
 
@@ -106,6 +108,16 @@ public class ArrowUtils {
     Set<org.apache.arrow.vector.types.pojo.Field> arrowField = new LinkedHashSet<>();
     for (int i = 0; i < fields.length; i++) {
       arrowField.add(toArrowField(fields[i].getFieldName(), fields[i].getDataType(), timeZoneId));
+    }
+    return new org.apache.arrow.vector.types.pojo.Schema(arrowField);
+  }
+
+  public static org.apache.arrow.vector.types.pojo.Schema toArrowSchema(QueryModel queryModel,
+      String timeZoneId) {
+    CarbonColumn[] fields = queryModel.getProjectionColumns();
+    Set<org.apache.arrow.vector.types.pojo.Field> arrowField = new LinkedHashSet<>();
+    for (int i = 0; i < fields.length; i++) {
+      arrowField.add(toArrowField(fields[i].getColName(), fields[i].getDataType(), timeZoneId));
     }
     return new org.apache.arrow.vector.types.pojo.Schema(arrowField);
   }

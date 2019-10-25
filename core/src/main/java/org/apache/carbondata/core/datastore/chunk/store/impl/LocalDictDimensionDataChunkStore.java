@@ -64,28 +64,47 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
     int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
     int rowsNum = dataLength / columnValueSize;
     CarbonColumnVector vector = vectorInfo.vector;
-    if (!dictionary.isDictionaryUsed()) {
-      vector.setDictionary(dictionary);
-      dictionary.setDictionaryUsed();
-    }
     BitSet nullBitset = new BitSet();
-    CarbonColumnVector dictionaryVector = ColumnarVectorWrapperDirectFactory
-        .getDirectVectorWrapperFactory(vector.getDictionaryVector(), invertedIndex, nullBitset,
-            vectorInfo.deletedRows, false, true);
-    vector = ColumnarVectorWrapperDirectFactory
-        .getDirectVectorWrapperFactory(vector, invertedIndex, nullBitset, vectorInfo.deletedRows,
-            false, false);
-    for (int i = 0; i < rowsNum; i++) {
-      int surrogate = CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-      if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
-        vector.putNull(i);
-        dictionaryVector.putNull(i);
-      } else {
-        dictionaryVector.putInt(i, surrogate);
+    if (null == vector.getDictionaryVector()) {
+      // arrow vector case. Decode the dictionary and write to vector
+      vector = ColumnarVectorWrapperDirectFactory
+          .getDirectVectorWrapperFactory(vector, invertedIndex, nullBitset, vectorInfo.deletedRows,
+              false, false);
+      for (int i = 0; i < rowsNum; i++) {
+        int surrogate = CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+        if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
+          vector.putNull(i);
+          vector.putNull(i);
+        } else {
+          vector.putByteArray(i, dictionary.getDictionaryValue(surrogate));
+        }
       }
-    }
-    if (dictionaryVector instanceof ConvertableVector) {
-      ((ConvertableVector) dictionaryVector).convert();
+      if (vector instanceof ConvertableVector) {
+        ((ConvertableVector) vector).convert();
+      }
+    } else {
+      if (!dictionary.isDictionaryUsed()) {
+        vector.setDictionary(dictionary);
+        dictionary.setDictionaryUsed();
+      }
+      CarbonColumnVector dictionaryVector = ColumnarVectorWrapperDirectFactory
+          .getDirectVectorWrapperFactory(vector.getDictionaryVector(), invertedIndex, nullBitset,
+              vectorInfo.deletedRows, false, true);
+      vector = ColumnarVectorWrapperDirectFactory
+          .getDirectVectorWrapperFactory(vector, invertedIndex, nullBitset, vectorInfo.deletedRows,
+              false, false);
+      for (int i = 0; i < rowsNum; i++) {
+        int surrogate = CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+        if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
+          vector.putNull(i);
+          dictionaryVector.putNull(i);
+        } else {
+          dictionaryVector.putInt(i, surrogate);
+        }
+      }
+      if (dictionaryVector instanceof ConvertableVector) {
+        ((ConvertableVector) dictionaryVector).convert();
+      }
     }
   }
 

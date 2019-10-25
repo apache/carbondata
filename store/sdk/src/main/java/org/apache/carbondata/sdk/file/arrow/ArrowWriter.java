@@ -49,6 +49,10 @@ public class ArrowWriter {
 
   private int count;
 
+  public ArrowFieldWriter[] getChildren() {
+    return children;
+  }
+
   public void write(Object[] data) {
     int i = 0;
     while (i < children.length) {
@@ -59,7 +63,10 @@ public class ArrowWriter {
   }
 
   public void finish() {
-    root.setRowCount(count);
+    if (children.length != 0) {
+      root.setRowCount(children[0].count);
+    }
+    //    root.setRowCount(count);
     for (int i = 0; i < children.length; i++) {
       children[i].finish();
     }
