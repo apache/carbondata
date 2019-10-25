@@ -93,7 +93,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
 
   }
 
-    ignore("clean up partition on table for more partition columns") {
+    test("clean up partition on table for more partition columns") {
       sql(
         """
           | CREATE TABLE partitionmany (empno int, empname String, designation String,
