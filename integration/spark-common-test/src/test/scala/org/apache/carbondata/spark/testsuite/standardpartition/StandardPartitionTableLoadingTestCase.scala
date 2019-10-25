@@ -386,7 +386,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     checkAnswer(sql(s"select count(*) from emp1"), rows)
   }
 
-  ignore("test restore partition table") {
+  test("test restore partition table") {
     sql(
       """
         | CREATE TABLE restorepartition (doj Timestamp,
