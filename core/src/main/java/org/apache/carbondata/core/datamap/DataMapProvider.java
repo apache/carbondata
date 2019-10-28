@@ -120,7 +120,7 @@ public abstract class DataMapProvider {
   /**
    * Rebuild the datamap by loading all existing data from mainTable
    * This is called when refreshing the datamap when
-   * 1. after datamap creation and if `autoRefreshDataMap` is set to true
+   * 1. after datamap creation and no "WITH DEFERRED REBUILD" defined
    * 2. user manually trigger REBUILD DATAMAP command
    */
   public boolean rebuild() throws IOException, NoSuchDataMapException {
