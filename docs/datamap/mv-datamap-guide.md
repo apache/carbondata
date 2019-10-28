@@ -21,7 +21,7 @@
 * [MV DataMap](#mv-datamap-introduction)
 * [Loading Data](#loading-data)
 * [Querying Data](#querying-data)
-* [Compaction](#compacting-mv-tables)
+* [Compaction](#compacting-mv-datamap)
 * [Data Management](#data-management-with-mv-tables)
 
 ## Quick example
