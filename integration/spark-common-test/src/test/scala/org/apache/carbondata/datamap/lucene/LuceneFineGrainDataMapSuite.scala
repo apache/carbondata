@@ -167,7 +167,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE datamap_test4(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test4 OPTIONS('header'='false')")
 
@@ -829,14 +829,14 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
         | CREATE TABLE datamap_test4(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT',
-        | 'autorefreshdatamap' = 'false', 'CACHE_LEVEL'='BLOCKLET')
+        | 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       """
         | CREATE TABLE datamap_copy(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT',
-        | 'autorefreshdatamap' = 'false', 'CACHE_LEVEL'='BLOCKLET')
+        | 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql("insert into datamap_test4 select 1,'name','city',20")
     sql("insert into datamap_test4 select 2,'name1','city1',20")
