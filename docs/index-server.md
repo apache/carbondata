@@ -42,7 +42,7 @@ information used for pruning.
 In IndexServer service a pruning RDD is fired which will take care of the pruning for that
 request. This RDD will be creating tasks based on the number of segments that are applicable for 
 pruning. It can happen that the user has specified segments to access for that table, so only the
-specified segments would be applicable for pruning. Refer: [query-data-with-specified-segments](https://github.com/apache/carbondata/blob/6e50c1c6fc1d6e82a4faf6dc6e0824299786ccc0/docs/segment-management-on-carbondata.md#query-data-with-specified-segments).
+specified segments would be applicable for pruning. Refer: [query-data-with-specified-segments](./segment-management-on-carbondata.md#query-data-with-specified-segments).
 IndexServer driver would have 2 important tasks, distributing the segments equally among the
 available executors and keeping track of the executor where the segment is cached.
 
@@ -95,7 +95,7 @@ The show metacache DDL has a new column called cache location will indicate whet
 from executor or driver. To drop cache the user has to enable/disable the index server using the
 dynamic configuration to clear the cache of the desired location.
 
-Refer: [MetaCacheDDL](https://github.com/apache/carbondata/blob/master/docs/ddl-of-carbondata.md#cache)
+Refer: [MetaCacheDDL](./ddl-of-carbondata.md#cache)
 
 ## Fallback
 In case of any failure the index server would fallback to embedded mode
@@ -138,7 +138,7 @@ The Index Server is a long running service therefore the 'spark.yarn.keytab' and
 | carbon.enable.index.server       |  false | Enable the use of index server for pruning for the whole application.       |
 | carbon.index.server.ip |    NA   |   Specify the IP/HOST on which the server is started. Better to specify the private IP. |
 | carbon.index.server.port | NA | The port on which the index server is started. |
-| carbon.disable.index.server.fallback | false | Whether to enable/disable fallback for index server. Should be used for testing purposes only. Refer: [Fallback](#Fallback)|
+| carbon.disable.index.server.fallback | false | Whether to enable/disable fallback for index server. Should be used for testing purposes only. Refer: [Fallback](#fallback)|
 |carbon.index.server.max.jobname.length|NA|The max length of the job to show in the index server service UI. For bigger queries this may impact performance as the whole string would be sent from JDBCServer to IndexServer.|
 
 
