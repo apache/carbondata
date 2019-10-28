@@ -1048,14 +1048,6 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * Return true if 'autoRefreshDataMap' is enabled, by default it is enabled
-   */
-  public boolean isAutoRefreshDataMap() {
-    String refresh = getTableInfo().getFactTable().getTableProperties().get("autorefreshdatamap");
-    return refresh == null || refresh.equalsIgnoreCase("true");
-  }
-
-  /**
    * whether this table has aggregation DataMap or not
    */
   public boolean hasAggregationDataMap() {
