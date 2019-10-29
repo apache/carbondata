@@ -170,10 +170,6 @@ object MixedFormatHandler {
       fileFormat: FileFormat,
       paths: Seq[Path]): (RDD[InternalRow], Boolean) = {
     val sparkSession = l.relation.sqlContext.sparkSession
-    val fs = paths.head.getFileSystem(SparkSQLUtil.sessionState(sparkSession).newHadoopConf())
-    val s = paths.map { f =>
-      fs.getFileStatus(f)
-    }
     val fsRelation = l.catalogTable match {
       case Some(catalogTable) =>
         val fileIndex =
