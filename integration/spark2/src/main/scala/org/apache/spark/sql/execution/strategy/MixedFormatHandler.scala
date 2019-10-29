@@ -144,9 +144,9 @@ object MixedFormatHandler {
       new CSVFileFormat
     } else if (fileFormat.equals(new FileFormatName("text"))) {
       new TextFileFormat
-    } else if (fileFormat.equals(new FileFormatName("carbon")))
+    } else if (fileFormat.equals(new FileFormatName("carbon"))) {
       new SparkCarbonFileFormat
-    else {
+    } else {
       throw new UnsupportedOperationException("Format not supported " + fileFormat)
     }
   }
