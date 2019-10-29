@@ -1610,7 +1610,7 @@ public final class CarbonCommonConstants {
 
   public static final String HDFSURL_PREFIX = "hdfs://";
 
-  public static final String LOCAL_FILE_PREFIX = "file://";
+  public static final String LOCAL_FILE_PREFIX = "file:";
 
   public static final String VIEWFSURL_PREFIX = "viewfs://";
 

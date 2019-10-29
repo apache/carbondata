@@ -262,8 +262,19 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
+  test("Test added segment with parquet file format") {
+    testAddSegmentWithDifferentFormat("parquet")
+  }
 
-  test("Test added segment with different format") {
+  test("Test added segment with orc file format") {
+    testAddSegmentWithDifferentFormat("orc")
+  }
+
+  test("Test added segment with carbon file format") {
+    testAddSegmentWithDifferentFormat("carbon")
+  }
+
+  private def testAddSegmentWithDifferentFormat(formatName: String) = {
     sql("drop table if exists addsegment1")
     sql("drop table if exists addsegment2")
     sql(
@@ -272,36 +283,40 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
         |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
+        | USING CARBONDATA
       """.stripMargin)
 
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(
+      s"""
+         |LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE addsegment1
+         |OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+      """.stripMargin)
 
     sql(
-      """
+      s"""
         | CREATE TABLE addsegment2 (empname String, designation String, doj Timestamp,
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int) using parquet
+        |  utilization int,salary int, empno int)
+        | USING $formatName
       """.stripMargin)
 
     sql(s"""insert into addsegment2 select * from addsegment1""")
 
-    sql("select * from addsegment2").show()
     val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("addsegment2"))
     val path = table.location
-    val newPath = storeLocation + "/" + "addsegtest"
-    FileFactory.deleteAllFilesOfDir(new File(newPath))
-    copy(path.toString, newPath)
-    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
 
-    sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='parquet')").show()
+    // add existing files of other format into carbondata table
+    sql(s"alter table addsegment1 add segment options('path'='$path', 'format'='$formatName')").show()
+
+    // verify files are added by query
     assert(sql("select empname, designation, doj, workgroupcategory , workgroupcategoryname   from addsegment1").collect().length == 20)
     checkAnswer(sql("select empname from addsegment1 where empname='arvind'"), Seq(Row("arvind"),Row("arvind")))
     checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(20)))
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
-    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    sql("drop table if exists addsegment1")
+    sql("drop table if exists addsegment2")
   }
 
   test("Test added segment with different format more than two") {

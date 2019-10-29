@@ -143,7 +143,7 @@ case class CarbonAddLoadCommand(
       false)
     newLoadMetaEntry.setPath(segmentPath)
     val format = options.getOrElse("format", "carbondata")
-    val isCarbonFormat = format.equals("carbondata") || format.equals("carbon")
+    val isCarbonFormat = format.equals("carbondata")
     if (!isCarbonFormat) {
       newLoadMetaEntry.setFileFormat(new FileFormat(format))
     }
