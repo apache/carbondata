@@ -181,8 +181,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   private void initMeasureChunkIndexes() {
     for (int i = 0; i < msrColEvalutorInfoList.size(); i++) {
       // find the measure in the current block measures list
-      CarbonMeasure measureFromCurrentBlock = segmentProperties.getMeasureFromCurrentBlock(
-          msrColEvalutorInfoList.get(i).getCarbonColumn().getColumnId());
+      CarbonMeasure measureFromCurrentBlock =
+          segmentProperties.getMeasureFromCurrentBlock(msrColEvalutorInfoList.get(i).getMeasure());
       if (null != measureFromCurrentBlock) {
         msrColEvalutorInfoList.get(i).setColumnIndex(measureFromCurrentBlock.getOrdinal());
         this.measureChunkIndex[i] = msrColEvalutorInfoList.get(i).getColumnIndexInMinMaxByteArray();

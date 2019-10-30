@@ -241,8 +241,8 @@ public final class FilterUtil {
       MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo,
       SegmentProperties segmentProperties) {
     if (null != msrColResolvedFilterInfo && msrColResolvedFilterInfo.getMeasure().isMeasure()) {
-      CarbonMeasure measuresFromCurrentBlock = segmentProperties
-          .getMeasureFromCurrentBlock(msrColResolvedFilterInfo.getMeasure().getColumnId());
+      CarbonMeasure measuresFromCurrentBlock =
+          segmentProperties.getMeasureFromCurrentBlock(msrColResolvedFilterInfo.getMeasure());
       if (null != measuresFromCurrentBlock) {
         // update dimension and column index according to the dimension position in current block
         MeasureColumnResolvedFilterInfo msrColResolvedFilterInfoCopyObject =
@@ -356,8 +356,8 @@ public final class FilterUtil {
     boolean replaceCurrentNodeWithTrueFilter = false;
     CarbonColumn columnFromCurrentBlock = null;
     if (isMeasure) {
-      columnFromCurrentBlock = segmentProperties
-          .getMeasureFromCurrentBlock(columnResolvedFilterInfo.getMeasure().getColumnId());
+      columnFromCurrentBlock =
+          segmentProperties.getMeasureFromCurrentBlock(columnResolvedFilterInfo.getMeasure());
     } else {
       columnFromCurrentBlock =
           segmentProperties.getDimensionFromCurrentBlock(columnResolvedFilterInfo.getDimension());
@@ -422,8 +422,8 @@ public final class FilterUtil {
       SegmentProperties segmentProperties) {
 
     if (null != msrColResolvedFilterInfo && msrColResolvedFilterInfo.getMeasure().isMeasure()) {
-      CarbonMeasure measuresFromCurrentBlock = segmentProperties
-          .getMeasureFromCurrentBlock(msrColResolvedFilterInfo.getMeasure().getColumnId());
+      CarbonMeasure measuresFromCurrentBlock =
+          segmentProperties.getMeasureFromCurrentBlock(msrColResolvedFilterInfo.getMeasure());
       if (null != measuresFromCurrentBlock) {
         // update dimension and column index according to the dimension position in current block
         MeasureColumnResolvedFilterInfo msrColResolvedFilterInfoCopyObject =

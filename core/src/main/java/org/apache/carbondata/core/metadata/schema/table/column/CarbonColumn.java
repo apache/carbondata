@@ -206,4 +206,10 @@ public class CarbonColumn implements Serializable {
   public void setUseActualData(boolean useActualData) {
     this.useActualData = useActualData;
   }
+
+  public boolean isColmatchBasedOnId(CarbonColumn queryColumn) {
+    return this.getColName().equalsIgnoreCase(this.getColumnId()) && this.getColName()
+        .equalsIgnoreCase(queryColumn.getColName());
+  }
+
 }

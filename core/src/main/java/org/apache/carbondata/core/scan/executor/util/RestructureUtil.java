@@ -167,7 +167,8 @@ public class RestructureUtil {
     // column ID but can have same column name
     if (tableColumn.getDataType().isComplexType() && !(tableColumn.getDataType().getId()
         == DataTypes.ARRAY_TYPE_ID)) {
-      if (tableColumn.getColumnId().equalsIgnoreCase(queryColumn.getColumnId())) {
+      if (tableColumn.getColumnId().equalsIgnoreCase(queryColumn.getColumnId()) || tableColumn
+          .isColmatchBasedOnId(queryColumn)) {
         return true;
       } else {
         return isColumnMatchesStruct(tableColumn, queryColumn);
@@ -175,7 +176,11 @@ public class RestructureUtil {
     } else {
       return (tableColumn.getColumnId().equalsIgnoreCase(queryColumn.getColumnId()) || (
           !isTransactionalTable && tableColumn.getColName()
-              .equalsIgnoreCase(queryColumn.getColName())));
+              .equalsIgnoreCase(queryColumn.getColName()))
+          // In case of SDK, columnId is same as columnName therefore the following check will
+          // ensure that if the table columnName is same as the query columnName and the table
+          // columnId is the same as table columnName then it's a valid columnName to be scanned.
+          || tableColumn.isColmatchBasedOnId(queryColumn));
     }
   }
 
@@ -200,8 +205,14 @@ public class RestructureUtil {
         }
         carbonDimension = CarbonTable.getCarbonDimension(tempColName.toString(), parentDimension);
         if (carbonDimension != null) {
+          // In case of SDK the columnId and columnName is same and this check will ensure for
+          // all the child columns that the table column name is equal to query column name and
+          // table columnId is equal to table columnName
           if (carbonDimension.getColumnSchema().getColumnUniqueId()
-              .equalsIgnoreCase(queryColumn.getColumnId())) {
+              .equalsIgnoreCase(queryColumn.getColumnId()) || (
+              carbonDimension.getColumnSchema().getColumnUniqueId()
+                  .equalsIgnoreCase(carbonDimension.getColName()) && carbonDimension.getColName()
+                  .equalsIgnoreCase(queryColumn.getColName()))) {
             return true;
           }
           if (carbonDimension.getListOfChildDimensions() != null) {
@@ -429,7 +440,7 @@ public class RestructureUtil {
       // then setting measure exists is true
       // otherwise adding a default value of a measure
       for (CarbonMeasure carbonMeasure : currentBlockMeasures) {
-        if (isColumnMatches(isTransactionalTable, carbonMeasure, queryMeasure.getMeasure())) {
+        if (isColumnMatches(isTransactionalTable, queryMeasure.getMeasure(), carbonMeasure)) {
           ProjectionMeasure currentBlockMeasure = new ProjectionMeasure(carbonMeasure);
           carbonMeasure.getColumnSchema().setDataType(queryMeasure.getMeasure().getDataType());
           carbonMeasure.getColumnSchema().setPrecision(queryMeasure.getMeasure().getPrecision());

@@ -1302,7 +1302,7 @@ public class CarbonTable implements Serializable, Writable {
         CarbonMeasure measure = getMeasureByName(tableName, measureColumn);
         if (null != measure) {
           CarbonMeasure measureFromCurrentBlock =
-              segmentProperties.getMeasureFromCurrentBlock(measure.getColumnId());
+              segmentProperties.getMeasureFromCurrentBlock(measure);
           if (null != measureFromCurrentBlock) {
             minMaxCachedColsList.add(measureFromCurrentBlock);
           }
