@@ -1142,7 +1142,11 @@ public final class CarbonUtil {
       List<CarbonDimension> blockDimensions, CarbonDimension dimensionToBeSearched) {
     CarbonDimension currentBlockDimension = null;
     for (CarbonDimension blockDimension : blockDimensions) {
-      if (dimensionToBeSearched.getColumnId().equalsIgnoreCase(blockDimension.getColumnId())) {
+      // In case of SDK, columnId is same as columnName therefore the following check will
+      // ensure that if the dimensions columnName is same as the block columnName and the dimension
+      // columnId is the same as dimensions columnName then it's a valid column to be scanned.
+      if (dimensionToBeSearched.getColumnId().equalsIgnoreCase(blockDimension.getColumnId())
+          || blockDimension.isColmatchBasedOnId(dimensionToBeSearched)) {
         currentBlockDimension = blockDimension;
         break;
       }
@@ -1154,14 +1158,18 @@ public final class CarbonUtil {
    * This method will search for a given measure in the current block measures list
    *
    * @param blockMeasures
-   * @param columnId
+   * @param measureToBeSearched
    * @return
    */
   public static CarbonMeasure getMeasureFromCurrentBlock(List<CarbonMeasure> blockMeasures,
-      String columnId) {
+      CarbonMeasure measureToBeSearched) {
     CarbonMeasure currentBlockMeasure = null;
     for (CarbonMeasure blockMeasure : blockMeasures) {
-      if (columnId.equals(blockMeasure.getColumnId())) {
+      // In case of SDK, columnId is same as columnName therefore the following check will
+      // ensure that if the measures columnName is same as the block columnName and the measures
+      // columnId is the same as measures columnName then it's a valid column to be scanned.
+      if (measureToBeSearched.getColumnId().equalsIgnoreCase(blockMeasure.getColumnId())
+          || blockMeasure.isColmatchBasedOnId(measureToBeSearched)) {
         currentBlockMeasure = blockMeasure;
         break;
       }

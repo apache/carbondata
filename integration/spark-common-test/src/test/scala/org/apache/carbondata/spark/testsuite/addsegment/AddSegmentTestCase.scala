@@ -31,12 +31,13 @@ import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport
-import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter}
+import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter, Field, Schema}
 import org.junit.Assert
 import scala.io.Source
 
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 
 class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -110,7 +111,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("delete from table addsegment1 where segment.id in (2)")
     sql("clean files for table addsegment1")
     val oldFolder = FileFactory.getCarbonFile(newPath)
-    assert(oldFolder.listFiles.length == 0, "Added segment path should be deleted when clean files are called")
+    assert(oldFolder.listFiles.length == 2,
+      "Added segment path should not be deleted physically when clean files are called")
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
@@ -145,7 +147,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(20)))
     sql("clean files for table addsegment1")
     val oldFolder = FileFactory.getCarbonFile(newPath)
-    assert(oldFolder.listFiles.length == 0, "Added segment path should be deleted when clean files are called")
+    assert(oldFolder.listFiles.length == 2,
+      "Added segment path should not be deleted physically when clean files are called")
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
@@ -729,12 +732,28 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val externalSegmentPath = storeLocation + "/" + "external_segment"
     FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
 
+    var fields: Array[Field] = new Array[Field](14)
+    fields(0) = new Field("empno", DataTypes.INT)
+    fields(1) = new Field("empname", DataTypes.STRING)
+    fields(2) = new Field("designation", DataTypes.STRING)
+    fields(3) = new Field("doj", DataTypes.TIMESTAMP)
+    fields(4) = new Field("workgroupcategory", DataTypes.INT)
+    fields(5) = new Field("workgroupcategoryname", DataTypes.STRING)
+    fields(6) = new Field("deptno", DataTypes.INT)
+    fields(7) = new Field("deptname", DataTypes.STRING)
+    fields(8) = new Field("projectcode", DataTypes.INT)
+    fields(9) = new Field("projectjoindate", DataTypes.TIMESTAMP)
+    fields(10) = new Field("projectenddate", DataTypes.DATE)
+    fields(11) = new Field("attendance", DataTypes.INT)
+    fields(12) = new Field("utilization", DataTypes.INT)
+    fields(13) = new Field("salary", DataTypes.INT)
+
+
     // write into external segment folder
     val writer = CarbonWriter.builder
       .outputPath(externalSegmentPath)
-      .withSchemaFile(s"$storeLocation/$tableName/Metadata/schema")
       .writtenBy("AddSegmentTestCase")
-      .withCsvInput()
+      .withCsvInput(new Schema(fields))
       .build()
     val source = Source.fromFile(s"$resourcesPath/data.csv")
     var count = 0
@@ -748,6 +767,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"alter table $tableName add segment options('path'='$externalSegmentPath', 'format'='carbon')").show()
     checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(20)))
+    checkAnswer(sql(s"select count(*) from $tableName where empno = 11"), Seq(Row(2)))
     checkAnswer(sql(s"select sum(empno) from $tableName where empname = 'arvind' "), Seq(Row(22)))
     FileFactory.deleteAllFilesOfDir(new File(externalSegmentPath))
     sql(s"drop table $tableName")

@@ -192,8 +192,10 @@ public final class DeleteLoadFolders {
 
   private static boolean checkIfLoadCanBeDeletedPhysically(LoadMetadataDetails oneLoad,
       boolean isForceDelete) {
-    if ((SegmentStatus.MARKED_FOR_DELETE == oneLoad.getSegmentStatus() ||
-        SegmentStatus.COMPACTED == oneLoad.getSegmentStatus())) {
+    // Check if the segment is added externally and path is set then do not delete it
+    if ((SegmentStatus.MARKED_FOR_DELETE == oneLoad.getSegmentStatus()
+        || SegmentStatus.COMPACTED == oneLoad.getSegmentStatus()) && (oneLoad.getPath() == null
+        || oneLoad.getPath().equalsIgnoreCase("NA"))) {
       if (isForceDelete) {
         return true;
       }

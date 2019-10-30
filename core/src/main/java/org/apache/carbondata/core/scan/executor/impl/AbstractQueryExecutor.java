@@ -716,7 +716,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       Set<CarbonMeasure> updatedFilterMeasures = new HashSet<>(queryFilterMeasures.size());
       for (CarbonMeasure queryMeasure : queryFilterMeasures) {
         CarbonMeasure measureFromCurrentBlock =
-            segmentProperties.getMeasureFromCurrentBlock(queryMeasure.getColumnId());
+            segmentProperties.getMeasureFromCurrentBlock(queryMeasure);
         if (null != measureFromCurrentBlock) {
           updatedFilterMeasures.add(measureFromCurrentBlock);
         }
