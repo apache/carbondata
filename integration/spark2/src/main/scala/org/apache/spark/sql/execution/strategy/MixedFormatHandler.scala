@@ -60,7 +60,7 @@ object MixedFormatHandler {
       options: Map[String, String],
       segPath: String): StructType = {
     val format = options.getOrElse("format", "carbondata")
-    if ((format.equals("carbondata") || format.equals("carbon"))) {
+    if ((format.equalsIgnoreCase("carbondata") || format.equalsIgnoreCase("carbon"))) {
       new SparkCarbonFileFormat().inferSchema(sparkSession, options, Seq.empty).get
     } else {
       val filePath = FileFactory.addSchemeIfNotExists(segPath.replace("\\", "/"))

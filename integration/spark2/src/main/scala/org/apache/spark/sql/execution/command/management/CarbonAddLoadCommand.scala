@@ -92,6 +92,24 @@ case class CarbonAddLoadCommand(
     val segmentPath = options.getOrElse(
       "path", throw new UnsupportedOperationException("PATH is manadatory"))
 
+    val allSegments = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+
+    // If a path is already added then we should block the adding of the same path again.
+    if (allSegments.exists(a =>
+      a.getPath != null && a.getPath.equalsIgnoreCase(segmentPath)
+    )) {
+      throw new AnalysisException(s"path already exists in table status file, can not add same " +
+                                  s"segment path repeatedly: $segmentPath")
+    }
+
+    val format = options.getOrElse("format", "carbondata")
+    val isCarbonFormat = format.equalsIgnoreCase("carbondata") || format.equalsIgnoreCase("carbon")
+
+    // If in the given location no carbon index files are found then we should throw an exception
+    if (isCarbonFormat && SegmentFileStore.getListOfCarbonIndexFiles(segmentPath).isEmpty) {
+      throw new AnalysisException("CarbonIndex files not present in the location")
+    }
+
     val segSchema = MixedFormatHandler.getSchema(sparkSession, options, segmentPath)
 
     val segCarbonSchema = new Schema(segSchema.fields.map { field =>
@@ -142,8 +160,6 @@ case class CarbonAddLoadCommand(
       model.getFactTimeStamp,
       false)
     newLoadMetaEntry.setPath(segmentPath)
-    val format = options.getOrElse("format", "carbondata")
-    val isCarbonFormat = format.equals("carbondata") || format.equals("carbon")
     if (!isCarbonFormat) {
       newLoadMetaEntry.setFileFormat(new FileFormat(format))
     }
