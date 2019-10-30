@@ -184,6 +184,22 @@ public class SegmentFileStore {
     return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath);
   }
 
+  /**
+   * Returns the list of index files
+   *
+   * @param segmentPath
+   * @return
+   */
+  public static CarbonFile[] getListOfCarbonIndexFiles(String segmentPath) {
+    CarbonFile segmentFolder = FileFactory.getCarbonFile(segmentPath);
+    CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
+            file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
+      }
+    });
+    return indexFiles;
+  }
 
   /**
    * Write segment file to the metadata folder of the table.
@@ -195,13 +211,7 @@ public class SegmentFileStore {
   public static boolean writeSegmentFile(CarbonTable carbonTable, Segment segment)
       throws IOException {
     String tablePath = carbonTable.getTablePath();
-    CarbonFile segmentFolder = FileFactory.getCarbonFile(segment.getSegmentPath());
-    CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
-        return (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
-            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
-      }
-    });
+    CarbonFile[] indexFiles = getListOfCarbonIndexFiles(segment.getSegmentPath());
     if (indexFiles != null && indexFiles.length > 0) {
       SegmentFile segmentFile = new SegmentFile();
       segmentFile.setOptions(segment.getOptions());

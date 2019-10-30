@@ -1061,13 +1061,13 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     result1.foreach { row =>
       if (row.getString(0).equals("1")) {
         assertResult(SegmentStatus.STREAMING.getMessage)(row.getString(1))
-        assertResult(FileFormat.ROW_V1.toString)(row.getString(5))
+        assertResult(FileFormat.ROW_V1.toString)(row.getString(5).toLowerCase)
       } else if (row.getString(0).equals("0.1")) {
         assertResult(SegmentStatus.SUCCESS.getMessage)(row.getString(1))
-        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(5))
+        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(5).toLowerCase)
       } else {
         assertResult(SegmentStatus.COMPACTED.getMessage)(row.getString(1))
-        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(5))
+        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(5).toLowerCase)
       }
     }
 

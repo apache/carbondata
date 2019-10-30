@@ -33,11 +33,11 @@ public class FileFormat implements Serializable {
   private int ordinal;
 
   public FileFormat(String format) {
-    this.format = format;
+    this.format = format.toLowerCase();
   }
 
   public FileFormat(String format, int ordinal) {
-    this.format = format;
+    this.format = format.toLowerCase();
     this.ordinal = ordinal;
   }
 

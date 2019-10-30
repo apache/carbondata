@@ -24,6 +24,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row}
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.row.CarbonRow
@@ -31,9 +32,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport
 import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter}
-import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.junit.Assert
-
 import scala.io.Source
 
 class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
@@ -542,7 +541,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     copy(path.toString, newPath)
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
 
-    sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='parquet')").show()
+    sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='PARQUET')").show()
     checkExistence(sql(s"show segments for table addsegment1"), true, "spark-common/target/warehouse/addsegtest")
     checkExistence(sql(s"show history segments for table addsegment1"), true, "spark-common/target/warehouse/addsegtest")
     FileFactory.deleteAllFilesOfDir(new File(newPath))
