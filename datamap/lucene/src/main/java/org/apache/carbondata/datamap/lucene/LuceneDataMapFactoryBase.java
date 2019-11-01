@@ -126,7 +126,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     this.dataMapName = dataMapSchema.getDataMapName();
 
     // validate DataMapSchema and get index columns
-    indexedCarbonColumns =  carbonTable.getIndexedColumns(dataMapSchema);;
+    indexedCarbonColumns =  carbonTable.getIndexedColumns(dataMapSchema);
     flushCacheSize = validateAndGetWriteCacheSize(dataMapSchema);
     storeBlockletWise = validateAndGetStoreBlockletWise(dataMapSchema);
 

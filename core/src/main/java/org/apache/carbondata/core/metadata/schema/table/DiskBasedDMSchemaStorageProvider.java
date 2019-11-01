@@ -220,7 +220,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
    */
   public static String getSchemaPath(String storePath, String dataMapName) {
     String schemaPath =  storePath + CarbonCommonConstants.FILE_SEPARATOR + dataMapName
-        + ".dmschema";;
+        + ".dmschema";
     return schemaPath;
   }
 }

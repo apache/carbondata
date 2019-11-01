@@ -246,7 +246,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
    */
   @Override
   public int compareTo(int rowId, byte[] compareValue) {
-    int currentDataOffset = getOffSet(rowId);;
+    int currentDataOffset = getOffSet(rowId);
     int length = getLength(rowId, currentDataOffset);
     // as this class handles this variable length data, so filter value can be
     // smaller or bigger than than actual data, so we need to take the smaller length
