@@ -107,7 +107,7 @@ public class TablePruningInfo {
             .append("    - name: ").append(cgDataMap.getDataMapWrapperName()).append("\n")
             .append("    - provider: ").append(cgDataMap.getDataMapWrapperProvider()).append("\n")
             .append("    - skipped: ").append(skipBlocks).append(" blocks, ")
-            .append(skipBlocklets).append(" blocklets").append("\n");;
+            .append(skipBlocklets).append(" blocklets").append("\n");
       }
       if (fgDataMap != null) {
         if (numBlockletsAfterCGPruning != 0) {
@@ -122,7 +122,7 @@ public class TablePruningInfo {
             .append("    - name: ").append(fgDataMap.getDataMapWrapperName()).append("\n")
             .append("    - provider: ").append(fgDataMap.getDataMapWrapperProvider()).append("\n")
             .append("    - skipped: ").append(skipBlocks).append(" blocks, ")
-            .append(skipBlocklets).append(" blocklets").append("\n");;
+            .append(skipBlocklets).append(" blocklets").append("\n");
       }
       return builder.toString();
     } else {

@@ -491,7 +491,7 @@ public class SegmentFileStore {
         LOGGER.error(
             "Not able to acquire the lock for Table status updation for table path " + tablePath);
       }
-      ;
+
     } finally {
       if (carbonLock.unlock()) {
         LOGGER.info("Table unlocked successfully after table status updation" + tablePath);
