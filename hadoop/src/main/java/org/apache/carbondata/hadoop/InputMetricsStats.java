@@ -18,7 +18,6 @@
 package org.apache.carbondata.hadoop;
 
 import java.io.Serializable;
-import java.lang.Long;
 
 /**
  * It gives statistics of number of bytes and record read

@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
  *It is used to save/retreive/drop datamap schema from storage medium like disk or DB.
