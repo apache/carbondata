@@ -595,6 +595,79 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists addSegParmore")
   }
 
+  test("test add segment partition table") {
+    sql("drop table if exists parquet_table")
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists orc_table")
+
+    sql("create table parquet_table(value int, name string, age int) using parquet partitioned by (name, age)")
+    sql("create table carbon_table(value int) partitioned by (name string, age int) stored as carbondata")
+    sql("insert into parquet_table values (30, 'amy', 12), (40, 'bob', 13)")
+    sql("insert into parquet_table values (30, 'amy', 20), (10, 'bob', 13)")
+    sql("insert into parquet_table values (30, 'cat', 12), (40, 'dog', 13)")
+    sql("select * from parquet_table").show
+    val parquetRootPath = sqlContext.sparkSession.sessionState.catalog
+      .getTableMetadata(TableIdentifier("parquet_table")).location.getPath
+
+    // add data from parquet table to carbon table
+    sql(s"alter table carbon_table add segment options ('path'='$parquetRootPath', 'format'='parquet', 'partition'='name:string,age:int')")
+    checkAnswer(sql("select * from carbon_table"), sql("select * from parquet_table"))
+
+    // load new data into carbon table
+    sql("insert into carbon_table select * from parquet_table")
+    checkAnswer(sql("select * from carbon_table"), sql("select * from parquet_table union all select * from parquet_table"))
+
+    // add another data from orc table to carbon table
+    sql("create table orc_table(value int, name string, age int) using orc partitioned by (name, age)")
+    sql("insert into orc_table values (30, 'orc', 50), (40, 'orc', 13)")
+    sql("insert into orc_table values (30, 'fast', 10), (10, 'fast', 13)")
+    val orcRootPath = sqlContext.sparkSession.sessionState.catalog
+      .getTableMetadata(TableIdentifier("orc_table")).location.getPath
+    sql(s"alter table carbon_table add segment options ('path'='$orcRootPath', 'format'='orc', 'partition'='name:string,age:int')")
+    checkAnswer(sql("select * from carbon_table"),
+      sql("select * from parquet_table " +
+          "union all select * from parquet_table " +
+          "union all select * from orc_table"))
+
+    // do compaction
+    sql("alter table carbon_table compact 'major'")
+    checkAnswer(sql("select * from carbon_table"),
+      sql("select * from parquet_table " +
+          "union all select * from parquet_table " +
+          "union all select * from orc_table"))
+
+    sql("drop table if exists parquet_table")
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists orc_table")
+  }
+
+  test("show segment after add segment to partition table") {
+    sql("drop table if exists parquet_table")
+    sql("drop table if exists carbon_table")
+
+    sql(
+      "create table parquet_table(value int, name string, age int) using parquet partitioned by (name, age)")
+    sql(
+      "create table carbon_table(value int) partitioned by (name string, age int) stored as carbondata")
+    sql("insert into parquet_table values (30, 'amy', 12), (40, 'bob', 13)")
+    sql("insert into parquet_table values (30, 'amy', 20), (10, 'bob', 13)")
+    sql("insert into parquet_table values (30, 'cat', 12), (40, 'dog', 13)")
+    sql("select * from parquet_table").show
+    val parquetRootPath = sqlContext.sparkSession.sessionState.catalog
+      .getTableMetadata(TableIdentifier("parquet_table")).location.getPath
+
+    // add data from parquet table to carbon table
+    sql(s"alter table carbon_table add segment options ('path'='$parquetRootPath', 'format'='parquet', 'partition'='name:string,age:int')")
+    checkAnswer(sql("select * from carbon_table"), sql("select * from parquet_table"))
+
+    // test show segment
+    checkExistence(sql(s"show segments for table carbon_table"), true, "spark-common/target/warehouse/parquet_table")
+    checkExistence(sql(s"show history segments for table carbon_table"), true, "spark-common/target/warehouse/parquet_table")
+
+    sql("drop table if exists parquet_table")
+    sql("drop table if exists carbon_table")
+  }
+
   private def copyseg(tableName: String, pathName: String): String = {
     val table1 = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier(tableName))

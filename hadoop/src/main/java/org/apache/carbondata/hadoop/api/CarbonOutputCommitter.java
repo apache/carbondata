@@ -144,7 +144,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       uuid = operationContext.getProperty("uuid").toString();
     }
 
-    SegmentFileStore.updateSegmentFile(carbonTable, loadModel.getSegmentId(),
+    SegmentFileStore.updateTableStatusFile(carbonTable, loadModel.getSegmentId(),
         segmentFileName + CarbonTablePath.SEGMENT_EXT,
         carbonTable.getCarbonTableIdentifier().getTableId(),
         new SegmentFileStore(carbonTable.getTablePath(),

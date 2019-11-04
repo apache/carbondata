@@ -23,6 +23,7 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.hadoop.fs.FileStatus
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil.convertSparkToCarbonDataType
 import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
@@ -36,8 +37,10 @@ import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
+import org.apache.carbondata.core.indexstore.{PartitionSpec => CarbonPartitionSpec}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -47,7 +50,6 @@ import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, Car
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.sdk.file.{Field, Schema}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.clearDataMapFiles
-import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 
 /**
@@ -89,8 +91,6 @@ case class CarbonAddLoadCommand(
     if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "delete segment")
     }
-    val segmentPath = options.getOrElse(
-      "path", throw new UnsupportedOperationException("PATH is manadatory"))
 
     val allSegments = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
 
@@ -110,24 +110,77 @@ case class CarbonAddLoadCommand(
       throw new AnalysisException("CarbonIndex files not present in the location")
     }
 
-    val segSchema = MixedFormatHandler.getSchema(sparkSession, options, segmentPath)
+    var segmentPath = options.getOrElse(
+      "path", throw new UnsupportedOperationException("PATH is mandatory"))
 
-    val segCarbonSchema = new Schema(segSchema.fields.map { field =>
+    // validate schema
+    val (inputPathSchema, lastLevelDirFileMap) =
+      MixedFormatHandler.collectInfo(sparkSession, options, segmentPath)
+    val inputPathCarbonFields = inputPathSchema.fields.map { field =>
+      val dataType = convertSparkToCarbonDataType(field.dataType)
+      new Field(field.name, dataType)
+    }
+    val carbonTableSchema = new Schema(tableSchema.fields.map { field =>
       val dataType = convertSparkToCarbonDataType(field.dataType)
       new Field(field.name, dataType)
     })
 
-    val tableCarbonSchema = new Schema(tableSchema.fields.map { field =>
-      val dataType = convertSparkToCarbonDataType(field.dataType)
-      new Field(field.name, dataType)
-    })
-
-
-    if (!tableCarbonSchema.getFields.forall(f => segCarbonSchema.getFields.exists(_.equals(f)))) {
+    // update schema if has partition
+    val inputPathCarbonSchema = if (carbonTable.isHivePartitionTable) {
+      val partitions = options("partition")
+      if (partitions.isEmpty) {
+        throw new AnalysisException("partition option must be specified for partition table")
+      }
+      // extract partition given by user, partition option should be form of "a:int, b:string"
+      val partitionFields = partitions.split(",")
+        .map(_.trim)
+        .filter(_.nonEmpty)
+        .map(_.toLowerCase)
+        .map { input =>
+          val list = input.split(":")
+          if (list.size == 2) {
+            new Field(list(0), list(1))
+          } else {
+            throw new AnalysisException(s"invalid partition option: ${options.toString()}")
+          }
+        }
+      new Schema(inputPathCarbonFields ++ partitionFields)
+    } else {
+      if (options.contains("partition")) {
+        throw new AnalysisException(s"partition option is not required for non-partition table")
+      }
+      new Schema(inputPathCarbonFields)
+    }
+    if (!carbonTableSchema.getFields.forall {
+      f => inputPathCarbonSchema.getFields.exists(_.equals(f))
+    }) {
       throw new AnalysisException(s"Schema is not same. Table schema is : " +
-                                  s"${tableSchema} and segment schema is : ${segSchema}")
+                                  s"${tableSchema} and segment schema is : ${inputPathSchema}")
     }
 
+    // all validation is done, update the metadata accordingly
+    if (carbonTable.isHivePartitionTable) {
+      val partitionSpecs = collectPartitionSpecList(
+        sparkSession, carbonTable.getTablePath, segmentPath, lastLevelDirFileMap.keys.toSeq)
+      partitionSpecs.foreach { partitionSpec =>
+        val dataFiles = lastLevelDirFileMap.getOrElse(partitionSpec.getLocation.toString,
+          throw new RuntimeException(s"partition folder not found: ${partitionSpec.getLocation}"))
+        writeMetaForSegment(sparkSession, carbonTable, segmentPath, Some(partitionSpec), dataFiles)
+      }
+    } else {
+      writeMetaForSegment(sparkSession, carbonTable, segmentPath)
+    }
+
+    Seq.empty
+  }
+
+  private def writeMetaForSegment(
+      sparkSession: SparkSession,
+      carbonTable: CarbonTable,
+      segmentPath: String,
+      partitionSpecOp: Option[CarbonPartitionSpec] = None,
+      partitionDataFiles: Seq[FileStatus] = Seq.empty
+  ): Unit = {
     val model = new CarbonLoadModel
     model.setCarbonTransactionalTable(true)
     model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
@@ -165,7 +218,8 @@ case class CarbonAddLoadCommand(
     }
 
     CarbonLoaderUtil.recordNewLoadMetadata(newLoadMetaEntry, model, true, false)
-    val segment = new Segment(model.getSegmentId,
+    val segment = new Segment(
+      model.getSegmentId,
       SegmentFileStore.genSegmentFileName(
         model.getSegmentId,
         System.nanoTime().toString) + CarbonTablePath.SEGMENT_EXT,
@@ -175,19 +229,24 @@ case class CarbonAddLoadCommand(
       if (isCarbonFormat) {
         SegmentFileStore.writeSegmentFile(carbonTable, segment)
       } else {
-        SegmentFileStore.writeSegmentFileForOthers(carbonTable, segment)
+        SegmentFileStore.writeSegmentFileForOthers(
+          carbonTable, segment, partitionSpecOp.orNull, partitionDataFiles.asJava)
       }
 
-    operationContext.setProperty(carbonTable.getTableUniqueName + "_Segment",
-      model.getSegmentId)
-    val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
-      new LoadTablePreStatusUpdateEvent(
-        carbonTable.getCarbonTableIdentifier,
-        model)
-    OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
+    // This event will trigger merge index job, only trigger it if it is carbon file
+    if (isCarbonFormat) {
+      operationContext.setProperty(
+        carbonTable.getTableUniqueName + "_Segment",
+        model.getSegmentId)
+      val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
+        new LoadTablePreStatusUpdateEvent(
+          carbonTable.getCarbonTableIdentifier,
+          model)
+      OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
+    }
 
     val success = if (writeSegment) {
-       SegmentFileStore.updateSegmentFile(
+      SegmentFileStore.updateTableStatusFile(
         carbonTable,
         model.getSegmentId,
         segment.getSegmentFileName,
@@ -241,10 +300,26 @@ case class CarbonAddLoadCommand(
       OperationListenerBus.getInstance()
         .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
     }
-    Seq.empty
   }
 
-
+  def collectPartitionSpecList(
+      sparkSession: SparkSession,
+      tablePath: String,
+      inputPath: String,
+      partitionPaths: Seq[String]
+  ): Seq[CarbonPartitionSpec] = {
+    // extract partition column and value, for example, given
+    // path1 = path/to/partition/a=1/b=earth
+    // path2 = path/to/partition/a=2/b=moon
+    // will extract a list of CarbonPartitionSpec:
+    //   CarbonPartitionSpec {("a=1","b=earth"), "path/to/partition"}
+    //   CarbonPartitionSpec {("a=2","b=moon"), "path/to/partition"}
+    partitionPaths.map { path =>
+      val partitionOnlyPath = path.substring(inputPath.length + 1)
+      val partitionColumnAndValue = partitionOnlyPath.split("/").toList.asJava
+      new CarbonPartitionSpec(partitionColumnAndValue, path)
+    }
+  }
 
   override protected def opName: String = "ADD SEGMENT WITH PATH"
 }

@@ -193,7 +193,7 @@ public class CarbonIndexFileMergeWriter {
         + CarbonCommonConstants.FILE_SEPARATOR + newSegmentFileName;
     if (!table.isHivePartitionTable()) {
       SegmentFileStore.writeSegmentFile(segmentFileStore.getSegmentFile(), path);
-      SegmentFileStore.updateSegmentFile(table, segmentId, newSegmentFileName,
+      SegmentFileStore.updateTableStatusFile(table, segmentId, newSegmentFileName,
           table.getCarbonTableIdentifier().getTableId(), segmentFileStore);
     }
 

@@ -483,7 +483,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   /**
-   * ALTER TABLE <db.tableName> ADD SEGMENT OPTIONS('path'='path','''key'='value')
+   * ALTER TABLE [dbName.]tableName ADD SEGMENT
+   * OPTIONS('path'='path','format'='format', ['partition'='schema list'])
+   *
+   * schema list format: column_name:data_type
+   * for example: 'partition'='a:int,b:string'
    */
   protected lazy val addLoad: Parser[LogicalPlan] =
     ALTER ~ TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> SEGMENT) ~
