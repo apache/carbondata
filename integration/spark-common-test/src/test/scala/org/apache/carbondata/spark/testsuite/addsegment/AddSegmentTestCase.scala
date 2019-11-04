@@ -606,7 +606,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into parquet_table values (30, 'amy', 20), (10, 'bob', 13)")
     sql("insert into parquet_table values (30, 'cat', 12), (40, 'dog', 13)")
     sql("select * from parquet_table").show
-    val parquetRootPath = sqlContext.sparkSession.sessionState.catalog
+    val parquetRootPath = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("parquet_table")).location.getPath
 
     // add data from parquet table to carbon table
@@ -621,7 +621,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table orc_table(value int, name string, age int) using orc partitioned by (name, age)")
     sql("insert into orc_table values (30, 'orc', 50), (40, 'orc', 13)")
     sql("insert into orc_table values (30, 'fast', 10), (10, 'fast', 13)")
-    val orcRootPath = sqlContext.sparkSession.sessionState.catalog
+    val orcRootPath = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("orc_table")).location.getPath
     sql(s"alter table carbon_table add segment options ('path'='$orcRootPath', 'format'='orc', 'partition'='name:string,age:int')")
     checkAnswer(sql("select * from carbon_table"),
@@ -653,7 +653,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into parquet_table values (30, 'amy', 20), (10, 'bob', 13)")
     sql("insert into parquet_table values (30, 'cat', 12), (40, 'dog', 13)")
     sql("select * from parquet_table").show
-    val parquetRootPath = sqlContext.sparkSession.sessionState.catalog
+    val parquetRootPath = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("parquet_table")).location.getPath
 
     // add data from parquet table to carbon table
