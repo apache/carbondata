@@ -24,6 +24,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row}
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.row.CarbonRow
@@ -31,10 +32,11 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport
 import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter}
-import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.junit.Assert
-
 import scala.io.Source
+
+import org.apache.carbondata.common.Strings
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 
 class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -301,6 +303,11 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select empname from addsegment1 where empname='arvind'"), Seq(Row("arvind"),Row("arvind")))
     checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(20)))
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
+    sql("show segments for table addsegment1").show(100, false)
+    val showSeg = sql("show segments for table addsegment1").collectAsList()
+    val size = getDataSize(newPath)
+    assert(showSeg.get(0).get(6).toString.equalsIgnoreCase(size))
+    assert(showSeg.get(0).get(7).toString.equalsIgnoreCase("NA"))
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
@@ -753,6 +760,19 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     for (file <- oldFiles) {
       Files.copy(Paths.get(file.getParentFile.getPath, file.getName), Paths.get(newLoc, file.getName))
     }
+  }
+
+  def getDataSize(path: String): String = {
+    val allFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(CarbonCommonConstants.PARQUET_FILE_EXT)
+      }
+    })
+    var size: Long = 0
+    for (file <- allFiles) {
+      size += file.getSize
+    }
+    Strings.formatSize(size.toFloat)
   }
 
 
