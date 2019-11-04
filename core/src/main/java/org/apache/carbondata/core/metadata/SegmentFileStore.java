@@ -16,12 +16,9 @@
  */
 package org.apache.carbondata.core.metadata;
 
-import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -455,7 +452,8 @@ public class SegmentFileStore {
    */
   public static boolean updateTableStatusFile(CarbonTable carbonTable, String segmentId,
       String segmentFile, String tableId, SegmentFileStore segmentFileStore) throws IOException {
-    return updateTableStatusFile(carbonTable, segmentId, segmentFile, tableId, segmentFileStore, null);
+    return updateTableStatusFile(carbonTable, segmentId, segmentFile, tableId, segmentFileStore,
+        null);
   }
 
   /**

@@ -22,20 +22,21 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.hadoop.fs.{FileStatus, FileSystem, LocatedFileStatus, Path, PathFilter, RemoteIterator}
+import org.apache.hadoop.fs.{FileStatus, FileSystem, Path, PathFilter}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{MixedFormatHandlerUtil, SparkSession, execution}
+import org.apache.spark.sql.{MixedFormatHandlerUtil, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.SparkCarbonFileFormat
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Cast, Expression, ExpressionSet, NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, AttributeSet, Expression, ExpressionSet, NamedExpression}
+import org.apache.spark.sql.execution.{FilterExec, ProjectExec}
 import org.apache.spark.sql.execution.datasources.{FileFormat, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
 import org.apache.spark.sql.execution.datasources.csv.CSVFileFormat
 import org.apache.spark.sql.execution.datasources.json.JsonFileFormat
 import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
 import org.apache.spark.sql.execution.datasources.text.TextFileFormat
 import org.apache.spark.sql.hive.orc.OrcFileFormat
-import org.apache.spark.sql.types.{StructField, StructType}
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -43,7 +44,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, FileFormat => FileFormatName}
+import org.apache.carbondata.core.statusmanager.{FileFormat => FileFormatName, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -63,7 +64,7 @@ object MixedFormatHandler {
    *
    * @param sparkSession spark session
    * @param options option for ADD SEGMENT
-   * @param path under which path to collect
+   * @param inputPath under which path to collect
    * @return schema of the data file, map of last level directory (partition folder) to its
    *         children file list (data files)
    */
@@ -325,11 +326,11 @@ object MixedFormatHandler {
         dataFilters,
         l.catalogTable.map(_.identifier))
     val afterScanFilter = afterScanFilters.toSeq.reduceOption(expressions.And)
-    val withFilter = afterScanFilter.map(execution.FilterExec(_, scan)).getOrElse(scan)
+    val withFilter = afterScanFilter.map(FilterExec(_, scan)).getOrElse(scan)
     val withProjections = if (projects == withFilter.output) {
       withFilter
     } else {
-      execution.ProjectExec(projects, withFilter)
+      ProjectExec(projects, withFilter)
     }
     (withProjections.inputRDDs().head, fileFormat.supportBatch(sparkSession, outputSchema))
   }
