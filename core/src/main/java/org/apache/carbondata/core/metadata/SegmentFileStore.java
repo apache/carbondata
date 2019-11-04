@@ -49,6 +49,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
@@ -242,24 +243,36 @@ public class SegmentFileStore {
     return false;
   }
 
-  public static boolean writeSegmentFileForOthers(CarbonTable carbonTable, Segment segment)
+  public static boolean writeSegmentFileForOthers(
+      CarbonTable carbonTable,
+      Segment segment,
+      PartitionSpec partitionSpec,
+      List<FileStatus> partitionDataFiles)
       throws IOException {
     String tablePath = carbonTable.getTablePath();
-    CarbonFile segmentFolder = FileFactory.getCarbonFile(segment.getSegmentPath());
-    CarbonFile[] otherFiles = segmentFolder.listFiles(new CarbonFileFilter() {
-      @Override
-      public boolean accept(CarbonFile file) {
-        return (!file.getName().equals("_SUCCESS") && !file.getName().endsWith(".crc"));
-      }
-    });
-    if (otherFiles != null && otherFiles.length > 0) {
+    CarbonFile[] dataFiles = null;
+    if (partitionDataFiles.isEmpty()) {
+      CarbonFile segmentFolder = FileFactory.getCarbonFile(segment.getSegmentPath());
+      dataFiles = segmentFolder.listFiles(
+          file -> (!file.getName().equals("_SUCCESS") && !file.getName().endsWith(".crc")));
+    } else {
+      dataFiles = partitionDataFiles.stream().map(
+          fileStatus -> FileFactory.getCarbonFile(
+              fileStatus.getPath().toString())).toArray(CarbonFile[]::new);
+    }
+    if (dataFiles != null && dataFiles.length > 0) {
       SegmentFile segmentFile = new SegmentFile();
       segmentFile.setOptions(segment.getOptions());
       FolderDetails folderDetails = new FolderDetails();
       folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
       folderDetails.setRelative(false);
-      segmentFile.addPath(segment.getSegmentPath(), folderDetails);
-      for (CarbonFile file : otherFiles) {
+      if (!partitionDataFiles.isEmpty()) {
+        folderDetails.setPartitions(partitionSpec.getPartitions());
+        segmentFile.addPath(partitionSpec.getLocation().toString(), folderDetails);
+      } else {
+        segmentFile.addPath(segment.getSegmentPath(), folderDetails);
+      }
+      for (CarbonFile file : dataFiles) {
         folderDetails.getFiles().add(file.getName());
       }
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
@@ -437,18 +450,19 @@ public class SegmentFileStore {
    * @return boolean which determines whether status update is done or not.
    * @throws IOException
    */
-  public static boolean updateSegmentFile(CarbonTable carbonTable, String segmentId,
+  public static boolean updateTableStatusFile(CarbonTable carbonTable, String segmentId,
       String segmentFile, String tableId, SegmentFileStore segmentFileStore) throws IOException {
-    return updateSegmentFile(carbonTable, segmentId, segmentFile, tableId, segmentFileStore, null);
+    return updateTableStatusFile(carbonTable, segmentId, segmentFile, tableId, segmentFileStore,
+        null);
   }
 
   /**
-   * This API will update the segmentFile of a passed segment.
+   * This API will update the table status file with specified segment.
    *
    * @return boolean which determines whether status update is done or not.
    * @throws IOException
    */
-  public static boolean updateSegmentFile(CarbonTable carbonTable, String segmentId,
+  public static boolean updateTableStatusFile(CarbonTable carbonTable, String segmentId,
       String segmentFile, String tableId, SegmentFileStore segmentFileStore,
       SegmentStatus segmentStatus) throws IOException {
     boolean status = false;

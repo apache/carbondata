@@ -19,14 +19,17 @@ package org.apache.spark.sql.execution.strategy
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
-import org.apache.hadoop.fs.{Path, PathFilter}
+import org.apache.hadoop.fs.{FileStatus, FileSystem, Path, PathFilter}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{execution, MixedFormatHandlerUtil, SparkSession}
+import org.apache.spark.sql.{MixedFormatHandlerUtil, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.SparkCarbonFileFormat
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Cast, Expression, ExpressionSet, NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, AttributeSet, Expression, ExpressionSet, NamedExpression}
+import org.apache.spark.sql.execution.{FilterExec, ProjectExec}
 import org.apache.spark.sql.execution.datasources.{FileFormat, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
 import org.apache.spark.sql.execution.datasources.csv.CSVFileFormat
 import org.apache.spark.sql.execution.datasources.json.JsonFileFormat
@@ -56,22 +59,76 @@ object MixedFormatHandler {
     supportedFormats.exists(_.equalsIgnoreCase(format))
   }
 
-  def getSchema(sparkSession: SparkSession,
+  /**
+   * collect schema, list of last level directory and list of all data files under given path
+   *
+   * @param sparkSession spark session
+   * @param options option for ADD SEGMENT
+   * @param inputPath under which path to collect
+   * @return schema of the data file, map of last level directory (partition folder) to its
+   *         children file list (data files)
+   */
+  def collectInfo(
+      sparkSession: SparkSession,
       options: Map[String, String],
-      segPath: String): StructType = {
-    val format = options.getOrElse("format", "carbondata")
-    if ((format.equalsIgnoreCase("carbondata") || format.equalsIgnoreCase("carbon"))) {
-      new SparkCarbonFileFormat().inferSchema(sparkSession, options, Seq.empty).get
+      inputPath: String): (StructType, mutable.Map[String, Seq[FileStatus]]) = {
+    val path = new Path(inputPath)
+    val fs = path.getFileSystem(SparkSQLUtil.sessionState(sparkSession).newHadoopConf())
+    val rootPath = fs.getFileStatus(path)
+    val leafDirFileMap = collectAllLeafFileStatus(sparkSession, rootPath, fs)
+    val format = options.getOrElse("format", "carbondata").toLowerCase
+    val fileFormat = if (format.equalsIgnoreCase("carbondata") ||
+                         format.equalsIgnoreCase("carbon")) {
+      new SparkCarbonFileFormat()
     } else {
-      val filePath = FileFactory.addSchemeIfNotExists(segPath.replace("\\", "/"))
-      val path = new Path(filePath)
-      val fs = path.getFileSystem(SparkSQLUtil.sessionState(sparkSession).newHadoopConf())
-      val status = fs.listStatus(path, new PathFilter {
-        override def accept(path: Path): Boolean = {
-          !path.getName.equals("_SUCCESS") && !path.getName.endsWith(".crc")
-        }
-      })
-      getFileFormat(new FileFormatName(format)).inferSchema(sparkSession, options, status).get
+      getFileFormat(new FileFormatName(format))
+    }
+    if (leafDirFileMap.isEmpty) {
+      throw new RuntimeException("no partition data is found")
+    }
+    val schema = fileFormat.inferSchema(sparkSession, options, leafDirFileMap.head._2).get
+    (schema, leafDirFileMap)
+  }
+
+  /**
+   * collect leaf directories and leaf files recursively in given path
+   *
+   * @param sparkSession spark session
+   * @param path path to collect
+   * @param fs hadoop file system
+   * @return mapping of leaf directory to its children files
+   */
+  private def collectAllLeafFileStatus(
+      sparkSession: SparkSession,
+      path: FileStatus,
+      fs: FileSystem): mutable.Map[String, Seq[FileStatus]] = {
+    val directories: ArrayBuffer[FileStatus] = ArrayBuffer()
+    val leafFiles: ArrayBuffer[FileStatus] = ArrayBuffer()
+    val lastLevelFileMap = mutable.Map[String, Seq[FileStatus]]()
+
+    // get all files under input path
+    val fileStatus = fs.listStatus(path.getPath, new PathFilter {
+      override def accept(path: Path): Boolean = {
+        !path.getName.equals("_SUCCESS") && !path.getName.endsWith(".crc")
+      }
+    })
+    // collect directories and files
+    fileStatus.foreach { file =>
+      if (file.isDirectory) directories.append(file)
+      else leafFiles.append(file)
+    }
+    if (leafFiles.nonEmpty) {
+      // leaf file is found, so parent folder (input parameter) is the last level dir
+      val updatedPath = FileFactory.getUpdatedFilePath(path.getPath.toString)
+      lastLevelFileMap.put(updatedPath, leafFiles)
+      lastLevelFileMap
+    } else {
+      // no leaf file is found, for each directory, collect recursively
+      directories.foreach { dir =>
+        val map = collectAllLeafFileStatus(sparkSession, dir, fs)
+        lastLevelFileMap ++= map
+      }
+      lastLevelFileMap
     }
   }
 
@@ -83,7 +140,8 @@ object MixedFormatHandler {
    * If multiple segments are with different formats like parquet , orc etc then it creates RDD for
    * each format segments and union them.
    */
-  def extraRDD(l: LogicalRelation,
+  def extraRDD(
+      l: LogicalRelation,
       projects: Seq[NamedExpression],
       filters: Seq[Expression],
       readCommittedScope: ReadCommittedScope,
@@ -99,13 +157,28 @@ object MixedFormatHandler {
       .filter(l => segsToAccess.isEmpty || segsToAccess.contains(l.getLoadName))
       .groupBy(_.getFileFormat)
       .map { case (format, detailses) =>
-        val paths = detailses.flatMap { d =>
-          SegmentFileStore.readSegmentFile(CarbonTablePath.getSegmentFilePath(readCommittedScope
-            .getFilePath, d.getSegmentFile)).getLocationMap.asScala.flatMap { case (p, f) =>
-            f.getFiles.asScala.map { ef =>
-              new Path(p + CarbonCommonConstants.FILE_SEPARATOR + ef)
+        // collect paths as input to scan RDD
+        val paths = detailses. flatMap { d =>
+          val segmentFile = SegmentFileStore.readSegmentFile(
+            CarbonTablePath.getSegmentFilePath(readCommittedScope.getFilePath, d.getSegmentFile))
+
+          // If it is a partition table, the path to create RDD should be the root path of the
+          // partition folder (excluding the partition subfolder).
+          // If it is not a partition folder, collect all data file paths
+          if (segmentFile.getOptions.containsKey("partition")) {
+            val segmentPath = segmentFile.getOptions.get("path")
+            if (segmentPath == null) {
+              throw new RuntimeException("invalid segment file, 'path' option not found")
+            }
+            Seq(new Path(segmentPath))
+          } else {
+            // If it is not a partition folder, collect all data file paths to create RDD
+            segmentFile.getLocationMap.asScala.flatMap { case (p, f) =>
+              f.getFiles.asScala.map { ef =>
+                new Path(p + CarbonCommonConstants.FILE_SEPARATOR + ef)
+              }.toSeq
             }.toSeq
-          }.toSeq
+          }
         }
         val fileFormat = getFileFormat(format, supportBatch)
         getRDDForExternalSegments(l, projects, filters, fileFormat, paths)
@@ -125,7 +198,7 @@ object MixedFormatHandler {
               rdd = rdd.union(r._1)
             }
           }
-          Some(rdd, !rdds.exists(!_._2))
+          Some(rdd, rdds.forall(_._2))
         }
       }
     } else {
@@ -178,10 +251,13 @@ object MixedFormatHandler {
       case Some(catalogTable) =>
         val fileIndex =
           new InMemoryFileIndex(sparkSession, paths, catalogTable.storage.properties, None)
+        // exclude the partition in data schema
+        val dataSchema = catalogTable.schema.filterNot { column =>
+          catalogTable.partitionColumnNames.contains(column.name)}
         HadoopFsRelation(
           fileIndex,
           catalogTable.partitionSchema,
-          catalogTable.schema,
+          new StructType(dataSchema.toArray),
           catalogTable.bucketSpec,
           fileFormat,
           catalogTable.storage.properties)(sparkSession)
@@ -253,11 +329,11 @@ object MixedFormatHandler {
         dataFilters,
         l.catalogTable.map(_.identifier))
     val afterScanFilter = afterScanFilters.toSeq.reduceOption(expressions.And)
-    val withFilter = afterScanFilter.map(execution.FilterExec(_, scan)).getOrElse(scan)
+    val withFilter = afterScanFilter.map(FilterExec(_, scan)).getOrElse(scan)
     val withProjections = if (projects == withFilter.output) {
       withFilter
     } else {
-      execution.ProjectExec(projects, withFilter)
+      ProjectExec(projects, withFilter)
     }
     (withProjections.inputRDDs().head, fileFormat.supportBatch(sparkSession, outputSchema))
   }

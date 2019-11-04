@@ -535,7 +535,7 @@ object CarbonDataRDDFactory {
         SegmentFileStore.writeSegmentFile(carbonTable, carbonLoadModel.getSegmentId,
           String.valueOf(carbonLoadModel.getFactTimeStamp))
 
-      SegmentFileStore.updateSegmentFile(
+      SegmentFileStore.updateTableStatusFile(
         carbonTable,
         carbonLoadModel.getSegmentId,
         segmentFileName,
