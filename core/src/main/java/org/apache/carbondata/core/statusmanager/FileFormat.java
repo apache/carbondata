@@ -56,6 +56,11 @@ public class FileFormat implements Serializable {
     return COLUMNAR_V3;
   }
 
+  public boolean isCarbonFormat() {
+    return (this.format.equalsIgnoreCase("COLUMNAR_V3") ||
+        this.format.equalsIgnoreCase("ROW_V1"));
+  }
+
   @Override public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;

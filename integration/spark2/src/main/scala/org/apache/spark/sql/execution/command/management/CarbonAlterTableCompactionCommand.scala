@@ -22,7 +22,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{AlterTableModel, AtomicRunnableCommand, CompactionModel}
@@ -42,7 +42,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -276,7 +276,18 @@ case class CarbonAlterTableCompactionCommand(
     val isCompactionTriggerByDDl = true
     val segmentIds: Option[List[String]] = if (compactionType == CompactionType.CUSTOM &&
       alterTableModel.customSegmentIds.isDefined) {
-      alterTableModel.customSegmentIds
+      val ids = alterTableModel.customSegmentIds
+      ids match {
+        case Some(x) =>
+          val loadMetadataDetails = carbonLoadModel.getLoadMetadataDetails.asScala
+          val otherLoadDetails = loadMetadataDetails
+            .exists(p => x.exists(a => a.equalsIgnoreCase(p.getLoadName)) && !p.isCarbonFormat)
+          if (otherLoadDetails) {
+            throw new AnalysisException(s"Custom compaction does not support other format segment")
+          }
+        case None =>
+      }
+      ids
     } else {
       None
     }

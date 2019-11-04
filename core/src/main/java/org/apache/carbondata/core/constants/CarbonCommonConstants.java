@@ -1701,6 +1701,11 @@ public final class CarbonCommonConstants {
   public static final String FACT_FILE_EXT = ".carbondata";
 
   /**
+   * PARQUET_FILE_EXT
+   */
+  public static final String PARQUET_FILE_EXT = ".parquet";
+
+  /**
    * DELETE_DELTA_FILE_EXT
    */
   public static final String DELETE_DELTA_FILE_EXT = ".deletedelta";
