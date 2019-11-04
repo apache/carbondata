@@ -154,8 +154,11 @@ class SparkCarbonFileFormat extends FileFormat
           path
         }
         context.getConfiguration.set("carbon.outputformat.writepath", updatedPath)
+        // "jobid"+"x"+"taskid", task retry should have same task number
         context.getConfiguration.set("carbon.outputformat.taskno",
-          UUID.randomUUID().toString.replace("-", ""))
+          context.getTaskAttemptID.getJobID.getJtIdentifier +
+          context.getTaskAttemptID.getJobID.getId
+          + 'x' + context.getTaskAttemptID.getTaskID.getId)
         new CarbonOutputWriter(path, context, dataSchema.fields)
       }
 
