@@ -38,7 +38,8 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
    * @return dictionary key array for all the dictionary dimension selected in
    * query
    */
-  @Override public byte[] getDictionaryKeyArray() {
+  @Override
+  public byte[] getDictionaryKeyArray() {
     ++currentRow;
     return getDictionaryKeyArray(currentRow);
   }
@@ -47,7 +48,8 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
    * @return dictionary key integer array for all the dictionary dimension
    * selected in query
    */
-  @Override public int[] getDictionaryKeyIntegerArray() {
+  @Override
+  public int[] getDictionaryKeyIntegerArray() {
     ++currentRow;
     return getDictionaryKeyIntegerArray(currentRow);
   }
@@ -57,11 +59,13 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
    *
    * @return complex type key array
    */
-  @Override public byte[][] getComplexTypeKeyArray() {
+  @Override
+  public byte[][] getComplexTypeKeyArray() {
     return getComplexTypeKeyArray(currentRow);
   }
 
-  @Override public List<byte[][]> getComplexTypeKeyArrayBatch(int batchSize) {
+  @Override
+  public List<byte[][]> getComplexTypeKeyArrayBatch(int batchSize) {
     return getComplexTypeKeyArrayBatch();
   }
 
@@ -71,11 +75,13 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
    *
    * @return no dictionary key array for all the no dictionary dimension
    */
-  @Override public byte[][] getNoDictionaryKeyArray() {
+  @Override
+  public byte[][] getNoDictionaryKeyArray() {
     return getNoDictionaryKeyArray(currentRow);
   }
 
-  @Override public void fillValidRowIdsBatchFilling(int rowId, int batchSize) {
+  @Override
+  public void fillValidRowIdsBatchFilling(int rowId, int batchSize) {
     // row id will be different for every batch so clear it before filling
     clearValidRowIdList();
     int startPosition = rowId;
@@ -92,7 +98,8 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
    *
    * @return valid row id
    */
-  @Override public int getCurrentRowId() {
+  @Override
+  public int getCurrentRowId() {
     return currentRow;
   }
 

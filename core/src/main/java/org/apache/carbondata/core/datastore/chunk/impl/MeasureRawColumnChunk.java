@@ -125,7 +125,8 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     }
   }
 
-  @Override public void freeMemory() {
+  @Override
+  public void freeMemory() {
     super.freeMemory();
     if (null != columnPages) {
       for (int i = 0; i < columnPages.length; i++) {

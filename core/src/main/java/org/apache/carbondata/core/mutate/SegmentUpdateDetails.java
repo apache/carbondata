@@ -103,14 +103,16 @@ public class SegmentUpdateDetails implements Serializable {
     this.deltaFileStamps = deltaFileStamps;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     final int prime = 31;
     int result = segmentName.hashCode();
     result = prime * result + blockName.hashCode();
     return result;
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (obj == null) {
       return false;
 

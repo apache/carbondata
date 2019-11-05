@@ -235,7 +235,8 @@ public class TableFieldStat implements Serializable {
     return noDictSortColumnSchemaOrderMapping;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof TableFieldStat)) return false;
     TableFieldStat that = (TableFieldStat) o;
@@ -248,7 +249,8 @@ public class TableFieldStat implements Serializable {
         && measureCnt == that.measureCnt;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(dictSortDimCnt, dictNoSortDimCnt, noDictSortDimCnt,
         noDictNoSortDimCnt, complexDimCnt, varcharDimCnt, measureCnt);
   }

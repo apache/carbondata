@@ -79,35 +79,40 @@ public class CarbonImplicitDimension extends CarbonDimension {
   /**
    * @return the list of encoder used in dimension
    */
-  @Override public List<Encoding> getEncoder() {
+  @Override
+  public List<Encoding> getEncoder() {
     return encodingList;
   }
 
   /**
    * @return return the number of child present in case of complex type
    */
-  @Override public int getNumberOfChild() {
+  @Override
+  public int getNumberOfChild() {
     return 0;
   }
 
   /**
    * @return the colName
    */
-  @Override public String getColName() {
+  @Override
+  public String getColName() {
     return implicitDimensionName;
   }
 
   /**
    * @return if column is dimension return true, else false.
    */
-  @Override public Boolean isDimension() {
+  @Override
+  public Boolean isDimension() {
     return true;
   }
 
   /**
    * @return the dataType
    */
-  @Override public DataType getDataType() {
+  @Override
+  public DataType getDataType() {
     return DataTypes.STRING;
   }
 
@@ -128,7 +133,8 @@ public class CarbonImplicitDimension extends CarbonDimension {
   /**
    * to generate the hash code for this class
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((implicitDimensionName == null) ?
@@ -140,7 +146,8 @@ public class CarbonImplicitDimension extends CarbonDimension {
   /**
    * to check whether to dimension are equal or not
    */
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }

@@ -52,7 +52,8 @@ public final class DataTypeUtil {
       LogServiceFactory.getLogService(DataTypeUtil.class.getName());
 
   private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
-    @Override protected DateFormat initialValue() {
+    @Override
+    protected DateFormat initialValue() {
       DateFormat dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
               CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
@@ -62,7 +63,8 @@ public final class DataTypeUtil {
   };
 
   private static final ThreadLocal<DateFormat> dateformatter = new ThreadLocal<DateFormat>() {
-    @Override protected DateFormat initialValue() {
+    @Override
+    protected DateFormat initialValue() {
       return new SimpleDateFormat(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
               CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));

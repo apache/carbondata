@@ -129,7 +129,8 @@ class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
     this.actualDataLength = actualDataLength;
   }
 
-  @Override public void fillVector(byte[] data, CarbonColumnVector vector) {
+  @Override
+  public void fillVector(byte[] data, CarbonColumnVector vector) {
     // start position will be used to store the current data position
     boolean invertedIndex = vector instanceof ColumnarVectorWrapperDirectWithInvertedIndex
         || vector instanceof SequentialFill;

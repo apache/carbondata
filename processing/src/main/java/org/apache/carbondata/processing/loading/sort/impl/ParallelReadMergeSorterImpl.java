@@ -144,7 +144,8 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
     return new Iterator[] { batchIterator };
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     if (intermediateFileMerger != null) {
       intermediateFileMerger.close();
     }

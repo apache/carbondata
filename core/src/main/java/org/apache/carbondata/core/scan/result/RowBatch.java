@@ -83,7 +83,8 @@ public class RowBatch extends CarbonIterator<Object[]> {
    *
    * @return {@code true} if the iteration has more elements
    */
-  @Override public boolean hasNext() {
+  @Override
+  public boolean hasNext() {
     return counter < rows.size();
   }
 
@@ -92,7 +93,8 @@ public class RowBatch extends CarbonIterator<Object[]> {
    *
    * @return the next element in the iteration
    */
-  @Override public Object[] next() {
+  @Override
+  public Object[] next() {
     if (!hasNext()) {
       throw new NoSuchElementException();
     }

@@ -28,11 +28,13 @@ public class HashPartitioner implements Partitioner {
     this.numPartitions = numPartitions;
   }
 
-  @Override public int numPartitions() {
+  @Override
+  public int numPartitions() {
     return numPartitions;
   }
 
-  @Override public int getPartition(Object key) {
+  @Override
+  public int getPartition(Object key) {
     if (key == null) {
       return 0;
     }

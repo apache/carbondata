@@ -23,7 +23,8 @@ public abstract class AbstractKeyGenerator implements KeyGenerator {
 
   private static final long serialVersionUID = -6675293078575359769L;
 
-  @Override public int compare(byte[] byte1, byte[] byte2) {
+  @Override
+  public int compare(byte[] byte1, byte[] byte2) {
     // Short circuit equal case
     if (byte1 == byte2) {
       return 0;

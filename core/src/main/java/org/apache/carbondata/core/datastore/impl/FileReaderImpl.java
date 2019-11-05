@@ -59,7 +59,8 @@ public class FileReaderImpl implements FileReader {
    * @param length   number of bytes to be read
    * @return read byte array
    */
-  @Override public byte[] readByteArray(String filePath, long offset, int length)
+  @Override
+  public byte[] readByteArray(String filePath, long offset, int length)
       throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBuffer = read(fileChannel, length, offset);
@@ -69,7 +70,8 @@ public class FileReaderImpl implements FileReader {
   /**
    * This method will be used to close all the streams currently present in the cache
    */
-  @Override public void finish() throws IOException {
+  @Override
+  public void finish() throws IOException {
     for (Entry<String, FileChannel> entry : fileNameAndStreamCache.entrySet()) {
       FileChannel channel = entry.getValue();
       if (null != channel) {
@@ -87,7 +89,8 @@ public class FileReaderImpl implements FileReader {
    * @param offset   reading start position,
    * @return read int
    */
-  @Override public int readInt(String filePath, long offset) throws IOException {
+  @Override
+  public int readInt(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE, offset);
     return byteBuffer.getInt();
@@ -100,7 +103,8 @@ public class FileReaderImpl implements FileReader {
    * @param filePath fully qualified file path
    * @return read int
    */
-  @Override public int readInt(String filePath) throws IOException {
+  @Override
+  public int readInt(String filePath) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE);
     return byteBuffer.getInt();
@@ -114,7 +118,8 @@ public class FileReaderImpl implements FileReader {
    * @param offset   reading start position,
    * @return read int
    */
-  @Override public long readDouble(String filePath, long offset) throws IOException {
+  @Override
+  public long readDouble(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
     return byteBuffer.getLong();
@@ -176,7 +181,8 @@ public class FileReaderImpl implements FileReader {
    * @param length   number of bytes to be read
    * @return read byte array
    */
-  @Override public byte[] readByteArray(String filePath, int length) throws IOException {
+  @Override
+  public byte[] readByteArray(String filePath, int length) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBuffer = read(fileChannel, length);
     return byteBuffer.array();
@@ -190,13 +196,15 @@ public class FileReaderImpl implements FileReader {
    * @param offset   reading start position,
    * @return read long
    */
-  @Override public long readLong(String filePath, long offset) throws IOException {
+  @Override
+  public long readLong(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
     return byteBuffer.getLong();
   }
 
-  @Override public ByteBuffer readByteBuffer(String filePath, long offset, int length)
+  @Override
+  public ByteBuffer readByteBuffer(String filePath, long offset, int length)
       throws IOException {
     ByteBuffer byteBuffer = ByteBuffer.allocate(length);
     FileChannel fileChannel = updateCache(filePath);
@@ -206,11 +214,13 @@ public class FileReaderImpl implements FileReader {
     return byteBuffer;
   }
 
-  @Override public void setReadPageByPage(boolean isReadPageByPage) {
+  @Override
+  public void setReadPageByPage(boolean isReadPageByPage) {
     this.readPageByPage = isReadPageByPage;
   }
 
-  @Override public boolean isReadPageByPage() {
+  @Override
+  public boolean isReadPageByPage() {
     return readPageByPage;
   }
 }

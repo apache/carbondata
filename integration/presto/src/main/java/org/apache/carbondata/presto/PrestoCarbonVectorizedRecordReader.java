@@ -94,7 +94,8 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   /**
    * Implementation of RecordReader API.
    */
-  @Override public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
+  @Override
+  public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
       throws IOException, InterruptedException, UnsupportedOperationException {
     // The input split can contain single HDFS block or multiple blocks, so firstly get all the
     // blocks and then set them in the query model.
@@ -121,7 +122,8 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     }
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     logStatistics(rowCount, queryModel.getStatisticsRecorder());
     if (columnarBatch != null) {
       columnarBatch = null;
@@ -142,7 +144,8 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     logStatistics(taskId, queryStartTime, queryModel.getStatisticsRecorder());
   }
 
-  @Override public boolean nextKeyValue() throws IOException, InterruptedException {
+  @Override
+  public boolean nextKeyValue() throws IOException, InterruptedException {
     resultBatch();
 
     if (returnColumnarBatch) return nextBatch();
@@ -154,7 +157,8 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     return true;
   }
 
-  @Override public Object getCurrentValue() throws IOException, InterruptedException {
+  @Override
+  public Object getCurrentValue() throws IOException, InterruptedException {
     if (returnColumnarBatch) {
       rowCount += columnarBatch.numValidRows();
       return columnarBatch;
@@ -163,11 +167,13 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     }
   }
 
-  @Override public Void getCurrentKey() throws IOException, InterruptedException {
+  @Override
+  public Void getCurrentKey() throws IOException, InterruptedException {
     return null;
   }
 
-  @Override public float getProgress() throws IOException, InterruptedException {
+  @Override
+  public float getProgress() throws IOException, InterruptedException {
     // TODO : Implement it based on total number of rows it is going to retrieve.
     return 0;
   }

@@ -86,7 +86,8 @@ class FileCollector {
     }
 
     Collections.sort(unsortedFiles, new Comparator<DataFile>() {
-      @Override public int compare(DataFile o1, DataFile o2) {
+      @Override
+      public int compare(DataFile o1, DataFile o2) {
         if (o1.getShardName().equalsIgnoreCase(o2.getShardName())) {
           return Integer.parseInt(o1.getPartNo()) - Integer.parseInt(o2.getPartNo());
         } else {

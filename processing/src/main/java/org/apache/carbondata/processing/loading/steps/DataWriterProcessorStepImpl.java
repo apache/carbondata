@@ -82,7 +82,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         CarbonUtil.getLocalDictionaryModel(configuration.getTableSpec().getCarbonTable());
   }
 
-  @Override public void initialize() throws IOException {
+  @Override
+  public void initialize() throws IOException {
     super.initialize();
     child.initialize();
     this.carbonFactHandlers = new CopyOnWriteArrayList<>();
@@ -105,7 +106,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return carbonFactDataHandlerModel;
   }
 
-  @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
+  @Override
+  public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     Iterator<CarbonRowBatch>[] iterators = child.execute();
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
@@ -143,7 +145,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return null;
   }
 
-  @Override protected String getStepName() {
+  @Override
+  protected String getStepName() {
     return "Data Writer";
   }
 
@@ -159,7 +162,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       this.rangeId = rangeId;
     }
 
-    @Override public Void call() {
+    @Override
+    public Void call() {
       processRange(insideRangeIterator, rangeId);
       return null;
     }
@@ -230,7 +234,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     rowCounter.getAndAdd(1);
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     if (!closed) {
       super.close();
       if (listener != null) {

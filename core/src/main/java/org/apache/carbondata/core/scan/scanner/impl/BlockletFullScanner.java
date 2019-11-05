@@ -165,7 +165,8 @@ public class BlockletFullScanner implements BlockletScanner {
     return emptyResult;
   }
 
-  @Override public boolean isScanRequired(DataRefNode dataBlock) {
+  @Override
+  public boolean isScanRequired(DataRefNode dataBlock) {
     // For non filter it is always true
     return true;
   }

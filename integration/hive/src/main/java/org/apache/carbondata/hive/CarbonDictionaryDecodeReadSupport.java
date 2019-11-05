@@ -75,7 +75,8 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
    * @param carbonColumns           column list
    * @param carbonTable table identifier
    */
-  @Override public void initialize(CarbonColumn[] carbonColumns,
+  @Override
+  public void initialize(CarbonColumn[] carbonColumns,
       CarbonTable carbonTable) throws IOException {
     this.carbonColumns = carbonColumns;
     dictionaries = new Dictionary[carbonColumns.length];
@@ -98,7 +99,8 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
     }
   }
 
-  @Override public T readRow(Object[] data) {
+  @Override
+  public T readRow(Object[] data) {
     assert (data.length == dictionaries.length);
     writableArr = new Writable[data.length];
     for (int i = 0; i < dictionaries.length; i++) {
@@ -120,7 +122,8 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
    * column involved during decode, to facilitate LRU cache policy if memory
    * threshold is reached
    */
-  @Override public void close() {
+  @Override
+  public void close() {
     if (dictionaries == null) {
       return;
     }

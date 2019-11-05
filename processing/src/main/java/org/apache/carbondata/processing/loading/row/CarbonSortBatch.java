@@ -31,15 +31,18 @@ public class CarbonSortBatch extends CarbonRowBatch {
     this.iterator = iterator;
   }
 
-  @Override public boolean hasNext() {
+  @Override
+  public boolean hasNext() {
     return iterator.hasNext();
   }
 
-  @Override public CarbonRow next() {
+  @Override
+  public CarbonRow next() {
     return new CarbonRow(iterator.next());
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     iterator.close();
   }
 }

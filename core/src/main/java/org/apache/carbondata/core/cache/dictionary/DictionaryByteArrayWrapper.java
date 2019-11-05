@@ -61,7 +61,8 @@ public class DictionaryByteArrayWrapper {
    * @param other
    * @return
    */
-  @Override public boolean equals(Object other) {
+  @Override
+  public boolean equals(Object other) {
     if (this == other) {
       return true;
     }
@@ -81,7 +82,8 @@ public class DictionaryByteArrayWrapper {
    *
    * @return
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     if (null != xxHash32) {
       return xxHash32.hash(data, 0, data.length, 0);
     }

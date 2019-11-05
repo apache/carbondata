@@ -48,7 +48,8 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
    *
    * @return {@code true} if the iteration has more elements
    */
-  @Override public boolean hasNext() {
+  @Override
+  public boolean hasNext() {
     if (currentChunk != null && currentChunk.hasNext()) {
       return true;
     } else if (iterator != null && iterator.hasNext()) {
@@ -63,7 +64,8 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
    *
    * @return the next element in the iteration
    */
-  @Override public Object[] next() {
+  @Override
+  public Object[] next() {
     return currentChunk.next();
   }
 

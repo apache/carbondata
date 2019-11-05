@@ -333,7 +333,8 @@ public class SegmentPropertiesAndSchemaHolder {
       fileFooterEntrySchemaForBlocklet = null;
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
       if (!(obj instanceof SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper)) {
         return false;
       }
@@ -361,13 +362,15 @@ public class SegmentPropertiesAndSchemaHolder {
 
     private void sortList(List<ColumnSchema> columnSchemas) {
       Collections.sort(columnSchemas, new Comparator<ColumnSchema>() {
-        @Override public int compare(ColumnSchema o1, ColumnSchema o2) {
+        @Override
+        public int compare(ColumnSchema o1, ColumnSchema o2) {
           return o1.getColumnUniqueId().compareTo(o2.getColumnUniqueId());
         }
       });
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
       int allColumnsHashCode = 0;
       // check column order
       StringBuilder builder = new StringBuilder();

@@ -142,6 +142,7 @@ public class MeasureFieldConverterImpl implements FieldConverter {
    * Method to clean the dictionary cache. As in this MeasureFieldConverterImpl convert no
    * dictionary caches are acquired so nothing to clear. s
    */
-  @Override public void clear() {
+  @Override
+  public void clear() {
   }
 }

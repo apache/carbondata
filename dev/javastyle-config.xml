@@ -172,7 +172,7 @@
 
         <!-- Checks for @Overrider in one line -->
         <module name="RegexpSinglelineJava">
-            <property name="severity" value="info"/>
+            <property name="severity" value="error"/>
             <property name="format" value="^\s*@Override\s+.+$"/>
             <property name="ignoreComments" value="true"/>
             <property name="message" value="@Override should at one line"/>

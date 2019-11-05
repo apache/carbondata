@@ -140,7 +140,8 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
     return dimColumnResolvedFilterInfo;
   }
 
-  @Override public CarbonMeasure getMeasure() {
+  @Override
+  public CarbonMeasure getMeasure() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 }

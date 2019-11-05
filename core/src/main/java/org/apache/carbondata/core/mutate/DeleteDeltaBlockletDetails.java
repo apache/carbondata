@@ -54,7 +54,8 @@ public class DeleteDeltaBlockletDetails implements Serializable {
     return deletedRows;
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -68,7 +69,8 @@ public class DeleteDeltaBlockletDetails implements Serializable {
     return id.equals(that.id) && (pageId.intValue() == that.pageId.intValue());
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return id.hashCode() + pageId.hashCode();
   }
 

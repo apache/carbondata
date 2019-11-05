@@ -50,7 +50,8 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    *
    * @param rowId Inverted index
    */
-  @Override public byte[] getRow(int rowId) {
+  @Override
+  public byte[] getRow(int rowId) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
       rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
@@ -74,7 +75,8 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    * @param index row id
    * @return surrogate key
    */
-  @Override public int getSurrogate(int index) {
+  @Override
+  public int getSurrogate(int index) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
       index = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
@@ -100,7 +102,8 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    * @param buffer   buffer in which data will be filled
    * @param offset off the of the buffer
    */
-  @Override public void fillRow(int rowId, byte[] buffer, int offset) {
+  @Override
+  public void fillRow(int rowId, byte[] buffer, int offset) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
       rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
@@ -117,7 +120,8 @@ public class UnsafeFixedLengthDimensionDataChunkStore
   /**
    * @return size of each column value
    */
-  @Override public int getColumnValueSize() {
+  @Override
+  public int getColumnValueSize() {
     return columnValueSize;
   }
 
@@ -128,7 +132,8 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    * @param compareValue value of to be compared
    * @return compare result
    */
-  @Override public int compareTo(int rowId, byte[] compareValue) {
+  @Override
+  public int compareTo(int rowId, byte[] compareValue) {
     // based on index we need to calculate the actual position in memory block
     rowId = rowId * columnValueSize;
     int compareResult = 0;

@@ -75,7 +75,8 @@ public final class Comparator {
 }
 
 class ByteArraySerializableComparator implements SerializableComparator {
-  @Override public int compare(Object key1, Object key2) {
+  @Override
+  public int compare(Object key1, Object key2) {
     if (key1 instanceof Byte) {
       return ((Byte) key1).compareTo((Byte) key2);
     }
@@ -104,7 +105,8 @@ class BooleanSerializableComparator implements SerializableComparator {
 }
 
 class IntSerializableComparator implements SerializableComparator {
-  @Override public int compare(Object key1, Object key2) {
+  @Override
+  public int compare(Object key1, Object key2) {
     if (key1 == null && key2 == null) {
       return 0;
     } else if (key1 == null) {
@@ -123,7 +125,8 @@ class IntSerializableComparator implements SerializableComparator {
 }
 
 class ShortSerializableComparator implements SerializableComparator {
-  @Override public int compare(Object key1, Object key2) {
+  @Override
+  public int compare(Object key1, Object key2) {
     if (key1 == null && key2 == null) {
       return 0;
     } else if (key1 == null) {
@@ -142,7 +145,8 @@ class ShortSerializableComparator implements SerializableComparator {
 }
 
 class DoubleSerializableComparator implements SerializableComparator {
-  @Override public int compare(Object key1, Object key2) {
+  @Override
+  public int compare(Object key1, Object key2) {
     if (key1 == null && key2 == null) {
       return 0;
     } else if (key1 == null) {
@@ -155,7 +159,8 @@ class DoubleSerializableComparator implements SerializableComparator {
 }
 
 class FloatSerializableComparator implements SerializableComparator {
-  @Override public int compare(Object key1, Object key2) {
+  @Override
+  public int compare(Object key1, Object key2) {
     if (key1 == null && key2 == null) {
       return 0;
     } else if (key1 == null) {
@@ -168,7 +173,8 @@ class FloatSerializableComparator implements SerializableComparator {
 }
 
 class LongSerializableComparator implements SerializableComparator {
-  @Override public int compare(Object key1, Object key2) {
+  @Override
+  public int compare(Object key1, Object key2) {
     if (key1 == null && key2 == null) {
       return 0;
     } else if (key1 == null) {
@@ -187,7 +193,8 @@ class LongSerializableComparator implements SerializableComparator {
 }
 
 class BigDecimalSerializableComparator implements SerializableComparator {
-  @Override public int compare(Object key1, Object key2) {
+  @Override
+  public int compare(Object key1, Object key2) {
     if (key1 == null && key2 == null) {
       return 0;
     } else if (key1 == null) {

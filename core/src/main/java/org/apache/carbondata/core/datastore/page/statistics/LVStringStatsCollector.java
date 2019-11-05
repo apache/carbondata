@@ -74,7 +74,8 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
 
   }
 
-  @Override public void update(float value) {
+  @Override
+  public void update(float value) {
 
   }
 
@@ -120,29 +121,34 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
   public SimpleStatsResult getPageStats() {
     return new SimpleStatsResult() {
 
-      @Override public Object getMin() {
+      @Override
+      public Object getMin() {
         if (null == min || ignoreWritingMinMax) {
           min = new byte[0];
         }
         return min;
       }
 
-      @Override public Object getMax() {
+      @Override
+      public Object getMax() {
         if (null == max || ignoreWritingMinMax) {
           max = new byte[0];
         }
         return max;
       }
 
-      @Override public int getDecimalCount() {
+      @Override
+      public int getDecimalCount() {
         return 0;
       }
 
-      @Override public DataType getDataType() {
+      @Override
+      public DataType getDataType() {
         return DataTypes.STRING;
       }
 
-      @Override public boolean writeMinMax() {
+      @Override
+      public boolean writeMinMax() {
         return !ignoreWritingMinMax;
       }
 

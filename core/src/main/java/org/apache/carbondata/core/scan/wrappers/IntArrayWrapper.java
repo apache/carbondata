@@ -30,7 +30,8 @@ public class IntArrayWrapper {
     this.data = data;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
@@ -41,7 +42,8 @@ public class IntArrayWrapper {
     return Arrays.equals(data, that.data);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Arrays.hashCode(data);
   }
 }

@@ -48,7 +48,8 @@ public class FileMergeSortComparator implements Comparator<IntermediateSortTempR
     this.noDictPrimitiveIndex = columnIdBasedOnSchemaInRow;
   }
 
-  @Override public int compare(IntermediateSortTempRow rowA, IntermediateSortTempRow rowB) {
+  @Override
+  public int compare(IntermediateSortTempRow rowA, IntermediateSortTempRow rowB) {
     int diff = 0;
     int dictIndex = 0;
     int nonDictIndex = 0;

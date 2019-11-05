@@ -142,7 +142,8 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    * @param other
    * @return
    */
-  @Override public boolean equals(Object other) {
+  @Override
+  public boolean equals(Object other) {
     if (this == other) {
       return true;
     }
@@ -162,7 +163,8 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    *
    * @return
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = dictionarySourceAbsoluteTableIdentifier.hashCode();
     result = 31 * result + columnIdentifier.hashCode();
     return result;

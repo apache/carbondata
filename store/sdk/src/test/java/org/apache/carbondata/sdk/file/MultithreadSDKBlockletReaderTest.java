@@ -123,7 +123,8 @@ public class MultithreadSDKBlockletReaderTest {
       this.split = split;
     }
 
-    @Override public Long call() throws IOException, InterruptedException {
+    @Override
+    public Long call() throws IOException, InterruptedException {
       long count = 0;
       CarbonReader reader = CarbonReader.builder(split).build();
       try {

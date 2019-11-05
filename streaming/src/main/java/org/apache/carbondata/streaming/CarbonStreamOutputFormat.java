@@ -53,7 +53,8 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
 
   private static final String SEGMENT_ID = "carbon.segment.id";
 
-  @Override public RecordWriter<Void, Object> getRecordWriter(TaskAttemptContext job)
+  @Override
+  public RecordWriter<Void, Object> getRecordWriter(TaskAttemptContext job)
       throws IOException, InterruptedException {
     return new CarbonStreamRecordWriter(job);
   }

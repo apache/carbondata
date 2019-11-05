@@ -113,13 +113,15 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
   @Override
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
-      @Override public ColumnPage decode(byte[] input, int offset, int length)
+      @Override
+      public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
         ColumnPage page = ColumnPage.decompress(meta, input, offset, length, false);
         return LazyColumnPage.newPage(page, converter);
       }
 
-      @Override public void decodeAndFillVector(byte[] input, int offset, int length,
+      @Override
+      public void decodeAndFillVector(byte[] input, int offset, int length,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
           ReusableDataBuffer reusableDataBuffer)
           throws MemoryException, IOException {
@@ -137,7 +139,8 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
             pageSize);
       }
 
-      @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+      @Override
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
           throws MemoryException, IOException {
         return decode(input, offset, length);
       }

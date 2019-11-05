@@ -65,7 +65,8 @@ public class S3FileLock extends AbstractCarbonLock {
   /* (non-Javadoc)
    * @see org.apache.carbondata.core.locks.ICarbonLock#unlock()
    */
-  @Override public boolean unlock() {
+  @Override
+  public boolean unlock() {
     boolean status = false;
     if (null != dataOutputStream) {
       try {
@@ -81,7 +82,8 @@ public class S3FileLock extends AbstractCarbonLock {
   /* (non-Javadoc)
    * @see org.apache.carbondata.core.locks.ICarbonLock#lock()
    */
-  @Override public boolean lock() {
+  @Override
+  public boolean lock() {
     try {
       if (!FileFactory.isFileExist(lockFileDir)) {
         FileFactory.mkdirs(lockFileDir, FileFactory.getFileType(lockFileDir));

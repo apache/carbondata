@@ -44,7 +44,8 @@ public class ReverseDictionary implements Dictionary {
    * @param value dictionary value
    * @return if found returns key else INVALID_SURROGATE_KEY
    */
-  @Override public int getSurrogateKey(String value) {
+  @Override
+  public int getSurrogateKey(String value) {
     return columnReverseDictionaryInfo.getSurrogateKey(value);
   }
 
@@ -58,7 +59,8 @@ public class ReverseDictionary implements Dictionary {
    * @param value dictionary value as byte array
    * @return if found returns key else INVALID_SURROGATE_KEY
    */
-  @Override public int getSurrogateKey(byte[] value) {
+  @Override
+  public int getSurrogateKey(byte[] value) {
     return columnReverseDictionaryInfo.getSurrogateKey(value);
   }
 
@@ -71,7 +73,8 @@ public class ReverseDictionary implements Dictionary {
    * @param surrogateKey a unique ID for a dictionary value
    * @return value if found else null
    */
-  @Override public String getDictionaryValueForKey(int surrogateKey) {
+  @Override
+  public String getDictionaryValueForKey(int surrogateKey) {
     return columnReverseDictionaryInfo.getDictionaryValueForKey(surrogateKey);
   }
 
@@ -84,7 +87,8 @@ public class ReverseDictionary implements Dictionary {
    * @param surrogateKey a unique ID for a dictionary value
    * @return value if found else null
    */
-  @Override public byte[] getDictionaryValueForKeyInBytes(int surrogateKey) {
+  @Override
+  public byte[] getDictionaryValueForKeyInBytes(int surrogateKey) {
     return columnReverseDictionaryInfo.getDictionaryValueForKeyInBytes(surrogateKey);
   }
 
@@ -96,7 +100,8 @@ public class ReverseDictionary implements Dictionary {
    * @param surrogateKey a unique ID for a dictionary value
    * @return if found returns key else 0
    */
-  @Override public int getSortedIndex(int surrogateKey) {
+  @Override
+  public int getSortedIndex(int surrogateKey) {
     return columnReverseDictionaryInfo.getSortedIndex(surrogateKey);
   }
 
@@ -110,7 +115,8 @@ public class ReverseDictionary implements Dictionary {
    * @param sortedIndex sort index of dictionary value
    * @return value if found else null
    */
-  @Override public String getDictionaryValueFromSortedIndex(int sortedIndex) {
+  @Override
+  public String getDictionaryValueFromSortedIndex(int sortedIndex) {
     return columnReverseDictionaryInfo.getDictionaryValueFromSortedIndex(sortedIndex);
   }
 
@@ -123,14 +129,16 @@ public class ReverseDictionary implements Dictionary {
    *
    * @return
    */
-  @Override public DictionaryChunksWrapper getDictionaryChunks() {
+  @Override
+  public DictionaryChunksWrapper getDictionaryChunks() {
     return columnReverseDictionaryInfo.getDictionaryChunks();
   }
 
   /**
    * This method will release the objects and set default value for primitive types
    */
-  @Override public void clear() {
+  @Override
+  public void clear() {
     if (null != columnReverseDictionaryInfo) {
       columnReverseDictionaryInfo.clear();
       columnReverseDictionaryInfo = null;
@@ -141,7 +149,8 @@ public class ReverseDictionary implements Dictionary {
    * This method return the access count associated with the dictionary.
    * @return
    */
-  @Override public int getAccessCount() {
+  @Override
+  public int getAccessCount() {
     if (null != columnReverseDictionaryInfo) {
       return columnReverseDictionaryInfo.getAccessCount();
     }

@@ -74,7 +74,8 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     stats = new SerDeStats();
   }
 
-  @Override public void initialize(@Nullable Configuration configuration, Properties tbl)
+  @Override
+  public void initialize(@Nullable Configuration configuration, Properties tbl)
       throws SerDeException {
 
     final TypeInfo rowTypeInfo;
@@ -109,11 +110,13 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     status = LAST_OPERATION.UNKNOWN;
   }
 
-  @Override public Class<? extends Writable> getSerializedClass() {
+  @Override
+  public Class<? extends Writable> getSerializedClass() {
     return ArrayWritable.class;
   }
 
-  @Override public Writable serialize(Object obj, ObjectInspector objectInspector)
+  @Override
+  public Writable serialize(Object obj, ObjectInspector objectInspector)
       throws SerDeException {
     if (!objInspector.getCategory().equals(ObjectInspector.Category.STRUCT)) {
       throw new SerDeException("Cannot serializeStartKey " + objInspector.getCategory()
@@ -203,7 +206,8 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     throw new SerDeException("Unknown data type" + inspector.getCategory());
   }
 
-  @Override public SerDeStats getSerDeStats() {
+  @Override
+  public SerDeStats getSerDeStats() {
     // must be different
     assert (status != LAST_OPERATION.UNKNOWN);
     if (status == LAST_OPERATION.SERIALIZE) {
@@ -214,7 +218,8 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     return stats;
   }
 
-  @Override public Object deserialize(Writable writable) throws SerDeException {
+  @Override
+  public Object deserialize(Writable writable) throws SerDeException {
     status = LAST_OPERATION.DESERIALIZE;
     if (writable instanceof ArrayWritable) {
       deserializedSize += ((StructObjectInspector) objInspector).getAllStructFieldRefs().size();
@@ -224,7 +229,8 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     }
   }
 
-  @Override public ObjectInspector getObjectInspector() throws SerDeException {
+  @Override
+  public ObjectInspector getObjectInspector() throws SerDeException {
     return objInspector;
   }
 }

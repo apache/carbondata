@@ -70,7 +70,8 @@ import org.apache.spark.network.server.StreamManager;
     }
   }
 
-  @Override public void receive(TransportClient transportClient, ByteBuffer byteBuffer,
+  @Override
+  public void receive(TransportClient transportClient, ByteBuffer byteBuffer,
       RpcResponseCallback rpcResponseCallback) {
     try {
       ByteBuf data = Unpooled.wrappedBuffer(byteBuffer);
@@ -88,7 +89,8 @@ import org.apache.spark.network.server.StreamManager;
     }
   }
 
-  @Override public StreamManager getStreamManager() {
+  @Override
+  public StreamManager getStreamManager() {
     return new OneForOneStreamManager();
   }
 

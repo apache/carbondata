@@ -29,7 +29,8 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
  */
 public class GzipCompressor extends AbstractCompressor {
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return "gzip";
   }
 
@@ -92,28 +93,34 @@ public class GzipCompressor extends AbstractCompressor {
     return byteOutputStream.toByteArray();
   }
 
-  @Override public byte[] compressByte(byte[] unCompInput) {
+  @Override
+  public byte[] compressByte(byte[] unCompInput) {
     return compressData(unCompInput);
   }
 
-  @Override public byte[] compressByte(byte[] unCompInput, int byteSize) {
+  @Override
+  public byte[] compressByte(byte[] unCompInput, int byteSize) {
     return compressData(unCompInput);
   }
 
-  @Override public byte[] unCompressByte(byte[] compInput) {
+  @Override
+  public byte[] unCompressByte(byte[] compInput) {
     return decompressData(compInput, 0, compInput.length);
   }
 
-  @Override public byte[] unCompressByte(byte[] compInput, int offset, int length) {
+  @Override
+  public byte[] unCompressByte(byte[] compInput, int offset, int length) {
     return decompressData(compInput, offset, length);
   }
 
-  @Override public long rawUncompress(byte[] input, byte[] output) {
+  @Override
+  public long rawUncompress(byte[] input, byte[] output) {
     //gzip api doesnt have rawUncompress yet.
     throw new RuntimeException("Not implemented rawUcompress for gzip yet");
   }
 
-  @Override public long maxCompressedLength(long inputSize) {
+  @Override
+  public long maxCompressedLength(long inputSize) {
     // Check if input size is lower than the max possible size
     if (inputSize < Integer.MAX_VALUE) {
       return inputSize;
@@ -122,12 +129,14 @@ public class GzipCompressor extends AbstractCompressor {
     }
   }
 
-  @Override public int unCompressedLength(byte[] data, int offset, int length) {
+  @Override
+  public int unCompressedLength(byte[] data, int offset, int length) {
     //gzip api doesnt have UncompressedLength
     throw new RuntimeException("Unsupported operation Exception");
   }
 
-  @Override public int rawUncompress(byte[] data, int offset, int length, byte[] output) {
+  @Override
+  public int rawUncompress(byte[] data, int offset, int length, byte[] output) {
     //gzip api doesnt have rawUncompress yet.
     throw new RuntimeException("Not implemented rawUcompress for gzip yet");
   }

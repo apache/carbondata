@@ -238,7 +238,8 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       }
     }
 
-    @Override public int compare(RawResultIterator o1, RawResultIterator o2) {
+    @Override
+    public int compare(RawResultIterator o1, RawResultIterator o2) {
 
       Object[] row1 = new Object[0];
       Object[] row2 = new Object[0];

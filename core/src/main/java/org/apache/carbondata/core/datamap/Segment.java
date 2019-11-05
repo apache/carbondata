@@ -277,18 +277,21 @@ public class Segment implements Serializable, Writable {
     this.filteredIndexShardNames.add(filteredIndexShardName);
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Segment segment = (Segment) o;
     return Objects.equals(segmentNo, segment.segmentNo);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(segmentNo);
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return segmentString;
   }
 
@@ -331,7 +334,8 @@ public class Segment implements Serializable, Writable {
     return true;
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  @Override
+  public void write(DataOutput out) throws IOException {
     out.writeUTF(segmentNo);
     boolean writeSegmentFileName = segmentFileName != null;
     out.writeBoolean(writeSegmentFileName);
@@ -351,7 +355,8 @@ public class Segment implements Serializable, Writable {
     out.writeLong(indexSize);
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     this.segmentNo = in.readUTF();
     if (in.readBoolean()) {
       this.segmentFileName = in.readUTF();

@@ -55,7 +55,8 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
     this.numberOfRows = numberOfRows;
   }
 
-  @Override public void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk,
+  @Override
+  public void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
       throws IOException, MemoryException {
     throw new UnsupportedOperationException(

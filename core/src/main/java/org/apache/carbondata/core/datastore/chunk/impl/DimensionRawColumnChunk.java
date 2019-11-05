@@ -141,7 +141,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     }
   }
 
-  @Override public void freeMemory() {
+  @Override
+  public void freeMemory() {
     super.freeMemory();
     if (null != dataChunks) {
       for (int i = 0; i < dataChunks.length; i++) {

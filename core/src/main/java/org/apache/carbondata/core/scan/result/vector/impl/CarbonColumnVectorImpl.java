@@ -101,100 +101,120 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   }
 
-  @Override public void putBoolean(int rowId, boolean value) {
+  @Override
+  public void putBoolean(int rowId, boolean value) {
     byteArr[rowId] =  (byte)((value) ? 1 : 0);
   }
 
-  @Override public void putFloat(int rowId, float value) {
+  @Override
+  public void putFloat(int rowId, float value) {
     floats[rowId] = value;
   }
 
-  @Override public void putShort(int rowId, short value) {
+  @Override
+  public void putShort(int rowId, short value) {
     shorts[rowId] = value;
   }
 
-  @Override public void putShorts(int rowId, int count, short value) {
+  @Override
+  public void putShorts(int rowId, int count, short value) {
     for (int i = 0; i < count; ++i) {
       shorts[i + rowId] = value;
     }
   }
 
-  @Override public void putInt(int rowId, int value) {
+  @Override
+  public void putInt(int rowId, int value) {
     ints[rowId] = value;
   }
 
-  @Override public void putInts(int rowId, int count, int value) {
+  @Override
+  public void putInts(int rowId, int count, int value) {
     for (int i = 0; i < count; ++i) {
       ints[i + rowId] = value;
     }
   }
 
-  @Override public void putLong(int rowId, long value) {
+  @Override
+  public void putLong(int rowId, long value) {
     longs[rowId] = value;
   }
 
-  @Override public void putLongs(int rowId, int count, long value) {
+  @Override
+  public void putLongs(int rowId, int count, long value) {
     for (int i = 0; i < count; ++i) {
       longs[i + rowId] = value;
     }
   }
 
-  @Override public void putDecimal(int rowId, BigDecimal  value, int precision) {
+  @Override
+  public void putDecimal(int rowId, BigDecimal  value, int precision) {
     decimals[rowId] = value;
   }
 
-  @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
+  @Override
+  public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
     for (int i = 0; i < count; ++i) {
       decimals[i + rowId] = value;
     }
   }
 
-  @Override public void putDouble(int rowId, double value) {
+  @Override
+  public void putDouble(int rowId, double value) {
     doubles[rowId] = value;
   }
 
-  @Override public void putDoubles(int rowId, int count, double value) {
+  @Override
+  public void putDoubles(int rowId, int count, double value) {
     for (int i = 0; i < count; ++i) {
       doubles[i + rowId] = value;
     }
   }
 
-  @Override public void putByteArray(int rowId, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, byte[] value) {
     bytes[rowId] = value;
   }
 
-  @Override public void putByte(int rowId, byte value) {
+  @Override
+  public void putByte(int rowId, byte value) {
     byteArr[rowId] = value;
   }
 
-  @Override public void putByteArray(int rowId, int count, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; ++i) {
       bytes[i + rowId] = value;
     }
   }
 
-  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, int offset, int length, byte[] value) {
     bytes[rowId] = new byte[length];
     System.arraycopy(value, offset, bytes[rowId], 0, length);
   }
 
-  @Override public void putNull(int rowId) {
+  @Override
+  public void putNull(int rowId) {
     nullBytes.set(rowId);
     anyNullsSet = true;
   }
 
-  @Override public void putNulls(int rowId, int count) {
+  @Override
+  public void putNulls(int rowId, int count) {
     for (int i = 0; i < count; ++i) {
       nullBytes.set(rowId + i);
     }
     anyNullsSet = true;
   }
 
-  @Override public void putNotNull(int rowId) {
+  @Override
+  public void putNotNull(int rowId) {
 
   }
 
-  @Override public void putNotNull(int rowId, int count) {
+  @Override
+  public void putNotNull(int rowId, int count) {
 
   }
 
@@ -203,15 +223,18 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   }
 
 
-  @Override public boolean isNull(int rowId) {
+  @Override
+  public boolean isNull(int rowId) {
     return nullBytes.get(rowId);
   }
 
-  @Override public void putObject(int rowId, Object obj) {
+  @Override
+  public void putObject(int rowId, Object obj) {
     data[rowId] = obj;
   }
 
-  @Override public Object getData(int rowId) {
+  @Override
+  public Object getData(int rowId) {
     if (!loaded) {
       loadPage();
     }
@@ -278,7 +301,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     }
   }
 
-  @Override public void reset() {
+  @Override
+  public void reset() {
     nullBytes.clear();
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       Arrays.fill(byteArr, (byte) 0);
@@ -305,7 +329,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   }
 
-  @Override public DataType getType() {
+  @Override
+  public DataType getType() {
     return dataType;
   }
 
@@ -319,19 +344,23 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     this.blockDataType = blockDataType;
   }
 
-  @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
+  @Override
+  public void setFilteredRowsExist(boolean filteredRowsExist) {
 
   }
 
-  @Override public void setDictionary(CarbonDictionary dictionary) {
+  @Override
+  public void setDictionary(CarbonDictionary dictionary) {
     this.carbonDictionary = dictionary;
   }
 
-  @Override public boolean hasDictionary() {
+  @Override
+  public boolean hasDictionary() {
     return null != this.carbonDictionary;
   }
 
-  @Override public CarbonColumnVector getDictionaryVector() {
+  @Override
+  public CarbonColumnVector getDictionaryVector() {
     return dictionaryVector;
   }
 
@@ -341,43 +370,50 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
    */
   public final boolean anyNullsSet() { return anyNullsSet; }
 
-  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+  @Override
+  public void putFloats(int rowId, int count, float[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       floats[rowId ++] = src[i];
     }
   }
 
-  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+  @Override
+  public void putShorts(int rowId, int count, short[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       shorts[rowId ++] = src[i];
     }
   }
 
-  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+  @Override
+  public void putInts(int rowId, int count, int[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       ints[rowId ++] = src[i];
     }
   }
 
-  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+  @Override
+  public void putLongs(int rowId, int count, long[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       longs[rowId ++] = src[i];
     }
   }
 
-  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+  @Override
+  public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       doubles[rowId ++] = src[i];
     }
   }
 
-  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+  @Override
+  public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       byteArr[rowId ++] = src[i];
     }
   }
 
-  @Override public void setLazyPage(LazyPageLoader lazyPage) {
+  @Override
+  public void setLazyPage(LazyPageLoader lazyPage) {
     this.lazyPage = lazyPage;
   }
 
@@ -388,7 +424,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     loaded = true;
   }
 
-  @Override public void putArray(int rowId, int offset, int length) {
+  @Override
+  public void putArray(int rowId, int offset, int length) {
     if (offsets == null) {
       offsets = new int[batchSize];
       lengths = new int[batchSize];
@@ -397,7 +434,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     lengths[rowId] = length;
   }
 
-  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+  @Override
+  public void putAllByteArray(byte[] data, int offset, int length) {
     byteArr = data;
   }
 

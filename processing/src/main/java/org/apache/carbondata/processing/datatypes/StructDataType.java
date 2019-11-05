@@ -176,11 +176,13 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   }
 
-  @Override public boolean getIsColumnDictionary() {
+  @Override
+  public boolean getIsColumnDictionary() {
     return isDictionaryColumn;
   }
 
-  @Override public void writeByteArray(StructObject input, DataOutputStream dataOutputStream,
+  @Override
+  public void writeByteArray(StructObject input, DataOutputStream dataOutputStream,
       BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
     dataOutputStream.writeShort(children.size());
     if (input == null) {
@@ -219,7 +221,8 @@ public class StructDataType implements GenericDataType<StructObject> {
    * @throws IOException
    * @throws KeyGenException
    */
-  @Override public void parseComplexValue(ByteBuffer byteArrayInput,
+  @Override
+  public void parseComplexValue(ByteBuffer byteArrayInput,
       DataOutputStream dataOutputStream, KeyGenerator[] generator)
       throws IOException, KeyGenException {
     short childElement = byteArrayInput.getShort();

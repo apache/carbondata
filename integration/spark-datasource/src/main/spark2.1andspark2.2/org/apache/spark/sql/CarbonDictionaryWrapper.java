@@ -34,11 +34,13 @@ public class CarbonDictionaryWrapper extends Dictionary {
     }
   }
 
-  @Override public int getMaxId() {
+  @Override
+  public int getMaxId() {
     return binaries.length - 1;
   }
 
-  @Override public Binary decodeToBinary(int id) {
+  @Override
+  public Binary decodeToBinary(int id) {
     return binaries[id];
   }
 }

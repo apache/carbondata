@@ -400,7 +400,8 @@ public class CarbonTable implements Serializable, Writable {
     columns.addAll(measures);
     Collections.sort(columns, new Comparator<CarbonColumn>() {
 
-      @Override public int compare(CarbonColumn o1, CarbonColumn o2) {
+      @Override
+      public int compare(CarbonColumn o1, CarbonColumn o2) {
         return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
       }
 
@@ -1357,11 +1358,13 @@ public class CarbonTable implements Serializable, Writable {
     }
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  @Override
+  public void write(DataOutput out) throws IOException {
     tableInfo.write(out);
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     tableInfo = new TableInfo();
     tableInfo.readFields(in);
     updateTableByTableInfo(this, tableInfo);

@@ -33,17 +33,20 @@ public class CSVStreamParserImp implements CarbonStreamParser {
 
   private CsvParser csvParser;
 
-  @Override public void initialize(
+  @Override
+  public void initialize(
       Configuration configuration,
       StructType structType, boolean[] isVarcharTypeMapping) {
     CsvParserSettings settings = CSVInputFormat.extractCsvParserSettings(configuration);
     csvParser = new CsvParser(settings);
   }
 
-  @Override public Object[] parserRow(InternalRow row) {
+  @Override
+  public Object[] parserRow(InternalRow row) {
     return csvParser.parseLine(row.getString(0));
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
   }
 }

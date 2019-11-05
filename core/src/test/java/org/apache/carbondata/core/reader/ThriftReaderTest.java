@@ -42,7 +42,8 @@ public class ThriftReaderTest {
   @Test(expected = java.io.IOException.class) public void testReadForException()
       throws IOException {
     ThriftReader.TBaseCreator tBaseCreator = new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new ColumnDictionaryChunkMeta();
       }
 
@@ -60,7 +61,8 @@ public class ThriftReaderTest {
 
   @Test public void testReadWithTBaseCreator() throws IOException {
     ThriftReader.TBaseCreator tBaseCreator = new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new ColumnDictionaryChunkMeta();
       }
     };
@@ -78,7 +80,8 @@ public class ThriftReaderTest {
   @Test(expected = java.io.IOException.class) public void testReadWithTBaseCreatorForException()
       throws IOException {
     ThriftReader.TBaseCreator tBaseCreator = new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new ColumnDictionaryChunkMeta();
       }
     };

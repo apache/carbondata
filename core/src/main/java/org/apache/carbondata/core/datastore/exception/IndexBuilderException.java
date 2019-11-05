@@ -78,7 +78,8 @@ public class IndexBuilderException extends IOException {
   /**
    * getLocalizedMessage
    */
-  @Override public String getLocalizedMessage() {
+  @Override
+  public String getLocalizedMessage() {
     return super.getLocalizedMessage();
   }
 

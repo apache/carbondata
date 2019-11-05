@@ -88,7 +88,8 @@ public class CarbonBadRecordUtil {
     CarbonFile carbonFile = FileFactory.getCarbonFile(badLogStoreLocation, fileType);
 
     CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile pathname) {
+      @Override
+      public boolean accept(CarbonFile pathname) {
         if (pathname.getName().indexOf(CarbonCommonConstants.FILE_INPROGRESS_STATUS) > -1) {
           return true;
         }

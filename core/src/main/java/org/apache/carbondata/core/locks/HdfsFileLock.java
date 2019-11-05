@@ -56,7 +56,8 @@ public class HdfsFileLock extends AbstractCarbonLock {
   /* (non-Javadoc)
    * @see org.apache.carbondata.core.locks.ICarbonLock#lock()
    */
-  @Override public boolean lock() {
+  @Override
+  public boolean lock() {
     try {
       if (null != this.lockFileDir &&
           !FileFactory.isFileExist(lockFileDir)) {

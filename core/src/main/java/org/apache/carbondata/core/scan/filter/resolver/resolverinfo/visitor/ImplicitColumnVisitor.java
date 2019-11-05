@@ -42,7 +42,8 @@ public class ImplicitColumnVisitor implements ResolvedFilterInfoVisitorIntf {
    *                                       filter models.
    */
 
-  @Override public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
+  @Override
+  public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     if (visitableObj instanceof DimColumnResolvedFilterInfo) {
       ColumnFilterInfo resolvedFilterObject = null;

@@ -61,7 +61,8 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
     this.loadMetadataDetails = loadMetadataDetails;
   }
 
-  @Override public LoadMetadataDetails[] getSegmentList() throws IOException {
+  @Override
+  public LoadMetadataDetails[] getSegmentList() throws IOException {
     try {
       if (loadMetadataDetails == null) {
         takeCarbonIndexFileSnapShot();
@@ -73,7 +74,8 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
     }
   }
 
-  @Override public Map<String, String> getCommittedIndexFile(Segment segment) throws IOException {
+  @Override
+  public Map<String, String> getCommittedIndexFile(Segment segment) throws IOException {
     Map<String, String> indexFiles;
     if (segment.getSegmentFileName() == null) {
       String path =
@@ -98,22 +100,26 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
     return segmentRefreshInfo;
   }
 
-  @Override public void takeCarbonIndexFileSnapShot() throws IOException {
+  @Override
+  public void takeCarbonIndexFileSnapShot() throws IOException {
     // Only Segment Information is updated.
     // File information will be fetched on the fly according to the fecthed segment info.
     this.loadMetadataDetails = SegmentStatusManager
         .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
   }
 
-  @Override public Configuration getConfiguration() {
+  @Override
+  public Configuration getConfiguration() {
     return configuration;
   }
 
-  @Override public void setConfiguration(Configuration configuration) {
+  @Override
+  public void setConfiguration(Configuration configuration) {
     this.configuration = configuration;
   }
 
-  @Override public String getFilePath() {
+  @Override
+  public String getFilePath() {
     return identifier.getTablePath();
   }
 }

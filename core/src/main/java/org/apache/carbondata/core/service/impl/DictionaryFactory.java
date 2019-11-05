@@ -42,7 +42,8 @@ public class DictionaryFactory implements DictionaryService {
    * @param dictionaryColumnUniqueIdentifier
    * @return
    */
-  @Override public CarbonDictionaryWriter getDictionaryWriter(
+  @Override
+  public CarbonDictionaryWriter getDictionaryWriter(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     return new CarbonDictionaryWriterImpl(dictionaryColumnUniqueIdentifier);
   }
@@ -53,7 +54,8 @@ public class DictionaryFactory implements DictionaryService {
    * @param dictionaryColumnUniqueIdentifier
    * @return
    */
-  @Override public CarbonDictionarySortIndexWriter getDictionarySortIndexWriter(
+  @Override
+  public CarbonDictionarySortIndexWriter getDictionarySortIndexWriter(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     return new CarbonDictionarySortIndexWriterImpl(dictionaryColumnUniqueIdentifier);
   }
@@ -64,7 +66,8 @@ public class DictionaryFactory implements DictionaryService {
    * @param dictionaryColumnUniqueIdentifier
    * @return
    */
-  @Override public CarbonDictionaryMetadataReader getDictionaryMetadataReader(
+  @Override
+  public CarbonDictionaryMetadataReader getDictionaryMetadataReader(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     return new CarbonDictionaryMetadataReaderImpl(dictionaryColumnUniqueIdentifier);
   }
@@ -75,7 +78,8 @@ public class DictionaryFactory implements DictionaryService {
    * @param dictionaryColumnUniqueIdentifier
    * @return
    */
-  @Override public CarbonDictionaryReader getDictionaryReader(
+  @Override
+  public CarbonDictionaryReader getDictionaryReader(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     return new CarbonDictionaryReaderImpl(dictionaryColumnUniqueIdentifier);
   }
@@ -86,7 +90,8 @@ public class DictionaryFactory implements DictionaryService {
    * @param dictionaryColumnUniqueIdentifier
    * @return
    */
-  @Override public CarbonDictionarySortIndexReader getDictionarySortIndexReader(
+  @Override
+  public CarbonDictionarySortIndexReader getDictionarySortIndexReader(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     return new CarbonDictionarySortIndexReaderImpl(dictionaryColumnUniqueIdentifier);
   }

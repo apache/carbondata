@@ -28,7 +28,8 @@ public class SecureDictionaryServiceProvider implements DictionaryServiceProvide
    */
   private static final long serialVersionUID = 1L;
 
-  @Override public DictionaryClient getDictionaryClient() {
+  @Override
+  public DictionaryClient getDictionaryClient() {
     return new SecureDictionaryClient();
   }
 }

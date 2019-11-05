@@ -66,7 +66,8 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
    * @return All deleted records for the specified block
    * @throws IOException if an I/O error occurs
    */
-  @Override public String read() throws IOException {
+  @Override
+  public String read() throws IOException {
     // Configure Buffer based on our requirement
     char[] buffer = new char[DEFAULT_BUFFER_SIZE];
     StringWriter sw = new StringWriter();
@@ -85,7 +86,8 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
    * @return DeleteDeltaBlockDetails
    * @throws IOException
    */
-  @Override public DeleteDeltaBlockDetails readJson() throws IOException {
+  @Override
+  public DeleteDeltaBlockDetails readJson() throws IOException {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;

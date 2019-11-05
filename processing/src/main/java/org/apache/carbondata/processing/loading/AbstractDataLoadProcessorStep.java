@@ -75,7 +75,8 @@ public abstract class AbstractDataLoadProcessorStep {
     if (LOGGER.isDebugEnabled()) {
       // This thread prints the rows processed in each step for every 10 seconds.
       new Thread() {
-        @Override public void run() {
+        @Override
+        public void run() {
           while (!closed) {
             try {
               LOGGER.debug("Rows processed in step " + getStepName() + " : " + rowCounter.get());

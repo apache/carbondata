@@ -27,11 +27,13 @@ public class DummyRowUpdater implements SortTempRowUpdater {
 
   private static final long serialVersionUID = 5989093890994039617L;
 
-  @Override public void updateSortTempRow(IntermediateSortTempRow intermediateSortTempRow) {
+  @Override
+  public void updateSortTempRow(IntermediateSortTempRow intermediateSortTempRow) {
     // DO NOTHING
   }
 
-  @Override public void updateOutputRow(Object[] out, int[] dimArray, Object[] noDictArray,
+  @Override
+  public void updateOutputRow(Object[] out, int[] dimArray, Object[] noDictArray,
       Object[] measureArray) {
     out[WriteStepRowUtil.DICTIONARY_DIMENSION] = dimArray;
     out[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX] = noDictArray;

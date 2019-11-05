@@ -61,7 +61,8 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
         DataTypeUtil.getDataTypeConverter().convertCarbonSchemaToSparkSchema(projection));
   }
 
-  @Override public boolean nextKeyValue() throws IOException, InterruptedException {
+  @Override
+  public boolean nextKeyValue() throws IOException, InterruptedException {
     if (isFirstRow) {
       isFirstRow = false;
       initializeAtFirstRow();
@@ -77,7 +78,8 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
     return nextRow();
   }
 
-  @Override public Object getCurrentValue() {
+  @Override
+  public Object getCurrentValue() {
     if (isVectorReader) {
       int value = vectorProxy.numRows();
       if (inputMetricsStats != null) {
@@ -163,7 +165,8 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
     }
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     super.close();
     if (null != vectorProxy) {
       vectorProxy.close();

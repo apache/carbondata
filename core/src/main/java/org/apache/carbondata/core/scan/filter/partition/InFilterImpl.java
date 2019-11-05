@@ -42,7 +42,8 @@ public class InFilterImpl implements PartitionFilterIntf {
     this.partitionInfo = partitionInfo;
   }
 
-  @Override public BitSet applyFilter(Partitioner partitioner) {
+  @Override
+  public BitSet applyFilter(Partitioner partitioner) {
     BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
     ListExpression list = (ListExpression) in.getRight();
     for (Expression expr : list.getChildren()) {

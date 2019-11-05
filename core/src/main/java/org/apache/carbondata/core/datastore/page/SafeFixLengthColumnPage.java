@@ -210,7 +210,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     return doubleData[rowId];
   }
 
-  @Override public BigDecimal getDecimal(int rowId) {
+  @Override
+  public BigDecimal getDecimal(int rowId) {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -279,7 +280,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   /**
    * Get string page
    */
-  @Override public byte[][] getByteArrayPage() {
+  @Override
+  public byte[][] getByteArrayPage() {
     byte[][] data = new byte[arrayElementCount][];
     for (int i = 0; i < arrayElementCount; i++) {
       data[i] = fixedLengthdata[i];
@@ -335,7 +337,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   /**
    * Set int values to page
    */
-  @Override public void setIntPage(int[] intData) {
+  @Override
+  public void setIntPage(int[] intData) {
     this.intData = intData;
   }
 

@@ -86,7 +86,8 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
    * special executer since it get all the rows of the specified filter dimension
    * and will be send to the spark for processing
    */
-  @Override public FilterExecuterType getFilterExecuterType() {
+  @Override
+  public FilterExecuterType getFilterExecuterType() {
     return FilterExecuterType.ROWLEVEL;
   }
 

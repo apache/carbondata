@@ -73,7 +73,8 @@ public class CarbonHeaderReader {
   private ThriftReader openThriftReader(String filePath) {
     Configuration conf = configuration != null ? configuration : FileFactory.getConfiguration();
     return new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new FileHeader();
       }
     }, conf);

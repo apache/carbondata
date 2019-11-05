@@ -35,14 +35,16 @@ public class ColumnWithRowIdForNoDictionary<T>
     this.dataType = dataType;
   }
 
-  @Override public int compareTo(ColumnWithRowIdForNoDictionary o) {
+  @Override
+  public int compareTo(ColumnWithRowIdForNoDictionary o) {
     // use the data type based comparator for the no dictionary encoded columns
     SerializableComparator comparator =
         org.apache.carbondata.core.util.comparator.Comparator.getComparator(dataType);
     return comparator.compare(column, o.column);
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
@@ -50,7 +52,8 @@ public class ColumnWithRowIdForNoDictionary<T>
     return column.equals(o.column) && getIndex() == o.getIndex();
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return getColumn().hashCode() + getIndex().hashCode();
   }
 

@@ -31,7 +31,8 @@ public class DropPartitionCallable implements Callable<Void> {
     this.dropPartitionCallableModel = dropPartitionCallableModel;
   }
 
-  @Override public Void call() {
+  @Override
+  public Void call() {
     PartitionDropper.triggerPartitionDrop(dropPartitionCallableModel);
     return null;
   }

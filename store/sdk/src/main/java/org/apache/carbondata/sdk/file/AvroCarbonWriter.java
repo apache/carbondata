@@ -777,7 +777,8 @@ public class AvroCarbonWriter extends CarbonWriter {
   /**
    * Flush and close the writer
    */
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     try {
       recordWriter.close(context);
     } catch (InterruptedException e) {

@@ -251,14 +251,16 @@ public class DataMapSchema implements Serializable, Writable {
     }
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     DataMapSchema that = (DataMapSchema) o;
     return Objects.equals(dataMapName, that.dataMapName);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(dataMapName);
   }
 

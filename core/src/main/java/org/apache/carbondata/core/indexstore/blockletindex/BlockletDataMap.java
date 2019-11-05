@@ -278,7 +278,8 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     }
   }
 
-  @Override public int getTotalBlocks() {
+  @Override
+  public int getTotalBlocks() {
     if (isLegacyStore) {
       return super.getTotalBlocklets();
     } else {

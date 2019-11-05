@@ -140,7 +140,8 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
    * @param pageNumber              number
    * @return DimensionColumnDataChunk
    */
-  @Override public DimensionColumnPage decodeColumnPage(
+  @Override
+  public DimensionColumnPage decodeColumnPage(
       DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber,
       ReusableDataBuffer reusableDataBuffer)
       throws IOException, MemoryException {

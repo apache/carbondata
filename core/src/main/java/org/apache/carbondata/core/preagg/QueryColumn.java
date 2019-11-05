@@ -57,7 +57,8 @@ public class QueryColumn {
     return timeseriesFunction;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
@@ -76,7 +77,8 @@ public class QueryColumn {
         that.timeseriesFunction == null;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = columnSchema.hashCode();
     result = 31 * result + (timeseriesFunction != null ? timeseriesFunction.hashCode() : 0);
     result = 31 * result + (isFilterColumn ? 1 : 0);

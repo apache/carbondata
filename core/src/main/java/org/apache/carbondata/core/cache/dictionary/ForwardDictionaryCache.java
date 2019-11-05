@@ -75,7 +75,8 @@ public class ForwardDictionaryCache<K extends
    * @return dictionary
    * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
-  @Override public Dictionary get(DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
+  @Override
+  public Dictionary get(DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
       throws IOException {
     return getDictionary(dictionaryColumnUniqueIdentifier);
   }
@@ -89,7 +90,8 @@ public class ForwardDictionaryCache<K extends
    * @return list of dictionary
    * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
-  @Override public List<Dictionary> getAll(
+  @Override
+  public List<Dictionary> getAll(
       List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers) throws IOException {
     boolean exceptionOccurredInDictionaryLoading = false;
     String exceptionMessage = "";
@@ -100,7 +102,8 @@ public class ForwardDictionaryCache<K extends
     ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
-        @Override public Dictionary call() throws IOException {
+        @Override
+        public Dictionary call() throws IOException {
           try {
             // Register thread callback for calculating metrics
             TaskMetricsMap.getInstance().registerThreadCallback();
@@ -165,7 +168,8 @@ public class ForwardDictionaryCache<K extends
    *                                         tableName and columnIdentifier
    * @return
    */
-  @Override public Dictionary getIfPresent(
+  @Override
+  public Dictionary getIfPresent(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     Dictionary forwardDictionary = null;
     ColumnDictionaryInfo columnDictionaryInfo = (ColumnDictionaryInfo) carbonLRUCache.get(
@@ -184,7 +188,8 @@ public class ForwardDictionaryCache<K extends
    * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
    *                                         tableName and columnIdentifier
    */
-  @Override public void invalidate(
+  @Override
+  public void invalidate(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     carbonLRUCache.remove(
         getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
@@ -240,7 +245,8 @@ public class ForwardDictionaryCache<K extends
     return columnDictionaryInfo;
   }
 
-  @Override public void clearAccessCount(List<DictionaryColumnUniqueIdentifier> keys) {
+  @Override
+  public void clearAccessCount(List<DictionaryColumnUniqueIdentifier> keys) {
     for (DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier : keys) {
       Dictionary cacheable = (Dictionary) carbonLRUCache.get(
           getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
@@ -249,7 +255,8 @@ public class ForwardDictionaryCache<K extends
     }
   }
 
-  @Override protected long getEstimatedDictionarySize(DictionaryInfo dictionaryInfo,
+  @Override
+  protected long getEstimatedDictionarySize(DictionaryInfo dictionaryInfo,
       CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk,
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, boolean
       readSortIndexSize) throws IOException {

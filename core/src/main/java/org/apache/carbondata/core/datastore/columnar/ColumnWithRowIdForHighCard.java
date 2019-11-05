@@ -28,12 +28,14 @@ public class ColumnWithRowIdForHighCard<T> extends ColumnWithRowId<T>
     super(column, index);
   }
 
-  @Override public int compareTo(ColumnWithRowId o) {
+  @Override
+  public int compareTo(ColumnWithRowId o) {
     return UnsafeComparer.INSTANCE
         .compareTo(column, 2, column.length - 2, o.column, 2, o.column.length - 2);
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
@@ -41,7 +43,8 @@ public class ColumnWithRowIdForHighCard<T> extends ColumnWithRowId<T>
     return Arrays.equals(column, o.column) && getIndex() == o.getIndex();
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Arrays.hashCode(column) + getIndex().hashCode();
   }
 }

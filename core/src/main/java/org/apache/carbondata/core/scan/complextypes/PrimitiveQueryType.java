@@ -69,28 +69,34 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
         DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
   }
 
-  @Override public void addChildren(GenericQueryType children) {
+  @Override
+  public void addChildren(GenericQueryType children) {
 
   }
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return name;
   }
 
-  @Override public void setName(String name) {
+  @Override
+  public void setName(String name) {
     this.name = name;
   }
 
-  @Override public String getParentName() {
+  @Override
+  public String getParentName() {
     return parentName;
   }
 
-  @Override public void setParentName(String parentName) {
+  @Override
+  public void setParentName(String parentName) {
     this.parentName = parentName;
 
   }
 
-  @Override public int getColsCount() {
+  @Override
+  public int getColsCount() {
     return 1;
   }
 
@@ -106,16 +112,19 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     dataOutputStream.write(currentVal);
   }
 
-  @Override public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
+  @Override
+  public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
       throws IOException {
     readBlockDataChunk(blockChunkHolder);
   }
 
-  @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+  @Override
+  public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
     return getDataObject(dataBuffer, -1);
   }
 
-  @Override public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
+  @Override
+  public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
       CarbonDimension child) {
     Object actualData;
 
@@ -175,7 +184,8 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     return actualData;
   }
 
-  @Override public Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
+  @Override
+  public Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
       CarbonDimension presentColumn) {
     return getDataBasedOnColumn(childBuffer.get(presentColumn), presentColumn, presentColumn);
   }

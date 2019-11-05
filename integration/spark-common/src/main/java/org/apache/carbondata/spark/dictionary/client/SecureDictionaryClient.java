@@ -57,7 +57,8 @@ public class SecureDictionaryClient implements DictionaryClient {
    * @param address
    * @param port
    */
-  @Override public void startClient(String secretKey, String address, int port,
+  @Override
+  public void startClient(String secretKey, String address, int port,
       boolean encryptSecureServer) {
     LOGGER.info("Starting client on " + address + " " + port);
     long start = System.currentTimeMillis();
@@ -103,14 +104,16 @@ public class SecureDictionaryClient implements DictionaryClient {
    * @param key
    * @return
    */
-  @Override public DictionaryMessage getDictionary(DictionaryMessage key) {
+  @Override
+  public DictionaryMessage getDictionary(DictionaryMessage key) {
     return dictionaryClientHandler.getDictionary(key, this.client);
   }
 
   /**
    * shutdown dictionary client
    */
-  @Override public void shutDown() {
+  @Override
+  public void shutDown() {
     clientFactory.close();
   }
 }

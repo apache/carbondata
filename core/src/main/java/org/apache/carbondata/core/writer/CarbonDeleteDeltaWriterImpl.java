@@ -62,7 +62,8 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
    * @param deleteDeltaBlockDetails
    * @throws IOException
    */
-  @Override public void write(DeleteDeltaBlockDetails deleteDeltaBlockDetails) throws IOException {
+  @Override
+  public void write(DeleteDeltaBlockDetails deleteDeltaBlockDetails) throws IOException {
     BufferedWriter brWriter = null;
     try {
       FileFactory.createNewFile(filePath, fileType);

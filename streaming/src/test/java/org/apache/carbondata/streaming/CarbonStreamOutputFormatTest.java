@@ -49,7 +49,8 @@ public class CarbonStreamOutputFormatTest extends TestCase {
   private CarbonLoadModel carbonLoadModel;
   private String tablePath;
 
-  @Override protected void setUp() throws Exception {
+  @Override
+  protected void setUp() throws Exception {
     super.setUp();
     JobID jobId = CarbonInputFormatUtil.getJobId(new Date(), 0);
     TaskID taskId = new TaskID(jobId, TaskType.MAP, 0);
@@ -113,7 +114,8 @@ public class CarbonStreamOutputFormatTest extends TestCase {
     }
   }
 
-  @Override protected void tearDown() throws Exception {
+  @Override
+  protected void tearDown() throws Exception {
     super.tearDown();
     if (tablePath != null) {
       FileFactory.deleteAllFilesOfDir(new File(tablePath));

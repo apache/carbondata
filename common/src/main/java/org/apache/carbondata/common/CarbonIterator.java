@@ -25,11 +25,14 @@ import java.util.Iterator;
  */
 public abstract class CarbonIterator<E> implements Iterator<E> {
 
-  @Override public abstract boolean hasNext();
+  @Override
+  public abstract boolean hasNext();
 
-  @Override public abstract E next();
+  @Override
+  public abstract E next();
 
-  @Override public void remove() {
+  @Override
+  public void remove() {
     throw new UnsupportedOperationException("remove");
   }
 

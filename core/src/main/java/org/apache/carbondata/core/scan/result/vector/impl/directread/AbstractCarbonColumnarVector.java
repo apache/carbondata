@@ -143,7 +143,8 @@ public abstract class AbstractCarbonColumnarVector
     throw new UnsupportedOperationException("Not allowed from here " + getClass().getName());
   }
 
-  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+  @Override
+  public void putAllByteArray(byte[] data, int offset, int length) {
     columnVector.putAllByteArray(data, offset, length);
   }
 }

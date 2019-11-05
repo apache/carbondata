@@ -53,7 +53,8 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
     this.localDictionaryGenerator = localDictionaryGenerator;
   }
 
-  @Override public FallbackEncodedColumnPage call() throws Exception {
+  @Override
+  public FallbackEncodedColumnPage call() throws Exception {
     int pageSize =
         encodedColumnPage.getActualPage().getPageSize();
     int offset = 0;

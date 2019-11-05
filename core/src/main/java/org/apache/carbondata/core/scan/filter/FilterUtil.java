@@ -609,7 +609,8 @@ public final class FilterUtil {
 
     java.util.Comparator<byte[]> filterNoDictValueComaparator = new java.util.Comparator<byte[]>() {
 
-      @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
+      @Override
+      public int compare(byte[] filterMember1, byte[] filterMember2) {
         // TODO Auto-generated method stub
         return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
       }
@@ -895,7 +896,8 @@ public final class FilterUtil {
       List<String> evaluateResultListFinal) {
     java.util.Comparator<String> filterActualValueComaparator = new java.util.Comparator<String>() {
 
-      @Override public int compare(String filterMember1, String filterMember2) {
+      @Override
+      public int compare(String filterMember1, String filterMember2) {
         return compareFilterMembersBasedOnActualDataType(filterMember1, filterMember2,
             columnExpression.getDataType());
       }
@@ -2183,7 +2185,8 @@ public final class FilterUtil {
    */
   private static byte[][] getSortedEncodedFilters(List<byte[]> encodedFilters) {
     java.util.Comparator<byte[]> filterNoDictValueComaparator = new java.util.Comparator<byte[]>() {
-      @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
+      @Override
+      public int compare(byte[] filterMember1, byte[] filterMember2) {
         return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
       }
     };

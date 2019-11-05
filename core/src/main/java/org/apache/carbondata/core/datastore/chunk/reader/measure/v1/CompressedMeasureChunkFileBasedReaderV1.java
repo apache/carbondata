@@ -61,7 +61,8 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    * @param columnIndexRange blocks to be read
    * @return measure data chunks
    */
-  @Override public MeasureRawColumnChunk[] readRawMeasureChunks(FileReader fileReader,
+  @Override
+  public MeasureRawColumnChunk[] readRawMeasureChunks(FileReader fileReader,
       int[][] columnIndexRange) throws IOException {
     MeasureRawColumnChunk[] datChunk = new MeasureRawColumnChunk[measureColumnChunks.size()];
     for (int i = 0; i < columnIndexRange.length; i++) {
@@ -79,7 +80,8 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    * @param columnIndex column to be read
    * @return measure data chunk
    */
-  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileReader fileReader, int columnIndex)
+  @Override
+  public MeasureRawColumnChunk readRawMeasureChunk(FileReader fileReader, int columnIndex)
       throws IOException {
     DataChunk dataChunk = measureColumnChunks.get(columnIndex);
     ByteBuffer buffer = fileReader

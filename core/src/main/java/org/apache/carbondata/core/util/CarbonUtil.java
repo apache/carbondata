@@ -297,7 +297,8 @@ public final class CarbonUtil {
       throws IOException, InterruptedException {
     UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-      @Override public Void run() throws Exception {
+      @Override
+      public Void run() throws Exception {
         for (int i = 0; i < path.length; i++) {
           CarbonFile carbonFile = FileFactory.getCarbonFile(path[i].getAbsolutePath());
           boolean delete = carbonFile.delete();
@@ -314,7 +315,8 @@ public final class CarbonUtil {
       throws IOException, InterruptedException {
     UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-      @Override public Void run() throws Exception {
+      @Override
+      public Void run() throws Exception {
         for (int i = 0; i < file.length; i++) {
           boolean delete = file[i].delete();
           if (!delete) {
@@ -330,7 +332,8 @@ public final class CarbonUtil {
       throws IOException, InterruptedException {
     UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-      @Override public Void run() throws Exception {
+      @Override
+      public Void run() throws Exception {
         for (int i = 0; i < file.length; i++) {
           boolean delete = file[i].delete();
           if (!delete) {
@@ -1451,7 +1454,8 @@ public final class CarbonUtil {
 
   public static BlockletHeader readBlockletHeader(byte[] data) throws IOException {
     return (BlockletHeader) read(data, new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new BlockletHeader();
       }
     }, 0, data.length);
@@ -1461,7 +1465,8 @@ public final class CarbonUtil {
       throws IOException {
     byte[] data = dataChunkBuffer.array();
     return (DataChunk3) read(data, new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new DataChunk3();
       }
     }, offset, length);
@@ -1469,7 +1474,8 @@ public final class CarbonUtil {
 
   public static DataChunk3 readDataChunk3(InputStream stream) throws IOException {
     TBaseCreator creator = new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new DataChunk3();
       }
     };
@@ -1487,7 +1493,8 @@ public final class CarbonUtil {
       throws IOException {
     byte[] data = dataChunkBuffer.array();
     return (DataChunk2) read(data, new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new DataChunk2();
       }
     }, offset, length);

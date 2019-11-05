@@ -57,7 +57,8 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
    *
    * @param absoluteTableIdentifier
    */
-  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  @Override
+  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
 
   }
 
@@ -81,24 +82,29 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
     return rightEvalutor;
   }
 
-  @Override public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {
+  @Override
+  public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {
     return null;
   }
 
-  @Override public MeasureColumnResolvedFilterInfo getMsrColResolvedFilterInfo() {
+  @Override
+  public MeasureColumnResolvedFilterInfo getMsrColResolvedFilterInfo() {
     return null;
   }
-  @Override public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
+  @Override
+  public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
       SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList) {
 
   }
 
-  @Override public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
+  @Override
+  public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
       SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList) {
 
   }
 
-  @Override public FilterExecuterType getFilterExecuterType() {
+  @Override
+  public FilterExecuterType getFilterExecuterType() {
     switch (filterExpressionType) {
       case OR:
         return FilterExecuterType.OR;
@@ -110,7 +116,8 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
     }
   }
 
-  @Override public Expression getFilterExpression() {
+  @Override
+  public Expression getFilterExpression() {
     return filterExpression;
   }
 }

@@ -126,7 +126,8 @@ public class TestUtil {
     }
 
     File[] dataFiles = new File(path).listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
+      @Override
+      public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
     });

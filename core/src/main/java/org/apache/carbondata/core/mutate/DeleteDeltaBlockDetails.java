@@ -50,7 +50,8 @@ public class DeleteDeltaBlockDetails implements Serializable {
     blockletDetailsMap = new TreeMap<>();
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) return true;
     if (obj == null || !(obj instanceof DeleteDeltaBlockDetails)) return false;
 
@@ -60,7 +61,8 @@ public class DeleteDeltaBlockDetails implements Serializable {
 
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return blockName.hashCode();
   }
 

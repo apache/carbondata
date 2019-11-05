@@ -42,15 +42,18 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
   /**
    * @return whether columns where explicitly sorted or not
    */
-  @Override public boolean isExplicitSorted() {
+  @Override
+  public boolean isExplicitSorted() {
     return dataChunkStore.isExplicitSorted();
   }
 
-  @Override public boolean isAdaptiveEncoded() {
+  @Override
+  public boolean isAdaptiveEncoded() {
     return false;
   }
 
-  @Override public BitSet getNullBits() {
+  @Override
+  public BitSet getNullBits() {
     return null;
   }
 
@@ -60,14 +63,16 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    * @param rowId row id of the data
    * @return chunk
    */
-  @Override public byte[] getChunkData(int rowId) {
+  @Override
+  public byte[] getChunkData(int rowId) {
     return dataChunkStore.getRow(rowId);
   }
 
   /**
    * @return inverted index
    */
-  @Override public int getInvertedIndex(int rowId) {
+  @Override
+  public int getInvertedIndex(int rowId) {
     return dataChunkStore.getInvertedIndex(rowId);
   }
 
@@ -75,7 +80,8 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    * @param rowId
    * @return inverted index reverse
    */
-  @Override public int getInvertedReverseIndex(int rowId) {
+  @Override
+  public int getInvertedReverseIndex(int rowId) {
     return dataChunkStore.getInvertedReverseIndex(rowId);
   }
 
@@ -86,7 +92,8 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    * @param compareValue value to compare
    * @return compare result
    */
-  @Override public int compareTo(int rowId, byte[] compareValue) {
+  @Override
+  public int compareTo(int rowId, byte[] compareValue) {
     // TODO Auto-generated method stub
     return dataChunkStore.compareTo(rowId, compareValue);
   }
@@ -94,7 +101,8 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
   /**
    * below method will be used to free the allocated memory
    */
-  @Override public void freeMemory() {
+  @Override
+  public void freeMemory() {
     if (dataChunkStore != null) {
       dataChunkStore.freeMemory();
       dataChunkStore = null;
@@ -104,7 +112,8 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
   /**
    * @return column is dictionary column or not
    */
-  @Override public boolean isNoDicitionaryColumn() {
+  @Override
+  public boolean isNoDicitionaryColumn() {
     return false;
   }
 }

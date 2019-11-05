@@ -188,7 +188,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     for (final File tempFile : files) {
 
       Callable<Void> callable = new Callable<Void>() {
-        @Override public Void call() throws CarbonSortKeyAndGroupByException {
+        @Override
+        public Void call() throws CarbonSortKeyAndGroupByException {
             // create chunk holder
             SortTempFileChunkHolder sortTempFileChunkHolder =
                 new SortTempFileChunkHolder(tempFile, sortParameters, tableName, true);

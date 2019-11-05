@@ -333,102 +333,127 @@ public class CarbonVectorProxy {
       return dictionaryIds;
     }
 
-    @Override public boolean isNullAt(int i) {
+    @Override
+    public boolean isNullAt(int i) {
       return vector.isNullAt(i);
     }
 
-    @Override public boolean getBoolean(int i) {
+    @Override
+    public boolean getBoolean(int i) {
       return vector.getBoolean(i);
     }
 
-    @Override public byte getByte(int i) {
+    @Override
+    public byte getByte(int i) {
       return vector.getByte(i);
     }
 
-    @Override public short getShort(int i) {
+    @Override
+    public short getShort(int i) {
       return vector.getShort(i);
     }
 
-    @Override public int getInt(int i) {
+    @Override
+    public int getInt(int i) {
       return vector.getInt(i);
     }
 
-    @Override public long getLong(int i) {
+    @Override
+    public long getLong(int i) {
       return vector.getLong(i);
     }
 
-    @Override public float getFloat(int i) {
+    @Override
+    public float getFloat(int i) {
       return vector.getFloat(i);
     }
 
-    @Override public double getDouble(int i) {
+    @Override
+    public double getDouble(int i) {
       return vector.getDouble(i);
     }
 
-    @Override protected void reserveInternal(int capacity) {
+    @Override
+    protected void reserveInternal(int capacity) {
     }
 
-    @Override public void reserve(int requiredCapacity) {
+    @Override
+    public void reserve(int requiredCapacity) {
       vector.reserve(requiredCapacity);
     }
 
-    @Override public long nullsNativeAddress() {
+    @Override
+    public long nullsNativeAddress() {
       return vector.nullsNativeAddress();
     }
 
-    @Override public long valuesNativeAddress() {
+    @Override
+    public long valuesNativeAddress() {
       return vector.valuesNativeAddress();
     }
 
-    @Override public void putBooleans(int rowId, int count, boolean value) {
+    @Override
+    public void putBooleans(int rowId, int count, boolean value) {
       vector.putBooleans(rowId, count, value);
     }
 
-    @Override public void putBytes(int rowId, int count, byte value) {
+    @Override
+    public void putBytes(int rowId, int count, byte value) {
       vector.putBytes(rowId, count, value);
     }
 
-    @Override public void putIntsLittleEndian(int rowId, int count, byte[] src, int srcIndex) {
+    @Override
+    public void putIntsLittleEndian(int rowId, int count, byte[] src, int srcIndex) {
       vector.putIntsLittleEndian(rowId, count, src, srcIndex);
     }
 
-    @Override public int getDictId(int rowId) {
+    @Override
+    public int getDictId(int rowId) {
       return vector.getDictId(rowId);
     }
 
-    @Override public void putLongsLittleEndian(int rowId, int count, byte[] src, int srcIndex) {
+    @Override
+    public void putLongsLittleEndian(int rowId, int count, byte[] src, int srcIndex) {
       vector.putLongsLittleEndian(rowId, count, src, srcIndex);
     }
 
-    @Override public void putFloats(int rowId, int count, float value) {
+    @Override
+    public void putFloats(int rowId, int count, float value) {
       vector.putFloats(rowId, count, value);
     }
 
-    @Override public void putFloats(int rowId, int count, byte[] src, int srcIndex) {
+    @Override
+    public void putFloats(int rowId, int count, byte[] src, int srcIndex) {
       vector.putFloats(rowId, count, src, srcIndex);
     }
 
-    @Override public void putDoubles(int rowId, int count, byte[] src, int srcIndex) {
+    @Override
+    public void putDoubles(int rowId, int count, byte[] src, int srcIndex) {
       vector.putDoubles(rowId, count, src, srcIndex);
     }
 
-    @Override public void putArray(int rowId, int offset, int length) {
+    @Override
+    public void putArray(int rowId, int offset, int length) {
       vector.putArray(rowId, offset, length);
     }
 
-    @Override public int getArrayLength(int rowId) {
+    @Override
+    public int getArrayLength(int rowId) {
       return vector.getArrayLength(rowId);
     }
 
-    @Override public int getArrayOffset(int rowId) {
+    @Override
+    public int getArrayOffset(int rowId) {
       return vector.getArrayOffset(rowId);
     }
 
-    @Override public void loadBytes(Array array) {
+    @Override
+    public void loadBytes(Array array) {
       vector.loadBytes(array);
     }
 
-    @Override public int putByteArray(int rowId, byte[] value, int offset, int count) {
+    @Override
+    public int putByteArray(int rowId, byte[] value, int offset, int count) {
       return vector.putByteArray(rowId, value, offset, count);
     }
 
@@ -441,7 +466,8 @@ public class CarbonVectorProxy {
       vector.arrayData().appendBytes(length, data, offset);
     }
 
-    @Override public void close() {
+    @Override
+    public void close() {
       vector.close();
     }
 
@@ -474,52 +500,62 @@ public class CarbonVectorProxy {
       vector = columnVector;
     }
 
-    @Override public boolean isNullAt(int i) {
+    @Override
+    public boolean isNullAt(int i) {
       checkPageLoaded();
       return vector.isNullAt(i);
     }
 
-    @Override public boolean getBoolean(int i) {
+    @Override
+    public boolean getBoolean(int i) {
       checkPageLoaded();
       return vector.getBoolean(i);
     }
 
-    @Override public byte getByte(int i) {
+    @Override
+    public byte getByte(int i) {
       checkPageLoaded();
       return vector.getByte(i);
     }
 
-    @Override public short getShort(int i) {
+    @Override
+    public short getShort(int i) {
       checkPageLoaded();
       return vector.getShort(i);
     }
 
-    @Override public int getInt(int i) {
+    @Override
+    public int getInt(int i) {
       checkPageLoaded();
       return vector.getInt(i);
     }
 
-    @Override public long getLong(int i) {
+    @Override
+    public long getLong(int i) {
       checkPageLoaded();
       return vector.getLong(i);
     }
 
-    @Override public float getFloat(int i) {
+    @Override
+    public float getFloat(int i) {
       checkPageLoaded();
       return vector.getFloat(i);
     }
 
-    @Override public double getDouble(int i) {
+    @Override
+    public double getDouble(int i) {
       checkPageLoaded();
       return vector.getDouble(i);
     }
 
-    @Override public int getArrayLength(int rowId) {
+    @Override
+    public int getArrayLength(int rowId) {
       checkPageLoaded();
       return vector.getArrayLength(rowId);
     }
 
-    @Override public int getArrayOffset(int rowId) {
+    @Override
+    public int getArrayOffset(int rowId) {
       checkPageLoaded();
       return vector.getArrayOffset(rowId);
     }

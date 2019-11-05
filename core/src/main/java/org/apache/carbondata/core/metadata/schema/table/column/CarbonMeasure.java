@@ -52,7 +52,8 @@ public class CarbonMeasure extends CarbonColumn {
   /**
    * to check whether to dimension are equal or not
    */
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -77,7 +78,8 @@ public class CarbonMeasure extends CarbonColumn {
    * hash code
    * @return
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return this.getColumnSchema().getColumnUniqueId().hashCode();
   }
 }

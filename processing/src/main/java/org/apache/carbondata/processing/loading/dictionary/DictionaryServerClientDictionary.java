@@ -50,7 +50,8 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
     this.base = (dictionary == null ? 0 : dictionary.getDictionaryChunks().getSize() - 1);
   }
 
-  @Override public Integer getOrGenerateKey(Object value) throws DictionaryGenerationException {
+  @Override
+  public Integer getOrGenerateKey(Object value) throws DictionaryGenerationException {
     Integer key = getKey(value);
     if (key == null) {
       dictionaryMessage.setData(value.toString());
@@ -64,7 +65,8 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
     return key;
   }
 
-  @Override public Integer getKey(Object value) {
+  @Override
+  public Integer getKey(Object value) {
     Integer key = -1;
     if (dictionary != null) {
       key = dictionary.getSurrogateKey(value.toString());
@@ -78,11 +80,13 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
     return key;
   }
 
-  @Override public Object getValue(Integer key) {
+  @Override
+  public Object getValue(Integer key) {
     throw new UnsupportedOperationException("Not supported here");
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     dictionaryMessage.setType(DictionaryMessageType.SIZE);
     return client.getDictionary(dictionaryMessage).getDictionaryValue() + base;
   }

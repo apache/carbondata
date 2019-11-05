@@ -138,7 +138,8 @@ public class ConcurrentSdkReaderTest {
       this.reader = reader;
     }
 
-    @Override public Long call() throws IOException {
+    @Override
+    public Long call() throws IOException {
       long count = 0;
       try {
         while (reader.hasNext()) {

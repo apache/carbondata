@@ -117,7 +117,8 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
     return carbonMeasure;
   }
 
-  @Override public CarbonDimension getDimension() {
+  @Override
+  public CarbonDimension getDimension() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 

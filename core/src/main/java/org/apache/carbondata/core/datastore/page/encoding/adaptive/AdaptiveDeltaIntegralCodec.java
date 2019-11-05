@@ -132,7 +132,8 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
   @Override
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
-      @Override public ColumnPage decode(byte[] input, int offset, int length)
+      @Override
+      public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
         ColumnPage page = null;
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
@@ -143,7 +144,8 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         return LazyColumnPage.newPage(page, converter);
       }
 
-      @Override public void decodeAndFillVector(byte[] input, int offset, int length,
+      @Override
+      public void decodeAndFillVector(byte[] input, int offset, int length,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
           ReusableDataBuffer reusableDataBuffer)
           throws MemoryException, IOException {
@@ -168,7 +170,8 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             pageSize);
       }
 
-      @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+      @Override
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
           throws MemoryException, IOException {
         return decode(input, offset, length);
       }

@@ -76,7 +76,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
    * @param context
    * @throws IOException
    */
-  @Override public void setupJob(JobContext context) throws IOException {
+  @Override
+  public void setupJob(JobContext context) throws IOException {
     super.setupJob(context);
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
@@ -93,7 +94,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     CarbonTableOutputFormat.setLoadModel(context.getConfiguration(), loadModel);
   }
 
-  @Override public void setupTask(TaskAttemptContext context) throws IOException {
+  @Override
+  public void setupTask(TaskAttemptContext context) throws IOException {
     super.setupTask(context);
   }
 
@@ -103,7 +105,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
    * @param context
    * @throws IOException
    */
-  @Override public void commitJob(JobContext context) throws IOException {
+  @Override
+  public void commitJob(JobContext context) throws IOException {
     try {
       super.commitJob(context);
     } catch (IOException e) {
@@ -269,7 +272,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
    * @param state
    * @throws IOException
    */
-  @Override public void abortJob(JobContext context, JobStatus.State state) throws IOException {
+  @Override
+  public void abortJob(JobContext context, JobStatus.State state) throws IOException {
     try {
       super.abortJob(context, state);
       CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());

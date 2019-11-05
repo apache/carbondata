@@ -42,11 +42,13 @@ public class DataMapDistributableWrapper extends InputSplit implements Serializa
     return distributable;
   }
 
-  @Override public long getLength() throws IOException, InterruptedException {
+  @Override
+  public long getLength() throws IOException, InterruptedException {
     return distributable.getLength();
   }
 
-  @Override public String[] getLocations() throws IOException, InterruptedException {
+  @Override
+  public String[] getLocations() throws IOException, InterruptedException {
     return distributable.getLocations();
   }
 }

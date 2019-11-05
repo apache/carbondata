@@ -162,7 +162,8 @@ public class CarbonHiveInputSplit extends FileSplit
     return segmentId;
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     super.readFields(in);
     this.segmentId = in.readUTF();
     this.version = ColumnarFormatVersion.valueOf(in.readShort());
@@ -180,7 +181,8 @@ public class CarbonHiveInputSplit extends FileSplit
     this.numberOfBlocklets = in.readInt();
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  @Override
+  public void write(DataOutput out) throws IOException {
     super.write(out);
     out.writeUTF(segmentId);
     out.writeShort(version.number());
@@ -233,7 +235,8 @@ public class CarbonHiveInputSplit extends FileSplit
     return bucketId;
   }
 
-  @Override public int compareTo(Distributable o) {
+  @Override
+  public int compareTo(Distributable o) {
     if (o == null) {
       return -1;
     }
@@ -283,7 +286,8 @@ public class CarbonHiveInputSplit extends FileSplit
     return 0;
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -296,7 +300,8 @@ public class CarbonHiveInputSplit extends FileSplit
     return 0 == this.compareTo(other);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = taskId.hashCode();
     result = 31 * result + segmentId.hashCode();
     result = 31 * result + bucketId.hashCode();
@@ -305,15 +310,18 @@ public class CarbonHiveInputSplit extends FileSplit
     return result;
   }
 
-  @Override public String getBlockPath() {
+  @Override
+  public String getBlockPath() {
     return getPath().getName();
   }
 
-  @Override public List<Long> getMatchedBlocklets() {
+  @Override
+  public List<Long> getMatchedBlocklets() {
     return null;
   }
 
-  @Override public boolean fullScan() {
+  @Override
+  public boolean fullScan() {
     return true;
   }
 

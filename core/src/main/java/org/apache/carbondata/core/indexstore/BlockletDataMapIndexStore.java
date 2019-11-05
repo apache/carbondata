@@ -158,7 +158,8 @@ public class BlockletDataMapIndexStore
     return blockletDataMapIndexWrapper;
   }
 
-  @Override public List<BlockletDataMapIndexWrapper> getAll(
+  @Override
+  public List<BlockletDataMapIndexWrapper> getAll(
       List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiers)
       throws IOException {
     Map<String, Map<String, BlockMetaInfo>> segInfoCache
@@ -205,7 +206,8 @@ public class BlockletDataMapIndexStore
    * @param tableSegmentUniqueIdentifierWrapper
    * @return
    */
-  @Override public BlockletDataMapIndexWrapper getIfPresent(
+  @Override
+  public BlockletDataMapIndexWrapper getIfPresent(
       TableBlockIndexUniqueIdentifierWrapper tableSegmentUniqueIdentifierWrapper) {
     return (BlockletDataMapIndexWrapper) lruCache.get(
         tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
@@ -217,7 +219,8 @@ public class BlockletDataMapIndexStore
    *
    * @param tableSegmentUniqueIdentifierWrapper
    */
-  @Override public void invalidate(
+  @Override
+  public void invalidate(
       TableBlockIndexUniqueIdentifierWrapper tableSegmentUniqueIdentifierWrapper) {
     BlockletDataMapIndexWrapper blockletDataMapIndexWrapper =
         getIfPresent(tableSegmentUniqueIdentifierWrapper);
@@ -321,7 +324,8 @@ public class BlockletDataMapIndexStore
    *
    * @param tableSegmentUniqueIdentifiersWrapper
    */
-  @Override public void clearAccessCount(
+  @Override
+  public void clearAccessCount(
       List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiersWrapper) {
     for (TableBlockIndexUniqueIdentifierWrapper
              identifierWrapper : tableSegmentUniqueIdentifiersWrapper) {

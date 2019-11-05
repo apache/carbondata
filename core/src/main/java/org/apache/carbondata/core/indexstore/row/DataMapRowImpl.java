@@ -33,88 +33,107 @@ public class DataMapRowImpl extends DataMapRow {
     this.data = new Object[schemas.length];
   }
 
-  @Override public byte[] getByteArray(int ordinal) {
+  @Override
+  public byte[] getByteArray(int ordinal) {
     return (byte[]) data[ordinal];
   }
 
-  @Override public int getLengthInBytes(int ordinal) {
+  @Override
+  public int getLengthInBytes(int ordinal) {
     return ((byte[]) data[ordinal]).length;
   }
 
-  @Override public void setBoolean(boolean value, int ordinal) {
+  @Override
+  public void setBoolean(boolean value, int ordinal) {
     assert (schemas[ordinal].getDataType() == DataTypes.BOOLEAN);
     data[ordinal] = value;
   }
 
-  @Override public boolean getBoolean(int ordinal) {
+  @Override
+  public boolean getBoolean(int ordinal) {
     return (boolean) data[ordinal];
   }
 
-  @Override public DataMapRow getRow(int ordinal) {
+  @Override
+  public DataMapRow getRow(int ordinal) {
     return (DataMapRow) data[ordinal];
   }
 
-  @Override public void setByteArray(byte[] byteArray, int ordinal) {
+  @Override
+  public void setByteArray(byte[] byteArray, int ordinal) {
     assert (schemas[ordinal].getDataType() == DataTypes.BYTE_ARRAY);
     data[ordinal] = byteArray;
   }
 
-  @Override public int getInt(int ordinal) {
+  @Override
+  public int getInt(int ordinal) {
     return (Integer) data[ordinal];
   }
 
-  @Override public void setInt(int value, int ordinal) {
+  @Override
+  public void setInt(int value, int ordinal) {
     assert (schemas[ordinal].getDataType() == DataTypes.INT);
     data[ordinal] = value;
   }
 
-  @Override public void setByte(byte value, int ordinal) {
+  @Override
+  public void setByte(byte value, int ordinal) {
     assert (schemas[ordinal].getDataType() == DataTypes.BYTE);
     data[ordinal] = value;
   }
 
-  @Override public byte getByte(int ordinal) {
+  @Override
+  public byte getByte(int ordinal) {
     return (Byte) data[ordinal];
   }
 
-  @Override public void setShort(short value, int ordinal) {
+  @Override
+  public void setShort(short value, int ordinal) {
     assert (schemas[ordinal].getDataType() == DataTypes.SHORT);
     data[ordinal] = value;
   }
 
-  @Override public short getShort(int ordinal) {
+  @Override
+  public short getShort(int ordinal) {
     return (Short) data[ordinal];
   }
 
-  @Override public void setLong(long value, int ordinal) {
+  @Override
+  public void setLong(long value, int ordinal) {
     assert (schemas[ordinal].getDataType() == DataTypes.LONG);
     data[ordinal] = value;
   }
 
-  @Override public long getLong(int ordinal) {
+  @Override
+  public long getLong(int ordinal) {
     return (Long) data[ordinal];
   }
 
-  @Override public void setFloat(float value, int ordinal) {
+  @Override
+  public void setFloat(float value, int ordinal) {
     assert (schemas[ordinal].getDataType() == DataTypes.FLOAT);
     data[ordinal] = value;
   }
 
-  @Override public float getFloat(int ordinal) {
+  @Override
+  public float getFloat(int ordinal) {
     return (Float) data[ordinal];
   }
 
-  @Override public void setDouble(double value, int ordinal) {
+  @Override
+  public void setDouble(double value, int ordinal) {
     assert (schemas[ordinal].getDataType() == DataTypes.DOUBLE);
     data[ordinal] = value;
   }
 
-  @Override public void setRow(DataMapRow row, int ordinal) {
+  @Override
+  public void setRow(DataMapRow row, int ordinal) {
     assert (DataTypes.isStructType(schemas[ordinal].getDataType()));
     data[ordinal] = row;
   }
 
-  @Override public double getDouble(int ordinal) {
+  @Override
+  public double getDouble(int ordinal) {
     return (Double) data[ordinal];
   }
 
@@ -122,7 +141,8 @@ public class DataMapRowImpl extends DataMapRow {
     this.totalLengthInBytes = totalLengthInBytes;
   }
 
-  @Override public int getTotalSizeInBytes() {
+  @Override
+  public int getTotalSizeInBytes() {
     if (totalLengthInBytes > 0) {
       return totalLengthInBytes;
     } else {

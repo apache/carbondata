@@ -27,7 +27,8 @@ import org.apache.carbondata.core.scan.partition.Partitioner;
  */
 public class KeepAllPartitionFilterImpl implements PartitionFilterIntf {
 
-  @Override public BitSet applyFilter(Partitioner partitioner) {
+  @Override
+  public BitSet applyFilter(Partitioner partitioner) {
     return PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), true);
   }
 }

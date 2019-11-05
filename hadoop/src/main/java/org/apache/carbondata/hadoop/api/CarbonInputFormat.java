@@ -411,7 +411,8 @@ m filterExpression
    * @return List<InputSplit> list of CarbonInputSplit
    * @throws IOException
    */
-  @Override public abstract List<InputSplit> getSplits(JobContext job) throws IOException;
+  @Override
+  public abstract List<InputSplit> getSplits(JobContext job) throws IOException;
 
   /**
    * This method will execute a distributed job(DistributedDataMapJob) to get the count for the
@@ -693,7 +694,8 @@ m filterExpression
     return resultFilteredBlocks;
   }
 
-  @Override public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
+  @Override
+  public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     QueryModel queryModel = createQueryModel(inputSplit, taskAttemptContext,
@@ -784,7 +786,8 @@ m filterExpression
     return readSupport;
   }
 
-  @Override protected boolean isSplitable(JobContext context, Path filename) {
+  @Override
+  protected boolean isSplitable(JobContext context, Path filename) {
     try {
       // Don't split the file if it is local file system
       FileSystem fileSystem = filename.getFileSystem(context.getConfiguration());

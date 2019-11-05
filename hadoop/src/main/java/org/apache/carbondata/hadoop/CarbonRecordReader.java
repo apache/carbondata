@@ -123,15 +123,18 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     }
   }
 
-  @Override public boolean nextKeyValue() {
+  @Override
+  public boolean nextKeyValue() {
     return carbonIterator.hasNext();
   }
 
-  @Override public Void getCurrentKey() throws IOException, InterruptedException {
+  @Override
+  public Void getCurrentKey() throws IOException, InterruptedException {
     return null;
   }
 
-  @Override public T getCurrentValue() throws IOException, InterruptedException {
+  @Override
+  public T getCurrentValue() throws IOException, InterruptedException {
     rowCount += 1;
     if (null != inputMetricsStats) {
       inputMetricsStats.incrementRecordRead(1L);
@@ -153,12 +156,14 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     return objects;
   }
 
-  @Override public float getProgress() throws IOException, InterruptedException {
+  @Override
+  public float getProgress() throws IOException, InterruptedException {
     // TODO : Implement it based on total number of rows it is going to retrieve.
     return 0;
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     logStatistics(rowCount, queryModel.getStatisticsRecorder());
     // clear dictionary cache
     Map<String, Dictionary> columnToDictionaryMapping = queryModel.getColumnToDictionaryMapping();

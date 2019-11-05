@@ -66,7 +66,8 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
 
   }
 
-  @Override public void update(float value) {
+  @Override
+  public void update(float value) {
 
   }
 
@@ -95,23 +96,28 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
   public SimpleStatsResult getPageStats() {
     return new SimpleStatsResult() {
 
-      @Override public Object getMin() {
+      @Override
+      public Object getMin() {
         return min;
       }
 
-      @Override public Object getMax() {
+      @Override
+      public Object getMax() {
         return max;
       }
 
-      @Override public int getDecimalCount() {
+      @Override
+      public int getDecimalCount() {
         return 0;
       }
 
-      @Override public DataType getDataType() {
+      @Override
+      public DataType getDataType() {
         return dataType;
       }
 
-      @Override public boolean writeMinMax() {
+      @Override
+      public boolean writeMinMax() {
         return true;
       }
 

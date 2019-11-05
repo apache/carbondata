@@ -73,7 +73,8 @@ public class DictionaryThresholdReachedException extends Exception {
   /**
    * getLocalizedMessage
    */
-  @Override public String getLocalizedMessage() {
+  @Override
+  public String getLocalizedMessage() {
     return super.getLocalizedMessage();
   }
 

@@ -55,7 +55,8 @@ public class CarbonStreamRecordReaderTest extends TestCase {
   private String tablePath;
 
 
-  @Override protected void setUp() throws Exception {
+  @Override
+  protected void setUp() throws Exception {
     tablePath = new File("target/stream_input").getCanonicalPath();
     String dbName = "default";
     String tableName = "stream_table_input";
@@ -91,7 +92,8 @@ public class CarbonStreamRecordReaderTest extends TestCase {
     }
   }
 
-  @Override protected void tearDown() throws Exception {
+  @Override
+  protected void tearDown() throws Exception {
     super.tearDown();
     if (tablePath != null) {
       FileFactory.deleteAllFilesOfDir(new File(tablePath));

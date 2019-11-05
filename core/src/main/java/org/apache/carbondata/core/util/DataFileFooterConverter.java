@@ -52,7 +52,8 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta
    */
-  @Override public DataFileFooter readDataFileFooter(TableBlockInfo tableBlockInfo)
+  @Override
+  public DataFileFooter readDataFileFooter(TableBlockInfo tableBlockInfo)
       throws IOException {
     DataFileFooter dataFileFooter = new DataFileFooter();
     FileReader fileReader = null;
@@ -132,7 +133,8 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
     return blockletInfo;
   }
 
-  @Override public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
+  @Override
+  public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
     FileReader fileReader = null;
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     try {

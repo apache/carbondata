@@ -37,7 +37,8 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     super(name, parentName, blockIndex);
   }
 
-  @Override public void addChildren(GenericQueryType children) {
+  @Override
+  public void addChildren(GenericQueryType children) {
     if (this.getName().equals(children.getParentName())) {
       this.children = children;
     } else {
@@ -45,19 +46,23 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     }
   }
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return name;
   }
 
-  @Override public void setName(String name) {
+  @Override
+  public void setName(String name) {
     this.name = name;
   }
 
-  @Override public String getParentName() {
+  @Override
+  public String getParentName() {
     return parentName;
   }
 
-  @Override public void setParentName(String parentName) {
+  @Override
+  public void setParentName(String parentName) {
     this.parentName = parentName;
 
   }
@@ -78,17 +83,20 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     }
   }
 
-  @Override public int getColsCount() {
+  @Override
+  public int getColsCount() {
     return children.getColsCount() + 1;
   }
 
-  @Override public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
+  @Override
+  public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
       throws IOException {
     readBlockDataChunk(blockChunkHolder);
     children.fillRequiredBlockData(blockChunkHolder);
   }
 
-  @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+  @Override
+  public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
     Object[] data = fillData(dataBuffer);
     if (data == null) {
       return null;
@@ -108,12 +116,14 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     return data;
   }
 
-  @Override public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
+  @Override
+  public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
       CarbonDimension child) {
     throw new UnsupportedOperationException("Operation Unsupported for ArrayType");
   }
 
-  @Override public Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
+  @Override
+  public Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
       CarbonDimension presentColumn) {
     throw new UnsupportedOperationException("Operation Unsupported for ArrayType");
   }

@@ -66,7 +66,8 @@ public class TableSegmentUniqueIdentifier {
    * @param o
    * @return
    */
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
@@ -81,7 +82,8 @@ public class TableSegmentUniqueIdentifier {
    * Returns hashcode for the TableSegmentIdentifier
    * @return
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = absoluteTableIdentifier.hashCode();
     result = 31 * result + segmentId.hashCode();
     return result;

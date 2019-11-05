@@ -58,13 +58,15 @@ public class ParentColumnTableRelation implements Serializable, Writable {
     return columnName;
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  @Override
+  public void write(DataOutput out) throws IOException {
     relationIdentifier.write(out);
     out.writeUTF(columnId);
     out.writeUTF(columnName);
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     this.relationIdentifier = new RelationIdentifier(null, null, null);
     relationIdentifier.readFields(in);
     this.columnId = in.readUTF();

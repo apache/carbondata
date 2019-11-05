@@ -50,7 +50,8 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta
    */
-  @Override public DataFileFooter readDataFileFooter(TableBlockInfo tableBlockInfo)
+  @Override
+  public DataFileFooter readDataFileFooter(TableBlockInfo tableBlockInfo)
       throws IOException {
     DataFileFooter dataFileFooter = new DataFileFooter();
     CarbonFooterReader reader =
@@ -146,7 +147,8 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
     return numberOfDimensionColumns;
   }
 
-  @Override public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
+  @Override
+  public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
     return new DataFileFooterConverter(configuration).getSchema(tableBlockInfo);
   }
 }

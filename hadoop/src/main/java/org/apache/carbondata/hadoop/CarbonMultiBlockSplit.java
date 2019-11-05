@@ -114,7 +114,8 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
     length = total;
   }
 
-  @Override public String[] getLocations() {
+  @Override
+  public String[] getLocations() {
     getLocationIfNull();
     return locations;
   }

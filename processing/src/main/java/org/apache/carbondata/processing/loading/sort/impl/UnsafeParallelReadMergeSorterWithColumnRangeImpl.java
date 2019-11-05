@@ -75,7 +75,8 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
     this.columnRangeInfo = columnRangeInfo;
   }
 
-  @Override public void initialize(SortParameters sortParameters) {
+  @Override
+  public void initialize(SortParameters sortParameters) {
     this.originSortParameters = sortParameters;
     int totalInMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
     inMemoryChunkSizeInMB = totalInMemoryChunkSizeInMB / columnRangeInfo.getNumOfRanges();
@@ -88,7 +89,8 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
     }
   }
 
-  @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
+  @Override
+  public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
     UnsafeSortDataRows[] sortDataRows = new UnsafeSortDataRows[columnRangeInfo.getNumOfRanges()];
     intermediateFileMergers = new UnsafeIntermediateMerger[columnRangeInfo.getNumOfRanges()];
@@ -152,7 +154,8 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
     return new UnsafeSingleThreadFinalSortFilesMerger(sortParameters, dataFolderLocation);
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     for (int i = 0; i < intermediateFileMergers.length; i++) {
       intermediateFileMergers[i].close();
     }
@@ -258,7 +261,8 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
 
     private UnsafeSingleThreadFinalSortFilesMerger finalMerger;
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
       if (firstRow) {
         firstRow = false;
         finalMerger = getFinalMerger(sortParameters);
@@ -269,7 +273,8 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
       return finalMerger.hasNext();
     }
 
-    @Override public CarbonRowBatch next() {
+    @Override
+    public CarbonRowBatch next() {
       int counter = 0;
       CarbonRowBatch rowBatch = new CarbonRowBatch(batchSize);
       while (finalMerger.hasNext() && counter < batchSize) {

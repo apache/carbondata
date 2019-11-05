@@ -90,7 +90,8 @@ public class CarbonTableReader {
 
   // default PathFilter, accepts files in carbondata format (with .carbondata extension).
   private static final PathFilter DefaultFilter = new PathFilter() {
-    @Override public boolean accept(Path path) {
+    @Override
+    public boolean accept(Path path) {
       return CarbonTablePath.isCarbonDataFile(path.getName());
     }
   };

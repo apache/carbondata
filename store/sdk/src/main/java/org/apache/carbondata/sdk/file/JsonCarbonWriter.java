@@ -66,7 +66,8 @@ public class JsonCarbonWriter extends CarbonWriter {
    * @param object (json row as a string)
    * @throws IOException
    */
-  @Override public void write(Object object) throws IOException {
+  @Override
+  public void write(Object object) throws IOException {
     Objects.requireNonNull(object, "Input cannot be null");
     try {
       String[] jsonString = new String[1];
@@ -82,7 +83,8 @@ public class JsonCarbonWriter extends CarbonWriter {
   /**
    * Flush and close the writer
    */
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     try {
       recordWriter.close(context);
     } catch (InterruptedException e) {

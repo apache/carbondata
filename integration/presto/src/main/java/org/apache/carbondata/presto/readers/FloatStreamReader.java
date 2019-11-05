@@ -49,15 +49,18 @@ public class FloatStreamReader extends CarbonColumnVectorImpl implements PrestoV
     this.dictionary = dictionary;
   }
 
-  @Override public Block buildBlock() {
+  @Override
+  public Block buildBlock() {
     return builder.build();
   }
 
-  @Override public void setBatchSize(int batchSize) {
+  @Override
+  public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
 
-  @Override public void putInt(int rowId, int value) {
+  @Override
+  public void putInt(int rowId, int value) {
     Object data = DataTypeUtil
         .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.FLOAT);
     if (data != null) {
@@ -67,31 +70,37 @@ public class FloatStreamReader extends CarbonColumnVectorImpl implements PrestoV
     }
   }
 
-  @Override public void putFloat(int rowId, float value) {
+  @Override
+  public void putFloat(int rowId, float value) {
     type.writeLong(builder, (long)Float.floatToRawIntBits(value));
   }
 
-  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+  @Override
+  public void putFloats(int rowId, int count, float[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       type.writeLong(builder, (long)Float.floatToRawIntBits(src[i]));
     }
   }
 
-  @Override public void putNull(int rowId) {
+  @Override
+  public void putNull(int rowId) {
     builder.appendNull();
   }
 
-  @Override public void putNulls(int rowId, int count) {
+  @Override
+  public void putNulls(int rowId, int count) {
     for (int i = 0; i < count; i++) {
       builder.appendNull();
     }
   }
 
-  @Override public void reset() {
+  @Override
+  public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
   }
 
-  @Override public void putObject(int rowId, Object value) {
+  @Override
+  public void putObject(int rowId, Object value) {
     if (value == null) {
       putNull(rowId);
     } else {

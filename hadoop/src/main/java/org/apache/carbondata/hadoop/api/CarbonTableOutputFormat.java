@@ -267,7 +267,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
                 true));
     // It should be started in new thread as the underlying iterator uses blocking queue.
     Future future = executorService.submit(new Thread() {
-      @Override public void run() {
+      @Override
+      public void run() {
         ThreadLocalSessionInfo.setConfigurationToCurrentThread(taskAttemptContext
             .getConfiguration());
         try {
@@ -458,14 +459,16 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       this.future = future;
     }
 
-    @Override public void write(NullWritable aVoid, ObjectArrayWritable objects)
+    @Override
+    public void write(NullWritable aVoid, ObjectArrayWritable objects)
         throws InterruptedException {
       if (iteratorWrapper != null) {
         iteratorWrapper.write(objects.get());
       }
     }
 
-    @Override public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
+    @Override
+    public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
       if (!isClosed) {
         isClosed = true;
         if (iteratorWrapper != null) {
@@ -510,7 +513,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       counter = new AtomicLong(0);
     }
 
-    @Override public void write(NullWritable aVoid, ObjectArrayWritable objects)
+    @Override
+    public void write(NullWritable aVoid, ObjectArrayWritable objects)
         throws InterruptedException {
       int iteratorNum = (int) (counter.incrementAndGet() % iterators.length);
       synchronized (iterators[iteratorNum]) {
@@ -518,7 +522,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       }
     }
 
-    @Override public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
+    @Override
+    public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
       for (int i = 0; i < iterators.length; i++) {
         synchronized (iterators[i]) {
           iterators[i].closeWriter(false);

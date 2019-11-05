@@ -52,7 +52,8 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
     byteArrayData.add(bytes);
   }
 
-  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+  @Override
+  public void putDecimal(int rowId, BigDecimal decimal) {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }

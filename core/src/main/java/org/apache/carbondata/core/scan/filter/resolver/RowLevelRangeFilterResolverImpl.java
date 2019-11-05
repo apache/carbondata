@@ -147,7 +147,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    * @return end IndexKey
    */
-  @Override public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
+  @Override
+  public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
       SortedMap<Integer, byte[]> noDicEndKeys, List<long[]> endKeyList) {
     switch (exp.getFilterExpressionType()) {
       case LESSTHAN:
@@ -197,7 +198,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       }
     }
     Comparator<byte[]> filterNoDictValueComaparator = new Comparator<byte[]>() {
-      @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
+      @Override
+      public int compare(byte[] filterMember1, byte[] filterMember2) {
         return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
       }
 

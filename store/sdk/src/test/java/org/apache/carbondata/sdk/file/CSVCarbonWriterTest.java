@@ -244,7 +244,8 @@ public class CSVCarbonWriterTest {
     }
 
     File[] dataFiles = new File(path).listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
+      @Override
+      public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
     });
@@ -281,7 +282,8 @@ public class CSVCarbonWriterTest {
 
     TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, 2, 2);
     File[] dataFiles = new File(path).listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
+      @Override
+      public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
     });
@@ -381,7 +383,8 @@ public class CSVCarbonWriterTest {
       writer.close();
 
       File[] dataFiles = new File(path).listFiles(new FileFilter() {
-        @Override public boolean accept(File pathname) {
+        @Override
+        public boolean accept(File pathname) {
           return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
         }
       });

@@ -29,7 +29,8 @@ public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> 
     this.iterator = iterator;
   }
 
-  @Override public boolean hasNext() {
+  @Override
+  public boolean hasNext() {
     if (null == batch || checkBatchEnd(batch)) {
       if (iterator.hasNext()) {
         batch = iterator.next();
@@ -42,7 +43,8 @@ public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> 
     return !checkBatchEnd(batch);
   }
 
-  @Override public Object[] next() {
+  @Override
+  public Object[] next() {
     if (batch == null) {
       batch = iterator.next();
     }

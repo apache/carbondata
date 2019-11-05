@@ -70,11 +70,13 @@ public class RangePartitioner implements Partitioner {
    *
    * @return
    */
-  @Override public int numPartitions() {
+  @Override
+  public int numPartitions() {
     return numPartitions + 1;
   }
 
-  @Override public int getPartition(Object key) {
+  @Override
+  public int getPartition(Object key) {
     if (key == null) {
       return 0;
     } else {

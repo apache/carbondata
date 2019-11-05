@@ -72,7 +72,8 @@ public class LocalFileLock extends AbstractCarbonLock {
    *
    * @return
    */
-  @Override public boolean lock() {
+  @Override
+  public boolean lock() {
     try {
       if (!FileFactory.isFileExist(lockFileDir)) {
         FileFactory.mkdirs(lockFileDir, FileFactory.getFileType(lockFileDir));
@@ -104,7 +105,8 @@ public class LocalFileLock extends AbstractCarbonLock {
    *
    * @return
    */
-  @Override public boolean unlock() {
+  @Override
+  public boolean unlock() {
     boolean status = false;
     try {
       if (null != fileLock) {

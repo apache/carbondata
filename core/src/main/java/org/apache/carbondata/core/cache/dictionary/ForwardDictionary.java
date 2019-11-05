@@ -50,7 +50,8 @@ public class ForwardDictionary implements Dictionary {
    * @param value dictionary value
    * @return if found returns key else INVALID_SURROGATE_KEY
    */
-  @Override public int getSurrogateKey(String value) {
+  @Override
+  public int getSurrogateKey(String value) {
     return columnDictionaryInfo.getSurrogateKey(value);
   }
 
@@ -64,7 +65,8 @@ public class ForwardDictionary implements Dictionary {
    * @param value dictionary value as byte array
    * @return if found returns key else INVALID_SURROGATE_KEY
    */
-  @Override public int getSurrogateKey(byte[] value) {
+  @Override
+  public int getSurrogateKey(byte[] value) {
     return columnDictionaryInfo.getSurrogateKey(value);
   }
 
@@ -77,7 +79,8 @@ public class ForwardDictionary implements Dictionary {
    * @param surrogateKey a unique ID for a dictionary value
    * @return value if found else null
    */
-  @Override public String getDictionaryValueForKey(int surrogateKey) {
+  @Override
+  public String getDictionaryValueForKey(int surrogateKey) {
     return columnDictionaryInfo.getDictionaryValueForKey(surrogateKey);
   }
 
@@ -90,7 +93,8 @@ public class ForwardDictionary implements Dictionary {
    * @param surrogateKey a unique ID for a dictionary value
    * @return value if found else null
    */
-  @Override public byte[] getDictionaryValueForKeyInBytes(int surrogateKey) {
+  @Override
+  public byte[] getDictionaryValueForKeyInBytes(int surrogateKey) {
     return columnDictionaryInfo.getDictionaryValueForKeyInBytes(surrogateKey);
   }
 
@@ -102,7 +106,8 @@ public class ForwardDictionary implements Dictionary {
    * @param surrogateKey a unique ID for a dictionary value
    * @return if found returns key else 0
    */
-  @Override public int getSortedIndex(int surrogateKey) {
+  @Override
+  public int getSortedIndex(int surrogateKey) {
     return columnDictionaryInfo.getSortedIndex(surrogateKey);
   }
 
@@ -116,7 +121,8 @@ public class ForwardDictionary implements Dictionary {
    * @param sortedIndex sort index of dictionary value
    * @return value if found else null
    */
-  @Override public String getDictionaryValueFromSortedIndex(int sortedIndex) {
+  @Override
+  public String getDictionaryValueFromSortedIndex(int sortedIndex) {
     return columnDictionaryInfo.getDictionaryValueFromSortedIndex(sortedIndex);
   }
 
@@ -129,14 +135,16 @@ public class ForwardDictionary implements Dictionary {
    *
    * @return
    */
-  @Override public DictionaryChunksWrapper getDictionaryChunks() {
+  @Override
+  public DictionaryChunksWrapper getDictionaryChunks() {
     return columnDictionaryInfo.getDictionaryChunks();
   }
 
   /**
    * This method will release the objects and set default value for primitive types
    */
-  @Override public void clear() {
+  @Override
+  public void clear() {
     if (null != columnDictionaryInfo) {
       columnDictionaryInfo.clear();
       columnDictionaryInfo = null;
@@ -166,7 +174,8 @@ public class ForwardDictionary implements Dictionary {
    * This method return the access count associated with the dictionary.
    * @return
    */
-  @Override public int getAccessCount() {
+  @Override
+  public int getAccessCount() {
     if (null != columnDictionaryInfo) {
       return columnDictionaryInfo.getAccessCount();
     }

@@ -66,7 +66,8 @@ public class CarbonFooterReaderV3 {
   private ThriftReader openThriftReader(String filePath) {
 
     return new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new FileFooter3();
       }
     });

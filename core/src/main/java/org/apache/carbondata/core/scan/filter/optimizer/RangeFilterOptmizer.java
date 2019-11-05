@@ -30,7 +30,8 @@ public class RangeFilterOptmizer implements FilterOptimizer {
 
   }
 
-  @Override public Expression optimizeFilter() {
+  @Override
+  public Expression optimizeFilter() {
     // Check if Range Filter can be applied.
     // rangeExpEvaluator.rangeExpressionEvaluatorGraphBased(null, null);
     rangeExpEvaluator.rangeExpressionEvaluatorMapBased();

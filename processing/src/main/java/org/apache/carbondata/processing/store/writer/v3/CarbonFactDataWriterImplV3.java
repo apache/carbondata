@@ -137,7 +137,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    * Below method will be used to write one table page data, invoked by Consumer
    * @param tablePage
    */
-  @Override public void writeTablePage(TablePage tablePage)
+  @Override
+  public void writeTablePage(TablePage tablePage)
       throws CarbonDataWriterException,IOException {
 
     // condition for writting all the pages

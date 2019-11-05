@@ -204,7 +204,8 @@ public class BlockletInfo implements Serializable, Writable {
     this.numberOfPages = numberOfPages;
   }
 
-  @Override public void write(DataOutput output) throws IOException {
+  @Override
+  public void write(DataOutput output) throws IOException {
     output.writeLong(dimensionOffset);
     output.writeLong(measureOffsets);
     int dsize = dimensionChunkOffsets != null ? dimensionChunkOffsets.size() : 0;
@@ -283,7 +284,8 @@ public class BlockletInfo implements Serializable, Writable {
     return dataChunk;
   }
 
-  @Override public void readFields(DataInput input) throws IOException {
+  @Override
+  public void readFields(DataInput input) throws IOException {
     dimensionOffset = input.readLong();
     measureOffsets = input.readLong();
     int dimensionChunkOffsetsSize = input.readShort();

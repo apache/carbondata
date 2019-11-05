@@ -196,7 +196,8 @@ public class LoadMetadataDetails implements Serializable {
   /* (non-Javadoc)
    * @see java.lang.Object#hashCode()
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((loadName == null) ? 0 : loadName.hashCode());
@@ -206,7 +207,8 @@ public class LoadMetadataDetails implements Serializable {
   /* (non-Javadoc)
    * @see java.lang.Object#equals(java.lang.Object)
    */
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (obj == null) {
       return false;
 
@@ -440,7 +442,8 @@ public class LoadMetadataDetails implements Serializable {
     this.segmentFile = segmentFile;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "LoadMetadataDetails{" + "loadStatus=" + loadStatus + ", loadName='" + loadName + '\''
         + ", loadStartTime='" + loadStartTime + '\'' + ", segmentFile='" + segmentFile + '\'' + '}';
   }

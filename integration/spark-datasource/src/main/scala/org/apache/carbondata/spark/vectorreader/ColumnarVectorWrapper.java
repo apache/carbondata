@@ -56,25 +56,29 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     this.ordinal = ordinal;
   }
 
-  @Override public void putBoolean(int rowId, boolean value) {
+  @Override
+  public void putBoolean(int rowId, boolean value) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putBoolean(counter++, value);
     }
   }
 
-  @Override public void putFloat(int rowId, float value) {
+  @Override
+  public void putFloat(int rowId, float value) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putFloat(counter++, value);
     }
   }
 
-  @Override public void putShort(int rowId, short value) {
+  @Override
+  public void putShort(int rowId, short value) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putShort(counter++, value);
     }
   }
 
-  @Override public void putShorts(int rowId, int count, short value) {
+  @Override
+  public void putShorts(int rowId, int count, short value) {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
@@ -87,7 +91,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putInt(int rowId, int value) {
+  @Override
+  public void putInt(int rowId, int value) {
     if (!filteredRows[rowId]) {
       if (isDictionary) {
         sparkColumnVectorProxy.putDictionaryInt(counter++, value);
@@ -97,7 +102,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putInts(int rowId, int count, int value) {
+  @Override
+  public void putInts(int rowId, int count, int value) {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
@@ -110,13 +116,15 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putLong(int rowId, long value) {
+  @Override
+  public void putLong(int rowId, long value) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putLong(counter++, value);
     }
   }
 
-  @Override public void putLongs(int rowId, int count, long value) {
+  @Override
+  public void putLongs(int rowId, int count, long value) {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
@@ -129,14 +137,16 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
+  @Override
+  public void putDecimal(int rowId, BigDecimal value, int precision) {
     if (!filteredRows[rowId]) {
       Decimal toDecimal = Decimal.apply(value);
       sparkColumnVectorProxy.putDecimal(counter++, toDecimal, precision);
     }
   }
 
-  @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
+  @Override
+  public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
     Decimal decimal = Decimal.apply(value);
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
@@ -146,13 +156,15 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putDouble(int rowId, double value) {
+  @Override
+  public void putDouble(int rowId, double value) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putDouble(counter++, value);
     }
   }
 
-  @Override public void putDoubles(int rowId, int count, double value) {
+  @Override
+  public void putDoubles(int rowId, int count, double value) {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
@@ -165,19 +177,22 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putByte(int rowId, byte value) {
+  @Override
+  public void putByte(int rowId, byte value) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putByte(counter++, value);
     }
   }
 
-  @Override public void putByteArray(int rowId, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, byte[] value) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putByteArray(counter++, value, 0, value.length);
     }
   }
 
-  @Override public void putByteArray(int rowId, int count, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
         sparkColumnVectorProxy.putByteArray(counter++, value);
@@ -186,19 +201,22 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, int offset, int length, byte[] value) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putByteArray(counter++, value, offset, length);
     }
   }
 
-  @Override public void putNull(int rowId) {
+  @Override
+  public void putNull(int rowId) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putNull(counter++);
     }
   }
 
-  @Override public void putNulls(int rowId, int count) {
+  @Override
+  public void putNulls(int rowId, int count) {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
@@ -211,13 +229,15 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putNotNull(int rowId) {
+  @Override
+  public void putNotNull(int rowId) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putNotNull(counter++);
     }
   }
 
-  @Override public void putNotNull(int rowId, int count) {
+  @Override
+  public void putNotNull(int rowId, int count) {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
@@ -230,20 +250,24 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public boolean isNull(int rowId) {
+  @Override
+  public boolean isNull(int rowId) {
     return sparkColumnVectorProxy.isNullAt(rowId);
   }
 
-  @Override public void putObject(int rowId, Object obj) {
+  @Override
+  public void putObject(int rowId, Object obj) {
     //TODO handle complex types
   }
 
-  @Override public Object getData(int rowId) {
+  @Override
+  public Object getData(int rowId) {
     //TODO handle complex types
     return null;
   }
 
-  @Override public void reset() {
+  @Override
+  public void reset() {
     counter = 0;
     filteredRowsExist = false;
     if (null != dictionaryVector) {
@@ -251,7 +275,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public DataType getType() {
+  @Override
+  public DataType getType() {
     return CarbonSparkDataSourceUtil
         .convertSparkToCarbonDataType(sparkColumnVectorProxy.dataType());
   }
@@ -271,11 +296,13 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     this.filteredRowsExist = filteredRowsExist;
   }
 
-  @Override public void setDictionary(CarbonDictionary dictionary) {
+  @Override
+  public void setDictionary(CarbonDictionary dictionary) {
       sparkColumnVectorProxy.setDictionary(dictionary);
   }
 
-  @Override public boolean hasDictionary() {
+  @Override
+  public boolean hasDictionary() {
     return sparkColumnVectorProxy.hasDictionary();
   }
 
@@ -285,11 +312,13 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     ((ColumnarVectorWrapper) dictionaryVector).isDictionary = true;
   }
 
-  @Override public CarbonColumnVector getDictionaryVector() {
+  @Override
+  public CarbonColumnVector getDictionaryVector() {
     return dictionaryVector;
   }
 
-  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+  @Override
+  public void putFloats(int rowId, int count, float[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
         sparkColumnVectorProxy.putFloat(counter++, src[i]);
@@ -298,7 +327,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+  @Override
+  public void putShorts(int rowId, int count, short[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
         sparkColumnVectorProxy.putShort(counter++, src[i]);
@@ -307,7 +337,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+  @Override
+  public void putInts(int rowId, int count, int[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
         sparkColumnVectorProxy.putInt(counter++, src[i]);
@@ -316,7 +347,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+  @Override
+  public void putLongs(int rowId, int count, long[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
         sparkColumnVectorProxy.putLong(counter++, src[i]);
@@ -325,7 +357,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+  @Override
+  public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
         sparkColumnVectorProxy.putDouble(counter++, src[i]);
@@ -334,7 +367,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+  @Override
+  public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
         sparkColumnVectorProxy.putByte(counter++, src[i]);
@@ -343,17 +377,20 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void setLazyPage(LazyPageLoader lazyPage) {
+  @Override
+  public void setLazyPage(LazyPageLoader lazyPage) {
     lazyPage.loadPage();
   }
 
-  @Override public void putArray(int rowId, int offset, int length) {
+  @Override
+  public void putArray(int rowId, int offset, int length) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putArray(rowId, offset, length);
     }
   }
 
-  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+  @Override
+  public void putAllByteArray(byte[] data, int offset, int length) {
     sparkColumnVectorProxy.putAllByteArray(data, offset, length);
   }
 }

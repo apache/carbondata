@@ -228,7 +228,8 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
     }
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  @Override
+  public void write(DataOutput out) throws IOException {
     out.writeBoolean(isWrittenToFile);
     out.writeBoolean(bytes != null);
     if (bytes != null) {
@@ -238,7 +239,8 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
     out.writeInt(dataSize);
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     this.isWrittenToFile = in.readBoolean();
     if (in.readBoolean()) {
       this.bytes = new byte[in.readInt()];

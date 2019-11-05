@@ -24,19 +24,23 @@ public class RowImpl implements RowIntf {
     row = new Object[0];
   }
 
-  @Override public Object getVal(int index) {
+  @Override
+  public Object getVal(int index) {
     return row[index];
   }
 
-  @Override public Object[] getValues() {
+  @Override
+  public Object[] getValues() {
     return row;
   }
 
-  @Override public void setValues(final Object[] row) {
+  @Override
+  public void setValues(final Object[] row) {
     this.row = row;
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return this.row.length;
   }
 }

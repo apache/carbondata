@@ -176,7 +176,8 @@ public final class CarbonLoaderUtil {
     List<String> filesToBeDeleted = new ArrayList<>();
     CarbonFile carbonFile = FileFactory.getCarbonFile(loadModel.getTablePath());
     CarbonFile[] filteredList = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
+      @Override
+      public boolean accept(CarbonFile file) {
         return !file.getName().contains(loadModel.getFactTimeStamp() + "");
       }
     });

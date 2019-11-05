@@ -32,11 +32,13 @@ public class SafeVariableShortLengthDimensionDataChunkStore
     super(isInvertedIndex, numberOfRows, dataLength);
   }
 
-  @Override protected int getLengthSize() {
+  @Override
+  protected int getLengthSize() {
     return CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
   }
 
-  @Override protected int getLengthFromBuffer(ByteBuffer buffer) {
+  @Override
+  protected int getLengthFromBuffer(ByteBuffer buffer) {
     return buffer.getShort();
   }
 }

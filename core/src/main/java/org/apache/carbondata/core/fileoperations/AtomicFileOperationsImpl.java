@@ -52,11 +52,13 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
     this.fileType = fileType;
   }
 
-  @Override public DataInputStream openForRead() throws IOException {
+  @Override
+  public DataInputStream openForRead() throws IOException {
     return FileFactory.getDataInputStream(filePath, fileType);
   }
 
-  @Override public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
+  @Override
+  public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
 
     filePath = filePath.replace("\\", "/");
 
@@ -74,7 +76,8 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
 
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
 
     if (null != dataOutStream) {
       CarbonUtil.closeStream(dataOutStream);
@@ -92,7 +95,8 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
     }
   }
 
-  @Override public void setFailed() {
+  @Override
+  public void setFailed() {
     this.setFailed = true;
   }
 }

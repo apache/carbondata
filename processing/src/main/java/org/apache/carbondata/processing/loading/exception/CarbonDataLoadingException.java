@@ -60,7 +60,8 @@ public class CarbonDataLoadingException extends RuntimeException {
   /**
    * getLocalizedMessage
    */
-  @Override public String getLocalizedMessage() {
+  @Override
+  public String getLocalizedMessage() {
     return super.getLocalizedMessage();
   }
 

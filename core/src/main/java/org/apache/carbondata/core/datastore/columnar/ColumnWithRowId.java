@@ -45,11 +45,13 @@ public class ColumnWithRowId<T> implements Comparable<ColumnWithRowId<T>> {
     return index;
   }
 
-  @Override public int compareTo(ColumnWithRowId o) {
+  @Override
+  public int compareTo(ColumnWithRowId o) {
     return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column);
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
@@ -57,7 +59,8 @@ public class ColumnWithRowId<T> implements Comparable<ColumnWithRowId<T>> {
     return Arrays.equals(column, o.column) && index == o.index;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Arrays.hashCode(column) + index.hashCode();
   }
 }

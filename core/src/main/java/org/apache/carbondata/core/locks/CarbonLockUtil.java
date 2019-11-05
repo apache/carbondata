@@ -135,7 +135,8 @@ public class CarbonLockUtil {
     CarbonFile[] files = FileFactory.getCarbonFile(lockFilesDir)
         .listFiles(new CarbonFileFilter() {
 
-            @Override public boolean accept(CarbonFile pathName) {
+            @Override
+            public boolean accept(CarbonFile pathName) {
               if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
                 return (currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreserveTime;
               }

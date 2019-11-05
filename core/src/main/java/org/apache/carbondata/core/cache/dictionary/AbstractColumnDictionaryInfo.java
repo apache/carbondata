@@ -76,7 +76,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    *
    * @return
    */
-  @Override public long getFileTimeStamp() {
+  @Override
+  public long getFileTimeStamp() {
     return fileTimeStamp;
   }
 
@@ -86,7 +87,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    *
    * @return
    */
-  @Override public int getAccessCount() {
+  @Override
+  public int getAccessCount() {
     return accessCount.get();
   }
 
@@ -95,11 +97,13 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    *
    * @return
    */
-  @Override public long getMemorySize() {
+  @Override
+  public long getMemorySize() {
     return memorySize;
   }
 
-  @Override public void setMemorySize(long memorySize) {
+  @Override
+  public void setMemorySize(long memorySize) {
     this.memorySize = memorySize;
   }
 
@@ -107,7 +111,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    * This method will increment the access count for a column by 1
    * whenever a column is getting used in query or incremental data load
    */
-  @Override public void incrementAccessCount() {
+  @Override
+  public void incrementAccessCount() {
     accessCount.incrementAndGet();
   }
 
@@ -117,7 +122,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    *
    * @return size of last dictionary chunk
    */
-  @Override public int getSizeOfLastDictionaryChunk() {
+  @Override
+  public int getSizeOfLastDictionaryChunk() {
     return 0;
   }
 
@@ -136,11 +142,13 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    *
    * @param offsetTillFileIsRead
    */
-  @Override public void setOffsetTillFileIsRead(long offsetTillFileIsRead) {
+  @Override
+  public void setOffsetTillFileIsRead(long offsetTillFileIsRead) {
     this.offsetTillFileIsRead = offsetTillFileIsRead;
   }
 
-  @Override public long getOffsetTillFileIsRead() {
+  @Override
+  public long getOffsetTillFileIsRead() {
     return offsetTillFileIsRead;
   }
 
@@ -150,7 +158,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    *
    * @param fileTimeStamp
    */
-  @Override public void setFileTimeStamp(long fileTimeStamp) {
+  @Override
+  public void setFileTimeStamp(long fileTimeStamp) {
     this.fileTimeStamp = fileTimeStamp;
   }
 
@@ -161,14 +170,16 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    *
    * @return
    */
-  @Override public DictionaryChunksWrapper getDictionaryChunks() {
+  @Override
+  public DictionaryChunksWrapper getDictionaryChunks() {
     return new DictionaryChunksWrapper(dictionaryChunks);
   }
 
   /**
    * This method will release the objects and set default value for primitive types
    */
-  @Override public void clear() {
+  @Override
+  public void clear() {
     decrementAccessCount();
   }
 
@@ -180,7 +191,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    * @param surrogateKey a unique ID for a dictionary value
    * @return if found returns key else 0
    */
-  @Override public int getSortedIndex(int surrogateKey) {
+  @Override
+  public int getSortedIndex(int surrogateKey) {
     return 0;
   }
 
@@ -190,7 +202,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    *
    * @param dictionaryMetaFileLength length of dictionary metadata file
    */
-  @Override public void setDictionaryMetaFileLength(long dictionaryMetaFileLength) {
+  @Override
+  public void setDictionaryMetaFileLength(long dictionaryMetaFileLength) {
     this.dictionaryMetaFileLength = dictionaryMetaFileLength;
   }
 
@@ -200,7 +213,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    *
    * @return
    */
-  @Override public long getDictionaryMetaFileLength() {
+  @Override
+  public long getDictionaryMetaFileLength() {
     return dictionaryMetaFileLength;
   }
 
@@ -214,7 +228,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    * @param sortedIndex sort index of dictionary value
    * @return value if found else null
    */
-  @Override public String getDictionaryValueFromSortedIndex(int sortedIndex) {
+  @Override
+  public String getDictionaryValueFromSortedIndex(int sortedIndex) {
     return null;
   }
 
@@ -227,7 +242,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    * @param surrogateKey a unique ID for a dictionary value
    * @return value if found else null
    */
-  @Override public String getDictionaryValueForKey(int surrogateKey) {
+  @Override
+  public String getDictionaryValueForKey(int surrogateKey) {
     String dictionaryValue = null;
     if (surrogateKey < MINIMUM_SURROGATE_KEY) {
       return dictionaryValue;
@@ -249,7 +265,8 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    * @param surrogateKey a unique ID for a dictionary value
    * @return value if found else null
    */
-  @Override public byte[] getDictionaryValueForKeyInBytes(int surrogateKey) {
+  @Override
+  public byte[] getDictionaryValueForKeyInBytes(int surrogateKey) {
     if (surrogateKey < MINIMUM_SURROGATE_KEY) {
       return null;
     }
@@ -292,12 +309,14 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    * @param value dictionary value
    * @return if found returns key else INVALID_SURROGATE_KEY
    */
-  @Override public int getSurrogateKey(String value) {
+  @Override
+  public int getSurrogateKey(String value) {
     byte[] keyData = value.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     return getSurrogateKey(keyData);
   }
 
-  @Override public void invalidate() {
+  @Override
+  public void invalidate() {
 
   }
 }

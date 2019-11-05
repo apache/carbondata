@@ -70,11 +70,13 @@ public class ZstdCompressor extends AbstractCompressor {
    * currently java version of zstd does not support this feature.
    * It may support it in upcoming release 1.3.5-3, then we can optimize this accordingly.
    */
-  @Override public int unCompressedLength(byte[] data, int offset, int length) {
+  @Override
+  public int unCompressedLength(byte[] data, int offset, int length) {
     throw new RuntimeException("Unsupported operation Exception");
   }
 
-  @Override public int rawUncompress(byte[] data, int offset, int length, byte[] output) {
+  @Override
+  public int rawUncompress(byte[] data, int offset, int length, byte[] output) {
     throw new RuntimeException("Unsupported operation Exception");
   }
 }

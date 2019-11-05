@@ -100,15 +100,18 @@ public class BlockIndexerStorageForNoDictionary extends BlockIndexerStorage<Obje
     }
   }
 
-  @Override public Object[] getDataPage() {
+  @Override
+  public Object[] getDataPage() {
     return dataPage;
   }
 
-  @Override public short[] getDataRlePage() {
+  @Override
+  public short[] getDataRlePage() {
     return new short[0];
   }
 
-  @Override public int getDataRlePageLengthInBytes() {
+  @Override
+  public int getDataRlePageLengthInBytes() {
     return 0;
   }
 

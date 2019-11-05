@@ -73,7 +73,8 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * @return list of byte array. Each byte array is unique dictionary value
    * @throws IOException if an I/O error occurs
    */
-  @Override public List<byte[]> read() throws IOException {
+  @Override
+  public List<byte[]> read() throws IOException {
     return read(0L);
   }
 
@@ -88,7 +89,8 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * @return list of byte array. Each byte array is unique dictionary value
    * @throws IOException if an I/O error occurs
    */
-  @Override public List<byte[]> read(long startOffset) throws IOException {
+  @Override
+  public List<byte[]> read(long startOffset) throws IOException {
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
         readDictionaryMetadataFile();
     // get the last entry for carbon dictionary meta chunk
@@ -112,7 +114,8 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * @return iterator over byte array. Each byte array is unique dictionary value
    * @throws IOException if an I/O error occurs
    */
-  @Override public Iterator<byte[]> read(long startOffset, long endOffset) throws IOException {
+  @Override
+  public Iterator<byte[]> read(long startOffset, long endOffset) throws IOException {
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
         readDictionaryMetadataFile();
     List<ColumnDictionaryChunk> columnDictionaryChunks =
@@ -127,7 +130,8 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    *
    * @throws IOException if an I/O error occurs
    */
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     if (null != dictionaryFileReader) {
       dictionaryFileReader.close();
       dictionaryFileReader = null;
@@ -294,7 +298,8 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
       // dictionary thrift object contains a list of byte buffer
       dictionaryFileReader =
           new ThriftReader(this.columnDictionaryFilePath, new ThriftReader.TBaseCreator() {
-            @Override public TBase create() {
+            @Override
+            public TBase create() {
               return new ColumnDictionaryChunk();
             }
           });

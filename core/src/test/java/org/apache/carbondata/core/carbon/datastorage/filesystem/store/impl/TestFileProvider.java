@@ -30,7 +30,8 @@ import org.apache.hadoop.conf.Configuration;
 
 public class TestFileProvider implements FileTypeInterface {
 
-  @Override public CarbonFile getCarbonFile(String path, Configuration configuration) {
+  @Override
+  public CarbonFile getCarbonFile(String path, Configuration configuration) {
 
     if (path.startsWith("testfs://")) {
       //Just sample for translation. Make it as local file path
@@ -53,7 +54,8 @@ public class TestFileProvider implements FileTypeInterface {
     }
   }
 
-  @Override public boolean isPathSupported(String path) {
+  @Override
+  public boolean isPathSupported(String path) {
     return path.startsWith("testfs://");
   }
 }

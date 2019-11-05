@@ -84,7 +84,8 @@ class ScanBenchmark implements Command {
 
     // benchmark read header and footer time
     benchmarkOperation("ReadHeaderAndFooter", new Operation() {
-      @Override public void run() throws IOException, MemoryException {
+      @Override
+      public void run() throws IOException, MemoryException {
         fileHeaderRef.set(file.readHeader());
         fileFoorterRef.set(file.readFooter());
       }
@@ -94,14 +95,16 @@ class ScanBenchmark implements Command {
 
     // benchmark convert footer
     benchmarkOperation("ConvertFooter", new Operation() {
-      @Override public void run() throws IOException, MemoryException {
+      @Override
+      public void run() throws IOException, MemoryException {
         convertFooter(fileHeader, fileFooter);
       }
     });
 
     // benchmark read all meta and convert footer
     benchmarkOperation("ReadAllMetaAndConvertFooter", new Operation() {
-      @Override public void run() throws IOException, MemoryException {
+      @Override
+      public void run() throws IOException, MemoryException {
         DataFileFooter footer = readAndConvertFooter(file);
         convertedFooterRef.set(footer);
       }
@@ -123,21 +126,24 @@ class ScanBenchmark implements Command {
             footer.getBlockletList().get(blockletId).getNumberOfPages(),
             footer.getBlockletList().get(blockletId).getNumberOfRows()));
         benchmarkOperation("\tColumnChunk IO", new Operation() {
-          @Override public void run() throws IOException, MemoryException {
+          @Override
+          public void run() throws IOException, MemoryException {
             columnChunk.set(readBlockletColumnChunkIO(footer, blockletId, columnIndex, dimension));
           }
         });
 
         if (dimensionColumnChunkReader != null) {
           benchmarkOperation("\tDecompress Pages", new Operation() {
-            @Override public void run() throws IOException, MemoryException {
+            @Override
+            public void run() throws IOException, MemoryException {
               decompressDimensionPages(columnChunk.get(),
                   footer.getBlockletList().get(blockletId).getNumberOfPages());
             }
           });
         } else {
           benchmarkOperation("\tDecompress Pages", new Operation() {
-            @Override public void run() throws IOException, MemoryException {
+            @Override
+            public void run() throws IOException, MemoryException {
               decompressMeasurePages(columnChunk.get(),
                   footer.getBlockletList().get(blockletId).getNumberOfPages());
             }

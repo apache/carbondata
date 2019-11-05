@@ -61,18 +61,21 @@ public class FileFormat implements Serializable {
         this.format.equalsIgnoreCase("ROW_V1"));
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     FileFormat that = (FileFormat) o;
     return Objects.equals(format, that.format);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(format);
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return format;
   }
 }

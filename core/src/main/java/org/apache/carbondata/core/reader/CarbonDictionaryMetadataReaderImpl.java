@@ -69,7 +69,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    * @return list of all dictionary meta chunks which contains information for each segment
    * @throws IOException if an I/O error occurs
    */
-  @Override public List<CarbonDictionaryColumnMetaChunk> read() throws IOException {
+  @Override
+  public List<CarbonDictionaryColumnMetaChunk> read() throws IOException {
     List<CarbonDictionaryColumnMetaChunk> dictionaryMetaChunks =
         new ArrayList<CarbonDictionaryColumnMetaChunk>(
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -101,7 +102,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    * @return last segment entry for dictionary chunk
    * @throws IOException if an I/O error occurs
    */
-  @Override public CarbonDictionaryColumnMetaChunk readLastEntryOfDictionaryMetaChunk()
+  @Override
+  public CarbonDictionaryColumnMetaChunk readLastEntryOfDictionaryMetaChunk()
       throws IOException {
     ColumnDictionaryChunkMeta dictionaryChunkMeta = null;
     // open dictionary meta thrift reader
@@ -118,7 +120,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
     return getNewInstanceOfCarbonDictionaryColumnMetaChunk(dictionaryChunkMeta);
   }
 
-  @Override public CarbonDictionaryColumnMetaChunk readEntryOfDictionaryMetaChunk(long end_Offset)
+  @Override
+  public CarbonDictionaryColumnMetaChunk readEntryOfDictionaryMetaChunk(long end_Offset)
           throws IOException {
     ColumnDictionaryChunkMeta dictionaryChunkMeta = null;
     // open dictionary meta thrift reader
@@ -145,7 +148,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    *
    * @throws IOException if an I/O error occurs
    */
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     if (null != dictionaryMetadataFileReader) {
       dictionaryMetadataFileReader.close();
       dictionaryMetadataFileReader = null;
@@ -171,7 +175,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
     if (null == dictionaryMetadataFileReader) {
       dictionaryMetadataFileReader =
           new ThriftReader(this.columnDictionaryMetadataFilePath, new ThriftReader.TBaseCreator() {
-            @Override public TBase create() {
+            @Override
+            public TBase create() {
               return new ColumnDictionaryChunkMeta();
             }
           });

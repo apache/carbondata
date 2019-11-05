@@ -83,7 +83,8 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
     }
   }
 
-  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+  @Override
+  public void putDecimal(int rowId, BigDecimal decimal) {
 
   }
 

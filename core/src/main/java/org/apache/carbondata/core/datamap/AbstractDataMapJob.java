@@ -27,7 +27,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  */
 public abstract class AbstractDataMapJob implements DataMapJob {
 
-  @Override public void execute(CarbonTable carbonTable,
+  @Override
+  public void execute(CarbonTable carbonTable,
       FileInputFormat<Void, BlockletDataMapIndexWrapper> format) {
   }
 }

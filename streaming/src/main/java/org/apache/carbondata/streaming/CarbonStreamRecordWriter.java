@@ -205,7 +205,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     isFirstRow = false;
   }
 
-  @Override public void write(Void key, Object value) throws IOException, InterruptedException {
+  @Override
+  public void write(Void key, Object value) throws IOException, InterruptedException {
     if (isFirstRow) {
       initializeAtFirstRow();
     }

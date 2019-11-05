@@ -75,7 +75,8 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
     }
 
     FileStatus[] indexFileStatus = fs.listStatus(indexPath, new PathFilter() {
-      @Override public boolean accept(Path path) {
+      @Override
+      public boolean accept(Path path) {
         return path.getName().endsWith(".minmaxindex");
       }
     });
@@ -175,7 +176,8 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
 
   }
 
-  @Override public int getNumberOfEntries() {
+  @Override
+  public int getNumberOfEntries() {
     // keep default, one record in one datamap
     return 1;
   }

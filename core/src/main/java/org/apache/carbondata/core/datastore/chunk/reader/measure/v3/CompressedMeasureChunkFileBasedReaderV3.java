@@ -76,7 +76,8 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * @param columnIndex         column to be read
    * @return measure raw chunk
    */
-  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileReader fileReader,
+  @Override
+  public MeasureRawColumnChunk readRawMeasureChunk(FileReader fileReader,
       int columnIndex) throws IOException {
     int dataLength = 0;
     // to calculate the length of the data to be read
@@ -189,13 +190,15 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * @param pageNumber            number
    * @return DimensionColumnPage
    */
-  @Override public ColumnPage decodeColumnPage(MeasureRawColumnChunk rawColumnChunk, int pageNumber,
+  @Override
+  public ColumnPage decodeColumnPage(MeasureRawColumnChunk rawColumnChunk, int pageNumber,
       ReusableDataBuffer reusableDataBuffer)
       throws IOException, MemoryException {
     return decodeColumnPage(rawColumnChunk, pageNumber, null, reusableDataBuffer);
   }
 
-  @Override public void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk,
+  @Override
+  public void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
       throws IOException, MemoryException {
     decodeColumnPage(measureRawColumnChunk, pageNumber, vectorInfo, reusableDataBuffer);
