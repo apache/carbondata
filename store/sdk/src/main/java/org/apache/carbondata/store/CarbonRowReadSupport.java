@@ -37,17 +37,20 @@ public class CarbonRowReadSupport implements CarbonReadSupport<CarbonRow> {
     this.delegate = new DictionaryDecodeReadSupport<>();
   }
 
-  @Override public void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable)
+  @Override
+  public void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable)
       throws IOException {
     delegate.initialize(carbonColumns, carbonTable);
   }
 
-  @Override public CarbonRow readRow(Object[] data) {
+  @Override
+  public CarbonRow readRow(Object[] data) {
     Object[] converted = delegate.readRow(data);
     return new CarbonRow(converted);
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     delegate.close();
   }
 }

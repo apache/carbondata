@@ -71,7 +71,8 @@ public class CompressedMsrChunkFileBasedPageLevelReaderV3
    * @param blockletColumnIndex blocklet index of the column in carbon data file
    * @return measure raw chunk
    */
-  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileReader fileReader,
+  @Override
+  public MeasureRawColumnChunk readRawMeasureChunk(FileReader fileReader,
       int blockletColumnIndex) throws IOException {
     int dataLength = 0;
     // to calculate the length of the data to be read
@@ -135,7 +136,8 @@ public class CompressedMsrChunkFileBasedPageLevelReaderV3
    * @param pageNumber            number
    * @return DimensionColumnDataChunk
    */
-  @Override public ColumnPage decodeColumnPage(
+  @Override
+  public ColumnPage decodeColumnPage(
       MeasureRawColumnChunk rawColumnPage, int pageNumber, ReusableDataBuffer reusableDataBuffer)
       throws IOException, MemoryException {
     // data chunk of blocklet column

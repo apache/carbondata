@@ -62,11 +62,13 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     this.sdkWriterCores = configuration.getWritingCoresCount();
   }
 
-  @Override public DataField[] getOutput() {
+  @Override
+  public DataField[] getOutput() {
     return configuration.getDataFields();
   }
 
-  @Override public void initialize() throws IOException {
+  @Override
+  public void initialize() throws IOException {
     super.initialize();
     rowParser = new RowParserImpl(getOutput(), configuration);
     executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
@@ -76,7 +78,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     this.isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(configuration);
   }
 
-  @Override public Iterator<CarbonRowBatch>[] execute() {
+  @Override
+  public Iterator<CarbonRowBatch>[] execute() {
     int batchSize = CarbonProperties.getInstance().getBatchSize();
     List<CarbonIterator<Object[]>>[] readerIterators =
         CarbonDataProcessorUtil.partitionInputReaderIterators(inputIterators, sdkWriterCores);
@@ -89,7 +92,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return outIterators;
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     if (!closed) {
       super.close();
       if (null != executorService) {
@@ -101,7 +105,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     }
   }
 
-  @Override protected String getStepName() {
+  @Override
+  protected String getStepName() {
     return "Input Processor";
   }
 
@@ -210,7 +215,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     private Future<CarbonRowBatch> getCarbonRowBatch() {
       return executorService.submit(new Callable<CarbonRowBatch>() {
-        @Override public CarbonRowBatch call() throws Exception {
+        @Override
+        public CarbonRowBatch call() throws Exception {
           return getBatch();
 
         }

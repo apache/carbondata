@@ -137,7 +137,8 @@ public class ExtendedBlockletWrapperContainer implements Writable {
       this.isCountJob = isCountJob;
     }
 
-    @Override public List<ExtendedBlocklet> call() throws Exception {
+    @Override
+    public List<ExtendedBlocklet> call() throws Exception {
       List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
       for (int i = start; i < end; i++) {
         extendedBlocklets.addAll(extendedBlockletWrappers[i].readBlocklet(tablePath, queryId,
@@ -147,14 +148,16 @@ public class ExtendedBlockletWrapperContainer implements Writable {
     }
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  @Override
+  public void write(DataOutput out) throws IOException {
     out.writeInt(extendedBlockletWrappers.length);
     for (int i = 0; i < extendedBlockletWrappers.length; i++) {
       extendedBlockletWrappers[i].write(out);
     }
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     extendedBlockletWrappers = new ExtendedBlockletWrapper[in.readInt()];
     for (int i = 0; i < extendedBlockletWrappers.length; i++) {
       ExtendedBlockletWrapper extendedBlockletWrapper = new ExtendedBlockletWrapper();

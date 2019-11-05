@@ -65,7 +65,8 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
     }
   }
 
-  @Override protected String getStepName() {
+  @Override
+  protected String getStepName() {
     return "Sort Processor";
   }
 }

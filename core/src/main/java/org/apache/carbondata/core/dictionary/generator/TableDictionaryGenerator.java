@@ -77,7 +77,8 @@ public class TableDictionaryGenerator
     return ((BiDictionary) generator).size();
   }
 
-  @Override public void writeDictionaryData() {
+  @Override
+  public void writeDictionaryData() {
     int numOfCores = CarbonProperties.getInstance().getNumberOfLoadingCores();
     long start = System.currentTimeMillis();
     ExecutorService executorService = Executors.newFixedThreadPool(numOfCores);
@@ -115,7 +116,8 @@ public class TableDictionaryGenerator
       this.generator = generator;
     }
 
-    @Override public void run() {
+    @Override
+    public void run() {
       try {
         ((DictionaryWriter)generator).writeDictionaryData();
       } catch (IOException e) {

@@ -279,7 +279,8 @@ public final class TableDataMap extends OperationEventListener {
     for (int i = 0; i < numOfThreadsForPruning; i++) {
       final List<SegmentDataMapGroup> segmentDataMapGroups = datamapListForEachThread.get(i);
       results.add(executorService.submit(new Callable<Void>() {
-        @Override public Void call() throws IOException {
+        @Override
+        public Void call() throws IOException {
           Thread.currentThread().setName(threadName);
           for (SegmentDataMapGroup segmentDataMapGroup : segmentDataMapGroups) {
             List<ExtendedBlocklet> pruneBlocklets = new ArrayList<>();
@@ -463,7 +464,8 @@ public final class TableDataMap extends OperationEventListener {
     return dataMapFactory;
   }
 
-  @Override public void onEvent(Event event, OperationContext opContext) throws Exception {
+  @Override
+  public void onEvent(Event event, OperationContext opContext) throws Exception {
     dataMapFactory.fireEvent(event);
   }
 

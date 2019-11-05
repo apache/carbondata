@@ -32,7 +32,8 @@ public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
     super(exp, isExpressionResolve, isIncludeFilter, false);
   }
 
-  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  @Override
+  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
   }
 
   /**
@@ -41,7 +42,8 @@ public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
    * special executer since it get all the rows of the specified filter dimension
    * and will be send to the spark for processing
    */
-  @Override public FilterExecuterType getFilterExecuterType() {
+  @Override
+  public FilterExecuterType getFilterExecuterType() {
     return FilterExecuterType.TRUE;
   }
 }

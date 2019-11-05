@@ -62,7 +62,8 @@ public class TableProcessingOperations {
     if (FileFactory.isFileExist(partitionPath, fileType)) {
       CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath, fileType);
       CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile path) {
+        @Override
+        public boolean accept(CarbonFile path) {
           String segmentId =
               CarbonTablePath.DataFileUtil.getSegmentIdFromPath(path.getAbsolutePath() + "/dummy");
           boolean found = false;
@@ -130,7 +131,8 @@ public class TableProcessingOperations {
                 true));
     try {
       localFolderDeletionService.submit(new Callable<Void>() {
-        @Override public Void call() throws Exception {
+        @Override
+        public Void call() throws Exception {
           long startTime = System.currentTimeMillis();
           String[] locArray = StringUtils.split(localStoreLocations, File.pathSeparator);
           for (String loc : locArray) {

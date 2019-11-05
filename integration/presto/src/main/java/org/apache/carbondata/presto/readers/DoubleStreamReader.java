@@ -48,15 +48,18 @@ public class DoubleStreamReader extends CarbonColumnVectorImpl implements Presto
     this.dictionary = dictionary;
   }
 
-  @Override public Block buildBlock() {
+  @Override
+  public Block buildBlock() {
     return builder.build();
   }
 
-  @Override public void setBatchSize(int batchSize) {
+  @Override
+  public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
 
-  @Override public void putInt(int rowId, int value) {
+  @Override
+  public void putInt(int rowId, int value) {
     Object data = DataTypeUtil
         .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.DOUBLE);
     if (data != null) {
@@ -66,31 +69,37 @@ public class DoubleStreamReader extends CarbonColumnVectorImpl implements Presto
     }
   }
 
-  @Override public void putDouble(int rowId, double value) {
+  @Override
+  public void putDouble(int rowId, double value) {
     type.writeDouble(builder, value);
   }
 
-  @Override public void putDoubles(int rowId, int count, double value) {
+  @Override
+  public void putDoubles(int rowId, int count, double value) {
     for (int i = 0; i < count; i++) {
       type.writeDouble(builder, value);
     }
   }
 
-  @Override public void putNull(int rowId) {
+  @Override
+  public void putNull(int rowId) {
     builder.appendNull();
   }
 
-  @Override public void putNulls(int rowId, int count) {
+  @Override
+  public void putNulls(int rowId, int count) {
     for (int i = 0; i < count; i++) {
       builder.appendNull();
     }
   }
 
-  @Override public void reset() {
+  @Override
+  public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
   }
 
-  @Override public void putObject(int rowId, Object value) {
+  @Override
+  public void putObject(int rowId, Object value) {
     if (value == null) {
       putNull(rowId);
     } else {

@@ -61,7 +61,8 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    * @param value dictionary value as byte array
    * @return if found returns key else 0
    */
-  @Override public int getSurrogateKey(byte[] value) {
+  @Override
+  public int getSurrogateKey(byte[] value) {
     return getSurrogateKeyFromDictionaryValue(value);
   }
 
@@ -73,7 +74,8 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    * @param surrogateKey a unique ID for a dictionary value
    * @return if found returns key else 0
    */
-  @Override public int getSortedIndex(int surrogateKey) {
+  @Override
+  public int getSortedIndex(int surrogateKey) {
     if (surrogateKey > sortReverseOrderReference.get().size()
         || surrogateKey < MINIMUM_SURROGATE_KEY) {
       return -1;
@@ -94,7 +96,8 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    * @param sortedIndex sort index of dictionary value
    * @return value if found else null
    */
-  @Override public String getDictionaryValueFromSortedIndex(int sortedIndex) {
+  @Override
+  public String getDictionaryValueFromSortedIndex(int sortedIndex) {
     if (sortedIndex > sortReverseOrderReference.get().size()
         || sortedIndex < MINIMUM_SURROGATE_KEY) {
       return null;
@@ -111,7 +114,8 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    *
    * @param newDictionaryChunk
    */
-  @Override public void addDictionaryChunk(List<byte[]> newDictionaryChunk) {
+  @Override
+  public void addDictionaryChunk(List<byte[]> newDictionaryChunk) {
     if (dictionaryChunks.size() > 0) {
       // Ensure that each time a new dictionary chunk is getting added to the
       // dictionary chunks list, equal distribution of dictionary values should
@@ -147,7 +151,8 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    *
    * @return size of last dictionary chunk
    */
-  @Override public int getSizeOfLastDictionaryChunk() {
+  @Override
+  public int getSizeOfLastDictionaryChunk() {
     int lastDictionaryChunkSize = 0;
     if (dictionaryChunks.size() > 0) {
       lastDictionaryChunkSize = dictionaryChunks.get(dictionaryChunks.size() - 1).size();
@@ -161,7 +166,8 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    *
    * @param sortOrderIndex
    */
-  @Override public void setSortOrderIndex(List<Integer> sortOrderIndex) {
+  @Override
+  public void setSortOrderIndex(List<Integer> sortOrderIndex) {
     sortOrderReference.set(sortOrderIndex);
   }
 
@@ -171,7 +177,8 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    *
    * @param sortReverseOrderIndex
    */
-  @Override public void setSortReverseOrderIndex(List<Integer> sortReverseOrderIndex) {
+  @Override
+  public void setSortReverseOrderIndex(List<Integer> sortReverseOrderIndex) {
     sortReverseOrderReference.set(sortReverseOrderIndex);
   }
 

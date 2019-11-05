@@ -43,7 +43,8 @@ public class UnsafeDataMapRow extends DataMapRow {
     this.pointer = pointer;
   }
 
-  @Override public byte[] getByteArray(int ordinal) {
+  @Override
+  public byte[] getByteArray(int ordinal) {
     int length;
     int currentOffset;
     switch (schemas[ordinal].getSchemaType()) {
@@ -67,7 +68,8 @@ public class UnsafeDataMapRow extends DataMapRow {
     return data;
   }
 
-  @Override public int getLengthInBytes(int ordinal) {
+  @Override
+  public int getLengthInBytes(int ordinal) {
     int length;
     int schemaOrdinal = schemas[ordinal].getBytePosition();
     switch (schemas[ordinal].getSchemaType()) {
@@ -85,80 +87,97 @@ public class UnsafeDataMapRow extends DataMapRow {
     return length;
   }
 
-  @Override public void setBoolean(boolean value, int ordinal) {
+  @Override
+  public void setBoolean(boolean value, int ordinal) {
     throw new UnsupportedOperationException("Not supported to set on unsafe row");
   }
 
-  @Override public boolean getBoolean(int ordinal) {
+  @Override
+  public boolean getBoolean(int ordinal) {
     return getUnsafe().getBoolean(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
 
-  @Override public DataMapRow getRow(int ordinal) {
+  @Override
+  public DataMapRow getRow(int ordinal) {
     CarbonRowSchema[] childSchemas =
         ((CarbonRowSchema.StructCarbonRowSchema) schemas[ordinal]).getChildSchemas();
     return new UnsafeDataMapRow(childSchemas, block, pointer);
   }
 
-  @Override public void setByteArray(byte[] byteArray, int ordinal) {
+  @Override
+  public void setByteArray(byte[] byteArray, int ordinal) {
     throw new UnsupportedOperationException("Not supported to set on unsafe row");
   }
 
-  @Override public int getInt(int ordinal) {
+  @Override
+  public int getInt(int ordinal) {
     return getUnsafe().getInt(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
 
-  @Override public void setInt(int value, int ordinal) {
+  @Override
+  public void setInt(int value, int ordinal) {
     throw new UnsupportedOperationException("Not supported to set on unsafe row");
   }
 
-  @Override public void setByte(byte value, int ordinal) {
+  @Override
+  public void setByte(byte value, int ordinal) {
     throw new UnsupportedOperationException("Not supported to set on unsafe row");
   }
 
-  @Override public byte getByte(int ordinal) {
+  @Override
+  public byte getByte(int ordinal) {
     return getUnsafe().getByte(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
 
-  @Override public void setShort(short value, int ordinal) {
+  @Override
+  public void setShort(short value, int ordinal) {
     throw new UnsupportedOperationException("Not supported to set on unsafe row");
   }
 
-  @Override public short getShort(int ordinal) {
+  @Override
+  public short getShort(int ordinal) {
     return getUnsafe().getShort(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
 
-  @Override public void setLong(long value, int ordinal) {
+  @Override
+  public void setLong(long value, int ordinal) {
     throw new UnsupportedOperationException("Not supported to set on unsafe row");
   }
 
-  @Override public long getLong(int ordinal) {
+  @Override
+  public long getLong(int ordinal) {
     return getUnsafe().getLong(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
 
-  @Override public void setFloat(float value, int ordinal) {
+  @Override
+  public void setFloat(float value, int ordinal) {
     throw new UnsupportedOperationException("Not supported to set on unsafe row");
   }
 
-  @Override public float getFloat(int ordinal) {
+  @Override
+  public float getFloat(int ordinal) {
     return getUnsafe().getFloat(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
 
-  @Override public void setDouble(double value, int ordinal) {
+  @Override
+  public void setDouble(double value, int ordinal) {
     throw new UnsupportedOperationException("Not supported to set on unsafe row");
   }
 
-  @Override public double getDouble(int ordinal) {
+  @Override
+  public double getDouble(int ordinal) {
     return getUnsafe().getDouble(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
 
-  @Override public void setRow(DataMapRow row, int ordinal) {
+  @Override
+  public void setRow(DataMapRow row, int ordinal) {
     throw new UnsupportedOperationException("Not supported to set on unsafe row");
   }
 }

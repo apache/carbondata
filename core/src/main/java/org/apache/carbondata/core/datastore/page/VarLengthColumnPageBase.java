@@ -464,7 +464,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     return data;
   }
 
-  @Override public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
+  @Override
+  public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
     // output LV encoded byte array
     int offset = 0;
     byte[] data = new byte[totalLength + ((rowOffset.getActualRowCount() - 1) * 2)];

@@ -49,7 +49,8 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
   /**
    * Get the datamap for segmentId
    */
-  @Override public List<FineGrainDataMap> getDataMaps(Segment segment) throws IOException {
+  @Override
+  public List<FineGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<FineGrainDataMap> lstDataMap = new ArrayList<>();
     FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
     try {
@@ -88,7 +89,8 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
     return DataMapLevel.FG;
   }
 
-  @Override public boolean willBecomeStale(TableOperation operation) {
+  @Override
+  public boolean willBecomeStale(TableOperation operation) {
     switch (operation) {
       case ALTER_RENAME:
         return true;

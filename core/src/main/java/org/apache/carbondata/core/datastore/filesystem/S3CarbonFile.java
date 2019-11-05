@@ -93,7 +93,8 @@ public class S3CarbonFile extends HDFSCarbonFile {
     return getDataOutputStream(path, fileType, CarbonCommonConstants.BYTEBUFFER_SIZE, true);
   }
 
-  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+  @Override
+  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
       int bufferSize, boolean append) throws IOException {
     Path pt = new Path(path);
     FileSystem fileSystem = pt.getFileSystem(FileFactory.getConfiguration());

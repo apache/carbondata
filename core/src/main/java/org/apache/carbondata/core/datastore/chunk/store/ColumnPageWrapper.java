@@ -95,7 +95,8 @@ public class ColumnPageWrapper implements DimensionColumnPage {
     return chunkIndex + 1;
   }
 
-  @Override public byte[] getChunkData(int rowId) {
+  @Override
+  public byte[] getChunkData(int rowId) {
     byte[] nullBitSet = getNullBitSet(rowId, columnPage.getColumnSpec().getColumnType());
     if (nullBitSet != null) {
       // if this row is null, return default null represent in byte array
@@ -279,11 +280,13 @@ public class ColumnPageWrapper implements DimensionColumnPage {
     }
   }
 
-  @Override public boolean isAdaptiveEncoded() {
+  @Override
+  public boolean isAdaptiveEncoded() {
     return isAdaptivePrimitivePage;
   }
 
-  @Override public BitSet getNullBits() {
+  @Override
+  public BitSet getNullBits() {
     return columnPage.getNullBits();
   }
 

@@ -119,7 +119,8 @@ public class ExtendedBlocklet extends Blocklet {
     this.dataMapUniqueId = dataMapUniqueId;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) {
@@ -132,7 +133,8 @@ public class ExtendedBlocklet extends Blocklet {
         that.inputSplit.getSegmentId() == null;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = super.hashCode();
     result = 31 * result + (inputSplit.getSegmentId() != null ?
         inputSplit.getSegmentId().hashCode() :

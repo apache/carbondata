@@ -57,7 +57,8 @@ public class SegmentRefreshInfo implements Serializable {
     return false;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = segmentUpdatedTimestamp.hashCode();
     result = 31 * result + countOfFileInSegment.hashCode();
     return result;

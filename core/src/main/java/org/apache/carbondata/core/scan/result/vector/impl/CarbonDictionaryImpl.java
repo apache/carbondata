@@ -37,31 +37,38 @@ public class CarbonDictionaryImpl implements CarbonDictionary {
     this.actualSize = actualSize;
   }
 
-  @Override public int getDictionaryActualSize() {
+  @Override
+  public int getDictionaryActualSize() {
     return actualSize;
   }
 
-  @Override public int getDictionarySize() {
+  @Override
+  public int getDictionarySize() {
     return this.dictionary.length;
   }
 
-  @Override public boolean isDictionaryUsed() {
+  @Override
+  public boolean isDictionaryUsed() {
     return this.isDictUsed;
   }
 
-  @Override public void setDictionaryUsed() {
+  @Override
+  public void setDictionaryUsed() {
     this.isDictUsed = true;
   }
 
-  @Override public byte[] getDictionaryValue(int index) {
+  @Override
+  public byte[] getDictionaryValue(int index) {
     return dictionary[index];
   }
 
-  @Override public byte[][] getAllDictionaryValues() {
+  @Override
+  public byte[][] getAllDictionaryValues() {
     return dictionary;
   }
 
-  @Override public byte[] getAllDictionaryValuesInSingleArray() {
+  @Override
+  public byte[] getAllDictionaryValuesInSingleArray() {
     if (singleArrayDictValues == null) {
       dictLens = new int[dictionary.length];
       dictOffsets = new int[dictionary.length];

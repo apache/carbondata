@@ -69,15 +69,18 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
     this.dictionary = dictionary;
   }
 
-  @Override public Block buildBlock() {
+  @Override
+  public Block buildBlock() {
     return builder.build();
   }
 
-  @Override public void setBatchSize(int batchSize) {
+  @Override
+  public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
 
-  @Override public void putInt(int rowId, int value) {
+  @Override
+  public void putInt(int rowId, int value) {
     DecimalType decimalType = (DecimalType) type;
     Object data = DataTypeUtil.getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value),
         DataTypes.createDecimalType(decimalType.getPrecision(), decimalType.getScale()));
@@ -88,27 +91,32 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
     }
   }
 
-  @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
+  @Override
+  public void putDecimal(int rowId, BigDecimal value, int precision) {
     decimalBlockWriter(value);
   }
 
-  @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
+  @Override
+  public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
     for (int i = 0; i < count; i++) {
       putDecimal(rowId++, value, precision);
     }
   }
 
-  @Override public void putNulls(int rowId, int count) {
+  @Override
+  public void putNulls(int rowId, int count) {
     for (int i = 0; i < count; i++) {
       builder.appendNull();
     }
   }
 
-  @Override public void putNull(int rowId) {
+  @Override
+  public void putNull(int rowId) {
     builder.appendNull();
   }
 
-  @Override public void reset() {
+  @Override
+  public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -168,7 +176,8 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
     return decimal;
   }
 
-  @Override public void putObject(int rowId, Object value) {
+  @Override
+  public void putObject(int rowId, Object value) {
     if (value == null) {
       putNull(rowId);
     } else {

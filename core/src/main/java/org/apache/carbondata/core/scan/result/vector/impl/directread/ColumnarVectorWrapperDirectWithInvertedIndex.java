@@ -147,7 +147,8 @@ public class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbon
     return columnVector.getBlockDataType();
   }
 
-  @Override public void putArray(int rowId, int offset, int length) {
+  @Override
+  public void putArray(int rowId, int offset, int length) {
     columnVector.putArray(invertedIndex[rowId], offset, length);
   }
 }

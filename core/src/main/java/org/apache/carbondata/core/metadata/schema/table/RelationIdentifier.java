@@ -60,21 +60,24 @@ public class RelationIdentifier implements Serializable, Writable {
     this.tablePath = tablePath;
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  @Override
+  public void write(DataOutput out) throws IOException {
     out.writeUTF(databaseName);
     out.writeUTF(tableName);
     out.writeUTF(tableId);
     out.writeUTF(tablePath);
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     this.databaseName = in.readUTF();
     this.tableName = in.readUTF();
     this.tableId = in.readUTF();
     this.tablePath = in.readUTF();
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
@@ -91,14 +94,16 @@ public class RelationIdentifier implements Serializable, Writable {
     return tableId != null ? tableId.equals(that.tableId) : that.tableId == null;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = databaseName != null ? databaseName.hashCode() : 0;
     result = 31 * result + (tableName != null ? tableName.hashCode() : 0);
     result = 31 * result + (tableId != null ? tableId.hashCode() : 0);
     return result;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return databaseName + "." + tableName;
   }
 }

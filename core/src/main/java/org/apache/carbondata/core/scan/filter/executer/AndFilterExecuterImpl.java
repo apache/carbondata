@@ -65,13 +65,15 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     return leftFilters;
   }
 
-  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+  @Override
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     return leftExecuter.applyFilter(value, dimOrdinalMax) &&
         rightExecuter.applyFilter(value, dimOrdinalMax);
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+  @Override
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
       boolean[] isMinMaxSet) {
     BitSet leftFilters = leftExecuter.isScanRequired(blockMaxValue, blockMinValue, isMinMaxSet);
     if (leftFilters.isEmpty()) {

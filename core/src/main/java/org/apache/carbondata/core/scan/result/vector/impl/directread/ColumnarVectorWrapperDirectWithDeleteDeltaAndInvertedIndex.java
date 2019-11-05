@@ -78,7 +78,8 @@ public class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
     }
   }
 
-  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+  @Override
+  public void putAllByteArray(byte[] data, int offset, int length) {
     carbonColumnVector.putAllByteArray(data, offset, length);
   }
 

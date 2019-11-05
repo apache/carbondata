@@ -111,7 +111,8 @@ public class BlockDataMap extends CoarseGrainDataMap
    */
   protected boolean isFilePathStored;
 
-  @Override public void init(DataMapModel dataMapModel)
+  @Override
+  public void init(DataMapModel dataMapModel)
       throws IOException, MemoryException {
     long startTime = System.currentTimeMillis();
     assert (dataMapModel instanceof BlockletDataMapModel);
@@ -607,7 +608,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     taskSummaryDMStore = getMemoryDMStore(blockletDataMapModel.isAddToUnsafe());
   }
 
-  @Override public boolean isScanRequired(FilterResolverIntf filterExp) {
+  @Override
+  public boolean isScanRequired(FilterResolverIntf filterExp) {
     FilterExecuter filterExecuter = FilterUtil
         .getFilterExecuterTree(filterExp, getSegmentProperties(), null, getMinMaxCacheColumns());
     DataMapRow unsafeRow = taskSummaryDMStore
@@ -826,7 +828,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     return found;
   }
 
-  @Override public void finish() {
+  @Override
+  public void finish() {
 
   }
 
@@ -999,7 +1002,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     }
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
     if (memoryDMStore != null) {
       memoryDMStore.freeMemory();
     }
@@ -1079,7 +1083,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     return segmentPropertiesWrapper;
   }
 
-  @Override public int getNumberOfEntries() {
+  @Override
+  public int getNumberOfEntries() {
     if (memoryDMStore != null) {
       if (memoryDMStore.getRowCount() == 0) {
         // so that one datamap considered as one record

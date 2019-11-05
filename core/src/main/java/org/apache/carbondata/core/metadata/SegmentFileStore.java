@@ -106,7 +106,8 @@ public class SegmentFileStore {
     if ((tempFolder.exists() && partionNames.size() > 0) || (isMergeIndexFlow
         && partionNames.size() > 0)) {
       CarbonFile[] carbonFiles = tempFolder.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile file) {
+        @Override
+        public boolean accept(CarbonFile file) {
           return file.getName().startsWith(taskNo) && (
               file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
                   .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
@@ -245,7 +246,8 @@ public class SegmentFileStore {
     String tablePath = carbonTable.getTablePath();
     CarbonFile segmentFolder = FileFactory.getCarbonFile(segment.getSegmentPath());
     CarbonFile[] otherFiles = segmentFolder.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
+      @Override
+      public boolean accept(CarbonFile file) {
         return (!file.getName().equals("_SUCCESS") && !file.getName().endsWith(".crc"));
       }
     });
@@ -293,7 +295,8 @@ public class SegmentFileStore {
     }
     CarbonFile segmentFolder = FileFactory.getCarbonFile(segmentPath);
     CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
+      @Override
+      public boolean accept(CarbonFile file) {
         if (null != currentLoadTimeStamp) {
           return file.getName().contains(currentLoadTimeStamp) && (
               file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
@@ -534,7 +537,8 @@ public class SegmentFileStore {
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
     if (carbonFile.exists()) {
       return carbonFile.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile file) {
+        @Override
+        public boolean accept(CarbonFile file) {
           return file.getName().endsWith(CarbonTablePath.SEGMENT_EXT);
         }
       });
@@ -555,7 +559,8 @@ public class SegmentFileStore {
       CarbonFile carbonFile = FileFactory.getCarbonFile(location);
 
       CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile file) {
+        @Override
+        public boolean accept(CarbonFile file) {
           return CarbonTablePath.isCarbonIndexFile(file.getAbsolutePath());
         }
       });

@@ -83,21 +83,25 @@ public class MinMaxDataWriter extends DataMapWriter {
     }
   }
 
-  @Override public void onBlockStart(String blockId) {
+  @Override
+  public void onBlockStart(String blockId) {
     if (blockMinMaxMap == null) {
       blockMinMaxMap = new HashMap<>();
     }
   }
 
-  @Override public void onBlockEnd(String blockId) {
+  @Override
+  public void onBlockEnd(String blockId) {
   }
 
-  @Override public void onBlockletStart(int blockletId) {
+  @Override
+  public void onBlockletStart(int blockletId) {
     pageLevelMin = new Object[columnCnt];
     pageLevelMax = new Object[columnCnt];
   }
 
-  @Override public void onBlockletEnd(int blockletId) {
+  @Override
+  public void onBlockletEnd(int blockletId) {
     updateCurrentBlockletMinMax(blockletId);
   }
 
@@ -261,7 +265,8 @@ public class MinMaxDataWriter extends DataMapWriter {
     }
   }
 
-  @Override public void finish() throws IOException {
+  @Override
+  public void finish() throws IOException {
     updateMinMaxIndex(indexShardName);
   }
 

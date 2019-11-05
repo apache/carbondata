@@ -66,14 +66,16 @@ public class AlluxioFileLock extends HdfsFileLock {
   /* (non-Javadoc)
    * @see org.apache.carbondata.core.locks.ICarbonLock#unlock()
    */
-  @Override public boolean unlock() {
+  @Override
+  public boolean unlock() {
     return super.unlock();
   }
 
   /* (non-Javadoc)
    * @see org.apache.carbondata.core.locks.ICarbonLock#lock()
    */
-  @Override public boolean lock() {
+  @Override
+  public boolean lock() {
     return super.lock();
   }
 }

@@ -91,7 +91,8 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
     this.classLoader = requireNonNull(classLoader, "classLoader is null");
   }
 
-  @Override public Connector create(String catalogName, Map<String, String> config,
+  @Override
+  public Connector create(String catalogName, Map<String, String> config,
       ConnectorContext context) {
     requireNonNull(config, "config is null");
 

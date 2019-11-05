@@ -37,7 +37,8 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
     super(infos, queryModel, execService);
   }
 
-  @Override public RowBatch next() {
+  @Override
+  public RowBatch next() {
     return getBatchResult();
   }
 

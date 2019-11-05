@@ -52,7 +52,8 @@ import org.apache.log4j.Logger;
     super.channelActive(ctx);
   }
 
-  @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+  @Override
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     try {
       ByteBuf data = (ByteBuf) msg;
       DictionaryMessage key = new DictionaryMessage();
@@ -76,7 +77,8 @@ import org.apache.log4j.Logger;
    * @param ctx
    * @param cause
    */
-  @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     LOGGER.error("exceptionCaught", cause);
     ctx.close();
   }

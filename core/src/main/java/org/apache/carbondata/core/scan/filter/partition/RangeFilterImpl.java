@@ -48,7 +48,8 @@ public class RangeFilterImpl implements PartitionFilterIntf {
     this.partitionInfo = partitionInfo;
   }
 
-  @Override public BitSet applyFilter(Partitioner partitioner) {
+  @Override
+  public BitSet applyFilter(Partitioner partitioner) {
 
     SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,

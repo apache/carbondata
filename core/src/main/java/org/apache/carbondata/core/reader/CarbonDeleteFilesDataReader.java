@@ -201,7 +201,8 @@ public class CarbonDeleteFilesDataReader {
     DeleteDeltaFileReaderCallable(String deltaFile) {
       this.deltaFile = deltaFile;
     }
-    @Override public DeleteDeltaBlockDetails call() throws IOException {
+    @Override
+    public DeleteDeltaBlockDetails call() throws IOException {
       CarbonDeleteDeltaFileReaderImpl deltaFileReader =
           new CarbonDeleteDeltaFileReaderImpl(deltaFile, FileFactory.getFileType(deltaFile));
       return deltaFileReader.readJson();

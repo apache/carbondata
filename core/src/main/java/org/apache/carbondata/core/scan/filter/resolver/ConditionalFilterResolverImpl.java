@@ -66,7 +66,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    *
    * @throws FilterUnsupportedException
    */
-  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
+  @Override
+  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
       throws FilterUnsupportedException, IOException {
     FilterResolverMetadata metadata = new FilterResolverMetadata();
     metadata.setTableIdentifier(absoluteTableIdentifier);
@@ -194,7 +195,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    *
    * @return left node of type FilterResolverIntf instance
    */
-  @Override public FilterResolverIntf getRight() {
+  @Override
+  public FilterResolverIntf getRight() {
     // TODO Auto-generated method stub
     return null;
   }
@@ -237,7 +239,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   /**
    * get the start key based on the filter surrogates
    */
-  @Override public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
+  @Override
+  public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
       SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList) {
     if (null != dimColResolvedFilterInfo) {
       FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(), endKeys,
@@ -253,7 +256,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    *
    * @return the filter executer type
    */
-  @Override public FilterExecuterType getFilterExecuterType() {
+  @Override
+  public FilterExecuterType getFilterExecuterType() {
     switch (exp.getFilterExpressionType()) {
       case NOT_EQUALS:
       case NOT_IN:
@@ -306,7 +310,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   }
 
 
-  @Override public Expression getFilterExpression() {
+  @Override
+  public Expression getFilterExpression() {
     // TODO Auto-generated method stub
     return exp;
   }

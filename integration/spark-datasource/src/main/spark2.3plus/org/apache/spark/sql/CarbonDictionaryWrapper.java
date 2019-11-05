@@ -31,23 +31,28 @@ public class CarbonDictionaryWrapper implements Dictionary {
     binaries = dictionary.getAllDictionaryValues();
   }
 
-  @Override public int decodeToInt(int id) {
+  @Override
+  public int decodeToInt(int id) {
     throw new UnsupportedOperationException("Dictionary encoding does not support int");
   }
 
-  @Override public long decodeToLong(int id) {
+  @Override
+  public long decodeToLong(int id) {
     throw new UnsupportedOperationException("Dictionary encoding does not support long");
   }
 
-  @Override public float decodeToFloat(int id) {
+  @Override
+  public float decodeToFloat(int id) {
     throw new UnsupportedOperationException("Dictionary encoding does not support float");
   }
 
-  @Override public double decodeToDouble(int id) {
+  @Override
+  public double decodeToDouble(int id) {
     throw new UnsupportedOperationException("Dictionary encoding does not support double");
   }
 
-  @Override public byte[] decodeToBinary(int id) {
+  @Override
+  public byte[] decodeToBinary(int id) {
     return binaries[id];
   }
 }

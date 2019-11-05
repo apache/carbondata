@@ -181,19 +181,23 @@ class CarbondataPageSource implements ConnectorPageSource {
 
   }
 
-  @Override public long getCompletedBytes() {
+  @Override
+  public long getCompletedBytes() {
     return sizeOfData;
   }
 
-  @Override public long getReadTimeNanos() {
+  @Override
+  public long getReadTimeNanos() {
     return nanoStart > 0L ? (nanoEnd == 0 ? System.nanoTime() : nanoEnd) - nanoStart : 0L;
   }
 
-  @Override public boolean isFinished() {
+  @Override
+  public boolean isFinished() {
     return closed;
   }
 
-  @Override public Page getNextPage() {
+  @Override
+  public Page getNextPage() {
     if (fileFormat.ordinal() == FileFormat.ROW_V1.ordinal()) {
       return getNextPageForRow();
     } else {
@@ -304,11 +308,13 @@ class CarbondataPageSource implements ConnectorPageSource {
     }
   }
 
-  @Override public long getSystemMemoryUsage() {
+  @Override
+  public long getSystemMemoryUsage() {
     return sizeOfData;
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     // some hive input formats are broken and bad things can happen if you close them multiple times
     if (closed) {
       return;
@@ -463,7 +469,8 @@ class CarbondataPageSource implements ConnectorPageSource {
       this.columnIndex = columnIndex;
     }
 
-    @Override public final void load(LazyBlock lazyBlock) {
+    @Override
+    public final void load(LazyBlock lazyBlock) {
       if (loaded) {
         return;
       }

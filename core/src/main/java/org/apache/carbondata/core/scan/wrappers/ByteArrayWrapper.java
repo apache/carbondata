@@ -107,7 +107,8 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   /**
    * to generate the hash code
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     // first generate the has code of the dictionary column
     int len = dictionaryKey.length;
     int result = 1;
@@ -134,7 +135,8 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
    *
    * @param other object
    */
-  @Override public boolean equals(Object other) {
+  @Override
+  public boolean equals(Object other) {
     if (null == other || !(other instanceof ByteArrayWrapper)) {
       return false;
     }
@@ -177,7 +179,8 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
    *
    * @param other ArrayWrapper Object
    */
-  @Override public int compareTo(ByteArrayWrapper other) {
+  @Override
+  public int compareTo(ByteArrayWrapper other) {
     // compare will be as follows
     //compare dictionary column
     // then no dictionary column

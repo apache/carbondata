@@ -75,11 +75,13 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
     return currentRow;
   }
 
-  @Override public int compareTo(UnsafeInmemoryMergeHolder o) {
+  @Override
+  public int compareTo(UnsafeInmemoryMergeHolder o) {
     return comparator.compare(currentRow, baseObject, o.getRow(), o.getBaseObject());
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -92,7 +94,8 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
     return this == o;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return super.hashCode();
   }
 

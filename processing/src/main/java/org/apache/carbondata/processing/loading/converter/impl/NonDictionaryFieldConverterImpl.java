@@ -52,7 +52,8 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
     this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
-  @Override public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
+  @Override
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
     String dimensionValue = row.getString(index);
     row.update(convert(dimensionValue, logHolder), index);
   }
@@ -115,7 +116,8 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
     return getNullValue();
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
   }
 
   private byte[] getNullValue() {

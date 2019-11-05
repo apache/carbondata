@@ -406,7 +406,8 @@ public class StreamSegment {
     CarbonFile carbonDir = FileFactory.getCarbonFile(segmentDir, fileType);
     if (carbonDir.exists()) {
       return carbonDir.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile file) {
+        @Override
+        public boolean accept(CarbonFile file) {
           return CarbonTablePath.isCarbonDataFile(file.getName());
         }
       });

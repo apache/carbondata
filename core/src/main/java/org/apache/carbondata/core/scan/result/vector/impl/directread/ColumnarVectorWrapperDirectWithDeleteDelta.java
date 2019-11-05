@@ -212,7 +212,8 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
     }
   }
 
-  @Override public void putArray(int rowId, int offset, int length) {
+  @Override
+  public void putArray(int rowId, int offset, int length) {
     if (!deletedRows.get(rowId)) {
       columnVector.putArray(counter++, offset, length);
     }

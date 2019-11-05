@@ -43,7 +43,8 @@ public class RowCountDetailsVO implements Serializable {
     return deletedRowsInBlock;
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -60,7 +61,8 @@ public class RowCountDetailsVO implements Serializable {
 
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = (int) (totalNumberOfRows ^ (totalNumberOfRows >>> 32));
     result = 31 * result + (int) (deletedRowsInBlock ^ (deletedRowsInBlock >>> 32));
     return result;

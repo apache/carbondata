@@ -74,7 +74,8 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
     return andBlocklets;
   }
 
-  @Override public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)
+  @Override
+  public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)
       throws IOException {
     List<ExtendedBlocklet> leftPrune = left.pruneBlocklets(blocklets);
     List<ExtendedBlocklet> rightPrune = right.pruneBlocklets(blocklets);
@@ -87,11 +88,13 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
     return andBlocklets;
   }
 
-  @Override public FilterResolverIntf getFilterResolverIntf() {
+  @Override
+  public FilterResolverIntf getFilterResolverIntf() {
     return resolverIntf;
   }
 
-  @Override public FilterResolverIntf getFilterResolverIntf(String uniqueId) {
+  @Override
+  public FilterResolverIntf getFilterResolverIntf(String uniqueId) {
     FilterResolverIntf leftExp = left.getFilterResolverIntf(uniqueId);
     FilterResolverIntf rightExp = right.getFilterResolverIntf(uniqueId);
     if (leftExp != null) {
@@ -111,7 +114,8 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
     return wrappers;
   }
 
-  @Override public DataMapLevel getDataMapLevel() {
+  @Override
+  public DataMapLevel getDataMapLevel() {
     return left.getDataMapLevel();
   }
 

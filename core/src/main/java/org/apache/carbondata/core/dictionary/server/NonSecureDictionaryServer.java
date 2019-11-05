@@ -73,7 +73,8 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
    * start dictionary server
    *
    */
-  @Override public void startServer() {
+  @Override
+  public void startServer() {
     LOGGER.info("Starting Dictionary Server in Non Secure Mode");
     nonSecureDictionaryServerHandler = new NonSecureDictionaryServerHandler();
     String workerThreads = CarbonProperties.getInstance()
@@ -89,7 +90,8 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
    * Binds dictionary server to an available port.
    *
    */
-  @Override public void bindToPort() {
+  @Override
+  public void bindToPort() {
     long start = System.currentTimeMillis();
     // Configure the server.
     int i = 0;
@@ -100,7 +102,8 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
         bootstrap.group(boss, worker);
         bootstrap.channel(NioServerSocketChannel.class);
         bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
-          @Override public void initChannel(SocketChannel ch) throws Exception {
+          @Override
+          public void initChannel(SocketChannel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
             pipeline
                 .addLast("LengthDecoder", new LengthFieldBasedFrameDecoder(1048576, 0, 2, 0, 2));
@@ -132,19 +135,23 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
   /**
    * @return Port on which the NonSecureDictionaryServer has started.
    */
-  @Override public int getPort() {
+  @Override
+  public int getPort() {
     return port;
   }
 
-  @Override public String getSecretKey() {
+  @Override
+  public String getSecretKey() {
     return null;
   }
 
-  @Override public boolean isEncryptSecureServer() {
+  @Override
+  public boolean isEncryptSecureServer() {
     return false;
   }
 
-  @Override public String getHost() {
+  @Override
+  public String getHost() {
     return host;
   }
 
@@ -153,7 +160,8 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
    *
    * @throws Exception
    */
-  @Override public void shutdown() throws Exception {
+  @Override
+  public void shutdown() throws Exception {
     LOGGER.info("Shutting down dictionary server");
     worker.shutdownGracefully();
     boss.shutdownGracefully();

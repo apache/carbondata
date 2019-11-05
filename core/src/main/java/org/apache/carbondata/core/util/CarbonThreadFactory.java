@@ -46,7 +46,8 @@ public class CarbonThreadFactory implements ThreadFactory {
     this.withTime = withTime;
   }
 
-  @Override public Thread newThread(Runnable r) {
+  @Override
+  public Thread newThread(Runnable r) {
     final Thread thread = defaultFactory.newThread(r);
     if (withTime) {
       thread.setName(name + "_" + System.currentTimeMillis());

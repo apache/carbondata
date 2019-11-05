@@ -64,7 +64,8 @@ public class FalseExpression  extends BinaryConditionalExpression {
   public ExpressionType getFilterExpressionType() {
     return ExpressionType.FALSE;
   }
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "False(" + (null == left ? null : left.getString());
   }
 

@@ -34,7 +34,8 @@ public class SplitPartitionCallable implements Callable<Void> {
     this.splitPartitionCallableModel = splitPartitionCallableModel;
   }
 
-  @Override public Void call() {
+  @Override
+  public Void call() {
     PartitionSplitter.triggerPartitionSplit(splitPartitionCallableModel);
     return null;
   }

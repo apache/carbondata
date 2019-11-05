@@ -102,7 +102,8 @@ public class ConcurrentAvroSdkWriterTest {
       this.record = record;
     }
 
-    @Override public void run() {
+    @Override
+    public void run() {
       try {
         for (int i = 0; i < recordsPerItr; i++) {
           writer.write(record);

@@ -301,11 +301,13 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     return entryCount;
   }
 
-  @Override public int compareTo(SortTempFileChunkHolder other) {
+  @Override
+  public int compareTo(SortTempFileChunkHolder other) {
     return comparator.compare(returnRow, other.getRow());
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -318,7 +320,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     return this == o;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int hash = 0;
     hash += tableFieldStat.hashCode();
     hash += tempFile.hashCode();
@@ -341,7 +344,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
           bufferSize < numberOfRecordsLeftToBeRead ? bufferSize : numberOfRecordsLeftToBeRead;
     }
 
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
       try {
         if (isBackUpFilling) {
           backupBuffer = prefetchRecordsFromFile(numberOfRecords);

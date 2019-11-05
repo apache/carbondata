@@ -63,7 +63,8 @@ public class BloomDataMapWriter extends AbstractBloomDataMapWriter {
         continue;
       }
       boolean isExistInIndex = CollectionUtils.exists(indexColumns, new Predicate() {
-        @Override public boolean evaluate(Object object) {
+        @Override
+        public boolean evaluate(Object object) {
           return ((CarbonColumn) object).getColName().equalsIgnoreCase(dimension.getColName());
         }
       });

@@ -295,7 +295,8 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     throw new UnsupportedOperationException("Please use VectorDetailQueryResultIterator");
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     if (null != dataBlockIterator) {
       dataBlockIterator.close();
     }

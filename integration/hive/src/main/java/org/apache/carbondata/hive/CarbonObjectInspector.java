@@ -99,19 +99,23 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
     }
   }
 
-  @Override public Category getCategory() {
+  @Override
+  public Category getCategory() {
     return Category.STRUCT;
   }
 
-  @Override public String getTypeName() {
+  @Override
+  public String getTypeName() {
     return typeInfo.getTypeName();
   }
 
-  @Override public List<? extends StructField> getAllStructFieldRefs() {
+  @Override
+  public List<? extends StructField> getAllStructFieldRefs() {
     return fields;
   }
 
-  @Override public Object getStructFieldData(final Object data, final StructField fieldRef) {
+  @Override
+  public Object getStructFieldData(final Object data, final StructField fieldRef) {
     if (data == null) {
       return null;
     }
@@ -129,11 +133,13 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
         (isArray ? ((Object[]) data)[fieldID] : ((List) data).get(fieldID));
   }
 
-  @Override public StructField getStructFieldRef(final String name) {
+  @Override
+  public StructField getStructFieldRef(final String name) {
     return fieldsByName.get(name);
   }
 
-  @Override public List<Object> getStructFieldsDataAsList(final Object data) {
+  @Override
+  public List<Object> getStructFieldsDataAsList(final Object data) {
     if (data == null) {
       return null;
     }
@@ -147,7 +153,8 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
     throw new UnsupportedOperationException("Cannot inspect " + data.getClass().getCanonicalName());
   }
 
-  @Override public Object create() {
+  @Override
+  public Object create() {
     final ArrayList<Object> list = new ArrayList<Object>(fields.size());
     for (int i = 0; i < fields.size(); ++i) {
       list.add(null);
@@ -155,13 +162,15 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
     return list;
   }
 
-  @Override public Object setStructFieldData(Object struct, StructField field, Object fieldValue) {
+  @Override
+  public Object setStructFieldData(Object struct, StructField field, Object fieldValue) {
     final ArrayList<Object> list = (ArrayList<Object>) struct;
     list.set(((StructFieldImpl) field).getIndex(), fieldValue);
     return list;
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (obj == null) {
       return false;
     }
@@ -173,7 +182,8 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
         .equals(other.typeInfo)));
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int hash = 5;
     hash = 29 * hash + (this.typeInfo != null ? this.typeInfo.hashCode() : 0);
     return hash;
@@ -191,11 +201,13 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
       this.index = index;
     }
 
-    @Override public String getFieldComment() {
+    @Override
+    public String getFieldComment() {
       return "";
     }
 
-    @Override public String getFieldName() {
+    @Override
+    public String getFieldName() {
       return name;
     }
 
@@ -203,11 +215,13 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
       return index;
     }
 
-    @Override public ObjectInspector getFieldObjectInspector() {
+    @Override
+    public ObjectInspector getFieldObjectInspector() {
       return inspector;
     }
 
-    @Override public int getFieldID() {
+    @Override
+    public int getFieldID() {
       return index;
     }
   }

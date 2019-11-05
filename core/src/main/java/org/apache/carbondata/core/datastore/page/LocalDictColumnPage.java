@@ -96,7 +96,8 @@ public class LocalDictColumnPage extends ColumnPage {
     this.actualDataColumnPage = actualDataColumnPage;
   }
 
-  @Override public byte[][] getByteArrayPage() {
+  @Override
+  public byte[][] getByteArrayPage() {
     if (null != pageLevelDictionary) {
       return encodedDataColumnPage.getByteArrayPage();
     } else {
@@ -120,7 +121,8 @@ public class LocalDictColumnPage extends ColumnPage {
    * @param rowId row number
    * @param bytes actual data
    */
-  @Override public void putBytes(int rowId, byte[] bytes) {
+  @Override
+  public void putBytes(int rowId, byte[] bytes) {
     if (null != pageLevelDictionary) {
       try {
         actualDataColumnPage.putBytes(rowId, bytes);
@@ -145,48 +147,59 @@ public class LocalDictColumnPage extends ColumnPage {
     }
   }
 
-  @Override public void disableLocalDictEncoding() {
+  @Override
+  public void disableLocalDictEncoding() {
     pageLevelDictionary = null;
     freeEncodedColumnPage();
   }
 
-  @Override public PageLevelDictionary getColumnPageDictionary() {
+  @Override
+  public PageLevelDictionary getColumnPageDictionary() {
     return pageLevelDictionary;
   }
 
-  @Override public void setBytePage(byte[] byteData) {
+  @Override
+  public void setBytePage(byte[] byteData) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void setShortPage(short[] shortData) {
+  @Override
+  public void setShortPage(short[] shortData) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void setShortIntPage(byte[] shortIntData) {
+  @Override
+  public void setShortIntPage(byte[] shortIntData) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void setIntPage(int[] intData) {
+  @Override
+  public void setIntPage(int[] intData) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void setLongPage(long[] longData) {
+  @Override
+  public void setLongPage(long[] longData) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void setFloatPage(float[] floatData) {
+  @Override
+  public void setFloatPage(float[] floatData) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void setDoublePage(double[] doubleData) {
+  @Override
+  public void setDoublePage(double[] doubleData) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void setByteArrayPage(byte[][] byteArray) {
+  @Override
+  public void setByteArrayPage(byte[][] byteArray) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void freeMemory() {
+  @Override
+  public void freeMemory() {
     // free the encoded column page as data is already encoded and it is of no use, during fallback
     // if goes to actual databased fallback, we need actual data and decoder based fallback we need
     // just the encoded data to form a new page
@@ -216,107 +229,133 @@ public class LocalDictColumnPage extends ColumnPage {
     }
   }
 
-  @Override public void putByte(int rowId, byte value) {
+  @Override
+  public void putByte(int rowId, byte value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void putShort(int rowId, short value) {
+  @Override
+  public void putShort(int rowId, short value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void putInt(int rowId, int value) {
+  @Override
+  public void putInt(int rowId, int value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void putLong(int rowId, long value) {
+  @Override
+  public void putLong(int rowId, long value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void putDouble(int rowId, double value) {
+  @Override
+  public void putDouble(int rowId, double value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void putFloat(int rowId, float value) {
+  @Override
+  public void putFloat(int rowId, float value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+  @Override
+  public void putDecimal(int rowId, BigDecimal decimal) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void putShortInt(int rowId, int value) {
+  @Override
+  public void putShortInt(int rowId, int value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void putBytes(int rowId, byte[] bytes, int offset, int length) {
+  @Override
+  public void putBytes(int rowId, byte[] bytes, int offset, int length) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public byte getByte(int rowId) {
+  @Override
+  public byte getByte(int rowId) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public short getShort(int rowId) {
+  @Override
+  public short getShort(int rowId) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public int getShortInt(int rowId) {
+  @Override
+  public int getShortInt(int rowId) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public int getInt(int rowId) {
+  @Override
+  public int getInt(int rowId) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public long getLong(int rowId) {
+  @Override
+  public long getLong(int rowId) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public float getFloat(int rowId) {
+  @Override
+  public float getFloat(int rowId) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public double getDouble(int rowId) {
+  @Override
+  public double getDouble(int rowId) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public BigDecimal getDecimal(int rowId) {
+  @Override
+  public BigDecimal getDecimal(int rowId) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public byte[] getBytes(int rowId) {
+  @Override
+  public byte[] getBytes(int rowId) {
     return actualDataColumnPage.getBytes(rowId);
   }
 
-  @Override public byte[] getBytePage() {
+  @Override
+  public byte[] getBytePage() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public short[] getShortPage() {
+  @Override
+  public short[] getShortPage() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public byte[] getShortIntPage() {
+  @Override
+  public byte[] getShortIntPage() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public int[] getIntPage() {
+  @Override
+  public int[] getIntPage() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public long[] getLongPage() {
+  @Override
+  public long[] getLongPage() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public float[] getFloatPage() {
+  @Override
+  public float[] getFloatPage() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public double[] getDoublePage() {
+  @Override
+  public double[] getDoublePage() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public byte[] getLVFlattenedBytePage() throws IOException {
+  @Override
+  public byte[] getLVFlattenedBytePage() throws IOException {
     if (null != encodedDataColumnPage) {
       return encodedDataColumnPage.getLVFlattenedBytePage();
     } else {
@@ -324,7 +363,8 @@ public class LocalDictColumnPage extends ColumnPage {
     }
   }
 
-  @Override public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
+  @Override
+  public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
     if (null != encodedDataColumnPage) {
       return encodedDataColumnPage.getComplexChildrenLVFlattenedBytePage();
     } else {
@@ -332,7 +372,8 @@ public class LocalDictColumnPage extends ColumnPage {
     }
   }
 
-  @Override public byte[] getComplexParentFlattenedBytePage() throws IOException {
+  @Override
+  public byte[] getComplexParentFlattenedBytePage() throws IOException {
     if (null != encodedDataColumnPage) {
       return encodedDataColumnPage.getComplexParentFlattenedBytePage();
     } else {
@@ -340,11 +381,13 @@ public class LocalDictColumnPage extends ColumnPage {
     }
   }
 
-  @Override public byte[] getDecimalPage() {
+  @Override
+  public byte[] getDecimalPage() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void convertValue(ColumnPageValueConverter codec) {
+  @Override
+  public void convertValue(ColumnPageValueConverter codec) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 

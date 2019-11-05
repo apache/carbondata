@@ -51,11 +51,13 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     this.nullBitset = new BitSet();
   }
 
-  @Override public void setNullBits(BitSet nullBits) {
+  @Override
+  public void setNullBits(BitSet nullBits) {
     this.nullBitset = nullBits;
   }
 
-  @Override public void putBoolean(int rowId, boolean value) {
+  @Override
+  public void putBoolean(int rowId, boolean value) {
     if (nullBitset.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -63,7 +65,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putFloat(int rowId, float value) {
+  @Override
+  public void putFloat(int rowId, float value) {
     if (nullBitset.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -71,7 +74,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putShort(int rowId, short value) {
+  @Override
+  public void putShort(int rowId, short value) {
     if (nullBitset.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -79,12 +83,14 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putShorts(int rowId, int count, short value) {
+  @Override
+  public void putShorts(int rowId, int count, short value) {
     columnVector.putShorts(rowId, count, value);
 
   }
 
-  @Override public void putInt(int rowId, int value) {
+  @Override
+  public void putInt(int rowId, int value) {
     if (nullBitset.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -92,11 +98,13 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putInts(int rowId, int count, int value) {
+  @Override
+  public void putInts(int rowId, int count, int value) {
     columnVector.putInts(rowId, count, value);
   }
 
-  @Override public void putLong(int rowId, long value) {
+  @Override
+  public void putLong(int rowId, long value) {
     if (nullBitset.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -104,11 +112,13 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putLongs(int rowId, int count, long value) {
+  @Override
+  public void putLongs(int rowId, int count, long value) {
     columnVector.putLongs(rowId, count, value);
   }
 
-  @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
+  @Override
+  public void putDecimal(int rowId, BigDecimal value, int precision) {
     if (nullBitset.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -116,7 +126,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
+  @Override
+  public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
     for (int i = 0; i < count; i++) {
       if (nullBitset.get(rowId)) {
         columnVector.putNull(rowId);
@@ -127,7 +138,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putDouble(int rowId, double value) {
+  @Override
+  public void putDouble(int rowId, double value) {
     if (nullBitset.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -135,11 +147,13 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putDoubles(int rowId, int count, double value) {
+  @Override
+  public void putDoubles(int rowId, int count, double value) {
     columnVector.putDoubles(rowId, count, value);
   }
 
-  @Override public void putByteArray(int rowId, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, byte[] value) {
     if (nullBitset.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -154,7 +168,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, int offset, int length, byte[] value) {
     if (nullBitset.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -162,75 +177,92 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putNull(int rowId) {
+  @Override
+  public void putNull(int rowId) {
     columnVector.putNull(rowId);
   }
 
-  @Override public void putNulls(int rowId, int count) {
+  @Override
+  public void putNulls(int rowId, int count) {
     columnVector.putNulls(rowId, count);
   }
 
-  @Override public void putNotNull(int rowId) {
+  @Override
+  public void putNotNull(int rowId) {
     columnVector.putNotNull(rowId);
   }
 
-  @Override public void putNotNull(int rowId, int count) {
+  @Override
+  public void putNotNull(int rowId, int count) {
   }
 
-  @Override public boolean isNull(int rowId) {
+  @Override
+  public boolean isNull(int rowId) {
     return columnVector.isNullAt(rowId);
   }
 
-  @Override public void putObject(int rowId, Object obj) {
+  @Override
+  public void putObject(int rowId, Object obj) {
     throw new UnsupportedOperationException(
         "Not supported this opeartion from " + this.getClass().getName());
   }
 
-  @Override public Object getData(int rowId) {
+  @Override
+  public Object getData(int rowId) {
     throw new UnsupportedOperationException(
         "Not supported this opeartion from " + this.getClass().getName());
   }
 
-  @Override public void reset() {
+  @Override
+  public void reset() {
     if (null != dictionaryVector) {
       dictionaryVector.reset();
     }
   }
 
-  @Override public DataType getType() {
+  @Override
+  public DataType getType() {
     return columnVector.getType();
   }
 
-  @Override public DataType getBlockDataType() {
+  @Override
+  public DataType getBlockDataType() {
     return blockDataType;
   }
 
-  @Override public void setBlockDataType(DataType blockDataType) {
+  @Override
+  public void setBlockDataType(DataType blockDataType) {
     this.blockDataType = blockDataType;
   }
 
-  @Override public void setDictionary(CarbonDictionary dictionary) {
+  @Override
+  public void setDictionary(CarbonDictionary dictionary) {
     columnVector.setDictionary(dictionary);
   }
 
-  @Override public boolean hasDictionary() {
+  @Override
+  public boolean hasDictionary() {
     return columnVector.hasDictionary();
   }
 
 
-  @Override public CarbonColumnVector getDictionaryVector() {
+  @Override
+  public CarbonColumnVector getDictionaryVector() {
     return dictionaryVector;
   }
 
-  @Override public void putByte(int rowId, byte value) {
+  @Override
+  public void putByte(int rowId, byte value) {
     columnVector.putByte(rowId, value);
   }
 
-  @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
+  @Override
+  public void setFilteredRowsExist(boolean filteredRowsExist) {
     // Leave it, as it does not need to do anything here.
   }
 
-  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+  @Override
+  public void putFloats(int rowId, int count, float[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
       if (nullBitset.get(rowId)) {
         columnVector.putNull(rowId);
@@ -241,7 +273,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+  @Override
+  public void putShorts(int rowId, int count, short[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
       if (nullBitset.get(rowId)) {
         columnVector.putNull(rowId);
@@ -252,7 +285,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+  @Override
+  public void putInts(int rowId, int count, int[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
       if (nullBitset.get(rowId)) {
         columnVector.putNull(rowId);
@@ -263,7 +297,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+  @Override
+  public void putLongs(int rowId, int count, long[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
       if (nullBitset.get(rowId)) {
         columnVector.putNull(rowId);
@@ -274,7 +309,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+  @Override
+  public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
       if (nullBitset.get(rowId)) {
         columnVector.putNull(rowId);
@@ -285,7 +321,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+  @Override
+  public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
       if (nullBitset.get(rowId)) {
         columnVector.putNull(rowId);
@@ -296,15 +333,18 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     }
   }
 
-  @Override public void setLazyPage(LazyPageLoader lazyPage) {
+  @Override
+  public void setLazyPage(LazyPageLoader lazyPage) {
     columnVector.setLazyPage(lazyPage);
   }
 
-  @Override public void putArray(int rowId, int offset, int length) {
+  @Override
+  public void putArray(int rowId, int offset, int length) {
     columnVector.putArray(rowId, offset, length);
   }
 
-  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+  @Override
+  public void putAllByteArray(byte[] data, int offset, int length) {
     columnVector.putAllByteArray(data, offset, length);
   }
 }

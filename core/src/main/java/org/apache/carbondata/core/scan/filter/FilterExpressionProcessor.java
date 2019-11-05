@@ -96,7 +96,8 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param partitionInfo
    * @return
    */
-  @Override public BitSet getFilteredPartitions(Expression expressionTree,
+  @Override
+  public BitSet getFilteredPartitions(Expression expressionTree,
       PartitionInfo partitionInfo) {
     Partitioner partitioner = PartitionUtil.getPartitioner(partitionInfo);
     return createPartitionFilterTree(expressionTree, partitionInfo).applyFilter(partitioner);

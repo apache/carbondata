@@ -153,7 +153,8 @@ public class BlockletDataMapUtil {
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFilePath, configuration);
     if (carbonFile instanceof AbstractDFSCarbonFile && !(carbonFile instanceof S3CarbonFile)) {
       PathFilter pathFilter = new PathFilter() {
-        @Override public boolean accept(Path path) {
+        @Override
+        public boolean accept(Path path) {
           return CarbonTablePath.isCarbonDataFile(path.getName());
         }
       };

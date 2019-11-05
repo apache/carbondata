@@ -137,7 +137,8 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   /**
    * Handling of the locking mechanism using zoo keeper.
    */
-  @Override public boolean lock() {
+  @Override
+  public boolean lock() {
     try {
       // create the lock file with lockName.
       lockPath =
@@ -175,7 +176,8 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   /**
    * @return status where lock file is unlocked or not.
    */
-  @Override public boolean unlock() {
+  @Override
+  public boolean unlock() {
     try {
       // exists will return null if the path doesn't exists.
       if (null != zk.exists(lockPath, true)) {

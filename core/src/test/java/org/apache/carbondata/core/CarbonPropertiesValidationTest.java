@@ -33,7 +33,8 @@ public class CarbonPropertiesValidationTest extends TestCase {
 
   CarbonProperties carbonProperties;
 
-  @Override public void setUp() throws Exception {
+  @Override
+  public void setUp() throws Exception {
     carbonProperties = CarbonProperties.getInstance();
   }
 

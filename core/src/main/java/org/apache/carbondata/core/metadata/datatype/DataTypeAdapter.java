@@ -35,10 +35,12 @@ public class DataTypeAdapter extends TypeAdapter<Object> {
 
   private Gson fallBack_original = new Gson();
 
-  @Override public void write(JsonWriter jsonWriter, Object o) throws IOException {
+  @Override
+  public void write(JsonWriter jsonWriter, Object o) throws IOException {
   }
 
-  @Override public Object read(JsonReader jsonReader) throws IOException {
+  @Override
+  public Object read(JsonReader jsonReader) throws IOException {
     JsonToken token = jsonReader.peek();
     if (token == JsonToken.STRING) {
       return DataTypeUtil.valueOf(jsonReader.nextString());

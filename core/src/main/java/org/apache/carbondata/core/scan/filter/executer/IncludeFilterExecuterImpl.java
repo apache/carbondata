@@ -245,7 +245,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return null;
   }
 
-  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
+  @Override
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
     if (isDimensionPresentInCurrentBlock) {
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
       byte[] col = (byte[])value.getVal(dimColumnEvaluatorInfo.getDimension().getOrdinal());

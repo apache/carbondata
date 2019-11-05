@@ -51,7 +51,8 @@ public class CarbonIndexFileReader {
    */
   public IndexHeader readIndexHeader() throws IOException {
     return (IndexHeader) thriftReader.read(new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new IndexHeader();
       }
     });
@@ -72,7 +73,8 @@ public class CarbonIndexFileReader {
    */
   public BlockIndex readBlockIndexInfo() throws IOException {
     return (BlockIndex) thriftReader.read(new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
+      @Override
+      public TBase create() {
         return new BlockIndex();
       }
     });

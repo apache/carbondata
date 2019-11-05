@@ -262,7 +262,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     deleteSegmentDatamapData(segment.getSegmentNo());
   }
 
-  @Override public void deleteSegmentDatamapData(String segmentId) throws IOException {
+  @Override
+  public void deleteSegmentDatamapData(String segmentId) throws IOException {
     try {
       String datamapPath = CarbonTablePath
           .getDataMapStorePath(tableIdentifier.getTablePath(), segmentId, dataMapName);

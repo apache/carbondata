@@ -87,7 +87,8 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * @param invertedIndexReverse inverted index reverse to be stored
    * @param data                 data to be stored
    */
-  @Override public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
+  @Override
+  public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
       final byte[] data) {
     assert (!isMemoryOccupied);
     this.invertedIndexReverseOffset = dataLength;
@@ -112,7 +113,8 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
     }
   }
 
-  @Override public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+  @Override
+  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     throw new UnsupportedOperationException("This method not supposed to be called here");
   }
@@ -120,7 +122,8 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
   /**
    * Below method will be used to free the memory occupied by the column chunk
    */
-  @Override public void freeMemory() {
+  @Override
+  public void freeMemory() {
     if (isMemoryReleased) {
       return;
     }
@@ -137,7 +140,8 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * @param rowId row id
    * @return inverted index based on row id passed
    */
-  @Override public int getInvertedIndex(int rowId) {
+  @Override
+  public int getInvertedIndex(int rowId) {
     return CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + dataLength + ((long)rowId
             * CarbonCommonConstants.INT_SIZE_IN_BYTE));
@@ -149,7 +153,8 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * @param rowId row id
    * @return inverted index based on row id passed
    */
-  @Override public int getInvertedReverseIndex(int rowId) {
+  @Override
+  public int getInvertedReverseIndex(int rowId) {
     return CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
             * CarbonCommonConstants.INT_SIZE_IN_BYTE));
@@ -162,21 +167,24 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * @param rowId row id
    * @return surrogate key
    */
-  @Override public int getSurrogate(int rowId) {
+  @Override
+  public int getSurrogate(int rowId) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
   /**
    * @return size of each column value
    */
-  @Override public int getColumnValueSize() {
+  @Override
+  public int getColumnValueSize() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
   /**
    * @return whether column was explicitly sorted or not
    */
-  @Override public boolean isExplicitSorted() {
+  @Override
+  public boolean isExplicitSorted() {
     return isExplicitSorted;
   }
 
@@ -187,11 +195,13 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * @param data   buffer in which data will be filled
    * @param offset off the of the buffer
    */
-  @Override public void fillRow(int rowId, byte[] data, int offset) {
+  @Override
+  public void fillRow(int rowId, byte[] data, int offset) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+  @Override
+  public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 }

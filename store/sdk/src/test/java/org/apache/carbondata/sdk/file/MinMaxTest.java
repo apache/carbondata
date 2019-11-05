@@ -112,7 +112,8 @@ public class MinMaxTest {
       Assert.assertTrue(false);
     }
     File[] dataFiles = new File(path).listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
+      @Override
+      public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
     });
@@ -122,7 +123,8 @@ public class MinMaxTest {
 
   public static void readIndexAndVerify(String path) {
     File[] dataFiles = new File(path).listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
+      @Override
+      public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.UPDATE_INDEX_FILE_EXT);
       }
     });

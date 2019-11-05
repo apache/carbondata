@@ -50,7 +50,8 @@ public class ActualDataBasedFallbackEncoder
     this.pageIndex = pageIndex;
   }
 
-  @Override public FallbackEncodedColumnPage call() throws Exception {
+  @Override
+  public FallbackEncodedColumnPage call() throws Exception {
     // disable encoding using local dictionary
     encodedColumnPage.getActualPage().disableLocalDictEncoding();
 

@@ -130,7 +130,8 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
 
   }
 
-  @Override public void initialize(InputSplit split, TaskAttemptContext context)
+  @Override
+  public void initialize(InputSplit split, TaskAttemptContext context)
       throws IOException {
     // input
     if (split instanceof CarbonInputSplit) {
@@ -335,7 +336,8 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     }
   }
 
-  @Override public boolean nextKeyValue() throws IOException, InterruptedException {
+  @Override
+  public boolean nextKeyValue() throws IOException, InterruptedException {
     if (isFirstRow) {
       isFirstRow = false;
       initializeAtFirstRow();
@@ -347,11 +349,13 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     return nextRow();
   }
 
-  @Override public Void getCurrentKey() throws IOException, InterruptedException {
+  @Override
+  public Void getCurrentKey() throws IOException, InterruptedException {
     return null;
   }
 
-  @Override public Object getCurrentValue() throws IOException, InterruptedException {
+  @Override
+  public Object getCurrentValue() throws IOException, InterruptedException {
     return outputValues;
   }
 
@@ -617,11 +621,13 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     }
   }
 
-  @Override public float getProgress() {
+  @Override
+  public float getProgress() {
     return 0;
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     if (null != input) {
       input.close();
     }

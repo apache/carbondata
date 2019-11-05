@@ -82,7 +82,8 @@ public class MapBasedDictionaryStore implements DictionaryStore {
    * @param data dictionary key
    * @return dictionary value
    */
-  @Override public int putIfAbsent(byte[] data) throws DictionaryThresholdReachedException {
+  @Override
+  public int putIfAbsent(byte[] data) throws DictionaryThresholdReachedException {
     // check if threshold has already reached
     checkIfThresholdReached();
     DictionaryByteArrayWrapper key = new DictionaryByteArrayWrapper(data);
@@ -136,7 +137,8 @@ public class MapBasedDictionaryStore implements DictionaryStore {
    *
    * @return
    */
-  @Override public boolean isThresholdReached() {
+  @Override
+  public boolean isThresholdReached() {
     return isThresholdReached;
   }
 
@@ -147,7 +149,8 @@ public class MapBasedDictionaryStore implements DictionaryStore {
    *              Caller will take of passing proper value
    * @return dictionary key based on value
    */
-  @Override public byte[] getDictionaryKeyBasedOnValue(int value) {
+  @Override
+  public byte[] getDictionaryKeyBasedOnValue(int value) {
     assert referenceDictionaryArray != null;
     // reference array index will be -1 of the value as dictionary value starts from 1
     return referenceDictionaryArray[value - 1].getData();

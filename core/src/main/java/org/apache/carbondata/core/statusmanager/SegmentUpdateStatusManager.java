@@ -216,7 +216,8 @@ public class SegmentUpdateStatusManager {
     // else scan the segment for the delta files with the respective timestamp.
     CarbonFile[] files = segDir.listFiles(new CarbonFileFilter() {
 
-      @Override public boolean accept(CarbonFile pathName) {
+      @Override
+      public boolean accept(CarbonFile pathName) {
         String fileName = pathName.getName();
         if (fileName.endsWith(CarbonCommonConstants.UPDATE_DELTA_FILE_EXT)) {
           String firstPart = fileName.substring(0, fileName.indexOf('.'));
@@ -415,7 +416,8 @@ public class SegmentUpdateStatusManager {
 
         return segDir.listFiles(new CarbonFileFilter() {
 
-          @Override public boolean accept(CarbonFile pathName) {
+          @Override
+          public boolean accept(CarbonFile pathName) {
             String fileName = pathName.getName();
             if (fileName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
                 && pathName.getSize() > 0) {

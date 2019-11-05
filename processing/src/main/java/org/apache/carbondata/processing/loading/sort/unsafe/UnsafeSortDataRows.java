@@ -101,7 +101,8 @@ public class UnsafeSortDataRows {
     this.parameters = parameters;
     this.tableFieldStat = new TableFieldStat(parameters);
     this.reUsableByteArrayDataOutputStream = new ThreadLocal<ReUsableByteArrayDataOutputStream>() {
-      @Override protected ReUsableByteArrayDataOutputStream initialValue() {
+      @Override
+      protected ReUsableByteArrayDataOutputStream initialValue() {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         return new ReUsableByteArrayDataOutputStream(byteStream);
       }

@@ -437,7 +437,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     return evaluateResultListFinal;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     final int prime = 31;
     int result = 1;
     if (null != expressionResults) {
@@ -451,7 +452,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     return result;
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (!(obj instanceof ExpressionResult)) {
       return false;
     }
@@ -508,7 +510,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     return value == null;
   }
 
-  @Override public int compareTo(ExpressionResult o) {
+  @Override
+  public int compareTo(ExpressionResult o) {
     try {
       DataType type = o.dataType;
       if (type == DataTypes.SHORT ||

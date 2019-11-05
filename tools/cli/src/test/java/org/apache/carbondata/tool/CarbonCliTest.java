@@ -278,7 +278,8 @@ public class CarbonCliTest {
     CarbonFile folder = FileFactory.getCarbonFile(path);
     CarbonFile[] carbonFiles = folder.listFiles(new CarbonFileFilter() {
 
-      @Override public boolean accept(CarbonFile file) {
+      @Override
+      public boolean accept(CarbonFile file) {
         return file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT);
       }
     });

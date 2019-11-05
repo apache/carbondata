@@ -44,24 +44,28 @@ class AtomicFileOperationS3Impl implements AtomicFileOperations {
   AtomicFileOperationS3Impl(String filePath) {
     this.filePath = filePath;
   }
-  @Override public DataInputStream openForRead() throws IOException {
+  @Override
+  public DataInputStream openForRead() throws IOException {
     return FileFactory.getDataInputStream(filePath, FileFactory.getFileType(filePath));
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     if (null != dataOutStream) {
       CarbonUtil.closeStream(dataOutStream);
     }
   }
 
-  @Override public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
+  @Override
+  public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
     filePath = filePath.replace("\\", "/");
     FileFactory.FileType fileType = FileFactory.getFileType(filePath);
     dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
     return dataOutStream;
   }
 
-  @Override public void setFailed() {
+  @Override
+  public void setFailed() {
     // no implementation required
   }
 }

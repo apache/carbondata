@@ -194,7 +194,8 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
           splits.add(split);
         }
         Collections.sort(splits, new Comparator<InputSplit>() {
-          @Override public int compare(InputSplit o1, InputSplit o2) {
+          @Override
+          public int compare(InputSplit o1, InputSplit o2) {
             return ((CarbonInputSplit) o1).getFilePath()
                 .compareTo(((CarbonInputSplit) o2).getFilePath());
           }
@@ -219,7 +220,8 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     List<CarbonFile> carbonFiles;
     try {
       carbonFiles = FileFactory.getCarbonFile(tablePath).listFiles(true, new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile file) {
+        @Override
+        public boolean accept(CarbonFile file) {
           return file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT);
         }
       });

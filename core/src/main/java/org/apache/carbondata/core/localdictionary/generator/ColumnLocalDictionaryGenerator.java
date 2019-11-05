@@ -60,7 +60,8 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
    * data for which dictionary needs to be generated
    * @return dictionary value
    */
-  @Override public int generateDictionary(byte[] data) throws DictionaryThresholdReachedException {
+  @Override
+  public int generateDictionary(byte[] data) throws DictionaryThresholdReachedException {
     return this.dictionaryHolder.putIfAbsent(data);
   }
 
@@ -69,7 +70,8 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
    * for dictionary for particular column
    * @return true if dictionary threshold reached for column
    */
-  @Override public boolean isThresholdReached() {
+  @Override
+  public boolean isThresholdReached() {
     return this.dictionaryHolder.isThresholdReached();
   }
 
@@ -79,7 +81,8 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
    * dictionary value
    * @return dictionary key based on value
    */
-  @Override public byte[] getDictionaryKeyBasedOnValue(int value) {
+  @Override
+  public byte[] getDictionaryKeyBasedOnValue(int value) {
     return this.dictionaryHolder.getDictionaryKeyBasedOnValue(value);
   }
 }

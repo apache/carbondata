@@ -80,11 +80,13 @@ class BooleanWriter extends ArrowFieldWriter {
     this.bitVector = bitVector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     bitVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     bitVector.setSafe(count, (Boolean) data ? 1 : 0);
   }
 }
@@ -97,11 +99,13 @@ class ByteWriter extends ArrowFieldWriter {
     this.tinyIntVector = tinyIntVector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.tinyIntVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     this.tinyIntVector.setSafe(count, (byte) data);
   }
 }
@@ -114,11 +118,13 @@ class ShortWriter extends ArrowFieldWriter {
     this.smallIntVector = smallIntVector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.smallIntVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     this.smallIntVector.setSafe(count, (short) data);
   }
 }
@@ -131,11 +137,13 @@ class IntWriter extends ArrowFieldWriter {
     this.intVector = intVector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.intVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     this.intVector.setSafe(count, (int) data);
   }
 }
@@ -148,11 +156,13 @@ class LongWriter extends ArrowFieldWriter {
     this.bigIntVector = bigIntVector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.bigIntVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     this.bigIntVector.setSafe(count, (long) data);
   }
 }
@@ -165,11 +175,13 @@ class FloatWriter extends ArrowFieldWriter {
     this.float4Vector = float4Vector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.float4Vector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     this.float4Vector.setSafe(count, (float) data);
   }
 }
@@ -182,11 +194,13 @@ class DoubleWriter extends ArrowFieldWriter {
     this.float8Vector = float8Vector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.float8Vector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     this.float8Vector.setSafe(count, (double) data);
   }
 }
@@ -199,11 +213,13 @@ class DateWriter extends ArrowFieldWriter {
     this.dateDayVector = dateDayVector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.dateDayVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     this.dateDayVector.setSafe(count, (int)data);
   }
 }
@@ -216,11 +232,13 @@ class TimeStampWriter extends ArrowFieldWriter {
     this.timeStampMicroTZVector = timeStampMicroTZVector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.timeStampMicroTZVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     this.timeStampMicroTZVector.setSafe(count, (long)data);
   }
 }
@@ -233,11 +251,13 @@ class StringWriter extends ArrowFieldWriter {
     this.varCharVector = varCharVector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.varCharVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     byte[] bytes =
         (String.valueOf(data)).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
@@ -253,11 +273,13 @@ class BinaryWriter extends ArrowFieldWriter {
     this.varBinaryVector = varBinaryVector;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.varBinaryVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     byte[] bytes = (byte[]) data;
     varBinaryVector.setSafe(count, bytes, 0, bytes.length);
   }
@@ -275,11 +297,13 @@ class DecimalWriter extends ArrowFieldWriter {
     this.scale = scale;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     this.decimalVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     BigDecimal decimal = (BigDecimal) data;
     decimalVector.setSafe(count, decimal);
   }
@@ -295,11 +319,13 @@ class ArrayWriter extends ArrowFieldWriter {
     this.elementWriter = elementWriter;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
 
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     Object[] array = (Object[]) data;
     int i = 0;
     listVector.startNewValue(count);
@@ -331,7 +357,8 @@ class StructWriter extends ArrowFieldWriter {
     this.children = children;
   }
 
-  @Override public void setNull() {
+  @Override
+  public void setNull() {
     int i = 0;
     while (i < children.length) {
       children[i].setNull();
@@ -341,7 +368,8 @@ class StructWriter extends ArrowFieldWriter {
     structVector.setNull(count);
   }
 
-  @Override public void setValue(Object data, int ordinal) {
+  @Override
+  public void setValue(Object data, int ordinal) {
     Object[] struct = (Object[]) data;
     int i = 0;
     while (i < struct.length) {

@@ -132,7 +132,8 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
     return ints;
   }
 
-  @Override public byte[][] splitKey(byte[] key) {
+  @Override
+  public byte[][] splitKey(byte[] key) {
     byte[][] split = new byte[blockKeySize.length][];
     int copyIndex = 0;
     for (int i = 0; i < split.length; i++) {
@@ -143,15 +144,18 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
     return split;
   }
 
-  @Override public byte[][] generateAndSplitKey(long[] keys) throws KeyGenException {
+  @Override
+  public byte[][] generateAndSplitKey(long[] keys) throws KeyGenException {
     return splitKey(generateKey(keys));
   }
 
-  @Override public byte[][] generateAndSplitKey(int[] keys) throws KeyGenException {
+  @Override
+  public byte[][] generateAndSplitKey(int[] keys) throws KeyGenException {
     return splitKey(generateKey(keys));
   }
 
-  @Override public long[] getKeyArray(byte[][] key) {
+  @Override
+  public long[] getKeyArray(byte[][] key) {
     byte[] fullKey = new byte[getKeySizeInBytes()];
     int copyIndex = 0;
     for (int i = 0; i < key.length; i++) {
@@ -161,7 +165,8 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
     return getKeyArray(fullKey);
   }
 
-  @Override public byte[] getKeyByteArray(byte[][] key) {
+  @Override
+  public byte[] getKeyByteArray(byte[][] key) {
     byte[] fullKey = new byte[getKeySizeInBytes()];
     int copyIndex = 0;
     for (int i = 0; i < key.length; i++) {
@@ -175,7 +180,8 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
     return blockKeySize;
   }
 
-  @Override public int getKeySizeByBlock(int[] blockIndexes) {
+  @Override
+  public int getKeySizeByBlock(int[] blockIndexes) {
     int size = 0;
 
     for (int i = 0; i < blockIndexes.length; i++) {
@@ -186,7 +192,8 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
     return size;
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (!(obj instanceof MultiDimKeyVarLengthEquiSplitGenerator)) {
       return false;
     }
@@ -194,7 +201,8 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
     return o.dimensionsToSplit == dimensionsToSplit && super.equals(obj);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return super.hashCode() + dimensionsToSplit;
   }
 }

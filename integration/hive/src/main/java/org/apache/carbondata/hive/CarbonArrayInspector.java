@@ -37,19 +37,23 @@ class CarbonArrayInspector implements SettableListObjectInspector {
     this.arrayElementInspector = arrayElementInspector;
   }
 
-  @Override public String getTypeName() {
+  @Override
+  public String getTypeName() {
     return "array<" + arrayElementInspector.getTypeName() + ">";
   }
 
-  @Override public Category getCategory() {
+  @Override
+  public Category getCategory() {
     return Category.LIST;
   }
 
-  @Override public ObjectInspector getListElementObjectInspector() {
+  @Override
+  public ObjectInspector getListElementObjectInspector() {
     return arrayElementInspector;
   }
 
-  @Override public Object getListElement(final Object data, final int index) {
+  @Override
+  public Object getListElement(final Object data, final int index) {
     if (data == null) {
       return null;
     }
@@ -77,7 +81,8 @@ class CarbonArrayInspector implements SettableListObjectInspector {
     throw new UnsupportedOperationException("Cannot inspect " + data.getClass().getCanonicalName());
   }
 
-  @Override public int getListLength(final Object data) {
+  @Override
+  public int getListLength(final Object data) {
     if (data == null) {
       return -1;
     }
@@ -101,7 +106,8 @@ class CarbonArrayInspector implements SettableListObjectInspector {
     throw new UnsupportedOperationException("Cannot inspect " + data.getClass().getCanonicalName());
   }
 
-  @Override public List<?> getList(final Object data) {
+  @Override
+  public List<?> getList(final Object data) {
     if (data == null) {
       return null;
     }
@@ -126,7 +132,8 @@ class CarbonArrayInspector implements SettableListObjectInspector {
     throw new UnsupportedOperationException("Cannot inspect " + data.getClass().getCanonicalName());
   }
 
-  @Override public Object create(final int size) {
+  @Override
+  public Object create(final int size) {
     final List<Object> result = Arrays.asList(new Object[size]);
     for (int i = 0; i < size; ++i) {
       result.add(null);
@@ -134,13 +141,15 @@ class CarbonArrayInspector implements SettableListObjectInspector {
     return result;
   }
 
-  @Override public Object set(final Object list, final int index, final Object element) {
+  @Override
+  public Object set(final Object list, final int index, final Object element) {
     final ArrayList<Object> l = (ArrayList<Object>) list;
     l.set(index, element);
     return list;
   }
 
-  @Override public Object resize(final Object list, final int newSize) {
+  @Override
+  public Object resize(final Object list, final int newSize) {
     final ArrayList<Object> l = (ArrayList<Object>) list;
     l.ensureCapacity(newSize);
     while (l.size() < newSize) {
@@ -152,7 +161,8 @@ class CarbonArrayInspector implements SettableListObjectInspector {
     return list;
   }
 
-  @Override public boolean equals(final Object o) {
+  @Override
+  public boolean equals(final Object o) {
     if (o == null || o.getClass() != getClass()) {
       return false;
     } else if (o == this) {
@@ -162,7 +172,8 @@ class CarbonArrayInspector implements SettableListObjectInspector {
     }
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int hash = 3;
     hash = 29 * hash + (this.arrayElementInspector != null ?
         this.arrayElementInspector.hashCode() :

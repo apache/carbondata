@@ -62,7 +62,8 @@ public class TrueExpression extends BinaryConditionalExpression {
   public ExpressionType getFilterExpressionType() {
     return ExpressionType.TRUE;
   }
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "True(" + (null == left ? null : left.getString());
   }
 

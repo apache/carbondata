@@ -64,7 +64,8 @@ public class ColumnReverseDictionaryInfo extends AbstractColumnDictionaryInfo {
    * @param value dictionary value as byte array. It will be treated as key here
    * @return if found returns key else INVALID_SURROGATE_KEY
    */
-  @Override public int getSurrogateKey(byte[] value) {
+  @Override
+  public int getSurrogateKey(byte[] value) {
     DictionaryByteArrayWrapper dictionaryByteArrayWrapper =
         new DictionaryByteArrayWrapper(value, xxHash32);
     Integer surrogateKeyInMap =
@@ -80,7 +81,8 @@ public class ColumnReverseDictionaryInfo extends AbstractColumnDictionaryInfo {
    *
    * @param dictionaryChunk
    */
-  @Override public void addDictionaryChunk(List<byte[]> dictionaryChunk) {
+  @Override
+  public void addDictionaryChunk(List<byte[]> dictionaryChunk) {
     dictionaryChunks.add(dictionaryChunk);
     if (null == dictionaryByteArrayToSurrogateKeyMap) {
       createDictionaryByteArrayToSurrogateKeyMap(dictionaryChunk.size());
@@ -118,7 +120,8 @@ public class ColumnReverseDictionaryInfo extends AbstractColumnDictionaryInfo {
    *
    * @param sortOrderIndex
    */
-  @Override public void setSortOrderIndex(List<Integer> sortOrderIndex) {
+  @Override
+  public void setSortOrderIndex(List<Integer> sortOrderIndex) {
   }
 
   /**
@@ -127,6 +130,7 @@ public class ColumnReverseDictionaryInfo extends AbstractColumnDictionaryInfo {
    *
    * @param sortReverseOrderIndex
    */
-  @Override public void setSortReverseOrderIndex(List<Integer> sortReverseOrderIndex) {
+  @Override
+  public void setSortReverseOrderIndex(List<Integer> sortReverseOrderIndex) {
   }
 }

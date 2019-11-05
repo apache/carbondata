@@ -126,7 +126,8 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    * @param segment
    * @return
    */
-  @Override public List<DataMapDistributable> toDistributable(Segment segment) {
+  @Override
+  public List<DataMapDistributable> toDistributable(Segment segment) {
     return null;
   }
 
@@ -135,25 +136,30 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    *
    * @param segment
    */
-  @Override public void clear(Segment segment) {
+  @Override
+  public void clear(Segment segment) {
   }
 
   /**
    * Clearing the data map.
    */
-  @Override public void clear() {
+  @Override
+  public void clear() {
   }
 
-  @Override public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
+  @Override
+  public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
     return getDataMaps(distributable.getSegment());
   }
 
-  @Override public void fireEvent(Event event) {
+  @Override
+  public void fireEvent(Event event) {
 
   }
 
-  @Override public DataMapMeta getMeta() {
+  @Override
+  public DataMapMeta getMeta() {
     return this.dataMapMeta;
   }
 
@@ -162,11 +168,13 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
 
   }
 
-  @Override public void deleteDatamapData() {
+  @Override
+  public void deleteDatamapData() {
 
   }
 
-  @Override public boolean willBecomeStale(TableOperation operation) {
+  @Override
+  public boolean willBecomeStale(TableOperation operation) {
     return false;
   }
 }

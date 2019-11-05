@@ -132,7 +132,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * @param value unique dictionary value
    * @throws IOException if an I/O error occurs
    */
-  @Override public void write(String value) throws IOException {
+  @Override
+  public void write(String value) throws IOException {
     write(value.getBytes(defaultCharset));
   }
 
@@ -167,7 +168,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * @param valueList list of byte array. Each byte array is unique dictionary value
    * @throws IOException if an I/O error occurs
    */
-  @Override public void write(List<byte[]> valueList) throws IOException {
+  @Override
+  public void write(List<byte[]> valueList) throws IOException {
     if (isFirstTime) {
       init();
       isFirstTime = false;
@@ -183,7 +185,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    *
    * @throws IOException if an I/O error occurs
    */
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     if (null != dictionaryThriftWriter && dictionaryThriftWriter.isOpen()) {
       try {
         // if stream is open then only need to write dictionary file.
@@ -414,7 +417,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     return new CarbonDictionaryMetadataReaderImpl(dictionaryColumnUniqueIdentifier);
   }
 
-  @Override public void commit() throws IOException {
+  @Override
+  public void commit() throws IOException {
     if (null != dictionaryThriftWriter && dictionaryThriftWriter.isOpen()) {
       this.chunk_end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
       writeDictionaryMetadataFile();

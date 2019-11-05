@@ -698,7 +698,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
      * @return computed result
      * @throws Exception if unable to compute a result
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
       try {
         TablePage tablePage = processDataRows(dataRows);
         dataRows = null;
@@ -733,7 +734,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
      * @return computed result
      * @throws Exception if unable to compute a result
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
       while (!processingComplete || blockletProcessingCount.get() > 0) {
         TablePage tablePage = null;
         try {

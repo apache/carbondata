@@ -42,7 +42,8 @@ public class JsonRowParser implements RowParser {
     this.dataFields = dataFields;
   }
 
-  @Override public Object[] parseRow(Object[] row) {
+  @Override
+  public Object[] parseRow(Object[] row) {
     try {
       return convertJsonToNoDictionaryToBytes((String) row[0]);
     } catch (IOException e) {

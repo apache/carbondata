@@ -102,7 +102,8 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     return (CarbonTable) ObjectSerializationUtil.convertStringToObject(carbonTableStr);
   }
 
-  @Override public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
+  @Override
+  public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
     jobConf.set(DATABASE_NAME, "_dummyDb_" + UUID.randomUUID().toString());
     jobConf.set(TABLE_NAME, "_dummyTable_" + UUID.randomUUID().toString());
     org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
@@ -198,7 +199,8 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     }
   }
 
-  @Override public boolean shouldSkipCombine(Path path, Configuration conf) throws IOException {
+  @Override
+  public boolean shouldSkipCombine(Path path, Configuration conf) throws IOException {
     return true;
   }
 }

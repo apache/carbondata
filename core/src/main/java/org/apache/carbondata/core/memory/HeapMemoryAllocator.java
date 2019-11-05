@@ -59,7 +59,8 @@ public class HeapMemoryAllocator implements MemoryAllocator {
     return shouldPooling && (size >= poolingThresholdBytes);
   }
 
-  @Override public MemoryBlock allocate(long size) throws OutOfMemoryError {
+  @Override
+  public MemoryBlock allocate(long size) throws OutOfMemoryError {
     int numWords = (int) ((size + 7) / 8);
     long alignedSize = numWords * 8L;
     assert (alignedSize >= size);
@@ -87,7 +88,8 @@ public class HeapMemoryAllocator implements MemoryAllocator {
     return new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size, MemoryType.ONHEAP);
   }
 
-  @Override public void free(MemoryBlock memory) {
+  @Override
+  public void free(MemoryBlock memory) {
     final long size = memory.size();
 
     // As an additional layer of defense against use-after-free bugs, we mutate the

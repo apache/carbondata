@@ -28,7 +28,8 @@ public class ColumnUniqueIdGenerator implements ColumnUniqueIdService {
 
   private static ColumnUniqueIdService columnUniqueIdService = new ColumnUniqueIdGenerator();
 
-  @Override public String generateUniqueId(ColumnSchema columnSchema) {
+  @Override
+  public String generateUniqueId(ColumnSchema columnSchema) {
     return UUID.randomUUID().toString();
   }
 

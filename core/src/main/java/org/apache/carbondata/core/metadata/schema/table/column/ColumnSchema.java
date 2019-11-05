@@ -289,7 +289,8 @@ public class ColumnSchema implements Serializable, Writable {
    * hash code method to check get the hashcode based.
    * for generating the hash code only column name and column unique id will considered
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((columnName == null) ? 0 : columnName.hashCode()) +
@@ -304,7 +305,8 @@ public class ColumnSchema implements Serializable, Writable {
   /**
    * Overridden equals method for columnSchema
    */
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }

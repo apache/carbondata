@@ -31,7 +31,8 @@ public class FalseConditionalResolverImpl extends ConditionalFilterResolverImpl 
     super(exp, isExpressionResolve, isIncludeFilter, false);
   }
 
-  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  @Override
+  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
   }
 
   /**
@@ -39,7 +40,8 @@ public class FalseConditionalResolverImpl extends ConditionalFilterResolverImpl 
    * the executer type for the filter resolution, False Expresssion willl not execute anything.
    * it will return empty bitset
    */
-  @Override public FilterExecuterType getFilterExecuterType() {
+  @Override
+  public FilterExecuterType getFilterExecuterType() {
     return FilterExecuterType.FALSE;
   }
 

@@ -93,7 +93,8 @@ public class TaskStatistics implements Serializable {
     return this;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     StringBuilder builder = new StringBuilder();
     printStatisticTable(Arrays.asList(this), builder, "");
     return builder.toString();

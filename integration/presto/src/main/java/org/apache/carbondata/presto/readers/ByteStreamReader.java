@@ -49,15 +49,18 @@ public class ByteStreamReader extends CarbonColumnVectorImpl implements PrestoVe
     this.dictionary = dictionary;
   }
 
-  @Override public Block buildBlock() {
+  @Override
+  public Block buildBlock() {
     return builder.build();
   }
 
-  @Override public void setBatchSize(int batchSize) {
+  @Override
+  public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
 
-  @Override public void putInt(int rowId, int value) {
+  @Override
+  public void putInt(int rowId, int value) {
     Object data = DataTypeUtil
         .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.BYTE);
     if (data != null) {
@@ -67,31 +70,37 @@ public class ByteStreamReader extends CarbonColumnVectorImpl implements PrestoVe
     }
   }
 
-  @Override public void putByte(int rowId, byte value) {
+  @Override
+  public void putByte(int rowId, byte value) {
     type.writeLong(builder, value);
   }
 
-  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+  @Override
+  public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       type.writeLong(builder, src[i]);
     }
   }
 
-  @Override public void putNull(int rowId) {
+  @Override
+  public void putNull(int rowId) {
     builder.appendNull();
   }
 
-  @Override public void putNulls(int rowId, int count) {
+  @Override
+  public void putNulls(int rowId, int count) {
     for (int i = 0; i < count; i++) {
       builder.appendNull();
     }
   }
 
-  @Override public void reset() {
+  @Override
+  public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
   }
 
-  @Override public void putObject(int rowId, Object value) {
+  @Override
+  public void putObject(int rowId, Object value) {
     if (value == null) {
       putNull(rowId);
     } else {

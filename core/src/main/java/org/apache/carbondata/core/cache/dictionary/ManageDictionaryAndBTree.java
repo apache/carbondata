@@ -64,7 +64,8 @@ public class ManageDictionaryAndBTree {
       // sort index file is created with dictionary size appended to it. So all the files
       // with a given column ID need to be listed
       CarbonFile[] listFiles = metadataDir.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile path) {
+        @Override
+        public boolean accept(CarbonFile path) {
           if (path.getName().startsWith(columnSchema.getColumnUniqueId())) {
             return true;
           }

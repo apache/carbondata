@@ -98,7 +98,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     this.fileStatus = fileStatus;
   }
 
-  @Override public boolean createNewFile() {
+  @Override
+  public boolean createNewFile() {
     Path path = fileStatus.getPath();
     FileSystem fs;
     try {
@@ -109,19 +110,23 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     }
   }
 
-  @Override public String getAbsolutePath() {
+  @Override
+  public String getAbsolutePath() {
     return fileStatus.getPath().toString();
   }
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return fileStatus.getPath().getName();
   }
 
-  @Override public boolean isDirectory() {
+  @Override
+  public boolean isDirectory() {
     return fileStatus.isDirectory();
   }
 
-  @Override public boolean exists() {
+  @Override
+  public boolean exists() {
     FileSystem fs;
     try {
       if (null != fileStatus) {
@@ -134,15 +139,18 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return false;
   }
 
-  @Override public String getCanonicalPath() {
+  @Override
+  public String getCanonicalPath() {
     return getAbsolutePath();
   }
 
-  @Override public String getPath() {
+  @Override
+  public String getPath() {
     return getAbsolutePath();
   }
 
-  @Override public long getSize() {
+  @Override
+  public long getSize() {
     return fileStatus.getLen();
   }
 
@@ -174,11 +182,13 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return false;
   }
 
-  @Override public long getLastModifiedTime() {
+  @Override
+  public long getLastModifiedTime() {
     return fileStatus.getModificationTime();
   }
 
-  @Override public boolean setLastModifiedTime(long timestamp) {
+  @Override
+  public boolean setLastModifiedTime(long timestamp) {
     FileSystem fs;
     try {
       if (null != fileStatus) {
@@ -194,7 +204,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   /**
    * This method will delete the data in file data from a given offset
    */
-  @Override public boolean truncate(String fileName, long validDataEndOffset) {
+  @Override
+  public boolean truncate(String fileName, long validDataEndOffset) {
     DataOutputStream dataOutputStream = null;
     DataInputStream dataInputStream = null;
     boolean fileTruncatedSuccessfully = false;
@@ -252,7 +263,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
    * @param endOffset     file length to be compared with current length of file
    * @return whether a file has been modified or not
    */
-  @Override public boolean isFileModified(long fileTimeStamp, long endOffset) {
+  @Override
+  public boolean isFileModified(long fileTimeStamp, long endOffset) {
     boolean isFileModified = false;
     if (getLastModifiedTime() > fileTimeStamp || getSize() > endOffset) {
       isFileModified = true;
@@ -260,7 +272,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return isFileModified;
   }
 
-  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+  @Override
+  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
       int bufferSize, boolean append) throws IOException {
     Path pt = new Path(path);
     FileSystem fileSystem = pt.getFileSystem(FileFactory.getConfiguration());
@@ -279,13 +292,15 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return stream;
   }
 
-  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+  @Override
+  public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
       int bufferSize, Configuration hadoopConf) throws IOException {
     return getDataInputStream(path, fileType, bufferSize,
         CarbonUtil.inferCompressorFromFileName(path), hadoopConf);
   }
 
-  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+  @Override
+  public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
       int bufferSize, String compressor) throws IOException {
     return getDataInputStream(path, fileType, bufferSize, FileFactory.getConfiguration());
   }
@@ -300,7 +315,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
    * @return DataInputStream
    * @throws IOException
    */
-  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+  @Override
+  public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
       int bufferSize, long offset) throws IOException {
     path = path.replace("\\", "/");
     Path pt = new Path(path);
@@ -404,7 +420,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return new DataOutputStream(new BufferedOutputStream(outputStream));
   }
 
-  @Override public boolean isFileExist(String filePath, boolean performFileCheck)
+  @Override
+  public boolean isFileExist(String filePath, boolean performFileCheck)
       throws IOException {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
@@ -416,7 +433,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     }
   }
 
-  @Override public boolean isFileExist(String filePath)
+  @Override
+  public boolean isFileExist(String filePath)
       throws IOException {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
@@ -424,7 +442,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return fs.exists(path);
   }
 
-  @Override public boolean createNewFile(String filePath, FileFactory.FileType fileType)
+  @Override
+  public boolean createNewFile(String filePath, FileFactory.FileType fileType)
       throws IOException {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
@@ -451,7 +470,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     }
   }
 
-  @Override public boolean deleteFile(String filePath, FileFactory.FileType fileType)
+  @Override
+  public boolean deleteFile(String filePath, FileFactory.FileType fileType)
       throws IOException {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
@@ -459,7 +479,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return fs.delete(path, true);
   }
 
-  @Override public boolean mkdirs(String filePath)
+  @Override
+  public boolean mkdirs(String filePath)
       throws IOException {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
@@ -476,7 +497,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return fs.append(pt);
   }
 
-  @Override public boolean createNewLockFile(String filePath, FileFactory.FileType fileType)
+  @Override
+  public boolean createNewLockFile(String filePath, FileFactory.FileType fileType)
       throws IOException {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);

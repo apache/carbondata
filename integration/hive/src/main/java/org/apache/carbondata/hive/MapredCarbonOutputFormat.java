@@ -43,13 +43,15 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
     return null;
   }
 
-  @Override public void checkOutputSpecs(FileSystem fileSystem, JobConf jobConf)
+  @Override
+  public void checkOutputSpecs(FileSystem fileSystem, JobConf jobConf)
       throws IOException {
     org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
     super.checkOutputSpecs(jobContext);
   }
 
-  @Override public FileSinkOperator.RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath,
+  @Override
+  public FileSinkOperator.RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath,
       Class<? extends Writable> valueClass, boolean isCompressed, Properties tableProperties,
       Progressable progress) throws IOException {
     return null;

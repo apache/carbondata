@@ -85,7 +85,8 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    * @param data             data to filed
    * @return how many bytes was copied
    */
-  @Override public int fillRawData(int rowId, int offset, byte[] data) {
+  @Override
+  public int fillRawData(int rowId, int offset, byte[] data) {
     dataChunkStore.fillRow(rowId, data, offset);
     return dataChunkStore.getColumnValueSize();
   }
@@ -98,7 +99,8 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    * @param outputSurrogateKey
    * @return
    */
-  @Override public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey) {
+  @Override
+  public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey) {
     outputSurrogateKey[chunkIndex] = dataChunkStore.getSurrogate(rowId);
     return chunkIndex + 1;
   }
@@ -110,7 +112,8 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    * @param chunkIndex
    * @return next column index
    */
-  @Override public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
+  @Override
+  public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
@@ -149,7 +152,8 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    * @param chunkIndex
    * @return next column index
    */
-  @Override public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo,
+  @Override
+  public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo,
       int chunkIndex) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     int offset = columnVectorInfo.offset;

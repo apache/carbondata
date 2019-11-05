@@ -61,7 +61,8 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
   /**
    * Compare
    */
-  @Override public int compareTo(CarbonDictionarySortModel o) {
+  @Override
+  public int compareTo(CarbonDictionarySortModel o) {
     if (dataType == DataTypes.SHORT ||
         dataType == DataTypes.INT ||
         dataType == DataTypes.LONG ||
@@ -126,14 +127,16 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
   /**
    * @see Object#hashCode()
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return ((memberValue == null) ? 0 : memberValue.hashCode());
   }
 
   /**
    * @see Object#equals(Object)
    */
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (obj instanceof CarbonDictionarySortModel) {
       if (this == obj) {
         return true;

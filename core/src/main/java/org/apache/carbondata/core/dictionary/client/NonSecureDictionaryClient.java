@@ -49,7 +49,8 @@ public class NonSecureDictionaryClient implements DictionaryClient {
    * @param address
    * @param port
    */
-  @Override public void startClient(String secretKey, String address, int port,
+  @Override
+  public void startClient(String secretKey, String address, int port,
       boolean encryptSecureServer) {
     LOGGER.info("Starting client on " + address + " " + port);
     long start = System.currentTimeMillis();
@@ -58,7 +59,8 @@ public class NonSecureDictionaryClient implements DictionaryClient {
     Bootstrap clientBootstrap = new Bootstrap();
     clientBootstrap.group(workerGroup).channel(NioSocketChannel.class)
         .handler(new ChannelInitializer<SocketChannel>() {
-          @Override public void initChannel(SocketChannel ch) throws Exception {
+          @Override
+          public void initChannel(SocketChannel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
             // Based on length provided at header, it collects all packets
             pipeline
@@ -86,7 +88,8 @@ public class NonSecureDictionaryClient implements DictionaryClient {
   /**
    * shutdown dictionary client
    */
-  @Override public void shutDown() {
+  @Override
+  public void shutDown() {
     workerGroup.shutdownGracefully();
     try {
       workerGroup.terminationFuture().sync();

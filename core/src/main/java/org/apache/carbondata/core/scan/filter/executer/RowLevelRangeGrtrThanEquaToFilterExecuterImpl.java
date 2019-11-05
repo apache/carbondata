@@ -113,7 +113,8 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     }
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+  @Override
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
       boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;

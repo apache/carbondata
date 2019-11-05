@@ -122,7 +122,8 @@ public class CarbonDimension extends CarbonColumn {
   /**
    * to generate the hash code for this class
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((columnSchema == null) ? 0 : columnSchema.hashCode());
@@ -132,7 +133,8 @@ public class CarbonDimension extends CarbonColumn {
   /**
    * to check whether to dimension are equal or not
    */
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }

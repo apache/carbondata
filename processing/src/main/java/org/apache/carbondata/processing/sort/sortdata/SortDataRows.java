@@ -89,7 +89,8 @@ public class SortDataRows {
     // observer of writing file in thread
     this.threadStatusObserver = new ThreadStatusObserver();
     this.reUsableByteArrayDataOutputStream = new ThreadLocal<ReUsableByteArrayDataOutputStream>() {
-      @Override protected ReUsableByteArrayDataOutputStream initialValue() {
+      @Override
+      protected ReUsableByteArrayDataOutputStream initialValue() {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         return new ReUsableByteArrayDataOutputStream(byteStream);
       }

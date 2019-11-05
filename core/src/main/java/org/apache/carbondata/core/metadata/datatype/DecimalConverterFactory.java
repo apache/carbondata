@@ -94,16 +94,19 @@ public final class DecimalConverterFactory {
       this.scale = scale;
     }
 
-    @Override public Object convert(BigDecimal decimal) {
+    @Override
+    public Object convert(BigDecimal decimal) {
       long longValue = decimal.unscaledValue().longValue();
       return (int) longValue;
     }
 
-    @Override public BigDecimal getDecimal(Object valueToBeConverted) {
+    @Override
+    public BigDecimal getDecimal(Object valueToBeConverted) {
       return BigDecimal.valueOf((Long) valueToBeConverted, scale);
     }
 
-    @Override public void fillVector(Object valuesToBeConverted, int size,
+    @Override
+    public void fillVector(Object valuesToBeConverted, int size,
         ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
       // TODO we need to find way to directly set to vector with out conversion. This way is very
       // inefficient.
@@ -186,11 +189,13 @@ public final class DecimalConverterFactory {
       }
     }
 
-    @Override public int getSize() {
+    @Override
+    public int getSize() {
       return 4;
     }
 
-    @Override public DecimalConverterType getDecimalConverterType() {
+    @Override
+    public DecimalConverterType getDecimalConverterType() {
       return DecimalConverterType.DECIMAL_INT;
     }
   }
@@ -201,19 +206,23 @@ public final class DecimalConverterFactory {
       super(scale);
     }
 
-    @Override public Object convert(BigDecimal decimal) {
+    @Override
+    public Object convert(BigDecimal decimal) {
       return decimal.unscaledValue().longValue();
     }
 
-    @Override public BigDecimal getDecimal(Object valueToBeConverted) {
+    @Override
+    public BigDecimal getDecimal(Object valueToBeConverted) {
       return BigDecimal.valueOf((Long) valueToBeConverted, scale);
     }
 
-    @Override public int getSize() {
+    @Override
+    public int getSize() {
       return 8;
     }
 
-    @Override public DecimalConverterType getDecimalConverterType() {
+    @Override
+    public DecimalConverterType getDecimalConverterType() {
       return DecimalConverterType.DECIMAL_LONG;
     }
   }
@@ -231,7 +240,8 @@ public final class DecimalConverterFactory {
       this.numBytes = minBytesForPrecision[precision];
     }
 
-    @Override public Object convert(BigDecimal decimal) {
+    @Override
+    public Object convert(BigDecimal decimal) {
       byte[] bytes = decimal.unscaledValue().toByteArray();
       byte[] fixedLengthBytes = null;
       if (bytes.length == numBytes) {
@@ -257,12 +267,14 @@ public final class DecimalConverterFactory {
       return value;
     }
 
-    @Override public BigDecimal getDecimal(Object valueToBeConverted) {
+    @Override
+    public BigDecimal getDecimal(Object valueToBeConverted) {
       BigInteger bigInteger = new BigInteger((byte[]) valueToBeConverted);
       return new BigDecimal(bigInteger, scale);
     }
 
-    @Override public void fillVector(Object valuesToBeConverted, int size,
+    @Override
+    public void fillVector(Object valuesToBeConverted, int size,
         ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
       CarbonColumnVector vector = getCarbonColumnVector(vectorInfo, nullBitSet);
       int precision = vectorInfo.measure.getMeasure().getPrecision();
@@ -287,11 +299,13 @@ public final class DecimalConverterFactory {
       }
     }
 
-    @Override public int getSize() {
+    @Override
+    public int getSize() {
       return numBytes;
     }
 
-    @Override public DecimalConverterType getDecimalConverterType() {
+    @Override
+    public DecimalConverterType getDecimalConverterType() {
       return DecimalConverterType.DECIMAL_UNSCALED;
     }
   }
@@ -300,15 +314,18 @@ public final class DecimalConverterFactory {
 
     public static LVBytesDecimalConverter INSTANCE = new LVBytesDecimalConverter();
 
-    @Override public Object convert(BigDecimal decimal) {
+    @Override
+    public Object convert(BigDecimal decimal) {
       return DataTypeUtil.bigDecimalToByte(decimal);
     }
 
-    @Override public BigDecimal getDecimal(Object valueToBeConverted) {
+    @Override
+    public BigDecimal getDecimal(Object valueToBeConverted) {
       return DataTypeUtil.byteToBigDecimal((byte[]) valueToBeConverted);
     }
 
-    @Override public void fillVector(Object valuesToBeConverted, int size,
+    @Override
+    public void fillVector(Object valuesToBeConverted, int size,
         ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
       CarbonColumnVector vector = getCarbonColumnVector(vectorInfo, nullBitSet);
       int precision = vectorInfo.measure.getMeasure().getPrecision();
@@ -329,11 +346,13 @@ public final class DecimalConverterFactory {
       }
     }
 
-    @Override public int getSize() {
+    @Override
+    public int getSize() {
       return -1;
     }
 
-    @Override public DecimalConverterType getDecimalConverterType() {
+    @Override
+    public DecimalConverterType getDecimalConverterType() {
       return DecimalConverterType.DECIMAL_LV;
     }
   }

@@ -177,7 +177,8 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
     CarbonFile carbonFile =
         FileFactory.getCarbonFile(CarbonProperties.getInstance().getSystemFolderLocation());
     CarbonFile[] carbonFiles = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
+      @Override
+      public boolean accept(CarbonFile file) {
         return file.getName().endsWith(".dmschema");
       }
     });

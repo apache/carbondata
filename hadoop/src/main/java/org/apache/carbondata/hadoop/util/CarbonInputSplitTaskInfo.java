@@ -49,7 +49,8 @@ public class CarbonInputSplitTaskInfo implements Distributable {
     this.carbonBlockInfoList = carbonSplitListInfo;
   }
 
-  @Override public String[] getLocations() {
+  @Override
+  public String[] getLocations() {
     Set<String> locations = new HashSet<String>();
     for (CarbonInputSplit splitInfo : carbonBlockInfoList) {
       try {
@@ -63,11 +64,13 @@ public class CarbonInputSplitTaskInfo implements Distributable {
     return nodes.toArray(new String[nodes.size()]);
   }
 
-  @Override public int compareTo(Distributable o) {
+  @Override
+  public int compareTo(Distributable o) {
     return taskId.compareTo(((CarbonInputSplitTaskInfo) o).getTaskId());
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -80,7 +83,8 @@ public class CarbonInputSplitTaskInfo implements Distributable {
     return null != taskId ? 0 == taskId.compareTo(that.taskId) : null == that.taskId;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return null != taskId ? taskId.hashCode() : 0;
   }
 

@@ -231,7 +231,8 @@ public class CarbonTableInputFormatTest {
       fileWriter.newLine();
     }
 
-    @Override public void cleanup(Context context) throws IOException, InterruptedException {
+    @Override
+    public void cleanup(Context context) throws IOException, InterruptedException {
       super.cleanup(context);
       fileWriter.close();
       context.write(new Text(), new Text());

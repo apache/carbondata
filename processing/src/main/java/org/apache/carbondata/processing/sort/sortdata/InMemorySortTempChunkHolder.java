@@ -102,11 +102,13 @@ public class InMemorySortTempChunkHolder extends SortTempFileChunkHolder {
     return this.rawResultIterator.hasNext();
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     return super.equals(obj);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int hash = rawResultIterator.hashCode();
     hash += segmentProperties.hashCode();
     return hash;

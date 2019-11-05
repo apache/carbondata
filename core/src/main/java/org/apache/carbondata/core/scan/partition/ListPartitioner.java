@@ -63,11 +63,13 @@ public class ListPartitioner implements Partitioner {
    * add extra default partition
    * @return
    */
-  @Override public int numPartitions() {
+  @Override
+  public int numPartitions() {
     return numPartitions + 1;
   }
 
-  @Override public int getPartition(Object key) {
+  @Override
+  public int getPartition(Object key) {
     Integer partition = map.get(key);
     if (partition == null) {
       return 0;

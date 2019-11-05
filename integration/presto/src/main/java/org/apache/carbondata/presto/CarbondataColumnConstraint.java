@@ -62,11 +62,13 @@ public class CarbondataColumnConstraint {
     this.domain = domain;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(name, domain, invertedindexed);
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -80,7 +82,8 @@ public class CarbondataColumnConstraint {
         && Objects.equals(this.invertedindexed, other.invertedindexed);
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return toStringHelper(this).add("name", this.name).add("invertedindexed", this.invertedindexed)
         .add("domain", this.domain).toString();
   }

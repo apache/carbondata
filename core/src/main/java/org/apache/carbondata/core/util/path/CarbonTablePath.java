@@ -199,7 +199,8 @@ public class CarbonTablePath {
       carbonFile = FileFactory.getCarbonFile(metaPath);
     }
     CarbonFile[] schemaFile = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
+      @Override
+      public boolean accept(CarbonFile file) {
         return file.getName().startsWith(SCHEMA_FILE);
       }
     });
@@ -240,7 +241,8 @@ public class CarbonTablePath {
         FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir));
 
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
+      @Override
+      public boolean accept(CarbonFile file) {
         if (bucketNumber.equals("-1")) {
           return file.getName().startsWith(taskId) && file.getName().endsWith(INDEX_FILE_EXT);
         }
@@ -575,7 +577,8 @@ public class CarbonTablePath {
       final String columnUniqueId) {
     if (null != sortIndexDir) {
       return sortIndexDir.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile file) {
+        @Override
+        public boolean accept(CarbonFile file) {
           return file.getName().startsWith(columnUniqueId) && file.getName()
               .endsWith(SORT_INDEX_EXT);
         }

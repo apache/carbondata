@@ -100,7 +100,8 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
       this.index = index;
     }
 
-    @Override public int getHash(Object[] value) {
+    @Override
+    public int getHash(Object[] value) {
       return value[index] != null ? value[index].hashCode() : 0;
     }
   }

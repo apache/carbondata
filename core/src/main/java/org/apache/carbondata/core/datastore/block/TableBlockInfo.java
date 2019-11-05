@@ -121,7 +121,8 @@ public class TableBlockInfo implements Distributable, Serializable {
    */
   public static final Comparator<Distributable> DATA_SIZE_DESC_COMPARATOR =
       new Comparator<Distributable>() {
-        @Override public int compare(Distributable o1, Distributable o2) {
+        @Override
+        public int compare(Distributable o1, Distributable o2) {
           long diff =
               ((TableBlockInfo) o1).getBlockLength() - ((TableBlockInfo) o2).getBlockLength();
           return diff < 0 ? 1 : (diff == 0 ? 0 : -1);
@@ -278,7 +279,8 @@ public class TableBlockInfo implements Distributable, Serializable {
    *
    * @see java.lang.Object#equals(java.lang.Object)
    */
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -319,7 +321,8 @@ public class TableBlockInfo implements Distributable, Serializable {
    * is same 2. compare task id if task id is same 3. compare offsets of the
    * block
    */
-  @Override public int compareTo(Distributable other) {
+  @Override
+  public int compareTo(Distributable other) {
 
     int compareResult = 0;
     // get the segment id
@@ -379,7 +382,8 @@ public class TableBlockInfo implements Distributable, Serializable {
     return 0;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = filePath.hashCode();
     result = 31 * result + (int) (blockOffset ^ (blockOffset >>> 32));
     result = 31 * result + (int) (blockLength ^ (blockLength >>> 32));
@@ -388,7 +392,8 @@ public class TableBlockInfo implements Distributable, Serializable {
     return result;
   }
 
-  @Override public String[] getLocations() {
+  @Override
+  public String[] getLocations() {
     return locations;
   }
 

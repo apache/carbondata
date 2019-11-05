@@ -36,7 +36,9 @@ public class NonSecureDictionaryServiceProvider implements DictionaryServiceProv
   //    return NonSecureDictionaryServer.getInstance(port);
   //  }
 
-  @Override public DictionaryClient getDictionaryClient() {
+
+  @Override
+  public DictionaryClient getDictionaryClient() {
     return new NonSecureDictionaryClient();
   }
 }

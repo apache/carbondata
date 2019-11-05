@@ -91,7 +91,8 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    * @param data              data to filed
    * @return how many bytes was copied
    */
-  @Override public int fillRawData(int rowId, int offset, byte[] data) {
+  @Override
+  public int fillRawData(int rowId, int offset, byte[] data) {
     // no required in this case because this column chunk is not the part if
     // mdkey
     return 0;
@@ -105,14 +106,16 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    * @param outputSurrogateKey
    * @return
    */
-  @Override public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey) {
+  @Override
+  public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey) {
     return chunkIndex + 1;
   }
 
   /**
    * @return whether column is dictionary column or not
    */
-  @Override public boolean isNoDicitionaryColumn() {
+  @Override
+  public boolean isNoDicitionaryColumn() {
     return true;
   }
 
@@ -123,7 +126,8 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    * @param chunkIndex
    * @return next column index
    */
-  @Override public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
+  @Override
+  public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     CarbonColumnVector vector = columnVectorInfo.vector;
     int offset = columnVectorInfo.offset;
@@ -145,7 +149,8 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    * @param chunkIndex
    * @return next column index
    */
-  @Override public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo,
+  @Override
+  public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo,
       int chunkIndex) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     CarbonColumnVector vector = columnVectorInfo.vector;

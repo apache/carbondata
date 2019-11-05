@@ -32,12 +32,14 @@ public class UnsafeIntSortDataFormat
     this.page = page;
   }
 
-  @Override public UnsafeCarbonRow getKey(IntPointerBuffer data, int pos) {
+  @Override
+  public UnsafeCarbonRow getKey(IntPointerBuffer data, int pos) {
     // Since we re-use keys, this method shouldn't be called.
     throw new UnsupportedOperationException();
   }
 
-  @Override public UnsafeCarbonRow newKey() {
+  @Override
+  public UnsafeCarbonRow newKey() {
     return new UnsafeCarbonRow();
   }
 
@@ -47,7 +49,8 @@ public class UnsafeIntSortDataFormat
     return reuse;
   }
 
-  @Override public void swap(IntPointerBuffer data, int pos0, int pos1) {
+  @Override
+  public void swap(IntPointerBuffer data, int pos0, int pos1) {
     int tempPointer = data.get(pos0);
     data.set(pos0, data.get(pos1));
     data.set(pos1, tempPointer);
@@ -64,7 +67,8 @@ public class UnsafeIntSortDataFormat
     System.arraycopy(src.getPointerBlock(), srcPos, dst.getPointerBlock(), dstPos, length);
   }
 
-  @Override public IntPointerBuffer allocate(int length) {
+  @Override
+  public IntPointerBuffer allocate(int length) {
     return new IntPointerBuffer(length);
   }
 }

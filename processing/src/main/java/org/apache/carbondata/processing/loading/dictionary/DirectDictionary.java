@@ -55,7 +55,8 @@ public class DirectDictionary implements BiDictionary<Integer, Object> {
     return dictionaryGenerator.getValueFromSurrogate(key);
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return Integer.MAX_VALUE;
   }
 }

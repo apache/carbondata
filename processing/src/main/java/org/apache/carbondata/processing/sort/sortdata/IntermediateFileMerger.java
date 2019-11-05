@@ -88,7 +88,8 @@ public class IntermediateFileMerger implements Callable<Void> {
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
   }
 
-  @Override public Void call() throws Exception {
+  @Override
+  public Void call() throws Exception {
     long intermediateMergeStartTime = System.currentTimeMillis();
     int fileConterConst = fileCounter;
     try {

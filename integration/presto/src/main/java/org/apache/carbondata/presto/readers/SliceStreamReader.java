@@ -65,7 +65,8 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     this.builder = type.createBlockBuilder(null, batchSize);
   }
 
-  @Override public Block buildBlock() {
+  @Override
+  public Block buildBlock() {
     if (dictionaryBlock == null) {
       return builder.build();
     } else {
@@ -79,7 +80,8 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     }
   }
 
-  @Override public void setDictionary(CarbonDictionary dictionary) {
+  @Override
+  public void setDictionary(CarbonDictionary dictionary) {
     super.setDictionary(dictionary);
     if (dictionary == null) {
       dictionaryBlock = null;
@@ -109,33 +111,39 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
         Slices.wrappedBuffer(singleArrayDictValues), dictOffsets, Optional.of(nulls));
     this.isLocalDict = true;
   }
-  @Override public void setBatchSize(int batchSize) {
+  @Override
+  public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
 
 
 
-  @Override public void putByteArray(int rowId, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, byte[] value) {
     type.writeSlice(builder, wrappedBuffer(value));
   }
 
-  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, int offset, int length, byte[] value) {
     type.writeSlice(builder, wrappedBuffer(value), offset, length);
   }
 
-  @Override public void putByteArray(int rowId, int count, byte[] value) {
+  @Override
+  public void putByteArray(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
       type.writeSlice(builder, wrappedBuffer(value));
     }
   }
 
-  @Override public void putNull(int rowId) {
+  @Override
+  public void putNull(int rowId) {
     if (dictionaryBlock == null) {
       builder.appendNull();
     }
   }
 
-  @Override public void putNulls(int rowId, int count) {
+  @Override
+  public void putNulls(int rowId, int count) {
     if (dictionaryBlock == null) {
       for (int i = 0; i < count; ++i) {
         builder.appendNull();
@@ -143,11 +151,13 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     }
   }
 
-  @Override public void reset() {
+  @Override
+  public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
   }
 
-  @Override public void putInt(int rowId, int value) {
+  @Override
+  public void putInt(int rowId, int value) {
     Object data = DataTypeUtil
         .getDataBasedOnDataType(globalDictionary.getDictionaryValueForKey(value), DataTypes.STRING);
     if (Objects.isNull(data)) {
@@ -158,7 +168,8 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     }
   }
 
-  @Override public void putObject(int rowId, Object value) {
+  @Override
+  public void putObject(int rowId, Object value) {
     if (value == null) {
       putNull(rowId);
     } else {

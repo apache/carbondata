@@ -95,7 +95,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     this.carbonFactHandlers = new CopyOnWriteArrayList<>();
   }
 
-  @Override public void initialize() throws IOException {
+  @Override
+  public void initialize() throws IOException {
     super.initialize();
     child.initialize();
   }
@@ -108,7 +109,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     return storeLocation;
   }
 
-  @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
+  @Override
+  public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     final Iterator<CarbonRowBatch>[] iterators = child.execute();
     tableIdentifier = configuration.getTableIdentifier().getCarbonTableIdentifier();
     tableName = tableIdentifier.getTableName();
@@ -185,7 +187,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   }
 
-  @Override protected String getStepName() {
+  @Override
+  protected String getStepName() {
     return "Data Writer";
   }
 
@@ -326,7 +329,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       this.iteratorIndex = iteratorIndex;
     }
 
-    @Override public void run() {
+    @Override
+    public void run() {
       try {
         doExecute(this.iterator, iteratorIndex);
       } catch (IOException e) {
@@ -336,7 +340,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     }
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     if (!closed) {
       super.close();
       if (null != executorService) {

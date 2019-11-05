@@ -208,7 +208,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
    * @param pageNumber              number
    * @return DimensionColumnPage
    */
-  @Override public DimensionColumnPage decodeColumnPage(DimensionRawColumnChunk rawColumnPage,
+  @Override
+  public DimensionColumnPage decodeColumnPage(DimensionRawColumnChunk rawColumnPage,
       int pageNumber, ReusableDataBuffer reusableDataBuffer) throws IOException, MemoryException {
     return decodeColumnPage(rawColumnPage, pageNumber, null, reusableDataBuffer);
   }

@@ -32,65 +32,80 @@ public class DummyStatsCollector implements ColumnPageStatsCollector {
    * dummy stats used to sync with encoder
    */
   protected static final SimpleStatsResult DUMMY_STATS = new SimpleStatsResult() {
-    @Override public Object getMin() {
+    @Override
+    public Object getMin() {
       return new byte[0];
     }
 
-    @Override public Object getMax() {
+    @Override
+    public Object getMax() {
       return new byte[0];
     }
 
-    @Override public int getDecimalCount() {
+    @Override
+    public int getDecimalCount() {
       return 0;
     }
 
-    @Override public DataType getDataType() {
+    @Override
+    public DataType getDataType() {
       return BYTE_ARRAY;
     }
 
-    @Override public boolean writeMinMax() {
+    @Override
+    public boolean writeMinMax() {
       return true;
     }
 
   };
 
-  @Override public void updateNull(int rowId) {
+  @Override
+  public void updateNull(int rowId) {
 
   }
 
-  @Override public void update(byte value) {
+  @Override
+  public void update(byte value) {
 
   }
 
-  @Override public void update(short value) {
+  @Override
+  public void update(short value) {
 
   }
 
-  @Override public void update(int value) {
+  @Override
+  public void update(int value) {
 
   }
 
-  @Override public void update(long value) {
+  @Override
+  public void update(long value) {
 
   }
 
-  @Override public void update(double value) {
+  @Override
+  public void update(double value) {
 
   }
 
-  @Override public void update(float value) {
+  @Override
+  public void update(float value) {
 
   }
 
-  @Override public void update(BigDecimal value) {
+  @Override
+  public void update(BigDecimal value) {
 
   }
 
-  @Override public void update(byte[] value) {
+  @Override
+  public void update(byte[] value) {
 
   }
 
-  @Override public SimpleStatsResult getPageStats() {
+  @Override
+  public SimpleStatsResult getPageStats() {
     return DUMMY_STATS;
   }
 }

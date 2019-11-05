@@ -60,7 +60,8 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Text> {
 
   public static final String RECORD_IDENTIFIER = "json.input.format.record.identifier";
 
-  @Override public RecordReader<LongWritable, Text> createRecordReader(InputSplit split,
+  @Override
+  public RecordReader<LongWritable, Text> createRecordReader(InputSplit split,
       TaskAttemptContext context) throws IOException, InterruptedException {
     RecordReader<LongWritable, Text> rdr;
 
@@ -85,14 +86,16 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Text> {
 
     private Text outValue = new Text();
 
-    @Override public void initialize(InputSplit split, TaskAttemptContext context)
+    @Override
+    public void initialize(InputSplit split, TaskAttemptContext context)
         throws IOException {
 
       reader = new LineRecordReader();
       reader.initialize(split, context);
     }
 
-    @Override public boolean nextKeyValue() throws IOException {
+    @Override
+    public boolean nextKeyValue() throws IOException {
       if (reader.nextKeyValue()) {
         outValue.set(reader.getCurrentValue());
         outKey.set(reader.getCurrentKey().get());
@@ -102,19 +105,23 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Text> {
       }
     }
 
-    @Override public void close() throws IOException {
+    @Override
+    public void close() throws IOException {
       reader.close();
     }
 
-    @Override public float getProgress() throws IOException {
+    @Override
+    public float getProgress() throws IOException {
       return reader.getProgress();
     }
 
-    @Override public LongWritable getCurrentKey() {
+    @Override
+    public LongWritable getCurrentKey() {
       return outKey;
     }
 
-    @Override public Text getCurrentValue() {
+    @Override
+    public Text getCurrentValue() {
       return outValue;
     }
   }
@@ -144,7 +151,8 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Text> {
 
     private LongWritable outKey = new LongWritable();
 
-    @Override public void initialize(InputSplit split, TaskAttemptContext context)
+    @Override
+    public void initialize(InputSplit split, TaskAttemptContext context)
         throws IOException, InterruptedException {
 
       this.identifier = JsonInputFormat.getRecordIdentifier(context.getConfiguration());
@@ -175,7 +183,8 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Text> {
       rdr = new JsonStreamReader(identifier, new BufferedInputStream(strm));
     }
 
-    @Override public boolean nextKeyValue() throws IOException {
+    @Override
+    public boolean nextKeyValue() throws IOException {
       boolean retVal = false;
       boolean keepGoing;
       do {
@@ -195,19 +204,23 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Text> {
       return retVal;
     }
 
-    @Override public void close() throws IOException {
+    @Override
+    public void close() throws IOException {
       rdr.close();
     }
 
-    @Override public float getProgress() {
+    @Override
+    public float getProgress() {
       return (float) rdr.getBytesRead() / toRead;
     }
 
-    @Override public LongWritable getCurrentKey() {
+    @Override
+    public LongWritable getCurrentKey() {
       return outKey;
     }
 
-    @Override public Text getCurrentValue() {
+    @Override
+    public Text getCurrentValue() {
       return outJson;
     }
   }

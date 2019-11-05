@@ -69,7 +69,8 @@ public class CarbonRow implements Serializable {
     data[ordinal] = value;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return Arrays.toString(data);
   }
 

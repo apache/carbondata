@@ -47,7 +47,8 @@ public class CarbonRowBatch extends CarbonIterator<CarbonRow> {
     return size;
   }
 
-  @Override public boolean hasNext() {
+  @Override
+  public boolean hasNext() {
     return index < size;
   }
 
@@ -59,7 +60,8 @@ public class CarbonRowBatch extends CarbonIterator<CarbonRow> {
     throw new NoSuchElementException("no more elements to iterate");
   }
 
-  @Override public void remove() {
+  @Override
+  public void remove() {
     rowBatch = (CarbonRow[]) ArrayUtils.remove(rowBatch, index - 1);
     --size;
     --index;

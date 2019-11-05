@@ -369,7 +369,8 @@ public class AggregationDataMapSchema extends DataMapSchema {
         DataMapClassProvider.TIMESERIES : DataMapClassProvider.PREAGGREGATE;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
@@ -377,7 +378,8 @@ public class AggregationDataMapSchema extends DataMapSchema {
     return that == this;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return super.hashCode();
   }
 }

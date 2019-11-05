@@ -93,7 +93,8 @@ public class ConcurrentSdkWriterTest {
       this.writer = writer;
     }
 
-    @Override public void run() {
+    @Override
+    public void run() {
       try {
         for (int i = 0; i < recordsPerItr; i++) {
           writer.write(new String[] { "robot" + (i % 10), String.valueOf(i),

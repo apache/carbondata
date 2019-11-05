@@ -83,7 +83,8 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
    * @param path path of the file
    * @return true if supported by the custom
    */
-  @Override public boolean isPathSupported(String path) {
+  @Override
+  public boolean isPathSupported(String path) {
     initializeCustomFileProvider();
     if (customFileTypeProvider != null) {
       return customFileTypeProvider.isPathSupported(path);

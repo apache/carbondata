@@ -93,7 +93,8 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
     }
   }
 
-  @Override public void convert(CarbonRow row, BadRecordLogHolder logHolder)
+  @Override
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder)
       throws CarbonDataLoadingException {
     try {
       row.update(convert(row.getString(index), logHolder), index);
@@ -135,7 +136,8 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
   /**
    * Method to clear out the dictionary cache.
    */
-  @Override public void clear() {
+  @Override
+  public void clear() {
     CarbonUtil.clearDictionaryCache(dictionary);
   }
 

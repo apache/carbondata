@@ -100,7 +100,8 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    *
    * @param rowId Inverted index
    */
-  @Override public byte[] getRow(int rowId) {
+  @Override
+  public byte[] getRow(int rowId) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplictSorted) {
       rowId = invertedIndexReverse[rowId];
@@ -120,7 +121,8 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    * @param index row id
    * @return surrogate key
    */
-  @Override public int getSurrogate(int index) {
+  @Override
+  public int getSurrogate(int index) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplictSorted) {
       index = invertedIndexReverse[index];
@@ -137,7 +139,8 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    * @param buffer   buffer in which data will be filled
    * @param offset off the of the buffer
    */
-  @Override public void fillRow(int rowId, byte[] buffer, int offset) {
+  @Override
+  public void fillRow(int rowId, byte[] buffer, int offset) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplictSorted) {
       rowId = invertedIndexReverse[rowId];
@@ -150,7 +153,8 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
   /**
    * @return size of each column value
    */
-  @Override public int getColumnValueSize() {
+  @Override
+  public int getColumnValueSize() {
     return columnValueSize;
   }
 
@@ -161,7 +165,8 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    * @param compareValue value of to be compared
    * @return compare result
    */
-  @Override public int compareTo(int rowId, byte[] compareValue) {
+  @Override
+  public int compareTo(int rowId, byte[] compareValue) {
     return ByteUtil.UnsafeComparer.INSTANCE
         .compareTo(data, rowId * columnValueSize, columnValueSize, compareValue, 0,
             columnValueSize);

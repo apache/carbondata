@@ -74,7 +74,8 @@ public class ColumnDictionaryChunkIterator extends CarbonIterator {
    *
    * @return {@code true} if the iteration has more elements
    */
-  @Override public boolean hasNext() {
+  @Override
+  public boolean hasNext() {
     return (currentSize < size);
   }
 
@@ -85,7 +86,8 @@ public class ColumnDictionaryChunkIterator extends CarbonIterator {
    *
    * @return the next element in the iteration
    */
-  @Override public byte[] next() {
+  @Override
+  public byte[] next() {
     if (iteratorIndex >= columnDictionaryChunks.get(outerIndex).getValues().size()) {
       iteratorIndex = 0;
       outerIndex++;

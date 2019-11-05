@@ -47,7 +47,8 @@ public class SchemaBasedRowUpdater implements SortTempRowUpdater {
     this.isUpdateNonDictDims = isUpdateNonDictDims;
   }
 
-  @Override public void updateSortTempRow(IntermediateSortTempRow intermediateSortTempRow) {
+  @Override
+  public void updateSortTempRow(IntermediateSortTempRow intermediateSortTempRow) {
     int[] dictSortDims = intermediateSortTempRow.getDictSortDims();
     if (isUpdateDictDims) {
       int[] dimArrayNew = new int[intermediateSortTempRow.getDictSortDims().length];
@@ -68,7 +69,8 @@ public class SchemaBasedRowUpdater implements SortTempRowUpdater {
     intermediateSortTempRow.setNoDictData(noDictSortDims);
   }
 
-  @Override public void updateOutputRow(Object[] out, int[] dimArray, Object[] noDictArray,
+  @Override
+  public void updateOutputRow(Object[] out, int[] dimArray, Object[] noDictArray,
       Object[] measureArray) {
     if (isUpdateDictDims) {
       int[] dimArrayNew = new int[dimArray.length];

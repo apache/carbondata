@@ -113,7 +113,8 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     }
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+  @Override
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
       boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     byte[] minValue = null;
@@ -597,7 +598,8 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     return bitSet;
   }
 
-  @Override public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks)
+  @Override
+  public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws IOException {
     if (isDimensionPresentInCurrentBlock[0]) {
       if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {

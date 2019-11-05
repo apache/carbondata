@@ -49,7 +49,8 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
     return new BigDecimal(data.toString());
   }
 
-  @Override public Object convertFromDecimalToBigDecimal(Object data) {
+  @Override
+  public Object convertFromDecimalToBigDecimal(Object data) {
     return convertFromBigDecimalToDecimal(data);
   }
 

@@ -43,7 +43,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     this.parentName = parentName;
   }
 
-  @Override public void addChildren(GenericQueryType newChild) {
+  @Override
+  public void addChildren(GenericQueryType newChild) {
     if (this.getName().equals(newChild.getParentName())) {
       this.children.add(newChild);
     } else {
@@ -54,24 +55,29 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
 
   }
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return name;
   }
 
-  @Override public void setName(String name) {
+  @Override
+  public void setName(String name) {
     this.name = name;
   }
 
-  @Override public String getParentName() {
+  @Override
+  public String getParentName() {
     return parentName;
   }
 
-  @Override public void setParentName(String parentName) {
+  @Override
+  public void setParentName(String parentName) {
     this.parentName = parentName;
 
   }
 
-  @Override public int getColsCount() {
+  @Override
+  public int getColsCount() {
     int colsCount = 1;
     for (int i = 0; i < children.size(); i++) {
       colsCount += children.get(i).getColsCount();
@@ -79,7 +85,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     return colsCount;
   }
 
-  @Override public void parseBlocksAndReturnComplexColumnByteArray(
+  @Override
+  public void parseBlocksAndReturnComplexColumnByteArray(
       DimensionRawColumnChunk[] dimensionColumnDataChunks,
       DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
       DataOutputStream dataOutputStream) throws IOException {
@@ -96,7 +103,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     }
   }
 
-  @Override public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
+  @Override
+  public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
       throws IOException {
     readBlockDataChunk(blockChunkHolder);
 
@@ -105,7 +113,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     }
   }
 
-  @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+  @Override
+  public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
     int childLength = dataBuffer.getShort();
     Object[] fields = new Object[childLength];
     for (int i = 0; i < childLength; i++) {
@@ -114,7 +123,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     return DataTypeUtil.getDataTypeConverter().wrapWithGenericRow(fields);
   }
 
-  @Override public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
+  @Override
+  public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
       CarbonDimension child) {
     int childLength;
     if (parent.getOrdinal() < child.getOrdinal()) {
@@ -134,7 +144,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     }
   }
 
-  @Override public Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
+  @Override
+  public Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
       CarbonDimension presentColumn) {
     // Traverse through the Complex Tree and check if the at present column is same as the
     // column present in the child column then fill it up else add null to the column.

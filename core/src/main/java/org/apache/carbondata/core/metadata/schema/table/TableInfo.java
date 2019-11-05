@@ -211,7 +211,8 @@ public class TableInfo implements Serializable, Writable {
   /**
    * to generate the hash code
    */
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((databaseName == null) ? 0 : databaseName.hashCode());
@@ -222,7 +223,8 @@ public class TableInfo implements Serializable, Writable {
   /**
    * Overridden equals method
    */
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -301,7 +303,8 @@ public class TableInfo implements Serializable, Writable {
     out.writeBoolean(isSchemaModified);
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     this.databaseName = in.readUTF();
     this.tableUniqueName = in.readUTF();
     this.factTable = new TableSchema();

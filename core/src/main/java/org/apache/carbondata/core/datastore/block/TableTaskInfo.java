@@ -46,7 +46,8 @@ public class TableTaskInfo implements Distributable {
     this.tableBlockInfoList = tableBlockInfoList;
   }
 
-  @Override public String[] getLocations() {
+  @Override
+  public String[] getLocations() {
     Set<String> locations = new HashSet<String>();
     for (TableBlockInfo tableBlockInfo : tableBlockInfoList) {
       locations.addAll(Arrays.asList(tableBlockInfo.getLocations()));
@@ -56,11 +57,13 @@ public class TableTaskInfo implements Distributable {
     return nodes.toArray(new String[nodes.size()]);
   }
 
-  @Override public int compareTo(Distributable o) {
+  @Override
+  public int compareTo(Distributable o) {
     return taskId.compareTo(((TableTaskInfo)o).getTaskId());
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -76,7 +79,8 @@ public class TableTaskInfo implements Distributable {
     return 0 == taskId.compareTo(((TableTaskInfo)obj).getTaskId());
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((taskId == null) ? 0 : taskId.hashCode());

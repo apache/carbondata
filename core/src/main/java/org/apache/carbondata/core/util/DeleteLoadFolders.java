@@ -126,7 +126,8 @@ public final class DeleteLoadFolders {
               CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
               CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
 
-                @Override public boolean accept(CarbonFile file) {
+                @Override
+                public boolean accept(CarbonFile file) {
                   return (CarbonTablePath.isCarbonDataFile(file.getName()) ||
                       CarbonTablePath.isCarbonIndexFile(file.getName()));
                 }

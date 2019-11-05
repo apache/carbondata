@@ -34,7 +34,8 @@ public class OrFilterImpl implements PartitionFilterIntf {
     this.right = right;
   }
 
-  @Override public BitSet applyFilter(Partitioner partitioner) {
+  @Override
+  public BitSet applyFilter(Partitioner partitioner) {
     BitSet leftBitSet = left.applyFilter(partitioner);
     BitSet rightBitSet = right.applyFilter(partitioner);
     leftBitSet.or(rightBitSet);

@@ -80,7 +80,8 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
     this.dimension = dimension;
   }
 
-  @Override public Integer getOrGenerateKey(String value) throws DictionaryGenerationException {
+  @Override
+  public Integer getOrGenerateKey(String value) throws DictionaryGenerationException {
     Integer dict = getKey(value);
     if (dict == null) {
       dict = generateKey(value);
@@ -88,21 +89,25 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
     return dict;
   }
 
-  @Override public Integer getKey(String value) {
+  @Override
+  public Integer getKey(String value) {
     return incrementalCache.get(value);
   }
 
-  @Override public String getValue(Integer key) {
+  @Override
+  public String getValue(Integer key) {
     return reverseIncrementalCache.get(key);
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     synchronized (lock) {
       return currentDictionarySize;
     }
   }
 
-  @Override public Integer generateKey(String value) throws DictionaryGenerationException {
+  @Override
+  public Integer generateKey(String value) throws DictionaryGenerationException {
     synchronized (lock) {
       Integer dict = incrementalCache.get(value);
       if (dict == null) {
@@ -114,7 +119,8 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
     }
   }
 
-  @Override public void writeDictionaryData() throws IOException {
+  @Override
+  public void writeDictionaryData() throws IOException {
     // initialize params
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     ColumnIdentifier columnIdentifier = dimension.getColumnIdentifier();

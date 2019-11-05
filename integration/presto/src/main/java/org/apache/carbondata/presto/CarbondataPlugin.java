@@ -25,7 +25,8 @@ import com.google.common.collect.ImmutableList;
 
 public class CarbondataPlugin implements Plugin {
 
-  @Override public Iterable<ConnectorFactory> getConnectorFactories() {
+  @Override
+  public Iterable<ConnectorFactory> getConnectorFactories() {
     return ImmutableList.of(new CarbondataConnectorFactory("carbondata", getClassLoader()));
   }
 

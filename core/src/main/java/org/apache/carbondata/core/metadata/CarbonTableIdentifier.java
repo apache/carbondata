@@ -91,7 +91,8 @@ public class CarbonTableIdentifier implements Serializable {
     return databaseName + File.separator + tableName + '_' + tableId;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((databaseName == null) ? 0 : databaseName.hashCode());
@@ -100,7 +101,8 @@ public class CarbonTableIdentifier implements Serializable {
     return result;
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -138,7 +140,8 @@ public class CarbonTableIdentifier implements Serializable {
   /**
    * return unique table name
    */
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return tableUniqueName;
   }
 }

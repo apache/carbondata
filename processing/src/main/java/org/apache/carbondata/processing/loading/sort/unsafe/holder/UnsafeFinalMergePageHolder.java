@@ -81,11 +81,13 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
     return currentRow;
   }
 
-  @Override public int compareTo(SortTempChunkHolder o) {
+  @Override
+  public int compareTo(SortTempChunkHolder o) {
     return comparator.compare(currentRow, o.getRow());
   }
 
-  @Override public boolean equals(Object obj) {
+  @Override
+  public boolean equals(Object obj) {
     if (this == obj) {
       return true;
     }
@@ -98,7 +100,8 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
     return this == o;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return super.hashCode();
   }
 

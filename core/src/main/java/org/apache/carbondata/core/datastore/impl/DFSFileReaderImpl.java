@@ -46,7 +46,8 @@ public class DFSFileReaderImpl implements FileReader {
         new HashMap<String, FSDataInputStream>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
 
-  @Override public byte[] readByteArray(String filePath, long offset, int length)
+  @Override
+  public byte[] readByteArray(String filePath, long offset, int length)
       throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
     return read(fileChannel, length, offset);
@@ -99,19 +100,22 @@ public class DFSFileReaderImpl implements FileReader {
     return byteBuffer;
   }
 
-  @Override public int readInt(String filePath, long offset) throws IOException {
+  @Override
+  public int readInt(String filePath, long offset) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
     fileChannel.seek(offset);
     return fileChannel.readInt();
   }
 
-  @Override public long readDouble(String filePath, long offset) throws IOException {
+  @Override
+  public long readDouble(String filePath, long offset) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
     fileChannel.seek(offset);
     return fileChannel.readLong();
   }
 
-  @Override public void finish() throws IOException {
+  @Override
+  public void finish() throws IOException {
     for (Entry<String, FSDataInputStream> entry : fileNameAndStreamCache.entrySet()) {
       FSDataInputStream channel = entry.getValue();
       if (null != channel) {
@@ -120,23 +124,27 @@ public class DFSFileReaderImpl implements FileReader {
     }
   }
 
-  @Override public byte[] readByteArray(String filePath, int length) throws IOException {
+  @Override
+  public byte[] readByteArray(String filePath, int length) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
     return read(fileChannel, length);
   }
 
-  @Override public long readLong(String filePath, long offset) throws IOException {
+  @Override
+  public long readLong(String filePath, long offset) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
     fileChannel.seek(offset);
     return fileChannel.readLong();
   }
 
-  @Override public int readInt(String filePath) throws IOException {
+  @Override
+  public int readInt(String filePath) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
     return fileChannel.readInt();
   }
 
-  @Override public ByteBuffer readByteBuffer(String filePath, long offset, int length)
+  @Override
+  public ByteBuffer readByteBuffer(String filePath, long offset, int length)
       throws IOException {
     byte[] readByteArray = readByteArray(filePath, offset, length);
     ByteBuffer byteBuffer = ByteBuffer.wrap(readByteArray);
@@ -144,11 +152,13 @@ public class DFSFileReaderImpl implements FileReader {
     return byteBuffer;
   }
 
-  @Override public void setReadPageByPage(boolean isReadPageByPage) {
+  @Override
+  public void setReadPageByPage(boolean isReadPageByPage) {
     this.readPageByPage = isReadPageByPage;
   }
 
-  @Override public boolean isReadPageByPage() {
+  @Override
+  public boolean isReadPageByPage() {
     return readPageByPage;
   }
 

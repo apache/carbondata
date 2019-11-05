@@ -349,11 +349,13 @@ public class DataMapChooser {
       this.dataMap = dataMap;
     }
 
-    @Override public int compareTo(DataMapTuple o) {
+    @Override
+    public int compareTo(DataMapTuple o) {
       return order - o.order;
     }
 
-    @Override public boolean equals(Object o) {
+    @Override
+    public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
 
@@ -363,7 +365,8 @@ public class DataMapChooser {
       return dataMap != null ? dataMap.equals(that.dataMap) : that.dataMap == null;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
       int result = order;
       result = 31 * result + (dataMap != null ? dataMap.hashCode() : 0);
       return result;

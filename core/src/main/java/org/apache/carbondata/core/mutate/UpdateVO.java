@@ -56,7 +56,8 @@ public class UpdateVO implements Serializable {
     this.updateDeltaStartTimestamp = updateDeltaStartTimestamp;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     UpdateVO updateVO = (UpdateVO) o;
@@ -76,7 +77,8 @@ public class UpdateVO implements Serializable {
 
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = factTimestamp != null ? factTimestamp.hashCode() : 0;
     result = 31 * result + (updateDeltaStartTimestamp != null ?
         updateDeltaStartTimestamp.hashCode() :
