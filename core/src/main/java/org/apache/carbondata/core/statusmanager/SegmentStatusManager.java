@@ -54,11 +54,12 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DeleteLoadFolders;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET;
+
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET;
 
 /**
  * Manages Load/Segment status
