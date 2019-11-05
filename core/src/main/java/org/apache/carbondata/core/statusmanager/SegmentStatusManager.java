@@ -22,6 +22,7 @@ import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -57,6 +58,8 @@ import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET;
+
 /**
  * Manages Load/Segment status
  */
@@ -68,6 +71,8 @@ public class SegmentStatusManager {
   private AbsoluteTableIdentifier identifier;
 
   private Configuration configuration;
+
+  private static final int READ_TABLE_STATUS_RETRY = 3;
 
   public SegmentStatusManager(AbsoluteTableIdentifier identifier) {
     this.identifier = identifier;
@@ -254,33 +259,44 @@ public class SegmentStatusManager {
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
-    LoadMetadataDetails[] listOfLoadFolderDetailsArray;
+    LoadMetadataDetails[] loadFolderDetails = null;
     AtomicFileOperations fileOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(tableStatusPath);
 
-    try {
-      if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
-        return new LoadMetadataDetails[0];
+    // When storing table status file in object store, reading of table status file may
+    // fail (receive EOFException) when table status file is being modifying
+    // so here we retry multiple times before throwing EOFException
+    int retry = READ_TABLE_STATUS_RETRY;
+    while (retry > 0) {
+      try {
+        if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
+          return new LoadMetadataDetails[0];
+        }
+        dataInputStream = fileOperation.openForRead();
+        inStream = new InputStreamReader(dataInputStream, Charset.forName(DEFAULT_CHARSET));
+        buffReader = new BufferedReader(inStream);
+        loadFolderDetails = gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
+        retry = 0;
+      } catch (EOFException ex) {
+        retry--;
+        if (retry == 0) {
+          LOG.error("Failed to read metadata of load after retry", ex);
+          throw ex;
+        }
+      } catch (IOException e) {
+        LOG.error("Failed to read metadata of load", e);
+        throw e;
+      } finally {
+        closeStreams(buffReader, inStream, dataInputStream);
       }
-      dataInputStream = fileOperation.openForRead();
-      inStream = new InputStreamReader(dataInputStream,
-          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-      buffReader = new BufferedReader(inStream);
-      listOfLoadFolderDetailsArray =
-          gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
-    } catch (IOException e) {
-      LOG.error("Failed to read metadata of load", e);
-      throw e;
-    } finally {
-      closeStreams(buffReader, inStream, dataInputStream);
     }
 
     // if listOfLoadFolderDetailsArray is null, return empty array
-    if (null == listOfLoadFolderDetailsArray) {
+    if (null == loadFolderDetails) {
       return new LoadMetadataDetails[0];
     }
 
-    return listOfLoadFolderDetailsArray;
+    return loadFolderDetails;
   }
 
   /**
@@ -518,7 +534,7 @@ public class SegmentStatusManager {
     try {
       dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
-              Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+              Charset.forName(DEFAULT_CHARSET)));
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetailsArray);
       brWriter.write(metadataInstance);
@@ -889,7 +905,7 @@ public class SegmentStatusManager {
 
       dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
-          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+          Charset.forName(DEFAULT_CHARSET)));
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);
