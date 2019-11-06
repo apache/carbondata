@@ -30,6 +30,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -287,7 +288,7 @@ public class SegmentStatusManager {
         }
         try {
           // sleep for some time before retry
-          Thread.sleep(10);
+          TimeUnit.MICROSECONDS.sleep(10);
         } catch (InterruptedException e) {
           // ignored
         }
