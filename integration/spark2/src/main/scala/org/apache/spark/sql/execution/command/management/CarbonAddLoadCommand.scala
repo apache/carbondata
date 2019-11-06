@@ -26,6 +26,7 @@ import scala.collection.mutable
 import org.apache.hadoop.fs.FileStatus
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil.convertSparkToCarbonDataType
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
 import org.apache.spark.sql.execution.strategy.MixedFormatHandler
 import org.apache.spark.sql.hive.CarbonRelation
@@ -144,6 +145,16 @@ case class CarbonAddLoadCommand(
             throw new AnalysisException(s"invalid partition option: ${options.toString()}")
           }
         }
+      // validate against the partition in carbon table
+      val carbonTablePartition = getCarbonTablePartition(sparkSession)
+      if (!partitionFields.sameElements(carbonTablePartition)) {
+        throw new AnalysisException(
+          s"""
+             |Partition is not same. Carbon table partition is :
+             |${carbonTablePartition.mkString(",")} and input segment partition is :
+             |${partitionFields.mkString(",")}
+             |""".stripMargin)
+      }
       inputPathCarbonFields ++ partitionFields
     } else {
       if (options.contains("partition")) {
@@ -153,10 +164,9 @@ case class CarbonAddLoadCommand(
     }
 
     // validate the schema including partition columns
-    val schemaMatched = (carbonTableSchema.getFields.length == inputPathTableFields.length) &&
-                        carbonTableSchema.getFields.zipWithIndex.forall {
-                          case (field, index) => inputPathTableFields(index).equals(field)
-                        }
+    val schemaMatched = carbonTableSchema.getFields.forall { field =>
+      inputPathTableFields.exists(_.equals(field))
+    }
     if (!schemaMatched) {
       throw new AnalysisException(s"Schema is not same. Table schema is : " +
                                   s"${tableSchema} and segment schema is : ${inputPathSchema}")
@@ -167,6 +177,16 @@ case class CarbonAddLoadCommand(
       // for each partition in input path, create a new segment in carbon table
       val partitionSpecs = collectPartitionSpecList(
         sparkSession, carbonTable.getTablePath, inputPath, lastLevelDirFileMap.keys.toSeq)
+      // check the collected partition from input segment path should comply to
+      // partitions in carbon table
+      val carbonTablePartition = getCarbonTablePartition(sparkSession)
+      if (partitionSpecs.head.getPartitions.size() != carbonTablePartition.length) {
+        throw new AnalysisException(
+          s"""
+             |input segment path does not comply to partitions in carbon table:
+             |${carbonTablePartition.mkString(",")}
+             |""".stripMargin)
+      }
       partitionSpecs.foreach { partitionSpec =>
         val dataFiles = lastLevelDirFileMap.getOrElse(partitionSpec.getLocation.toString,
           throw new RuntimeException(s"partition folder not found: ${partitionSpec.getLocation}"))
@@ -177,6 +197,14 @@ case class CarbonAddLoadCommand(
     }
 
     Seq.empty
+  }
+
+  private def getCarbonTablePartition(sparkSession: SparkSession): Array[Field] = {
+    sparkSession.sessionState.catalog
+      .getTableMetadata(TableIdentifier(tableName, databaseNameOp))
+      .partitionSchema
+      .fields
+      .map(f => new Field(f.name, convertSparkToCarbonDataType(f.dataType)))
   }
 
   /**

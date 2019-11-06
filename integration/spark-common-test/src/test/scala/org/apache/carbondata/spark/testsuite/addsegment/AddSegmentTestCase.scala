@@ -711,13 +711,13 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     var exception = intercept[AnalysisException](
       sql(s"alter table carbon_table add segment options ('path'='$parquetRootPath', 'format'='parquet', 'partition'='name:string')")
     )
-    assert(exception.message.contains("Schema is not same"))
+    assert(exception.message.contains("Partition is not same"))
 
     // incorrect partition option
     exception = intercept[AnalysisException](
       sql(s"alter table carbon_table add segment options ('path'='$parquetRootPath', 'format'='parquet', 'partition'='name:string,age:int')")
     )
-    assert(exception.message.contains("Schema is not same"))
+    assert(exception.message.contains("input segment path does not comply to partitions in carbon table"))
 
     sql("drop table if exists parquet_table")
     sql("drop table if exists carbon_table")
