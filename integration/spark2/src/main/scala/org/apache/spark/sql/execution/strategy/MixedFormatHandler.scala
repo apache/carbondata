@@ -139,7 +139,8 @@ object MixedFormatHandler {
    * If multiple segments are with different formats like parquet , orc etc then it creates RDD for
    * each format segments and union them.
    */
-  def extraRDD(l: LogicalRelation,
+  def extraRDD(
+      l: LogicalRelation,
       projects: Seq[NamedExpression],
       filters: Seq[Expression],
       readCommittedScope: ReadCommittedScope,
@@ -155,12 +156,12 @@ object MixedFormatHandler {
       .filter(l => segsToAccess.isEmpty || segsToAccess.contains(l.getLoadName))
       .groupBy(_.getFileFormat)
       .map { case (format, detailses) =>
-        // collect paths to create scan RDD
+        // collect paths as input to scan RDD
         val paths = detailses. flatMap { d =>
           val segmentFile = SegmentFileStore.readSegmentFile(
             CarbonTablePath.getSegmentFilePath(readCommittedScope.getFilePath, d.getSegmentFile))
 
-          // If it is a partition folder, the path to create RDD should be the root path of the
+          // If it is a partition table, the path to create RDD should be the root path of the
           // partition folder (excluding the partition subfolder).
           // If it is not a partition folder, collect all data file paths
           if (segmentFile.getOptions.containsKey("partition")) {
@@ -170,6 +171,7 @@ object MixedFormatHandler {
             }
             Seq(new Path(segmentPath))
           } else {
+            // If it is not a partition folder, collect all data file paths to create RDD
             segmentFile.getLocationMap.asScala.flatMap { case (p, f) =>
               f.getFiles.asScala.map { ef =>
                 new Path(p + CarbonCommonConstants.FILE_SEPARATOR + ef)
@@ -195,7 +197,7 @@ object MixedFormatHandler {
               rdd = rdd.union(r._1)
             }
           }
-          Some(rdd, !rdds.exists(!_._2))
+          Some(rdd, rdds.forall(_._2))
         }
       }
     } else {
