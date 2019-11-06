@@ -281,8 +281,15 @@ public class SegmentStatusManager {
       } catch (EOFException ex) {
         retry--;
         if (retry == 0) {
+          // we have retried several times, throw this exception to make the execution failed
           LOG.error("Failed to read metadata of load after retry", ex);
           throw ex;
+        }
+        try {
+          // sleep for some time before retry
+          Thread.sleep(10);
+        } catch (InterruptedException e) {
+          // ignored
         }
       } catch (IOException e) {
         LOG.error("Failed to read metadata of load", e);
