@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.chunk;
 
 import java.nio.ByteBuffer;
 
+import org.apache.carbondata.core.bloom.ColumnPagesBloomFilter;
 import org.apache.carbondata.format.DataChunk3;
 
 /**
@@ -53,6 +54,15 @@ public abstract class AbstractRawColumnChunk {
     this.rawData = rawData;
     this.offSet = offSet;
     this.length = length;
+  }
+
+  public ColumnPagesBloomFilter getPageBloomFilter() {
+    // page bloom is disabled for current column in this blocklet
+    if (!dataChunkV3.isSetPage_bloom_chunk()) {
+      return null;
+    } else {
+      return new ColumnPagesBloomFilter(dataChunkV3.page_bloom_chunk);
+    }
   }
 
   public byte[][] getMinValues() {

@@ -151,6 +151,10 @@ private[sql] case class CarbonDescribeFormattedCommand(
       results ++= Seq((CarbonCommonConstants.LONG_STRING_COLUMNS.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.LONG_STRING_COLUMNS, ""), ""))
     }
+    if (tblProps.contains(CarbonCommonConstants.PAGE_BLOOM_INCLUDE)) {
+      results ++= Seq(("Page Bloom Include",
+        tblProps.getOrElse(CarbonCommonConstants.PAGE_BLOOM_INCLUDE, ""), ""))
+    }
 
     //////////////////////////////////////////////////////////////////////////////
     // Compaction Information

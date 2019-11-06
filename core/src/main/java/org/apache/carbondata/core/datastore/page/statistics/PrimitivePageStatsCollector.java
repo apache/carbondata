@@ -24,12 +24,14 @@ import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 import static org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert.FALSE_VALUE;
 import static org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert.TRUE_VALUE;
 
 /** statics for primitive column page */
-public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, SimpleStatsResult {
+public class PrimitivePageStatsCollector extends ColumnPageStatsCollector
+        implements SimpleStatsResult {
   private static final String ZERO_STRING = "0";
   private DataType dataType;
   private byte minByte, maxByte;
@@ -221,6 +223,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     if (maxInt < value) {
       maxInt = value;
     }
+    if (null != bloomFilter) {
+      addValueToBloom(CarbonUtil.getValueAsBytes(DataTypes.INT, value));
+    }
   }
 
   @Override
@@ -230,6 +235,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     }
     if (maxLong < value) {
       maxLong = value;
+    }
+    if (null != bloomFilter) {
+      addValueToBloom(CarbonUtil.getValueAsBytes(DataTypes.LONG, value));
     }
   }
 

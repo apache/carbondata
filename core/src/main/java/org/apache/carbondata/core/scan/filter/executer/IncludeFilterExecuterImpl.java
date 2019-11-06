@@ -18,8 +18,11 @@
 package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 
+import org.apache.carbondata.core.bloom.ColumnPagesBloomFilter;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
@@ -218,6 +221,14 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
           bitSet.set(i);
         }
       }
+      // prune pages with bloom if not all pruned
+      if (bitSet.nextSetBit(0) != -1) {
+        ColumnPagesBloomFilter bloomFilter = dimensionRawColumnChunk.getPageBloomFilter();
+        if (null != bloomFilter) {
+          return bloomFilter.prunePages(
+                  dimColumnExecuterInfo.getFilterKeys(), bitSet);
+        }
+      }
       return bitSet;
     } else if (isMeasurePresentInCurrentBlock) {
       int chunkIndex = segmentProperties.getMeasuresOrdinalToChunkMapping()
@@ -241,6 +252,20 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
           bitSet.set(i);
         }
       }
+
+      // prune pages with bloom if not all pruned
+      if (bitSet.nextSetBit(0) != -1) {
+        ColumnPagesBloomFilter bloomFilter = measureRawColumnChunk.getPageBloomFilter();
+        if (null != bloomFilter) {
+          // converting filter keys to byte[]
+          List<byte[]> filterKeyBytes = new ArrayList<>();
+          for (Object filterVal : msrColumnExecutorInfo.getFilterKeys()) {
+            filterKeyBytes.add(
+                    CarbonUtil.getValueAsBytes(msrColumnEvaluatorInfo.getType(), filterVal));
+          }
+          return bloomFilter.prunePages(filterKeyBytes.toArray(new byte[0][0]), bitSet);
+        }
+      }
       return bitSet;
     }
     return null;
@@ -250,7 +275,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
     if (isDimensionPresentInCurrentBlock) {
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-      byte[] col = (byte[])value.getVal(dimColumnEvaluatorInfo.getDimension().getOrdinal());
+      byte[] col = (byte[]) value.getVal(dimColumnEvaluatorInfo.getDimension().getOrdinal());
       for (int i = 0; i < filterValues.length; i++) {
         if (0 == ByteUtil.UnsafeComparer.INSTANCE.compareTo(col, 0, col.length,
             filterValues[i], 0, filterValues[i].length)) {

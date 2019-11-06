@@ -27,7 +27,7 @@ import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE_ARRAY;
  * Column Page dummy stats collector. This will be used for which stats generation
  * is not required for example complex type column
  */
-public class DummyStatsCollector implements ColumnPageStatsCollector {
+public class DummyStatsCollector extends ColumnPageStatsCollector {
 
   /**
    * dummy stats used to sync with encoder

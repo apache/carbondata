@@ -3161,6 +3161,28 @@ public final class CarbonUtil {
     return columnLocalDictGenMap;
   }
 
+
+  public static void setPageBloomColumnsToWrapperSchema(List<ColumnSchema> columns,
+        Map<String, String> mainTableProperties) {
+    if (!mainTableProperties.containsKey(CarbonCommonConstants.PAGE_BLOOM_INCLUDE)) {
+      return;
+    }
+    String[] pageBloomCols = null;
+    String pageBloomIncludeColumns =
+            mainTableProperties.get(CarbonCommonConstants.PAGE_BLOOM_INCLUDE);
+    if (null != pageBloomIncludeColumns) {
+      pageBloomCols = pageBloomIncludeColumns.trim().split("\\s*,\\s*");
+      for (String bloomColumn : pageBloomCols) {
+        for (ColumnSchema column: columns) {
+          if (bloomColumn.trim().equalsIgnoreCase(column.getColumnName())) {
+            column.setPageBloomColumn(true);
+            break;
+          }
+        }
+      }
+    }
+
+  }
   /**
    * This method get the carbon file format version
    *

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.bloom.BloomFilterUtil;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
@@ -78,29 +79,11 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
 
   protected void resetBloomFilters() {
     indexBloomFilters.clear();
-    int[] stats = calculateBloomStats();
+    int[] stats = BloomFilterUtil.getBloomParameters(bloomFilterSize, bloomFilterFpp);
     for (int i = 0; i < indexColumns.size(); i++) {
       indexBloomFilters
           .add(new CarbonBloomFilter(stats[0], stats[1], Hash.MURMUR_HASH, compressBloom));
     }
-  }
-
-  /**
-   * It calculates the bits size and number of hash functions to calculate bloom.
-   */
-  private int[] calculateBloomStats() {
-    /*
-     * n: how many items you expect to have in your filter
-     * p: your acceptable false positive rate
-     * Number of bits (m) = -n*ln(p) / (ln(2)^2)
-     * Number of hashes(k) = m/n * ln(2)
-     */
-    double sizeinBits = -bloomFilterSize * Math.log(bloomFilterFpp) / (Math.pow(Math.log(2), 2));
-    double numberOfHashes = sizeinBits / bloomFilterSize * Math.log(2);
-    int[] stats = new int[2];
-    stats[0] = (int) Math.ceil(sizeinBits);
-    stats[1] = (int) Math.ceil(numberOfHashes);
-    return stats;
   }
 
   @Override

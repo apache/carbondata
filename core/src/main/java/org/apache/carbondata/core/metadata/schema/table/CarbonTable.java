@@ -386,6 +386,8 @@ public class CarbonTable implements Serializable, Writable {
     CarbonUtil.setLocalDictColumnsToWrapperSchema(tableSchema.getListOfColumns(),
         tableSchema.getTableProperties(),
         tableSchema.getTableProperties().get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE));
+    CarbonUtil.setPageBloomColumnsToWrapperSchema(tableSchema.getListOfColumns(),
+            tableSchema.getTableProperties());
     dimensionOrdinalMax = dimensionOrdinal;
   }
 

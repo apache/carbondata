@@ -763,12 +763,15 @@ class TableNewProcessor(cm: TableModel) {
     // add all dimensions
     cm.dimCols.foreach(addDimensionCol(_))
 
-    // check whether the column is a local dictionary column and set in column schema
     if (null != cm.tableProperties) {
+      // check whether the column is a local dictionary column and set in column schema
       CarbonUtil
         .setLocalDictColumnsToWrapperSchema(allColumns.asJava,
           cm.tableProperties.asJava,
           cm.tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE))
+      // set page level bloom info to column schema
+      CarbonUtil.setPageBloomColumnsToWrapperSchema(allColumns.asJava,
+          cm.tableProperties.asJava)
     }
     cm.msrCols.foreach { field =>
       // if aggregate function is defined in case of preaggregate and agg function is sum or avg

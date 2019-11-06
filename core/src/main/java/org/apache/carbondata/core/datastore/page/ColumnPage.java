@@ -45,6 +45,8 @@ import static org.apache.carbondata.core.metadata.datatype.DataTypes.INT;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.LONG;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT;
 
+import org.apache.hadoop.util.bloom.BloomFilter;
+
 public abstract class ColumnPage {
 
   // number of row in this page
@@ -81,6 +83,18 @@ public abstract class ColumnPage {
 
   public int getPageSize() {
     return pageSize;
+  }
+
+  public void initBloom() {
+    statsCollector.initBloom();
+  }
+
+  public BloomFilter getBloomFilter() {
+    return statsCollector.getBloomFilter();
+  }
+
+  public boolean isBloomEnable() {
+    return null != statsCollector.getBloomFilter();
   }
 
   public void setStatsCollector(ColumnPageStatsCollector statsCollector) {

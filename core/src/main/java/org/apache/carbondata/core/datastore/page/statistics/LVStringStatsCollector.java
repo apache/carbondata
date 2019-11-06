@@ -25,7 +25,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 
-public abstract class LVStringStatsCollector implements ColumnPageStatsCollector {
+public abstract class LVStringStatsCollector extends ColumnPageStatsCollector {
 
   /**
    * allowed character limit for to be considered for storing min max
@@ -94,7 +94,14 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
     }
     // input value is LV encoded
     byte[] newValue = getActualValue(value);
-    if (min == null) {
+
+    // add value to page bloom
+    if (null != bloomFilter) {
+      addValueToBloom(newValue);
+    }
+
+    // update min max
+    if (null == min) {
       min = newValue;
     }
     if (null == max) {

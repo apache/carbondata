@@ -19,28 +19,54 @@ package org.apache.carbondata.core.datastore.page.statistics;
 
 import java.math.BigDecimal;
 
-public interface ColumnPageStatsCollector {
+import org.apache.carbondata.core.bloom.BloomFilterUtil;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
-  void updateNull(int rowId);
+import org.apache.hadoop.util.bloom.BloomFilter;
+import org.apache.hadoop.util.bloom.Key;
+import org.apache.hadoop.util.hash.Hash;
 
-  void update(byte value);
+public abstract class ColumnPageStatsCollector {
 
-  void update(short value);
+  protected BloomFilter bloomFilter;
 
-  void update(int value);
+  public abstract void updateNull(int rowId);
 
-  void update(long value);
+  public abstract void update(byte value);
 
-  void update(double value);
+  public abstract void update(short value);
 
-  void update(float value);
+  public abstract void update(int value);
 
-  void update(BigDecimal value);
+  public abstract void update(long value);
 
-  void update(byte[] value);
+  public abstract void update(double value);
+
+  public abstract void update(float value);
+
+  public abstract void update(BigDecimal value);
+
+  public abstract void update(byte[] value);
 
   /**
    * return the collected statistics
    */
-  SimpleStatsResult getPageStats();
+  public abstract SimpleStatsResult getPageStats();
+
+  public void initBloom() {
+    int[] bloomParas = BloomFilterUtil.getPageBloomParameters();
+    bloomFilter = new BloomFilter(bloomParas[0], bloomParas[1], Hash.MURMUR_HASH);
+  }
+
+  public BloomFilter getBloomFilter() {
+    return bloomFilter;
+  }
+
+  void addValueToBloom(byte[] value) {
+    if (value.length == 0) {
+      bloomFilter.add(new Key(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY));
+    } else {
+      bloomFilter.add(new Key(value));
+    }
+  }
 }

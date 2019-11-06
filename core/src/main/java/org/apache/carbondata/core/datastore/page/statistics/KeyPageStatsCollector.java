@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
 
-public class KeyPageStatsCollector implements ColumnPageStatsCollector {
+public class KeyPageStatsCollector extends ColumnPageStatsCollector {
 
   private DataType dataType;
 

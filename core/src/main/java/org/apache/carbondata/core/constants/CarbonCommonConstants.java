@@ -203,6 +203,16 @@ public final class CarbonCommonConstants {
   public static final String LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT = "true";
 
   /**
+   * table properties for page level bloom filter to specify which columns needs to build
+   */
+  public static final String PAGE_BLOOM_INCLUDE = "page_bloom_include";
+
+  /**
+   * default value of page bloom's false positive probability parameter
+   */
+  public static final double DEFAULT_PAGE_BLOOM_FPP = 0.0005;
+
+  /**
    * zookeeper url key
    */
   @CarbonProperty

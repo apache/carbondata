@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.bloom.ColumnPagesBloomFilter;
 import org.apache.carbondata.core.datastore.page.ActualDataBasedFallbackEncoder;
 import org.apache.carbondata.core.datastore.page.DecoderBasedFallbackEncoder;
 import org.apache.carbondata.core.datastore.page.FallbackEncodedColumnPage;
@@ -89,6 +90,11 @@ public class BlockletEncodedColumnPage {
    */
   private LocalDictionaryGenerator localDictionaryGenerator;
 
+  /**
+   * Store page bloom filters
+   */
+  private ColumnPagesBloomFilter columnPagesBloomFilter;
+
   BlockletEncodedColumnPage(ExecutorService fallbackExecutorService,
       boolean isDecoderBasedFallBackEnabled, LocalDictionaryGenerator localDictionaryGenerator) {
     this.fallbackExecutorService = fallbackExecutorService;
@@ -114,8 +120,20 @@ public class BlockletEncodedColumnPage {
       }
       this.encodedColumnPageList.add(encodedColumnPage);
       this.columnName = encodedColumnPage.getActualPage().getColumnSpec().getFieldName();
+      // init store for page blooms in blocklet
+      if (encodedColumnPage.getActualPage().isBloomEnable()) {
+        this.columnPagesBloomFilter = new ColumnPagesBloomFilter();
+        this.columnPagesBloomFilter.addPageBloomFilter(
+                encodedColumnPage.getActualPage().getBloomFilter());
+      }
       return;
     }
+
+    // add following page blooom
+    if (null != columnPagesBloomFilter) {
+      columnPagesBloomFilter.addPageBloomFilter(encodedColumnPage.getActualPage().getBloomFilter());
+    }
+
     // when first page was encoded without dictionary and next page encoded with dictionary
     // in a blocklet
     if (!isLocalDictEncoded && encodedColumnPage.isLocalDictGeneratedPage()) {
@@ -150,6 +168,10 @@ public class BlockletEncodedColumnPage {
       //add to page list
       this.encodedColumnPageList.add(encodedColumnPage);
     }
+  }
+
+  public ColumnPagesBloomFilter getColumnPagesBloomFilter() {
+    return columnPagesBloomFilter;
   }
 
   /**
