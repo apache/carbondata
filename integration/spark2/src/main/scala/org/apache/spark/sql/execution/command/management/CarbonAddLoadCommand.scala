@@ -26,7 +26,6 @@ import scala.collection.mutable
 import org.apache.hadoop.fs.FileStatus
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil.convertSparkToCarbonDataType
-import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{Checker, MetadataCommand}
 import org.apache.spark.sql.execution.strategy.MixedFormatHandler
 import org.apache.spark.sql.hive.CarbonRelation
@@ -154,9 +153,10 @@ case class CarbonAddLoadCommand(
     }
 
     // validate the schema including partition columns
-    val schemaMatched = carbonTableSchema.getFields.zipWithIndex.forall {
-      case (field, index) => inputPathTableFields(index).equals(field)
-    }
+    val schemaMatched = (carbonTableSchema.getFields.length == inputPathTableFields.length) &&
+                        carbonTableSchema.getFields.zipWithIndex.forall {
+                          case (field, index) => inputPathTableFields(index).equals(field)
+                        }
     if (!schemaMatched) {
       throw new AnalysisException(s"Schema is not same. Table schema is : " +
                                   s"${tableSchema} and segment schema is : ${inputPathSchema}")
@@ -179,6 +179,15 @@ case class CarbonAddLoadCommand(
     Seq.empty
   }
 
+  /**
+   * Write metadata for external segment, including table status file and segment file
+   *
+   * @param sparkSession spark session
+   * @param carbonTable carbon table
+   * @param segmentPath external segment path specified by user
+   * @param partitionSpecOp partition info extracted from the path
+   * @param partitionDataFiles all data files in the partition
+   */
   private def writeMetaForSegment(
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
@@ -307,19 +316,18 @@ case class CarbonAddLoadCommand(
     }
   }
 
+  // extract partition column and value, for example, given
+  // path1 = path/to/partition/a=1/b=earth
+  // path2 = path/to/partition/a=2/b=moon
+  // will extract a list of CarbonPartitionSpec:
+  //   CarbonPartitionSpec {("a=1","b=earth"), "path/to/partition"}
+  //   CarbonPartitionSpec {("a=2","b=moon"), "path/to/partition"}
   def collectPartitionSpecList(
       sparkSession: SparkSession,
       tablePath: String,
       inputPath: String,
       partitionPaths: Seq[String]
   ): Seq[CarbonPartitionSpec] = {
-    // extract partition column and value, for example, given
-    // path1 = path/to/partition/a=1/b=earth
-    // path2 = path/to/partition/a=2/b=moon
-    // will extract a list of CarbonPartitionSpec:
-    //   CarbonPartitionSpec {("a=1","b=earth"), "path/to/partition"}
-    //   CarbonPartitionSpec {("a=2","b=moon"), "path/to/partition"}
-
     partitionPaths.map { path =>
       try {
         val partitionOnlyPath = path.substring(inputPath.length + 1)
