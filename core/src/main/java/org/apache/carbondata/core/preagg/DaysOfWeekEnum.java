@@ -14,45 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.carbondata.core.preagg;
 
 /**
- * enum for timeseries function
+ * Class to define the days of the week inline with the Java Calender class DAYs.
  */
-public enum TimeSeriesFunctionEnum {
-  SECOND("second", 0),
-  MINUTE("minute", 1),
-  FIVE_MINUTE("five_minute", 2),
-  TEN_MINUTE("ten_minute", 3),
-  FIFTEEN_MINUTE("fifteen_minute", 4),
-  THIRTY_MINUTE("thirty_minute", 5),
-  HOUR("hour", 6),
-  DAY("day", 7),
-  WEEK("week", 8),
-  MONTH("month", 9),
-  YEAR("year", 10);
+public enum DaysOfWeekEnum {
 
-  /**
-   * name of the function
-   */
-  private String name;
+  SUNDAY("SUNDAY", 1),
+  MONDAY("MONDAY", 2),
+  TUESDAY("TUESDAY", 3),
+  WEDNESDAY("WEDNESDAY", 4),
+  THURSDAY("THURSDAY", 5),
+  FRIDAY("FRIDAY", 6),
+  SATURDAY("SATURDAY", 7);
 
-  /**
-   * ordinal for function
-   */
-  private int ordinal;
-
-  TimeSeriesFunctionEnum(String name, int ordinal) {
-    this.name = name;
-    this.ordinal = ordinal;
-  }
-
-  public String getName() {
-    return name;
+  public String getDay() {
+    return day;
   }
 
   public int getOrdinal() {
     return ordinal;
+  }
+
+  private String day;
+
+  private int ordinal;
+
+  DaysOfWeekEnum(String day, int ordinal) {
+    this.day = day;
+    this.ordinal = ordinal;
   }
 }

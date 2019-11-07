@@ -49,6 +49,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.lock.retries | 3 | CarbonData ensures consistency of operations by blocking certain operations from running in parallel. In order to block the operations from running in parallel, lock is obtained on the table. This configuration specifies the maximum number of retries to obtain the lock for any operations other than load. **NOTE:** Data manupulation operations like Compaction,UPDATE,DELETE  or LOADING,UPDATE,DELETE are not allowed to run in parallel. How ever data loading can happen in parallel to compaction. |
 | carbon.lock.retry.timeout.sec | 5 | Specifies the interval between the retries to obtain the lock for any operation other than load. **NOTE:** Refer to ***carbon.lock.retries*** for understanding why CarbonData uses locks for operations. |
 | carbon.fs.custom.file.provider | None | To support FileTypeInterface for configuring custom CarbonFile implementation to work with custom FileSystem. |
+| carbon.timeseries.first.day.of.week | SUNDAY | This parameter configures which day of the week to be considered as first day of the week. Because first day of the week will be different in different parts of the world. |
 
 ## Data Loading Configuration
 

@@ -211,8 +211,8 @@ release, user can do as following:
 Basically, user can manually trigger the operation by re-building the datamap.
 
 ## MV TimeSeries Support
-MV non-lazy datamap support's TimeSeries queries. Supported granularities strings are: year, month, day, week,
-hour,thirty_minute, fifteen_minute, minute and second.
+MV non-lazy datamap supports TimeSeries queries. Supported granularity strings are: year, month, week, day,
+hour,thirty_minute, fifteen_minute, ten_minute, five_minute, minute and second.
 
  User can create MV datamap with timeseries queries like the below example:
 
@@ -229,5 +229,5 @@ Supported columns that can be provided in timeseries udf should be of TimeStamp/
 Timeseries queries with Date type support's only year, month, day and week granularities.
 
  **NOTE**:
- 1. Multiple timeseries udf functions cannot be defined in Select statement with different timestamp 
- columns or different granularities.
+ 1. Single select statement cannot contain timeseries udf(s) neither with different granularity nor
+ with different timestamp/date columns.

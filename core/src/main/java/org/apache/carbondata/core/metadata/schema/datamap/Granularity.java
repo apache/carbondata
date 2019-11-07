@@ -29,10 +29,16 @@ package org.apache.carbondata.core.metadata.schema.datamap;
 public enum Granularity {
   YEAR("year_granularity"),
   MONTH("month_granularity"),
+  WEEK("week_granularity"),
   DAY("day_granularity"),
   HOUR("hour_granularity"),
+  THIRTY_MINUTE("thirty_minute_granularity"),
+  FIFTEEN_MINUTE("fifteen_minute_granularity"),
+  TEN_MINUTE("ten_minute_granularity"),
+  FIVE_MINUTE("five_minute_granularity"),
   MINUTE("minute_granularity"),
   SECOND("second_granularity");
+
   private String name;
 
   Granularity(String name) {

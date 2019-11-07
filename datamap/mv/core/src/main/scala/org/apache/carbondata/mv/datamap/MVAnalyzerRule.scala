@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.{Alias, ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Command, DeserializeToObject, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -33,6 +33,7 @@ import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.datamap.DataMapManager
+import org.apache.carbondata.mv.plans.modular.{ModularPlan, Select}
 import org.apache.carbondata.mv.rewrite.{SummaryDataset, SummaryDatasetCatalog}
 
 /**
@@ -87,7 +88,8 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
     if (needAnalysis && catalog != null && isValidPlan(plan, catalog)) {
       val modularPlan = catalog.mvSession.sessionState.rewritePlan(plan).withMVTable
       if (modularPlan.find(_.rewritten).isDefined) {
-        val compactSQL = modularPlan.asCompactSQL
+        var compactSQL = modularPlan.asCompactSQL
+        compactSQL = reWriteTheUDFInSQLWithQualifierName(modularPlan, compactSQL)
         val analyzed = sparkSession.sql(compactSQL).queryExecution.analyzed
         analyzed
       } else {
@@ -95,6 +97,53 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
       }
     } else {
       plan
+    }
+  }
+
+  /**
+   * This method is specially handled for timeseries on MV, because when we use timeseries UDF which
+   * is a scala UDF, so after plan matching when query is made. We get as below query for example
+   *
+   * SELECT gen_subsumer_0.`UDF:timeseries(projectjoindate, hour)` AS `UDF:timeseries(projectjoi...
+   * FROM
+   * (SELECT datamap1_table.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries(projectjoin...
+   * FROM
+   *     default.datamap1_table
+   * GROUP BY datamap1_table.`UDF:timeseries_projectjoindate_hour`) gen_subsumer_0
+   * WHERE
+   * (UDF:timeseries(projectjoindate, hour) = TIMESTAMP('2016-02-23 09:00:00.0'))
+   *
+   * Here for Where filter expression is of type ScalaUDF, so when we do .sql() to prepare SQL, we
+   * get without qualifier name(Refer org.apache.spark.sql.catalyst.expressions.NonSQLExpression)
+   * which is 'gen_subsumer_0', so this funtion rewrites with qualifier name and returns, so that
+   * parsing does not fail in spark, for rewritten MV query.
+   * @param plan Modular Plan
+   * @param compactSQL compactSQL generated from Modular plan
+   * @return Rewritten plan with the qualifier names for where clauses in query.
+   */
+  private def reWriteTheUDFInSQLWithQualifierName(plan: ModularPlan, compactSQL: String): String = {
+    var outPutUDFColumn = ""
+    var reWrittenQuery = compactSQL
+    plan match {
+      case select: Select =>
+        select.outputList.collect {
+          case a: Alias if a.child.isInstanceOf[Attribute] =>
+            val childName = a.child.asInstanceOf[Attribute].name
+            if (childName.startsWith("UDF:timeseries")) {
+              outPutUDFColumn = childName
+            }
+        }
+        var queryArray: Array[String] = Array.empty
+        if (!outPutUDFColumn.equalsIgnoreCase("") && compactSQL.contains("WHERE")) {
+          queryArray = compactSQL.split("\n")
+          queryArray(queryArray.indexOf("WHERE") + 1) = queryArray(
+            queryArray.indexOf("WHERE") + 1).replace(outPutUDFColumn,
+            s"gen_subsumer_0.`$outPutUDFColumn`")
+          reWrittenQuery = queryArray.mkString("\n")
+        }
+        reWrittenQuery
+      case _ =>
+        compactSQL
     }
   }
 

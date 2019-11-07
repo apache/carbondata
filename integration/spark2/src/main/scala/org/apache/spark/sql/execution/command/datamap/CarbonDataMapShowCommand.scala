@@ -125,8 +125,13 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
                     val iterator = segmentMaps.entrySet().iterator()
                     while (iterator.hasNext) {
                       val entry = iterator.next()
-
-                      syncInfoMap.put(entry.getKey, DataMapUtil.getMaxSegmentID(entry.getValue))
+                      // when in join scenario, one table is loaded and one more is not loaded,
+                      // then put value as NA
+                      if (entry.getValue.isEmpty) {
+                        syncInfoMap.put(entry.getKey, "NA")
+                      } else {
+                        syncInfoMap.put(entry.getKey, DataMapUtil.getMaxSegmentID(entry.getValue))
+                      }
                     }
                     val loadEndTime =
                       if (loadMetadataDetails(i).getLoadEndTime ==

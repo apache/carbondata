@@ -2285,4 +2285,15 @@ public final class CarbonCommonConstants {
    * hive column-name maximum length
    */
   public static final int MAXIMUM_CHAR_LENGTH = 128;
+
+  /**
+   * Carbon property for timeseries MV to define the first day of week
+   */
+  public static final String CARBON_TIMESERIES_FIRST_DAY_OF_WEEK =
+      "carbon.timeseries.first.day.of.week";
+
+  /**
+   * Default first day of week
+   */
+  public static final String CARBON_TIMESERIES_FIRST_DAY_OF_WEEK_DEFAULT = "SUNDAY";
 }

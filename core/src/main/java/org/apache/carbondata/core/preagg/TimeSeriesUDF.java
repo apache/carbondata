@@ -22,10 +22,19 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
+
+import org.apache.log4j.Logger;
+
 /**
  * class for applying timeseries udf
  */
 public class TimeSeriesUDF {
+
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(TimeSeriesUDF.class.getName());
 
   public final List<String> TIMESERIES_FUNCTION = new ArrayList<>();
 
@@ -76,6 +85,25 @@ public class TimeSeriesUDF {
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.SECOND, 0);
         break;
+      case FIVE_MINUTE:
+        setData(calendar, 5);
+        break;
+      case TEN_MINUTE:
+        setData(calendar, 10);
+        break;
+      case FIFTEEN_MINUTE:
+        setData(calendar, 15);
+        break;
+      case THIRTY_MINUTE:
+        setData(calendar, 30);
+        break;
+      case WEEK:
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
+        break;
       case HOUR:
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.SECOND, 0);
@@ -110,6 +138,15 @@ public class TimeSeriesUDF {
   }
 
   /**
+   * This method sets the calender data based on the interval time of granularity
+   */
+  private void setData(Calendar calendar, int intervalTime) {
+    calendar.set(Calendar.MILLISECOND, 0);
+    calendar.set(Calendar.SECOND, 0);
+    calendar.set(Calendar.MINUTE, (calendar.get(Calendar.MINUTE) / intervalTime) * intervalTime);
+  }
+
+  /**
    * Below method will be used to initialize the thread local
    */
   private void initialize() {
@@ -119,10 +156,29 @@ public class TimeSeriesUDF {
     if (TIMESERIES_FUNCTION.isEmpty()) {
       TIMESERIES_FUNCTION.add("second");
       TIMESERIES_FUNCTION.add("minute");
+      TIMESERIES_FUNCTION.add("five_minute");
+      TIMESERIES_FUNCTION.add("ten_minute");
+      TIMESERIES_FUNCTION.add("fifteen_minute");
+      TIMESERIES_FUNCTION.add("thirty_minute");
       TIMESERIES_FUNCTION.add("hour");
       TIMESERIES_FUNCTION.add("day");
+      TIMESERIES_FUNCTION.add("week");
       TIMESERIES_FUNCTION.add("month");
       TIMESERIES_FUNCTION.add("year");
     }
+    int firstDayOfWeek;
+    try {
+      firstDayOfWeek = DaysOfWeekEnum.valueOf(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESERIES_FIRST_DAY_OF_WEEK,
+              CarbonCommonConstants.CARBON_TIMESERIES_FIRST_DAY_OF_WEEK_DEFAULT).toUpperCase())
+          .getOrdinal();
+    } catch (IllegalArgumentException ex) {
+      LOGGER.warn("Invalid value set for first of the week. Considering the default value as: "
+          + CarbonCommonConstants.CARBON_TIMESERIES_FIRST_DAY_OF_WEEK_DEFAULT);
+      firstDayOfWeek = DaysOfWeekEnum.valueOf(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESERIES_FIRST_DAY_OF_WEEK_DEFAULT)
+          .toUpperCase()).getOrdinal();
+    }
+    calanderThreadLocal.get().setFirstDayOfWeek(firstDayOfWeek);
   }
 }
