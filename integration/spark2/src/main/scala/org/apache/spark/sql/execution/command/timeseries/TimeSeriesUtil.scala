@@ -168,15 +168,19 @@ object TimeSeriesUtil {
     for (granularity <- Granularity.values()) {
       if (timeSeriesFunction.equalsIgnoreCase(granularity.getName
         .substring(0, granularity.getName.indexOf(CarbonCommonConstants.UNDERSCORE)))) {
-        if (!(granularity.getName.equalsIgnoreCase(Granularity.DAY.getName) ||
-              granularity.getName.equalsIgnoreCase(Granularity.MONTH.getName) ||
-              granularity.getName.equalsIgnoreCase(Granularity.YEAR.getName))) {
+        if (!supportedGranularitiesForDate.contains(granularity.getName)) {
           throw new MalformedCarbonCommandException(
             "Granularity should be DAY,MONTH or YEAR, for timeseries column of Date type")
         }
       }
     }
   }
+
+  val supportedGranularitiesForDate: Seq[String] = Seq(
+    Granularity.DAY.getName,
+    Granularity.WEEK.getName,
+    Granularity.MONTH.getName,
+    Granularity.YEAR.getName)
 
   /**
    * validate TimeSeries Granularity
@@ -189,7 +193,7 @@ object TimeSeriesUtil {
     breakable {
       for (granularity <- Granularity.values()) {
         if (timeSeriesFunction.equalsIgnoreCase(granularity.getName
-          .substring(0, granularity.getName.indexOf(CarbonCommonConstants.UNDERSCORE)))) {
+          .substring(0, granularity.getName.lastIndexOf(CarbonCommonConstants.UNDERSCORE)))) {
           found = true
           break
         }

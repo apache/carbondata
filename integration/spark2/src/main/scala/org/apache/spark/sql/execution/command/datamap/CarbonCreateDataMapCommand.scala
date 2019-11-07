@@ -181,7 +181,12 @@ case class CarbonCreateDataMapCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (dataMapProvider != null) {
       dataMapProvider.initData()
-      if (mainTable != null && !deferredRebuild) {
+      // TODO: remove these checks once the preaggregate and preaggregate timeseries are deprecated
+      if (mainTable != null && !deferredRebuild &&
+          (dataMapSchema.isIndexDataMap || dataMapSchema.getProviderName
+            .equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.getShortName) ||
+           dataMapSchema.getProviderName
+             .equalsIgnoreCase(DataMapClassProvider.TIMESERIES.getShortName))) {
         dataMapProvider.rebuild()
         if (dataMapSchema.isIndexDataMap) {
           val operationContext: OperationContext = new OperationContext()

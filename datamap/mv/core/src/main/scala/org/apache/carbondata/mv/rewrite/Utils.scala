@@ -17,11 +17,11 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Divide, Expression, Multiply, PredicateHelper}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Divide, Expression, Multiply, PredicateHelper, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 
 import org.apache.carbondata.mv.plans.modular
-import org.apache.carbondata.mv.plans.modular.ModularPlan
+import org.apache.carbondata.mv.plans.modular.{ModularPlan, Select}
 
 /**
  * Utility functions used by mqo matcher to convert our plan to new aggregation code path
@@ -391,7 +391,7 @@ object Utils extends PredicateHelper {
           }
         } else if (sel_2c.predicateList.contains(exprE)) {
           if (sel_2a.predicateList.exists(_.semanticEquals(exprE)) ||
-              canEvaluate(exprE, subsumer)) {
+              canEvaluate(exprE, subsumer) || canBeDerived(subsumer, exprE)) {
             Some(exprE)
           } else {
             None
@@ -413,6 +413,30 @@ object Utils extends PredicateHelper {
         }
 
       case _ => None // TODO: implement this
+    }
+  }
+
+  private def canBeDerived(subsumer: ModularPlan, expE: Expression): Boolean = {
+    var canBeDerived = false
+    subsumer.asInstanceOf[Select].outputList.forall {
+      case Alias(s: ScalaUDF, _) =>
+        expE.children.foreach { expr =>
+          if (s.semanticEquals(expr)) {
+            canBeDerived = true
+          }
+          // It is because when expression is like between filter, the expr will be as Cast
+          // expression and its child will be ScalaUDF(timeseries), So compare the child also.
+          if (!canBeDerived && null != expr.children) {
+            expr.children.foreach { expC =>
+              if (s.semanticEquals(expC)) {
+                canBeDerived = true
+              }
+            }
+          }
+        }
+        canBeDerived
+      case _ =>
+        canBeDerived
     }
   }
 

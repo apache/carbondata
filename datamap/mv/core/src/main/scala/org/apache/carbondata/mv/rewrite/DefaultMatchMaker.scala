@@ -448,14 +448,50 @@ object GroupbyGroupbySelectOnlyChildDelta extends DefaultMatchPattern with Predi
       subsumer: ModularPlan,
       compensation: Option[ModularPlan]) = {
     if (subsumee.asInstanceOf[GroupBy].predicateList.contains(exprE)) {
-      if (exprListR.exists(_.semanticEquals(exprE)) || canEvaluate(exprE, exprListR)) true
-      else false
+      if (exprListR.exists(_.semanticEquals(exprE)) || canEvaluate(exprE, exprListR) ||
+          isDerivableForUDF(exprE, exprListR)) {
+        true
+      } else {
+        false
+      }
     } else if (compensation.getOrElse(throw new RuntimeException("compensation cannot be None"))
       .asInstanceOf[Select].predicateList.contains(exprE)) {
-      if (canEvaluate(exprE, exprListR) || exprListR.exists(_.semanticEquals(exprE))) true
-      else false
+      if (canEvaluate(exprE, exprListR) || exprListR.exists(_.semanticEquals(exprE)) ||
+          isDerivableForUDF(exprE, exprListR)) {
+        true
+      } else {
+        false
+      }
     } else {
       false
+    }
+  }
+
+  /**
+   * org.apache.carbondata.mv.plans.MorePredicateHelper#canEvaluate will be checking the
+   * exprE.references as subset of AttibuteSet(exprListR), which will just take the column name from
+   * UDF, so it will be always false for ScalaUDF.
+   * This method takes care of checking whether the exprE references can be derived form list
+   *
+   * Example:
+   * exprE has attribute reference for timeseries column like UDF:timeseries(projectjoindate, month)
+   * So exprE.references will give UDF:timeseries(projectjoindate, month)
+   * exprListR has ScalaUDF also, so AttributeSet(exprListR) contains just column name like
+   * projectjoindate, so canEvaluate method returns false.
+   *
+   * Here checking whether the exprListR(ScalaUDF) .sql gives UDF:timeseries(projectjoindate, month)
+   * which can be checked with exprE.references
+   */
+  private def isDerivableForUDF(exprE: Expression, exprListR: Seq[Expression]): Boolean = {
+    var canBeDerived = false
+    exprListR.forall {
+      case a: ScalaUDF =>
+        a.references.foreach { a =>
+          canBeDerived = exprE.sql.contains(a.name)
+        }
+        canBeDerived
+      case _ =>
+        canBeDerived
     }
   }
 
