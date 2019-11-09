@@ -24,33 +24,33 @@ import org.apache.commons.lang3.time.DateUtils
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 /**
- * Benchmark for Change Data Capture scenario.
- * This test simulates updates to history table using CDC table.
+ * Benchmark for SCD (Slowly Change Dimension) Type 2 performance.
+ * See [[https://en.wikipedia.org/wiki/Slowly_changing_dimension]]
  *
  * The benchmark shows performance of two update methods:
- * 1. hive_solution, which uses INSERT OVERWRITE. This is a popular method for hive warehouse.
- * 2. carbon_solution, which uses CarbonData's update syntax to update the history table directly.
+ * 1. overwrite_solution, which uses INSERT OVERWRITE. This is a popular method for hive warehouse.
+ * 2. update_solution, which uses CarbonData's update syntax to update the history table directly.
  *
  * When running in a 8-cores laptop, the benchmark shows:
  *
  * 1. test one
  * History table 1M records, update 10K records everyday and insert 10K records everyday,
  * simulated 3 days.
- * hive_solution: total process time takes 13,516 ms
- * carbon_solution: total process time takes 7,521 ms
+ * hive_solution: total process time takes 13s
+ * carbon_solution: total process time takes 6s
  *
  *
  * 2. test two
  * History table 10M records, update 10K records everyday and insert 10K records everyday,
  * simulated 3 days.
- * hive_solution: total process time takes 104,250 ms
- * carbon_solution: total process time takes 17,384 ms
+ * hive_solution: total process time takes 115s
+ * carbon_solution: total process time takes 15s
  *
  */
-object CDCBenchmark {
+object SCDType2Benchmark {
 
   // Schema for history table
-  // Table name: dw_order
+  // Table name: dw_order_solution1 (using overwrite), dw_order_solution2 (using update)
   // +-------------+-----------+-------------+
   // | Column name | Data type | Cardinality |
   // +-------------+-----------+-------------+
@@ -67,7 +67,7 @@ object CDCBenchmark {
   case class Order (order_id: String, customer_id: String, start_date: Date, end_date: Date,
       state: Int)
 
-  // Schema for CDC data which is used for update to history table every day
+  // Schema for Change table which is used for update to history table every day
   // Table name: ods_order
   // +-------------+-----------+-------------+
   // | Column name | Data type | Cardinality |
@@ -80,7 +80,7 @@ object CDCBenchmark {
   // +-------------+-----------+-------------+
   // | state       | int       | 4           |
   // +-------------+-----------+-------------+
-  case class CDC (order_id: String, customer_id: String, update_date: Date, state: Int)
+  case class Change (order_id: String, customer_id: String, update_date: Date, state: Int)
 
   // number of records for first day
   val numOrders = 10000000
@@ -107,7 +107,7 @@ object CDCBenchmark {
       }.toDS().toDF()
   }
 
-  def generateDailyCDC(
+  def generateDailyChange(
       sparkSession: SparkSession,
       numUpdatedOrders: Int,
       startDate: Date,
@@ -116,12 +116,15 @@ object CDCBenchmark {
       numNewOrders: Int
       ): DataFrame = {
     import sparkSession.implicits._
+    // data for update to the history table
     val ds1 = sparkSession.sparkContext.parallelize(1 to numUpdatedOrders, 4)
-      .map {x => CDC(s"order$x", s"customer$x", updateDate, newState)
+      .map {x => Change(s"order$x", s"customer$x", updateDate, newState)
       }.toDS().toDF()
+    // date for insert to the history table
     val ds2 = sparkSession.sparkContext.parallelize(1 to numNewOrders, 4)
-      .map {x => CDC(s"newOrder${System.currentTimeMillis()}", s"customer$x", updateDate, 1)
+      .map {x => Change(s"newOrder${System.currentTimeMillis()}", s"customer$x", updateDate, 1)
       }.toDS().toDF()
+    // union them so that the Change table contains both data for update and insert
     ds1.union(ds2)
   }
 
@@ -139,28 +142,37 @@ object CDCBenchmark {
       .master(master.get)
       .enableHiveSupport()
       .config("spark.driver.host", "127.0.0.1")
-      .getOrCreateCarbonSession(storeLocation)
+      .getOrCreateCarbonSession()
     spark.sparkContext.setLogLevel("warn")
 
     spark.sql("drop table if exists dw_order")
     spark.sql("drop table if exists ods_order")
 
     // prepare base data for first day
-    val df = generateDataForDay0(
-      sparkSession = spark,
-      numOrders = numOrders,
-      startDate = Date.valueOf("2018-05-01"))
+    spark.sql(s"drop table if exists dw_order_solution1")
+    spark.sql(s"drop table if exists dw_order_solution2")
 
-    spark.sql(s"drop table if exists dw_order")
+    val df = generateDataForDay0(
+        sparkSession = spark,
+        numOrders = numOrders,
+        startDate = Date.valueOf("2018-05-01"))
+
     df.write
       .format("carbondata")
-      .option("tableName", "dw_order")
+      .option("tableName", "dw_order_solution1")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    df.write
+      .format("carbondata")
+      .option("tableName", "dw_order_solution2")
       .mode(SaveMode.Overwrite)
       .save()
 
     var startDate = Date.valueOf("2018-05-01")
     var state = 2
-    var updateTime = 0L
+    var originalUpdateTime = 0L
+    var carbonUpdateTime = 0L
 
     if (printDetail) {
       println("## day0")
@@ -170,41 +182,48 @@ object CDCBenchmark {
     for (i <- 1 to numDays) {
       // prepare for incremental update data for day-i
       val newDate = new Date(DateUtils.addDays(startDate, 1).getTime)
-      val cdc = generateDailyCDC(
+      val change = generateDailyChange(
         sparkSession = spark,
         numUpdatedOrders = numUpdateOrdersDaily,
         startDate = startDate,
         updateDate = newDate,
         newState = state,
         numNewOrders = newNewOrdersDaily)
-      cdc.write
+      change.write
         .format("carbondata")
-        .option("tableName", "ods_order")
+        .option("tableName", "change")
         .mode(SaveMode.Overwrite)
         .save()
 
       if (printDetail) {
-        println(s"day$i CDC")
-        spark.sql("select * from ods_order").show(100, false)
+        println(s"day$i Change")
+        spark.sql("select * from change").show(100, false)
       }
 
-      // update dw table using CDC data
-      val start = System.nanoTime()
-      hive_solution(spark)
-      // carbon_solution(spark)
-      val end = System.nanoTime()
-      updateTime += end - start
+      var start = System.nanoTime()
+      // apply Change to history table by using INSERT OVERWRITE
+      solution1(spark)
+      var end = System.nanoTime()
+      originalUpdateTime += end - start
+
+      start = System.nanoTime()
+      // apply Change to history table by using UPDATE
+      solution2(spark)
+      end = System.nanoTime()
+      carbonUpdateTime += end - start
 
       if (printDetail) {
         println(s"day$i result")
-        spark.sql("select * from dw_order").show(100, false)
+        spark.sql("select * from dw_order_solution1").show(false)
+        spark.sql("select * from dw_order_solution2").show(false)
       }
 
       startDate = newDate
       state = state + 1
     }
 
-    println(s"simulated $numDays days, total process time takes ${updateTime / 1000 / 1000} ms")
+    println(s"simulated $numDays days, overwrite solution process time takes ${originalUpdateTime / 1000 / 1000 / 1000} s")
+    println(s"simulated $numDays days, update solution process time takes ${carbonUpdateTime / 1000 / 1000 / 1000} s")
     spark.close()
   }
 
@@ -212,10 +231,10 @@ object CDCBenchmark {
    * Typical solution when using hive
    * This solution uses INSERT OVERWRITE to rewrite the whole table every day
    */
-  private def hive_solution(spark: SparkSession) = {
+  private def solution1(spark: SparkSession) = {
     spark.sql(
       """
-        | insert overwrite table dw_order
+        | insert overwrite table dw_order_solution1
         | select * from
         | (
         |   select A.order_id, A.customer_id, A.start_date,
@@ -223,13 +242,12 @@ object CDCBenchmark {
         |     else A.end_date
         |     end as end_date,
         |   A.state
-        |   from dw_order A
-        |   left join ods_order B
+        |   from dw_order_solution1 A
+        |   left join change B
         |   on A.order_id = B.order_id
         |   union all
-        |   select B.order_id, B.customer_id, B.update_date, date("9999-01-01"),
-        |     B.state
-        |   from ods_order B
+        |     select B.order_id, B.customer_id, B.update_date, date("9999-01-01"), B.state
+        |     from change B
         | ) T
       """.stripMargin)
   }
@@ -237,20 +255,20 @@ object CDCBenchmark {
   /**
    * Solution leveraging carbon's update syntax
    */
-  private def carbon_solution(spark: SparkSession) = {
+  private def solution2(spark: SparkSession) = {
     spark.sql(
       """
-        | update dw_order A
+        | update dw_order_solution2 A
         | set (A.end_date) =
         |   (select B.update_date
-        |   from ods_order B
+        |   from change B
         |   where A.order_id = B.order_id and A.end_date > B.update_date)
       """.stripMargin).show
     spark.sql(
       """
-        | insert into dw_order
+        | insert into dw_order_solution2
         | select B.order_id, B.customer_id, B.update_date, date('9999-12-30'), B.state
-        | from ods_order B
+        | from change B
       """.stripMargin)
   }
 }
