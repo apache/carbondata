@@ -47,6 +47,7 @@ import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
  * carbon_solution: total process time takes 15s
  *
  */
+// scalastyle:off println
 object SCDType2Benchmark {
 
   // Schema for history table
@@ -132,7 +133,6 @@ object SCDType2Benchmark {
     import org.apache.spark.sql.CarbonSession._
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/examples/spark2/target/store"
     val master = Option(System.getProperty("spark.master"))
       .orElse(sys.env.get("MASTER"))
       .orElse(Option("local[8]"))
@@ -143,7 +143,7 @@ object SCDType2Benchmark {
       .enableHiveSupport()
       .config("spark.driver.host", "127.0.0.1")
       .getOrCreateCarbonSession()
-    spark.sparkContext.setLogLevel("warn")
+    spark.sparkContext.setLogLevel("error")
 
     spark.sql("drop table if exists dw_order")
     spark.sql("drop table if exists ods_order")
@@ -171,12 +171,18 @@ object SCDType2Benchmark {
 
     var startDate = Date.valueOf("2018-05-01")
     var state = 2
-    var originalUpdateTime = 0L
-    var carbonUpdateTime = 0L
+    var solution1UpdateTime = 0L
+    var solution2UpdateTime = 0L
 
     if (printDetail) {
       println("## day0")
       spark.sql("select * from dw_order").show(100, false)
+    }
+
+    def timeIt(func: (SparkSession) => Unit): Long = {
+      val start = System.nanoTime()
+      func(spark)
+      System.nanoTime() - start
     }
 
     for (i <- 1 to numDays) {
@@ -200,17 +206,11 @@ object SCDType2Benchmark {
         spark.sql("select * from change").show(100, false)
       }
 
-      var start = System.nanoTime()
       // apply Change to history table by using INSERT OVERWRITE
-      solution1(spark)
-      var end = System.nanoTime()
-      originalUpdateTime += end - start
+      solution1UpdateTime += timeIt(solution1)
 
-      start = System.nanoTime()
       // apply Change to history table by using UPDATE
-      solution2(spark)
-      end = System.nanoTime()
-      carbonUpdateTime += end - start
+      solution2UpdateTime += timeIt(solution2)
 
       if (printDetail) {
         println(s"day$i result")
@@ -222,8 +222,36 @@ object SCDType2Benchmark {
       state = state + 1
     }
 
-    println(s"simulated $numDays days, overwrite solution process time takes ${originalUpdateTime / 1000 / 1000 / 1000} s")
-    println(s"simulated $numDays days, update solution process time takes ${carbonUpdateTime / 1000 / 1000 / 1000} s")
+    // print update time
+    println(s"overwrite solution update takes ${solution1UpdateTime / 1000 / 1000 / 1000} s")
+    println(s"update solution update takes ${solution2UpdateTime / 1000 / 1000 / 1000} s")
+
+    val solution1QueryTime = timeIt(
+      spark => spark.sql(
+      s"""
+         | select sum(state) as sum, customer_id
+         | from dw_order_solution1
+         | group by customer_id
+         | order by sum
+         | limit 10
+         |""".stripMargin).collect()
+    )
+
+    val solution2QueryTime = timeIt(
+      spark => spark.sql(
+        s"""
+           | select sum(state) as sum, customer_id
+           | from dw_order_solution2
+           | group by customer_id
+           | order by sum
+           | limit 10
+           |""".stripMargin).collect()
+    )
+
+    // print query time
+    println(s"overwrite solution query takes ${solution1QueryTime / 1000 / 1000 / 1000} s")
+    println(s"update solution query takes ${solution2QueryTime / 1000 / 1000 / 1000} s")
+
     spark.close()
   }
 
@@ -272,3 +300,4 @@ object SCDType2Benchmark {
       """.stripMargin)
   }
 }
+// scalastyle:on println
