@@ -222,10 +222,7 @@ object SCDType2Benchmark {
       state = state + 1
     }
 
-    // print update time
-    println(s"overwrite solution update takes ${solution1UpdateTime / 1000 / 1000 / 1000} s")
-    println(s"update solution update takes ${solution2UpdateTime / 1000 / 1000 / 1000} s")
-
+    // do a query after apply SCD Type2 update
     val solution1QueryTime = timeIt(
       spark => spark.sql(
       s"""
@@ -247,6 +244,10 @@ object SCDType2Benchmark {
            | limit 10
            |""".stripMargin).collect()
     )
+
+    // print update time
+    println(s"overwrite solution update takes ${solution1UpdateTime / 1000 / 1000 / 1000} s")
+    println(s"update solution update takes ${solution2UpdateTime / 1000 / 1000 / 1000} s")
 
     // print query time
     println(s"overwrite solution query takes ${solution1QueryTime / 1000 / 1000 / 1000} s")
