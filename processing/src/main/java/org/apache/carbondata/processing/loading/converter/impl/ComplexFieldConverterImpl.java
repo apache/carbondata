@@ -38,13 +38,15 @@ public class ComplexFieldConverterImpl extends AbstractDictionaryFieldConverterI
   }
 
   @Override
-  public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary) {
     Object object = row.getObject(index);
-    row.update(convert(object, logHolder), index);
+    row.update(convert(object, logHolder, skipDirectDictionary, convertOnlyDirectDictionary), index);
   }
 
   @Override
-  public Object convert(Object value, BadRecordLogHolder logHolder) throws RuntimeException {
+  public Object convert(Object value, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary) throws RuntimeException {
     // TODO Its temporary, needs refactor here.
     ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
     DataOutputStream dataOutputStream = new DataOutputStream(byteArray);

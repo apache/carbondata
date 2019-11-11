@@ -923,7 +923,15 @@ case class CarbonLoadDataCommand(
       // Update attribute datatypes in case of dictionary columns, in case of dictionary columns
       // datatype is always int
       val column = table.getColumnByName(table.getTableName, attr.name)
-      if (column.hasEncoding(Encoding.DICTIONARY)) {
+      if ((attr.dataType == DateType) || (attr.dataType == TimestampType)) {
+        CarbonToSparkAdapter.createAttributeReference(attr.name,
+          StringType,
+          attr.nullable,
+          attr.metadata,
+          attr.exprId,
+          attr.qualifier,
+          attr)
+      } else if (column.hasEncoding(Encoding.DICTIONARY)) {
         CarbonToSparkAdapter.createAttributeReference(attr.name,
           IntegerType,
           attr.nullable,
@@ -931,15 +939,8 @@ case class CarbonLoadDataCommand(
           attr.exprId,
           attr.qualifier,
           attr)
-      } else if (attr.dataType == TimestampType || attr.dataType == DateType) {
-        CarbonToSparkAdapter.createAttributeReference(attr.name,
-          LongType,
-          attr.nullable,
-          attr.metadata,
-          attr.exprId,
-          attr.qualifier,
-          attr)
-      } else {
+      }
+      else {
         attr
       }
     }
@@ -1083,10 +1084,10 @@ case class CarbonLoadDataCommand(
     val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
     val metastoreSchema = StructType(catalogTable.schema.fields.map{f =>
       val column = table.getColumnByName(table.getTableName, f.name)
-      if (column.hasEncoding(Encoding.DICTIONARY)) {
+      if ((f.dataType == TimestampType) || (f.dataType == DateType)) {
+        f.copy(dataType = StringType)
+      } else if (column.hasEncoding(Encoding.DICTIONARY)) {
         f.copy(dataType = IntegerType)
-      } else if (f.dataType == TimestampType || f.dataType == DateType) {
-        f.copy(dataType = LongType)
       } else {
         f
       }

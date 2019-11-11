@@ -54,13 +54,16 @@ public class BinaryFieldConverterImpl implements FieldConverter {
   }
 
   @Override
-  public void convert(CarbonRow row, BadRecordLogHolder logHolder)
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
       throws CarbonDataLoadingException {
-    row.update(convert(row.getObject(index), logHolder), index);
+    row.update(convert(row.getObject(index), logHolder, skipDirectDictionary,
+        convertOnlyDirectDictionary), index);
   }
 
   @Override
-  public Object convert(Object value, BadRecordLogHolder logHolder)
+  public Object convert(Object value, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
       throws RuntimeException {
     if (value instanceof String) {
       return binaryDecoder.decode((String) value);

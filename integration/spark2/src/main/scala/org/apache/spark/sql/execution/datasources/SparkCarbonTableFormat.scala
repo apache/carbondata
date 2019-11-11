@@ -116,7 +116,7 @@ with Serializable {
     model.setDictionaryServerHost(options.getOrElse("dicthost", null))
     model.setDictionaryServerPort(options.getOrElse("dictport", "-1").toInt)
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
-    model.setLoadWithoutConverterStep(true)
+    model.setLoadWithDirectDictionaryConverter(true)
     val staticPartition = options.getOrElse("staticpartition", null)
     if (staticPartition != null) {
       conf.set("carbon.staticpartition", staticPartition)
@@ -309,12 +309,11 @@ private class CarbonOutputWriter(path: String,
   private def updatePartitions(partitionData: Seq[String]): Array[AnyRef] = {
     model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo.getFactTable.getPartitionInfo
       .getColumnSchemaList.asScala.zipWithIndex.map { case (col, index) =>
-
-      val dataType = if (col.hasEncoding(Encoding.DICTIONARY)) {
-        DataTypes.INT
-      } else if (col.getDataType.equals(DataTypes.TIMESTAMP) ||
+      val dataType = if (col.getDataType.equals(DataTypes.TIMESTAMP) ||
                          col.getDataType.equals(DataTypes.DATE)) {
-        DataTypes.LONG
+        DataTypes.STRING
+      } else if (col.hasEncoding(Encoding.DICTIONARY)) {
+        DataTypes.INT
       } else {
         col.getDataType
       }

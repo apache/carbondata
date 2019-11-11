@@ -335,7 +335,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     }
 
     Object convertedValue = this.name2Converters.get(carbonColumn.getColName()).convert(
-        strFilterValue, badRecordLogHolder);
+        strFilterValue, badRecordLogHolder, false, false);
 
     byte[] internalFilterValue;
     if (carbonColumn.isMeasure()) {

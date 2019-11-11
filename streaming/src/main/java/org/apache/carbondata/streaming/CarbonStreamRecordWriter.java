@@ -215,7 +215,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     currentRow.setRawData(rowData);
     // parse and convert row
     currentRow.setData(rowParser.parseRow(rowData));
-    CarbonRow updatedCarbonRow = converter.convert(currentRow);
+    CarbonRow updatedCarbonRow = converter.convert(currentRow, false, false);
     if (updatedCarbonRow == null) {
       output.skipRow();
       currentRow.clearData();

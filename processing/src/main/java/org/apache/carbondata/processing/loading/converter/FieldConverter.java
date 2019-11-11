@@ -28,16 +28,21 @@ public interface FieldConverter {
   /**
    * It converts the column field and updates the data in same location/index in row.
    * @param row
+   * @param convertOnlyDirectDictionary
    * @return the status whether it could be loaded or not, usually when record is added
    * to bad records then it returns false.
    * @throws CarbonDataLoadingException
    */
-  void convert(CarbonRow row, BadRecordLogHolder logHolder) throws CarbonDataLoadingException;
+  void convert(CarbonRow row, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
+      throws CarbonDataLoadingException;
 
   /**
    * It convert the literal value to carbon internal value
    */
-  Object convert(Object value, BadRecordLogHolder logHolder) throws RuntimeException;
+  Object convert(Object value, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
+      throws RuntimeException;
 
   /**
    * This method clears all the dictionary caches being acquired.

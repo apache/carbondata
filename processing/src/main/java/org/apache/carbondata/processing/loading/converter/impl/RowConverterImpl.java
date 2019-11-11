@@ -160,12 +160,13 @@ public class RowConverterImpl implements RowConverter {
     return null;
   }
 
-  @Override
-  public CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException {
+  @Override public CarbonRow convert(CarbonRow row, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
+      throws CarbonDataLoadingException {
     logHolder.setLogged(false);
     logHolder.clear();
     for (int i = 0; i < fieldConverters.length; i++) {
-      fieldConverters[i].convert(row, logHolder);
+      fieldConverters[i].convert(row, logHolder, skipDirectDictionary, convertOnlyDirectDictionary);
       if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
         badRecordLogger.addBadRecordsToBuilder(row.getRawData(), logHolder.getReason());
         if (badRecordLogger.isDataLoadFail()) {

@@ -93,17 +93,21 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
     }
   }
 
-  @Override public void convert(CarbonRow row, BadRecordLogHolder logHolder)
+  @Override
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
       throws CarbonDataLoadingException {
     try {
-      row.update(convert(row.getString(index), logHolder), index);
+      row.update(convert(row.getString(index), logHolder, skipDirectDictionary,
+          convertOnlyDirectDictionary), index);
     } catch (RuntimeException e) {
       throw new CarbonDataLoadingException(e);
     }
   }
 
   @Override
-  public Object convert(Object value, BadRecordLogHolder logHolder)
+  public Object convert(Object value, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
       throws RuntimeException {
     try {
       String parsedValue = null;

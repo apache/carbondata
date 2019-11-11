@@ -44,6 +44,7 @@ import org.apache.carbondata.processing.loading.steps.DataConverterProcessorStep
 import org.apache.carbondata.processing.loading.steps.DataWriterBatchProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.DataWriterProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.InputProcessorStepImpl;
+import org.apache.carbondata.processing.loading.steps.InputProcessorStepWithDirectDictionaryConverterImpl;
 import org.apache.carbondata.processing.loading.steps.InputProcessorStepWithNoConverterImpl;
 import org.apache.carbondata.processing.loading.steps.JsonInputProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.SortProcessorStepImpl;
@@ -65,6 +66,8 @@ public final class DataLoadProcessBuilder {
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     if (loadModel.isLoadWithoutConverterStep()) {
       return buildInternalWithNoConverter(inputIterators, configuration, sortScope);
+    } else if (loadModel.isLoadWithDirectDictionaryConverter()) {
+      return buildInternalWithDirectDictionaryConverter(inputIterators, configuration, sortScope);
     } else if (loadModel.isJsonFileLoad()) {
       return buildInternalWithJsonInputProcessor(inputIterators, configuration, sortScope);
     } else if (!configuration.isSortTable() || sortScope.equals(
@@ -133,6 +136,33 @@ public final class DataLoadProcessBuilder {
       return new CarbonRowDataWriterProcessorStepImpl(configuration, inputProcessorStep);
     }
   }
+
+  /**
+   * Build pipe line for Load with direct dictionary Conversion Step.
+   */
+  private AbstractDataLoadProcessorStep buildInternalWithDirectDictionaryConverter(
+      CarbonIterator[] inputIterators, CarbonDataLoadConfiguration configuration,
+      SortScopeOptions.SortScope sortScope) {
+    // Wraps with dummy processor.
+    AbstractDataLoadProcessorStep inputProcessorStep =
+        new InputProcessorStepWithDirectDictionaryConverterImpl(configuration, inputIterators);
+    if (sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT)) {
+      AbstractDataLoadProcessorStep sortProcessorStep =
+          new SortProcessorStepImpl(configuration, inputProcessorStep);
+      //  Writes the sorted data in carbondata format.
+      return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
+    } else if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
+      //  Sorts the data by SortColumn or not
+      AbstractDataLoadProcessorStep sortProcessorStep =
+          new SortProcessorStepImpl(configuration, inputProcessorStep);
+      // Writes the sorted data in carbondata format.
+      return new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
+    } else {
+      // In all other cases like global sort and no sort uses this step
+      return new CarbonRowDataWriterProcessorStepImpl(configuration, inputProcessorStep);
+    }
+  }
+
 
   /**
    * Build pipe line for Load with json input processor.

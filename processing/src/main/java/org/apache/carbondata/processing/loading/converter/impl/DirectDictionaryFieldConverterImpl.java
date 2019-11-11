@@ -25,6 +25,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -64,13 +65,15 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
   }
 
   @Override
-  public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary) {
     String value = row.getString(index);
-    row.update(convert(value, logHolder), index);
+    row.update(convert(value, logHolder, skipDirectDictionary, convertOnlyDirectDictionary), index);
   }
 
   @Override
-  public Object convert(Object value, BadRecordLogHolder logHolder)
+  public Object convert(Object value, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
       throws RuntimeException {
     String literalValue = (String) value;
     if (literalValue == null) {
@@ -80,6 +83,14 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
     } else if (literalValue.equals(nullFormat)) {
       return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
+      if ((skipDirectDictionary) && (column.getDataType() == DataTypes.DATE)) {
+        return DataTypeUtil.getDataTypeConverter()
+            .convertFromStringToUTF8String(literalValue.replace("/", "-"));
+      } else {
+        if (column.getDataType() == DataTypes.DATE) {
+          literalValue = literalValue.replace("-", "/");
+        }
+      }
       int key = directDictionaryGenerator.generateDirectSurrogateKey(literalValue);
       if (key == CarbonCommonConstants.DIRECT_DICT_VALUE_NULL) {
         if ((literalValue.length() > 0) || (literalValue.length() == 0 && isEmptyBadRecord)) {

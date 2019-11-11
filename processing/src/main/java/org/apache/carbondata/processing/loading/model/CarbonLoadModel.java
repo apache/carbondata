@@ -212,6 +212,8 @@ public class CarbonLoadModel implements Serializable {
    */
   private boolean isLoadWithoutConverterStep;
 
+  private boolean isLoadWithDirectDictionaryConverter;
+
   /**
    * To identify the suitable input processor step for json file loading.
    */
@@ -497,6 +499,7 @@ public class CarbonLoadModel implements Serializable {
     copy.rangePartitionColumn = rangePartitionColumn;
     copy.scaleFactor = scaleFactor;
     copy.totalSize = totalSize;
+    copy.isLoadWithDirectDictionaryConverter = isLoadWithDirectDictionaryConverter;
     return copy;
   }
 
@@ -557,6 +560,8 @@ public class CarbonLoadModel implements Serializable {
     copyObj.rangePartitionColumn = rangePartitionColumn;
     copyObj.scaleFactor = scaleFactor;
     copyObj.totalSize = totalSize;
+    copyObj.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
+    copyObj.isLoadWithDirectDictionaryConverter = isLoadWithDirectDictionaryConverter;
     return copyObj;
   }
 
@@ -997,5 +1002,13 @@ public class CarbonLoadModel implements Serializable {
 
   public int getScaleFactor() {
     return scaleFactor;
+  }
+
+  public boolean isLoadWithDirectDictionaryConverter() {
+    return isLoadWithDirectDictionaryConverter;
+  }
+
+  public void setLoadWithDirectDictionaryConverter(boolean loadWithDirectDictionaryConverter) {
+    isLoadWithDirectDictionaryConverter = loadWithDirectDictionaryConverter;
   }
 }

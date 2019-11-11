@@ -52,13 +52,16 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
     this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
-  @Override public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
+  @Override
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary) {
     String dimensionValue = row.getString(index);
-    row.update(convert(dimensionValue, logHolder), index);
+    row.update(convert(dimensionValue, logHolder, skipDirectDictionary, convertOnlyDirectDictionary), index);
   }
 
   @Override
-  public Object convert(Object value, BadRecordLogHolder logHolder)
+  public Object convert(Object value, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
       throws RuntimeException {
     String dimensionValue = (String) value;
     if (null == dimensionValue && column.getDataType() != DataTypes.STRING) {

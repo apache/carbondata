@@ -54,14 +54,16 @@ public class MeasureFieldConverterImpl implements FieldConverter {
   }
 
   @Override
-  public void convert(CarbonRow row, BadRecordLogHolder logHolder)
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
       throws CarbonDataLoadingException {
     String value = row.getString(index);
-    row.update(convert(value, logHolder), index);
+    row.update(convert(value, logHolder, skipDirectDictionary, convertOnlyDirectDictionary), index);
   }
 
   @Override
-  public Object convert(Object value, BadRecordLogHolder logHolder)
+  public Object convert(Object value, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
+      Boolean convertOnlyDirectDictionary)
       throws RuntimeException {
     String literalValue = (String) (value);
     Object output;
@@ -101,11 +103,24 @@ public class MeasureFieldConverterImpl implements FieldConverter {
             dateFormat = dataField.getTimestampFormat();
           }
           if (dataField.isUseActualData()) {
-            output = DataTypeUtil.getNoDictionaryValueBasedOnDataType(literalValue,
-                dataField.getColumn().getDataType(),
-                dataField.getColumn().getColumnSchema().getScale(),
-                dataField.getColumn().getColumnSchema().getPrecision(), true, dateFormat);
+            if ((skipDirectDictionary) && (
+                dataField.getColumn().getDataType() == DataTypes.TIMESTAMP
+                    || dataField.getColumn().getDataType() == DataTypes.DATE)) {
+              output = DataTypeUtil.getDataTypeConverter()
+                  .convertFromStringToUTF8String(literalValue.replace("/", "-"));
+            } else {
+              output = DataTypeUtil.getNoDictionaryValueBasedOnDataType(literalValue,
+                  dataField.getColumn().getDataType(),
+                  dataField.getColumn().getColumnSchema().getScale(),
+                  dataField.getColumn().getColumnSchema().getPrecision(), true, dateFormat);
+            }
           } else {
+            //TODO: remove it and fix properly
+            if ((dataField.getColumn().getDataType() == DataTypes.TIMESTAMP
+                || dataField.getColumn().getDataType() == DataTypes.DATE) && (dateFormat
+                .equals(""))) {
+              literalValue = literalValue.replaceAll("-", "/");
+            }
             output = DataTypeUtil.getNoDictionaryValueBasedOnDataType(literalValue,
                 dataField.getColumn().getDataType(),
                 dataField.getColumn().getColumnSchema().getScale(),

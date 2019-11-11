@@ -151,7 +151,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     BadRecordLogHolder logHolder = new BadRecordLogHolder();
     logHolder.setLogged(false);
     for (int colIdx : sortColumnRangeInfo.getSortColumnIndex()) {
-      fieldConverters[colIdx].convert(fakeRow, logHolder);
+      fieldConverters[colIdx].convert(fakeRow, logHolder, false, false);
     }
   }
 
@@ -198,7 +198,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
    */
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch, RowConverter localConverter) {
     while (rowBatch.hasNext()) {
-      CarbonRow convertRow = localConverter.convert(rowBatch.next());
+      CarbonRow convertRow = localConverter.convert(rowBatch.next(), false, false);
       if (convertRow == null) {
         rowBatch.remove();
       } else {

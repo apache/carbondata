@@ -178,7 +178,7 @@ object DataLoadProcessorStepOnSpark {
         } else {
           row = new CarbonRow(rowParser.parseRow(rows.next()))
         }
-        row = rowConverter.convert(row)
+        row = rowConverter.convert(row, true, false)
         rowCounter.add(1)
         row
       }
@@ -220,7 +220,7 @@ object DataLoadProcessorStepOnSpark {
 
       override def next(): CarbonRow = {
         rowCounter.add(1)
-        rowConverter.convert(rows.next())
+        rowConverter.convert(rows.next(), false, false)
       }
     }
   }
@@ -245,7 +245,7 @@ object DataLoadProcessorStepOnSpark {
       override def hasNext: Boolean = rows.hasNext
 
       override def next(): CarbonRow = {
-        rowConverter.convert(rows.next())
+        rowConverter.convert(rows.next(), false, false)
       }
     }
   }
