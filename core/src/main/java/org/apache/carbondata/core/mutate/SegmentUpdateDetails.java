@@ -92,7 +92,7 @@ public class SegmentUpdateDetails implements Serializable {
     return deltaFileStamps;
   }
 
-  public void setDeltaFileStamp(String deltaFileStamp) {
+  public void addDeltaFileStamp(String deltaFileStamp) {
     if (deltaFileStamps == null) {
       deltaFileStamps = new LinkedHashSet<>();
     }
@@ -194,6 +194,4 @@ public class SegmentUpdateDetails implements Serializable {
   public void setDeletedRowsInBlock(String deletedRowsInBlock) {
     this.deletedRowsInBlock = deletedRowsInBlock;
   }
-
-
 }

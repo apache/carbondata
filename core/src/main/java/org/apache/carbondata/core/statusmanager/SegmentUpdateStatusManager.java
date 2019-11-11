@@ -330,15 +330,17 @@ public class SegmentUpdateStatusManager {
         // directly with available information with out listing
         if (block.getDeleteDeltaStartTimestamp().equals(block.getDeleteDeltaEndTimestamp())) {
           deleteFileList.add(
-              blockDir + CarbonCommonConstants.FILE_SEPARATOR + block.getBlockName() + "-" + block
-                  .getDeleteDeltaStartTimestamp() + extension);
+              new StringBuilder(blockDir).append(CarbonCommonConstants.FILE_SEPARATOR)
+                  .append(block.getBlockName()).append("-")
+                  .append(block.getDeleteDeltaStartTimestamp()).append(extension).toString());
           // If deltatimestamps list has data then it has multiple delta file so construct the file
           // directly with list of deltas with out listing
         } else if (block.getDeltaFileStamps() != null && block.getDeltaFileStamps().size() > 0) {
           for (String delta : block.getDeltaFileStamps()) {
             deleteFileList.add(
-                blockDir + CarbonCommonConstants.FILE_SEPARATOR + block.getBlockName() + "-" + delta
-                    + extension);
+                new StringBuilder(blockDir).append(CarbonCommonConstants.FILE_SEPARATOR)
+                    .append(block.getBlockName()).append("-").append(delta).append(extension)
+                    .toString());
           }
         } else {
           // It is for backward compatability.It lists the files.

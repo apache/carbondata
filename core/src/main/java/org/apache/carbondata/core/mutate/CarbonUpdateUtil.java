@@ -149,8 +149,8 @@ public class CarbonUpdateUtil {
             // add them to the list to get the delta files easily with out listing.
             if (!blockDetail.getDeleteDeltaStartTimestamp()
                 .equals(blockDetail.getDeleteDeltaEndTimestamp())) {
-              blockDetail.setDeltaFileStamp(blockDetail.getDeleteDeltaStartTimestamp());
-              blockDetail.setDeltaFileStamp(blockDetail.getDeleteDeltaEndTimestamp());
+              blockDetail.addDeltaFileStamp(blockDetail.getDeleteDeltaStartTimestamp());
+              blockDetail.addDeltaFileStamp(blockDetail.getDeleteDeltaEndTimestamp());
             } else {
               blockDetail.setDeltaFileStamps(null);
             }
