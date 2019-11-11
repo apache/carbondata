@@ -52,7 +52,8 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 /**
  * It reads data from record reader and sends data to next step.
  */
-public class InputProcessorStepWithDirectDictionaryConverterImpl extends AbstractDataLoadProcessorStep {
+public class InputProcessorStepWithDirectDictionaryConverterImpl
+    extends AbstractDataLoadProcessorStep {
 
   private CarbonIterator<Object[]>[] inputIterators;
 
@@ -71,8 +72,8 @@ public class InputProcessorStepWithDirectDictionaryConverterImpl extends Abstrac
 
   private BadRecordsLogger badRecordLogger;
 
-  public InputProcessorStepWithDirectDictionaryConverterImpl(CarbonDataLoadConfiguration configuration,
-      CarbonIterator<Object[]>[] inputIterators) {
+  public InputProcessorStepWithDirectDictionaryConverterImpl(
+      CarbonDataLoadConfiguration configuration, CarbonIterator<Object[]>[] inputIterators) {
     super(configuration, null);
     this.inputIterators = inputIterators;
     sdkWriterCores = configuration.getWritingCoresCount();
@@ -280,7 +281,8 @@ public class InputProcessorStepWithDirectDictionaryConverterImpl extends Abstrac
       for (int i = 0; i < data.length; i++) {
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
           // TODO: just need to keep rearrange order, remove others
-          if (DataTypeUtil.isPrimitiveColumn(dataTypes[i]) || dataTypes[i].equals(DataTypes.STRING)) {
+          if (DataTypeUtil.isPrimitiveColumn(dataTypes[i]) || dataTypes[i]
+              .equals(DataTypes.STRING)) {
             // keep the no dictionary measure column as original data
             newData[i] = data[orderOfData[i]];
           } else {

@@ -79,15 +79,23 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
     if (literalValue == null) {
       logHolder.setReason(
           CarbonDataProcessorUtil.prepareFailureReason(column.getColName(), column.getDataType()));
+      if (skipDirectDictionary) {
+        return null;
+      }
       return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else if (literalValue.equals(nullFormat)) {
+      if (skipDirectDictionary) {
+        return null;
+      }
       return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       if ((skipDirectDictionary) && (column.getDataType() == DataTypes.DATE)) {
         return DataTypeUtil.getDataTypeConverter()
             .convertFromStringToUTF8String(literalValue.replace("/", "-"));
       } else {
-        if (column.getDataType() == DataTypes.DATE) {
+        if ((convertOnlyDirectDictionary && column.getDataType() == DataTypes.DATE) && (column
+            .getDateFormat().contains("/"))) {
+          // also do this if original data has / else don't do.
           literalValue = literalValue.replace("-", "/");
         }
       }

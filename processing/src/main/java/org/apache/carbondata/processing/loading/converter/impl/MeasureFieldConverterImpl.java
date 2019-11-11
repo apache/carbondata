@@ -116,9 +116,11 @@ public class MeasureFieldConverterImpl implements FieldConverter {
             }
           } else {
             //TODO: remove it and fix properly
-            if ((dataField.getColumn().getDataType() == DataTypes.TIMESTAMP
-                || dataField.getColumn().getDataType() == DataTypes.DATE) && (dateFormat
-                .equals(""))) {
+            if (convertOnlyDirectDictionary && (
+                dataField.getColumn().getDataType() == DataTypes.TIMESTAMP
+                    || dataField.getColumn().getDataType() == DataTypes.DATE) && (dateFormat
+                .contains("/"))) {
+              // if original data is having '-' as delimiter, should not do this. how to find that?
               literalValue = literalValue.replaceAll("-", "/");
             }
             output = DataTypeUtil.getNoDictionaryValueBasedOnDataType(literalValue,

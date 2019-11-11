@@ -41,7 +41,8 @@ public class ComplexFieldConverterImpl extends AbstractDictionaryFieldConverterI
   public void convert(CarbonRow row, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
       Boolean convertOnlyDirectDictionary) {
     Object object = row.getObject(index);
-    row.update(convert(object, logHolder, skipDirectDictionary, convertOnlyDirectDictionary), index);
+    row.update(convert(object, logHolder, skipDirectDictionary, convertOnlyDirectDictionary),
+        index);
   }
 
   @Override

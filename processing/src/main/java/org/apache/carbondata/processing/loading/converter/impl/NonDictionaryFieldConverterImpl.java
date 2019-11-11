@@ -56,7 +56,9 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
   public void convert(CarbonRow row, BadRecordLogHolder logHolder, Boolean skipDirectDictionary,
       Boolean convertOnlyDirectDictionary) {
     String dimensionValue = row.getString(index);
-    row.update(convert(dimensionValue, logHolder, skipDirectDictionary, convertOnlyDirectDictionary), index);
+    row.update(
+        convert(dimensionValue, logHolder, skipDirectDictionary, convertOnlyDirectDictionary),
+        index);
   }
 
   @Override
