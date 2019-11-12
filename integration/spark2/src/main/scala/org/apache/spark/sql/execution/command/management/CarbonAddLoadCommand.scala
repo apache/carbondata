@@ -111,13 +111,13 @@ case class CarbonAddLoadCommand(
       throw new AnalysisException("CarbonIndex files not present in the location")
     }
 
-    var inputPath = options.getOrElse(
+    val inputPath = options.getOrElse(
       "path", throw new UnsupportedOperationException("PATH is mandatory"))
 
     // infer schema and collect FileStatus for all partitions
     val (inputPathSchema, lastLevelDirFileMap) =
       MixedFormatHandler.collectInfo(sparkSession, options, inputPath)
-    var inputPathCarbonFields = inputPathSchema.fields.map { field =>
+    val inputPathCarbonFields = inputPathSchema.fields.map { field =>
       val dataType = convertSparkToCarbonDataType(field.dataType)
       new Field(field.name, dataType)
     }
@@ -133,16 +133,16 @@ case class CarbonAddLoadCommand(
           "partition option is required when adding segment to partition table")
       )
       // extract partition given by user, partition option should be form of "a:int, b:string"
-      val partitionFields = partitions.split(",")
-        .map(_.trim)
-        .filter(_.nonEmpty)
-        .map(_.toLowerCase)
+      val partitionFields = partitions
+        .split(",")
         .map { input =>
-          val nameAndDataType = input.split(":")
-          if (nameAndDataType.size == 2) {
-            new Field(nameAndDataType(0), nameAndDataType(1))
-          } else {
-            throw new AnalysisException(s"invalid partition option: ${options.toString()}")
+          if (input.nonEmpty) {
+            val nameAndDataType = input.trim.toLowerCase.split(":")
+            if (nameAndDataType.size == 2) {
+              new Field(nameAndDataType(0), nameAndDataType(1))
+            } else {
+              throw new AnalysisException(s"invalid partition option: ${ options.toString() }")
+            }
           }
         }
       // validate against the partition in carbon table
@@ -158,7 +158,8 @@ case class CarbonAddLoadCommand(
       inputPathCarbonFields ++ partitionFields
     } else {
       if (options.contains("partition")) {
-        throw new AnalysisException(s"partition option is not required for non-partition table")
+        throw new AnalysisException(
+          s"Invalid option: partition, $tableName is not a partitioned table")
       }
       inputPathCarbonFields
     }

@@ -121,14 +121,15 @@ object MixedFormatHandler {
       // leaf file is found, so parent folder (input parameter) is the last level dir
       val updatedPath = FileFactory.getUpdatedFilePath(path.getPath.toString)
       lastLevelFileMap.put(updatedPath, leafFiles)
-      return lastLevelFileMap
+      lastLevelFileMap
+    } else {
+      // no leaf file is found, for each directory, collect recursively
+      directories.foreach { dir =>
+        val map = collectAllLeafFileStatus(sparkSession, dir, fs)
+        lastLevelFileMap ++= map
+      }
+      lastLevelFileMap
     }
-    // for each directory, collect recursively
-    directories.foreach { dir =>
-      val map = collectAllLeafFileStatus(sparkSession, dir, fs)
-      lastLevelFileMap ++= map
-    }
-    return lastLevelFileMap
   }
 
   /**
