@@ -133,24 +133,19 @@ object SCDType2Benchmark {
     import org.apache.spark.sql.CarbonSession._
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
-    val master = Option(System.getProperty("spark.master"))
-      .orElse(sys.env.get("MASTER"))
-      .orElse(Option("local[8]"))
 
     val spark = SparkSession
       .builder()
-      .master(master.get)
+      .master("local[8]")
       .enableHiveSupport()
-      .config("spark.driver.host", "127.0.0.1")
+      .config("spark.sql.warehouse.dir", s"$rootPath/examples/spark2/target/warehouse")
       .getOrCreateCarbonSession()
     spark.sparkContext.setLogLevel("error")
 
-    spark.sql("drop table if exists dw_order")
-    spark.sql("drop table if exists ods_order")
-
     // prepare base data for first day
-    spark.sql(s"drop table if exists dw_order_solution1")
-    spark.sql(s"drop table if exists dw_order_solution2")
+    spark.sql("drop table if exists dw_order_solution1")
+    spark.sql("drop table if exists dw_order_solution2")
+    spark.sql("drop table if exists change")
 
     val baseData = generateDataForDay0(
         sparkSession = spark,
