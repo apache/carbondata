@@ -37,6 +37,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -768,7 +769,7 @@ public final class DataTypeUtil {
    *                  data type
    * @return
    */
-  public static String normalizeColumnValueForItsDataType(String value, CarbonDimension dimension) {
+  public static String normalizeColumnValueForItsDataType(String value, CarbonColumn dimension) {
     try {
       Object parsedValue = null;
       // validation will not be done for timestamp datatype as for timestamp direct dictionary
@@ -826,7 +827,7 @@ public final class DataTypeUtil {
     return value;
   }
 
-  private static String parseStringToBigDecimal(String value, CarbonDimension dimension) {
+  private static String parseStringToBigDecimal(String value, CarbonColumn dimension) {
     BigDecimal bigDecimal = new BigDecimal(value)
         .setScale(dimension.getColumnSchema().getScale(), RoundingMode.HALF_UP);
     BigDecimal normalizedValue =

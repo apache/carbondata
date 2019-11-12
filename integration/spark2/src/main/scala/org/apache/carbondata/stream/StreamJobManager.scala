@@ -60,7 +60,7 @@ object StreamJobManager {
         "('streaming' tblproperty is not 'sink' or 'true')")
     }
     if (validateQuerySchema) {
-      val fields = sink.getCreateOrderColumn(sink.getTableName).asScala.map { column =>
+      val fields = sink.getCreateOrderColumn().asScala.map { column =>
         StructField(
           column.getColName,
           CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(column.getDataType))

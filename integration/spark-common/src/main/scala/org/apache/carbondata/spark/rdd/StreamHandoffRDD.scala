@@ -150,7 +150,7 @@ class StreamHandoffRDD[K, V](
     CarbonInputFormat.setTableName(hadoopConf, carbonTable.getTableName)
     CarbonInputFormat.setTablePath(hadoopConf, carbonTable.getTablePath)
     val projection = new CarbonProjection
-    val dataFields = carbonTable.getStreamStorageOrderColumn(carbonTable.getTableName)
+    val dataFields = carbonTable.getStreamStorageOrderColumn()
     (0 until dataFields.size()).foreach { index =>
       projection.addColumn(dataFields.get(index).getColName)
     }
@@ -175,8 +175,7 @@ class StreamHandoffRDD[K, V](
       carbonTable: CarbonTable
   ): CompactionResultSortProcessor = {
     val wrapperColumnSchemaList = CarbonUtil.getColumnSchemaList(
-      carbonTable.getDimensionByTableName(carbonTable.getTableName),
-      carbonTable.getMeasureByTableName(carbonTable.getTableName))
+      carbonTable.getDimensions, carbonTable.getMeasures)
     val dimLensWithComplex =
       (0 until wrapperColumnSchemaList.size()).map(_ => Integer.MAX_VALUE).toArray
     val dictionaryColumnCardinality =

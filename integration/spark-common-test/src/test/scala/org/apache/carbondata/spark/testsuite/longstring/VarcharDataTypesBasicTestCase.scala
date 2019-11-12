@@ -326,9 +326,9 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     val dmTableName = longStringTable + "_" + datamapName
     val dmTable = CarbonMetadata.getInstance().getCarbonTable("default", dmTableName)
     assert(null != dmTable)
-    assert(dmTable.getColumnByName(dmTableName.toLowerCase(), longStringTable + "_description").getDataType
+    assert(dmTable.getColumnByName(longStringTable + "_description").getDataType
       == DataTypes.VARCHAR)
-    assert(dmTable.getColumnByName(dmTableName.toLowerCase(), longStringTable + "_note").getDataType
+    assert(dmTable.getColumnByName(longStringTable + "_note").getDataType
       == DataTypes.VARCHAR)
     sql(s"DROP DATAMAP IF EXISTS $datamapName ON TABLE $longStringTable")
   }

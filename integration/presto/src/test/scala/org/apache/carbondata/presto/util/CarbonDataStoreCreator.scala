@@ -338,7 +338,7 @@ object CarbonDataStoreCreator {
     val header: String = reader.readLine()
     val allCols: util.List[CarbonColumn] = new util.ArrayList[CarbonColumn]()
     val dimensions: util.List[CarbonDimension] =
-      table.getDimensionByTableName(table.getTableName)
+      table.getDimensions()
     allCols.addAll(dimensions)
     val msrs: List[CarbonMeasure] =
       table.getMeasureByTableName(table.getTableName)

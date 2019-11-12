@@ -259,7 +259,7 @@ public class CarbonTableReader {
     JobConf jobConf = new JobConf(config);
     List<PartitionSpec> filteredPartitions = new ArrayList<>();
 
-    PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
+    PartitionInfo partitionInfo = carbonTable.getPartitionInfo();
     LoadMetadataDetails[] loadMetadataDetails = null;
     if (partitionInfo != null && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE) {
       try {

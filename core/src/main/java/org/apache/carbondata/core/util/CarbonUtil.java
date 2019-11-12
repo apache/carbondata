@@ -3118,8 +3118,7 @@ public final class CarbonUtil {
   public static Map<String, LocalDictionaryGenerator> getLocalDictionaryModel(
       CarbonTable carbonTable) {
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensionByTableName(carbonTable.getTableName()),
-            carbonTable.getMeasureByTableName(carbonTable.getTableName()));
+        .getColumnSchemaList(carbonTable.getDimensions(), carbonTable.getMeasures());
     boolean islocalDictEnabled = carbonTable.isLocalDictionaryEnabled();
     // creates a map only if local dictionary is enabled, else map will be null
     Map<String, LocalDictionaryGenerator> columnLocalDictGenMap = new HashMap<>();

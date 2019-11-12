@@ -85,7 +85,7 @@ public class Util {
   }
 
   public static StructType convertToSparkSchema(CarbonTable table) {
-    List<CarbonColumn> columns = table.getCreateOrderColumn(table.getTableName());
+    List<CarbonColumn> columns = table.getCreateOrderColumn();
     ColumnSchema[] schema = new ColumnSchema[columns.size()];
     int i = 0;
     for (CarbonColumn column : columns) {

@@ -210,8 +210,7 @@ public class CarbonFactDataHandlerModel {
     CarbonTable carbonTable = configuration.getTableSpec().getCarbonTable();
 
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensionByTableName(identifier.getTableName()),
-            carbonTable.getMeasureByTableName(identifier.getTableName()));
+        .getColumnSchemaList(carbonTable.getDimensions(), carbonTable.getMeasures());
     int[] colCardinality =
         CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
 
@@ -354,8 +353,7 @@ public class CarbonFactDataHandlerModel {
         segmentProperties.getDimensions().size() - carbonFactDataHandlerModel
             .getNoDictionaryCount());
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
-            carbonTable.getMeasureByTableName(tableName));
+        .getColumnSchemaList(carbonTable.getDimensions(), carbonTable.getMeasures());
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
     // get the cardinality for all all the columns including no
     // dictionary columns and complex columns

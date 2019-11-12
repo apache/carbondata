@@ -462,8 +462,7 @@ case class CarbonLoadDataCommand(
     val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       .getCarbonTableIdentifier
     val dictFolderPath = CarbonTablePath.getMetadataPath(carbonLoadModel.getTablePath)
-    val dimensions = carbonTable.getDimensionByTableName(
-      carbonTable.getTableName).asScala.toArray
+    val dimensions = carbonTable.getDimensions().asScala.toArray
     val colDictFilePath = carbonLoadModel.getColDictFilePath
     if (!StringUtils.isEmpty(colDictFilePath)) {
       carbonLoadModel.initPredefDictMap()
@@ -673,8 +672,8 @@ case class CarbonLoadDataCommand(
     // input data from csv files. Convert to logical plan
     val allCols = new ArrayBuffer[String]()
     // get only the visible dimensions from table
-    allCols ++= table.getDimensionByTableName(table.getTableName).asScala.map(_.getColName)
-    allCols ++= table.getMeasureByTableName(table.getTableName).asScala.map(_.getColName)
+    allCols ++= table.getDimensions().asScala.map(_.getColName)
+    allCols ++= table.getMeasures.asScala.map(_.getColName)
     var attributes =
       StructType(
         allCols.filterNot(_.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)).map(
@@ -934,7 +933,7 @@ case class CarbonLoadDataCommand(
     attributes = attributes.map { attr =>
       // Update attribute datatypes in case of dictionary columns, in case of dictionary columns
       // datatype is always int
-      val column = table.getColumnByName(table.getTableName, attr.name)
+      val column = table.getColumnByName(attr.name)
       if (column.hasEncoding(Encoding.DICTIONARY)) {
         CarbonToSparkAdapter.createAttributeReference(attr.name,
           IntegerType,
@@ -983,7 +982,7 @@ case class CarbonLoadDataCommand(
           CarbonProperties.getInstance().getGlobalSortRddStorageLevel))
       }
       val child = Project(output, LogicalRDD(attributes, updatedRdd)(sparkSession))
-      val sortColumns = table.getSortColumns(table.getTableName)
+      val sortColumns = table.getSortColumns()
       val sortPlan =
         Sort(
           output.filter(f => sortColumns.contains(f.name)).map(SortOrder(_, Ascending)),
@@ -1094,7 +1093,7 @@ case class CarbonLoadDataCommand(
       operationContext: OperationContext): LogicalRelation = {
     val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
     val metastoreSchema = StructType(catalogTable.schema.fields.map{f =>
-      val column = table.getColumnByName(table.getTableName, f.name)
+      val column = table.getColumnByName(f.name)
       if (column.hasEncoding(Encoding.DICTIONARY)) {
         f.copy(dataType = IntegerType)
       } else if (f.dataType == TimestampType || f.dataType == DateType) {
@@ -1112,7 +1111,7 @@ case class CarbonLoadDataCommand(
       catalog.filterPartitions(Nil) // materialize all the partitions in memory
     }
     var partitionSchema =
-      StructType(table.getPartitionInfo(table.getTableName).getColumnSchemaList.asScala.map(field =>
+      StructType(table.getPartitionInfo().getColumnSchemaList.asScala.map(field =>
         metastoreSchema.fields.find(_.name.equalsIgnoreCase(field.getColumnName))).map(_.get))
     val dataSchema =
       StructType(metastoreSchema

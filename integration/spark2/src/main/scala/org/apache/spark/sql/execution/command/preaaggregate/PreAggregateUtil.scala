@@ -195,7 +195,7 @@ object PreAggregateUtil {
       parentTableName: String,
       parentDatabaseName: String,
       carbonTable: CarbonTable) : ColumnTableRelation = {
-    val parentColumnId = carbonTable.getColumnByName(parentTableName, parentColumnName).getColumnId
+    val parentColumnId = carbonTable.getColumnByName(parentColumnName).getColumnId
     val columnTableRelation = ColumnTableRelation(parentColumnName = parentColumnName.toLowerCase(),
       parentColumnId = parentColumnId,
       parentTableName = parentTableName,

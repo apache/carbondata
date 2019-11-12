@@ -58,10 +58,8 @@ public class TableSpec {
 
   public TableSpec(CarbonTable carbonTable) {
     this.carbonTable = carbonTable;
-    List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getTableName());
-    List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getTableName());
+    List<CarbonDimension> dimensions = carbonTable.getDimensions();
+    List<CarbonMeasure> measures = carbonTable.getMeasures();
     // first calculate total number of columnar field considering column group and complex column
     numSimpleDimensions = 0;
     for (CarbonDimension dimension : dimensions) {

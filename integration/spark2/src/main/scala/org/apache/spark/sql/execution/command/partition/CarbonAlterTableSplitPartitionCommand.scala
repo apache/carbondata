@@ -74,7 +74,7 @@ case class CarbonAlterTableSplitPartitionCommand(
       throwMetadataException(dbName, tableName, "table not found")
     }
     val carbonTable = relation.carbonTable
-    val partitionInfo = carbonTable.getPartitionInfo(tableName)
+    val partitionInfo = carbonTable.getPartitionInfo
     val partitionIds = partitionInfo.getPartitionIds.asScala.map(_.asInstanceOf[Int]).toList
     // keep a copy of partitionIdList before update partitionInfo.
     // will be used in partition data scan

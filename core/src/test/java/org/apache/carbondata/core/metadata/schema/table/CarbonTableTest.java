@@ -44,11 +44,11 @@ public class CarbonTableTest extends TestCase {
   }
 
   @Test public void testNumberOfDimensionReturnsProperCount() {
-    assertEquals(1, carbonTable.getNumberOfDimensions("carbontesttable"));
+    assertEquals(1, carbonTable.getDimensions().size());
   }
 
   @Test public void testNumberOfMeasureReturnsProperCount() {
-    assertEquals(1, carbonTable.getNumberOfMeasures("carbontesttable"));
+    assertEquals(1, carbonTable.getMeasures().size());
   }
 
   @Test public void testGetDatabaseNameResturnsDatabaseName() {
@@ -65,7 +65,7 @@ public class CarbonTableTest extends TestCase {
 
   @Test public void testDimensionPresentInTableIsProper() {
     CarbonDimension dimension = new CarbonDimension(getColumnarDimensionColumn(), 0, -1, -1);
-    assertTrue(carbonTable.getDimensionByName("carbontesttable", "IMEI").equals(dimension));
+    assertTrue(carbonTable.getDimensionByName("IMEI").equals(dimension));
   }
 
   static ColumnSchema getColumnarDimensionColumn() {

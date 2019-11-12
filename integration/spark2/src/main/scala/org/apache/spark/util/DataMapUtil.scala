@@ -41,7 +41,7 @@ object DataMapUtil {
       fieldRelationMap: scala.collection.mutable.LinkedHashMap[Field, DataMapField],
       tableProperties: mutable.Map[String, String]): Unit = {
     var neworder = Seq[String]()
-    val parentOrder = parentTable.getSortColumns(parentTable.getTableName).asScala
+    val parentOrder = parentTable.getSortColumns().asScala
     parentOrder.foreach(parentcol =>
       fields.filter(col => fieldRelationMap(col).aggregateFunction.isEmpty &&
                            fieldRelationMap(col).columnTableRelationList.size == 1 &&

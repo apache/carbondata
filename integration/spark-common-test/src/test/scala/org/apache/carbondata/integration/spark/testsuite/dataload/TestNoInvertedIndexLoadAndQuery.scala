@@ -312,11 +312,11 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            LOAD DATA LOCAL INPATH '$testData1' into table index1
            """)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "index1")
-    assert(carbonTable.getColumnByName("index1", "city").getColumnSchema.getEncodingList
+    assert(carbonTable.getColumnByName("city").getColumnSchema.getEncodingList
       .contains(Encoding.INVERTED_INDEX))
-    assert(carbonTable.getColumnByName("index1", "name").getColumnSchema.getEncodingList
+    assert(carbonTable.getColumnByName("name").getColumnSchema.getEncodingList
       .contains(Encoding.INVERTED_INDEX))
-    assert(!carbonTable.getColumnByName("index1", "id").getColumnSchema.getEncodingList
+    assert(!carbonTable.getColumnByName("id").getColumnSchema.getEncodingList
       .contains(Encoding.INVERTED_INDEX))
     checkAnswer(
       sql(
@@ -336,11 +336,11 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            TBLPROPERTIES('INVERTED_INDEX'='city,name,id','SORT_COLUMNS'='city,name,id')
       """)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "index1")
-    assert(carbonTable.getColumnByName("index1", "city").getColumnSchema.getEncodingList
+    assert(carbonTable.getColumnByName("city").getColumnSchema.getEncodingList
       .contains(Encoding.INVERTED_INDEX))
-    assert(carbonTable.getColumnByName("index1", "name").getColumnSchema.getEncodingList
+    assert(carbonTable.getColumnByName("name").getColumnSchema.getEncodingList
       .contains(Encoding.INVERTED_INDEX))
-    assert(carbonTable.getColumnByName("index1", "id").getColumnSchema.getEncodingList
+    assert(carbonTable.getColumnByName("id").getColumnSchema.getEncodingList
       .contains(Encoding.INVERTED_INDEX))
   }
 

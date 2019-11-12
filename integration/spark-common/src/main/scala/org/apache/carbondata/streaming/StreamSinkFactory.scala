@@ -250,7 +250,7 @@ object StreamSinkFactory {
     val optionsFinal = LoadOption.fillOptionWithDefaultValue(parameters.asJava)
     optionsFinal.put("sort_scope", "no_sort")
     if (parameters.get("fileheader").isEmpty) {
-      optionsFinal.put("fileheader", carbonTable.getCreateOrderColumn(carbonTable.getTableName)
+      optionsFinal.put("fileheader", carbonTable.getCreateOrderColumn()
         .asScala.map(_.getColName).mkString(","))
     }
     optionsFinal

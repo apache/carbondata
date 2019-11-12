@@ -576,8 +576,7 @@ object AlterTableUtil {
           CarbonCommonConstants.COLUMN_META_CACHE} is not allowed for child datamaps")
       }
       val schemaList: util.List[ColumnSchema] = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensionByTableName(carbonTable.getTableName),
-          carbonTable.getMeasureByTableName(carbonTable.getTableName))
+        .getColumnSchemaList(carbonTable.getDimensions, carbonTable.getMeasures)
       val tableColumns: Seq[String] = schemaList.asScala
         .map(columnSchema => columnSchema.getColumnName)
       CommonUtil
@@ -610,7 +609,7 @@ object AlterTableUtil {
         val errorMsg = "range_column not support multiple columns"
         throw new MalformedCarbonCommandException(errorMsg)
       }
-      val rangeColumn = carbonTable.getColumnByName(carbonTable.getTableName, rangeColumnProp)
+      val rangeColumn = carbonTable.getColumnByName(rangeColumnProp)
       if (rangeColumn == null) {
         throw new MalformedCarbonCommandException(
           s"Table property ${ CarbonCommonConstants.RANGE_COLUMN }: ${ rangeColumnProp }" +
@@ -664,7 +663,7 @@ object AlterTableUtil {
       cachedColumns: String): Unit = {
     if (cachedColumns.nonEmpty) {
       cachedColumns.split(",").foreach { column =>
-        val dimension = carbonTable.getDimensionByName(carbonTable.getTableName, column)
+        val dimension = carbonTable.getDimensionByName(column)
         if (null != dimension && dimension.isComplex) {
           val errorMessage =
             s"$column is a complex type column and complex type is not allowed for " +
@@ -799,8 +798,7 @@ object AlterTableUtil {
         // By default all the columns in the table will be cached. This case is to compare all the
         // table columns already cached to the newly specified cached columns
         val schemaList: util.List[ColumnSchema] = CarbonUtil
-          .getColumnSchemaList(carbonTable.getDimensionByTableName(carbonTable.getTableName),
-            carbonTable.getMeasureByTableName(carbonTable.getTableName))
+          .getColumnSchemaList(carbonTable.getDimensions, carbonTable.getMeasures)
         val tableColumns: Array[String] = schemaList.asScala
           .map(columnSchema => columnSchema.getColumnName).toArray
         compareColumns(tableColumns, newColumns)

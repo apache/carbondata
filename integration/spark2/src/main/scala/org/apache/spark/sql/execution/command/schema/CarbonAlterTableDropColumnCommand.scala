@@ -62,8 +62,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         throw new MalformedCarbonCommandException(
           "alter table drop column is not supported for index datamap")
       }
-      val partitionInfo = carbonTable.getPartitionInfo(tableName)
-      val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
+      val partitionInfo = carbonTable.getPartitionInfo()
+      val tableColumns = carbonTable.getCreateOrderColumn().asScala
       if (partitionInfo != null) {
         val partitionColumnSchemaList = partitionInfo.getColumnSchemaList.asScala
           .map(_.getColumnName)
@@ -149,7 +149,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         schemaEvolutionEntry,
         tableInfo)(sparkSession)
       // get the columns in schema order and filter the dropped column in the column set
-      val cols = carbonTable.getCreateOrderColumn(carbonTable.getTableName).asScala
+      val cols = carbonTable.getCreateOrderColumn().asScala
         .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema }
         .filterNot(column => delCols.contains(column))
       // In case of spark2.2 and above and , when we call

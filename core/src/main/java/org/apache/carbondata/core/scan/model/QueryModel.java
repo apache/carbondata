@@ -210,8 +210,8 @@ public class QueryModel {
       // corresponding segment. So the filter column may not be present in it. so generate the
       // dimension and measure from the carbontable
       CarbonDimension dimension =
-          table.getDimensionByName(table.getTableName(), col.getColumnName());
-      CarbonMeasure measure = table.getMeasureByName(table.getTableName(), col.getColumnName());
+          table.getDimensionByName(col.getColumnName());
+      CarbonMeasure measure = table.getMeasureByName(col.getColumnName());
       col.setDimension(dimension);
       col.setMeasure(measure);
       col.setCarbonColumn(dimension == null ? measure : dimension);

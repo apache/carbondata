@@ -42,13 +42,13 @@ object PartitionSplitter {
      val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
      val tableName = carbonTable.getTableName
      val databaseName = carbonTable.getDatabaseName
-     val bucketInfo = carbonTable.getBucketingInfo(tableName)
+     val bucketInfo = carbonTable.getBucketingInfo()
      var finalSplitStatus = false
      val bucketNumber = bucketInfo match {
        case null => 1
        case _ => bucketInfo.getNumOfRanges
      }
-     val partitionInfo = carbonTable.getPartitionInfo(tableName)
+     val partitionInfo = carbonTable.getPartitionInfo()
      val partitioner = PartitionFactory.getPartitioner(partitionInfo)
 
      for (i <- 0 until bucketNumber) {
