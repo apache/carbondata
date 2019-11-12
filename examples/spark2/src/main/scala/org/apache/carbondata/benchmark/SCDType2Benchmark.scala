@@ -152,20 +152,21 @@ object SCDType2Benchmark {
     spark.sql(s"drop table if exists dw_order_solution1")
     spark.sql(s"drop table if exists dw_order_solution2")
 
-    val df = generateDataForDay0(
+    val baseData = generateDataForDay0(
         sparkSession = spark,
         numOrders = numOrders,
         startDate = Date.valueOf("2018-05-01"))
 
-    df.write
+    baseData.write
       .format("carbondata")
       .option("tableName", "dw_order_solution1")
       .mode(SaveMode.Overwrite)
       .save()
 
-    df.write
+    baseData.write
       .format("carbondata")
       .option("tableName", "dw_order_solution2")
+      .option("sort_columns", "order_id")
       .mode(SaveMode.Overwrite)
       .save()
 
@@ -188,14 +189,14 @@ object SCDType2Benchmark {
     for (i <- 1 to numDays) {
       // prepare for incremental update data for day-i
       val newDate = new Date(DateUtils.addDays(startDate, 1).getTime)
-      val change = generateDailyChange(
+      val changeData = generateDailyChange(
         sparkSession = spark,
         numUpdatedOrders = numUpdateOrdersDaily,
         startDate = startDate,
         updateDate = newDate,
         newState = state,
         numNewOrders = newNewOrdersDaily)
-      change.write
+      changeData.write
         .format("carbondata")
         .option("tableName", "change")
         .mode(SaveMode.Overwrite)
