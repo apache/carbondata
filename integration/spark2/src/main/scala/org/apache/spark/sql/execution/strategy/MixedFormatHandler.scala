@@ -44,7 +44,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
-import org.apache.carbondata.core.statusmanager.{FileFormat => FileFormatName, SegmentStatus}
+import org.apache.carbondata.core.statusmanager.{FileFormat => FileFormatName, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -149,11 +149,12 @@ object MixedFormatHandler {
       supportBatch: Boolean = true): Option[(RDD[InternalRow], Boolean)] = {
     val loadMetadataDetails = readCommittedScope.getSegmentList
     val segsToAccess = getSegmentsToAccess(identier)
-    val rdds = loadMetadataDetails.filterNot(l =>
-      l.getFileFormat.equals(FileFormatName.COLUMNAR_V3) ||
-      l.getFileFormat.equals(FileFormatName.ROW_V1) &&
-      (!(l.getSegmentStatus.equals(SegmentStatus.SUCCESS) &&
-         l.getSegmentStatus.equals(SegmentStatus.LOAD_PARTIAL_SUCCESS))))
+    val rdds = loadMetadataDetails.filter(metaDetail =>
+      (metaDetail.getSegmentStatus.equals(SegmentStatus.SUCCESS) ||
+       metaDetail.getSegmentStatus.equals(SegmentStatus.LOAD_PARTIAL_SUCCESS)))
+      .filterNot(currLoad =>
+        currLoad.getFileFormat.equals(FileFormatName.COLUMNAR_V3) ||
+        currLoad.getFileFormat.equals(FileFormatName.ROW_V1))
       .filter(l => segsToAccess.isEmpty || segsToAccess.contains(l.getLoadName))
       .groupBy(_.getFileFormat)
       .map { case (format, detailses) =>
@@ -382,5 +383,13 @@ object MixedFormatHandler {
     } else {
       Seq.empty
     }
+  }
+
+  /**
+   * Returns true if any other non-carbon format segment exists
+   */
+  def otherFormatSegmentsExist(metadataPath: String): Boolean = {
+    val allSegments = SegmentStatusManager.readLoadMetadata(metadataPath)
+    allSegments.exists(a => a.getFileFormat != null && !a.isCarbonFormat)
   }
 }
