@@ -368,7 +368,9 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
    * Returns true if any of the nulls indicator are set for this column. This can be used
    * as an optimization to prevent setting nulls.
    */
-  public final boolean anyNullsSet() { return anyNullsSet; }
+  public final boolean anyNullsSet() {
+    return anyNullsSet;
+  }
 
   @Override
   public void putFloats(int rowId, int count, float[] src, int srcIndex) {

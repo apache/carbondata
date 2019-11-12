@@ -72,13 +72,19 @@ public class BlockDetails extends FileSplit implements Serializable {
 
   /** The file containing this split's data. */
   @Override
-  public Path getPath() { return new Path(filePath); }
+  public Path getPath() {
+    return new Path(filePath);
+  }
 
   /** The position of the first byte in the file to process. */
   @Override
-  public long getStart() { return blockOffset; }
+  public long getStart() {
+    return blockOffset;
+  }
 
   /** The number of bytes in the file to process. */
   @Override
-  public long getLength() { return blockLength; }
+  public long getLength() {
+    return blockLength;
+  }
 }

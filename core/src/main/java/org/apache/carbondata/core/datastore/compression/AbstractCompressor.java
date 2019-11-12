@@ -125,5 +125,7 @@ public abstract class AbstractCompressor implements Compressor {
   }
 
   @Override
-  public boolean supportUnsafe() { return false; }
+  public boolean supportUnsafe() {
+    return false;
+  }
 }

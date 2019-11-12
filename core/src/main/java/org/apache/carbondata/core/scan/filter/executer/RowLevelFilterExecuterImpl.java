@@ -621,8 +621,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
       if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
-        if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[dimensionChunkIndex[i]])
-        {
+        if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[dimensionChunkIndex[i]]) {
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[dimensionChunkIndex[i]] =
               rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
                   rawBlockletColumnChunks.getFileReader(), dimensionChunkIndex[i]);

@@ -112,8 +112,7 @@ public class CarbonCompactionUtil {
         groupCorrespodingInfoBasedOnTask(info, taskBlockInfoMapping, taskNo);
         // put the taskBlockInfo with respective segment id
         segmentBlockInfoMapping.put(segId, taskBlockInfoMapping);
-      } else
-      {
+      } else {
         groupCorrespodingInfoBasedOnTask(info, taskBlockInfoMapping, taskNo);
       }
     }

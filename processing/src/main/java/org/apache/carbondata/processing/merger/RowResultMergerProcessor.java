@@ -170,8 +170,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
           }
         }
       }
-      if (isDataPresent)
-      {
+      if (isDataPresent) {
         this.dataHandler.finish();
       }
       mergeStatus = true;
