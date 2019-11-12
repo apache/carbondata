@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -31,12 +32,13 @@ import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport
-import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter, Field, Schema}
+import org.apache.carbondata.sdk.file.{Field, Schema}
 import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter}
 import org.junit.Assert
 import scala.io.Source
 
 import org.apache.carbondata.common.Strings
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 
@@ -53,18 +55,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test add segment ") {
-    sql("drop table if exists addsegment1")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
 
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
+    createCarbonTable()
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     sql("select count(*) from addsegment1").show()
@@ -83,18 +75,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test added segment drop") {
-    sql("drop table if exists addsegment1")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
 
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
+    createCarbonTable()
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     sql("select count(*) from addsegment1").show()
@@ -118,18 +100,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test compact on added segment") {
-    sql("drop table if exists addsegment1")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
 
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
+    createCarbonTable()
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     sql("select count(*) from addsegment1").show()
@@ -154,17 +126,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test compact on multiple added segments") {
-    sql("drop table if exists addsegment1")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
 
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    createCarbonTable()
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -197,18 +160,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   test("Test update on added segment") {
-    sql("drop table if exists addsegment1")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
 
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
+    createCarbonTable()
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     sql("select count(*) from addsegment1").show()
@@ -230,18 +183,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test validation on added segment") {
-    sql("drop table if exists addsegment1")
     sql("drop table if exists addsegment2")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    createCarbonTable()
 
     sql(
       """
@@ -270,28 +213,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   test("Test added segment with different format") {
-    sql("drop table if exists addsegment1")
-    sql("drop table if exists addsegment2")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
-    sql(
-      """
-        | CREATE TABLE addsegment2 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int) using parquet
-      """.stripMargin)
-
-    sql(s"""insert into addsegment2 select * from addsegment1""")
+    createCarbonTable()
+    createParquetTable()
 
     sql("select * from addsegment2").show()
     val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
@@ -315,40 +238,65 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
-  test("Test added segment with different format more than two") {
-    sql("drop table if exists addsegment1")
-    sql("drop table if exists addsegment2")
-    sql("drop table if exists addsegment3")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
+  test("Test update/delete blocking on mixed format segments") {
+    createCarbonTable()
+    createParquetTable()
 
+    sql("select * from addsegment2").show()
+    val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
+      .getTableMetadata(TableIdentifier("addsegment2"))
+    val path = table.location
+    val newPath = storeLocation + "/" + "addsegtest"
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    copy(path.toString, newPath)
+
+    sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='parquet')")
+    val exception1 = intercept[MalformedCarbonCommandException](sql(
+      """update addsegment1 d  set (d.empname) = ('ravi') where d.empname = 'arvind'""").show())
+    assertResult("Unsupported update operation on table containing mixed format segments")(
+      exception1.getMessage())
+    val exception2 = intercept[MalformedCarbonCommandException](sql(
+      "delete from addsegment1 where deptno = 10"))
+    assertResult("Unsupported delete operation on table containing mixed format segments")(
+      exception2.getMessage())
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+  }
+
+  test("Test delete by id for added segment") {
+    createCarbonTable()
+    createCarbonTable()
+
+    sql("select * from addsegment2").show()
+    val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
+      .getTableMetadata(TableIdentifier("addsegment2"))
+    val path = table.location
+    val newPath = storeLocation + "/" + "addsegtest"
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    copy(path.toString, newPath)
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
+
+    sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='parquet')").show()
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    sql(
-      """
-        | CREATE TABLE addsegment2 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int) using parquet
-      """.stripMargin)
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(40)))
+    sql("show segments for table addsegment1").show(100, false)
+    sql("delete from table addsegment1 where segment.id in(3)")
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
+    sql("show segments for table addsegment1").show(100, false)
+    sql("delete from table addsegment1 where segment.id in(2)")
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
+    sql("show segments for table addsegment1").show(100, false)
+    sql("delete from table addsegment1 where segment.id in(0,1)")
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(0)))
+    sql("clean files for table addsegment1")
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+  }
 
-    sql(s"""insert into addsegment2 select * from addsegment1""")
-
-    sql(
-      """
-        | CREATE TABLE addsegment3 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int) using orc
-      """.stripMargin)
-
-    sql(s"""insert into addsegment3 select * from addsegment1""")
+  test("Test added segment with different format more than two") {
+    createCarbonTable()
+    createParquetTable()
+    createOrcTable()
 
     val newPath1 = copyseg("addsegment2", "addsegtest1")
     val newPath2 = copyseg("addsegment3", "addsegtest2")
@@ -367,39 +315,9 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test added segment with different format more than two and use set segment") {
-    sql("drop table if exists addsegment1")
-    sql("drop table if exists addsegment2")
-    sql("drop table if exists addsegment3")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
-    sql(
-      """
-        | CREATE TABLE addsegment2 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int) using parquet
-      """.stripMargin)
-
-    sql(s"""insert into addsegment2 select * from addsegment1""")
-
-    sql(
-      """
-        | CREATE TABLE addsegment3 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int) using orc
-      """.stripMargin)
-
-    sql(s"""insert into addsegment3 select * from addsegment1""")
+    createCarbonTable()
+    createParquetTable()
+    createOrcTable()
 
     val newPath1 = copyseg("addsegment2", "addsegtest1")
     val newPath2 = copyseg("addsegment3", "addsegtest2")
@@ -429,28 +347,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test added segment with different format and test compaction") {
-    sql("drop table if exists addsegment1")
-    sql("drop table if exists addsegment2")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
-    sql(
-      """
-        | CREATE TABLE addsegment2 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int) using parquet
-      """.stripMargin)
-
-    sql(s"""insert into addsegment2 select * from addsegment1""")
+    createCarbonTable()
+    createParquetTable()
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
@@ -470,29 +368,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test filter queries on mixed formats table") {
-    sql("drop table if exists addsegment1")
-    sql("drop table if exists addsegment2")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-
-    sql(
-      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS
-         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
-
-    sql(
-      """
-        | CREATE TABLE addsegment2 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int) using parquet
-      """.stripMargin)
-    sql(s"""insert into addsegment2 select * from addsegment1""")
+    createCarbonTable()
+    createParquetTable()
 
     val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
       .getTableMetadata(TableIdentifier("addsegment2"))
@@ -521,28 +398,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   test("Test show segments for added segment with different format") {
-    sql("drop table if exists addsegment1")
-    sql("drop table if exists addsegment2")
-    sql(
-      """
-        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
-    sql(
-      """
-        | CREATE TABLE addsegment2 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int, empno int) using parquet
-      """.stripMargin)
-
-    sql(s"""insert into addsegment2 select * from addsegment1""")
+    createCarbonTable()
+    createParquetTable()
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
@@ -943,6 +800,48 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
       size += file.getSize
     }
     Strings.formatSize(size.toFloat)
+  }
+
+  def createCarbonTable() = {
+    sql("drop table if exists addsegment1")
+
+    sql(
+      """
+        | CREATE TABLE addsegment1 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+  }
+
+  def createParquetTable() = {
+    sql("drop table if exists addsegment2")
+    sql(
+      """
+        | CREATE TABLE addsegment2 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int) using parquet
+      """.stripMargin)
+
+    sql(s"""insert into addsegment2 select * from addsegment1""")
+  }
+
+  def createOrcTable() = {
+    sql("drop table if exists addsegment3")
+    sql(
+      """
+        | CREATE TABLE addsegment3 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int) using orc
+      """.stripMargin)
+
+    sql(s"""insert into addsegment3 select * from addsegment1""")
   }
 
 
