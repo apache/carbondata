@@ -74,7 +74,7 @@ public class SegmentStatusManager {
 
   private Configuration configuration;
 
-  private static final int READ_TABLE_STATUS_RETRY = 3;
+  private static final int READ_TABLE_STATUS_RETRY_COUNT = 3;
 
   public SegmentStatusManager(AbsoluteTableIdentifier identifier) {
     this.identifier = identifier;
@@ -268,7 +268,7 @@ public class SegmentStatusManager {
     // When storing table status file in object store, reading of table status file may
     // fail (receive EOFException) when table status file is being modifying
     // so here we retry multiple times before throwing EOFException
-    int retry = READ_TABLE_STATUS_RETRY;
+    int retry = READ_TABLE_STATUS_RETRY_COUNT;
     while (retry > 0) {
       try {
         if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
