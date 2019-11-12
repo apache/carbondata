@@ -80,8 +80,7 @@ public class RowResultProcessor {
       for (Object[] row: resultList) {
         addRow(row);
       }
-      if (isDataPresent)
-      {
+      if (isDataPresent) {
         this.dataHandler.finish();
       }
       processStatus = true;

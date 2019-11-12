@@ -27,5 +27,7 @@ public abstract class Event {
    *
    * @return
    */
-  String getEventType() { return this.getClass().getName(); }
+  String getEventType() {
+    return this.getClass().getName();
+  }
 }

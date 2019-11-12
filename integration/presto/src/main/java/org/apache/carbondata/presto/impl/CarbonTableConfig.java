@@ -61,7 +61,9 @@ public class CarbonTableConfig {
     return this;
   }
 
-  public String getEnableUnsafeColumnPage() { return enableUnsafeColumnPage; }
+  public String getEnableUnsafeColumnPage() {
+    return enableUnsafeColumnPage;
+  }
 
   @Config("enable.unsafe.columnpage")
   public CarbonTableConfig setEnableUnsafeColumnPage(String enableUnsafeColumnPage) {
@@ -69,7 +71,9 @@ public class CarbonTableConfig {
     return this;
   }
 
-  public String getEnableUnsafeSort() { return enableUnsafeSort; }
+  public String getEnableUnsafeSort() {
+    return enableUnsafeSort;
+  }
 
   @Config("enable.unsafe.sort")
   public CarbonTableConfig setEnableUnsafeSort(String enableUnsafeSort) {
@@ -77,7 +81,9 @@ public class CarbonTableConfig {
     return this;
   }
 
-  public String getEnableQueryStatistics() { return enableQueryStatistics; }
+  public String getEnableQueryStatistics() {
+    return enableQueryStatistics;
+  }
 
   @Config("enable.query.statistics")
   public CarbonTableConfig setEnableQueryStatistics(String enableQueryStatistics) {
@@ -85,7 +91,9 @@ public class CarbonTableConfig {
     return this;
   }
 
-  public String getBatchSize() { return batchSize; }
+  public String getBatchSize() {
+    return batchSize;
+  }
 
   @Config("query.vector.batchSize")
   public CarbonTableConfig setBatchSize(String batchSize) {

@@ -89,10 +89,8 @@ public class NumberCompressor {
 
       if (nextIndex != index) {
         int consideredBits = bitsLength - ll & 0x3f;
-        if (consideredBits < bitsLength) // Check for spill over only if
-        // all the bits are not
-        // considered
-        {
+        // Check for spill over only if all the bits are not considered
+        if (consideredBits < bitsLength) {
           // Check for spill over
           mask = (val >> (bitsLength - ll & 0x3f));
           words[nextIndex] |= mask;
@@ -145,8 +143,8 @@ public class NumberCompressor {
       int nextIndex = ll >> 6;
       if (nextIndex != index) {
         pos = ll & 0x3f;
-        if (pos != 0) // Number of bits pending for current key is zero, no spill over
-        {
+        // Number of bits pending for current key is zero, no spill over
+        if (pos != 0) {
           mask = (LONG_MAX >>> (MAX_LENGTH - pos));
           val = words[nextIndex];
           value = value | ((val & mask) << (bitsLength - pos));

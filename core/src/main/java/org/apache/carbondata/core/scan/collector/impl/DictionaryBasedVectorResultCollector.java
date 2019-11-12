@@ -206,11 +206,10 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     columnarBatch.setRowCounter(columnarBatch.getRowCounter() + requiredRows);
   }
 
-  void fillColumnVectorDetails(CarbonColumnarBatch columnarBatch, int rowCounter, int requiredRows)
-  {
+  void fillColumnVectorDetails(CarbonColumnarBatch columnarBatch, int rowCount, int requiredRows) {
     for (int i = 0; i < allColumnInfo.length; i++) {
       allColumnInfo[i].size = requiredRows;
-      allColumnInfo[i].offset = rowCounter;
+      allColumnInfo[i].offset = rowCount;
       allColumnInfo[i].vectorOffset = columnarBatch.getRowCounter();
       allColumnInfo[i].vector = columnarBatch.columnVectors[i];
       if (null != allColumnInfo[i].dimension) {

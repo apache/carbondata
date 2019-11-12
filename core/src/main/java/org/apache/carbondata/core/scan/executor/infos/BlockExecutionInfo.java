@@ -313,9 +313,8 @@ public class BlockExecutionInfo {
   /**
    * @param allSelectedDimensionColumnIndexRange the allSelectedDimensionColumnIndexRange to set
    */
-  public void setAllSelectedDimensionColumnIndexRange(int[][] allSelectedDimensionColumnIndexRange)
-  {
-    this.allSelectedDimensionColumnIndexRange = allSelectedDimensionColumnIndexRange;
+  public void setAllSelectedDimensionColumnIndexRange(int[][] selectedDimensionColumnIndexRange) {
+    this.allSelectedDimensionColumnIndexRange = selectedDimensionColumnIndexRange;
   }
 
   /**

@@ -485,7 +485,9 @@ public class CarbonInputSplit extends FileSplit
     return bucketId;
   }
 
-  public String getBlockletId() { return blockletId; }
+  public String getBlockletId() {
+    return blockletId;
+  }
 
   @Override
   public int compareTo(Distributable o) {
@@ -766,7 +768,9 @@ public class CarbonInputSplit extends FileSplit
   }
 
   /** The position of the first byte in the file to process. */
-  public long getStart() { return start; }
+  public long getStart() {
+    return start;
+  }
 
   /**
    * In case of index server detail info won't be present
@@ -800,7 +804,9 @@ public class CarbonInputSplit extends FileSplit
   }
 
   @Override
-  public String toString() { return filePath + ":" + start + "+" + length; }
+  public String toString() {
+    return filePath + ":" + start + "+" + length;
+  }
 
   @Override
   public String[] getLocations() throws IOException {

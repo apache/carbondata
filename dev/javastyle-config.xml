@@ -180,7 +180,7 @@
 
         <!-- Checks for redundant imports. -->
         <module name="RedundantImport">
-            <property name="severity" value="info"/>
+            <property name="severity" value="error"/>
             <message key="import.redundancy" value="Redundant import {0}."/>
         </module>
 
@@ -191,7 +191,7 @@
 
         <!-- Checks for placement of the left curly brace ('{'). -->
         <module name="LeftCurly">
-            <property name="severity" value="info"/>
+            <property name="severity" value="error"/>
         </module>
 
         <!-- Checks for complicated boolean expressions. -->
@@ -201,7 +201,7 @@
 
         <!-- Checks for empty statements. -->
         <module name="EmptyStatement">
-            <property name="severity" value="info"/>
+            <property name="severity" value="error"/>
         </module>
 
         <!-- Checks for consecutive semicolons. -->
