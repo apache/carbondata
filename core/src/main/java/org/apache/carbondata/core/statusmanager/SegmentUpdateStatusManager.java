@@ -359,7 +359,8 @@ public class SegmentUpdateStatusManager {
     List<String> deltaList = segmentDeleteDeltaListMap.get(blockDir);
     if (deltaList == null) {
       CarbonFile[] files = FileFactory.getCarbonFile(blockDir).listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile pathName) {
+        @Override
+        public boolean accept(CarbonFile pathName) {
           String fileName = pathName.getName();
           if (fileName.endsWith(extension) && pathName.getSize() > 0) {
             return true;

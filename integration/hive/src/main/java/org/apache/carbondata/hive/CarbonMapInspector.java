@@ -36,11 +36,13 @@ public class CarbonMapInspector implements SettableMapObjectInspector {
     this.valueInspector = valueInspector;
   }
 
-  @Override public String getTypeName() {
+  @Override
+  public String getTypeName() {
     return "map<" + keyInspector.getTypeName() + "," + valueInspector.getTypeName() + ">";
   }
 
-  @Override public Category getCategory() {
+  @Override
+  public Category getCategory() {
     return Category.MAP;
   }
 
@@ -54,7 +56,8 @@ public class CarbonMapInspector implements SettableMapObjectInspector {
     return valueInspector;
   }
 
-  @Override public Object getMapValueElement(Object data, Object key) {
+  @Override
+  public Object getMapValueElement(Object data, Object key) {
     if (data != null && key != null) {
       Map<?, ?> map = (Map)data;
       return map.get(key);
