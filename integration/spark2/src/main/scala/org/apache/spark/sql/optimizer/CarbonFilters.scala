@@ -18,7 +18,7 @@
 package org.apache.spark.sql.optimizer
 
 import java.text.SimpleDateFormat
-import java.util._
+import java.util.{ArrayList, Date, TimeZone}
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -603,7 +603,7 @@ object CarbonFilters {
     }
     Some(partitions.map { partition =>
       new PartitionSpec(
-        new util.ArrayList[String]( partition.spec.seq.map{case (column, value) =>
+        new ArrayList[String]( partition.spec.seq.map{case (column, value) =>
           column + "=" + value}.toList.asJava), partition.location)
     })
   }
