@@ -30,7 +30,7 @@ import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.devapi.DictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.log4j.Logger;
@@ -57,7 +57,7 @@ public class TableDictionaryGenerator
   @Override
   public Integer generateKey(DictionaryMessage value)
       throws DictionaryGenerationException {
-    CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(value.getColumnName());
+    CarbonColumn dimension = carbonTable.getPrimitiveDimensionByName(value.getColumnName());
 
     if (null == dimension) {
       throw new DictionaryGenerationException("Dictionary Generation Failed");
@@ -68,7 +68,7 @@ public class TableDictionaryGenerator
   }
 
   public Integer size(DictionaryMessage key) {
-    CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(key.getColumnName());
+    CarbonColumn dimension = carbonTable.getPrimitiveDimensionByName(key.getColumnName());
 
     if (null == dimension) {
       return 0;
@@ -98,7 +98,7 @@ public class TableDictionaryGenerator
   }
 
   public void updateGenerator(DictionaryMessage key) {
-    CarbonDimension dimension = carbonTable
+    CarbonColumn dimension = carbonTable
         .getPrimitiveDimensionByName(key.getColumnName());
     if (null != dimension && null == columnMap.get(dimension.getColumnId())) {
       synchronized (columnMap) {

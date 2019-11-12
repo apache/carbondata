@@ -44,9 +44,7 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
   val segmentId = alterPartitionModel.segmentId
   val oldPartitionIds = alterPartitionModel.oldPartitionIds
   val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-  val databaseName = carbonTable.getDatabaseName
-  val factTableName = carbonTable.getTableName
-  val partitionInfo = carbonTable.getPartitionInfo(factTableName)
+  val partitionInfo = carbonTable.getPartitionInfo()
 
   override protected def internalGetPartitions: Array[Partition] = {
     val sc = alterPartitionModel.sqlContext.sparkContext

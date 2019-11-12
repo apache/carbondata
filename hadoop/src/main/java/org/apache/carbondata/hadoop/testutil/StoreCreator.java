@@ -383,7 +383,7 @@ public class StoreCreator {
   private void writeDictionary(String factFilePath, CarbonTable table) throws Exception {
     BufferedReader reader = new BufferedReader(new InputStreamReader(
         new FileInputStream(factFilePath), "UTF-8"));
-    List<CarbonDimension> dims = table.getDimensionByTableName(table.getTableName());
+    List<CarbonDimension> dims = table.getVisibleDimensions();
     Set<String>[] set = new HashSet[dims.size()];
     for (int i = 0; i < set.length; i++) {
       set[i] = new HashSet<String>();

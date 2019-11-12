@@ -39,7 +39,7 @@ object DictionaryTestCaseUtil {
    */
   def checkDictionary(relation: CarbonRelation, columnName: String, value: String) {
     val table = relation.carbonTable
-    val dimension = table.getDimensionByName(table.getTableName, columnName)
+    val dimension = table.getDimensionByName(columnName)
     val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getTableName, "uniqueid")
     val  absoluteTableIdentifier = AbsoluteTableIdentifier.from(table.getTablePath, tableIdentifier)
     val columnIdentifier = new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,

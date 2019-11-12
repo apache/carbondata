@@ -64,7 +64,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
         "('DICTIONARY_INCLUDE'='ID','BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='ID')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE bucket_table")
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_bucket_table")
-    if (table != null && table.getBucketingInfo("bucket_table") != null) {
+    if (table != null && table.getBucketingInfo != null) {
       assert(true)
     } else {
       assert(false, "Bucketing info does not exist")
@@ -78,7 +78,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name,phonetype')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE bucket_table")
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_bucket_table")
-    if (table != null && table.getBucketingInfo("bucket_table") != null) {
+    if (table != null && table.getBucketingInfo != null) {
       assert(true)
     } else {
       assert(false, "Bucketing info does not exist")

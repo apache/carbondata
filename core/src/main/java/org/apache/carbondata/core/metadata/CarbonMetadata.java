@@ -141,8 +141,7 @@ public final class CarbonMetadata {
    */
   public CarbonDimension getCarbonDimensionBasedOnColIdentifier(CarbonTable carbonTable,
       String columnIdentifier) {
-    List<CarbonDimension> listOfCarbonDims =
-        carbonTable.getDimensionByTableName(carbonTable.getTableName());
+    List<CarbonDimension> listOfCarbonDims = carbonTable.getVisibleDimensions();
     for (CarbonDimension dimension : listOfCarbonDims) {
       if (dimension.getColumnId().equalsIgnoreCase(columnIdentifier)) {
         return dimension;

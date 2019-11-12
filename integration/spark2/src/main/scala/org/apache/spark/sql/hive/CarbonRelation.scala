@@ -50,12 +50,9 @@ case class CarbonRelation(
   }
 
   val dimensionsAttr: Seq[AttributeReference] = {
-    val sett = new LinkedHashSet(
-      carbonTable.getDimensionByTableName(carbonTable.getTableName)
-        .asScala.asJava)
+    val sett = new LinkedHashSet(carbonTable.getVisibleDimensions.asScala.asJava)
     sett.asScala.toSeq.map(dim => {
-      val dimval = metaData.carbonTable
-        .getDimensionByName(metaData.carbonTable.getTableName, dim.getColName)
+      val dimval = metaData.carbonTable.getDimensionByName(dim.getColName)
       val output: DataType = dimval.getDataType.getName.toLowerCase match {
         case "array" =>
           CarbonMetastoreTypes.toDataType(
@@ -81,9 +78,9 @@ case class CarbonRelation(
   val measureAttr = {
     val factTable = carbonTable.getTableName
     new LinkedHashSet(
-      carbonTable.getMeasureByTableName(carbonTable.getTableName).asScala.asJava).asScala.toSeq
+      carbonTable.getVisibleMeasures.asScala.asJava).asScala.toSeq
       .map { x =>
-      val metastoreType = metaData.carbonTable.getMeasureByName(factTable, x.getColName)
+      val metastoreType = metaData.carbonTable.getMeasureByName(x.getColName)
         .getDataType.getName.toLowerCase match {
         case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
         case others => others
@@ -96,7 +93,7 @@ case class CarbonRelation(
   }
 
   override val output = {
-    val columns = carbonTable.getCreateOrderColumn(carbonTable.getTableName)
+    val columns = carbonTable.getCreateOrderColumn()
       .asScala
     val partitionColumnSchemas = if (carbonTable.getPartitionInfo() != null) {
       carbonTable.getPartitionInfo.getColumnSchemaList.asScala

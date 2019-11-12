@@ -176,7 +176,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     // process and resolve the expression
     DataMapFilter dataMapFilter = getFilterPredicates(job.getConfiguration());
     // this will be null in case of corrupt schema file.
-    PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
+    PartitionInfo partitionInfo = carbonTable.getPartitionInfo();
 
     if (dataMapFilter != null) {
       dataMapFilter.resolve(false);

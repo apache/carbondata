@@ -62,7 +62,7 @@ case class CarbonAlterTableDropPartitionCommand(
     val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonTable = CarbonEnv.getCarbonTable(Option(dbName), tableName)(sparkSession)
     val tablePath = carbonTable.getTablePath
-    val partitionInfo = carbonTable.getPartitionInfo(tableName)
+    val partitionInfo = carbonTable.getPartitionInfo()
     if (partitionInfo == null) {
       throwMetadataException(dbName, tableName, "table is not a partition table")
     }

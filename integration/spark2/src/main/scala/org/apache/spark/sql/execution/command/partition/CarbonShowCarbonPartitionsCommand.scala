@@ -40,8 +40,7 @@ private[sql] case class CarbonShowCarbonPartitionsCommand(
       .lookupRelation(tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     val carbonTable = relation.carbonTable
     setAuditTable(carbonTable)
-    val partitionInfo = carbonTable.getPartitionInfo(
-      carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
+    val partitionInfo = carbonTable.getPartitionInfo
     if (partitionInfo == null) {
       throwMetadataException(carbonTable.getDatabaseName, carbonTable.getTableName,
         "SHOW PARTITIONS is not allowed on a table that is not partitioned")

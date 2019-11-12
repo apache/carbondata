@@ -43,11 +43,11 @@ object PartitionDropper {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-    val partitionInfo = carbonTable.getPartitionInfo(tableName)
+    val partitionInfo = carbonTable.getPartitionInfo()
     val partitioner = PartitionFactory.getPartitioner(partitionInfo)
 
     var finalDropStatus = false
-    val bucketInfo = carbonTable.getBucketingInfo(tableName)
+    val bucketInfo = carbonTable.getBucketingInfo()
     val bucketNumber = bucketInfo match {
       case null => 1
       case _ => bucketInfo.getNumOfRanges

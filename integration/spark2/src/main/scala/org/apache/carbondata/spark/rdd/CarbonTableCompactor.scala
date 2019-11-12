@@ -402,7 +402,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       segments: Array[Segment]
   ): DataFrame = {
     val columns = carbonTable
-      .getCreateOrderColumn(carbonTable.getTableName)
+          .getCreateOrderColumn()
       .asScala
       .map(_.getColName)
       .toArray
@@ -457,8 +457,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     CarbonTableOutputFormat.setDatabaseName(conf, carbonTable.getDatabaseName)
     CarbonTableOutputFormat.setTableName(conf, carbonTable.getTableName)
     CarbonTableOutputFormat.setCarbonTable(conf, carbonTable)
-    val fieldList = carbonTable
-      .getCreateOrderColumn(carbonTable.getTableName)
+    val fieldList = carbonTable.getCreateOrderColumn
       .asScala
       .map { column =>
         new StructField(column.getColName, column.getDataType)

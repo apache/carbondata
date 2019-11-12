@@ -272,7 +272,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     // form a filter expression and generate filter resolver tree
     val columnExpression = new ColumnExpression("name", DataTypes.STRING)
     columnExpression.setDimension(true)
-    val dimension: CarbonDimension = carbonTable.getDimensionByName(carbonTable.getTableName, "name")
+    val dimension: CarbonDimension = carbonTable.getDimensionByName("name")
     columnExpression.setDimension(dimension)
     columnExpression.setCarbonColumn(dimension)
     val literalValueExpression = new LiteralExpression("a", DataTypes.STRING)

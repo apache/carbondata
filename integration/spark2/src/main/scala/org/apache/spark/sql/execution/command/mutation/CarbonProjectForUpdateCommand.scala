@@ -81,7 +81,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
     setAuditTable(carbonTable)
     setAuditInfo(Map("plan" -> plan.simpleString))
     columns.foreach { col =>
-      val dataType = carbonTable.getColumnByName(tableName, col).getColumnSchema.getDataType
+      val dataType = carbonTable.getColumnByName(col).getColumnSchema.getDataType
       if (dataType.isComplexType) {
         throw new UnsupportedOperationException("Unsupported operation on Complex data type")
       }

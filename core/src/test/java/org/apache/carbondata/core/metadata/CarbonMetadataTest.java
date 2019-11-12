@@ -79,13 +79,13 @@ public class CarbonMetadataTest {
   @Test public void testGetCarbonTableReturingProperTableWithProperDimensionCount() {
     int expectedResult = 1;
     assertEquals(expectedResult,
-        carbonMetadata.getCarbonTable(tableUniqueName).getNumberOfDimensions("carbontesttable"));
+        carbonMetadata.getCarbonTable(tableUniqueName).getVisibleDimensions().size());
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperMeasureCount() {
     int expectedResult = 1;
     assertEquals(expectedResult,
-        carbonMetadata.getCarbonTable(tableUniqueName).getNumberOfMeasures("carbontesttable"));
+        carbonMetadata.getCarbonTable(tableUniqueName).getVisibleMeasures().size());
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperDatabaseName() {
@@ -175,7 +175,7 @@ public class CarbonMetadataTest {
         return "carbonTestTable";
       }
 
-      @Mock public List<CarbonDimension> getDimensionByTableName(String tableName) {
+      @Mock public List<CarbonDimension> getVisibleDimensions() {
         return carbonDimensions;
       }
     };
@@ -204,7 +204,7 @@ public class CarbonMetadataTest {
         return "carbonTestTable";
       }
 
-      @Mock public List<CarbonDimension> getDimensionByTableName(String tableName) {
+      @Mock public List<CarbonDimension> getVisibleDimensions() {
         return carbonDimensions;
       }
     };
@@ -246,7 +246,7 @@ public class CarbonMetadataTest {
         return "carbonTestTable";
       }
 
-      @Mock public List<CarbonDimension> getDimensionByTableName(String tableName) {
+      @Mock public List<CarbonDimension> getVisibleDimensions() {
         return carbonDimensions;
       }
     };

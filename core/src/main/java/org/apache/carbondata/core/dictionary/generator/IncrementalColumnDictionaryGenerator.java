@@ -36,7 +36,7 @@ import org.apache.carbondata.core.devapi.DictionaryGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.DictionaryService;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -69,11 +69,11 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
 
   private int maxValue;
 
-  private CarbonDimension dimension;
+  private CarbonColumn dimension;
 
   private CarbonTable carbonTable;
 
-  public IncrementalColumnDictionaryGenerator(CarbonDimension dimension, int maxValue,
+  public IncrementalColumnDictionaryGenerator(CarbonColumn dimension, int maxValue,
       CarbonTable carbonTable) {
     this.carbonTable = carbonTable;
     this.maxValue = maxValue;

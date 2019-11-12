@@ -34,8 +34,8 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
   test("test only column rename operation") {
     sql("alter table rename change empname empAddress string")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "rename")
-    assert(null != carbonTable.getColumnByName("rename", "empAddress"))
-    assert(null == carbonTable.getColumnByName("rename", "empname"))
+    assert(null != carbonTable.getColumnByName("empAddress"))
+    assert(null == carbonTable.getColumnByName("empname"))
   }
 
   test("test only column rename operation with datatype change also") {
@@ -46,8 +46,8 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     }
     sql("alter table rename change deptno classNo Bigint")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "rename")
-    assert(null != carbonTable.getColumnByName("rename", "classNo"))
-    assert(null == carbonTable.getColumnByName("rename", "deptno"))
+    assert(null != carbonTable.getColumnByName("classNo"))
+    assert(null == carbonTable.getColumnByName("deptno"))
   }
 
   test("test trying to rename column which does not exists") {
@@ -74,10 +74,10 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     sql("alter table rename change projectenddate newDate Timestamp")
     sql("alter table rename change workgroupcategory newCategory int")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "rename")
-    assert(null != carbonTable.getColumnByName("rename", "newDate"))
-    assert(null == carbonTable.getColumnByName("rename", "projectenddate"))
-    assert(null != carbonTable.getColumnByName("rename", "newCategory"))
-    assert(null == carbonTable.getColumnByName("rename", "workgroupcategory"))
+    assert(null != carbonTable.getColumnByName("newDate"))
+    assert(null == carbonTable.getColumnByName("projectenddate"))
+    assert(null != carbonTable.getColumnByName("newCategory"))
+    assert(null == carbonTable.getColumnByName("workgroupcategory"))
   }
 
   test("query count after column rename and filter results"){
@@ -114,14 +114,14 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     createTableAndLoad()
     sql("alter table rename add columns(newAdded string)")
     var carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "rename")
-    assert(null != carbonTable.getColumnByName("rename", "newAdded"))
+    assert(null != carbonTable.getColumnByName("newAdded"))
     sql("alter table rename change newAdded addedRename string")
     carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "rename")
-    assert(null != carbonTable.getColumnByName("rename", "addedRename"))
-    assert(null == carbonTable.getColumnByName("rename", "newAdded"))
+    assert(null != carbonTable.getColumnByName("addedRename"))
+    assert(null == carbonTable.getColumnByName("newAdded"))
     sql("alter table rename drop columns(addedRename)")
     carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "rename")
-    assert(null == carbonTable.getColumnByName("rename", "addedRename"))
+    assert(null == carbonTable.getColumnByName("addedRename"))
     intercept[ProcessMetaDataException] {
       sql("alter table rename change addedRename test string")
     }
@@ -303,8 +303,8 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     sql("create table biginttable(name string, age int, bigintfield bigint) stored by 'carbondata'")
     sql("alter table biginttable change bigintfield testfield bigint")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "biginttable")
-    assert(null != carbonTable.getColumnByName("biginttable", "testfield"))
-    assert(null == carbonTable.getColumnByName("biginttable", "bigintfield"))
+    assert(null != carbonTable.getColumnByName("testfield"))
+    assert(null == carbonTable.getColumnByName("bigintfield"))
     sql("drop table if exists biginttable")
   }
 

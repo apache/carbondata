@@ -131,7 +131,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         }
       }
       // this will be null in case of corrupt schema file.
-      PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
+      PartitionInfo partitionInfo = carbonTable.getPartitionInfo();
       DataMapFilter filter = getFilterPredicates(job.getConfiguration());
 
       // if external table Segments are found, add it to the List

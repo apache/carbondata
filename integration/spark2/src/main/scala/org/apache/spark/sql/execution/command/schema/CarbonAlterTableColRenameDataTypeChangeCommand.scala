@@ -123,7 +123,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         .fireEvent(alterTableColRenameAndDataTypeChangePreEvent, operationContext)
       val newColumnName = alterTableColRenameAndDataTypeChangeModel.newColumnName.toLowerCase
       val oldColumnName = alterTableColRenameAndDataTypeChangeModel.columnName.toLowerCase
-      val carbonColumns = carbonTable.getCreateOrderColumn(tableName).asScala.filter(!_.isInvisible)
+      val carbonColumns = carbonTable.getCreateOrderColumn().asScala.filter(!_.isInvisible)
       if (!carbonColumns.exists(_.getColName.equalsIgnoreCase(oldColumnName))) {
         throwMetadataException(dbName, tableName, s"Column does not exist: $oldColumnName")
       }
@@ -278,7 +278,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       oldCarbonColumn: CarbonColumn): Unit = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     // get the carbon column in schema order
-    val carbonColumns = carbonTable.getCreateOrderColumn(carbonTable.getTableName).asScala
+    val carbonColumns = carbonTable.getCreateOrderColumn().asScala
       .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema }
     // get the schema ordinal of the column for which the dataType changed or column is renamed
     val schemaOrdinal = carbonColumns.indexOf(carbonColumns

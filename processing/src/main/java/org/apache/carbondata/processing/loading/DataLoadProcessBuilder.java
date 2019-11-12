@@ -262,10 +262,8 @@ public final class DataLoadProcessBuilder {
     configuration.setDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER,
         loadModel.getBinaryDecoder());
 
-    List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getTableName());
-    List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getTableName());
+    List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
+    List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
     List<DataField> dataFields = new ArrayList<>();
     List<DataField> complexDataFields = new ArrayList<>();
 
@@ -304,7 +302,7 @@ public final class DataLoadProcessBuilder {
     }
     configuration.setDataFields(
         updateDataFieldsBasedOnSortColumns(dataFields).toArray(new DataField[dataFields.size()]));
-    configuration.setBucketingInfo(carbonTable.getBucketingInfo(carbonTable.getTableName()));
+    configuration.setBucketingInfo(carbonTable.getBucketingInfo());
     // configuration for one pass load: dictionary server info
     configuration.setUseOnePass(loadModel.getUseOnePass());
     configuration.setDictionaryServerHost(loadModel.getDictionaryServerHost());
@@ -341,7 +339,7 @@ public final class DataLoadProcessBuilder {
    */
   private static void setSortColumnInfo(CarbonTable carbonTable, CarbonLoadModel loadModel,
       CarbonDataLoadConfiguration configuration) {
-    List<String> sortCols = carbonTable.getSortColumns(carbonTable.getTableName());
+    List<String> sortCols = carbonTable.getSortColumns();
     SortScopeOptions.SortScope sortScope = SortScopeOptions.getSortScope(loadModel.getSortScope());
     if (!SortScopeOptions.SortScope.LOCAL_SORT.equals(sortScope)
         || sortCols.size() == 0

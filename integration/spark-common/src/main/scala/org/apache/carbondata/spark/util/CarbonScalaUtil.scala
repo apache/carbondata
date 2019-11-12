@@ -259,7 +259,7 @@ object CarbonScalaUtil {
       } else {
         pValue
       }
-      val carbonColumn = table.getColumnByName(table.getTableName, col.toLowerCase)
+      val carbonColumn = table.getColumnByName(col.toLowerCase)
       val dataType =
         CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
       try {

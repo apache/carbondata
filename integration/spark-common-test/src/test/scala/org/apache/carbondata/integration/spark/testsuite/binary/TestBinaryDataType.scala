@@ -437,7 +437,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
         CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
         val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "binaryTable")
-        if (table != null && table.getBucketingInfo("binarytable") != null) {
+        if (table != null && table.getBucketingInfo() != null) {
             assert(true)
         } else {
             assert(false, "Bucketing info does not exist")

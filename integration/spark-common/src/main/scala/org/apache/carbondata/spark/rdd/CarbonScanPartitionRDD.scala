@@ -80,8 +80,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
   val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
   val dimensions = carbonTable.getAllDimensions.asScala
   val measures = carbonTable.getAllMeasures.asScala
-  val partitionInfo = carbonTable
-    .getPartitionInfo(absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
+  val partitionInfo = carbonTable.getPartitionInfo()
   val partitionColumn = partitionInfo.getColumnSchemaList().get(0)
   val partitionDataType = partitionColumn.getDataType
   val partitionColumnName = partitionColumn.getColumnName

@@ -368,7 +368,7 @@ object CarbonDataRDDFactory {
             }
           }
         } else {
-          status = if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
+          status = if (carbonTable.getPartitionInfo() != null) {
             loadDataForPartitionTable(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
           } else if (dataFrame.isEmpty && isSortTable &&
                      carbonLoadModel.getRangePartitionColumn != null &&
@@ -994,7 +994,7 @@ object CarbonDataRDDFactory {
       carbonLoadModel: CarbonLoadModel,
       hadoopConf: Configuration): RDD[Row] = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
+    val partitionInfo = carbonTable.getPartitionInfo()
     val partitionColumn = partitionInfo.getColumnSchemaList.get(0).getColumnName
     val partitionColumnDataType = partitionInfo.getColumnSchemaList.get(0).getDataType
     val columns = carbonLoadModel.getCsvHeaderColumns

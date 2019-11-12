@@ -60,7 +60,7 @@ public class QueryModelBuilder {
 
     int i = 0;
     for (String projectionColumnName : projectionColumns) {
-      CarbonDimension dimension = table.getDimensionByName(factTableName, projectionColumnName);
+      CarbonDimension dimension = table.getDimensionByName(projectionColumnName);
       if (dimension != null) {
         CarbonDimension complexParentDimension = dimension.getComplexParentDimension();
         if (null != complexParentDimension && dimension.hasEncoding(Encoding.DICTIONARY)) {
@@ -73,7 +73,7 @@ public class QueryModelBuilder {
           i++;
         }
       } else {
-        CarbonMeasure measure = table.getMeasureByName(factTableName, projectionColumnName);
+        CarbonMeasure measure = table.getMeasureByName(projectionColumnName);
         if (measure == null) {
           throw new RuntimeException(
               projectionColumnName + " column not found in the table " + factTableName);
@@ -191,7 +191,7 @@ public class QueryModelBuilder {
     QueryProjection queryProjection = new QueryProjection();
     int i = 0;
     for (String projectionColumnName : projectionColumns) {
-      CarbonDimension dimension = table.getDimensionByName(factTableName, projectionColumnName);
+      CarbonDimension dimension = table.getDimensionByName(projectionColumnName);
       if (dimension != null) {
         if (!mergedDimensions.contains(dimension)) {
           if (!isAlreadyExists(dimension, queryProjection.getDimensions())) {
@@ -200,7 +200,7 @@ public class QueryModelBuilder {
           }
         }
       } else {
-        CarbonMeasure measure = table.getMeasureByName(factTableName, projectionColumnName);
+        CarbonMeasure measure = table.getMeasureByName(projectionColumnName);
         if (measure == null) {
           throw new RuntimeException(
               projectionColumnName + " column not found in the table " + factTableName);
@@ -215,7 +215,7 @@ public class QueryModelBuilder {
   private List<CarbonDimension> mergeChildColumns(List<Integer> childOrdinals) {
     // Check If children if they are in the path of not.
     List<CarbonDimension> mergedChild = new ArrayList<>();
-    List<CarbonDimension> dimList = table.getDimensions();
+    List<CarbonDimension> dimList = table.getVisibleDimensions();
     for (int i = 0; i < childOrdinals.size(); i++) {
       for (int j = i; j < childOrdinals.size(); j++) {
         CarbonDimension parentDimension = getDimensionBasedOnOrdinal(dimList, childOrdinals.get(i));
@@ -274,11 +274,11 @@ public class QueryModelBuilder {
 
   public QueryModelBuilder projectAllColumns() {
     QueryProjection projection = new QueryProjection();
-    List<CarbonDimension> dimensions = table.getDimensions();
+    List<CarbonDimension> dimensions = table.getVisibleDimensions();
     for (int i = 0; i < dimensions.size(); i++) {
       projection.addDimension(dimensions.get(i), i);
     }
-    List<CarbonMeasure> measures = table.getMeasures();
+    List<CarbonMeasure> measures = table.getVisibleMeasures();
     for (int i = 0; i < measures.size(); i++) {
       projection.addMeasure(measures.get(i), i);
     }

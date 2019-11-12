@@ -37,12 +37,10 @@ case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 object CarbonSparkUtil {
 
   def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
-    val dimensionsAttr = carbonTable.getDimensionByTableName(carbonTable.getTableName)
-      .asScala.map(x => x.getColName) // wf : may be problem
-    val measureAttr = carbonTable.getMeasureByTableName(carbonTable.getTableName)
-      .asScala.map(x => x.getColName)
+    val dimensionsAttr = carbonTable.getVisibleDimensions.asScala.map(x => x.getColName)
+    val measureAttr = carbonTable.getVisibleMeasures.asScala.map(x => x.getColName)
     val dictionary =
-      carbonTable.getDimensionByTableName(carbonTable.getTableName).asScala.map { f =>
+      carbonTable.getVisibleDimensions.asScala.map { f =>
         (f.getColName.toLowerCase,
           f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             !f.getDataType.isComplexType)
@@ -98,13 +96,13 @@ object CarbonSparkUtil {
       sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
     val columnList = columnSchemas.toList.asJava
     carbonRelation.dimensionsAttr.foreach(attr => {
-      val carbonColumn = carbonTable.getColumnByName(carbonRelation.tableName, attr.name)
+      val carbonColumn = carbonTable.getColumnByName(attr.name)
       val columnComment = getColumnComment(carbonColumn)
       fields(columnList.indexOf(carbonColumn.getColumnSchema)) =
         '`' + attr.name + '`' + ' ' + attr.dataType.catalogString + columnComment
     })
     carbonRelation.measureAttr.foreach(msrAtrr => {
-      val carbonColumn = carbonTable.getColumnByName(carbonRelation.tableName, msrAtrr.name)
+      val carbonColumn = carbonTable.getColumnByName(msrAtrr.name)
       val columnComment = getColumnComment(carbonColumn)
       fields(columnList.indexOf(carbonColumn.getColumnSchema)) =
         '`' + msrAtrr.name + '`' + ' ' + msrAtrr.dataType.catalogString + columnComment

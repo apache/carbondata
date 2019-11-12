@@ -49,7 +49,7 @@ object TimeSeriesUtil {
     if (!eventTime.isDefined) {
       throw new MalformedCarbonCommandException("event_time not defined in time series")
     } else {
-      val carbonColumn = parentTable.getColumnByName(parentTable.getTableName, eventTime.get.trim)
+      val carbonColumn = parentTable.getColumnByName(eventTime.get.trim)
       if (carbonColumn.getDataType != DataTypes.TIMESTAMP) {
         throw new MalformedCarbonCommandException(
           "Timeseries event time is only supported on Timestamp " +

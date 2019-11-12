@@ -113,7 +113,7 @@ class CarbonAppendableStreamSink(
     carbonLoadModel
       .getCarbonDataLoadSchema
       .getCarbonTable
-      .getMeasures
+      .getVisibleMeasures
       .asScala
       .map(_.getDataType)
       .toArray
@@ -264,7 +264,7 @@ object CarbonAppendableStreamSink {
         val rowSchema = queryExecution.analyzed.schema
         val isVarcharTypeMapping = {
           val col2VarcharType = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-            .getCreateOrderColumn(carbonLoadModel.getTableName).asScala
+                      .getCreateOrderColumn().asScala
             .map(c => c.getColName -> (c.getDataType == DataTypes.VARCHAR)).toMap
           rowSchema.fieldNames.map(c => {
             val r = col2VarcharType.get(c.toLowerCase)

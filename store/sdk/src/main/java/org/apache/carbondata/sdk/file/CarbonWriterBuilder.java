@@ -573,7 +573,7 @@ public class CarbonWriterBuilder {
     carbonTable.getTableInfo().setTablePath(path);
     carbonTable.setTransactionalTable(false);
     List<ColumnSchema> columnSchemas =
-        carbonTable.getCreateOrderColumn(carbonTable.getTableName()).stream().map(
+        carbonTable.getCreateOrderColumn().stream().map(
             CarbonColumn::getColumnSchema
         ).collect(Collectors.toList());
     schema = new Schema(columnSchemas);

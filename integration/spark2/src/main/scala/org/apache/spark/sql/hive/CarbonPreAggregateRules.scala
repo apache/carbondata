@@ -1803,7 +1803,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       carbonTable: CarbonTable,
       isFilterColumn: Boolean = false,
       timeseriesFunction: String = ""): QueryColumn = {
-    val columnSchema = carbonTable.getColumnByName(carbonTable.getTableName, columnName.toLowerCase)
+    val columnSchema = carbonTable.getColumnByName(columnName.toLowerCase)
     if(null == columnSchema) {
       null
     } else {

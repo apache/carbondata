@@ -176,7 +176,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     if (projection == null) {
       projection = configuration.get("hive.io.file.readcolumn.names");
     }
-    List<CarbonColumn> carbonColumns = carbonTable.getCreateOrderColumn(tableName);
+    List<CarbonColumn> carbonColumns = carbonTable.getCreateOrderColumn();
     List<String> carbonColumnNames = new ArrayList<>();
     StringBuilder allColumns = new StringBuilder();
     StringBuilder projectionColumns = new StringBuilder();

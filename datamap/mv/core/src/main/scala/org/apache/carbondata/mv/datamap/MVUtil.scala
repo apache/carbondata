@@ -237,7 +237,7 @@ class MVUtil {
       parentTableName: String,
       parentDatabaseName: String,
       carbonTable: CarbonTable): ColumnTableRelation = {
-    val parentColumn = carbonTable.getColumnByName(parentTableName, parentColumnName)
+    val parentColumn = carbonTable.getColumnByName(parentColumnName)
     var columnTableRelation: ColumnTableRelation = null
     if (null != parentColumn) {
       val parentColumnId = parentColumn.getColumnId

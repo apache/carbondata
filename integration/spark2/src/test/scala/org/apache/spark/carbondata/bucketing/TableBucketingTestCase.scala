@@ -54,7 +54,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t4")
     val table = CarbonEnv.getCarbonTable(Option("default"), "t4")(sqlContext.sparkSession)
-    if (table != null && table.getBucketingInfo("t4") != null) {
+    if (table != null && table.getBucketingInfo() != null) {
       assert(true)
     } else {
       assert(false, "Bucketing info does not exist")
@@ -69,7 +69,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t10")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "t10")
-    if (table != null && table.getBucketingInfo("t10") != null) {
+    if (table != null && table.getBucketingInfo() != null) {
       assert(true)
     } else {
       assert(false, "Bucketing info does not exist")
