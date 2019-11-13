@@ -84,12 +84,20 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                             carbonMainTable
                               .getTableName
                           }")
-              val validSegments: mutable.Buffer[Segment] = CarbonDataMergerUtil.getValidSegmentList(
-                carbonMainTable.getAbsoluteTableIdentifier, carbonMainTable.isChildTable).asScala
-              val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
-              validSegments.foreach { segment =>
-                validSegmentIds += segment.getSegmentNo
-              }
+              val segmentsToMerge =
+                if (alterTableMergeIndexEvent.alterTableModel.customSegmentIds.isEmpty) {
+                  val validSegments = CarbonDataMergerUtil.getValidSegmentList(
+                    carbonMainTable.getAbsoluteTableIdentifier,
+                    carbonMainTable.isChildTable).asScala
+                  val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
+                  validSegments.foreach { segment =>
+                    validSegmentIds += segment.getSegmentNo
+                  }
+                  validSegmentIds
+                } else {
+                  alterTableMergeIndexEvent.alterTableModel.customSegmentIds.get
+                }
+
               val loadFolderDetailsArray = SegmentStatusManager
                 .readLoadMetadata(carbonMainTable.getMetadataPath)
               val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String,
@@ -105,14 +113,14 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               // old store is also upgraded to new store
               CarbonMergeFilesRDD.mergeIndexFiles(
                 sparkSession = sparkSession,
-                segmentIds = validSegmentIds,
+                segmentIds = segmentsToMerge,
                 segmentFileNameToSegmentIdMap = segmentFileNameMap,
                 tablePath = carbonMainTable.getTablePath,
                 carbonTable = carbonMainTable,
                 mergeIndexProperty = true,
                 readFileFooterFromCarbonDataFile = true)
               // clear Block dataMap Cache
-              MergeIndexUtil.clearBlockDataMapCache(carbonMainTable, validSegmentIds)
+              MergeIndexUtil.clearBlockDataMapCache(carbonMainTable, segmentsToMerge)
               val requestMessage = "Compaction request completed for table " +
                 s"${ carbonMainTable.getDatabaseName }.${ carbonMainTable.getTableName }"
               LOGGER.info(requestMessage)

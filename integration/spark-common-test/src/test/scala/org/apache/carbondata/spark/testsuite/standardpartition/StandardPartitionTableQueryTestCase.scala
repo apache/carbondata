@@ -20,7 +20,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Row}
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
@@ -28,6 +28,8 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterAll {
@@ -312,6 +314,52 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("insert into partitionTable select 1,'huawei','def'")
     checkAnswer(sql("select email from partitionTable"), Seq(Row("def"), Row("abc")))
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location))
+  }
+
+  test("sdk write and add partition based on location on partition table"){
+    sql("drop table if exists partitionTable")
+    sql("create table partitionTable (id int,name String) partitioned by(email string) stored as carbondata")
+    sql("insert into partitionTable select 1,'blue','abc'")
+    val schemaFile =
+      CarbonTablePath.getSchemaFilePath(
+        CarbonEnv.getCarbonTable(None, "partitionTable")(sqlContext.sparkSession).getTablePath)
+
+    val sdkWritePath = metaStoreDB +"/" +"def"
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath))
+
+    (1 to 3).foreach { i =>
+      val writer = CarbonWriter.builder()
+        .outputPath(sdkWritePath)
+        .writtenBy("test")
+        .withSchemaFile(schemaFile)
+        .withCsvInput()
+        .build()
+      writer.write(Seq("2", "red", "def").toArray)
+      writer.write(Seq("3", "black", "def").toArray)
+      writer.close()
+    }
+
+    sql(s"alter table partitionTable add partition (email='def') location '$sdkWritePath'")
+    sql("show partitions partitionTable").show(false)
+    checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc"), Row("email=def")))
+    checkAnswer(sql("select email from partitionTable"), Seq(Row("abc"), Row("def"), Row("def"), Row("def"), Row("def"), Row("def"), Row("def")))
+    checkAnswer(sql("select count(*) from partitionTable"), Seq(Row(7)))
+    checkAnswer(sql("select id from partitionTable where email = 'def'"), Seq(Row(2), Row(3), Row(2), Row(3), Row(2), Row(3)))
+    // alter table add partition should merge index files
+    assert(FileFactory.getCarbonFile(sdkWritePath)
+      .listFiles()
+      .exists(_.getName.contains(".carbonindexmerge")))
+
+    // do compaction to sort data written by sdk
+    sql("alter table partitionTable compact 'major'")
+    assert(sql("show segments for table partitionTable").collectAsList().get(0).getString(1).contains("Compacted"))
+    checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc"), Row("email=def")))
+    checkAnswer(sql("select email from partitionTable"), Seq(Row("abc"), Row("def"), Row("def"), Row("def"), Row("def"), Row("def"), Row("def")))
+    checkAnswer(sql("select count(*) from partitionTable"), Seq(Row(7)))
+    checkAnswer(sql("select id from partitionTable where email = 'def'"), Seq(Row(2), Row(3), Row(2), Row(3), Row(2), Row(3)))
+
+    sql("drop table if exists partitionTable")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath))
   }
 
   test("add partition with static column partition with load command") {

@@ -205,9 +205,9 @@ case class AlterTableCompactionAbortEvent(sparkSession: SparkSession,
 /**
  * Compaction Event for handling merge index in alter DDL
  *
- * @param sparkSession
- * @param carbonTable
- * @param alterTableModel
+ * @param sparkSession spark session
+ * @param carbonTable carbon table
+ * @param alterTableModel alter request
  */
 case class AlterTableMergeIndexEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,

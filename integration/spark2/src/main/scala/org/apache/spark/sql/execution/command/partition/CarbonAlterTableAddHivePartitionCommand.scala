@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AtomicRunnableCommand}
+import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AlterTableModel, AtomicRunnableCommand}
 import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -36,7 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
+import org.apache.carbondata.events.{AlterTableMergeIndexEvent, OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
@@ -116,7 +116,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
       if (segmentFile != null) {
         val indexToSchemas = SegmentFileStore.getSchemaFiles(segmentFile, table.getTablePath)
         val tableColums = table.getTableInfo.getFactTable.getListOfColumns.asScala
-        var isSameSchema = indexToSchemas.asScala.exists{ case(key, columnSchemas) =>
+        val isSameSchema = indexToSchemas.asScala.exists{ case(key, columnSchemas) =>
           columnSchemas.asScala.exists { col =>
             tableColums.exists(p => p.getColumnUniqueId.equals(col.getColumnUniqueId))
           } && columnSchemas.size() == tableColums.length
@@ -153,6 +153,23 @@ case class CarbonAlterTableAddHivePartitionCommand(
         CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId, table)
         // Make the load as success in table status
         CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false)
+
+        // Normally, application will use Carbon SDK to write files into a partition folder, then
+        // add the folder to partitioned carbon table.
+        // If there are many threads writes to the same partition folder, there will be many
+        // carbon index files, and it is not good for query performance since all index files
+        // need to be read to spark driver.
+        // So, here trigger to merge the index files by sending an event
+        val alterTableModel = AlterTableModel(
+          dbName = Some(table.getDatabaseName),
+          tableName = table.getTableName,
+          segmentUpdateStatusManager = None,
+          compactionType = "", // to trigger index merge, this is not required
+          factTimeStamp = Some(System.currentTimeMillis()),
+          alterSql = null,
+          customSegmentIds = Some(Seq(loadModel.getSegmentId).toList))
+        val mergeIndexEvent = AlterTableMergeIndexEvent(sparkSession, table, alterTableModel)
+        OperationListenerBus.getInstance.fireEvent(mergeIndexEvent, new OperationContext)
       }
     }
     Seq.empty[Row]
