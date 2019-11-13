@@ -546,6 +546,11 @@ public class SegmentStatusManager {
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
               Charset.forName(DEFAULT_CHARSET)));
 
+      // make the table status file smaller by removing fields that are default value
+      for (LoadMetadataDetails loadMetadataDetails : listOfLoadFolderDetailsArray) {
+        loadMetadataDetails.removeUnnecessaryField();
+      }
+
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetailsArray);
       brWriter.write(metadataInstance);
     } catch (IOException ioe) {
@@ -767,9 +772,11 @@ public class SegmentStatusManager {
       this.listOfStreamSegments = listOfStreamSegments;
       this.listOfInProgressSegments = listOfInProgressSegments;
     }
+
     public List<Segment> getInvalidSegments() {
       return listOfInvalidSegments;
     }
+
     public List<Segment> getValidSegments() {
       return listOfValidSegments;
     }
@@ -916,6 +923,9 @@ public class SegmentStatusManager {
       dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           Charset.forName(DEFAULT_CHARSET)));
+
+      // make the table status file smaller by removing fields that are default value
+      listOfLoadFolderDetails.forEach(LoadMetadataDetails::removeUnnecessaryField);
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);

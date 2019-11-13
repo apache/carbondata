@@ -128,7 +128,6 @@ class NewCarbonDataLoadRDD[K, V](
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
-        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PARTITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
 
         val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
@@ -259,7 +258,6 @@ class NewDataFrameLoaderRDD[K, V](
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
 
-        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PARTITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         carbonLoadModel.setPreFetch(false)
@@ -470,7 +468,6 @@ class PartitionTableDataLoaderRDD[K, V](
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
 
-        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PARTITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
         carbonLoadModel.setTaskNo(String.valueOf(partitionInfo.getPartitionId(theSplit.index)))
         carbonLoadModel.setPreFetch(false)

@@ -25,6 +25,8 @@ import java.util.Date;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
+import com.google.gson.annotations.SerializedName;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /*
@@ -53,20 +55,91 @@ import org.apache.log4j.Logger;
 public class LoadMetadataDetails implements Serializable {
 
   private static final long serialVersionUID = 1106104914918491724L;
+
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(LoadMetadataDetails.class.getName());
+
+  // don't remove static as the write will fail.
+  private static final SimpleDateFormat parser =
+      new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
+
+  @SerializedName(value = "ts", alternate = "timestamp")
   private String timestamp;
 
   // For backward compatibility, this member is required to read from JSON in the table_status file
+  @SerializedName(value = "ls", alternate = "loadStatus")
   private SegmentStatus loadStatus;
 
   // name of the segment
+  @SerializedName(value = "ln", alternate = "loadName")
   private String loadName;
 
-  // partition count of this segment
-  private String partitionCount;
-
-  private String isDeleted = CarbonCommonConstants.KEYWORD_FALSE;
+  @SerializedName(value = "ds", alternate = "dataSize")
   private String dataSize;
+
+  @SerializedName(value = "is", alternate = "indexSize")
   private String indexSize;
+
+  // update delta end timestamp
+  @SerializedName(value = "ue", alternate = "updateDeltaEndTimestamp")
+  private String updateDeltaEndTimestamp;
+
+  // update delta start timestamp
+  @SerializedName(value = "us", alternate = "updateDeltaStartTimestamp")
+  private String updateDeltaStartTimestamp;
+
+  // this will represent the update status file name at that point of time.
+  @SerializedName(value = "uf", alternate = "updateStatusFileName")
+  private String updateStatusFileName;
+
+  /**
+   * Segment modification or deletion time stamp
+   */
+  @SerializedName(value = "mt", alternate = "modificationOrdeletionTimesStamp")
+  private String modificationOrdeletionTimesStamp;
+
+  @SerializedName(value = "lt", alternate = "loadStartTime")
+  private String loadStartTime;
+
+  @SerializedName(value = "mn", alternate = "mergedLoadName")
+  private String mergedLoadName;
+
+  /**
+   * visibility is used to determine whether to the load is visible or not.
+   * by default it is true
+   */
+  @SerializedName(value = "v", alternate = "visibility")
+  private String visibility;
+
+  /**
+   * To know if the segment is a major compacted segment or not.
+   */
+  @SerializedName(value = "mc", alternate = "majorCompacted")
+  private String majorCompacted;
+
+  /**
+   * the file format of this segment, by default it is FileFormat.COLUMNAR_V3
+   */
+  @SerializedName(value = "ff", alternate = "fileFormat")
+  private String fileFormat;
+
+  /**
+   * Segment path if the segment is added externally.
+   */
+  @SerializedName(value = "p", alternate = "path")
+  private String path;
+
+  /**
+   * Segment file name where it has the information of partition information.
+   */
+  @SerializedName(value = "sf", alternate = "segmentFile")
+  private String segmentFile;
+
+  /**
+   * extraInfo will contain segment mapping Information for datamap table
+   */
+  @SerializedName(value = "ei", alternate = "extraInfo")
+  private String extraInfo;
 
   public String getDataSize() {
     return dataSize;
@@ -82,70 +155,6 @@ public class LoadMetadataDetails implements Serializable {
 
   public void setIndexSize(String indexSize) {
     this.indexSize = indexSize;
-  }
-
-  // update delta end timestamp
-  private String updateDeltaEndTimestamp = "";
-
-  // update delta start timestamp
-  private String updateDeltaStartTimestamp = "";
-
-  // this will represent the update status file name at that point of time.
-  private String updateStatusFileName = "";
-
-  /**
-   * LOGGER
-   */
-  private static final Logger LOGGER =
-      LogServiceFactory.getLogService(LoadMetadataDetails.class.getName());
-
-  // don't remove static as the write will fail.
-  private static final SimpleDateFormat parser =
-      new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
-  /**
-   * Segment modification or deletion time stamp
-   */
-  private String modificationOrdeletionTimesStamp;
-  private String loadStartTime;
-
-  private String mergedLoadName;
-  /**
-   * visibility is used to determine whether to the load is visible or not.
-   */
-  private String visibility = "true";
-
-  /**
-   * To know if the segment is a major compacted segment or not.
-   */
-  private String majorCompacted;
-
-  /**
-   * the file format of this segment
-   */
-  private String fileFormat = FileFormat.COLUMNAR_V3.toString();
-
-  /**
-   * Segment path if the segment is added externally.
-   */
-  private String path;
-
-  /**
-   * Segment file name where it has the information of partition information.
-   */
-  private String segmentFile;
-
-  public String getPartitionCount() {
-    return partitionCount;
-  }
-
-  /**
-   * extraInfo will contain segment mapping Information for datamap table
-   */
-  private String extraInfo;
-
-  @Deprecated
-  public void setPartitionCount(String partitionCount) {
-    this.partitionCount = partitionCount;
   }
 
   public long getLoadEndTime() {
@@ -336,6 +345,9 @@ public class LoadMetadataDetails implements Serializable {
    * @return the visibility
    */
   public String getVisibility() {
+    if (visibility == null) {
+      return "true";
+    }
     return visibility;
   }
 
@@ -364,20 +376,14 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   /**
-   * To set isDeleted property.
-   *
-   * @param isDeleted
-   */
-  public void setIsDeleted(String isDeleted) {
-    this.isDeleted = isDeleted;
-  }
-
-  /**
    * To get the update delta end timestamp
    *
    * @return updateDeltaEndTimestamp
    */
   public String getUpdateDeltaEndTimestamp() {
+    if (updateDeltaEndTimestamp == null) {
+      return "";
+    }
     return updateDeltaEndTimestamp;
   }
 
@@ -396,6 +402,9 @@ public class LoadMetadataDetails implements Serializable {
    * @return updateDeltaStartTimestamp
    */
   public String getUpdateDeltaStartTimestamp() {
+    if (updateDeltaStartTimestamp == null) {
+      return "";
+    }
     return updateDeltaStartTimestamp;
   }
 
@@ -414,6 +423,9 @@ public class LoadMetadataDetails implements Serializable {
    * @return updateStatusFileName
    */
   public String getUpdateStatusFileName() {
+    if (updateStatusFileName == null) {
+      return "";
+    }
     return updateStatusFileName;
   }
 
@@ -427,6 +439,9 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public FileFormat getFileFormat() {
+    if (fileFormat == null) {
+      return FileFormat.COLUMNAR_V3;
+    }
     return new FileFormat(fileFormat);
   }
 
@@ -467,5 +482,27 @@ public class LoadMetadataDetails implements Serializable {
   public boolean isCarbonFormat() {
     return getFileFormat().equals(FileFormat.COLUMNAR_V3)
         || getFileFormat().equals(FileFormat.ROW_V1);
+  }
+
+  /**
+   * Before writing table status file, call this to make the metadata smaller.
+   * It checks if fields are default value, then make it null so GSON does not write it
+   */
+  void removeUnnecessaryField() {
+    if (StringUtils.isEmpty(updateDeltaEndTimestamp)) {
+      updateDeltaEndTimestamp = null;
+    }
+    if (StringUtils.isEmpty(updateDeltaStartTimestamp)) {
+      updateDeltaStartTimestamp = null;
+    }
+    if (StringUtils.isEmpty(updateStatusFileName)) {
+      updateStatusFileName = null;
+    }
+    if (StringUtils.isEmpty(visibility) || visibility.equals("true")) {
+      visibility = null;
+    }
+    if (StringUtils.isEmpty(fileFormat) || fileFormat.equals(FileFormat.COLUMNAR_V3.toString())) {
+      fileFormat = null;
+    }
   }
 }
