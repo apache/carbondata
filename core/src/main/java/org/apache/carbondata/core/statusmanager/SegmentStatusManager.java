@@ -29,6 +29,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -54,6 +55,7 @@ import org.apache.carbondata.core.util.DeleteLoadFolders;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -520,6 +522,11 @@ public class SegmentStatusManager {
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
               Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
 
+      // make the table status file smaller by removing fields that are default value
+      for (LoadMetadataDetails loadMetadataDetails : listOfLoadFolderDetailsArray) {
+        loadMetadataDetails.removeUnnecessaryField();
+      }
+
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetailsArray);
       brWriter.write(metadataInstance);
     } catch (IOException ioe) {
@@ -890,6 +897,9 @@ public class SegmentStatusManager {
       dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+
+      // make the table status file smaller by removing fields that are default value
+      listOfLoadFolderDetails.forEach(LoadMetadataDetails::removeUnnecessaryField);
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);

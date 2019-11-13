@@ -96,7 +96,6 @@ public class StreamSegment {
         if (null == streamSegment) {
           int segmentId = SegmentStatusManager.createNewSegmentId(details);
           LoadMetadataDetails newDetail = new LoadMetadataDetails();
-          newDetail.setPartitionCount("0");
           newDetail.setLoadName("" + segmentId);
           newDetail.setFileFormat(FileFormat.ROW_V1);
           newDetail.setLoadStartTime(System.currentTimeMillis());
@@ -159,8 +158,7 @@ public class StreamSegment {
 
         int newSegmentId = SegmentStatusManager.createNewSegmentId(details);
         LoadMetadataDetails newDetail = new LoadMetadataDetails();
-        newDetail.setPartitionCount("0");
-        newDetail.setLoadName("" + newSegmentId);
+        newDetail.setLoadName(String.valueOf(newSegmentId));
         newDetail.setFileFormat(FileFormat.ROW_V1);
         newDetail.setLoadStartTime(System.currentTimeMillis());
         newDetail.setSegmentStatus(SegmentStatus.STREAMING);
