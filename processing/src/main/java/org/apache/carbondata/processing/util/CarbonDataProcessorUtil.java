@@ -377,7 +377,6 @@ public final class CarbonDataProcessorUtil {
    */
   public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema) {
     Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    String factTableName = schema.getCarbonTable().getTableName();
     List<CarbonDimension> dimensions =
         schema.getCarbonTable().getDimensions();
     for (CarbonDimension dimension : dimensions) {
