@@ -49,6 +49,8 @@ public class RawBlockletColumnChunks {
 
   private BitSetGroup bitSetGroup;
 
+  private BlockletIterator.DataRefNodeWrapper nodeWrapper;
+
   private RawBlockletColumnChunks() { }
 
   public static RawBlockletColumnChunks newInstance(int numberOfDimensionChunk,
@@ -58,6 +60,19 @@ public class RawBlockletColumnChunks {
     instance.measureRawColumnChunks = new MeasureRawColumnChunk[numberOfMeasureChunk];
     instance.fileReader = fileReader;
     instance.dataBlock = dataBlock;
+    return instance;
+  }
+
+  public static RawBlockletColumnChunks newInstance(BlockletIterator.DataRefNodeWrapper nodeWrapper,
+      FileReader fileReader) {
+    RawBlockletColumnChunks instance = new RawBlockletColumnChunks();
+    instance.dimensionRawColumnChunks =
+        new DimensionRawColumnChunk[nodeWrapper.executionInfo.getTotalNumberDimensionToRead()];
+    instance.measureRawColumnChunks =
+        new MeasureRawColumnChunk[nodeWrapper.executionInfo.getTotalNumberOfMeasureToRead()];
+    instance.fileReader = fileReader;
+    instance.dataBlock = nodeWrapper.datablock;
+    instance.nodeWrapper = nodeWrapper;
     return instance;
   }
 
@@ -109,5 +124,9 @@ public class RawBlockletColumnChunks {
 
   public void setBitSetGroup(BitSetGroup bitSetGroup) {
     this.bitSetGroup = bitSetGroup;
+  }
+
+  public BlockletIterator.DataRefNodeWrapper getNodeWrapper() {
+    return nodeWrapper;
   }
 }

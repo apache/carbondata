@@ -17,17 +17,25 @@
 
 package org.apache.carbondata.core.scan.processor;
 
+import java.util.List;
+
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.DataRefNode;
+import org.apache.carbondata.core.scan.collector.ResultCollectorFactory;
+import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
+import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.core.scan.scanner.BlockletScanner;
+import org.apache.carbondata.core.scan.scanner.impl.BlockletFilterScanner;
+import org.apache.carbondata.core.scan.scanner.impl.BlockletFullScanner;
 
 /**
  * Below class will be used to iterate over data block
  */
-class BlockletIterator extends CarbonIterator<DataRefNode> {
+public class BlockletIterator extends CarbonIterator<BlockletIterator.DataRefNodeWrapper> {
   /**
    * data store block
    */
-  protected DataRefNode datablock;
+  protected DataRefNodeWrapper nodeWrapper;
   /**
    * block counter to keep a track how many block has been processed
    */
@@ -43,15 +51,19 @@ class BlockletIterator extends CarbonIterator<DataRefNode> {
    */
   private long totalNumberOfBlocksToScan;
 
+  private List<BlockExecutionInfo> blockExecutionInfos;
+
+  private BlockExecutionInfo executionInfo;
   /**
    * Constructor
    *
-   * @param datablock                 first data block
-   * @param totalNumberOfBlockletToScan total number of blocklets to be scanned
+   * @param blockExecutionInfos                 blocks to scan
    */
-  BlockletIterator(DataRefNode datablock, long totalNumberOfBlockletToScan) {
-    this.datablock = datablock;
-    this.totalNumberOfBlocksToScan = totalNumberOfBlockletToScan;
+  BlockletIterator(List<BlockExecutionInfo> blockExecutionInfos) {
+    this.blockExecutionInfos = blockExecutionInfos;
+    this.executionInfo = blockExecutionInfos.remove(0);
+    this.nodeWrapper = getWrapper(executionInfo, true);
+    this.totalNumberOfBlocksToScan = executionInfo.getNumberOfBlockToScan();
   }
 
   /**
@@ -69,20 +81,71 @@ class BlockletIterator extends CarbonIterator<DataRefNode> {
    *
    */
   @Override
-  public DataRefNode next() {
+  public DataRefNodeWrapper next() {
     // get the current blocks
-    DataRefNode datablockTemp = datablock;
+    DataRefNodeWrapper datablockTemp = nodeWrapper;
     // store the next data block
-    datablock = datablock.getNextDataRefNode();
+    nodeWrapper = getWrapper(this.executionInfo, false);
     // increment the counter
     blockCounter++;
     // if all the data block is processed then
     // set the has next flag to false
     // or if number of blocks assigned to this iterator is processed
     // then also set the hasnext flag to false
-    if (null == datablock || blockCounter >= this.totalNumberOfBlocksToScan) {
-      hasNext = false;
+    if (null == nodeWrapper || blockCounter >= this.totalNumberOfBlocksToScan) {
+      if (blockExecutionInfos.size() > 0) {
+        this.executionInfo = blockExecutionInfos.remove(0);
+        this.nodeWrapper = getWrapper(executionInfo, true);
+        this.totalNumberOfBlocksToScan = executionInfo.getNumberOfBlockToScan();
+        blockCounter = 0;
+      } else {
+        hasNext = false;
+      }
     }
     return datablockTemp;
+  }
+
+  private DataRefNodeWrapper getWrapper(BlockExecutionInfo executionInfo, boolean isFirst) {
+    DataRefNode nextDataRefNode;
+    if (isFirst) {
+      nextDataRefNode = executionInfo.getFirstDataBlock();
+    } else {
+      nextDataRefNode = nodeWrapper.datablock.getNextDataRefNode();
+      if (nextDataRefNode == null) {
+        return null;
+      }
+    }
+    DataRefNodeWrapper nodeWrapper = new DataRefNodeWrapper();
+    if (executionInfo.getFilterExecuterTree() != null) {
+      nodeWrapper.blockletScanner =
+          new BlockletFilterScanner(executionInfo, executionInfo.getQueryStatisticsModel());
+    } else {
+      nodeWrapper.blockletScanner =
+          new BlockletFullScanner(executionInfo, executionInfo.getQueryStatisticsModel());
+    }
+    nodeWrapper.scannerResultAggregator =
+        ResultCollectorFactory.getScannedResultCollector(executionInfo);
+    nodeWrapper.datablock = nextDataRefNode;
+    nodeWrapper.executionInfo = executionInfo;
+    return nodeWrapper;
+  }
+
+  public static class DataRefNodeWrapper {
+
+    DataRefNode datablock;
+
+    /**
+     * result collector which will be used to aggregate the scanned result
+     */
+    ScannedResultCollector scannerResultAggregator;
+
+    /**
+     * processor which will be used to process the block processing can be
+     * filter processing or non filter processing
+     */
+    BlockletScanner blockletScanner;
+
+    BlockExecutionInfo executionInfo;
+
   }
 }
