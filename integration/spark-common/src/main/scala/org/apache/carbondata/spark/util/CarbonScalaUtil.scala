@@ -185,9 +185,9 @@ object CarbonScalaUtil {
     try {
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
-          value
+          DateTimeUtils.timestampToString(value.toLong * 1000)
         case CarbonDataTypes.DATE =>
-          value
+          DateTimeUtils.dateToString(DateTimeUtils.millisToDays(value.toLong))
         case _ => value
       }
     } catch {
