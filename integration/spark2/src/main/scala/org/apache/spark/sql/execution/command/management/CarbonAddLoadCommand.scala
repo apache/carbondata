@@ -93,26 +93,23 @@ case class CarbonAddLoadCommand(
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "delete segment")
     }
 
-    val allSegments = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    val inputPath = options.getOrElse(
+      "path", throw new UnsupportedOperationException("PATH is mandatory"))
 
     // If a path is already added then we should block the adding of the same path again.
-    if (allSegments.exists(a =>
-      a.getPath != null && a.getPath.equalsIgnoreCase(segmentPath)
-    )) {
+    val allSegments = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    if (allSegments.exists(a => a.getPath != null && a.getPath.equalsIgnoreCase(inputPath))) {
       throw new AnalysisException(s"path already exists in table status file, can not add same " +
-                                  s"segment path repeatedly: $segmentPath")
+                                  s"segment path repeatedly: $inputPath")
     }
 
     val format = options.getOrElse("format", "carbondata")
     val isCarbonFormat = format.equalsIgnoreCase("carbondata") || format.equalsIgnoreCase("carbon")
 
     // If in the given location no carbon index files are found then we should throw an exception
-    if (isCarbonFormat && SegmentFileStore.getListOfCarbonIndexFiles(segmentPath).isEmpty) {
+    if (isCarbonFormat && SegmentFileStore.getListOfCarbonIndexFiles(inputPath).isEmpty) {
       throw new AnalysisException("CarbonIndex files not present in the location")
     }
-
-    val inputPath = options.getOrElse(
-      "path", throw new UnsupportedOperationException("PATH is mandatory"))
 
     // infer schema and collect FileStatus for all partitions
     val (inputPathSchema, lastLevelDirFileMap) =
@@ -243,8 +240,8 @@ case class CarbonAddLoadCommand(
       val dataMapNames: mutable.Buffer[String] =
         tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
       val buildDataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
-        new BuildDataMapPreExecutionEvent(sparkSession,
-          carbonTable.getAbsoluteTableIdentifier, dataMapNames)
+        BuildDataMapPreExecutionEvent(
+          sparkSession, carbonTable.getAbsoluteTableIdentifier, dataMapNames)
       OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent,
         dataMapOperationContext)
     }
@@ -256,6 +253,9 @@ case class CarbonAddLoadCommand(
       model.getFactTimeStamp,
       false)
     newLoadMetaEntry.setPath(segmentPath)
+    val format = options.getOrElse("format", "carbondata")
+    val isCarbonFormat = format.equalsIgnoreCase("carbondata") ||
+                         format.equalsIgnoreCase("carbon")
     if (!isCarbonFormat) {
       newLoadMetaEntry.setFileFormat(new FileFormat(format))
     }
