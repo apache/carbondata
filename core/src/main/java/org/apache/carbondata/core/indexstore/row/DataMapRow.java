@@ -20,7 +20,7 @@ import java.io.Serializable;
 
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 
-/**
+     /**
  * It is just a normal row to store data. Implementation classes could be safe and unsafe.
  * TODO move this class a global row and use across loading after DataType is changed class
  */
