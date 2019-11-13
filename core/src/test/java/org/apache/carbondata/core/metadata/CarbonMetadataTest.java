@@ -174,7 +174,7 @@ public class CarbonMetadataTest {
         return "carbonTestTable";
       }
 
-      @Mock public List<CarbonDimension> getDimensions(String tableName) {
+      @Mock public List<CarbonDimension> getDimensions() {
         return carbonDimensions;
       }
     };
@@ -203,7 +203,7 @@ public class CarbonMetadataTest {
         return "carbonTestTable";
       }
 
-      @Mock public List<CarbonDimension> getDimensions(String tableName) {
+      @Mock public List<CarbonDimension> getDimensions() {
         return carbonDimensions;
       }
     };
@@ -245,7 +245,7 @@ public class CarbonMetadataTest {
         return "carbonTestTable";
       }
 
-      @Mock public List<CarbonDimension> getDimensions(String tableName) {
+      @Mock public List<CarbonDimension> getDimensions() {
         return carbonDimensions;
       }
     };
