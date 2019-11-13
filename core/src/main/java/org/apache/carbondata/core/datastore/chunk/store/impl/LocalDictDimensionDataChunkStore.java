@@ -81,6 +81,9 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
         vector.putNull(i);
         dictionaryVector.putNull(i);
       } else {
+        // if vector is 'ColumnarVectorWrapperDirectWithDeleteDelta', it needs to call 'putNotNull'
+        // to increase 'counter', otherwise it will set the null value to the wrong index.
+        vector.putNotNull(i);
         dictionaryVector.putInt(i, surrogate);
       }
     }
