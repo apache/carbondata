@@ -24,10 +24,12 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -378,6 +380,38 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     )
 
     sql("drop table if exists test_return_row_count").show()
+  }
+
+  test("[CARBONDATA-3561] Fix incorrect results after execute delete/update operation if there are null values") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+    val tableName = "fix_incorrect_results_for_iud"
+    sql(s"drop table if exists ${tableName}")
+
+    sql(s"create table ${tableName} (a string, b string, c string) stored by 'carbondata'").show()
+    sql(s"""insert into table ${tableName}
+              select '1','1','2017' union all
+              select '2','2','2017' union all
+              select '3','3','2017' union all
+              select '4','4','2017' union all
+              select '5',null,'2017' union all
+              select '6',null,'2017' union all
+              select '7','7','2017' union all
+              select '8','8','2017' union all
+              select '9',null,'2017' union all
+              select '10',null,'2017'""").show()
+
+    checkAnswer(sql(s"select count(1) from ${tableName} where b is null"), Seq(Row(4)))
+
+    checkAnswer(sql(s"delete from ${tableName} where b ='4'"), Seq(Row(1)))
+    checkAnswer(sql(s"delete from ${tableName} where a ='9'"), Seq(Row(1)))
+    checkAnswer(sql(s"update ${tableName} set (b) = ('10') where a = '10'"), Seq(Row(1)))
+
+    checkAnswer(sql(s"select count(1) from ${tableName} where b is null"), Seq(Row(2)))
+    checkAnswer(sql(s"select * from ${tableName} where a = '1'"), Seq(Row("1", "1", "2017")))
+    checkAnswer(sql(s"select * from ${tableName} where a = '10'"), Seq(Row("10", "10", "2017")))
+
+    sql(s"drop table if exists ${tableName}").show()
   }
 
   override def afterAll {
