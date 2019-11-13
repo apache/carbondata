@@ -110,6 +110,9 @@
               <exclude>org.apache.hive:*</exclude>
               <exclude>com.google.guava:guava</exclude>
               <exclude>org.xerial.snappy:snappy-java</exclude>
+              <exclude>*:servlet-api</exclude>
+              <exclude>*:javax.inject</exclude>
+              <exclude>javax.activation:activation</exclude>
               <!--add more items to be excluded from the assembly-->
             </excludes>
           </artifactSet>
