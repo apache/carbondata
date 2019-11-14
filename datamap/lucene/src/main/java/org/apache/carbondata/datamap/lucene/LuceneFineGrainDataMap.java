@@ -286,7 +286,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
         }
         // result will have the total number of hits therefore we always need to query on the
         // left over documents
-        int remainingHits = result.totalHits - documentHitCounter;
+        int remainingHits = (int)(result.totalHits.value - documentHitCounter);
         // break the loop if count reaches maxDocs to be searched or remaining hits become <=0
         if (remainingHits <= 0 || documentHitCounter >= maxDocs) {
           break;

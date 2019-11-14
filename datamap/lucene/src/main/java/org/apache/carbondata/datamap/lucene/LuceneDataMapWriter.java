@@ -47,13 +47,13 @@ import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.codecs.lucene50.Lucene50StoredFieldsFormat;
-import org.apache.lucene.codecs.lucene62.Lucene62Codec;
+import org.apache.lucene.codecs.lucene80.Lucene80Codec;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FloatPoint;
 import org.apache.lucene.document.IntPoint;
-import org.apache.lucene.document.IntRangeField;
+import org.apache.lucene.document.IntRange;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
@@ -87,10 +87,10 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   public static final String ROWID_NAME = "rowId";
 
-  private Codec speedCodec = new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED);
+  private Codec speedCodec = new Lucene80Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED);
 
   private Codec compressionCodec =
-      new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION);
+      new Lucene80Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION);
 
   private Map<LuceneColumnKeys, Map<Integer, RoaringBitmap>> cache = new HashMap<>();
 
@@ -246,8 +246,8 @@ public class LuceneDataMapWriter extends DataMapWriter {
     if (key instanceof Byte) {
       // byte type , use int range to deal with byte, lucene has no byte type
       byte value = (Byte) key;
-      IntRangeField field =
-          new IntRangeField(fieldName, new int[] { Byte.MIN_VALUE }, new int[] { Byte.MAX_VALUE });
+      IntRange field =
+          new IntRange(fieldName, new int[] { Byte.MIN_VALUE }, new int[] { Byte.MAX_VALUE });
       field.setIntValue(value);
       doc.add(field);
 
@@ -258,7 +258,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
     } else if (key instanceof Short) {
       // short type , use int range to deal with short type, lucene has no short type
       short value = (Short) key;
-      IntRangeField field = new IntRangeField(fieldName, new int[] { Short.MIN_VALUE },
+      IntRange field = new IntRange(fieldName, new int[] { Short.MIN_VALUE },
           new int[] { Short.MAX_VALUE });
       field.setShortValue(value);
       doc.add(field);
@@ -302,7 +302,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
       doc.add(new TextField(fieldName, strValue, store));
     } else if (key instanceof Boolean) {
       boolean value = (Boolean) key;
-      IntRangeField field = new IntRangeField(fieldName, new int[] { 0 }, new int[] { 1 });
+      IntRange field = new IntRange(fieldName, new int[] { 0 }, new int[] { 1 });
       field.setIntValue(value ? 1 : 0);
       doc.add(field);
       if (store == Field.Store.YES) {

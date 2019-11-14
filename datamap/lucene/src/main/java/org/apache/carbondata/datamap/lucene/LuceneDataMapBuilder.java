@@ -43,7 +43,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.codecs.lucene50.Lucene50StoredFieldsFormat;
-import org.apache.lucene.codecs.lucene62.Lucene62Codec;
+import org.apache.lucene.codecs.lucene80.Lucene80Codec;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
@@ -119,10 +119,10 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
         .getProperty(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE,
             CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)
         .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)) {
-      indexWriterConfig.setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED));
+      indexWriterConfig.setCodec(new Lucene80Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED));
     } else {
       indexWriterConfig
-          .setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
+          .setCodec(new Lucene80Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
     }
 
     return new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
