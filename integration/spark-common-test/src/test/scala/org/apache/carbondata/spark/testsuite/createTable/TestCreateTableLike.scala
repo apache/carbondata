@@ -134,7 +134,9 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     assert(exception.getMessage.contains("already exists in database"))
   }
 
-  test("command with location") {
+  // ignore this test case since Spark 2.1 does not support specify location
+  // and also current implementation in carbon does not use this parameter. 
+  ignore("command with location") {
     sql(s"create table targetTable like sourceTable location '$warehouse/tbl_with_loc' ")
     checkTableProperties(TableIdentifier("sourceTable"), TableIdentifier("targetTable"))
   }
