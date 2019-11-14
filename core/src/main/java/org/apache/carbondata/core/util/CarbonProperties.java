@@ -1132,6 +1132,11 @@ public final class CarbonProperties {
         CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT).equalsIgnoreCase("true");
   }
 
+  public static boolean isEnableTableStatusBackup() {
+    return getInstance().getProperty(CarbonCommonConstants.ENABLE_TABLE_STATUS_BACKUP,
+        CarbonCommonConstants.ENABLE_TABLE_STATUS_BACKUP_DEFAULT).equalsIgnoreCase("true");
+  }
+
   /**
    * Validate the restrictions
    *

@@ -1295,6 +1295,11 @@ public final class CarbonCommonConstants {
 
   public static final String ENABLE_VECTOR_READER_DEFAULT = "true";
 
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String ENABLE_TABLE_STATUS_BACKUP = "carbon.enable.tablestatus.backup";
+
+  public static final String ENABLE_TABLE_STATUS_BACKUP_DEFAULT = "false";
+
   /**
    * property to set is IS_DRIVER_INSTANCE
    */
