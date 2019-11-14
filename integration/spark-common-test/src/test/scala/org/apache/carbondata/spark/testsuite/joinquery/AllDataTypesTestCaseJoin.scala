@@ -34,6 +34,28 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE alldatatypestableJoin_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
     sql(s"LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' INTO TABLE alldatatypestableJoin_hive");
 
+    sql("DROP TABLE IF EXISTS carbon_table1")
+    sql("DROP TABLE IF EXISTS carbon_table2")
+
+    sql("CREATE TABLE carbon_table1(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')")
+
+    sql("CREATE TABLE carbon_table2(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')")
+
+    val path1 = s"$resourcesPath/join/data1.csv"
+    val path2 = s"$resourcesPath/join/data2.csv"
+
+    sql(
+      s"""
+         LOAD DATA LOCAL INPATH '$path1'
+         INTO TABLE carbon_table1
+         options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData','COMPLEX_DELIMITER_LEVEL_1'='#')
+       """.stripMargin)
+    sql(
+      s"""
+         LOAD DATA LOCAL INPATH '$path2'
+         INTO TABLE carbon_table2
+         options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData','COMPLEX_DELIMITER_LEVEL_1'='#')
+       """.stripMargin)
   }
 
   test("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableJoin where empname in ('arvind','ayushi') group by empno,empname,utilization") {
@@ -58,36 +80,29 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Union with alias fails") {
-    sql("DROP TABLE IF EXISTS carbon_table1")
-    sql("DROP TABLE IF EXISTS carbon_table2")
-
-    sql("CREATE TABLE carbon_table1(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')")
-
-    sql("CREATE TABLE carbon_table2(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')")
-
-    val path1 = s"$resourcesPath/join/data1.csv"
-    val path2 = s"$resourcesPath/join/data2.csv"
-
-    sql(
-      s"""
-         LOAD DATA LOCAL INPATH '$path1'
-         INTO TABLE carbon_table1
-         options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData','COMPLEX_DELIMITER_LEVEL_1'='#')
-       """.stripMargin)
-    sql(
-      s"""
-         LOAD DATA LOCAL INPATH '$path2'
-         INTO TABLE carbon_table2
-         options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData','COMPLEX_DELIMITER_LEVEL_1'='#')
-       """.stripMargin)
-
     checkAnswer(sql("""SELECT t.a a FROM (select charField a from  carbon_table1 t1 union all  select charField a from  carbon_table2 t2) t order by a """),
       Seq(Row("aaa"),Row("bbb"),Row("ccc"),Row("ddd"))
      )
+  }
 
-    // Drop table
-    sql("DROP TABLE IF EXISTS carbon_table1")
-    sql("DROP TABLE IF EXISTS carbon_table2")
+  test("test all types of join with empty aggregate and group by expressions") {
+    checkAnswer(sql("""select t1.shortField from carbon_table1 t1, carbon_table2 t2 where t1.charField = t2.charField group by (t1.shortField)"""),
+      Seq())
+    // case of empty aggregate
+    checkAnswer(sql("""select t1.shortField,count(t1.shortField) from carbon_table1 t1, carbon_table2 t2 where t1.shortField = t2.shortField group by (t1.shortField) having count(t1.shortField) > 2"""),
+      Seq())
+    // inner join
+    checkAnswer(sql("""select t1.shortField,count(t1.shortField) from carbon_table1 t1 inner join carbon_table2 t2 on t1.shortField = t2.shortField group by (t1.shortField)"""),
+      Seq(Row(1,2)))
+    // left join
+    checkAnswer(sql("""select t1.shortField,count(t1.shortField) from carbon_table1 t1 left join carbon_table2 t2 on t1.shortField = t2.shortField group by (t1.shortField)"""),
+      Seq(Row(1,2)))
+    // right join
+    checkAnswer(sql("""select t1.shortField,count(t1.shortField) from carbon_table1 t1 right join carbon_table2 t2 on t1.shortField = t2.shortField group by (t1.shortField)"""),
+      Seq(Row(null,0), Row(1,2)))
+    // full join
+    checkAnswer(sql("""select t1.shortField,count(t1.shortField) from carbon_table1 t1 full join carbon_table2 t2 on t1.shortField = t2.shortField group by (t1.shortField)"""),
+      Seq(Row(null,0), Row(1,2)))
   }
 
   test("join with aggregate plan") {
@@ -102,5 +117,7 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
     sql("drop table alldatatypestableJoin_hive")
     sql("drop table if exists manager")
     sql("drop table if exists employee")
+    sql("DROP TABLE IF EXISTS carbon_table1")
+    sql("DROP TABLE IF EXISTS carbon_table2")
   }
 }

@@ -44,6 +44,8 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
 
   val file2 = resourcesPath + "/local_dictionary_complex_data.csv"
 
+  val file3 = resourcesPath + "/local_dictionary_partial.csv"
+
   val storePath = warehouse + "/local2/Fact/Part0/Segment_0"
 
   override protected def beforeAll(): Unit = {
@@ -51,6 +53,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     createFile(file1)
     createComplexData(file2)
     sql("drop table if exists local2")
+    sql("drop table if exists local3")
   }
 
   test("test LocalDictionary Load For FallBackScenario"){
@@ -59,6 +62,15 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
       "CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties" +
       "('local_dictionary_threshold'='2001','local_dictionary_include'='name')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
+    assert(!checkForLocalDictionary(getDimRawChunk(0)))
+  }
+
+  test("test LocalDictionary in case of multiple blocklet generation") {
+    sql("drop table if exists local3")
+    sql(
+      "CREATE TABLE local3(a1 string,a2 string,a3 string,a4 string,a5 string,a6 string,a7 string,a8 string,a9 string,a10 string,a11 string,a12 string,a13 string,a14 string,a15 string,a16 string,a17 string,a18 string,a19 string,a20 string,a21 string,a22 string,a23 string,a24 string,a25 string,a26 string,a27 string,a28 string,a29 string,a30 string,a31 string,a32 string,a33 string,a34 string,a35 string,a36 string,a37 string,a38 string,a39 string,a40 string,a41 string,a42 string,a43 string,a44 string,a45 string,a46 string,a47 string,a48 string,a49 string,a50 string) STORED BY 'carbondata' tblproperties" +
+      "('table_blocklet_size'='1','local_dictionary_threshold'='32500','local_dictionary_include'='a1','local_dictionary_exclude'='a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20,a21,a22,a23,a24,a25,a26,a27,a28,a29,a30,a31,a32,a33,a34,a35,a36,a37,a38,a39,a40,a41,a42,a43,a44,a45,a46,a47,a48,a49,a50')")
+    sql("load data inpath '" + file3 + "' into table local3 OPTIONS('header'='false')")
     assert(!checkForLocalDictionary(getDimRawChunk(0)))
   }
 
@@ -181,6 +193,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
 
   override protected def afterAll(): Unit = {
     sql("drop table if exists local2")
+    sql("drop table if exists local3")
     deleteFile(file1)
     deleteFile(file2)
     CarbonProperties.getInstance
