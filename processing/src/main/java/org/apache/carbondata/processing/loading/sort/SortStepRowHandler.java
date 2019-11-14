@@ -133,8 +133,7 @@ public class SortStepRowHandler implements Serializable {
   public Object[] convertRawRowTo3Parts(Object[] row) {
     Object[] holder = new Object[3];
     try {
-      int[] dictDims
-          = new int[this.dictSortDimCnt + this.dictNoSortDimCnt];
+      int[] dictDims = new int[this.dictSortDimCnt + this.dictNoSortDimCnt];
       Object[] nonDictArray = new Object[this.noDictSortDimCnt + this.noDictNoSortDimCnt
                                        + this.varcharDimCnt + this.complexDimCnt];
       Object[] measures = new Object[this.measureCnt];
