@@ -26,6 +26,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /*
@@ -488,19 +489,19 @@ public class LoadMetadataDetails implements Serializable {
    * It checks if fields are default value, then make it null so GSON does not write it
    */
   void removeUnnecessaryField() {
-    if (updateDeltaEndTimestamp == null || updateDeltaStartTimestamp.isEmpty()) {
+    if (StringUtils.isEmpty(updateDeltaEndTimestamp)) {
       updateDeltaEndTimestamp = null;
     }
-    if (updateDeltaStartTimestamp == null || updateDeltaStartTimestamp.isEmpty()) {
+    if (StringUtils.isEmpty(updateDeltaStartTimestamp)) {
       updateDeltaStartTimestamp = null;
     }
-    if (updateStatusFileName == null || updateStatusFileName.isEmpty()) {
+    if (StringUtils.isEmpty(updateStatusFileName)) {
       updateStatusFileName = null;
     }
-    if (visibility == null || visibility.equals("true")) {
+    if (StringUtils.isEmpty(visibility) || visibility.equals("true")) {
       visibility = null;
     }
-    if (fileFormat == null || fileFormat.equals(FileFormat.COLUMNAR_V3.toString())) {
+    if (StringUtils.isEmpty(fileFormat) || fileFormat.equals(FileFormat.COLUMNAR_V3.toString())) {
       fileFormat = null;
     }
   }
