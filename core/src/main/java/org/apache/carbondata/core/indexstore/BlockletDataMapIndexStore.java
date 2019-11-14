@@ -162,8 +162,8 @@ public class BlockletDataMapIndexStore
   public List<BlockletDataMapIndexWrapper> getAll(
       List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiers)
       throws IOException {
-    Map<String, Map<String, BlockMetaInfo>> segInfoCache
-        = new HashMap<String, Map<String, BlockMetaInfo>>();
+    Map<String, Map<String, BlockMetaInfo>> segInfoCache =
+        new HashMap<String, Map<String, BlockMetaInfo>>();
 
     List<BlockletDataMapIndexWrapper> blockletDataMapIndexWrappers =
         new ArrayList<>(tableSegmentUniqueIdentifiers.size());

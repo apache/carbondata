@@ -138,8 +138,8 @@ public final class CarbonLoadOptionConstants {
    * data. This option is especially useful when you encounter skewed data.
    */
   @CarbonProperty
-  public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION
-      = "carbon.load.skewedDataOptimization.enabled";
+  public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION =
+      "carbon.load.skewedDataOptimization.enabled";
 
   public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION_DEFAULT = "false";
 
@@ -154,8 +154,8 @@ public final class CarbonLoadOptionConstants {
   public static final String SORT_COLUMN_BOUNDS_ROW_DELIMITER = ";";
 
   @CarbonProperty
-  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH
-      = "carbon.load.directWriteToStorePath.enabled";
+  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH =
+      "carbon.load.directWriteToStorePath.enabled";
 
   public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT = "false";
 
@@ -167,11 +167,10 @@ public final class CarbonLoadOptionConstants {
    * into sort memory, valid value is from 0 to 100.
    */
   @CarbonProperty
-  public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE
-      = "carbon.load.sortmemory.spill.percentage";
+  public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE =
+      "carbon.load.sortmemory.spill.percentage";
 
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
-
 
   /**
    * carbon binary decoder when writing string data to binary, like decode base64, Hex

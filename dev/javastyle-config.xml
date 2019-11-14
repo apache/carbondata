@@ -242,7 +242,7 @@
 
         <!-- Checks for assign operators are at the end of the line. -->
         <module name="OperatorWrap">
-            <property name="severity" value="info"/>
+            <property name="severity" value="error"/>
             <property name="option" value="eol"/>
             <property name="tokens" value="ASSIGN"/>
         </module>

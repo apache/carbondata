@@ -58,8 +58,8 @@ public class CarbonSplitExecutor extends AbstractCarbonQueryExecutor {
         .dataConverter(converter)
         .enableForcedDetailRawQuery()
         .build();
-    List<PartitionSpliterRawResultIterator> resultList
-        = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<PartitionSpliterRawResultIterator> resultList =
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     TaskBlockInfo taskBlockInfo = segmentMapping.get(segmentId);
     Set<String> taskBlockListMapping = taskBlockInfo.getTaskSet();
     for (String task : taskBlockListMapping) {
