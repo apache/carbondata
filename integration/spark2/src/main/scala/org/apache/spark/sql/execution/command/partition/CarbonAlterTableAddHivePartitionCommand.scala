@@ -154,6 +154,12 @@ case class CarbonAlterTableAddHivePartitionCommand(
         // Make the load as success in table status
         CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false)
 
+        // Normally, application will use Carbon SDK to write files into a partition folder, then
+        // add the folder to partitioned carbon table.
+        // If there are many threads writes to the same partition folder, there will be many
+        // carbon index files, and it is not good for query performance since all index files
+        // need to be read to spark driver.
+        // So, here trigger to merge the index files by sending an event
         val alterTableModel = AlterTableModel(
           dbName = Some(table.getDatabaseName),
           tableName = table.getTableName,
