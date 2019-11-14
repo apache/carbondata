@@ -179,16 +179,16 @@ case class CarbonRelation(
       val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
         carbonTable.getAbsoluteTableIdentifier)
       if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
-        if (new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-          .getValidAndInvalidSegments(carbonTable.isChildTable).getValidSegments.isEmpty) {
+        val allSegments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+          .getValidAndInvalidSegments(carbonTable.isChildTable)
+        if (allSegments.getValidSegments.isEmpty) {
           sizeInBytesLocalValue = 0L
         } else {
           val tablePath = carbonTable.getTablePath
           val fileType = FileFactory.getFileType(tablePath)
           if (FileFactory.isFileExist(tablePath, fileType)) {
             // get the valid segments
-            val segments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-              .getValidAndInvalidSegments(carbonTable.isChildTable).getValidSegments.asScala
+            val segments = allSegments.getValidSegments.asScala
             var size = 0L
             // for each segment calculate the size
             segments.foreach { validSeg =>
