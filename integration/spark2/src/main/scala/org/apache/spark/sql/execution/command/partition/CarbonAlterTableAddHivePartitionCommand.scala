@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AtomicRunnableCommand}
+import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AlterTableModel, AtomicRunnableCommand}
 import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -36,7 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
+import org.apache.carbondata.events.{AlterTableMergeIndexEvent, OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
@@ -153,6 +153,17 @@ case class CarbonAlterTableAddHivePartitionCommand(
         CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId, table)
         // Make the load as success in table status
         CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false)
+
+        val alterTableModel = AlterTableModel(
+          dbName = Some(table.getDatabaseName),
+          tableName = table.getTableName,
+          segmentUpdateStatusManager = None,
+          compactionType = "", // to trigger index merge, this is not required
+          factTimeStamp = Some(System.currentTimeMillis()),
+          alterSql = null,
+          customSegmentIds = None)
+        val mergeIndexEvent = AlterTableMergeIndexEvent(sparkSession, table, alterTableModel)
+        OperationListenerBus.getInstance.fireEvent(mergeIndexEvent, new OperationContext)
       }
     }
     Seq.empty[Row]
