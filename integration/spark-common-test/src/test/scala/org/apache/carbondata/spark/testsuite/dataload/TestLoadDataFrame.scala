@@ -69,6 +69,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
   }
 
   def dropTable() = {
+    sql("DROP TABLE IF EXISTS carbon0")
     sql("DROP TABLE IF EXISTS carbon1")
     sql("DROP TABLE IF EXISTS carbon2")
     sql("DROP TABLE IF EXISTS carbon3")
