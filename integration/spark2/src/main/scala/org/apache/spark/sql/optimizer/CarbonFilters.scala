@@ -17,8 +17,7 @@
 
 package org.apache.spark.sql.optimizer
 
-import java.text.SimpleDateFormat
-import java.util.{ArrayList, Date, TimeZone}
+import java.util.ArrayList
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -38,7 +37,6 @@ import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.indexstore.PartitionSpec
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -50,8 +48,6 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
-
-
 
 /**
  * All filter conversions are done here.
@@ -525,66 +521,7 @@ object CarbonFilters {
           getProperty(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT,
           CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT).toBoolean) {
           // read partitions directly from hive metastore using filters
-
-          val partitions = sparkSession
-            .sharedState
-            .externalCatalog
-            .listPartitions(identifier
-              .database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
-              identifier.table)
-
-          val catalogTable = sparkSession
-            .sharedState
-            .externalCatalog
-            .getTable(identifier.database
-              .getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
-            identifier.table)
-
-
-          if (partitionFilters.isEmpty) {
-            partitions
-          } else {
-            val partitionSchema = catalogTable.partitionSchema
-            val partitionColumnNames = catalogTable.partitionColumnNames.toSet
-
-            val nonPartitionPruningPredicates = partitionFilters.filterNot {
-              _.references.map(_.name).toSet.subsetOf(partitionColumnNames)
-            }
-            if (nonPartitionPruningPredicates.nonEmpty) {
-              throw new AnalysisException("Expected only partition pruning predicates: " +
-                nonPartitionPruningPredicates)
-            }
-
-            val boundPredicate =
-              InterpretedPredicate.create(partitionFilters.reduce(And).transform {
-                case att: AttributeReference =>
-                  val index = partitionSchema.indexWhere(_.name == att.name)
-                  BoundReference(index, partitionSchema(index).dataType, nullable = true)
-              })
-
-            val ddg =
-              new DateDirectDictionaryGenerator(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-            val sf = new SimpleDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-            sf.setTimeZone(TimeZone.getTimeZone("GMT"))
-            partitions.filter { p =>
-              val p1 = p.copy(spec = p.spec.map(u => {
-                if (partitionSchema
-                  .filter(_.name.equals(u._1)).head.dataType == DataTypes.DateType) {
-                  (u._1,
-                    sf.format(new Date(ddg.getValueFromSurrogate(u._2.toInt).asInstanceOf[Integer]
-                        * DateDirectDictionaryGenerator.MILLIS_PER_DAY)))
-                } else if (partitionSchema
-                  .filter(_.name.equals(u._1)).head.dataType == DataTypes.TimestampType) {
-                  (u._1,
-                    sf.format(new Date(u._2.toLong)))
-                } else {
-                  u
-                }
-              }))
-              boundPredicate.eval(p1.toRow(partitionSchema,
-                sparkSession.sessionState.conf.sessionLocalTimeZone))
-            }
-          }
+          sparkSession.sessionState.catalog.listPartitionsByFilter(identifier, partitionFilters)
         } else {
           // Read partitions alternatively by first get all partitions then filter them
           CarbonSessionCatalogUtil.getPartitionsAlternate(

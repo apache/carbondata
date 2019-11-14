@@ -374,7 +374,9 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         }
       case iihrc@InsertIntoHadoopFsRelationCommand(
       outputPath, staticPartitions, ifPartitionNotExists, partitionColumns,
-      bucketSpec, fileFormat, options, query, mode, catalogTable, fileIndex, outputColumnNames) =>
+      bucketSpec, fileFormat, options, query, mode, catalogTable, fileIndex, outputColumnNames)
+        if (catalogTable.isDefined && CarbonEnv.getInstance(sparkSession).carbonMetaStore
+          .tableExists(catalogTable.get.identifier)(sparkSession)) =>
         DataWritingCommandExec(
           CarbonInsertIntoHadoopFsRelationCommand(
             outputPath, staticPartitions, ifPartitionNotExists, partitionColumns,
