@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
@@ -254,18 +255,23 @@ public class SegmentStatusManager {
     }
   }
 
-  public static LoadMetadataDetails[] readTableStatusFile(String tableStatusPath)
-      throws IOException {
-    Gson gsonObjectToRead = new Gson();
+  /**
+   * Read file and return its content as string
+   *
+   * @param tableStatusPath path of the table status to read
+   * @return file content, null is file does not exist
+   * @throws IOException if IO errors
+   */
+  private static String readFileAsString(String tableStatusPath) throws IOException {
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
-    LoadMetadataDetails[] loadFolderDetails = null;
+
     AtomicFileOperations fileOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(tableStatusPath);
 
     if (!FileFactory.isFileExist(tableStatusPath)) {
-      return new LoadMetadataDetails[0];
+      return null;
     }
 
     // When storing table status file in object store, reading of table status file may
@@ -277,8 +283,7 @@ public class SegmentStatusManager {
         dataInputStream = fileOperation.openForRead();
         inStream = new InputStreamReader(dataInputStream, Charset.forName(DEFAULT_CHARSET));
         buffReader = new BufferedReader(inStream);
-        loadFolderDetails = gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
-        retry = 0;
+        return buffReader.readLine();
       } catch (EOFException ex) {
         retry--;
         if (retry == 0) {
@@ -299,13 +304,23 @@ public class SegmentStatusManager {
         closeStreams(buffReader, inStream, dataInputStream);
       }
     }
+    return null;
+  }
 
-    // if listOfLoadFolderDetailsArray is null, return empty array
-    if (null == loadFolderDetails) {
+  /**
+   * Read table status file and decoded to segment meta arrays
+   *
+   * @param tableStatusPath table status file path
+   * @return segment metadata
+   * @throws IOException if IO errors
+   */
+  public static LoadMetadataDetails[] readTableStatusFile(String tableStatusPath)
+      throws IOException {
+    String content = readFileAsString(tableStatusPath);
+    if (content == null) {
       return new LoadMetadataDetails[0];
     }
-
-    return loadFolderDetails;
+    return new Gson().fromJson(content, LoadMetadataDetails[].class);
   }
 
   /**
@@ -314,7 +329,7 @@ public class SegmentStatusManager {
    * @param loadMetadataDetails
    * @return
    */
-  public static int getMaxSegmentId(LoadMetadataDetails[] loadMetadataDetails) {
+  private static int getMaxSegmentId(LoadMetadataDetails[] loadMetadataDetails) {
     int newSegmentId = -1;
     for (int i = 0; i < loadMetadataDetails.length; i++) {
       try {
@@ -525,45 +540,78 @@ public class SegmentStatusManager {
   }
 
   /**
-   * writes load details into a given file at @param dataLoadLocation
+   * Backup the table status file as 'tablestatus.backup' in the same path
    *
-   * @param dataLoadLocation
-   * @param listOfLoadFolderDetailsArray
-   * @throws IOException
+   * @param tableStatusPath table status file path
    */
-  public static void writeLoadDetailsIntoFile(String dataLoadLocation,
+  private static void backupTableStatus(String tableStatusPath) throws IOException {
+    CarbonFile file = FileFactory.getCarbonFile(tableStatusPath);
+    if (file.exists()) {
+      String backupPath = tableStatusPath + ".backup";
+      String currentContent = readFileAsString(tableStatusPath);
+      if (currentContent != null) {
+        writeStringIntoFile(backupPath, currentContent);
+      }
+    }
+  }
+
+  /**
+   * writes load details to specified path
+   *
+   * @param tableStatusPath path of the table status file
+   * @param listOfLoadFolderDetailsArray segment metadata
+   * @throws IOException if IO errors
+   */
+  public static void writeLoadDetailsIntoFile(
+      String tableStatusPath,
       LoadMetadataDetails[] listOfLoadFolderDetailsArray) throws IOException {
-    AtomicFileOperations fileWrite =
-        AtomicFileOperationFactory.getAtomicFileOperations(dataLoadLocation);
+    // When overwriting table status file, if process crashed, table status file
+    // will be in corrupted state. This can happen in an unstable environment,
+    // like in the cloud. To prevent the table corruption, user can enable following
+    // property to enable backup of the table status before overwriting it.
+    if (tableStatusPath.endsWith(CarbonTablePath.TABLE_STATUS_FILE) &&
+        CarbonProperties.isEnableTableStatusBackup()) {
+      backupTableStatus(tableStatusPath);
+    }
+    String content = new Gson().toJson(listOfLoadFolderDetailsArray);
+    mockForTest();
+    // make the table status file smaller by removing fields that are default value
+    for (LoadMetadataDetails loadMetadataDetails : listOfLoadFolderDetailsArray) {
+      loadMetadataDetails.removeUnnecessaryField();
+    }
+    // If process crashed during following write, table status file need to be
+    // manually recovered.
+    writeStringIntoFile(tableStatusPath, content);
+  }
+
+  // a dummy func for mocking in testcase, which simulates IOException
+  private static void mockForTest() throws IOException {
+  }
+
+  /**
+   * writes string content to specified path
+   *
+   * @param filePath path of the file to write
+   * @param content content to write
+   * @throws IOException if IO errors
+   */
+  private static void writeStringIntoFile(String filePath, String content) throws IOException {
+    AtomicFileOperations fileWrite = AtomicFileOperationFactory.getAtomicFileOperations(filePath);
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
-    Gson gsonObjectToWrite = new Gson();
-    // write the updated data into the metadata file.
-
     try {
       dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
-      brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
-              Charset.forName(DEFAULT_CHARSET)));
-
-      // make the table status file smaller by removing fields that are default value
-      for (LoadMetadataDetails loadMetadataDetails : listOfLoadFolderDetailsArray) {
-        loadMetadataDetails.removeUnnecessaryField();
-      }
-
-      String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetailsArray);
-      brWriter.write(metadataInstance);
+      brWriter = new BufferedWriter(new OutputStreamWriter(
+          dataOutputStream, Charset.forName(DEFAULT_CHARSET)));
+      brWriter.write(content);
     } catch (IOException ioe) {
-      LOG.error("Error message: " + ioe.getLocalizedMessage());
+      LOG.error("Write file failed: " + ioe.getLocalizedMessage());
       fileWrite.setFailed();
       throw ioe;
     } finally {
-      if (null != brWriter) {
-        brWriter.flush();
-      }
       CarbonUtil.closeStreams(brWriter);
       fileWrite.close();
     }
-
   }
 
   /**
@@ -637,7 +685,7 @@ public class SegmentStatusManager {
    * @param invalidLoadTimestamps
    * @return invalidLoadTimestamps
    */
-  public static List<String> updateDeletionStatus(AbsoluteTableIdentifier absoluteTableIdentifier,
+  private static List<String> updateDeletionStatus(AbsoluteTableIdentifier absoluteTableIdentifier,
       String loadDate, LoadMetadataDetails[] listOfLoadFolderDetailsArray,
       List<String> invalidLoadTimestamps, Long loadStartTime) {
     // For each load timestamp loop through data and if the
@@ -708,8 +756,7 @@ public class SegmentStatusManager {
    * @param newMetadata
    * @return
    */
-
-  public static List<LoadMetadataDetails> updateLatestTableStatusDetails(
+  private static List<LoadMetadataDetails> updateLatestTableStatusDetails(
       LoadMetadataDetails[] oldMetadata, LoadMetadataDetails[] newMetadata) {
 
     List<LoadMetadataDetails> newListMetadata =
@@ -727,7 +774,7 @@ public class SegmentStatusManager {
    *
    * @param loadMetadata
    */
-  public static void updateSegmentMetadataDetails(LoadMetadataDetails loadMetadata) {
+  private static void updateSegmentMetadataDetails(LoadMetadataDetails loadMetadata) {
     // update status only if the segment is not marked for delete
     if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus()) {
       loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
@@ -893,7 +940,7 @@ public class SegmentStatusManager {
    * @param newList
    * @return
    */
-  public static List<LoadMetadataDetails> updateLoadMetadataFromOldToNew(
+  private static List<LoadMetadataDetails> updateLoadMetadataFromOldToNew(
       LoadMetadataDetails[] oldList, LoadMetadataDetails[] newList) {
 
     List<LoadMetadataDetails> newListMetadata =
@@ -1024,7 +1071,9 @@ public class SegmentStatusManager {
               // update the metadata details from old to new status.
               List<LoadMetadataDetails> latestStatus =
                   updateLoadMetadataFromOldToNew(tuple2.details, latestMetadata);
-              writeLoadMetadata(identifier, latestStatus);
+              writeLoadDetailsIntoFile(
+                  CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()),
+                  latestStatus.toArray(new LoadMetadataDetails[0]));
             }
             updationCompletionStatus = true;
           } else {
