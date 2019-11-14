@@ -342,6 +342,16 @@ test("Creation of partition table should fail if the colname in table schema and
     checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc"), Row("email=def")))
     checkAnswer(sql("select email from partitionTable"), Seq(Row("abc"), Row("def"), Row("def")))
     checkAnswer(sql("select count(*) from partitionTable"), Seq(Row(3)))
+    checkAnswer(sql("select id from partitionTable where email = 'def'"), Seq(Row(2), Row(3)))
+
+    // do compaction to sort data written by sdk
+    sql("alter table partitionTable compact 'major'")
+    assert(sql("show segments for table partitionTable").collectAsList().get(0).getString(1).contains("Compacted"))
+    checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc"), Row("email=def")))
+    checkAnswer(sql("select email from partitionTable"), Seq(Row("abc"), Row("def"), Row("def")))
+    checkAnswer(sql("select count(*) from partitionTable"), Seq(Row(3)))
+    checkAnswer(sql("select id from partitionTable where email = 'def'"), Seq(Row(2), Row(3)))
+
     sql("drop table if exists partitionTable")
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(sdkWritePath))
   }
