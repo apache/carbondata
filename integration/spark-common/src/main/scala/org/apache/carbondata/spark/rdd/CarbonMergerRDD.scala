@@ -56,7 +56,7 @@ import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatusManager, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection}
+import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonInputSplitWrapper, CarbonMultiBlockSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
 import org.apache.carbondata.processing.loading.TableProcessingOperations
@@ -89,10 +89,10 @@ class CarbonMergerRDD[K, V](
   var rangeColumn: CarbonColumn = null
   var singleRange = false
   var expressionMapForRangeCol: util.Map[Integer, Expression] = null
-  var broadCastSplits: Broadcast[util.List[CarbonInputSplit]] = null
+  var broadCastSplits: Broadcast[CarbonInputSplitWrapper] = null
 
   def makeBroadCast(splits: util.List[CarbonInputSplit]): Unit = {
-    broadCastSplits = sparkContext.broadcast(splits)
+    broadCastSplits = sparkContext.broadcast(new CarbonInputSplitWrapper(splits))
   }
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
@@ -121,7 +121,7 @@ class CarbonMergerRDD[K, V](
           // all the splits)
           carbonSparkPartition.split.value.getAllSplits
         } else {
-          broadCastSplits.value
+          broadCastSplits.value.getInputSplit
         }
         val tableBlockInfoList = CarbonInputSplit.createBlocks(splitList)
 
