@@ -116,7 +116,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
       if (segmentFile != null) {
         val indexToSchemas = SegmentFileStore.getSchemaFiles(segmentFile, table.getTablePath)
         val tableColums = table.getTableInfo.getFactTable.getListOfColumns.asScala
-        var isSameSchema = indexToSchemas.asScala.exists{ case(key, columnSchemas) =>
+        val isSameSchema = indexToSchemas.asScala.exists{ case(key, columnSchemas) =>
           columnSchemas.asScala.exists { col =>
             tableColums.exists(p => p.getColumnUniqueId.equals(col.getColumnUniqueId))
           } && columnSchemas.size() == tableColums.length
@@ -167,7 +167,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
           compactionType = "", // to trigger index merge, this is not required
           factTimeStamp = Some(System.currentTimeMillis()),
           alterSql = null,
-          customSegmentIds = None)
+          customSegmentIds = Some(Seq(loadModel.getSegmentId).toList))
         val mergeIndexEvent = AlterTableMergeIndexEvent(sparkSession, table, alterTableModel)
         OperationListenerBus.getInstance.fireEvent(mergeIndexEvent, new OperationContext)
       }
