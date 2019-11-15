@@ -265,15 +265,16 @@ public class SegmentStatusManager {
     AtomicFileOperations fileOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(tableStatusPath);
 
+    if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
+      return new LoadMetadataDetails[0];
+    }
+
     // When storing table status file in object store, reading of table status file may
     // fail (receive EOFException) when table status file is being modifying
     // so here we retry multiple times before throwing EOFException
     int retry = READ_TABLE_STATUS_RETRY_COUNT;
     while (retry > 0) {
       try {
-        if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
-          return new LoadMetadataDetails[0];
-        }
         dataInputStream = fileOperation.openForRead();
         inStream = new InputStreamReader(dataInputStream, Charset.forName(DEFAULT_CHARSET));
         buffReader = new BufferedReader(inStream);
@@ -283,17 +284,17 @@ public class SegmentStatusManager {
         retry--;
         if (retry == 0) {
           // we have retried several times, throw this exception to make the execution failed
-          LOG.error("Failed to read metadata of load after retry", ex);
+          LOG.error("Failed to read table status file after retry", ex);
           throw ex;
         }
         try {
           // sleep for some time before retry
-          TimeUnit.MICROSECONDS.sleep(10);
+          TimeUnit.MILLISECONDS.sleep(10);
         } catch (InterruptedException e) {
           // ignored
         }
       } catch (IOException e) {
-        LOG.error("Failed to read metadata of load", e);
+        LOG.error("Failed to read table status file", e);
         throw e;
       } finally {
         closeStreams(buffReader, inStream, dataInputStream);
