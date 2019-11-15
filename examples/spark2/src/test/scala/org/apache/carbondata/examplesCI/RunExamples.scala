@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.examplesCI
 
+import java.io.File
+
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 
@@ -37,6 +39,11 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
   private val spark = sqlContext.sparkSession
 
   override def beforeAll: Unit = {
+    val rootPath = new File(this.getClass.getResource("/").getPath
+      + "../../../..").getCanonicalPath
+    val targetLoc = s"$rootPath/examples/spark2/target"
+
+    System.setProperty("derby.system.home", s"$targetLoc")
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

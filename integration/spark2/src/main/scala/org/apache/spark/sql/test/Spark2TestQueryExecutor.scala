@@ -62,6 +62,7 @@ object Spark2TestQueryExecutor {
       System.getProperty("spark.hadoop.hive.metastore.uris"))
   }
   val metaStoreDB = s"$integrationPath/spark-common-cluster-test/target"
+  System.setProperty("derby.system.home", metaStoreDB)
   val spark = SparkSession
     .builder().config(conf)
     .master(TestQueryExecutor.masterUrl)
