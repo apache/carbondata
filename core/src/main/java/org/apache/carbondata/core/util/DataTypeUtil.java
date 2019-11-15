@@ -715,6 +715,12 @@ public final class DataTypeUtil {
           javaDecVal = javaDecVal.setScale(dimension.getColumnSchema().getScale());
         }
         return getDataTypeConverter().convertFromBigDecimalToDecimal(javaDecVal);
+      } else if (dataType == DataTypes.BOOLEAN) {
+        String data8 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        if (data8.isEmpty()) {
+          return null;
+        }
+        return BooleanConvert.parseBoolean(data8);
       } else {
         return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       }

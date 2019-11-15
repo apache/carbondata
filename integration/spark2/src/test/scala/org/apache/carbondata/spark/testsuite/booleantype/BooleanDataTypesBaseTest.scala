@@ -154,4 +154,21 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
     sql("delete from carbon_table where cc=true")
     checkAnswer(sql("select COUNT(*) from carbon_table"), Row(0))
   }
+
+  test("test boolean as dictionary include column and codegen=false"){
+    sql("drop table if exists carbon_table")
+    sql("create table carbon_table(a1 boolean,a2 string,a3 int) stored by 'carbondata' tblproperties('dictionary_include'='a1')")
+    sql("insert into carbon_table select false,'a',1")
+    sql("set spark.sql.codegen.wholestage=false")
+    checkAnswer(sql("select a1 from carbon_table"), Seq(Row(false)))
+    sql("set spark.sql.codegen.wholestage=true")
+    checkAnswer(sql("select a1 from carbon_table"), Seq(Row(false)))
+    sql("insert into carbon_table select true,'a',1")
+    sql("set spark.sql.codegen.wholestage=false")
+    checkAnswer(sql("select a1 from carbon_table"), Seq(Row(false), Row(true)))
+    sql("set spark.sql.codegen.wholestage=true")
+    checkAnswer(sql("select a1 from carbon_table"), Seq(Row(false), Row(true)))
+    sql("reset")
+    sql("drop table if exists carbon_table")
+  }
 }
