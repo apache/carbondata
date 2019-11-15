@@ -750,7 +750,7 @@ public class SegmentStatusManager {
     public List<Segment> getInvalidSegments() {
       return listOfInvalidSegments;
     }
-    
+
     public List<Segment> getValidSegments() {
       return listOfValidSegments;
     }
