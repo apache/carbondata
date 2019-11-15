@@ -29,7 +29,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -55,7 +54,6 @@ import org.apache.carbondata.core.util.DeleteLoadFolders;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -748,9 +746,11 @@ public class SegmentStatusManager {
       this.listOfStreamSegments = listOfStreamSegments;
       this.listOfInProgressSegments = listOfInProgressSegments;
     }
+
     public List<Segment> getInvalidSegments() {
       return listOfInvalidSegments;
     }
+    
     public List<Segment> getValidSegments() {
       return listOfValidSegments;
     }
