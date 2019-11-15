@@ -344,9 +344,11 @@ class NewRddIterator(rddIter: Iterator[Row],
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
   import scala.collection.JavaConverters._
   private val isVarcharTypeMapping =
-    carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn().asScala.map(_.getDataType == DataTypes.VARCHAR)
+    carbonLoadModel.getCarbonDataLoadSchema
+      .getCarbonTable.getCreateOrderColumn.asScala.map(_.getDataType == DataTypes.VARCHAR)
   private val isComplexTypeMapping =
-    carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn().asScala.map(_.isComplex())
+    carbonLoadModel.getCarbonDataLoadSchema
+      .getCarbonTable.getCreateOrderColumn.asScala.map(_.isComplex())
   def hasNext: Boolean = rddIter.hasNext
 
   def next: Array[AnyRef] = {
