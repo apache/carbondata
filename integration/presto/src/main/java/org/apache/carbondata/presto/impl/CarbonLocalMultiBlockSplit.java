@@ -49,23 +49,28 @@ public class CarbonLocalMultiBlockSplit {
 
   private long length;
 
-  @JsonProperty public long getLength() {
+  @JsonProperty
+  public long getLength() {
     return length;
   }
 
-  @JsonProperty public String[] getLocations() {
+  @JsonProperty
+  public String[] getLocations() {
     return locations;
   }
 
-  @JsonProperty public List<CarbonLocalInputSplit> getSplitList() {
+  @JsonProperty
+  public List<CarbonLocalInputSplit> getSplitList() {
     return splitList;
   }
 
-  @JsonProperty public FileFormat getFileFormat() {
+  @JsonProperty
+  public FileFormat getFileFormat() {
     return fileFormat;
   }
 
-  @JsonCreator public CarbonLocalMultiBlockSplit(
+  @JsonCreator
+  public CarbonLocalMultiBlockSplit(
       @JsonProperty("splitList") List<CarbonLocalInputSplit> splitList,
       @JsonProperty("locations") String[] locations) {
     this.splitList = splitList;

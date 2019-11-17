@@ -52,47 +52,58 @@ public class CarbonLocalInputSplit {
    */
   private int numberOfBlocklets = 0;
 
-  @JsonProperty public short getVersion() {
+  @JsonProperty
+  public short getVersion() {
     return version;
   }
 
-  @JsonProperty public List<String> getLocations() {
+  @JsonProperty
+  public List<String> getLocations() {
     return locations;
   }
 
-  @JsonProperty public long getLength() {
+  @JsonProperty
+  public long getLength() {
     return length;
   }
 
-  @JsonProperty public long getStart() {
+  @JsonProperty
+  public long getStart() {
     return start;
   }
 
-  @JsonProperty public String getPath() {
+  @JsonProperty
+  public String getPath() {
     return path;
   }
 
-  @JsonProperty public String getSegmentId() {
+  @JsonProperty
+  public String getSegmentId() {
     return segmentId;
   }
 
-  @JsonProperty public int getNumberOfBlocklets() {
+  @JsonProperty
+  public int getNumberOfBlocklets() {
     return numberOfBlocklets;
   }
 
-  @JsonProperty public String[] getDeleteDeltaFiles() {
+  @JsonProperty
+  public String[] getDeleteDeltaFiles() {
     return deleteDeltaFiles;
   }
 
-  @JsonProperty public String getDetailInfo() {
+  @JsonProperty
+  public String getDetailInfo() {
     return detailInfo;
   }
 
-  @JsonProperty public String getBlockletId() {
+  @JsonProperty
+  public String getBlockletId() {
     return blockletId;
   }
 
-  @JsonProperty public int getFileFormatOrdinal() {
+  @JsonProperty
+  public int getFileFormatOrdinal() {
     return fileFormatOrdinal;
   }
 
@@ -106,7 +117,8 @@ public class CarbonLocalInputSplit {
 
   }
 
-  @JsonCreator public CarbonLocalInputSplit(@JsonProperty("segmentId") String segmentId,
+  @JsonCreator
+  public CarbonLocalInputSplit(@JsonProperty("segmentId") String segmentId,
       @JsonProperty("path") String path, @JsonProperty("start") long start,
       @JsonProperty("length") long length, @JsonProperty("locations") List<String> locations,
       @JsonProperty("numberOfBlocklets") int numberOfBlocklets/*,
@@ -115,8 +127,7 @@ public class CarbonLocalInputSplit {
       @JsonProperty("deleteDeltaFiles") String[] deleteDeltaFiles,
       @JsonProperty("blockletId") String blockletId,
       @JsonProperty("detailInfo") String detailInfo,
-      @JsonProperty("fileFormatOrdinal") int fileFormatOrdinal
-  ) {
+      @JsonProperty("fileFormatOrdinal") int fileFormatOrdinal) {
     this.path = path;
     this.start = start;
     this.length = length;
