@@ -471,7 +471,6 @@ public final class CarbonUtil {
     return -(low + 1);
   }
 
-
   /**
    * Method will identify the value which is lesser than the pivot element
    * on which range filter is been applied.
@@ -689,7 +688,9 @@ public final class CarbonUtil {
       return "";
     }
   }
+
   public static String removeAKSK(String filePath) {
+
     if (null == filePath) {
       return "";
     }
@@ -759,7 +760,6 @@ public final class CarbonUtil {
     }
     return created;
   }
-
 
   /**
    * This method will return the size of a given file
@@ -1787,6 +1787,7 @@ public final class CarbonUtil {
         throw new IllegalArgumentException("Int cannot be more than 4 bytes");
     }
   }
+
   /**
    * Validate boolean value configuration
    *
@@ -2429,6 +2430,7 @@ public final class CarbonUtil {
     }
     return true;
   }
+
   /**
    * Below method will be used to check whether bitset applied on previous filter
    * can be used to apply on next column filter
@@ -2708,7 +2710,6 @@ public final class CarbonUtil {
     return size;
   }
 
-
   /**
    * Utility function to check whether table has timseries datamap or not
    * @param carbonTable
@@ -2762,7 +2763,6 @@ public final class CarbonUtil {
       throws UnsupportedEncodingException {
     return Base64.decodeBase64(objectString.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
   }
-
 
   /**
    * This method will copy the given file to carbon store location
@@ -3273,7 +3273,6 @@ public final class CarbonUtil {
   public static boolean isStandardCarbonTable(CarbonTable table) {
     return !(table.isSupportFlatFolder() || table.isHivePartitionTable());
   }
-
 
   /**
    * This method will form the FallbackEncodedColumnPage from input column page

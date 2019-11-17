@@ -45,7 +45,6 @@ public class SDKUtil {
     return result;
   }
 
-
   public static Object[] getSplitList(String path, String suf,
                                       int numOfSplit, Configuration conf) throws Exception {
     List fileList = listFiles(path, suf, conf);

@@ -256,6 +256,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   public CarbonVectorBatch getColumnarBatch() {
     return columnarBatch;
   }
+
   public void setTaskId(long taskId) {
     this.taskId = taskId;
   }

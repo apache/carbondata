@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.datamap.dev.cgdatamap;
 
 import java.io.IOException;
@@ -53,7 +54,6 @@ public abstract class CoarseGrainDataMap implements DataMap<Blocklet> {
       Map<String, Long> blockletToRowCountMap) throws IOException {
     throw new UnsupportedOperationException("Operation not supported");
   }
-
 
   @Override
   public int getNumberOfEntries() {

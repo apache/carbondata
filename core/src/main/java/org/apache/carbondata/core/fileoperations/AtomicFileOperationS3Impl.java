@@ -44,6 +44,7 @@ class AtomicFileOperationS3Impl implements AtomicFileOperations {
   AtomicFileOperationS3Impl(String filePath) {
     this.filePath = filePath;
   }
+
   @Override
   public DataInputStream openForRead() throws IOException {
     return FileFactory.getDataInputStream(filePath, FileFactory.getFileType(filePath));

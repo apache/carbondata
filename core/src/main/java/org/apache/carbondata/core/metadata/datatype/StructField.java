@@ -36,7 +36,6 @@ public class StructField implements Serializable {
     this.children = null;
   }
 
-
   public StructField(String fieldName, DataType dataType, List<StructField> children) {
     this.fieldName = fieldName;
     this.dataType = dataType;

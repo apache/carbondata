@@ -127,6 +127,7 @@ public interface CarbonFile {
    */
   DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType, int bufferSize,
       long blockSize, short replication) throws IOException;
+
   /**
    * get data output stream
    * @param path

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.util;
 
 import java.io.IOException;
@@ -191,6 +192,7 @@ public class CarbonMetadataUtil {
     }
     return encodedPages;
   }
+
   public static BlockletIndex getBlockletIndex(EncodedBlocklet encodedBlocklet,
       List<CarbonMeasure> carbonMeasureList) {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
@@ -340,6 +342,7 @@ public class CarbonMetadataUtil {
       return CompressorFactory.NativeSupportedCompressor.SNAPPY.getName();
     }
   }
+
   /**
    * Below method will be used to get the index header
    *

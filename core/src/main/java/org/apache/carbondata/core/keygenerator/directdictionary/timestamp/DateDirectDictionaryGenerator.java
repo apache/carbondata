@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.keygenerator.directdictionary.timestamp;
 
 import java.text.ParseException;
@@ -71,6 +72,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     MIN_VALUE = minValue;
     MAX_VALUE = maxValue;
   }
+
   public DateDirectDictionaryGenerator(String dateFormat) {
     this.dateFormat = dateFormat;
     initialize();

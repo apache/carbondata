@@ -379,7 +379,6 @@ public class CarbonReaderBuilder {
     }
   }
 
-
   private  <T> CarbonReader<T> buildWithSplits(InputSplit inputSplit)
       throws IOException, InterruptedException {
     if (hadoopConf == null) {

@@ -147,8 +147,6 @@ public class Field {
     }
   }
 
-
-
   public Field(String name, DataType type, List<StructField> fields) {
     this.name = name.toLowerCase().trim();
     this.type = type;

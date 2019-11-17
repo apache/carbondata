@@ -31,7 +31,6 @@ public enum EscapeSequences {
    */
   private char escapeChar;
 
-
   EscapeSequences(String name, char escapeChar) {
     this.name = name;
     this.escapeChar = escapeChar;

@@ -43,7 +43,6 @@ import org.apache.commons.cli.PosixParser;
 @InterfaceStability.Unstable
 public class CarbonCli {
 
-
   static class OptionsHolder {
     static Options instance = buildOptions();
   }
@@ -115,7 +114,6 @@ public class CarbonCli {
     run(args, System.out);
   }
 
-
   /**
    * adapter to run CLI and print to stream
    * @param args input arguments
@@ -128,7 +126,6 @@ public class CarbonCli {
       out.println(line);
     }
   }
-
 
   /**
    * run CLI and fill result into array

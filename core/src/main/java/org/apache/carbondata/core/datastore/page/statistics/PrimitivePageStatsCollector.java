@@ -283,6 +283,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       }
     }
   }
+
   @Override
   public void update(float value) {
     if (minFloat > value) {

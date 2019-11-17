@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.datamap.dev;
 
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql;
 
 import org.apache.spark.memory.MemoryMode;
@@ -25,9 +26,7 @@ import org.apache.spark.sql.vectorized.ColumnarBatch;
 
 public class ColumnVectorFactory {
 
-
     public static WritableColumnVector[] getColumnVector(MemoryMode memMode, StructType outputSchema, int rowNums) {
-
 
         WritableColumnVector[] writableColumnVectors = null;
         switch (memMode) {

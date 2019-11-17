@@ -194,7 +194,6 @@ public class RangeExpressionEvaluator {
     }
   }
 
-
   private Map<String, List<FilterModificationNode>> convertFilterTreeToMap() {
     // Traverse the Filter Tree and add the nodes in filterExpressionMap.
     // Only those nodes will be added which has got LessThan, LessThanEqualTo

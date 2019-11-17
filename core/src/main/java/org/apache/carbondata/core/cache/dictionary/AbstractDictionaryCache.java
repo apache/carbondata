@@ -50,7 +50,6 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    */
   protected CarbonLRUCache carbonLRUCache;
 
-
   /**
    * @param carbonLRUCache
    */
@@ -63,7 +62,6 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
   public void put(DictionaryColumnUniqueIdentifier key, Dictionary value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
-
 
   /**
    * This method will initialize the thread pool size to be used for creating the

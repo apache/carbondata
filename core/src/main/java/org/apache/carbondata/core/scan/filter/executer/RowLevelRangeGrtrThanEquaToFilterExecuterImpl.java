@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
@@ -446,7 +447,6 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     }
     return bitSet;
   }
-
 
   private BitSet getFilteredIndexes(DimensionColumnPage dimensionColumnPage,
       int numerOfRows) {

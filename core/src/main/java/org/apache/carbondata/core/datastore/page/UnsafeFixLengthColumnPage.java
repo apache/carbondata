@@ -28,7 +28,6 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
-
 // This extension uses unsafe memory to store page data, for fix length data type only (byte,
 // short, integer, long, float, double)
 public class UnsafeFixLengthColumnPage extends ColumnPage {
@@ -127,8 +126,6 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     totalLength += ByteUtil.SIZEOF_BYTE;
     updatePageSize(rowId);
   }
-
-
 
   @Override
   public void putShort(int rowId, short value) {

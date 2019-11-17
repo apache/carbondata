@@ -118,7 +118,6 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     return null;
   }
 
-
   /**
    * method will get the start key based on the filter surrogates
    *

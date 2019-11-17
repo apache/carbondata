@@ -109,6 +109,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
   }
 
   protected abstract int getLengthSize();
+
   protected abstract int getLengthFromBuffer(ByteBuffer byteBuffer);
 
   /**

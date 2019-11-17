@@ -385,8 +385,6 @@ public class CarbonDataLoadConfiguration {
     return getCardinalityFinder().getCardinality();
   }
 
-
-
   public TableSpec getTableSpec() {
     return tableSpec;
   }

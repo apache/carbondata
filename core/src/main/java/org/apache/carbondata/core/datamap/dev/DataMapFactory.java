@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
@@ -35,6 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.events.Event;
+
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
 /**
@@ -67,6 +69,7 @@ public abstract class DataMapFactory<T extends DataMap> {
    */
   public abstract DataMapWriter createWriter(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException;
+
   /**
    * Create a new DataMapBuilder for this datamap, to rebuild the specified
    * segment and shard data in the main table.

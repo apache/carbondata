@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.dictionary.generator.key;
 
 import java.nio.charset.Charset;
@@ -131,7 +132,6 @@ public class DictionaryMessage {
     // packets before proceeding to process the message.Based on the length it waits.
     byteBuf.setShort(startIndex, endIndex - startIndex - 2);
   }
-
 
   private DictionaryMessageType getKeyType(byte type) {
     switch (type) {

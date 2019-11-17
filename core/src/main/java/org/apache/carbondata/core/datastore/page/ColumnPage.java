@@ -528,7 +528,6 @@ public abstract class ColumnPage {
    */
   public abstract void putBytes(int rowId, byte[] bytes, int offset, int length);
 
-
   /**
    * Set null at rowId
    */

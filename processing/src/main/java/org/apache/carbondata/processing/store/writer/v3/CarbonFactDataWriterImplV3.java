@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.store.writer.v3;
 
 import java.io.IOException;
@@ -192,8 +193,6 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       listener.onPageAdded(blockletId, pageId++, tablePage);
     }
   }
-
-
 
   /**
    * Write the collect blocklet data (blockletDataHolder) to file

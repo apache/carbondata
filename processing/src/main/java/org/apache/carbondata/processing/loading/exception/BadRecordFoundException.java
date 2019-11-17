@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.loading.exception;
 
 public class BadRecordFoundException extends CarbonDataLoadingException {
@@ -46,7 +47,6 @@ public class BadRecordFoundException extends CarbonDataLoadingException {
     super(msg, t);
     this.msg = msg;
   }
-
 
   /**
    * getMessage

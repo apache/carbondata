@@ -54,7 +54,6 @@ public class TaskMetricsMap {
     return threadLocal;
   }
 
-
   /**
    * initializes thread local to current thread id
    *

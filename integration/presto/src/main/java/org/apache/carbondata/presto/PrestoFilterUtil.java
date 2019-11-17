@@ -61,7 +61,6 @@ import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
 import static com.google.common.base.Preconditions.checkArgument;
 
-
 /**
  * PrestoFilterUtil create the carbonData Expression from the presto-domain
  */

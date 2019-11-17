@@ -40,7 +40,6 @@ public class CarbonTableConfig {
   private String endPoint;
   private String pushRowFilter;
 
-
   public String getUnsafeMemoryInMb() {
     return unsafeMemoryInMb;
   }
@@ -129,7 +128,6 @@ public class CarbonTableConfig {
     return endPoint;
   }
 
-
   @Config("fs.s3a.access.key")
   public CarbonTableConfig setS3A_AcesssKey(String s3A_acesssKey) {
     this.s3A_acesssKey = s3A_acesssKey;
@@ -153,6 +151,7 @@ public class CarbonTableConfig {
     this.s3_secretKey = s3_secretKey;
     return this;
   }
+
   @Config("fs.s3n.awsAccessKeyId")
   public CarbonTableConfig setS3N_AcesssKey(String s3N_acesssKey) {
     this.s3N_acesssKey = s3N_acesssKey;
@@ -164,6 +163,7 @@ public class CarbonTableConfig {
     this.s3N_secretKey = s3N_secretKey;
     return this;
   }
+
   @Config("fs.s3a.endpoint")
   public CarbonTableConfig setS3EndPoint(String endPoint) {
     this.endPoint = endPoint;

@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.expression;
 
-
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;

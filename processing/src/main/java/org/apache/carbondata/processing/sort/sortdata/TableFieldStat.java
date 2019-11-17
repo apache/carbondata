@@ -263,7 +263,6 @@ public class TableFieldStat implements Serializable {
     return noDictNoSortDataType;
   }
 
-
   public DataType[] getNoDictDataType() {
     return noDictDataType;
   }

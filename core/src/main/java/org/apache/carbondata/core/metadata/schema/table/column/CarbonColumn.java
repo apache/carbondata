@@ -161,6 +161,7 @@ public class CarbonColumn implements Serializable {
   public Boolean isUseInvertedIndex() {
     return columnSchema.isUseInvertedIndex();
   }
+
   public ColumnSchema getColumnSchema() {
     return this.columnSchema;
   }

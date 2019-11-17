@@ -41,7 +41,6 @@ public class FloatStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   private Dictionary dictionary;
 
-
   public FloatStreamReader(int batchSize, DataType dataType, Dictionary dictionary) {
     super(batchSize, dataType);
     this.batchSize = batchSize;

@@ -252,7 +252,6 @@ public final class CarbonDataProcessorUtil {
     }
   }
 
-
   /**
    * Preparing the boolean [] to map whether the dimension use inverted index or not.
    */
@@ -514,7 +513,6 @@ public final class CarbonDataProcessorUtil {
     return CarbonTablePath.getSegmentPath(carbonTable.getTablePath(), segmentId);
   }
 
-
   /**
    * initialise data type for measures for their storage format
    */
@@ -675,6 +673,7 @@ public final class CarbonDataProcessorUtil {
     }
     return errorMessage;
   }
+
   /**
    * The method returns true is either logger is enabled or action is redirect
    * @param configuration

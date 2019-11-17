@@ -71,7 +71,6 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   // it is used when same col is used in projection many times.So need to fetch only that col.
   private List<Integer> projectionMapping = new ArrayList<>();
 
-
   public CarbonVectorizedRecordReader(QueryModel queryModel) {
     this.queryModel = queryModel;
   }
@@ -130,7 +129,6 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     ++batchIdx;
     return true;
   }
-
 
   private boolean nextBatch() {
     carbonColumnarBatch.reset();

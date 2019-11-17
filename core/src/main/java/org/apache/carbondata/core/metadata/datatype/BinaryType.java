@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.metadata.datatype;
 
 public class BinaryType extends DataType {
@@ -22,6 +23,7 @@ public class BinaryType extends DataType {
   private BinaryType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);
   }
+
   // this function is needed to ensure singleton pattern while supporting java serialization
   private Object readResolve() {
     return DataTypes.BINARY;

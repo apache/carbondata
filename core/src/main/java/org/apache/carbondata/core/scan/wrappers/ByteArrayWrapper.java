@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.wrappers;
 
 import java.io.Serializable;
@@ -93,7 +94,6 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   public byte[][] getNoDictionaryKeys() {
     return this.noDictionaryKeys;
   }
-
 
   /**
    * to get the complex column data

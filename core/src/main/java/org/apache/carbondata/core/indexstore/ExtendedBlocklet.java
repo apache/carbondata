@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.indexstore;
 
 import java.io.DataInput;
@@ -91,6 +92,7 @@ public class ExtendedBlocklet extends Blocklet {
   public Segment getSegment() {
     return this.inputSplit.getSegment();
   }
+
   public void setSegment(Segment segment) {
     this.inputSplit.setSegment(segment);
   }

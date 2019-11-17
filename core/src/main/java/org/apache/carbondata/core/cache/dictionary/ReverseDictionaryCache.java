@@ -63,7 +63,6 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
 
   private static final long byteArraySize = ObjectSizeCalculator.estimate(new byte[0], 16);
 
-
   /**
    * @param carbonLRUCache
    */

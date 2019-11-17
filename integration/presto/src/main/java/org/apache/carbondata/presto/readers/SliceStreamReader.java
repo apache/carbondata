@@ -111,12 +111,11 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
         Slices.wrappedBuffer(singleArrayDictValues), dictOffsets, Optional.of(nulls));
     this.isLocalDict = true;
   }
+
   @Override
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
-
-
 
   @Override
   public void putByteArray(int rowId, byte[] value) {

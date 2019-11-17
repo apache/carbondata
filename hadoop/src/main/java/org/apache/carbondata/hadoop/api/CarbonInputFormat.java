@@ -137,7 +137,6 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
   private CarbonTable carbonTable;
 
-
   public int getNumSegments() {
     return numSegments;
   }
@@ -682,7 +681,6 @@ m filterExpression
     }
     return prunedBlocklets;
   }
-
 
   static List<InputSplit> convertToCarbonInputSplit(List<ExtendedBlocklet> extendedBlocklets) {
     List<InputSplit> resultFilteredBlocks = new ArrayList<>();

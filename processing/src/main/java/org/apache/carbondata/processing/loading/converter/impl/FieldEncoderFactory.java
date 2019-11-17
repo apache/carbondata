@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.loading.converter.impl;
 
 import java.io.IOException;
@@ -88,7 +89,6 @@ public class FieldEncoderFactory {
         useOnePass, localCache, isEmptyBadRecord, parentTablePath, isConvertToBinary,
         CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_DEFAULT);
   }
-
 
   /**
    * Creates the FieldConverter for all dimensions, for measures return null.

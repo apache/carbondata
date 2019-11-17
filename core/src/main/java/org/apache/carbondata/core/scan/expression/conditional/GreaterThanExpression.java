@@ -26,7 +26,6 @@ import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedExc
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 
-
 public class GreaterThanExpression extends BinaryConditionalExpression {
   private static final long serialVersionUID = -5319109756575539219L;
 

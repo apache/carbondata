@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.util;
 
 import java.io.IOException;
@@ -385,8 +386,6 @@ public abstract class AbstractDataFileFooterConverter {
     }
     return parentColumnTableRelationList;
   }
-
-
 
   /**
    * Below method is convert the thrift encoding to wrapper encoding

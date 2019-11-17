@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.loading.csvinput;
 
 import java.io.IOException;
@@ -84,7 +85,6 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CSVInputFormat.class.toString());
-
 
   @Override
   public RecordReader<NullWritable, StringArrayWritable> createRecordReader(InputSplit inputSplit,

@@ -64,7 +64,6 @@ public class ColumnWithRowIdForNoDictionary<T>
     return index;
   }
 
-
   /**
    * @return the column
    */

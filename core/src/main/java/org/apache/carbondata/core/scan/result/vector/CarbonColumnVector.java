@@ -106,7 +106,6 @@ public interface CarbonColumnVector {
 
   void setFilteredRowsExist(boolean filteredRowsExist);
 
-
   void setDictionary(CarbonDictionary dictionary);
 
   boolean hasDictionary();

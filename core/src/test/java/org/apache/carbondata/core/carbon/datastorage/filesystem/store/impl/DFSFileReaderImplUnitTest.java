@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.carbon.datastorage.filesystem.store.impl;
 
 import java.io.BufferedWriter;

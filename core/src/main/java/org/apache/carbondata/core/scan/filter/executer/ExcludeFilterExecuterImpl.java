@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
@@ -65,6 +66,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     this.filterBitSetUpdater =
         BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecuterType.EXCLUDE);
   }
+
   public ExcludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
       MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo, SegmentProperties segmentProperties,
       boolean isMeasure) {
@@ -222,6 +224,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       return getFilteredIndexes(measureColumnPage, numberOfRows, msrDataType);
     }
   }
+
   /**
    * Below method will be used to apply filter on measure column based on previous filtered indexes
    * @param measureColumnPage

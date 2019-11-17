@@ -22,7 +22,6 @@ import org.apache.carbondata.hadoop.InputMetricsStats;
 
 import org.apache.spark.TaskContext;
 
-
 /**
  * Initializes bytes read call back
  */

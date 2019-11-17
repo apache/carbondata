@@ -29,7 +29,6 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
-
 /**
  * Encapsulating presto Tuple-domain
  */

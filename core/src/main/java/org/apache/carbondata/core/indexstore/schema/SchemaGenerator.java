@@ -119,6 +119,7 @@ public class SchemaGenerator {
       }
     }
   }
+
   private static int getSchemaSize(CarbonRowSchema schema) {
     switch (schema.getSchemaType()) {
       case FIXED:

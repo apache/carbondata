@@ -22,7 +22,6 @@ import java.nio.ByteOrder;
 
 import sun.misc.Unsafe;
 
-
 public final class CarbonUnsafe {
 
   public static final int BYTE_ARRAY_OFFSET;

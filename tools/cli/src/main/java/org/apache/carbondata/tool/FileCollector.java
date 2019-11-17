@@ -49,7 +49,6 @@ class FileCollector {
   private CarbonFile tableStatusFile;
   private CarbonFile schemaFile;
 
-
   FileCollector(List<String> outPuts) {
     this.outPuts = outPuts;
   }

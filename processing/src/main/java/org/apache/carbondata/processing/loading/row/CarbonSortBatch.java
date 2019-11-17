@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.loading.row;
 
 import org.apache.carbondata.core.datastore.row.CarbonRow;

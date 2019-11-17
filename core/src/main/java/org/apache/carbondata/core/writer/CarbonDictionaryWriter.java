@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.writer;
 
 import java.io.Closeable;
@@ -44,7 +45,6 @@ public interface CarbonDictionaryWriter extends Closeable {
    * @throws IOException if an I/O error occurs
    */
   void write(List<byte[]> valueList) throws IOException;
-
 
   void commit() throws IOException;
 }

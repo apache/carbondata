@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql;
 
 import java.math.BigInteger;
@@ -40,9 +41,8 @@ import org.apache.spark.unsafe.types.UTF8String;
  */
 public class CarbonVectorProxy {
 
-    private ColumnarBatch columnarBatch;
-    private ColumnVectorProxy[] columnVectorProxies;
-
+  private ColumnarBatch columnarBatch;
+  private ColumnVectorProxy[] columnVectorProxies;
 
   /**
    * Adapter class which handles the columnar vector reading of the carbondata
@@ -92,6 +92,7 @@ public class CarbonVectorProxy {
     public ColumnVectorProxy getColumnVector(int ordinal) {
         return columnVectorProxies[ordinal];
     }
+
     /**
      * Resets this column for writing. The currently stored values are no longer accessible.
      */
@@ -111,7 +112,6 @@ public class CarbonVectorProxy {
     public InternalRow getRow(int rowId) {
         return columnarBatch.getRow(rowId);
     }
-
 
     /**
      * Returns the row in this batch at `rowId`. Returned row is reused across calls.
@@ -134,7 +134,6 @@ public class CarbonVectorProxy {
     public void setNumRows(int numRows) {
         columnarBatch.setNumRows(numRows);
     }
-
 
     public DataType dataType(int ordinal) {
         return columnarBatch.column(ordinal).dataType();

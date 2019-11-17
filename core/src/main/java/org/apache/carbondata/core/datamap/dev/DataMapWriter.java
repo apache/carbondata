@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
@@ -125,7 +126,6 @@ public abstract class DataMapWriter {
     }
     CarbonUtil.copyCarbonDataFileToCarbonStorePath(dataMapFile, carbonFilePath, 0);
   }
-
 
   /**
    * Return store path for datamap

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.filter.resolver;
 
 import java.io.IOException;
@@ -308,7 +309,6 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     }
     return null;
   }
-
 
   @Override
   public Expression getFilterExpression() {

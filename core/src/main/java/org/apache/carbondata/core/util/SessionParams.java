@@ -244,6 +244,7 @@ public class SessionParams implements Serializable, Cloneable {
   public void removeExtraInfo(String key) {
     extraInfo.remove(key);
   }
+
   /**
    * clear the set properties
    */

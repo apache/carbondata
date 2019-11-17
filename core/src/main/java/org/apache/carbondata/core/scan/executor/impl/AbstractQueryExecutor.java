@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.executor.impl;
 
 import java.io.IOException;
@@ -110,6 +111,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // add executor service for query execution
     queryProperties.executorService = executorService;
   }
+
   /**
    * Below method will be used to fill the executor properties based on query
    * model it will parse the query model and get the detail and fill it in
@@ -639,8 +641,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setRequiredRowId(queryModel.isRequiredRowId());
     return blockExecutionInfo;
   }
-
-
 
   /**
    * This method will be used to get fixed key length size this will be used

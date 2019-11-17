@@ -151,10 +151,12 @@ public final class FileFactory {
   public static CarbonFile getCarbonFile(String path) {
     return fileFileTypeInterface.getCarbonFile(path, getConfiguration());
   }
+
   public static CarbonFile getCarbonFile(String path, FileType fileType) {
     //TODO ignoring this fileType now to avoid refactoring. Remove the unused argument later.
     return fileFileTypeInterface.getCarbonFile(path, getConfiguration());
   }
+
   public static CarbonFile getCarbonFile(String path,
       Configuration hadoopConf) {
     return fileFileTypeInterface.getCarbonFile(path, hadoopConf);
@@ -174,6 +176,7 @@ public final class FileFactory {
       throws IOException {
     return getDataInputStream(path, fileType, bufferSize, getConfiguration());
   }
+
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
       Configuration configuration) throws IOException {
     return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, configuration);
@@ -192,6 +195,7 @@ public final class FileFactory {
       String compressorName) throws IOException {
     return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, compressorName);
   }
+
   /**
    * return the datainputStream which is seek to the offset of file
    *
@@ -237,6 +241,7 @@ public final class FileFactory {
     return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, blockSize,
         replication);
   }
+
   /**
    * get data out put stream
    * @param path
@@ -250,6 +255,7 @@ public final class FileFactory {
       String compressorName) throws IOException {
     return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, compressorName);
   }
+
   /**
    * This method checks the given path exists or not and also is it file or
    * not if the performFileCheck is true
@@ -284,6 +290,7 @@ public final class FileFactory {
   public static boolean createNewFile(String filePath, FileType fileType) throws IOException {
     return createNewFile(filePath, fileType, true, null);
   }
+
   public static boolean createNewFile(
       String filePath,
       FileType fileType,
@@ -291,6 +298,7 @@ public final class FileFactory {
       final FsPermission permission) throws IOException {
     return getCarbonFile(filePath).createNewFile(filePath, fileType, doAs, permission);
   }
+
   public static boolean deleteFile(String filePath, FileType fileType) throws IOException {
     return getCarbonFile(filePath).deleteFile(filePath, fileType);
   }
@@ -543,7 +551,6 @@ public final class FileFactory {
   public static FileSystem getFileSystem(Path path) throws IOException {
     return path.getFileSystem(getConfiguration());
   }
-
 
   public static void createDirectoryAndSetPermission(String directoryPath, FsPermission permission)
       throws IOException {

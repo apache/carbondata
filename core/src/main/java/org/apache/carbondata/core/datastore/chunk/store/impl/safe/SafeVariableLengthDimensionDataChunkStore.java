@@ -118,6 +118,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
   }
 
   protected abstract int getLengthSize();
+
   protected abstract int getLengthFromBuffer(ByteBuffer buffer);
 
   @Override

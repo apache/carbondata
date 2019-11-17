@@ -147,7 +147,6 @@ public final class CarbonDataMergerUtil {
 
   }
 
-
   /**
    * Update Both Segment Update Status and Table Status for the case of IUD Delete
    * delta compaction.
@@ -965,7 +964,6 @@ public final class CarbonDataMergerUtil {
     }
     return validAndInvalidSegments.getValidSegments();
   }
-
 
   /**
    * Removing the already merged segments from list.

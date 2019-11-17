@@ -159,5 +159,4 @@ public class CarbonLocalInputSplit {
     return inputSplit;
   }
 
-
 }

@@ -343,6 +343,7 @@ public class TableSpec {
     public short getActualPostion() {
       return actualPostion;
     }
+
     @Override
     public void write(DataOutput out) throws IOException {
       super.write(out);
