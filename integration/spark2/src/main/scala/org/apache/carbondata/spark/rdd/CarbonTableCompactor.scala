@@ -457,8 +457,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     CarbonTableOutputFormat.setDatabaseName(conf, carbonTable.getDatabaseName)
     CarbonTableOutputFormat.setTableName(conf, carbonTable.getTableName)
     CarbonTableOutputFormat.setCarbonTable(conf, carbonTable)
-    val fieldList = carbonTable
-          .getCreateOrderColumn()
+    val fieldList = carbonTable.getCreateOrderColumn
       .asScala
       .map { column =>
         new StructField(column.getColName, column.getDataType)

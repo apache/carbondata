@@ -73,39 +73,30 @@ import org.apache.log4j.Logger;
 public class CarbonTable implements Serializable, Writable {
 
   private static final Logger LOGGER = LogServiceFactory.getLogService(CarbonTable.class.getName());
-  /**
-   * serialization id
-   */
   private static final long serialVersionUID = 8696507171227156445L;
-  /**
-   * the cached table info
-   */
+
+  // The main object that contains all carbon table information, including
+  // schema, store path, table properties, datamap related info, etc.
+  // All other fields in CarbonTable can be derived from TableInfo.
   private TableInfo tableInfo;
-  /**
-   * Dimensions list. This map will contain allDimensions which are visible
-   */
+
+  // Visible dimension columns that exposed to user (can be queried)
   private List<CarbonDimension> visibleDimensions;
 
-  /**
-   * list of all the allDimensions
-   */
+  // All dimension columns including visible columns and implicit columns
   private List<CarbonDimension> allDimensions;
 
+  // An ordered list, same order as when creating this table by user
   private List<CarbonColumn> createOrderColumn;
 
-  /**
-   * table allMeasures list.
-   */
+  // Implicit columns that for internal usage, like positionid and tupleid for update/delete
+  // operation. see CARBON_IMPLICIT_COLUMN_POSITIONID, CARBON_IMPLICIT_COLUMN_TUPLEID
   private List<CarbonDimension> implicitDimensions;
 
-  /**
-   * table allMeasures list. This map will contain allDimensions which are visible
-   */
+  // Visible measure columns that exposed to user (can be queried)
   private List<CarbonMeasure> visibleMeasures;
 
-  /**
-   * list of allMeasures
-   */
+  // All measure columns including visible columns and implicit columns
   private List<CarbonMeasure> allMeasures;
 
   /**
@@ -113,66 +104,33 @@ public class CarbonTable implements Serializable, Writable {
    */
   private List<CarbonDimension> columnDrift;
 
-  /**
-   * table bucket map.
-   */
+  // Bucket information defined by user when creating table
+  // Will be deleted after 2.0
+  @Deprecated
   private BucketingInfo bucket;
 
-  /**
-   * table partition info
-   */
+  // Partition (Range/List/Hash). This is not for Hive partition.
+  // Will be deleted after 2.0
+  @Deprecated
   private PartitionInfo partition;
 
-  /**
-   * tableUniqueName
-   */
-  private String tableUniqueName;
-
-  /**
-   * last updated time
-   */
-  private long tableLastUpdatedTime;
-
-  /**
-   * table block size in MB
-   */
-  private int blockSize;
-
-  /**
-   * the number of columns in SORT_COLUMNS
-   */
+  // Number of columns in SORT_COLUMNS table property
   private int numberOfSortColumns;
 
-  /**
-   * the number of no dictionary columns in SORT_COLUMNS
-   */
+  // Number of no dictionary columns in SORT_COLUMNS
   private int numberOfNoDictSortColumns;
 
+  // The last index of the dimension column in all columns
   private int dimensionOrdinalMax;
 
+  // True if this table has datamap
   private boolean hasDataMapSchema;
 
-  /**
-   * is local dictionary generation enabled for the table
-   */
+  // True if local dictionary is enabled for this table
   private boolean isLocalDictionaryEnabled;
 
-  /**
-   * local dictionary generation threshold
-   */
+  // Cardinality threshold for local dictionary, below which dictionary will be generated
   private int localDictionaryThreshold;
-
-  /**
-   * The boolean field which points if the data written for Non Transactional Table
-   * or Transactional Table.
-   * transactional table means carbon will provide transactional support when user doing data
-   * management like data loading, whether it is success or failure, data will be in consistent
-   * state
-   * The difference between Transactional and non Transactional table is
-   * non Transactional Table will not contain any Metadata folder and subsequently
-   * no TableStatus or Schema files.
-   */
-  private boolean isTransactionalTable = true;
 
   public CarbonTable() {
     this.visibleDimensions = new LinkedList<>();
@@ -187,7 +145,7 @@ public class CarbonTable implements Serializable, Writable {
    * DataTypes are not converted to the appropriate child classes.
    * This method will cast the same to the appropriate classes
    */
-  public static void updateTableInfo(TableInfo tableInfo) {
+  private static void updateTableInfo(TableInfo tableInfo) {
     List<DataMapSchema> dataMapSchemas = new ArrayList<>();
     for (DataMapSchema dataMapSchema : tableInfo.getDataMapSchemaList()) {
       DataMapSchema newDataMapSchema = DataMapSchemaFactory.INSTANCE
@@ -258,7 +216,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * @param tableInfo
+   * Build {@link CarbonTable} from a {@link TableInfo} object.
    */
   public static CarbonTable buildFromTableInfo(TableInfo tableInfo) {
     CarbonTable table = new CarbonTable();
@@ -267,12 +225,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * build table unique name
-   * all should call this method to build table unique name
-   *
-   * @param databaseName
-   * @param tableName
-   * @return
+   * Return table unique name
    */
   public static String buildUniqueName(String databaseName, String tableName) {
     return (databaseName + CarbonCommonConstants.UNDERSCORE + tableName).toLowerCase(
@@ -281,10 +234,6 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * Get Dimension for columnName from list of dimensions
-   *
-   * @param columnName
-   * @param dimensions
-   * @return
    */
   public static CarbonDimension getCarbonDimension(String columnName,
       List<CarbonDimension> dimensions) {
@@ -319,17 +268,11 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * update the carbon table by using the passed tableInfo
-   *
-   * @param table
-   * @param tableInfo
+   * Update the carbon table by using the passed tableInfo
    */
   public static void updateTableByTableInfo(CarbonTable table, TableInfo tableInfo) {
     updateTableInfo(tableInfo);
     table.tableInfo = tableInfo;
-    table.blockSize = tableInfo.getTableBlockSizeInMB();
-    table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
-    table.tableUniqueName = tableInfo.getTableUniqueName();
     table.setTransactionalTable(tableInfo.isTransactionalTable());
     table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
     table.fillCreateOrderColumn();
@@ -347,9 +290,6 @@ public class CarbonTable implements Serializable, Writable {
   /**
    * This method sets whether the local dictionary is enabled or not, and the local dictionary
    * threshold, if not defined default value are considered.
-   *
-   * @param table
-   * @param tableInfo
    */
   private static void setLocalDictInfo(CarbonTable table, TableInfo tableInfo) {
     Map<String, String> tableProperties = tableInfo.getFactTable().getTableProperties();
@@ -374,8 +314,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * fill columns as per user provided order
-   *
+   * Fill columns as per user provided order
    */
   private void fillCreateOrderColumn() {
     List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
@@ -394,8 +333,6 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * Fill allDimensions and allMeasures for carbon table
-   *
-   * @param tableSchema
    */
   private void fillDimensionsAndMeasuresForTables(TableSchema tableSchema) {
     List<CarbonDimension> implicitDimensions = new ArrayList<CarbonDimension>();
@@ -454,9 +391,6 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * This method will add implicit dimension into carbontable
-   *
-   * @param dimensionOrdinal
-   * @param dimensions
    */
   private void addImplicitDimension(int dimensionOrdinal, List<CarbonDimension> dimensions) {
     dimensions.add(new CarbonImplicitDimension(dimensionOrdinal,
@@ -466,23 +400,8 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * to get the all dimension of a table
-   *
-   * @return
-   */
-  public List<CarbonDimension> getImplicitDimensions() {
-    return implicitDimensions;
-  }
-
-  /**
    * Read all primitive/complex children and set it as list of child carbon dimension to parent
    * dimension
-   *
-   * @param dimensionOrdinal
-   * @param childCount
-   * @param listOfColumns
-   * @param parentDimension
-   * @return
    */
   private int readAllComplexTypeChildrens(int dimensionOrdinal, int childCount,
       List<ColumnSchema> listOfColumns, CarbonDimension parentDimension) {
@@ -552,13 +471,11 @@ public class CarbonTable implements Serializable, Writable {
    * @return the tableUniqueName
    */
   public String getTableUniqueName() {
-    return tableUniqueName;
+    return tableInfo.getTableUniqueName();
   }
 
   /**
-   * is local dictionary enabled for the table
-   *
-   * @return
+   * Return true if local dictionary enabled for the table
    */
   public boolean isLocalDictionaryEnabled() {
     return isLocalDictionaryEnabled;
@@ -566,10 +483,8 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * set whether local dictionary enabled or not
-   *
-   * @param localDictionaryEnabled
    */
-  public void setLocalDictionaryEnabled(boolean localDictionaryEnabled) {
+  private void setLocalDictionaryEnabled(boolean localDictionaryEnabled) {
     isLocalDictionaryEnabled = localDictionaryEnabled;
   }
 
@@ -582,10 +497,8 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * set the local dictionary generation threshold
-   *
-   * @param localDictionaryThreshold
    */
-  public void setLocalDictionaryThreshold(int localDictionaryThreshold) {
+  private void setLocalDictionaryThreshold(int localDictionaryThreshold) {
     this.localDictionaryThreshold = localDictionaryThreshold;
   }
 
@@ -614,7 +527,7 @@ public class CarbonTable implements Serializable, Writable {
    * @return the tableLastUpdatedTime
    */
   public long getTableLastUpdatedTime() {
-    return tableLastUpdatedTime;
+    return tableInfo.getLastUpdatedTime();
   }
 
   /**
@@ -633,8 +546,6 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * This will give user created order column
-   *
-   * @return
    */
   public List<CarbonColumn> getCreateOrderColumn() {
     return createOrderColumn;
@@ -665,10 +576,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * to get particular measure from a table
-   *
-   * @param columnName
-   * @return
+   * Get particular measure
    */
   public CarbonMeasure getMeasureByName(String columnName) {
     for (CarbonMeasure measure : visibleMeasures) {
@@ -680,10 +588,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * to get particular dimension from a table
-   *
-   * @param columnName
-   * @return
+   * Get particular dimension
    */
   public CarbonDimension getDimensionByName(String columnName) {
     CarbonDimension carbonDimension = null;
@@ -728,8 +633,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * @param columnName
-   * @return
+   * @return column by column name
    */
   public CarbonColumn getColumnByName(String columnName) {
     List<CarbonColumn> columns = createOrderColumn;
@@ -744,21 +648,14 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * gets all children dimension for complex type
-   *
-   * @param dimName
-   * @return list of child allDimensions
+   * Returns all children dimension for complex type
    */
   public List<CarbonDimension> getChildren(String dimName) {
     return getChildren(dimName, visibleDimensions);
   }
 
   /**
-   * returns level 2 or more child allDimensions
-   *
-   * @param dimName
-   * @param dimensions
-   * @return list of child allDimensions
+   * Returns level 2 or more child allDimensions
    */
   private List<CarbonDimension> getChildren(String dimName, List<CarbonDimension> dimensions) {
     for (CarbonDimension carbonDimension : dimensions) {
@@ -812,16 +709,8 @@ public class CarbonTable implements Serializable, Writable {
     return tableInfo.getOrCreateAbsoluteTableIdentifier().getCarbonTableIdentifier();
   }
 
-  /**
-   * gets partition count for this table
-   * TODO: to be implemented while supporting partitioning
-   */
-  public int getPartitionCount() {
-    return 1;
-  }
-
   public int getBlockSizeInMB() {
-    return blockSize;
+    return tableInfo.getTableBlockSizeInMB();
   }
 
   public int getBlockletSizeInMB() {
@@ -849,8 +738,6 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * return all allDimensions in the table
-   *
-   * @return
    */
   public List<CarbonDimension> getAllDimensions() {
     return allDimensions;
@@ -858,7 +745,6 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * This method will all the visible allDimensions
-   *
    */
   private void fillVisibleDimensions() {
     List<CarbonDimension> visibleDimensions = new ArrayList<CarbonDimension>(allDimensions.size());
@@ -878,8 +764,6 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * return all allMeasures in the table
-   *
-   * @return
    */
   public List<CarbonMeasure> getAllMeasures() {
     return allMeasures;
@@ -895,7 +779,6 @@ public class CarbonTable implements Serializable, Writable {
 
   /**
    * This method will all the visible allMeasures
-   *
    */
   private void fillVisibleMeasures() {
     List<CarbonMeasure> visibleMeasures = new ArrayList<CarbonMeasure>(allMeasures.size());
@@ -908,9 +791,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * Method to get the list of sort columns
-   *
-   * @return List of Sort column
+   * Get the list of sort columns
    */
   public List<String> getSortColumns() {
     List<String> sortColumnsList = new ArrayList<String>(allDimensions.size());
@@ -1033,12 +914,11 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   public boolean isTransactionalTable() {
-    return isTransactionalTable;
+    return tableInfo.isTransactionalTable();
   }
 
   public void setTransactionalTable(boolean transactionalTable) {
-    isTransactionalTable = transactionalTable;
-    getTableInfo().setTransactionalTable(transactionalTable);
+    tableInfo.setTransactionalTable(transactionalTable);
   }
 
   /**
@@ -1124,8 +1004,6 @@ public class CarbonTable implements Serializable, Writable {
    * Method to get the list of cached columns of the table.
    * This method need to be used for Describe formatted like scenario where columns need to be
    * displayed in the column create order
-   *
-   * @return
    */
   public List<String> getMinMaxCachedColumnsInCreateOrder() {
     List<String> cachedColsList = new ArrayList<>();
@@ -1155,8 +1033,6 @@ public class CarbonTable implements Serializable, Writable {
    * In alter add column scenarios it can happen that the newly added columns are being cached
    * which do not exist in already loaded data. In those cases newly added columns should not be
    * cached for the already loaded data
-   *
-   * @return
    */
   public List<CarbonColumn> getMinMaxCacheColumns(SegmentProperties segmentProperties) {
     List<CarbonColumn> minMaxCachedColsList = null;
