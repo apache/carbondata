@@ -46,19 +46,23 @@ public class CarbondataColumnConstraint {
     this.domain = requireNonNull(domain, "domain is null");
   }
 
-  @JsonProperty public boolean isInvertedindexed() {
+  @JsonProperty
+  public boolean isInvertedindexed() {
     return invertedindexed;
   }
 
-  @JsonProperty public String getName() {
+  @JsonProperty
+  public String getName() {
     return name;
   }
 
-  @JsonProperty public Optional<Domain> getDomain() {
+  @JsonProperty
+  public Optional<Domain> getDomain() {
     return domain;
   }
 
-  @JsonSetter public void setDomain(Optional<Domain> domain) {
+  @JsonSetter
+  public void setDomain(Optional<Domain> domain) {
     this.domain = domain;
   }
 

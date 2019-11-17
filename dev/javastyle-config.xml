@@ -150,11 +150,11 @@
 
         <module name="MethodParamPad"/>
         <module name="AnnotationLocation">
-            <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF"/>
-        </module>
-        <module name="AnnotationLocation">
-            <property name="tokens" value="VARIABLE_DEF"/>
-            <property name="allowSamelineMultipleAnnotations" value="true"/>
+            <property name="allowSamelineMultipleAnnotations" value="false"/>
+            <property name="allowSamelineSingleParameterlessAnnotation"
+                      value="false"/>
+            <property name="allowSamelineParameterizedAnnotation" value="true"/>
+            <property name="tokens" value="METHOD_DEF"/>
         </module>
         <module name="MethodName">
             <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9_]*$"/>
@@ -169,14 +169,6 @@
 
         <module name="ParenPad"/>
         <module name="WhitespaceAround"/>
-
-        <!-- Checks for @Overrider in one line -->
-        <module name="RegexpSinglelineJava">
-            <property name="severity" value="error"/>
-            <property name="format" value="^\s*@Override\s+.+$"/>
-            <property name="ignoreComments" value="true"/>
-            <property name="message" value="@Override should at one line"/>
-        </module>
 
         <!-- Checks for redundant imports. -->
         <module name="RedundantImport">
