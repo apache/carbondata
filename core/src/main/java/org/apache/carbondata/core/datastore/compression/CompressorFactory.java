@@ -118,6 +118,7 @@ public class CompressorFactory {
               compressorClassName, StringUtils.join(allSupportedCompressors.keySet(), ", ")), e);
     }
   }
+
   /**
    * get the default compressor.
    * This method can only be called in data load procedure to compress column page.

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.datamap.dev.expr;
 
 import java.io.IOException;
@@ -106,7 +107,6 @@ public class OrDataMapExprWrapper implements DataMapExprWrapper {
     }
     return null;
   }
-
 
   @Override
   public DataMapLevel getDataMapLevel() {

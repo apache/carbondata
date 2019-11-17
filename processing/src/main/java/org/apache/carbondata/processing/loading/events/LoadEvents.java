@@ -111,13 +111,14 @@ public class LoadEvents {
       this.isCompaction = isCompaction;
       this.options = options;
     }
+
     public boolean isCompaction() {
       return isCompaction;
     }
+
     public CarbonTable getCarbonTable() {
       return carbonTable;
     }
-
 
     public Map<String, String> getOptions() {
       return options;

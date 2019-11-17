@@ -305,6 +305,7 @@ public class SegmentUpdateStatusManager {
     return details == null || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus());
 
   }
+
   /**
    * Returns all delta file paths of specified block
    *
@@ -632,7 +633,6 @@ public class SegmentUpdateStatusManager {
     }
     return endTimestamp;
   }
-
 
   /**
    * This method loads segment update details

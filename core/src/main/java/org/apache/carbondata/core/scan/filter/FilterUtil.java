@@ -513,6 +513,7 @@ public final class FilterUtil {
     }
     return false;
   }
+
   /**
    * This method will check if a given expression contains a column expression
    * recursively.
@@ -839,8 +840,6 @@ public final class FilterUtil {
     }
     return excludeFilterList;
   }
-
-
 
   /**
    * This API will get the Dictionary value for the respective filter member
@@ -1552,8 +1551,6 @@ public final class FilterUtil {
       }
     }
   }
-
-
 
   /**
    * method will create a default end key in case of no end key is been derived using existing

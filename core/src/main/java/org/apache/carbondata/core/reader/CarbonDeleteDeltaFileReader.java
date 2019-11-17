@@ -21,7 +21,6 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 
-
 /**
  * CarbonDeleteDeltaFileReader contains all methods to read delete delta file data
  */
@@ -37,6 +36,7 @@ public interface CarbonDeleteDeltaFileReader {
    * @throws IOException if an I/O error occurs
    */
   String read() throws IOException;
+
   DeleteDeltaBlockDetails readJson() throws IOException;
 
 }

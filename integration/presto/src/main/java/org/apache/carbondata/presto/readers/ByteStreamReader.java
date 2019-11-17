@@ -41,7 +41,6 @@ public class ByteStreamReader extends CarbonColumnVectorImpl implements PrestoVe
 
   private Dictionary dictionary;
 
-
   public ByteStreamReader(int batchSize, DataType dataType, Dictionary dictionary) {
     super(batchSize, dataType);
     this.batchSize = batchSize;

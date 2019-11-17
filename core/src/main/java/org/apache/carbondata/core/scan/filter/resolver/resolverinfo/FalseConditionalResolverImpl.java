@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;

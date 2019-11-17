@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.util;
 
 import java.io.ByteArrayInputStream;
@@ -72,7 +73,6 @@ public class ObjectSerializationUtil {
 
     return CarbonUtil.encodeToString(baos.toByteArray());
   }
-
 
   /**
    * Converts Base64 string to object.

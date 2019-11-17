@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.datastore.chunk.store;
 
-
 import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -32,7 +31,6 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
-
 
 public class ColumnPageWrapper implements DimensionColumnPage {
 

@@ -293,7 +293,6 @@ public class LocalCarbonFile implements CarbonFile {
     return isFileModified;
   }
 
-
   @Override
   public boolean renameForce(String changeToName) {
     File destFile = new File(changeToName);

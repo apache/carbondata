@@ -245,7 +245,6 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
     return columnVector.hasDictionary();
   }
 
-
   @Override
   public CarbonColumnVector getDictionaryVector() {
     return dictionaryVector;

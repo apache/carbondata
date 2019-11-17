@@ -110,10 +110,9 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     }
   }
 
-
-  /*
- * Can be called before any rows are returned to enable returning columnar batches directly.
- */
+  /**
+   * Can be called before any rows are returned to enable returning columnar batches directly.
+   */
   public void enableReturningBatches() {
     returnColumnarBatch = true;
   }
@@ -354,8 +353,6 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   private void resultBatch() {
     if (vectorProxy == null) initBatch();
   }
-
-
 
   /**
    * Advances to the next batch of rows. Returns false if there are no more.

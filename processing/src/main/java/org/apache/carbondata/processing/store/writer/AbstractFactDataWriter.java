@@ -482,8 +482,6 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     }
   }
 
-
-
   /**
    * This method will complete hdfs backend storage for this file.
    * It may copy the carbon data file from local store location to carbon store location,

@@ -512,6 +512,7 @@ public class CarbonFactDataHandlerModel {
   public void setColCardinality(int[] colCardinality) {
     this.colCardinality = colCardinality;
   }
+
   public CarbonDataFileAttributes getCarbonDataFileAttributes() {
     return carbonDataFileAttributes;
   }

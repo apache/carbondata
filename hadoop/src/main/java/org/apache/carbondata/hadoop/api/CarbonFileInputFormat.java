@@ -66,7 +66,6 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
 
-
   public CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
     CarbonTable carbonTableTemp;
     if (carbonTable == null) {

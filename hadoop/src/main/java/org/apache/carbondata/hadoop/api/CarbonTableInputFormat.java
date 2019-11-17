@@ -216,7 +216,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * @throws IOException
    */
 
-
   /**
    * Below method will be used to get the filter segments when query is fired on pre Aggregate
    * and main table in case of streaming.
@@ -427,6 +426,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
     return matchedPartitions;
   }
+
   /**
    * {@inheritDoc}
    * Configurations FileInputFormat.INPUT_DIR, CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS

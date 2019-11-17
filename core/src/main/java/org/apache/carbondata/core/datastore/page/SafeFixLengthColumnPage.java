@@ -483,6 +483,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
           "not support value conversion on " + dataType + " page");
     }
   }
+
   public int getActualRowCount() {
     return arrayElementCount;
   }

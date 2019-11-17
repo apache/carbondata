@@ -560,7 +560,6 @@ public class CarbonLoadModel implements Serializable {
     return copyObj;
   }
 
-
   /**
    * @param tablePath The tablePath to set.
    */
@@ -574,6 +573,7 @@ public class CarbonLoadModel implements Serializable {
   public String getTablePath() {
     return tablePath;
   }
+
   /**
    * getLoadMetadataDetails.
    *
@@ -582,7 +582,6 @@ public class CarbonLoadModel implements Serializable {
   public List<LoadMetadataDetails> getLoadMetadataDetails() {
     return loadMetadataDetails;
   }
-
 
   /**
    * Get the current load metadata.
@@ -605,6 +604,7 @@ public class CarbonLoadModel implements Serializable {
   public void setLoadMetadataDetails(List<LoadMetadataDetails> loadMetadataDetails) {
     this.loadMetadataDetails = loadMetadataDetails;
   }
+
   /**
    * getSegmentUpdateStatusManager
    *
@@ -944,6 +944,7 @@ public class CarbonLoadModel implements Serializable {
   public void setMergedSegmentIds(List<String> mergedSegmentIds) {
     this.mergedSegmentIds = mergedSegmentIds;
   }
+
   public List<String> getMergedSegmentIds() {
     if (null == mergedSegmentIds) {
       mergedSegmentIds = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

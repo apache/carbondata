@@ -92,12 +92,10 @@ public class TableSchemaBuilder {
     return this;
   }
 
-
   public TableSchemaBuilder enableLocalDictionary(boolean enableLocalDictionary) {
     this.isLocalDictionaryEnabled = enableLocalDictionary;
     return this;
   }
-
 
   public TableSchemaBuilder tableName(String tableName) {
     Objects.requireNonNull(tableName);

@@ -83,7 +83,6 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     this.name = name;
   }
 
-
   /**
    * constructor
    * @param name

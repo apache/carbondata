@@ -140,5 +140,4 @@ public class ColumnExpression extends LeafExpression {
   public void findAndSetChild(Expression oldExpr, Expression newExpr) {
   }
 
-
 }

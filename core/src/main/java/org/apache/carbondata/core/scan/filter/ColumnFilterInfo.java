@@ -80,9 +80,11 @@ public class ColumnFilterInfo implements Serializable {
   public List<Integer> getExcludeFilterList() {
     return excludeFilterList;
   }
+
   public void setExcludeFilterList(List<Integer> excludeFilterList) {
     this.excludeFilterList = excludeFilterList;
   }
+
   public Map<String, Set<Integer>> getImplicitColumnFilterBlockToBlockletsMap() {
     return implicitColumnFilterBlockToBlockletsMap;
   }

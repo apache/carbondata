@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.result.vector.impl;
 
 import java.math.BigDecimal;
@@ -221,7 +222,6 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   public boolean isNullAt(int rowId) {
     return nullBytes.get(rowId);
   }
-
 
   @Override
   public boolean isNull(int rowId) {

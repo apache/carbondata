@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.datamap.bloom;
 
 import java.io.ByteArrayInputStream;
@@ -57,7 +58,6 @@ public class BloomIndexFileStore {
    * if flag file not exists and mergeShard generated, query will use mergeShard
    */
   public static final String MERGE_INPROGRESS_FILE = "mergeShard.inprogress";
-
 
   public static void mergeBloomIndexFile(String dmSegmentPathString, List<String> indexCols) {
 
@@ -184,7 +184,6 @@ public class BloomIndexFileStore {
       CarbonUtil.closeStreams(dataInStream);
     }
   }
-
 
   /**
    * load bloom filter of {@code colName} from {@code mergeShardPath}

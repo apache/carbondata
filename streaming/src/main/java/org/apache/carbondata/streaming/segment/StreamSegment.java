@@ -396,7 +396,6 @@ public class StreamSegment {
     }
   }
 
-
   /**
    * list all carbondata files of a segment
    */

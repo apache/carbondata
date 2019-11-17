@@ -196,11 +196,14 @@ public class CarbonDeleteFilesDataReader {
     }
     return deleteDeltaResultSet;
   }
+
   private static class DeleteDeltaFileReaderCallable implements Callable<DeleteDeltaBlockDetails> {
     private String deltaFile;
+
     DeleteDeltaFileReaderCallable(String deltaFile) {
       this.deltaFile = deltaFile;
     }
+
     @Override
     public DeleteDeltaBlockDetails call() throws IOException {
       CarbonDeleteDeltaFileReaderImpl deltaFileReader =

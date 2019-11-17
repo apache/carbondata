@@ -435,7 +435,6 @@ public class CarbonLoadModelBuilder {
     }
   }
 
-
   private void validateAndSetBinaryDecoder(CarbonLoadModel carbonLoadModel) {
     String binaryDecoder = carbonLoadModel.getBinaryDecoder();
     if (!CarbonLoaderUtil.isValidBinaryDecoder(binaryDecoder)) {

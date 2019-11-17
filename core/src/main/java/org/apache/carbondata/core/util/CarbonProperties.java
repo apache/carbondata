@@ -1497,6 +1497,7 @@ public final class CarbonProperties {
     }
     return preserveCnt;
   }
+
   /**
    * Get the configured system folder location.
    * @return

@@ -27,13 +27,10 @@ import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedExc
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 
-
-
 /**
  * This class will form an expression whose evaluation will be always false.
  */
 public class FalseExpression  extends BinaryConditionalExpression {
-
 
   private static final long serialVersionUID = -8390184061336799370L;
 
@@ -64,6 +61,7 @@ public class FalseExpression  extends BinaryConditionalExpression {
   public ExpressionType getFilterExpressionType() {
     return ExpressionType.FALSE;
   }
+
   @Override
   public String getString() {
     return "False(" + (null == left ? null : left.getString());

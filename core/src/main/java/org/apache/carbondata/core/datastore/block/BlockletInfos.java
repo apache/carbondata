@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.datastore.block;
 
 import java.io.Serializable;
@@ -40,6 +41,7 @@ public class BlockletInfos implements Serializable {
    */
   public BlockletInfos() {
   }
+
   /**
    * constructor to initialize the blockletinfo
    * @param noOfBlockLets

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.loading.converter;
 
 import java.io.IOException;
@@ -31,6 +32,8 @@ public interface RowConverter extends DictionaryCardinalityFinder {
   CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException;
 
   RowConverter createCopyForNewThread();
+
   FieldConverter[] getFieldConverters();
+
   void finish();
 }

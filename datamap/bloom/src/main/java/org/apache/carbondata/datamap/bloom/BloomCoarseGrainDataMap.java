@@ -300,7 +300,6 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     return queryModels;
   }
 
-
   private BloomQueryModel buildQueryModelForEqual(ColumnExpression ce,
       LiteralExpression le) throws DictionaryGenerationException, UnsupportedEncodingException {
     List<byte[]> filterValues = new ArrayList<>();

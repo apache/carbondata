@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.expression.exception;
 
-
 /**
  * FilterIllegalMemberException class representing exception which can cause while evaluating
  * filter members needs to be gracefully handled without propagating to outer layer so that

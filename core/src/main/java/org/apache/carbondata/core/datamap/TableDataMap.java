@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.datamap;
 
 import java.io.IOException;
@@ -348,6 +349,7 @@ public final class TableDataMap extends OperationEventListener {
     }
     return pruneBlocklets;
   }
+
   /**
    * This is used for making the datamap distributable.
    * It takes the valid segments and returns all the datamaps as distributable objects so that
@@ -442,6 +444,7 @@ public final class TableDataMap extends OperationEventListener {
       dataMapFactory.deleteDatamapData(segment);
     }
   }
+
   /**
    * delete datamap data if any
    */

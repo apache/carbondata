@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.result;
 
 import java.io.ByteArrayOutputStream;
@@ -518,7 +519,6 @@ public abstract class BlockletScannedResult {
    * @param batchSize
    * @return
    */
-
 
   public abstract void fillValidRowIdsBatchFilling(int rowId, int batchSize);
 

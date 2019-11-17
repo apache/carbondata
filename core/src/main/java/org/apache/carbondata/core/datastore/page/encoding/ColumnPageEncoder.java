@@ -237,7 +237,6 @@ public abstract class ColumnPageEncoder {
     return null;
   }
 
-
   /**
    * Below method to encode the dictionary page
    * @param dictionaryPage

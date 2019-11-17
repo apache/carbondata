@@ -70,7 +70,6 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
     this.addTableBlockToUnsafeAndLRUCache = addTableBlockToUnsafeAndLRUCache;
   }
 
-
   public TableBlockIndexUniqueIdentifier getTableBlockIndexUniqueIdentifier() {
     return tableBlockIndexUniqueIdentifier;
   }

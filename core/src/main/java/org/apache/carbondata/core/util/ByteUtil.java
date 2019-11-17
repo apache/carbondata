@@ -70,7 +70,6 @@ public final class ByteUtil {
         .compareTo(buffer1, offset1, len1, buffer2, offset2, len2);
   }
 
-
   /**
    * covert the long[] to int[]
    *

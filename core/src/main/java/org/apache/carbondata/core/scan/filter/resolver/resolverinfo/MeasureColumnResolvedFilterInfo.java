@@ -157,5 +157,4 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
     return msrColumnResolvedFilterInfo;
   }
 
-
 }

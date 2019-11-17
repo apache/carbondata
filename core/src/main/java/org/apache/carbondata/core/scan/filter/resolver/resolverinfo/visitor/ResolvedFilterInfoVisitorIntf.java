@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor;
 
 import java.io.IOException;
@@ -21,7 +22,6 @@ import java.io.IOException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
-
 
 public interface ResolvedFilterInfoVisitorIntf {
 

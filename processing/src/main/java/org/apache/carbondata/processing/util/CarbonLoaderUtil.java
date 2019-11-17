@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.util;
 
 import java.io.IOException;
@@ -446,7 +447,6 @@ public final class CarbonLoaderUtil {
     }
     return escapeCharacter;
   }
-
 
   public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
       boolean insertOverwrite, String uuid) throws IOException {
@@ -922,6 +922,7 @@ public final class CarbonLoaderUtil {
       blocks.remove();
     }
   }
+
   /**
    * allocate distributable blocks to nodes based on data locality
    */

@@ -91,6 +91,7 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
   public MeasureColumnResolvedFilterInfo getMsrColResolvedFilterInfo() {
     return null;
   }
+
   @Override
   public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
       SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList) {

@@ -172,6 +172,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     }
     return splitBlockletWise;
   }
+
   /**
    * this method will delete the datamap folders during drop datamap
    * @throws MalformedDataMapCommandException

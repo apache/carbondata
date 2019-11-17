@@ -450,7 +450,6 @@ public class CarbonWriterBuilder {
     return this;
   }
 
-
   /**
    * To set the blocklet size of CarbonData file
    *

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.loading.steps;
 
 import java.io.ByteArrayOutputStream;
@@ -46,7 +47,6 @@ import org.apache.carbondata.processing.loading.exception.BadRecordFoundExceptio
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-
 
 /**
  * It reads data from record reader and sends data to next step.

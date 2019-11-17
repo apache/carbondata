@@ -247,6 +247,7 @@ public class CarbonInputSplit extends FileSplit
     this.location = locations;
     this.numberOfBlocklets = numberOfBlocklets;
   }
+
   public CarbonInputSplit(String segmentId, String filePath, long start, long length,
       String[] locations, FileFormat fileFormat) {
     this.filePath = filePath;
@@ -352,7 +353,6 @@ public class CarbonInputSplit extends FileSplit
     derserializeField();
     return segment;
   }
-
 
   @Override
   public void readFields(DataInput in) throws IOException {
@@ -462,7 +462,6 @@ public class CarbonInputSplit extends FileSplit
       out.writeBoolean(false);
     }
   }
-
 
   /**
    * returns the number of blocklets

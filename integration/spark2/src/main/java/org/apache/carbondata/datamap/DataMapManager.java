@@ -29,7 +29,6 @@ import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassPro
 
 import org.apache.spark.sql.SparkSession;
 
-
 public class DataMapManager {
 
   private static DataMapManager INSTANCE;

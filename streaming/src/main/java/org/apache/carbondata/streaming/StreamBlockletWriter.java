@@ -92,7 +92,6 @@ public class StreamBlockletWriter {
     }
   }
 
-
   private void ensureCapacity(int space) {
     int newcount = space + count;
     if (newcount > buffer.length) {

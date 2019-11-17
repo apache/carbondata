@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.reader;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ public class CarbonIndexFileReader {
   public CarbonIndexFileReader(Configuration configuration) {
     this.configuration = configuration;
   }
+
   /**
    * reader
    */

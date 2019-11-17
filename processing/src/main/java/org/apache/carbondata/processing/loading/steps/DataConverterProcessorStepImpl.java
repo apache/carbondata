@@ -110,7 +110,6 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         new HashPartitionerImpl(indexes, columnSchemas, bucketingInfo.getNumOfRanges());
   }
 
-
   /**
    * initialize partitioner for sort column ranges
    */
@@ -175,6 +174,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     return new CarbonIterator<CarbonRowBatch>() {
       private boolean first = true;
       private RowConverter localConverter;
+
       @Override
       public boolean hasNext() {
         if (first) {
@@ -186,6 +186,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         }
         return childIter.hasNext();
       }
+
       @Override
       public CarbonRowBatch next() {
         return processRowBatch(childIter.next(), localConverter);

@@ -256,8 +256,6 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     return false;
   }
 
-
-
   /**
    * Method to identify if scanning of Data Block required or not by comparing the Block Min and Max
    * values and comparing them with filter min and max value.

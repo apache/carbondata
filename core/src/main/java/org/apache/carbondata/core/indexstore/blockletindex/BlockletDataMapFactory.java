@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.io.IOException;
@@ -249,7 +250,6 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     }
     throw new IOException("Blocklet not found: " + blocklet.toString());
   }
-
 
   @Override
   public List<DataMapDistributable> toDistributable(Segment segment) {

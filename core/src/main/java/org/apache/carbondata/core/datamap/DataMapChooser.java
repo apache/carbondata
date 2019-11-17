@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.datamap;
 
 import java.io.IOException;
@@ -262,7 +263,6 @@ public class DataMapChooser {
     }
     return new ExpressionTuple();
   }
-
 
   private void extractColumnExpression(Expression expression,
       List<ColumnExpression> columnExpressions) {

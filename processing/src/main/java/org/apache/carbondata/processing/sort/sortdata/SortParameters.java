@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.sort.sortdata;
 
 import java.io.File;
@@ -415,7 +416,6 @@ public class SortParameters implements Serializable {
   private void setNoDictSortColumnSchemaOrderMapping(int[] noDictSortColumnSchemaOrderMapping) {
     this.noDictSortColumnSchemaOrderMapping = noDictSortColumnSchemaOrderMapping;
   }
-
 
   public static SortParameters createSortParameters(CarbonDataLoadConfiguration configuration) {
     SortParameters parameters = new SortParameters();
