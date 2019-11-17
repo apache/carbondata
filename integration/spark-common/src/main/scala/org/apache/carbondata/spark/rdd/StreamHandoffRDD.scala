@@ -175,7 +175,7 @@ class StreamHandoffRDD[K, V](
       carbonTable: CarbonTable
   ): CompactionResultSortProcessor = {
     val wrapperColumnSchemaList = CarbonUtil.getColumnSchemaList(
-      carbonTable.getDimensions, carbonTable.getMeasures)
+      carbonTable.getVisibleDimensions, carbonTable.getVisibleMeasures)
     val dimLensWithComplex =
       (0 until wrapperColumnSchemaList.size()).map(_ => Integer.MAX_VALUE).toArray
     val dictionaryColumnCardinality =

@@ -533,14 +533,14 @@ public class CarbonTable implements Serializable, Writable {
   /**
    * Return all visible dimensions of the table
    */
-  public List<CarbonDimension> getDimensions() {
+  public List<CarbonDimension> getVisibleDimensions() {
     return visibleDimensions;
   }
 
   /**
    * Return all visible measure of the table
    */
-  public List<CarbonMeasure> getMeasures() {
+  public List<CarbonMeasure> getVisibleMeasures() {
     return visibleMeasures;
   }
 
@@ -913,6 +913,15 @@ public class CarbonTable implements Serializable, Writable {
     return dataSize + indexSize;
   }
 
+  /**
+   * Return true if this is a transactional table.
+   * Transactional table means carbon will provide transactional support when user doing data
+   * management like data loading, whether it is success or failure, data will be in consistent
+   * state.
+   * The difference between Transactional and non Transactional table is
+   * non Transactional Table will not contain any Metadata folder and subsequently
+   * no TableStatus or Schema files.
+   */
   public boolean isTransactionalTable() {
     return tableInfo.isTransactionalTable();
   }

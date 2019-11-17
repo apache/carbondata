@@ -576,7 +576,7 @@ object AlterTableUtil {
           CarbonCommonConstants.COLUMN_META_CACHE} is not allowed for child datamaps")
       }
       val schemaList: util.List[ColumnSchema] = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensions, carbonTable.getMeasures)
+        .getColumnSchemaList(carbonTable.getVisibleDimensions, carbonTable.getVisibleMeasures)
       val tableColumns: Seq[String] = schemaList.asScala
         .map(columnSchema => columnSchema.getColumnName)
       CommonUtil
@@ -798,7 +798,7 @@ object AlterTableUtil {
         // By default all the columns in the table will be cached. This case is to compare all the
         // table columns already cached to the newly specified cached columns
         val schemaList: util.List[ColumnSchema] = CarbonUtil
-          .getColumnSchemaList(carbonTable.getDimensions, carbonTable.getMeasures)
+          .getColumnSchemaList(carbonTable.getVisibleDimensions, carbonTable.getVisibleMeasures)
         val tableColumns: Array[String] = schemaList.asScala
           .map(columnSchema => columnSchema.getColumnName).toArray
         compareColumns(tableColumns, newColumns)

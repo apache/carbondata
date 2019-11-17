@@ -55,12 +55,12 @@ public class StreamPruner {
     if (filterExp != null) {
       // cache all columns
       List<CarbonColumn> minMaxCacheColumns = new ArrayList<>();
-      for (CarbonDimension dimension : carbonTable.getDimensions()) {
+      for (CarbonDimension dimension : carbonTable.getVisibleDimensions()) {
         if (!dimension.isComplex()) {
           minMaxCacheColumns.add(dimension);
         }
       }
-      minMaxCacheColumns.addAll(carbonTable.getMeasures());
+      minMaxCacheColumns.addAll(carbonTable.getVisibleMeasures());
       // prepare cardinality of all dimensions
       List<ColumnSchema> listOfColumns =
           carbonTable.getTableInfo().getFactTable().getListOfColumns();

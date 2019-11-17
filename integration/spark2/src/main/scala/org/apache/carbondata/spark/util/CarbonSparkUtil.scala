@@ -37,10 +37,10 @@ case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 object CarbonSparkUtil {
 
   def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
-    val dimensionsAttr = carbonTable.getDimensions.asScala.map(x => x.getColName)
-    val measureAttr = carbonTable.getMeasures.asScala.map(x => x.getColName)
+    val dimensionsAttr = carbonTable.getVisibleDimensions.asScala.map(x => x.getColName)
+    val measureAttr = carbonTable.getVisibleMeasures.asScala.map(x => x.getColName)
     val dictionary =
-      carbonTable.getDimensions.asScala.map { f =>
+      carbonTable.getVisibleDimensions.asScala.map { f =>
         (f.getColName.toLowerCase,
           f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             !f.getDataType.isComplexType)

@@ -262,8 +262,8 @@ public final class DataLoadProcessBuilder {
     configuration.setDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER,
         loadModel.getBinaryDecoder());
 
-    List<CarbonDimension> dimensions = carbonTable.getDimensions();
-    List<CarbonMeasure> measures = carbonTable.getMeasures();
+    List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
+    List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
     List<DataField> dataFields = new ArrayList<>();
     List<DataField> complexDataFields = new ArrayList<>();
 

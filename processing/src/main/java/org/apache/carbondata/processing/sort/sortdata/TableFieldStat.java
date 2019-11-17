@@ -121,7 +121,7 @@ public class TableFieldStat implements Serializable {
     int tmpVarcharCnt = 0;
     int tmpComplexcount = 0;
 
-    List<CarbonDimension> allDimensions = sortParameters.getCarbonTable().getDimensions();
+    List<CarbonDimension> allDimensions = sortParameters.getCarbonTable().getVisibleDimensions();
     List<CarbonDimension> updatedDimensions = updateDimensionsBasedOnSortColumns(allDimensions);
     for (int i = 0; i < updatedDimensions.size(); i++) {
       CarbonDimension carbonDimension = updatedDimensions.get(i);

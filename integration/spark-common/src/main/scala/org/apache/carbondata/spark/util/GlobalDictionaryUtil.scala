@@ -628,7 +628,7 @@ object GlobalDictionaryUtil {
       val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
       val dictfolderPath = CarbonTablePath.getMetadataPath(carbonLoadModel.getTablePath)
       // columns which need to generate global dictionary file
-      val dimensions = carbonTable.getDimensions().asScala.toArray
+      val dimensions = carbonTable.getVisibleDimensions().asScala.toArray
       // generate global dict from pre defined column dict file
       carbonLoadModel.initPredefDictMap()
       val allDictionaryPath = carbonLoadModel.getAllDictPath

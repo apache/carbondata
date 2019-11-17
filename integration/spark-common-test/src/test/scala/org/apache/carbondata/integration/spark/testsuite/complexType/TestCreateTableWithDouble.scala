@@ -77,7 +77,7 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.DATABASE_DEFAULT_NAME, "doubleComplex2".toLowerCase(), "uniqueid")
     val carbonTable =
       CarbonMetadata.getInstance().getCarbonTable(tableIdentifier.getTableUniqueName)
-    val dimExist = carbonTable.getDimensions().toArray.
+    val dimExist = carbonTable.getVisibleDimensions().toArray.
       exists(_.asInstanceOf[CarbonDimension].getColName.equalsIgnoreCase("number"))
     assertResult(dimExist)(true)
     // assert that load and query is successful

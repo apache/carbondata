@@ -150,9 +150,9 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     }
     carbonTable = model.getTable();
     List<CarbonDimension> dimensions =
-        carbonTable.getDimensions();
+        carbonTable.getVisibleDimensions();
     dimensionCount = dimensions.size();
-    List<CarbonMeasure> measures = carbonTable.getMeasures();
+    List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
     measureCount = measures.size();
     List<CarbonColumn> carbonColumnList =
         carbonTable.getStreamStorageOrderColumn();
@@ -223,7 +223,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
 
   private void initializeFilter() {
     List<ColumnSchema> wrapperColumnSchemaList = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensions(), carbonTable.getMeasures());
+        .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
     int[] dimLensWithComplex = new int[wrapperColumnSchemaList.size()];
     for (int i = 0; i < dimLensWithComplex.length; i++) {
       dimLensWithComplex[i] = Integer.MAX_VALUE;

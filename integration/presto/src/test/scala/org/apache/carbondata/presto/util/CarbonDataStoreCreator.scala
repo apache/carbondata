@@ -337,9 +337,9 @@ object CarbonDataStoreCreator {
       new FileReader(factFilePath))
     val header: String = reader.readLine()
     val allCols: util.List[CarbonColumn] = new util.ArrayList[CarbonColumn]()
-    val dimensions: util.List[CarbonDimension] = table.getDimensions
+    val dimensions: util.List[CarbonDimension] = table.getVisibleDimensions
     allCols.addAll(dimensions)
-    val msrs: List[CarbonMeasure] = table.getMeasures
+    val msrs: List[CarbonMeasure] = table.getVisibleMeasures
     allCols.addAll(msrs)
     val dimensionsIndex = dimensions.map(dim => dim.getColumnSchema.getSchemaOrdinal)
     val dimensionSet: Array[util.List[String]] = Array.ofDim[util.List[String]](dimensions.size)

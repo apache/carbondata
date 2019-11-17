@@ -611,7 +611,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     if (info != null) {
       val cols = info.getListOfColumns.asScala
       val sortColumn = carbonTable.
-              getDimensions().get(0).getColName
+              getVisibleDimensions().get(0).getColName
       val numBuckets = info.getNumOfRanges
       val bucketColumns = cols.flatMap { n =>
         val attrRef = output.find(_.name.equalsIgnoreCase(n.getColumnName))

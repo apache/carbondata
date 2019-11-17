@@ -462,7 +462,7 @@ case class CarbonLoadDataCommand(
     val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       .getCarbonTableIdentifier
     val dictFolderPath = CarbonTablePath.getMetadataPath(carbonLoadModel.getTablePath)
-    val dimensions = carbonTable.getDimensions().asScala.toArray
+    val dimensions = carbonTable.getVisibleDimensions().asScala.toArray
     val colDictFilePath = carbonLoadModel.getColDictFilePath
     if (!StringUtils.isEmpty(colDictFilePath)) {
       carbonLoadModel.initPredefDictMap()
@@ -672,8 +672,8 @@ case class CarbonLoadDataCommand(
     // input data from csv files. Convert to logical plan
     val allCols = new ArrayBuffer[String]()
     // get only the visible dimensions from table
-    allCols ++= table.getDimensions().asScala.map(_.getColName)
-    allCols ++= table.getMeasures.asScala.map(_.getColName)
+    allCols ++= table.getVisibleDimensions().asScala.map(_.getColName)
+    allCols ++= table.getVisibleMeasures.asScala.map(_.getColName)
     var attributes =
       StructType(
         allCols.filterNot(_.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)).map(

@@ -113,7 +113,7 @@ class CarbonAppendableStreamSink(
     carbonLoadModel
       .getCarbonDataLoadSchema
       .getCarbonTable
-      .getMeasures
+      .getVisibleMeasures
       .asScala
       .map(_.getDataType)
       .toArray

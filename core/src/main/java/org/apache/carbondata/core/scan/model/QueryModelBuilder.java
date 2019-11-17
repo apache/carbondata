@@ -215,7 +215,7 @@ public class QueryModelBuilder {
   private List<CarbonDimension> mergeChildColumns(List<Integer> childOrdinals) {
     // Check If children if they are in the path of not.
     List<CarbonDimension> mergedChild = new ArrayList<>();
-    List<CarbonDimension> dimList = table.getDimensions();
+    List<CarbonDimension> dimList = table.getVisibleDimensions();
     for (int i = 0; i < childOrdinals.size(); i++) {
       for (int j = i; j < childOrdinals.size(); j++) {
         CarbonDimension parentDimension = getDimensionBasedOnOrdinal(dimList, childOrdinals.get(i));
@@ -274,11 +274,11 @@ public class QueryModelBuilder {
 
   public QueryModelBuilder projectAllColumns() {
     QueryProjection projection = new QueryProjection();
-    List<CarbonDimension> dimensions = table.getDimensions();
+    List<CarbonDimension> dimensions = table.getVisibleDimensions();
     for (int i = 0; i < dimensions.size(); i++) {
       projection.addDimension(dimensions.get(i), i);
     }
-    List<CarbonMeasure> measures = table.getMeasures();
+    List<CarbonMeasure> measures = table.getVisibleMeasures();
     for (int i = 0; i < measures.size(); i++) {
       projection.addMeasure(measures.get(i), i);
     }

@@ -210,7 +210,7 @@ public class CarbonFactDataHandlerModel {
     CarbonTable carbonTable = configuration.getTableSpec().getCarbonTable();
 
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensions(), carbonTable.getMeasures());
+        .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
     int[] colCardinality =
         CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
 
@@ -325,7 +325,7 @@ public class CarbonFactDataHandlerModel {
       String[] tempStoreLocation, String carbonDataDirectoryPath) {
 
     // for dynamic page size in write step if varchar columns exist
-    List<CarbonDimension> allDimensions = carbonTable.getDimensions();
+    List<CarbonDimension> allDimensions = carbonTable.getVisibleDimensions();
     CarbonColumn[] noDicAndComplexColumns =
         new CarbonColumn[segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
             .getComplexDimensions().size()];
@@ -353,7 +353,7 @@ public class CarbonFactDataHandlerModel {
         segmentProperties.getDimensions().size() - carbonFactDataHandlerModel
             .getNoDictionaryCount());
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensions(), carbonTable.getMeasures());
+        .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
     // get the cardinality for all all the columns including no
     // dictionary columns and complex columns

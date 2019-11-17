@@ -430,7 +430,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * create an instance of sort data rows
    */
   private void initSortDataRows() throws Exception {
-    measureCount = carbonTable.getMeasures().size();
+    measureCount = carbonTable.getVisibleMeasures().size();
     dimensions = new ArrayList<>(2);
     dimensions.addAll(segmentProperties.getDimensions());
     dimensions.addAll(segmentProperties.getComplexDimensions());
