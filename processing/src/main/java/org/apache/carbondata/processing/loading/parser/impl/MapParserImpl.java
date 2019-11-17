@@ -20,7 +20,9 @@ package org.apache.carbondata.processing.loading.parser.impl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
+
 import org.apache.commons.lang.ArrayUtils;
 
 public class MapParserImpl extends ArrayParserImpl {
