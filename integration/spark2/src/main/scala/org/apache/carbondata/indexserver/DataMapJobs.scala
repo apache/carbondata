@@ -131,6 +131,7 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
   }
 
   override def executeCountJob(dataMapFormat: DistributableDataMapFormat): java.lang.Long = {
+    dataMapFormat.setFallbackJob()
     IndexServer.getCount(dataMapFormat).get()
   }
 

@@ -124,22 +124,26 @@ object IndexServer extends ServerInterface {
   def getCount(request: DistributableDataMapFormat): LongWritable = {
     doAs {
       val sparkSession = SparkSQLUtil.getSparkSession
+      var currentUser: String = null
+      if (!request.isFallbackJob) {
+        currentUser = Server.getRemoteUser.getShortUserName
+      }
       lazy val getCountTask = {
         if (!request.isFallbackJob) {
           sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
           sparkSession.sparkContext
             .setLocalProperty("spark.job.description", request.getTaskGroupDesc)
         }
+        // Fire Generic Event like ACLCheck..etc
+        val indexServerEvent = IndexServerEvent(sparkSession, request.getCarbonTable,
+          currentUser)
+        OperationListenerBus.getInstance().fireEvent(indexServerEvent, operationContext)
         val splits = new DistributedCountRDD(sparkSession, request).collect()
         if (!request.isFallbackJob) {
           DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
         }
         new LongWritable(splits.map(_._2.toLong).sum)
       }
-      // Fire Generic Event like ACLCheck..etc
-      val indexServerEvent = IndexServerEvent(sparkSession, request.getCarbonTable,
-        Server.getRemoteUser.getShortUserName)
-      OperationListenerBus.getInstance().fireEvent(indexServerEvent, operationContext)
       if (request.ifAsyncCall) {
         submitAsyncTask(getCountTask)
         new LongWritable(0)

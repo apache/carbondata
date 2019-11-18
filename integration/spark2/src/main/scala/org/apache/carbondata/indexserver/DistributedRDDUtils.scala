@@ -28,11 +28,12 @@ import org.apache.spark.Partition
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapDistributable, Segment}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
+import org.apache.carbondata.core.readcommitter.{LatestFilesReadCommittedScope, TableStatusReadCommittedScope}
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus}
 
@@ -358,23 +359,29 @@ object DistributedRDDUtils {
       conf: Configuration,
       segmentId: List[String]): Unit = {
     if (carbonTable.isTransactionalTable) {
-      val readCommittedScope = new TableStatusReadCommittedScope(AbsoluteTableIdentifier.from(
-        carbonTable.getTablePath), conf)
-      val validSegments: Seq[Segment] = segmentId.map {
-        segmentToPrime =>
-          val loadDetailsForCurrentSegment = readCommittedScope
-            .getSegmentList.find(_.getLoadName.equalsIgnoreCase(segmentToPrime)).get
-
-          new Segment(segmentToPrime,
-            loadDetailsForCurrentSegment.getSegmentFile,
-            readCommittedScope,
-            loadDetailsForCurrentSegment)
-      }
       val indexServerEnabled = CarbonProperties.getInstance().isDistributedPruningEnabled(
         carbonTable.getDatabaseName, carbonTable.getTableName)
       val prePrimingEnabled = CarbonProperties.getInstance().isIndexServerPrePrimingEnabled
       if (indexServerEnabled && prePrimingEnabled) {
         LOGGER.info(s" Loading segments for the table: ${ carbonTable.getTableName } in the cache")
+        val readCommittedScope = new TableStatusReadCommittedScope(AbsoluteTableIdentifier.from(
+          carbonTable.getTablePath), conf)
+        val validSegments: Seq[Segment] = segmentId.map {
+          segmentToPrime =>
+            val loadDetailsForCurrentSegment = readCommittedScope
+              .getSegmentList.find(_.getLoadName.equalsIgnoreCase(segmentToPrime)).get
+
+            new Segment(segmentToPrime,
+              loadDetailsForCurrentSegment.getSegmentFile,
+              readCommittedScope,
+              loadDetailsForCurrentSegment)
+        }
+        val updateStatusManager =
+          new SegmentUpdateStatusManager(carbonTable, readCommittedScope.getSegmentList)
+        // Adding valid segments to segments to be refreshed, so that the select query
+        // goes in the same executor.
+        DataMapStoreManager.getInstance
+          .getSegmentsToBeRefreshed(carbonTable, updateStatusManager, validSegments.toList.asJava)
         val indexServerLoadEvent: IndexServerLoadEvent =
           IndexServerLoadEvent(
             sparkSession,

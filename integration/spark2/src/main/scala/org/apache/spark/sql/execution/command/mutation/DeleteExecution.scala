@@ -418,13 +418,13 @@ object DeleteExecution {
   def reloadDistributedSegmentCache(carbonTable: CarbonTable, deletedSegments: Seq[Segment],
       operationContext: OperationContext)(sparkSession: SparkSession): Unit = {
     if (carbonTable.isTransactionalTable) {
-      val readCommittedScope = new TableStatusReadCommittedScope(AbsoluteTableIdentifier.from(
-        carbonTable.getTablePath), FileFactory.getConfiguration)
-      deletedSegments.foreach(_.setReadCommittedScope(readCommittedScope))
       val indexServerEnabled = CarbonProperties.getInstance().isDistributedPruningEnabled(
         carbonTable.getDatabaseName, carbonTable.getTableName)
       val prePrimingEnabled = CarbonProperties.getInstance().isIndexServerPrePrimingEnabled()
       if (indexServerEnabled && prePrimingEnabled) {
+        val readCommittedScope = new TableStatusReadCommittedScope(AbsoluteTableIdentifier.from(
+          carbonTable.getTablePath), FileFactory.getConfiguration)
+        deletedSegments.foreach(_.setReadCommittedScope(readCommittedScope))
         LOGGER.info(s"Loading segments for table: ${ carbonTable.getTableName } in the cache")
         val indexServerLoadEvent: IndexServerLoadEvent =
           IndexServerLoadEvent(
