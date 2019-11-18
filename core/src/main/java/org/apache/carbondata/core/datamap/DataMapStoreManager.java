@@ -329,7 +329,7 @@ public final class DataMapStoreManager {
     String tableId =
         table.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableId();
     List<TableDataMap> tableIndices = allDataMaps.get(table.getTableId());
-    if (tableIndices == null) {
+    if (tableIndices == null && !table.isTransactionalTable()) {
       String keyUsingTablePath = getKeyUsingTablePath(table.getTablePath());
       if (keyUsingTablePath != null) {
         tableId = keyUsingTablePath;
