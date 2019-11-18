@@ -19,7 +19,7 @@ package org.apache.carbondata.mv.timeseries
 
 import java.util.concurrent.{Callable, Executors, TimeUnit}
 
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -27,7 +27,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.mv.rewrite.TestUtil
 
-class TestMVTimeSeriesCreateDataMapCommand extends QueryTest with BeforeAndAfterAll {
+class TestMVTimeSeriesCreateDataMapCommand extends CarbonQueryTest with BeforeAndAfterAll {
 
   private val timestampFormat = CarbonProperties.getInstance()
     .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)

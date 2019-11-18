@@ -135,7 +135,7 @@ class TestHybridCompaction extends CarbonQueryTest with BeforeAndAfterEach with 
 
 
   def dropTable(): Unit = {
-    sql(s"DROP TABLE IF E XISTS $tableName")
+    sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
   test("PREAGG") {
