@@ -869,7 +869,7 @@ case class CarbonLoadDataCommand(
       }
 
       // Prepriming for Partition table here
-      if (carbonLoadModel.getSegmentId != null) {
+      if (!StringUtils.isEmpty(carbonLoadModel.getSegmentId)) {
         DistributedRDDUtils.triggerPrepriming(sparkSession,
           table,
           Seq(),
