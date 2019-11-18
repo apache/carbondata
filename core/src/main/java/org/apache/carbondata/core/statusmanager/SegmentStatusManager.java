@@ -569,7 +569,8 @@ public class SegmentStatusManager {
     // will be in corrupted state. This can happen in an unstable environment,
     // like in the cloud. To prevent the table corruption, user can enable following
     // property to enable backup of the table status before overwriting it.
-    if (CarbonProperties.isEnableTableStatusBackup()) {
+    if (tableStatusPath.endsWith(CarbonTablePath.TABLE_STATUS_FILE) &&
+        CarbonProperties.isEnableTableStatusBackup()) {
       backupTableStatus(tableStatusPath);
     }
     String content = new Gson().toJson(listOfLoadFolderDetailsArray);
