@@ -28,6 +28,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.control.Breaks._
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
@@ -594,7 +595,7 @@ object CarbonDataRDDFactory {
 
       // code to handle Pre-Priming cache for loading
 
-      if (carbonLoadModel.getSegmentId != null) {
+      if (!StringUtils.isEmpty(carbonLoadModel.getSegmentId)) {
         DistributedRDDUtils.triggerPrepriming(sqlContext.sparkSession, carbonTable, Seq(),
           operationContext, hadoopConf, List(carbonLoadModel.getSegmentId))
       }
