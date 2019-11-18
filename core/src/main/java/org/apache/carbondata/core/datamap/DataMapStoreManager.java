@@ -37,7 +37,6 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
@@ -335,7 +334,7 @@ public final class DataMapStoreManager {
     if (allDataMaps.size() > 0 && !CollectionUtils.isEmpty(allDataMaps.get(tableId))
         && !allDataMaps.get(tableId).get(0).getTable().getTableInfo().getFactTable()
         .getListOfColumns().equals(table.getTableInfo().getFactTable().getListOfColumns())) {
-      clearDataMaps(table.getCarbonTableIdentifier());
+      clearDataMaps(tableId);
       tableIndices = null;
     }
     TableDataMap dataMap = null;
@@ -547,7 +546,7 @@ public final class DataMapStoreManager {
       }
     }
     segmentRefreshMap.remove(tableId);
-    clearDataMaps(identifier.getCarbonTableIdentifier());
+    clearDataMaps(tableId);
     allDataMaps.remove(tableId);
     tablePathMap.remove(tableId);
   }
@@ -577,8 +576,8 @@ public final class DataMapStoreManager {
   /**
    * this methods clears the datamap of table from memory
    */
-  public void clearDataMaps(CarbonTableIdentifier carbonTableIdentifier) {
-    List<TableDataMap> tableIndices = allDataMaps.get(carbonTableIdentifier.getTableId());
+  public void clearDataMaps(String tableId) {
+    List<TableDataMap> tableIndices = allDataMaps.get(tableId);
     if (tableIndices != null) {
       for (TableDataMap tableDataMap : tableIndices) {
         if (tableDataMap != null) {
@@ -589,8 +588,8 @@ public final class DataMapStoreManager {
         }
       }
     }
-    allDataMaps.remove(carbonTableIdentifier.getTableId());
-    tablePathMap.remove(carbonTableIdentifier.getTableId());
+    allDataMaps.remove(tableId);
+    tablePathMap.remove(tableId);
   }
 
   /**
@@ -775,7 +774,7 @@ public final class DataMapStoreManager {
       }
       allDataMaps.put(carbonTable.getTableId(), remainingDataMaps);
     } else {
-      clearDataMaps(carbonTable.getCarbonTableIdentifier());
+      clearDataMaps(carbonTable.getTableId());
       // clear the segment properties cache from executor
       SegmentPropertiesAndSchemaHolder.getInstance()
           .invalidate(carbonTable.getAbsoluteTableIdentifier());
