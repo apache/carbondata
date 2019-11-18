@@ -173,20 +173,6 @@ public class SegmentFileStore {
   }
 
   /**
-   * Write segment file to the metadata folder of the table
-   *
-   * @param carbonTable CarbonTable
-   * @param segmentId segment id
-   * @param UUID      a UUID string used to construct the segment file name
-   * @return segment file name
-   */
-  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      String segPath)
-      throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath);
-  }
-
-  /**
    * Returns the list of index files
    *
    * @param segmentPath
@@ -299,7 +285,7 @@ public class SegmentFileStore {
    * @return
    * @throws IOException
    */
-  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId,
       final String currentLoadTimeStamp, String absSegPath) throws IOException {
     String tablePath = carbonTable.getTablePath();
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
@@ -346,7 +332,8 @@ public class SegmentFileStore {
       if (!carbonFile.exists()) {
         carbonFile.mkdirs(segmentFileFolder);
       }
-      String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
+      String segmentFileName =
+          genSegmentFileName(segmentId, currentLoadTimeStamp) + CarbonTablePath.SEGMENT_EXT;
       // write segment info to new file.
       writeSegmentFile(segmentFile, segmentFileFolder + File.separator + segmentFileName);
 
