@@ -62,6 +62,9 @@ public class DataMapWriterListener {
    */
   public void registerAllWriter(CarbonTable carbonTable, String segmentId,
       String taskNo, SegmentProperties segmentProperties) {
+    // clear cache in executor side
+    DataMapStoreManager.getInstance()
+        .clearDataMaps(carbonTable.getTableId());
     List<TableDataMap> tableIndices;
     try {
       tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
