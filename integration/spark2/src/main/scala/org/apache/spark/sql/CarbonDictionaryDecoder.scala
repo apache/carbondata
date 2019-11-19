@@ -232,7 +232,7 @@ case class CarbonDictionaryDecoder(
            |  return tuple;
            |}""".stripMargin)
       val decodeBool = ctx.freshName("deDictBool")
-      ctx.addNewFunction(decodeStr,
+      ctx.addNewFunction(decodeBool,
         s"""
            |private org.apache.spark.sql.DictTuple $decodeBool(
            |  org.apache.spark.sql.ForwardDictionaryWrapper dict, int surg)
