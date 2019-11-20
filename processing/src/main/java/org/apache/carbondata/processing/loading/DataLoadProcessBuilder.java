@@ -190,6 +190,7 @@ public final class DataLoadProcessBuilder {
     configuration.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     configuration.setHeader(loadModel.getCsvHeaderColumns());
     configuration.setSegmentId(loadModel.getSegmentId());
+    configuration.setIndexColumnsPresent(loadModel.isIndexColumnsPresent());
     List<LoadMetadataDetails> loadMetadataDetails = loadModel.getLoadMetadataDetails();
     if (loadMetadataDetails != null) {
       for (LoadMetadataDetails detail : loadMetadataDetails) {

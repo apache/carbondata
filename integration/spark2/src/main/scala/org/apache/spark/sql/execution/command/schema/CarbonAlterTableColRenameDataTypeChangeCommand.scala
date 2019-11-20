@@ -113,6 +113,9 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         throw new MalformedCarbonCommandException(
           "alter table column rename is not supported for index datamap")
       }
+      // Do not allow index handler's source columns to be changed.
+      AlterTableUtil.validateForIndexHandlerSources(carbonTable,
+        List(alterTableColRenameAndDataTypeChangeModel.columnName))
       val operationContext = new OperationContext
       operationContext.setProperty("childTableColumnRename", childTableColumnRename)
       val alterTableColRenameAndDataTypeChangePreEvent =

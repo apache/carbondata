@@ -101,6 +101,13 @@ public class CarbonDataLoadConfiguration {
 
   private OutputFilesInfoHolder outputFilesInfoHolder;
 
+  /**
+   * Whether index columns are present. This flag should be set only when all the schema
+   * columns are already converted. Now, just need to generate and convert index columns present in
+   * data fields.
+   */
+  private boolean isIndexColumnsPresent;
+
   public CarbonDataLoadConfiguration() {
   }
 
@@ -383,5 +390,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setOutputFilesInfoHolder(OutputFilesInfoHolder outputFilesInfoHolder) {
     this.outputFilesInfoHolder = outputFilesInfoHolder;
+  }
+
+  public boolean isIndexColumnsPresent() {
+    return isIndexColumnsPresent;
+  }
+
+  public void setIndexColumnsPresent(boolean indexColumnsPresent) {
+    isIndexColumnsPresent = indexColumnsPresent;
   }
 }

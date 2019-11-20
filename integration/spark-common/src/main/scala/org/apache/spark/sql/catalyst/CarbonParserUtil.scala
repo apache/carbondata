@@ -18,7 +18,8 @@
 package org.apache.spark.sql.catalyst
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, Map}
+import scala.collection.mutable
+import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, ListBuffer, Map}
 import scala.language.implicitConversions
 
 import org.apache.hadoop.hive.ql.lib.Node
@@ -28,8 +29,8 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
@@ -38,7 +39,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CustomIndex}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, DataTypeConverterUtil}
 
@@ -89,6 +90,108 @@ object CarbonParserUtil {
   }
 
   /**
+   * The method parses, validates and processes the index_handler property.
+   * @param tableProperties Table properties
+   * @param tableFields Sequence of table fields
+   * @return <Seq[Field]> Sequence of index fields to add to table fields
+   */
+  private def processIndexProperty(tableProperties: mutable.Map[String, String],
+      tableFields: Seq[Field]): Seq[Field] = {
+    val option = tableProperties.get(CarbonCommonConstants.INDEX_HANDLER)
+    val fields = ListBuffer[Field]()
+    if (option.isDefined) {
+      if (option.get.trim.isEmpty) {
+        throw new MalformedCarbonCommandException(
+          s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+          s"Option value is empty.")
+      }
+      option.get.split(",").map(_.trim).foreach { handler =>
+        // Validate target column name
+        if (tableFields.exists(_.column.equalsIgnoreCase(handler))) {
+          throw new MalformedCarbonCommandException(
+            s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+            s"handler: $handler must not match with any other column name in the table")
+        }
+        val TYPE = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.type"
+        val SOURCE_COLUMNS = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.sourcecolumns"
+        val SOURCE_COLUMN_TYPES
+        = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.sourcecolumntypes"
+        val HANDLER_CLASS = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.class"
+        val HANDLER_INSTANCE = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.instance"
+
+        val handlerType = tableProperties.get(TYPE)
+        if (handlerType.isEmpty || handlerType.get.trim.isEmpty) {
+          throw new MalformedCarbonCommandException(
+            s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+            s"$TYPE property must be specified.")
+        }
+        val sourceColumnsOption = tableProperties.get(SOURCE_COLUMNS)
+        if (sourceColumnsOption.isEmpty || sourceColumnsOption.get.trim.isEmpty) {
+          throw new MalformedCarbonCommandException(
+            s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+            s"$SOURCE_COLUMNS property must be specified.")
+        }
+        val sourcesWithoutSpaces = sourceColumnsOption.get.replaceAll("\\s", "")
+        // Validate source columns
+        val sources = sourcesWithoutSpaces.split(",")
+        if (sources.distinct.length != sources.size) {
+          throw new MalformedCarbonCommandException(
+            s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+            s"$SOURCE_COLUMNS property cannot have duplicate columns.")
+        }
+        val sourceTypes = StringBuilder.newBuilder
+        sources.foreach { column =>
+          tableFields.find(_.column.equalsIgnoreCase(column)) match {
+            case Some(field) => sourceTypes.append(field.dataType.get).append(",")
+            case None =>
+              throw new MalformedCarbonCommandException(
+                s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+                s"Source column: $column in property " +
+                s"$SOURCE_COLUMNS must be a column in the table.")
+          }
+        }
+        tableProperties.put(SOURCE_COLUMNS, sourcesWithoutSpaces)
+        tableProperties.put(SOURCE_COLUMN_TYPES, sourceTypes.dropRight(1).toString())
+        val handlerClass = tableProperties.get(HANDLER_CLASS)
+        val handlerClassName: String = handlerClass match {
+          case Some(className) => className.trim
+          case None =>
+            // use handler type to find the default implementation
+            if (handlerType.get.trim.equalsIgnoreCase(CarbonCommonConstants.GEOHASH)) {
+              // Use GeoHash default implementation
+              val className = CustomIndex.CUSTOM_INDEX_DEFAULT_IMPL
+              tableProperties.put(HANDLER_CLASS, className)
+              className
+            } else {
+              throw new MalformedCarbonCommandException(
+                s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+                s"Unsupported value: ${ handlerType.get } specified for property $TYPE.")
+            }
+        }
+        try {
+          val handlerClass: Class[_] = java.lang.Class.forName(handlerClassName)
+          val instance = handlerClass.newInstance().asInstanceOf[CustomIndex[_]]
+          instance.init(handler, tableProperties.asJava)
+          tableProperties.put(HANDLER_INSTANCE, CustomIndex.getCustomInstance(instance))
+        } catch {
+          case ex@(_: ClassNotFoundException | _: InstantiationError | _: IllegalAccessException |
+                   _: ClassCastException) =>
+            val err = s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property process failed. "
+            LOGGER.error(err, ex)
+            throw new MalformedCarbonCommandException(err, ex)
+        }
+        // Add index handler as a sort column if it is not already present in it.
+        CarbonScalaUtil.addIndexHandlerToSortColumns(handler, sources, tableProperties)
+        // TODO Need to convert it to DataType object and pass it to StructField
+        val dataType =
+          tableProperties.get(s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.datatype")
+        fields += Field(handler, Some("LongType"), Some(handler), Some(null))
+      }
+    }
+    fields
+  }
+
+  /**
    * This will prepare the Model from the Tree details.
    *
    * @param ifNotExistPresent
@@ -110,8 +213,11 @@ object CarbonParserUtil {
       isAlterFlow: Boolean = false,
       tableComment: Option[String] = None): TableModel = {
 
+    val indexFields = processIndexProperty(tableProperties, fields)
+    val allFields = fields ++ indexFields
+
     // do not allow below key words as column name
-    validateColumnNames(fields)
+    validateColumnNames(allFields)
 
     fields.zipWithIndex.foreach { case (field, index) =>
       field.schemaOrdinal = index
@@ -129,7 +235,7 @@ object CarbonParserUtil {
         } ")
     }
     val (dims, msrs, noDictionaryDims, sortKeyDims, varcharColumns) = extractDimAndMsrFields(
-      fields, tableProperties)
+      fields, indexFields, tableProperties)
 
     // column properties
     val colProps = extractColumnProperties(fields, tableProperties)
@@ -232,7 +338,8 @@ object CarbonParserUtil {
 
     if (tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
       // validate the column_meta_cache option
-      val tableColumns = dims.map(x => x.name.get) ++ msrs.map(x => x.name.get)
+      val tableColumns = dims.view.filter(_.schemaOrdinal != -1).map(x => x.name.get) ++
+                         msrs.map(x => x.name.get)
       CommonUtil.validateColumnMetaCacheFields(
         dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
         tableName,
@@ -513,16 +620,19 @@ object CarbonParserUtil {
    * By default all string cols are dimensions.
    *
    * @param fields
+   * @param indexFields
    * @param tableProperties
    * @return
    */
-  protected def extractDimAndMsrFields(fields: Seq[Field],
+  protected def extractDimAndMsrFields(fields: Seq[Field], indexFields: Seq[Field],
       tableProperties: Map[String, String]):
   (Seq[Field], Seq[Field], Seq[String], Seq[String], Seq[String]) = {
     var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
     var msrFields: Seq[Field] = Seq[Field]()
     var noDictionaryDims: Seq[String] = Seq[String]()
     var varcharCols: Seq[String] = Seq[String]()
+
+    val allFields = fields ++ indexFields
 
     // All long_string cols should be there in create table cols and should be of string data type
     if (tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS).isDefined) {
@@ -544,12 +654,12 @@ object CarbonParserUtil {
       val sortKey = sortKeyString.split(',').map(_.trim)
       CommonUtil.validateSortColumns(
         sortKey,
-        fields.map { field => (field.column, field.dataType.get) },
+        allFields.map { field => (field.column, field.dataType.get) },
         varcharCols
       )
       sortKey.foreach { dimension =>
         if (!sortKeyDimsTmp.exists(dimension.equalsIgnoreCase)) {
-          fields.foreach { field =>
+          allFields.foreach { field =>
             if (field.column.equalsIgnoreCase(dimension)) {
               sortKeyDimsTmp :+= field.column
             }
@@ -592,7 +702,7 @@ object CarbonParserUtil {
 
     // by default consider all String cols as dims and if any dictionary include isn't present then
     // add it to noDictionaryDims list. consider all dictionary excludes/include cols as dims
-    fields.foreach { field =>
+    allFields.foreach { field =>
       if (field.dataType.get.toUpperCase.equals("TIMESTAMP")) {
         noDictionaryDims :+= field.column
         dimFields += field

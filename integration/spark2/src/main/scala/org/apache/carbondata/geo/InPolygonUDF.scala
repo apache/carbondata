@@ -15,35 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.filter.intf;
+package org.apache.carbondata.geo
 
-public enum ExpressionType {
+import org.apache.spark.sql.sources.Filter
 
-  AND,
-  OR,
-  NOT,
-  EQUALS,
-  NOT_EQUALS,
-  LESSTHAN,
-  LESSTHAN_EQUALTO,
-  GREATERTHAN,
-  GREATERTHAN_EQUALTO,
-  ADD,
-  SUBSTRACT,
-  DIVIDE,
-  MULTIPLY,
-  IN,
-  LIST,
-  NOT_IN,
-  UNKNOWN,
-  LITERAL,
-  RANGE,
-  FALSE,
-  TRUE,
-  STARTSWITH,
-  ENDSWITH,
-  CONTAINSWITH,
-  TEXT_MATCH,
-  IMPLICIT,
-  POLYGON
+import org.apache.carbondata.common.annotations.InterfaceAudience
+
+@InterfaceAudience.Internal
+class InPolygonUDF extends (String => Boolean) with Serializable {
+  override def apply(v1: String): Boolean = {
+    true // Carbon applies the filter. So, Spark do not have to apply filter.
+  }
 }
+
+@InterfaceAudience.Internal
+case class InPolygon(queryString: String) extends Filter {
+  override def references: Array[String] = null
+}
+

@@ -105,6 +105,19 @@ with Serializable {
       carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
         carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
           CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
+    // If index handler property is configured, set flag to indicate index columns are present.
+    // So that InputProcessorStepWithNoConverterImpl can generate the values for those columns,
+    // convert them and then apply sort/write steps.
+    val handler =
+    table.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.INDEX_HANDLER)
+    if (handler != null) {
+      val sortScope = optionsFinal.get("sort_scope")
+      if (sortScope.equalsIgnoreCase(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)) {
+        // Index handler non-schema column must be sorted
+        optionsFinal.put("sort_scope", "LOCAL_SORT")
+      }
+      model.setIndexColumnsPresent(true)
+    }
     optionsFinal
       .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
     val partitionStr =
