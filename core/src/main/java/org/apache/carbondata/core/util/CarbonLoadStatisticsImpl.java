@@ -316,7 +316,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
             " block distinct values: " + loadCsvfilesToDfTime + "(s)");
     double dicShuffleAndWriteFileTotalTime = getDicShuffleAndWriteFileTotalTime();
     LOGGER.info("STAGE 2 ->Global dict shuffle and write dict file: " +
-            + dicShuffleAndWriteFileTotalTime + "(s)");
+            dicShuffleAndWriteFileTotalTime + "(s)");
   }
 
   private void printLruCacheLoadTimeInfo() {

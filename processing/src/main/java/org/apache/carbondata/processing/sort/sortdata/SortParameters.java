@@ -573,7 +573,7 @@ public class SortParameters implements Serializable {
           + " will be used for writing the sort temp File");
     }
 
-    parameters.setPrefetch(CarbonCommonConstants. CARBON_PREFETCH_IN_MERGE_VALUE);
+    parameters.setPrefetch(CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE);
     parameters.setBufferSize(Integer.parseInt(carbonProperties.getProperty(
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));

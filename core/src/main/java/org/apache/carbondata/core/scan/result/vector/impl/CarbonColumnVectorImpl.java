@@ -375,42 +375,42 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   @Override
   public void putFloats(int rowId, int count, float[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
-      floats[rowId ++] = src[i];
+      floats[rowId++] = src[i];
     }
   }
 
   @Override
   public void putShorts(int rowId, int count, short[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
-      shorts[rowId ++] = src[i];
+      shorts[rowId++] = src[i];
     }
   }
 
   @Override
   public void putInts(int rowId, int count, int[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
-      ints[rowId ++] = src[i];
+      ints[rowId++] = src[i];
     }
   }
 
   @Override
   public void putLongs(int rowId, int count, long[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
-      longs[rowId ++] = src[i];
+      longs[rowId++] = src[i];
     }
   }
 
   @Override
   public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
-      doubles[rowId ++] = src[i];
+      doubles[rowId++] = src[i];
     }
   }
 
   @Override
   public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
-      byteArr[rowId ++] = src[i];
+      byteArr[rowId++] = src[i];
     }
   }
 

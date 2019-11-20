@@ -192,7 +192,7 @@ public class RowConverterImpl implements RowConverter {
   @Override
   public void finish() {
     // Clear up dictionary cache access count.
-    for (int i = 0; i < fieldConverters.length; i ++) {
+    for (int i = 0; i < fieldConverters.length; i++) {
       fieldConverters[i].clear();
     }
     // close dictionary client when finish write

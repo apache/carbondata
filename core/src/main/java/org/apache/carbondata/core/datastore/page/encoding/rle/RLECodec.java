@@ -74,7 +74,7 @@ public class RLECodec implements ColumnPageCodec {
 
   // This codec supports integral type only
   private void validateDataType(DataType dataType) {
-    if (! (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE ||
+    if (!(dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE ||
         dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
         dataType == DataTypes.LONG)) {
       throw new UnsupportedOperationException(dataType + " is not supported for RLE");

@@ -357,7 +357,7 @@ public class SortStepRowHandler implements Serializable {
     // read measure
     int measureCnt = measures.length;
     Object tmpContent;
-    for (short idx = 0 ; idx < measureCnt; idx++) {
+    for (short idx = 0; idx < measureCnt; idx++) {
       tmpContent = getDataFromRowBuffer(dataTypes[idx], rowBuffer);
       measures[idx] = tmpContent;
     }
