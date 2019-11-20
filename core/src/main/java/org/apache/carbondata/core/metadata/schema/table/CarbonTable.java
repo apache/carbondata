@@ -400,6 +400,13 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
+   * to get the all dimension of a table
+   */
+  public List<CarbonDimension> getImplicitDimensions() {
+    return implicitDimensions;
+  }
+
+  /**
    * Read all primitive/complex children and set it as list of child carbon dimension to parent
    * dimension
    */

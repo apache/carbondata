@@ -207,9 +207,10 @@ public class DataMapFilter implements Serializable {
               new ArrayList<CarbonDimension>());
     } else {
       processVO =
-          new QueryModel.FilterProcessVO(table.getDimensionByTableName(table.getTableName()),
-              table.getMeasureByTableName(table.getTableName()),
-              table.getImplicitDimensionByTableName(table.getTableName()));
+          new QueryModel.FilterProcessVO(
+              table.getVisibleDimensions(),
+              table.getVisibleMeasures(),
+              table.getImplicitDimensions());
     }
     QueryModel.processFilterExpression(processVO, expression, isFilterDimensions, isFilterMeasures,
         table);
