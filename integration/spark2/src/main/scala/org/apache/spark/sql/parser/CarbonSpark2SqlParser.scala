@@ -632,42 +632,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   def getFields(schema: Seq[StructField]): Seq[Field] = {
     schema.map { col =>
-      var columnComment: String = ""
-      var plainComment: String = ""
-      if (col.getComment().isDefined) {
-        columnComment = " comment \"" + col.getComment().get + "\""
-        plainComment = col.getComment().get
-      }
-      val x =
-        if (col.dataType.catalogString == "float") {
-          '`' + col.name + '`' + " double" + columnComment
-        } else {
-          '`' + col.name + '`' + ' ' + col.dataType.catalogString + columnComment
-        }
-      val f: Field = anyFieldDef(new lexical.Scanner(x.toLowerCase))
-      match {
-        case Success(field, _) => field.asInstanceOf[Field]
-        case failureOrError => throw new MalformedCarbonCommandException(
-          s"Unsupported data type: ${ col.dataType }")
-      }
-      // the data type of the decimal type will be like decimal(10,0)
-      // so checking the start of the string and taking the precision and scale.
-      // resetting the data type with decimal
-      if (f.dataType.getOrElse("").startsWith("decimal")) {
-        val (precision, scale) = CommonUtil.getScaleAndPrecision(col.dataType.catalogString)
-        f.precision = precision
-        f.scale = scale
-        f.dataType = Some("decimal")
-      }
-      if (f.dataType.getOrElse("").startsWith("char")) {
-        f.dataType = Some("char")
-      }
-      else if (f.dataType.getOrElse("").startsWith("float")) {
-        f.dataType = Some("double")
-      }
-      f.rawSchema = x
-      f.columnComment = plainComment
-      f
+      getField(col)
     }
   }
 

@@ -171,6 +171,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case TRUE:
         return getFilterResolverBasedOnExpressionType(ExpressionType.TRUE, false,
             expressionTree, tableIdentifier, expressionTree);
+      case POLYGON:
+        if (expressionTree.getChildren().isEmpty()) {
+          return null;
+        }
+        return createFilterResolverTree(expressionTree.getChildren().get(0), tableIdentifier);
       default:
         return getFilterResolverBasedOnExpressionType(ExpressionType.UNKNOWN, false, expressionTree,
             tableIdentifier, expressionTree);

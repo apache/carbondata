@@ -56,6 +56,29 @@ private[sql] case class CarbonDescribeFormattedCommand(
 
     val carbonTable = relation.carbonTable
     val tblProps = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+    // Append index handler columns
+    val indexes = tblProps.get(CarbonCommonConstants.INDEX_HANDLER)
+    if (indexes.isDefined) {
+      results ++= Seq(
+        ("", "", ""),
+        ("## Custom Index Information", "", "")
+      )
+      val indexList = indexes.get.split(",").map(_.trim)
+      indexList.zip(Stream from 1).foreach {
+        case(index, count) =>
+          results ++= Seq(
+            ("Type", tblProps(s"${ CarbonCommonConstants.INDEX_HANDLER }.$index.type"), ""),
+            ("Class", tblProps(s"${ CarbonCommonConstants.INDEX_HANDLER }.$index.class"), ""),
+            ("Column Name", index, ""),
+            ("Column Data Type",
+              tblProps(s"${ CarbonCommonConstants.INDEX_HANDLER }.$index.datatype"), ""),
+            ("Sources Columns",
+              tblProps(s"${ CarbonCommonConstants.INDEX_HANDLER }.$index.sourcecolumns"), ""))
+          if (indexList.length != count) {
+            results ++= Seq(("", "", ""))
+          }
+      }
+    }
     // If Sort Columns are given and Sort Scope is not given in either table properties
     // or carbon properties then pass LOCAL_SORT as the sort scope,
     // else pass NO_SORT

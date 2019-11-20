@@ -51,6 +51,7 @@ import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit, TextMatchMaxDocUDF, TextMatchUDF}
+import org.apache.carbondata.geo.{InPolygon, InPolygonUDF}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -322,6 +323,12 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     // In case of more dictionary columns spark code gen needs generate lot of code and that slows
     // down the query, so we limit the direct fill in case of more dictionary columns.
     val hasMoreDictionaryCols = hasMoreDictionaryColumnsOnProjection(projectSet, table)
+
+    // Spark cannot filter the rows from the pages in case of polygon query. So, we do the row
+    // level filter at carbon and return the rows directly.
+    val hasInPolygonFilter = candidatePredicates
+      .exists(exp => exp.isInstanceOf[ScalaUDF] &&
+                     exp.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonUDF])
     var vectorPushRowFilters = CarbonProperties.getInstance().isPushRowFiltersForVector
     // In case of mixed format, make the vectorPushRowFilters always false as other formats
     // filtering happens in spark layer.
@@ -365,7 +372,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         updateRequestedColumns.asInstanceOf[Seq[Attribute]], extraRdd)
       // Check whether spark should handle row filters in case of vector flow.
       if (!vectorPushRowFilters && scan.isInstanceOf[CarbonDataSourceScan]
-          && !hasDictionaryFilterCols && !hasMoreDictionaryCols) {
+          && !hasDictionaryFilterCols && !hasMoreDictionaryCols && !hasInPolygonFilter) {
         // Here carbon only do page pruning and row level pruning will be done by spark.
         scan.inputRDDs().head match {
           case rdd: CarbonScanRDD[InternalRow] =>
@@ -419,7 +426,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
       var updateRequestedColumns =
         if (!vectorPushRowFilters && !implicitExisted && !hasDictionaryFilterCols
-            && !hasMoreDictionaryCols) {
+            && !hasMoreDictionaryCols && !hasInPolygonFilter) {
           updateRequestedColumnsFunc(
             (projectsAttr.to[mutable.LinkedHashSet] ++ filterSet).map(relation.attributeMap).toSeq,
             table,
@@ -432,7 +439,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           updateRequestedColumns.asInstanceOf[Seq[Attribute]]) &&
         needDecoder.isEmpty && extraRdd.getOrElse((null, true))._2
       if (!vectorPushRowFilters && !supportBatch && !implicitExisted && !hasDictionaryFilterCols
-          && !hasMoreDictionaryCols) {
+          && !hasMoreDictionaryCols && !hasInPolygonFilter) {
         // revert for row scan
         updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       }
@@ -452,7 +459,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         newRequestedColumns, extraRdd)
       // Check whether spark should handle row filters in case of vector flow.
       if (!vectorPushRowFilters && scan.isInstanceOf[CarbonDataSourceScan]
-          && !implicitExisted && !hasDictionaryFilterCols && !hasMoreDictionaryCols) {
+          && !implicitExisted && !hasDictionaryFilterCols && !hasMoreDictionaryCols
+          && !hasInPolygonFilter) {
         // Here carbon only do page pruning and row level pruning will be done by spark.
         scan.inputRDDs().head match {
           case rdd: CarbonScanRDD[InternalRow] =>
@@ -664,6 +672,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           predicate match {
             case u: ScalaUDF if u.function.isInstanceOf[TextMatchUDF] ||
                                 u.function.isInstanceOf[TextMatchMaxDocUDF] => count = count + 1
+            case _ =>
           }
         }
         if (count > 1) {
@@ -730,6 +739,12 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             "TEXT_MATCH UDF syntax: TEXT_MATCH_LIMIT('luceneQuerySyntax')")
         }
         Some(TextMatchLimit(u.children.head.toString(), u.children.last.toString()))
+
+      case u: ScalaUDF if u.function.isInstanceOf[InPolygonUDF] =>
+        if (u.children.size > 1) {
+          throw new MalformedCarbonCommandException("Expect one string in polygon")
+        }
+        Some(InPolygon(u.children.head.toString()))
 
       case or@Or(left, right) =>
 

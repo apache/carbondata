@@ -179,6 +179,16 @@ object DataLoadProcessorStepOnSpark {
           row = new CarbonRow(rowParser.parseRow(rows.next()))
         }
         row = rowConverter.convert(row)
+        if (row != null) {
+          // In case of partition, after Input processor and converter steps, all the rows are given
+          // to hive to create partition folders. As hive is unaware of the non-schema columns,
+          // should discard those columns from rows and return.
+          val schemaColumnValues = row.getData.zipWithIndex.collect {
+            case (data, index) if conf.getDataFields()(index).getColumn.getSchemaOrdinal != -1 =>
+              data
+          }
+          row.setData(schemaColumnValues)
+        }
         rowCounter.add(1)
         row
       }

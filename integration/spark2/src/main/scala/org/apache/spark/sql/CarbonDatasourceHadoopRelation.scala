@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.util.control.Breaks._
 
@@ -73,7 +74,8 @@ case class CarbonDatasourceHadoopRelation(
       filters: Array[Filter],
       partitions: Seq[PartitionSpec]): RDD[InternalRow] = {
     val filterExpression: Option[Expression] = filters.flatMap { filter =>
-      CarbonFilters.createCarbonFilter(schema, filter)
+      CarbonFilters.createCarbonFilter(schema, filter,
+        carbonTable.getTableInfo.getFactTable.getTableProperties.asScala)
     }.reduceOption(new AndExpression(_, _))
 
     val projection = new CarbonProjection

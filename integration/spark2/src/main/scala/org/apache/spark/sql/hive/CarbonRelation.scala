@@ -50,7 +50,8 @@ case class CarbonRelation(
   }
 
   val dimensionsAttr: Seq[AttributeReference] = {
-    val sett = new LinkedHashSet(carbonTable.getVisibleDimensions.asScala.asJava)
+    val sett = new LinkedHashSet(carbonTable.getVisibleDimensions.asScala
+    .filter(schema => schema.getSchemaOrdinal != -1).asJava)
     sett.asScala.toSeq.map(dim => {
       val dimval = metaData.carbonTable.getDimensionByName(dim.getColName)
       val output: DataType = dimval.getDataType.getName.toLowerCase match {

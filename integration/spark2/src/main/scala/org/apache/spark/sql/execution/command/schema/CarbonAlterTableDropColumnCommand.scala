@@ -61,6 +61,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         throw new MalformedCarbonCommandException(
           "alter table drop column is not supported for index datamap")
       }
+      // Do not allow index handler's source columns to be dropped.
+      AlterTableUtil.validateForIndexHandlerSources(carbonTable, alterTableDropColumnModel.columns)
       val partitionInfo = carbonTable.getPartitionInfo()
       val tableColumns = carbonTable.getCreateOrderColumn().asScala
       if (partitionInfo != null) {

@@ -447,7 +447,8 @@ object AlterTableUtil {
       validateRangeColumnProperties(carbonTable, lowerCasePropertiesMap)
 
       // validate the Sort Scope and Sort Columns
-      validateSortScopeAndSortColumnsProperties(carbonTable, lowerCasePropertiesMap)
+      validateSortScopeAndSortColumnsProperties(carbonTable, lowerCasePropertiesMap,
+        tblPropertiesMap)
       // if SORT_COLUMN is changed, it will move them to the head of column list
       updateSchemaForSortColumns(thriftTable, lowerCasePropertiesMap, schemaConverter)
       // validate long string columns
@@ -634,9 +635,20 @@ object AlterTableUtil {
   }
 
   def validateSortScopeAndSortColumnsProperties(carbonTable: CarbonTable,
-      propertiesMap: mutable.Map[String, String]): Unit = {
+                                                propertiesMap: mutable.Map[String, String],
+                                                tblPropertiesMap: mutable.Map[String, String]
+                                               ): Unit = {
     CommonUtil.validateSortScope(propertiesMap)
     CommonUtil.validateSortColumns(carbonTable, propertiesMap)
+    val indexProp = tblPropertiesMap.get(CarbonCommonConstants.INDEX_HANDLER)
+    if (indexProp.isDefined) {
+      indexProp.get.split(",").map(_.trim).foreach { handler =>
+        val SOURCE_COLUMNS = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.sourcecolumns"
+        val sourceColumns = tblPropertiesMap(SOURCE_COLUMNS).split(",").map(_.trim)
+        // Add index handler as a sort column if it is not already present in it.
+        CarbonScalaUtil.addIndexHandlerToSortColumns(handler, sourceColumns, propertiesMap)
+      }
+    }
     // match SORT_SCOPE and SORT_COLUMNS
     val newSortScope = propertiesMap.get(CarbonCommonConstants.SORT_SCOPE)
     val newSortColumns = propertiesMap.get(CarbonCommonConstants.SORT_COLUMNS)
@@ -981,6 +993,36 @@ object AlterTableUtil {
     // validate load min size property
     if (propertiesMap.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB).isDefined) {
       CommonUtil.validateLoadMinSize(propertiesMap, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB)
+    }
+  }
+
+  def validateForIndexHandlerName(carbonTable: CarbonTable, alterColumns: Seq[String]): Unit = {
+    // Do not allow columns to be added with index handler name
+    val properties = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+    val indexProperty = properties.get(CarbonCommonConstants.INDEX_HANDLER)
+    if (indexProperty.isDefined) {
+      indexProperty.get.split(",").map(_.trim).foreach(element =>
+        if (alterColumns.contains(element)) {
+          throw new MalformedCarbonCommandException(s"Column: $element is not allowed. " +
+            s"This column is present in ${CarbonCommonConstants.INDEX_HANDLER} table property.")
+        })
+      }
+  }
+
+  def validateForIndexHandlerSources(carbonTable: CarbonTable, alterColumns: Seq[String]): Unit = {
+    // Do not allow index handler source columns to be altered
+    val properties = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+    val indexProperty = properties.get(CarbonCommonConstants.INDEX_HANDLER)
+    if (indexProperty.isDefined) {
+      indexProperty.get.split(",").map(_.trim).foreach { element =>
+        val srcColumns
+        = properties.get(CarbonCommonConstants.INDEX_HANDLER + s".$element.sourcecolumns")
+        val common = alterColumns.intersect(srcColumns.get.split(",").map(_.trim))
+        if (common.nonEmpty) {
+          throw new MalformedCarbonCommandException(s"Columns present in " +
+            s"${CarbonCommonConstants.INDEX_HANDLER} table property cannot be altered.")
+        }
+      }
     }
   }
 }

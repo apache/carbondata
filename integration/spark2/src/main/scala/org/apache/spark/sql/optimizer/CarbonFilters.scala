@@ -20,6 +20,7 @@ package org.apache.spark.sql.optimizer
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.util.Try
 
 import org.apache.spark.sql._
@@ -40,13 +41,14 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression, MatchExpression}
+import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression, MatchExpression, PolygonExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit}
+import org.apache.carbondata.geo.{GeoUtils, InPolygon}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 
@@ -61,7 +63,8 @@ object CarbonFilters {
    * Converts data sources filters to carbon filter predicates.
    */
   def createCarbonFilter(schema: StructType,
-      predicate: sources.Filter): Option[CarbonExpression] = {
+      predicate: sources.Filter,
+      tableProperties: mutable.Map[String, String]): Option[CarbonExpression] = {
     val dataTypeOf = schema.map(f => f.name -> f.dataType).toMap
 
     def createFilter(predicate: sources.Filter): Option[CarbonExpression] = {
@@ -148,6 +151,9 @@ object CarbonFilters {
           Some(new MatchExpression(queryString))
         case TextMatchLimit(queryString, maxDoc) =>
           Some(new MatchExpression(queryString, Try(maxDoc.toInt).getOrElse(Integer.MAX_VALUE)))
+        case InPolygon(queryString) =>
+          val (columnName, handler) = GeoUtils.getGeoHashHandler(tableProperties)
+          Some(new PolygonExpression(queryString, columnName, handler))
         case _ => None
       }
     }

@@ -31,6 +31,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.PolygonExpression;
 import org.apache.carbondata.core.scan.expression.UnknownExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
@@ -133,7 +134,11 @@ public class QueryModel {
       final boolean[] isFilterDimensions, final boolean[] isFilterMeasures,
       CarbonTable carbonTable) {
     if (null != filterExpression) {
-      if (null != filterExpression.getChildren() && filterExpression.getChildren().size() == 0) {
+      if (filterExpression instanceof PolygonExpression) {
+        // Process polygon expression
+        ((PolygonExpression) filterExpression).processExpression();
+      } else if (null != filterExpression.getChildren() &&
+              filterExpression.getChildren().size() == 0) {
         if (filterExpression instanceof ConditionalExpression) {
           List<ColumnExpression> listOfCol =
               ((ConditionalExpression) filterExpression).getColumnList();
