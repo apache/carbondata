@@ -428,7 +428,7 @@ case class CarbonLoadDataCommand(
     // input data from csv files. Convert to logical plan
     val allCols = new ArrayBuffer[String]()
     // get only the visible dimensions from table
-    allCols ++= table.getVisibleDimensions.asScala.map(_.getColName)
+    allCols ++= table.getVisibleDimensions().asScala.filterNot(_.isIndexColumn).map(_.getColName)
     allCols ++= table.getVisibleMeasures.asScala.map(_.getColName)
     var attributes =
       StructType(

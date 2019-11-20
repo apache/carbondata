@@ -34,6 +34,7 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
   private DirectDictionaryGenerator directDictionaryGenerator;
 
   private int index;
+  private DataField dataField;
 
   private String nullFormat;
 
@@ -60,6 +61,7 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
           .getDirectDictionaryGenerator(dataField.getColumn().getDataType());
     }
     this.index = index;
+    this.dataField = dataField;
     this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
@@ -94,6 +96,11 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
       }
       return key;
     }
+  }
+
+  @Override
+  public DataField getDataField() {
+    return dataField;
   }
 
   /**

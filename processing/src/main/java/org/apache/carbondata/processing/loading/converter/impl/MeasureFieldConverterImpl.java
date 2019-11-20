@@ -138,6 +138,10 @@ public class MeasureFieldConverterImpl implements FieldConverter {
     }
   }
 
+  @Override
+  public DataField getDataField() {
+    return dataField;
+  }
 
   /**
    * Method to clean the dictionary cache. As in this MeasureFieldConverterImpl convert no

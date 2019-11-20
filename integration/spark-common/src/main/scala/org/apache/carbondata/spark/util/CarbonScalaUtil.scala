@@ -624,6 +624,47 @@ object CarbonScalaUtil {
     }
   }
 
+  /**
+   * The method adds the index handler to sort columns if it is not already present as sort column
+   * @param handler Index handler name
+   * @param sourceColumns Source columns of index handler
+   * @param tableProperties Table properties
+   */
+  def addIndexHandlerToSortColumns(handler: String, sourceColumns: Array[String],
+      tableProperties: mutable.Map[String, String]): Unit = {
+    // Add handler into sort columns
+    val sortKey = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
+    var sortColumnsString = handler
+    // If sort columns are not configured, simply use handler as a sort column.
+    if (sortKey.isDefined && !sortKey.get.isEmpty) {
+      sortColumnsString = sortKey.get
+      val sortColumns = sortColumnsString.split(",").map(_.trim)
+      // If sort columns already contains handler, use sort columns as is.
+      if (!sortColumns.contains(handler)) {
+        // If sort columns do not contain handler as one of the sort column then check if
+        // any of handler's source columns are present as sort columns. If so, insert handler
+        // into sort columns such that it is just before its source columns. Thus, sorting of
+        // data happens w.r.t handler before any of its source columns.
+        val sourceIndex = new Array[Int](sourceColumns.length)
+        sourceColumns.zipWithIndex.foreach {
+          case (source, index) => sourceIndex(index) = sortColumns.indexWhere(_.equals(source))
+        }
+        val posIdx = sourceIndex.filter(_ >= 0)
+        if (posIdx.nonEmpty) {
+          // Found index of first source column in the sort columns. Insert handler just
+          // before it.
+          sortColumnsString = (sortColumns.slice(0, posIdx.min) ++ Array(handler) ++
+                               sortColumns.slice(posIdx.min, sortColumns.length)).mkString(",")
+        } else {
+          // None of the source columns of handler are not present as sort columns. Just append
+          // handler to existing sort columns.
+          sortColumnsString = sortColumnsString + s",$handler"
+        }
+      }
+    }
+    tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, sortColumnsString)
+  }
+
   def isStringDataType(dataType: DataType): Boolean = {
     dataType == StringType
   }

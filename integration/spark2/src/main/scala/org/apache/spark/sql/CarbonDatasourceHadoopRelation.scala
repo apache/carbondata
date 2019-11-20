@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -70,7 +72,8 @@ case class CarbonDatasourceHadoopRelation(
       filters: Array[Filter],
       partitions: Seq[PartitionSpec]): RDD[InternalRow] = {
     val filterExpression: Option[Expression] = filters.flatMap { filter =>
-      CarbonFilters.createCarbonFilter(schema, filter)
+      CarbonFilters.createCarbonFilter(schema, filter,
+        carbonTable.getTableInfo.getFactTable.getTableProperties.asScala)
     }.reduceOption(new AndExpression(_, _))
 
     val projection = new CarbonProjection

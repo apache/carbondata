@@ -319,7 +319,11 @@ public class CarbonTable implements Serializable, Writable {
    */
   private void fillCreateOrderColumn() {
     List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
-    columns.addAll(visibleDimensions);
+    for (CarbonDimension dimension : visibleDimensions) {
+      if (!dimension.getColumnSchema().isIndexColumn()) {
+        columns.add(dimension);
+      }
+    }
     columns.addAll(visibleMeasures);
     Collections.sort(columns, new Comparator<CarbonColumn>() {
 

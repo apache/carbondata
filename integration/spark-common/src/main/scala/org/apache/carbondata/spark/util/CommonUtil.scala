@@ -779,7 +779,7 @@ object CommonUtil {
   }
 
   def validateSortColumns(carbonTable: CarbonTable, newProperties: Map[String, String]): Unit = {
-    val fields = carbonTable.getCreateOrderColumn().asScala
+    val fields = carbonTable.getVisibleDimensions.asScala ++ carbonTable.getVisibleMeasures.asScala
     val tableProperties = carbonTable.getTableInfo.getFactTable.getTableProperties
     var sortKeyOption = newProperties.get(CarbonCommonConstants.SORT_COLUMNS)
     val varcharColsString = tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS)
