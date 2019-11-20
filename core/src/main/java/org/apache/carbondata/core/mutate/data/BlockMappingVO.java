@@ -24,9 +24,9 @@ import java.util.Map;
  */
 public class BlockMappingVO {
 
-  private Map<String, Long> blockRowCountMapping ;
+  private Map<String, Long> blockRowCountMapping;
 
-  private Map<String, Long> segmentNumberOfBlockMapping ;
+  private Map<String, Long> segmentNumberOfBlockMapping;
 
   private Map<String, RowCountDetailsVO> completeBlockRowDetailVO;
 

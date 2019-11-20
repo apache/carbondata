@@ -356,7 +356,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
         }
 
         CarbonColumn column = currentCondExpression.getColumnList().get(0).getCarbonColumn();
-        if (currentCondExpression.isSingleColumn() && ! column.getDataType().isComplexType()) {
+        if (currentCondExpression.isSingleColumn() && !column.getDataType().isComplexType()) {
           if (column.isMeasure()) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
@@ -413,7 +413,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case NOT_EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
         column = currentCondExpression.getColumnList().get(0).getCarbonColumn();
-        if (currentCondExpression.isSingleColumn() && ! column.getDataType().isComplexType()) {
+        if (currentCondExpression.isSingleColumn() && !column.getDataType().isComplexType()) {
           if (column.isMeasure()) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
@@ -465,7 +465,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
         if (expression instanceof ConditionalExpression) {
           condExpression = (ConditionalExpression) expression;
           column = condExpression.getColumnList().get(0).getCarbonColumn();
-          if (condExpression.isSingleColumn() && ! column.isComplex()) {
+          if (condExpression.isSingleColumn() && !column.isComplex()) {
             condExpression = (ConditionalExpression) expression;
             if ((condExpression.getColumnList().get(0).getCarbonColumn()
                 .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)

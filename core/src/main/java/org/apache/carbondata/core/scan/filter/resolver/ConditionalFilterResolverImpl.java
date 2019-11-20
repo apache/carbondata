@@ -161,7 +161,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
 
       } else if ((null != columnList.get(0).getDimension()) && (
           columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) &&
-              ! columnList.get(0).getDimension().getDataType().isComplexType())) {
+              !columnList.get(0).getDimension().getDataType().isComplexType())) {
         dimColResolvedFilterInfo.setFilterValues(FilterUtil
             .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
                 isIncludeFilter, isExpressionResolve));

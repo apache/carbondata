@@ -286,7 +286,7 @@ public class RangeExpressionEvaluator {
     for (Expression exp : expChild.getChildren()) {
       if (exp instanceof ColumnExpression) {
         return ((ColumnExpression) exp).isDimension() &&
-            ! (((ColumnExpression) exp).getDimension().getDataType().isComplexType());
+            !(((ColumnExpression) exp).getDimension().getDataType().isComplexType());
       }
     }
     return false;

@@ -196,14 +196,6 @@
             <property name="severity" value="error"/>
         </module>
 
-        <!-- Checks for consecutive semicolons. -->
-        <module name="RegexpSinglelineJava">
-            <property name="severity" value="info"/>
-            <property name="format" value=";{2,}"/>
-            <property name="message" value="Please use one semicolon"/>
-            <property name="ignoreComments" value="true"/>
-        </module>
-
         <!-- Checks for empty line separator between tokens. -->
         <module name="EmptyLineSeparator">
             <property name="severity" value="error"/>
@@ -220,7 +212,7 @@
 
         <!-- Checks for there is no whitespace after unary operators. -->
         <module name="NoWhitespaceAfter">
-            <property name="severity" value="info"/>
+            <property name="severity" value="error"/>
             <property name="tokens" value="BNOT, DEC, DOT, INC, LNOT, UNARY_MINUS, UNARY_PLUS"/>
             <property name="allowLineBreaks" value="true"/>
         </module>
