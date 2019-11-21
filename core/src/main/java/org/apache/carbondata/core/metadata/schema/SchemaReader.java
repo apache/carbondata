@@ -69,8 +69,7 @@ public class SchemaReader {
   public static CarbonTable readCarbonTableFromSchema(String schemaFilePath, Configuration conf)
       throws IOException {
     TableInfo tableInfo = readTableInfoFromSchema(schemaFilePath, conf);
-    CarbonMetadata.getInstance().loadTableMetadata(tableInfo);
-    return CarbonMetadata.getInstance().getCarbonTable("dummy_dummy");
+    return CarbonTable.buildFromTableInfo(tableInfo);
   }
 
   /**
