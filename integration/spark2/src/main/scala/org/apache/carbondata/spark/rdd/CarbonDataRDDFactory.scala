@@ -972,7 +972,7 @@ object CarbonDataRDDFactory {
       throw new Exception(errorMessage)
     } else {
       DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
-      if (overwriteTable) {
+      if (overwriteTable && carbonTable.isChildTable) {
         val allDataMapSchemas = DataMapStoreManager.getInstance
           .getDataMapSchemasOfTable(carbonTable).asScala
           .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&

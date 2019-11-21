@@ -105,8 +105,10 @@ public class DataMapStatusManager {
    * This method will disable all lazy (DEFERRED REBUILD) datamap in the given table
    */
   public static void disableAllLazyDataMaps(CarbonTable table) throws IOException {
-    List<DataMapSchema> allDataMapSchemas =
-        DataMapStoreManager.getInstance().getDataMapSchemasOfTable(table);
+    List<DataMapSchema> allDataMapSchemas = new ArrayList<>();
+    if (!(table.isChildTable() || table.isChildDataMap())) {
+      allDataMapSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(table);
+    }
     List<DataMapSchema> dataMapToBeDisabled = new ArrayList<>(allDataMapSchemas.size());
     for (DataMapSchema dataMap : allDataMapSchemas) {
       if (dataMap.isLazy()) {

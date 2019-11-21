@@ -97,7 +97,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   @Override
   public DataMapSchema retrieveSchema(String dataMapName)
       throws IOException, NoSuchDataMapException {
-    checkAndReloadDataMapSchemas(true);
+    checkAndReloadDataMapSchemas(false);
     for (DataMapSchema dataMapSchema : dataMapSchemas) {
       if (dataMapSchema.getDataMapName().equalsIgnoreCase(dataMapName)) {
         return dataMapSchema;
@@ -130,7 +130,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
   @Override
   public List<DataMapSchema> retrieveAllSchemas() throws IOException {
-    checkAndReloadDataMapSchemas(true);
+    checkAndReloadDataMapSchemas(false);
     return new ArrayList<>(dataMapSchemas);
   }
 
@@ -186,7 +186,16 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   }
 
   private void checkAndReloadDataMapSchemas(boolean touchFile) throws IOException {
-    if (FileFactory.isFileExist(mdtFilePath)) {
+    boolean mdtFileExists = false;
+    String absolutePath = FileFactory.getCarbonFile(mdtFilePath).getAbsolutePath();
+    try {
+      FileFactory.getDataInputStream(absolutePath, FileFactory.getFileType(absolutePath));
+      mdtFileExists = true;
+    } catch (IOException e) {
+      // mdtFile is not created
+      return;
+    }
+    if (mdtFileExists) {
       long lastModifiedTime = FileFactory.getCarbonFile(mdtFilePath).getLastModifiedTime();
       if (this.lastModifiedTime != lastModifiedTime) {
         dataMapSchemas = retrieveAllSchemasInternal();

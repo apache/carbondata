@@ -136,7 +136,10 @@ public final class DataMapStoreManager {
    * @return
    */
   public List<TableDataMap> getAllDataMap(CarbonTable carbonTable) throws IOException {
-    List<DataMapSchema> dataMapSchemas = getDataMapSchemasOfTable(carbonTable);
+    List<DataMapSchema> dataMapSchemas = new ArrayList<>();
+    if (!(carbonTable.isChildTable() || carbonTable.isChildDataMap())) {
+      dataMapSchemas = getDataMapSchemasOfTable(carbonTable);
+    }
     List<TableDataMap> dataMaps = new ArrayList<>();
     if (dataMapSchemas != null) {
       for (DataMapSchema dataMapSchema : dataMapSchemas) {
