@@ -245,6 +245,11 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
         .put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatisticValidScanBlocklet);
     queryStatisticsModel.getRecorder().recordStatistics(queryStatisticValidScanBlocklet);
 
+    QueryStatistic scannedBlocklets = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM, scannedBlocklets);
+    queryStatisticsModel.getRecorder().recordStatistics(scannedBlocklets);
+
     QueryStatistic totalNumberOfPages = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.TOTAL_PAGE_SCANNED, totalNumberOfPages);

@@ -52,6 +52,8 @@ public interface QueryStatisticsConstants {
 
   String VALID_SCAN_BLOCKLET_NUM = "The num of valid scanned blocklet";
 
+  String BLOCKLET_SCANNED_NUM = "The num of blocklet scanned";
+
   String VALID_PAGE_SCANNED = "The number of valid page scanned";
 
   String TOTAL_PAGE_SCANNED = "The number of total page scanned";

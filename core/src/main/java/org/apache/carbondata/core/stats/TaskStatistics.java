@@ -41,6 +41,7 @@ public class TaskStatistics implements Serializable {
       new Column("carbon_IO_time", QueryStatisticsConstants.READ_BLOCKlET_TIME),
       new Column("scan_blocks_num", QueryStatisticsConstants.SCAN_BLOCKS_NUM),
       new Column("total_blocklets", QueryStatisticsConstants.TOTAL_BLOCKLET_NUM),
+      new Column("scanned_blocklets", QueryStatisticsConstants.BLOCKLET_SCANNED_NUM),
       new Column("valid_blocklets", QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM),
       new Column("total_pages", QueryStatisticsConstants.TOTAL_PAGE_SCANNED),
       new Column("scanned_pages", QueryStatisticsConstants.PAGE_SCANNED),
