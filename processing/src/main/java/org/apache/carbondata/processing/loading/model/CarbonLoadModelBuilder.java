@@ -106,13 +106,6 @@ public class CarbonLoadModelBuilder {
     }
     model.setDateFormat(dateFormat);
     model.setTimestampformat(timestampFormat);
-    model.setUseOnePass(Boolean.parseBoolean(Maps.getOrDefault(options, "onepass", "false")));
-    model.setDictionaryServerHost(Maps.getOrDefault(options, "dicthost", null));
-    try {
-      model.setDictionaryServerPort(Integer.parseInt(Maps.getOrDefault(options, "dictport", "-1")));
-    } catch (NumberFormatException e) {
-      throw new InvalidLoadOptionException(e.getMessage());
-    }
     validateAndSetColumnCompressor(model);
     validateAndSetBinaryDecoder(model);
     return model;
@@ -263,7 +256,6 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setSortScope(sort_scope);
     carbonLoadModel.setBatchSortSizeInMb(optionsFinal.get("batch_sort_size_inmb"));
     carbonLoadModel.setGlobalSortPartitions(global_sort_partitions);
-    carbonLoadModel.setUseOnePass(Boolean.parseBoolean(single_pass));
 
     if (delimiter.equalsIgnoreCase(complex_delimiter_level1) ||
         complex_delimiter_level1.equalsIgnoreCase(complex_delimiter_level2) ||

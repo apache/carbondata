@@ -20,7 +20,6 @@ package org.apache.carbondata.core.localdictionary.dictionaryholder;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.carbondata.core.cache.dictionary.DictionaryByteArrayWrapper;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.util.CarbonProperties;

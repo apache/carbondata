@@ -23,7 +23,7 @@ import java.util.List;
  * Encoding type supported in carbon
  */
 public enum Encoding {
-  DICTIONARY,
+  DICTIONARY,  // Deprecated
   DELTA,
   RLE,
   INVERTED_INDEX,

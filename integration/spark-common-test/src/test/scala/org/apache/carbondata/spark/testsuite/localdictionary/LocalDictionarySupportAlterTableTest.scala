@@ -78,7 +78,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     }
   }
 
-  test("test alter table add column where same column is in dictionary include and local dictionary include") {
+  test("test alter table add column where same column is in local dictionary include") {
     sql("drop table if exists local1")
     sql(
       """
@@ -88,7 +88,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
       """.stripMargin)
     val exception = intercept[MalformedCarbonCommandException] {
       sql(
-        "alter table local1 add columns (alt string) tblproperties('local_dictionary_include'='alt','dictionary_include'='alt')")
+        "alter table local1 add columns (alt string) tblproperties('local_dictionary_include'='alt')")
     }
     assert(exception.getMessage
       .contains(
@@ -591,7 +591,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     sql(
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
-        | STORED BY 'carbondata' tblproperties('local_dictionary_enable'='true','dictionary_include'='name')
+        | STORED BY 'carbondata' tblproperties('local_dictionary_enable'='true')
       """.stripMargin)
 
     val descLoc1 = sql("describe formatted local1").collect
@@ -658,7 +658,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     sql(
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
-        | STORED BY 'carbondata' tblproperties('local_dictionary_enable'='true','dictionary_include'='name')
+        | STORED BY 'carbondata' tblproperties('local_dictionary_enable'='true')
       """.stripMargin)
 
     val descLoc1 = sql("describe formatted local1").collect

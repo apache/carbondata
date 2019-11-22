@@ -50,7 +50,7 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     sql("create table if not exists carbonBigDecimal_2 (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(30, 10)) STORED BY 'org.apache.carbondata.format'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal_2")
 
-    sql("create table if not exists carbonBigDecimal_3 (ID Int, date Timestamp, country String,name String, phonetype String, serialname String, salary decimal(30, 2)) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='salary')")
+    sql("create table if not exists carbonBigDecimal_3 (ID Int, date Timestamp, country String,name String, phonetype String, serialname String, salary decimal(30, 2)) STORED BY 'org.apache.carbondata.format' ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal_3")
   }
 
@@ -135,7 +135,7 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
 
   test("test big decimal for dictionary look up") {
     sql("drop table if exists decimalDictLookUp")
-    sql("create table if not exists decimalDictLookUp (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10)) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='salary')")
+    sql("create table if not exists decimalDictLookUp (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10)) STORED BY 'org.apache.carbondata.format' ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table decimalDictLookUp")
 
     checkAnswer(sql("select sum(salary) from decimalDictLookUp"),

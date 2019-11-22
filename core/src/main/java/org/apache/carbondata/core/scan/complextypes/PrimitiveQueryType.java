@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -44,27 +43,20 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   private int keySize;
 
-  private Dictionary dictionary;
-
   private org.apache.carbondata.core.metadata.datatype.DataType dataType;
 
   private boolean isDirectDictionary;
 
-  private boolean isDictionary;
-
   private DirectDictionaryGenerator directDictGenForDate;
 
   public PrimitiveQueryType(String name, String parentName, int blockIndex,
-      DataType dataType, int keySize,
-      Dictionary dictionary, boolean isDirectDictionary) {
+      DataType dataType, int keySize, boolean isDirectDictionary) {
     super(name, parentName, blockIndex);
     this.dataType = dataType;
     this.keySize = keySize;
-    this.dictionary = dictionary;
     this.name = name;
     this.parentName = parentName;
     this.isDirectDictionary = isDirectDictionary;
-    this.isDictionary = (dictionary != null && !isDirectDictionary);
     this.directDictGenForDate =
         DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
   }
@@ -106,7 +98,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       DataOutputStream dataOutputStream) throws IOException {
     byte[] currentVal =
         copyBlockDataChunk(rawColumnChunks, dimensionColumnPages, rowNumber, pageNumber);
-    if (!this.isDictionary && !this.isDirectDictionary) {
+    if (!this.isDirectDictionary) {
       dataOutputStream.writeShort(currentVal.length);
     }
     dataOutputStream.write(currentVal);
@@ -156,7 +148,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       DirectDictionaryGenerator directDictionaryGenerator =
           DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(dataType);
       actualData = directDictionaryGenerator.getValueFromSurrogate(surrgateValue);
-    } else if (!isDictionary) {
+    } else {
       if (size == -1) {
         size = dataBuffer.getShort();
       }
@@ -172,14 +164,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       } else {
         actualData = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(value, this.dataType);
       }
-    } else {
-      // Dictionary Column
-      byte[] data = new byte[keySize];
-      dataBuffer.get(data);
-      Bits bit = new Bits(new int[] { keySize * 8 });
-      int surrgateValue = (int) bit.getKeyArray(data, 0)[0];
-      String dictionaryValueForKey = dictionary.getDictionaryValueForKey(surrgateValue);
-      actualData = DataTypeUtil.getDataBasedOnDataType(dictionaryValueForKey, this.dataType);
     }
     return actualData;
   }

@@ -79,7 +79,7 @@ object SparkSessionExample {
          | charField CHAR(5)
          | )
          | USING carbondata
-         | OPTIONS('DICTIONARY_INCLUDE'='dateField, charField',
+         | OPTIONS(
          | 'dbName'='default', 'tableName'='sparksession_table')
        """.stripMargin)
 

@@ -112,7 +112,7 @@ class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with Be
     sql(
       """
         | CREATE TABLE maintable(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='id')
+        | STORED BY 'org.apache.carbondata.format' 
       """.stripMargin)
     createAllAggregateTables("maintable")
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
@@ -134,7 +134,7 @@ class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with Be
     sql(
       """
         | CREATE TABLE maintable(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='id')
+        | STORED BY 'org.apache.carbondata.format' 
       """.stripMargin)
     createAllAggregateTables("maintable")
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable options('single_pass'='true')")
@@ -156,7 +156,7 @@ class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with Be
     sql(
       """
         | CREATE TABLE maintable(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='id')
+        | STORED BY 'org.apache.carbondata.format' 
       """.stripMargin)
     createAllAggregateTables("maintable")
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
@@ -206,7 +206,7 @@ class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with Be
     sql(
       """
         | CREATE TABLE maintable(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='id')
+        | STORED BY 'org.apache.carbondata.format' 
       """.stripMargin)
     sql(
       s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id,sum(age) from maintable group by id"""

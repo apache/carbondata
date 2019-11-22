@@ -20,7 +20,6 @@ package org.apache.carbondata.core.indexstore.blockletindex;
 import java.lang.reflect.Method;
 import java.util.BitSet;
 
-import org.apache.carbondata.core.cache.dictionary.AbstractDictionaryCacheTest;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
@@ -33,7 +32,7 @@ import mockit.MockUp;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestBlockletDataMap extends AbstractDictionaryCacheTest {
+public class TestBlockletDataMap {
 
   ImplicitIncludeFilterExecutorImpl implicitIncludeFilterExecutor;
   @Before public void setUp() throws Exception {

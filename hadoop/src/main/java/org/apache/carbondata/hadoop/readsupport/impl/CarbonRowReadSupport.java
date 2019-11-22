@@ -17,26 +17,41 @@
 
 package org.apache.carbondata.hadoop.readsupport.impl;
 
+import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 /**
  * A read support implementation to return CarbonRow after handling
  * global dictionary and direct dictionary (date/timestamp) conversion
  */
-public class CarbonRowReadSupport extends DictionaryDecodeReadSupport<CarbonRow> {
+public class CarbonRowReadSupport implements CarbonReadSupport<CarbonRow> {
+
+  protected DataType[] dataTypes;
+
+  protected CarbonColumn[] carbonColumns;
+
+  @Override
+  public void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable)
+      throws IOException {
+    this.carbonColumns = carbonColumns;
+    this.dataTypes = new DataType[carbonColumns.length];
+    for (int i = 0; i < carbonColumns.length; i++) {
+      dataTypes[i] = carbonColumns[i].getDataType();
+    }
+  }
 
   @Override
   public CarbonRow readRow(Object[] data) {
-    assert (data.length == dictionaries.length);
-    for (int i = 0; i < dictionaries.length; i++) {
-      if (dictionaries[i] != null) {
-        data[i] = dictionaries[i].getDictionaryValueForKey((int) data[i]);
-      }
+    for (int i = 0; i < dataTypes.length; i++) {
       if (dataTypes[i] == DataTypes.DATE) {
         Calendar c = Calendar.getInstance();
         c.setTime(new Date(0));
@@ -48,5 +63,9 @@ public class CarbonRowReadSupport extends DictionaryDecodeReadSupport<CarbonRow>
       }
     }
     return new CarbonRow(data);
+  }
+
+  @Override
+  public void close() {
   }
 }

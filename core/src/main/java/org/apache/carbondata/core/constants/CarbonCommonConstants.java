@@ -436,7 +436,6 @@ public final class CarbonCommonConstants {
   /**
    * key for dictionary path
    */
-  public static final String DICTIONARY_PATH = "dictionary_path";
   public static final String SORT_COLUMNS = "sort_columns";
   public static final String SORT_SCOPE = "sort_scope";
   public static final String RANGE_COLUMN = "range_column";

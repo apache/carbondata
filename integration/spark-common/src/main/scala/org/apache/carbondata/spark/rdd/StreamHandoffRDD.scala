@@ -176,10 +176,8 @@ class StreamHandoffRDD[K, V](
   ): CompactionResultSortProcessor = {
     val wrapperColumnSchemaList = CarbonUtil.getColumnSchemaList(
       carbonTable.getVisibleDimensions, carbonTable.getVisibleMeasures)
-    val dimLensWithComplex =
-      (0 until wrapperColumnSchemaList.size()).map(_ => Integer.MAX_VALUE).toArray
     val dictionaryColumnCardinality =
-      CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchemaList)
+      CarbonUtil.getFormattedCardinality(wrapperColumnSchemaList)
     val segmentProperties =
       new SegmentProperties(wrapperColumnSchemaList, dictionaryColumnCardinality)
 

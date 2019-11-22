@@ -138,7 +138,7 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
     sql("create table rstest1 (c1 string,c2 int) STORED BY 'org.apache.carbondata.format'")
     sql("Alter table rstest1 drop columns(c2)")
     sql(
-      "Alter table rstest1 add columns(c4 string) TBLPROPERTIES('DICTIONARY_EXCLUDE'='c4', " +
+      "Alter table rstest1 add columns(c4 string) TBLPROPERTIES( " +
       "'DEFAULT.VALUE.c4'='def')")
     sql(s"""CREATE EXTERNAL TABLE rsext STORED BY 'carbondata' LOCATION '$storeLocation/rstest1'""")
     sql("insert into rsext select 'shahid', 1")

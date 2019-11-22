@@ -278,7 +278,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
         "serialname String, salary Int) STORED BY 'carbondata' " +
-        "tblproperties('sort_columns'='ID,name','dictionary_include'='ID')")
+        "tblproperties('sort_columns'='ID,name')")
     // ID is sort column and dictionary column. Since the actual order and literal order of
     // this column are not necessarily the same, this will not cause error but will cause data skewed.
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
@@ -297,7 +297,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
         "serialname String, salary Int) STORED BY 'carbondata' " +
-        "tblproperties('sort_columns'='name,ID','dictionary_include'='name')")
+        "tblproperties('sort_columns'='name,ID')")
     // 'name' is sort column and dictionary column, but value for 'name' in bounds does not exists
     // in dictionary. It will not cause error but will cause data skewed.
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +

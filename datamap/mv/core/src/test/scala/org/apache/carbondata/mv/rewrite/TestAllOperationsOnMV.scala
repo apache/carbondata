@@ -396,7 +396,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm ")
     intercept[MalformedCarbonCommandException] {
-      sql("create datamap dm using 'mv' dmproperties('dictionary_include'='name', 'sort_columns'='name') as select name from maintable")
+      sql("create datamap dm using 'mv' dmproperties('name', 'sort_columns'='name') as select name from maintable")
     }.getMessage.contains("DMProperties dictionary_include,sort_columns are not allowed for this datamap")
   }
 
@@ -411,7 +411,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
 
   test("test global dictionary inherited from parent table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('dictionary_include'='name')")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' ")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm ")
     sql("create datamap dm using 'mv' as select name, sum(price) from maintable group by name")
@@ -422,7 +422,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
 
   test("test global dictionary inherited from parent table - Preaggregate") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('dictionary_include'='name')")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' ")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm ")
     sql("create datamap dm on table maintable using 'preaggregate' as select name, sum(price) from maintable group by name")

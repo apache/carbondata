@@ -22,10 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.cache.dictionary.ForwardDictionaryCache;
-import org.apache.carbondata.core.cache.dictionary.ReverseDictionaryCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -134,14 +130,10 @@ public class CacheProvider {
    */
   private void createDictionaryCacheForGivenType(CacheType cacheType) {
     Cache cacheObject = null;
-    if (cacheType.equals(CacheType.REVERSE_DICTIONARY)) {
-      cacheObject =
-          new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonLRUCache);
-    } else if (cacheType.equals(CacheType.FORWARD_DICTIONARY)) {
-      cacheObject =
-          new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonLRUCache);
-    } else if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
+    if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
       cacheObject = new BlockletDataMapIndexStore(carbonLRUCache);
+    } else {
+      throw new UnsupportedOperationException(cacheType + " is not supported");
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);
   }

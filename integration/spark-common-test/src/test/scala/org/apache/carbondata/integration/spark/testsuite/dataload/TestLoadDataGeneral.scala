@@ -208,7 +208,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
   test("test load / insert / update with data more than 32000 bytes - dictionary_include") {
     val testdata = s"$resourcesPath/unicodechar.csv"
     sql("drop table if exists load32000bytes")
-    sql("create table load32000bytes(name string) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='name')")
+    sql("create table load32000bytes(name string) stored by 'carbondata' ")
     sql("insert into table load32000bytes select 'aaa'")
 
     assert(intercept[Exception] {

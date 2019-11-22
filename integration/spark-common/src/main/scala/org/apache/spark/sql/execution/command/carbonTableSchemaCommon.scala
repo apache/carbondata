@@ -37,8 +37,7 @@ import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, Decima
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier, TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
-import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
+import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ColumnUniqueIdGenerator, ParentColumnTableRelation}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -554,8 +553,7 @@ object TableNewProcessor {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     columnSchema.setEncodingList(encoders)
-    val colUniqueIdGenerator = ColumnUniqueIdGenerator.getInstance
-    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(columnSchema)
+    val columnUniqueId = ColumnUniqueIdGenerator.generateUniqueId()
     columnSchema.setColumnUniqueId(columnUniqueId)
     columnSchema.setColumnReferenceId(columnUniqueId)
     columnSchema.setDimensionColumn(isDimensionCol)
@@ -569,27 +567,22 @@ object TableNewProcessor {
 
 class TableNewProcessor(cm: TableModel) {
 
-  def getAllChildren(fieldChildren: Option[List[Field]],
-      useDictionaryEncoding: Boolean): Seq[ColumnSchema] = {
+  def getAllChildren(fieldChildren: Option[List[Field]]): Seq[ColumnSchema] = {
     var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
     fieldChildren.foreach(fields => {
       fields.foreach(field => {
         val encoders = new java.util.ArrayList[Encoding]()
-        if (useDictionaryEncoding) {
-          encoders.add(Encoding.DICTIONARY)
-        }
         val columnSchema: ColumnSchema = getColumnSchema(
           DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
           field.name.getOrElse(field.column),
           encoders,
           true,
           field,
-          cm.dataMapRelation,
-          useDictionaryEncoding = useDictionaryEncoding)
+          cm.dataMapRelation)
         allColumns ++= Seq(columnSchema)
         if (field.children.get != null) {
           columnSchema.setNumberOfChild(field.children.get.size)
-          allColumns ++= getAllChildren(field.children, useDictionaryEncoding)
+          allColumns ++= getAllChildren(field.children)
         }
       })
     })
@@ -607,8 +600,8 @@ class TableNewProcessor(cm: TableModel) {
       encoders: java.util.List[Encoding],
       isDimensionCol: Boolean,
       field: Field,
-      map: Option[scala.collection.mutable.LinkedHashMap[Field, DataMapField]],
-      useDictionaryEncoding: Boolean = true) : ColumnSchema = {
+      map: Option[scala.collection.mutable.LinkedHashMap[Field, DataMapField]]
+  ) : ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
@@ -618,17 +611,16 @@ class TableNewProcessor(cm: TableModel) {
       if (highCardinalityDims.contains(colName)) {
         encoders.remove(Encoding.DICTIONARY)
       }
-    if (dataType == DataTypes.DATE && useDictionaryEncoding) {
+    if (dataType == DataTypes.DATE) {
         encoders.add(Encoding.DIRECT_DICTIONARY)
       }
       if (dataType == DataTypes.TIMESTAMP &&
-          !highCardinalityDims.contains(colName) && useDictionaryEncoding) {
+          !highCardinalityDims.contains(colName)) {
         encoders.add(Encoding.DIRECT_DICTIONARY)
       }
     }
     columnSchema.setEncodingList(encoders)
-    val colUniqueIdGenerator = ColumnUniqueIdGenerator.getInstance
-    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(columnSchema)
+    val columnUniqueId = ColumnUniqueIdGenerator.generateUniqueId()
     columnSchema.setColumnUniqueId(columnUniqueId)
     columnSchema.setColumnReferenceId(columnUniqueId)
     columnSchema.setDimensionColumn(isDimensionCol)
@@ -705,9 +697,6 @@ class TableNewProcessor(cm: TableModel) {
       index = index + 1
     }
 
-    val dictionaryIncludeCols = cm.tableProperties
-      .getOrElse(CarbonCommonConstants.DICTIONARY_INCLUDE, "")
-
     def addDimensionCol(field: Field): Unit = {
       val sortField = cm.sortKeyDims.get.find(field.column equals _)
       if (sortField.isEmpty) {
@@ -715,9 +704,7 @@ class TableNewProcessor(cm: TableModel) {
           cm.parentTable.get.getColumnByName(cm.dataMapRelation.get.get(field).get.
                         columnTableRelationList.get(0).parentColumnName).getEncoder
         } else {
-          val encoders = new java.util.ArrayList[Encoding]()
-          encoders.add(Encoding.DICTIONARY)
-          encoders
+          new java.util.ArrayList[Encoding]()
         }
         val columnSchema = getColumnSchema(
           DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
@@ -729,12 +716,8 @@ class TableNewProcessor(cm: TableModel) {
         allColumns :+= columnSchema
         index = index + 1
         if (field.children.isDefined && field.children.get != null) {
-          val includeDictionaryEncoding = dictionaryIncludeCols.contains(field.column)
-          if (!includeDictionaryEncoding) {
-            columnSchema.getEncodingList.remove(Encoding.DICTIONARY)
-          }
           columnSchema.setNumberOfChild(field.children.get.size)
-          allColumns ++= getAllChildren(field.children, includeDictionaryEncoding)
+          allColumns ++= getAllChildren(field.children)
         }
       }
     }

@@ -19,115 +19,12 @@ package org.apache.spark.sql.optimizer
 
 import java.util
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable
-
-import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.util.CarbonReflectionUtils
-
-import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 abstract class AbstractNode
 
-case class Node(cd: CarbonDictionaryTempDecoder) extends AbstractNode
-
 case class ArrayCarbonNode(children: Seq[util.List[AbstractNode]])
   extends AbstractNode
-
-case class CarbonDictionaryTempDecoder(
-    attrList: util.Set[AttributeReferenceWrapper],
-    attrsNotDecode: util.Set[AttributeReferenceWrapper],
-    child: LogicalPlan,
-    isOuter: Boolean = false,
-    aliasMap: Option[CarbonAliasDecoderRelation] = None) extends UnaryNode {
-  var processed = false
-  // In case of join plan and project does not include the notDecode attributes then we should not
-  // carry forward to above plan.
-  val notDecodeCarryForward = new util.HashSet[AttributeReferenceWrapper]()
-
-  def getAttrsNotDecode: util.Set[Attribute] = {
-    val set = new util.HashSet[Attribute]()
-    attrsNotDecode.asScala.foreach(f => set.add(f.attr))
-    set
-  }
-
-  def getAttrList: util.Set[Attribute] = {
-    val set = new util.HashSet[Attribute]()
-    attrList.asScala.foreach(f => set.add(f.attr))
-    set
-  }
-
-  override def output: Seq[Attribute] = child.output
-}
-
-class CarbonDecoderProcessor {
-
-  def getDecoderList(plan: LogicalPlan): util.List[AbstractNode] = {
-    val nodeList = new util.ArrayList[AbstractNode]
-    process(plan, nodeList)
-    nodeList
-  }
-
-  private def process(plan: LogicalPlan, nodeList: util.List[AbstractNode]): Unit = {
-    plan match {
-      case cd: CarbonDictionaryTempDecoder =>
-        nodeList.add(Node(cd))
-        process(cd.child, nodeList)
-      case j: BinaryNode =>
-        val leftList = new util.ArrayList[AbstractNode]
-        val rightList = new util.ArrayList[AbstractNode]
-        nodeList.add(ArrayCarbonNode(Seq(leftList, rightList)))
-        process(j.left, leftList)
-        process(j.right, rightList)
-      case u: Union =>
-        val nodeListSeq = u.children.map { child =>
-          val list = new util.ArrayList[AbstractNode]
-          process(child, list)
-          list
-        }
-        nodeList.add(ArrayCarbonNode(nodeListSeq))
-      case e: UnaryNode => process(e.child, nodeList)
-      case i: InsertIntoTable =>
-        val version = SPARK_VERSION
-
-        val child: LogicalPlan = if (version.startsWith("2.1")) {
-          CarbonReflectionUtils.getField("child", i).asInstanceOf[LogicalPlan]
-        } else if (version.startsWith("2.2")) {
-          CarbonReflectionUtils.getField("query", i).asInstanceOf[LogicalPlan]
-        } else {
-          throw new UnsupportedOperationException(s"Spark version $version is not supported")
-        }
-        process(child, nodeList)
-      case _ =>
-    }
-  }
-
-  def updateDecoders(nodeList: util.List[AbstractNode]): Unit = {
-    val scalaList = nodeList.asScala
-    val decoderNotDecode = new util.HashSet[AttributeReferenceWrapper]
-    updateDecoderInternal(scalaList, decoderNotDecode)
-  }
-
-  private def updateDecoderInternal(scalaList: mutable.Buffer[AbstractNode],
-      decoderNotDecode: util.HashSet[AttributeReferenceWrapper]): Unit = {
-    scalaList.reverseMap {
-      case Node(cd: CarbonDictionaryTempDecoder) =>
-        decoderNotDecode.asScala.foreach(cd.attrsNotDecode.add)
-        decoderNotDecode.asScala.foreach(cd.attrList.remove)
-        decoderNotDecode.addAll(cd.attrList)
-        cd.notDecodeCarryForward.asScala.foreach(decoderNotDecode.remove)
-      case ArrayCarbonNode(children) =>
-        children.foreach { child =>
-          val notDecode = new util.HashSet[AttributeReferenceWrapper]
-          updateDecoderInternal(child.asScala, notDecode)
-          decoderNotDecode.addAll(notDecode)
-        }
-    }
-  }
-
-}
 
 case class AttributeReferenceWrapper(attr: Attribute) {
 

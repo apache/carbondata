@@ -204,7 +204,7 @@ class TestPartitionWithGlobalSort extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""Create table s ( s short, f float,l long,d double,ch char(10),vch varchar(10),num int,time timestamp,
          |dt date,name string) partitioned by (dec decimal(30,15)) stored by 'carbondata'
-         |TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT','DICTIONARY_EXCLUDE'='name')""".stripMargin)
+         |TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""".stripMargin)
     sql("show partitions s")
     sql(s"""alter table s rename to partition2""")
     intercept[Exception] {

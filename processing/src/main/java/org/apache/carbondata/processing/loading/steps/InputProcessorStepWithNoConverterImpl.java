@@ -117,8 +117,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
         // create a ComplexDataType
         dataFieldsWithComplexDataType.put(srcDataField[i].getColumn().getOrdinal(),
             fieldConverterFactory
-                .createComplexDataType(srcDataField[i], configuration.getTableIdentifier(), null,
-                    false, null, i, nullFormat, isEmptyBadRecord));
+                .createComplexDataType(srcDataField[i], configuration.getTableIdentifier(),
+                    null, i, nullFormat, isEmptyBadRecord));
       }
     }
   }

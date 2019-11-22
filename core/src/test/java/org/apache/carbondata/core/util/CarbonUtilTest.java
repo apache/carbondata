@@ -615,7 +615,7 @@ public class CarbonUtilTest {
     columnSchemas.add(column1Schema);
     columnSchemas.add(column2Schema);
     int[] columnCardinality = { 1, 5 };
-    int[] result = CarbonUtil.getFormattedCardinality(columnCardinality, columnSchemas);
+    int[] result = CarbonUtil.getFormattedCardinality(columnSchemas);
     int[] expectedResult = { 1, 5 };
     for (int i = 0; i < result.length; i++) {
       assertEquals(result[i], expectedResult[i]);

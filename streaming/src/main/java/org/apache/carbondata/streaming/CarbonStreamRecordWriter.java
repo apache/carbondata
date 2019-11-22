@@ -312,12 +312,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private void writeFileHeader() throws IOException {
     List<ColumnSchema> wrapperColumnSchemaList = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
-    int[] dimLensWithComplex = new int[wrapperColumnSchemaList.size()];
-    for (int i = 0; i < dimLensWithComplex.length; i++) {
-      dimLensWithComplex[i] = Integer.MAX_VALUE;
-    }
-    int[] dictionaryColumnCardinality =
-        CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchemaList);
+    int[] dictionaryColumnCardinality = CarbonUtil.getFormattedCardinality(wrapperColumnSchemaList);
     List<Integer> cardinality = new ArrayList<>();
     List<org.apache.carbondata.format.ColumnSchema> columnSchemaList = AbstractFactDataWriter
         .getColumnSchemaListAndCardinality(cardinality, dictionaryColumnCardinality,

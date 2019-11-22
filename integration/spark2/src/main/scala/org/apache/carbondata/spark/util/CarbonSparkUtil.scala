@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
-import org.apache.spark.sql.hive.{CarbonMetaData, CarbonRelation, DictionaryMap}
+import org.apache.spark.sql.hive.{CarbonMetaData, CarbonRelation}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -45,10 +45,10 @@ object CarbonSparkUtil {
           f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             !f.getDataType.isComplexType)
       }
-    CarbonMetaData(dimensionsAttr,
+    CarbonMetaData(
+      dimensionsAttr,
       measureAttr,
       carbonTable,
-      DictionaryMap(dictionary.toMap),
       CarbonUtil.hasAggregationDataMap(carbonTable))
   }
 

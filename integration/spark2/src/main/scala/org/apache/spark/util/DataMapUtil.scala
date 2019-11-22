@@ -125,19 +125,9 @@ object DataMapUtil {
     val parentDictExclude = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, "").split(",")
 
-    val parentGlobalDictInclude = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse(CarbonCommonConstants.DICTIONARY_INCLUDE, "").split(",")
-
-    val parentGlobalDictExclude = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse(CarbonCommonConstants.DICTIONARY_EXCLUDE, "").split(",")
-
     val newLocalDictInclude = getDataMapColumns(parentDictInclude, fields, fieldRelationMap)
 
     val newLocalDictExclude = getDataMapColumns(parentDictExclude, fields, fieldRelationMap)
-
-    val newGlobalDictInclude = getDataMapColumns(parentGlobalDictInclude, fields, fieldRelationMap)
-
-    val newGlobalDictExclude = getDataMapColumns(parentGlobalDictExclude, fields, fieldRelationMap)
 
     if (newLocalDictInclude.nonEmpty) {
       tableProperties
@@ -146,15 +136,6 @@ object DataMapUtil {
     if (newLocalDictExclude.nonEmpty) {
       tableProperties
         .put(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, newLocalDictExclude.mkString(","))
-    }
-
-    if (newGlobalDictInclude.nonEmpty) {
-      tableProperties
-        .put(CarbonCommonConstants.DICTIONARY_INCLUDE, newGlobalDictInclude.mkString(","))
-    }
-    if (newGlobalDictExclude.nonEmpty) {
-      tableProperties
-        .put(CarbonCommonConstants.DICTIONARY_EXCLUDE, newGlobalDictExclude.mkString(","))
     }
 
     val parentInvertedIndex = parentTable.getTableInfo.getFactTable.getTableProperties.asScala

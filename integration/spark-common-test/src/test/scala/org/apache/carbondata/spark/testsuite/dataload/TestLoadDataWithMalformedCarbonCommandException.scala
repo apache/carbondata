@@ -42,7 +42,6 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_EXCLUDE'='country,phonetype,CCC')
         """)
   }
 
@@ -53,7 +52,6 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_INCLUDE'='AAA,country')
         """)
   }
 
@@ -64,7 +62,6 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_INCLUDE'='country','DICTIONARY_EXCLUDE'='country')
         """)
   }
 
@@ -75,7 +72,6 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_INCLUDE'='country','DICTIONARY_EXCLUDE'='country ')
       """)
   }
 

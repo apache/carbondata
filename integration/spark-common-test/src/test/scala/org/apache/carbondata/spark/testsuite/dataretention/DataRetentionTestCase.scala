@@ -187,8 +187,6 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       (ID Int, date Timestamp, country String,
       name String, phonetype String, serialname String, salary Int)
       STORED BY 'org.apache.carbondata.format'
-      TBLPROPERTIES('DICTIONARY_EXCLUDE'='country,phonetype,serialname',
-      'DICTIONARY_INCLUDE'='ID')
       """)
 
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptyDimensionData.csv' into table carbon_table_1")

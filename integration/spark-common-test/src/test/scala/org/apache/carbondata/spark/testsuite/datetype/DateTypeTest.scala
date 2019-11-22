@@ -51,7 +51,7 @@ class DateTypeTest extends QueryTest with BeforeAndAfterAll{
         "Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
         "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
         "Latest_operatorId string, gamePointDescription string, gamePointId int,contractNumber " +
-        "int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='doj')")
+        "int) STORED BY 'org.apache.carbondata.format' ")
 
       assert(false)
     }
@@ -81,7 +81,7 @@ class DateTypeTest extends QueryTest with BeforeAndAfterAll{
       "Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
       "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
       "Latest_operatorId string, gamePointDescription string, gamePointId int,contractNumber " +
-      "int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='doj')")
+      "int) STORED BY 'org.apache.carbondata.format'")
 
     assert(true)
   }

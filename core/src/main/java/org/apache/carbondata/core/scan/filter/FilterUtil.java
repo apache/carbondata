@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -37,13 +36,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.CacheProvider;
-import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.cache.dictionary.ForwardDictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.IndexKey;
@@ -56,16 +48,12 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
-import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
@@ -114,9 +102,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
-import org.roaringbitmap.RoaringBitmap;
 
 public final class FilterUtil {
   private static final Logger LOGGER =
@@ -693,77 +679,6 @@ public final class FilterUtil {
     }
   }
 
-  /**
-   * Method will prepare the  dimfilterinfo instance by resolving the filter
-   * expression value to its respective surrogates.
-   *
-   * @param tableIdentifier
-   * @param columnExpression
-   * @param evaluateResultList
-   * @param isIncludeFilter
-   * @return
-   * @throws QueryExecutionException
-   */
-  public static ColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
-      ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
-      throws QueryExecutionException, FilterUnsupportedException, IOException {
-    Dictionary forwardDictionary = null;
-    ColumnFilterInfo filterInfo = null;
-    List<Integer> surrogates =
-        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    try {
-      // Reading the dictionary value from cache.
-      forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
-      sortFilterModelMembers(columnExpression, evaluateResultList);
-      getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
-      filterInfo =
-          getFilterValues(forwardDictionary, isIncludeFilter, surrogates);
-      if (filterInfo.isOptimized()) {
-        return getDimColumnFilterInfoAfterApplyingCBO(forwardDictionary, filterInfo);
-      }
-    } finally {
-      CarbonUtil.clearDictionaryCache(forwardDictionary);
-    }
-    return filterInfo;
-  }
-
-  /**
-   * Method will prepare the  dimfilterinfo instance by resolving the filter
-   * expression value to its respective surrogates.
-   *
-   * @param forwardDictionary
-   * @param isIncludeFilter
-   * @param surrogates
-   * @return
-   */
-  private static ColumnFilterInfo getFilterValues(Dictionary forwardDictionary,
-      boolean isIncludeFilter, List<Integer> surrogates) {
-    // Default value has to be added
-    if (surrogates.isEmpty()) {
-      surrogates.add(0);
-    }
-    boolean isExcludeFilterNeedsToApply = false;
-    if (isIncludeFilter) {
-      isExcludeFilterNeedsToApply =
-          isExcludeFilterNeedsToApply(forwardDictionary.getDictionaryChunks().getSize(),
-              surrogates.size());
-    }
-    Collections.sort(surrogates);
-    ColumnFilterInfo columnFilterInfo = null;
-    columnFilterInfo = new ColumnFilterInfo();
-    if (isExcludeFilterNeedsToApply) {
-      columnFilterInfo.setOptimized(true);
-    }
-    columnFilterInfo.setIncludeFilter(isIncludeFilter);
-    if (!isIncludeFilter) {
-      columnFilterInfo.setExcludeFilterList(surrogates);
-    } else {
-      columnFilterInfo.setFilterList(surrogates);
-    }
-    return columnFilterInfo;
-  }
-
   public static boolean isExcludeFilterNeedsToApply(int dictionarySize,
       int size) {
     if ((size * 100) / dictionarySize >= 60) {
@@ -771,138 +686,6 @@ public final class FilterUtil {
       return true;
     }
     return false;
-  }
-
-  private static ColumnFilterInfo getDimColumnFilterInfoAfterApplyingCBO(
-      Dictionary forwardDictionary, ColumnFilterInfo filterInfo) throws FilterUnsupportedException {
-    List<Integer> excludeMemberSurrogates =
-        prepareExcludeFilterMembers(forwardDictionary, filterInfo.getFilterList());
-    filterInfo.setExcludeFilterList(excludeMemberSurrogates);
-    return filterInfo;
-  }
-
-  private static void prepareIncludeFilterMembers(Expression expression,
-      final ColumnExpression columnExpression, boolean isIncludeFilter,
-      Dictionary forwardDictionary, List<Integer> surrogates)
-      throws FilterUnsupportedException {
-    DictionaryChunksWrapper dictionaryWrapper;
-    dictionaryWrapper = forwardDictionary.getDictionaryChunks();
-    int surrogateCount = 0;
-    while (dictionaryWrapper.hasNext()) {
-      byte[] columnVal = dictionaryWrapper.next();
-      ++surrogateCount;
-      try {
-        RowIntf row = new RowImpl();
-        String stringValue =
-            new String(columnVal, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-        if (stringValue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-          stringValue = null;
-        }
-        row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
-            columnExpression.getCarbonColumn().getDataType()) });
-        Boolean rslt = expression.evaluate(row).getBoolean();
-        if (null != rslt) {
-          if (rslt) {
-            if (null == stringValue) {
-              // this is for query like select name from table unknowexpr(name,1)
-              // != 'value' -> for null dictionary value
-              surrogates.add(CarbonCommonConstants.DICT_VALUE_NULL);
-            } else if (isIncludeFilter) {
-              // this is for query like select ** from * where unknwonexpr(*) == 'value'
-              surrogates.add(surrogateCount);
-            }
-          } else if (null != stringValue && !isIncludeFilter) {
-            // this is for isNot null or not in query( e.x select ** from t where name is not null
-            surrogates.add(surrogateCount);
-          }
-        }
-      } catch (FilterIllegalMemberException e) {
-        LOGGER.debug(e.getMessage());
-      }
-    }
-  }
-
-  private static List<Integer> prepareExcludeFilterMembers(
-      Dictionary forwardDictionary,List<Integer> includeSurrogates)
-      throws FilterUnsupportedException {
-    DictionaryChunksWrapper dictionaryWrapper;
-    RoaringBitmap bitMapOfSurrogates = RoaringBitmap.bitmapOf(
-        ArrayUtils.toPrimitive(includeSurrogates.toArray(new Integer[includeSurrogates.size()])));
-    dictionaryWrapper = forwardDictionary.getDictionaryChunks();
-    List<Integer> excludeFilterList = new ArrayList<Integer>(includeSurrogates.size());
-    int surrogateCount = 0;
-    while (dictionaryWrapper.hasNext()) {
-      dictionaryWrapper.next();
-      ++surrogateCount;
-      if (!bitMapOfSurrogates.contains(surrogateCount)) {
-        excludeFilterList.add(surrogateCount);
-      }
-    }
-    return excludeFilterList;
-  }
-
-  /**
-   * This API will get the Dictionary value for the respective filter member
-   * string.
-   *
-   * @param evaluateResultList filter value
-   * @param surrogates
-   */
-  private static void getDictionaryValue(List<String> evaluateResultList,
-      Dictionary forwardDictionary, List<Integer> surrogates) {
-    ((ForwardDictionary) forwardDictionary)
-        .getSurrogateKeyByIncrementalSearch(evaluateResultList, surrogates);
-  }
-
-  /**
-   * This method will get all the members of column from the forward dictionary
-   * cache, this method will be basically used in row level filter resolver.
-   *
-   * @param tableIdentifier
-   * @param expression
-   * @param columnExpression
-   * @param isIncludeFilter
-   * @return ColumnFilterInfo
-   * @throws FilterUnsupportedException
-   * @throws IOException
-   */
-  public static ColumnFilterInfo getFilterListForAllValues(AbsoluteTableIdentifier tableIdentifier,
-      Expression expression, final ColumnExpression columnExpression, boolean isIncludeFilter,
-      boolean isExprEvalReqd) throws FilterUnsupportedException, IOException {
-    Dictionary forwardDictionary = null;
-    List<Integer> surrogates = new ArrayList<Integer>(20);
-    try {
-      forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
-      if (isExprEvalReqd && !isIncludeFilter) {
-        surrogates.add(CarbonCommonConstants.DICT_VALUE_NULL);
-      }
-      prepareIncludeFilterMembers(expression, columnExpression, isIncludeFilter, forwardDictionary,
-          surrogates);
-      ColumnFilterInfo filterInfo =
-          getFilterValues(forwardDictionary, isIncludeFilter, surrogates);
-      if (filterInfo.isOptimized()) {
-        return getDimColumnFilterInfoAfterApplyingCBO(forwardDictionary,
-            filterInfo);
-      }
-      return filterInfo;
-    } finally {
-      CarbonUtil.clearDictionaryCache(forwardDictionary);
-    }
-  }
-
-  private static void sortFilterModelMembers(final ColumnExpression columnExpression,
-      List<String> evaluateResultListFinal) {
-    java.util.Comparator<String> filterActualValueComaparator = new java.util.Comparator<String>() {
-
-      @Override
-      public int compare(String filterMember1, String filterMember2) {
-        return compareFilterMembersBasedOnActualDataType(filterMember1, filterMember2,
-            columnExpression.getDataType());
-      }
-
-    };
-    Collections.sort(evaluateResultListFinal, filterActualValueComaparator);
   }
 
   /**
@@ -1437,38 +1220,6 @@ public final class FilterUtil {
       return dimCarinality[carbonDimension.getKeyOrdinal()];
     }
     return -1;
-  }
-
-  /**
-   * @param dictionarySourceAbsoluteTableIdentifier
-   * @param carbonDimension
-   * @return
-   */
-  public static Dictionary getForwardDictionaryCache(
-      AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
-      CarbonDimension carbonDimension) throws IOException {
-    String dictionaryPath = null;
-    ColumnIdentifier columnIdentifier = carbonDimension.getColumnIdentifier();
-    String dicPath = dictionarySourceAbsoluteTableIdentifier.getDictionaryPath();
-    if (null != dicPath && !dicPath.trim().isEmpty()) {
-      dictionaryPath = dicPath;
-    }
-    if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations()
-        && carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
-      dictionarySourceAbsoluteTableIdentifier =
-          QueryUtil.getTableIdentifierForColumn(carbonDimension);
-      columnIdentifier = new ColumnIdentifier(
-          carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
-          carbonDimension.getColumnProperties(), carbonDimension.getDataType());
-    }
-    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(dictionarySourceAbsoluteTableIdentifier,
-            columnIdentifier, carbonDimension.getDataType(), dictionaryPath);
-    CacheProvider cacheProvider = CacheProvider.getInstance();
-    Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
-    // get the forward dictionary object
-    return forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
   }
 
   public static IndexKey createIndexKeyFromResolvedFilterVal(long[] startOrEndKey,

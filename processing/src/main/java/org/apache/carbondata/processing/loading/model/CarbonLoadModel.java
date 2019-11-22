@@ -25,7 +25,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -146,35 +145,6 @@ public class CarbonLoadModel implements Serializable {
    */
   private String skipEmptyLine;
 
-  /**
-   * Use one pass to generate dictionary
-   */
-  private boolean useOnePass;
-
-  /**
-   * dictionary server host
-   */
-  private String dictionaryServerHost;
-
-  /**
-   * dictionary sever port
-   */
-  private int dictionaryServerPort;
-
-  /**
-   * dictionary server communication Secret Key.
-   */
-  private String dictionaryServerSecretKey;
-
-  /**
-   * dictionary service provider.
-   */
-  private DictionaryServiceProvider dictionaryServiceProvider;
-
-  /**
-   * Dictionary Secure or not.
-   */
-  private Boolean dictionaryEncryptServerSecure;
   /**
    * Pre fetch data from csv reader
    */
@@ -415,14 +385,6 @@ public class CarbonLoadModel implements Serializable {
     this.colDictFilePath = colDictFilePath;
   }
 
-  public DictionaryServiceProvider getDictionaryServiceProvider() {
-    return dictionaryServiceProvider;
-  }
-
-  public void setDictionaryServiceProvider(DictionaryServiceProvider dictionaryServiceProvider) {
-    this.dictionaryServiceProvider = dictionaryServiceProvider;
-  }
-
   public String getSortColumnsBoundsStr() {
     return sortColumnsBoundsStr;
   }
@@ -474,12 +436,6 @@ public class CarbonLoadModel implements Serializable {
     copy.maxColumns = maxColumns;
     copy.tablePath = tablePath;
     copy.carbonTransactionalTable = carbonTransactionalTable;
-    copy.useOnePass = useOnePass;
-    copy.dictionaryServerHost = dictionaryServerHost;
-    copy.dictionaryServerPort = dictionaryServerPort;
-    copy.dictionaryServerSecretKey = dictionaryServerSecretKey;
-    copy.dictionaryServiceProvider = dictionaryServiceProvider;
-    copy.dictionaryEncryptServerSecure = dictionaryEncryptServerSecure;
     copy.preFetch = preFetch;
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
     copy.skipEmptyLine = skipEmptyLine;
@@ -535,12 +491,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.maxColumns = maxColumns;
     copyObj.tablePath = tablePath;
     copyObj.carbonTransactionalTable = carbonTransactionalTable;
-    copyObj.useOnePass = useOnePass;
-    copyObj.dictionaryServerHost = dictionaryServerHost;
-    copyObj.dictionaryServerPort = dictionaryServerPort;
-    copyObj.dictionaryServerSecretKey = dictionaryServerSecretKey;
-    copyObj.dictionaryServiceProvider = dictionaryServiceProvider;
-    copyObj.dictionaryEncryptServerSecure = dictionaryEncryptServerSecure;
     copyObj.preFetch = preFetch;
     copyObj.isEmptyDataBadRecord = isEmptyDataBadRecord;
     copyObj.skipEmptyLine = skipEmptyLine;
@@ -786,46 +736,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setBadRecordsAction(String badRecordsAction) {
     this.badRecordsAction = badRecordsAction;
-  }
-
-  public boolean getUseOnePass() {
-    return useOnePass;
-  }
-
-  public void setUseOnePass(boolean useOnePass) {
-    this.useOnePass = useOnePass;
-  }
-
-  public int getDictionaryServerPort() {
-    return dictionaryServerPort;
-  }
-
-  public void setDictionaryServerPort(int dictionaryServerPort) {
-    this.dictionaryServerPort = dictionaryServerPort;
-  }
-
-  public String getDictionaryServerSecretKey() {
-    return dictionaryServerSecretKey;
-  }
-
-  public void setDictionaryServerSecretKey(String dictionaryServerSecretKey) {
-    this.dictionaryServerSecretKey = dictionaryServerSecretKey;
-  }
-
-  public Boolean getDictionaryEncryptServerSecure() {
-    return dictionaryEncryptServerSecure;
-  }
-
-  public void setDictionaryEncryptServerSecure(Boolean dictionaryEncryptServerSecure) {
-    this.dictionaryEncryptServerSecure = dictionaryEncryptServerSecure;
-  }
-
-  public String getDictionaryServerHost() {
-    return dictionaryServerHost;
-  }
-
-  public void setDictionaryServerHost(String dictionaryServerHost) {
-    this.dictionaryServerHost = dictionaryServerHost;
   }
 
   public boolean isPreFetch() {

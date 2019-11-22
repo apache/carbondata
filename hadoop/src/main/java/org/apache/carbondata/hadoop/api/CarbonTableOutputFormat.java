@@ -406,12 +406,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       }
     }
     model.setBadRecordsLocation(badRecordsPath);
-    model.setUseOnePass(
-        conf.getBoolean(IS_ONE_PASS_LOAD,
-            Boolean.parseBoolean(
-                carbonProperty.getProperty(
-                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
-                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT))));
     return model;
   }
 

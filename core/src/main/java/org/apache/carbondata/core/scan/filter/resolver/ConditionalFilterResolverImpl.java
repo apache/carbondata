@@ -159,15 +159,6 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
             FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0), exp),
             metadata);
 
-      } else if ((null != columnList.get(0).getDimension()) && (
-          columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) &&
-              !columnList.get(0).getDimension().getDataType().isComplexType())) {
-        dimColResolvedFilterInfo.setFilterValues(FilterUtil
-            .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
-                isIncludeFilter, isExpressionResolve));
-
-        dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
-        dimColResolvedFilterInfo.setDimension(columnList.get(0).getDimension());
       } else if (columnList.get(0).isMeasure()) {
         msrColResolvedFilterInfo.setMeasure(columnList.get(0).getMeasure());
         msrColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(

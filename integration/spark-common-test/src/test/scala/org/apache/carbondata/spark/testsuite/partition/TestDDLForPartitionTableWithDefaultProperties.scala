@@ -65,7 +65,7 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
         | PARTITIONED BY (doj Timestamp)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-        |  'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59','DICTIONARY_INCLUDE'='doj')
+        |  'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59')
       """.stripMargin)
 
     val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "rangeTable")(sqlContext.sparkSession)
@@ -92,8 +92,7 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
         | PARTITIONED BY (projectenddate Timestamp)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('PARTITION_TYPE'='LIST',
-        |  'LIST_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59',
-        |  'DICTIONARY_INCLUDE'='projectenddate')
+        |  'LIST_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59')
       """.stripMargin)
     val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "listTable")(sqlContext.sparkSession)
     val partitionInfo = carbonTable.getPartitionInfo()

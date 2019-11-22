@@ -391,9 +391,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
           "designation String, doj Timestamp, workgroupcategory int, " +
           "workgroupcategoryname String, deptno int, deptname String, projectcode int, " +
           "projectjoindate Timestamp, projectenddate Timestamp, attendance int, " +
-          "utilization int,salary int) STORED BY 'org.apache.carbondata.format' " +
-          "TBLPROPERTIES('DICTIONARY_INCLUDE'='empno,workgroupcategory,deptno,projectcode'," +
-          "'DICTIONARY_EXCLUDE'='empname')")
+          "utilization int,salary int) STORED BY 'org.apache.carbondata.format' ")
     }
   }
 

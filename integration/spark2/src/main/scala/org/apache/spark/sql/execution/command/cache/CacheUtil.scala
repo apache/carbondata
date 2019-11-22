@@ -104,8 +104,7 @@ object CacheUtil {
     carbonTable.getAllDimensions.asScala
       .collect {
         case dict if dict.isGlobalDictionaryEncoding =>
-          Seq(getDictCacheKey(dict.getColumnId, CacheType.FORWARD_DICTIONARY),
-            getDictCacheKey(dict.getColumnId, CacheType.REVERSE_DICTIONARY))
+          throw new UnsupportedOperationException("Global dictionary is deprecated");
       }.flatten.toList
   }
 

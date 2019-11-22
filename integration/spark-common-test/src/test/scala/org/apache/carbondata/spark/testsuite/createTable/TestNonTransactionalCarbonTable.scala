@@ -40,7 +40,6 @@ import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.cache.dictionary.DictionaryByteArrayWrapper
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.TableBlockInfo
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk
@@ -50,6 +49,7 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
+import org.apache.carbondata.core.localdictionary.dictionaryholder.DictionaryByteArrayWrapper
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3

@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.TableSpec;
-import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -49,36 +48,6 @@ public class CarbonDataLoadConfiguration {
   private String segmentPath;
 
   private Map<String, Object> dataLoadProperties = new HashMap<>();
-
-  /**
-   *  Use one pass to generate dictionary
-   */
-  private boolean useOnePass;
-
-  /**
-   * dictionary server host
-   */
-  private String dictionaryServerHost;
-
-  /**
-   * dictionary sever port
-   */
-  private int dictionaryServerPort;
-
-  /**
-   * dictionary server secret key
-   */
-  private String dictionaryServerSecretKey;
-
-  /**
-   * Dictionary Service Provider.
-   */
-  private DictionaryServiceProvider dictionaryServiceProvider;
-
-  /**
-   * Secure Mode or not.
-   */
-  private Boolean dictionaryEncryptServerSecure;
 
   private boolean preFetch;
 
@@ -251,54 +220,6 @@ public class CarbonDataLoadConfiguration {
 
   public void setBucketingInfo(BucketingInfo bucketingInfo) {
     this.bucketingInfo = bucketingInfo;
-  }
-
-  public boolean getUseOnePass() {
-    return useOnePass;
-  }
-
-  public void setUseOnePass(boolean useOnePass) {
-    this.useOnePass = useOnePass;
-  }
-
-  public String getDictionaryServerHost() {
-    return dictionaryServerHost;
-  }
-
-  public void setDictionaryServerHost(String dictionaryServerHost) {
-    this.dictionaryServerHost = dictionaryServerHost;
-  }
-
-  public int getDictionaryServerPort() {
-    return dictionaryServerPort;
-  }
-
-  public void setDictionaryServerPort(int dictionaryServerPort) {
-    this.dictionaryServerPort = dictionaryServerPort;
-  }
-
-  public String getDictionaryServerSecretKey() {
-    return dictionaryServerSecretKey;
-  }
-
-  public void setDictionaryServerSecretKey(String dictionaryServerSecretKey) {
-    this.dictionaryServerSecretKey = dictionaryServerSecretKey;
-  }
-
-  public DictionaryServiceProvider getDictionaryServiceProvider() {
-    return dictionaryServiceProvider;
-  }
-
-  public void setDictionaryServiceProvider(DictionaryServiceProvider dictionaryServiceProvider) {
-    this.dictionaryServiceProvider = dictionaryServiceProvider;
-  }
-
-  public Boolean getDictionaryEncryptServerSecure() {
-    return dictionaryEncryptServerSecure;
-  }
-
-  public void setDictionaryEncryptServerSecure(Boolean dictionaryEncryptServerSecure) {
-    this.dictionaryEncryptServerSecure = dictionaryEncryptServerSecure;
   }
 
   public boolean isPreFetch() {

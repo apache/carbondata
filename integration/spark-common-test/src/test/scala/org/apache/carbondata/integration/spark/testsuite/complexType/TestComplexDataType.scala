@@ -414,9 +414,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
 
   test("test StructofArray pushdown") {
     sql("DROP TABLE IF EXISTS table1")
-    sql(
-      "create table table1 (person Struct<detail:string,ph:array<int>>) stored by " +
-      "'carbondata' tblproperties('dictionary_include'='person')")
+    sql("create table table1 (person Struct<detail:string,ph:array<int>>) stored by 'carbondata' ")
     sql("insert into table1 values(named_struct('detail', 'abc', 'ph', array(2)))")
     sql("select person from table1").show(false)
     sql("select person.detail, person.ph[0] from table1").show(false)
@@ -636,9 +634,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS table1")
     sql(
       "create table table1 (roll int,a struct<b:int,c:string,d:int,e:string,f:struct<g:int," +
-      "h:string,i:int>,j:int>) stored " +
-      "by " +
-      "'carbondata' tblproperties('dictionary_include'='a')")
+      "h:string,i:int>,j:int>) stored by 'carbondata' ")
     sql("insert into table1 values(1,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', 'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
     sql("insert into table1 values(2,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', 'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
     sql("insert into table1 values(3,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', 'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
@@ -848,28 +844,21 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS table1")
     sql(
       "create table table1 (roll int,a struct<b:int,c:string,d:int,e:string,f:struct<g:int," +
-      "h:string,i:int>,j:int>) stored " +
-      "by " +
-      "'carbondata' tblproperties('dictionary_exclude'='a')")
+      "h:string,i:int>,j:int>) stored by 'carbondata' ")
     sql("insert into table1 values(1,named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', 'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
     checkAnswer(sql("select a.b from table1"), Seq(Row(1)))
     sql("DROP TABLE IF EXISTS table1")
     val structException = intercept[MalformedCarbonCommandException](
     sql(
       "create table table1 (roll int,a struct<b:int,c:string,d:int,e:string,f:struct<g:int," +
-      "h:string,i:int>,j:int>) stored " +
-      "by " +
-      "'carbondata' tblproperties('dictionary_exclude'='a.b')"))
+      "h:string,i:int>,j:int>) stored by 'carbondata' "))
     assertResult(
       "DICTIONARY_EXCLUDE column: a.b does not exist in table or unsupported for complex child " +
       "column. Please check the create table statement.")(
       structException.getMessage)
     sql("DROP TABLE IF EXISTS table1")
     val arrayException = intercept[MalformedCarbonCommandException](
-      sql(
-        "create table table1 (roll int,a array<int>) stored " +
-        "by " +
-        "'carbondata' tblproperties('dictionary_exclude'='a[0]')"))
+      sql("create table table1 (roll int,a array<int>) stored by 'carbondata'"))
     assertResult(
       "DICTIONARY_EXCLUDE column: a[0] does not exist in table or unsupported for complex child " +
       "column. Please check the create table statement.")(
@@ -881,9 +870,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     val structException = intercept[MalformedCarbonCommandException](
       sql(
         "create table table1 (roll int,a struct<b:int,c:string,d:int,e:string,f:struct<g:int," +
-        "h:string,i:int>,j:int>) stored " +
-        "by " +
-        "'carbondata' tblproperties('dictionary_include'='a.b')"))
+        "h:string,i:int>,j:int>) stored by 'carbondata' "))
     assertResult(
       "DICTIONARY_INCLUDE column: a.b does not exist in table or unsupported for complex child " +
       "column. Please check the create table statement.")(
@@ -891,9 +878,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS table1")
     val arrayException = intercept[MalformedCarbonCommandException](
       sql(
-        "create table table1 (roll int,a array<int>) stored " +
-        "by " +
-        "'carbondata' tblproperties('dictionary_include'='a[0]')"))
+        "create table table1 (roll int,a array<int>) stored by 'carbondata' "))
     assertResult(
       "DICTIONARY_INCLUDE column: a[0] does not exist in table or unsupported for complex child " +
       "column. Please check the create table statement.")(
@@ -953,8 +938,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
   test("decimal with two level struct type") {
     sql("DROP TABLE IF EXISTS test")
     sql(
-      "create table test(id int,a struct<c:struct<d:decimal(20,10)>>) stored by 'carbondata' " +
-      "tblproperties('dictionary_include'='a')")
+      "create table test(id int,a struct<c:struct<d:decimal(20,10)>>) stored by 'carbondata' ")
     checkExistence(sql("desc test"),true,"struct<c:struct<d:decimal(20,10)>>")
     checkExistence(sql("describe formatted test"),true,"struct<c:struct<d:decimal(20,10)>>")
     sql("insert into test values(1, named_struct('c', named_struct('d', 3999.999)))")
@@ -965,20 +949,18 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql(
       "create table test(id int,a struct<b:int,c:int>, d struct<e:int,f:int>, d1 struct<e1:int," +
-      "f1:int>) stored by 'carbondata' tblproperties('dictionary_include'='d1')")
+      "f1:int>) stored by 'carbondata' ")
     sql("insert into test values(1, named_struct('b', 2, 'c', 3), named_struct('e', 4, 'f', 5), named_struct('e1', 6, 'f1', 7))")
     checkAnswer(sql("select * from test"),Seq(Row(1,Row(2,3),Row(4,5),Row(6,7))))
     sql("DROP TABLE IF EXISTS test")
     sql(
-      "create table test(a array<int>, b array<int>) stored by 'carbondata' tblproperties" +
-      "('dictionary_include'='b')")
+      "create table test(a array<int>, b array<int>) stored by 'carbondata'")
     sql("insert into test values(array(1),array(2)) ")
     checkAnswer(sql("select b[0] from test"),Seq(Row(2)))
     sql("DROP TABLE IF EXISTS test")
     sql(
       "create table test(intval array<array<int>>,str array<array<string>>, bool " +
-      "array<array<boolean>>, sint array<array<short>>, big array<array<bigint>>)  stored by " +
-      "'carbondata' tblproperties('dictionary_include'='bool,sint,big')")
+      "array<array<boolean>>, sint array<array<short>>, big array<array<bigint>>)  stored by 'carbondata' ")
     sql("insert into test values(array(array(1)), array(array('ab')), array(array(true)), array(array(22)), array(array(33))) ")
     checkExistence(sql("select * from test"), true, "33")
   }

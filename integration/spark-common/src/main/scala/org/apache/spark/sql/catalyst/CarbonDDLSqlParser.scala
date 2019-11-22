@@ -816,57 +816,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       }
     }
 
-    // All excluded cols should be there in create table cols
+    // global dictionary is not supported since carbondata 2.0
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
-      LOGGER.warn("dictionary_exclude option was deprecated, " +
-                  "by default string column does not use global dictionary.")
-      dictExcludeCols =
-        tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
-      dictExcludeCols
-        .foreach { dictExcludeCol =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
-            val errorMsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
-                           " does not exist in table or unsupported for complex child column. " +
-                           "Please check the create table statement."
-            throw new MalformedCarbonCommandException(errorMsg)
-          } else {
-            val dataType = fields.find(x =>
-              x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
-            if (!isDataTypeSupportedForDictionary_Exclude(dataType)) {
-              val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
-                             " data type column: " + dictExcludeCol
-              throw new MalformedCarbonCommandException(errorMsg)
-            } else if (varcharCols.exists(x => x.equalsIgnoreCase(dictExcludeCol))) {
-              throw new MalformedCarbonCommandException(
-                "DICTIONARY_EXCLUDE is unsupported for long string datatype column: " +
-                dictExcludeCol)
-            }
-          }
-        }
+      throw new MalformedCarbonCommandException("Global dictionary is deprecated");
     }
-    // All included cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
-      dictIncludeCols =
-        tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
-      dictIncludeCols.foreach { distIncludeCol =>
-        if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
-          val errorMsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
-                         " does not exist in table or unsupported for complex child column. " +
-                         "Please check the create table statement."
-          throw new MalformedCarbonCommandException(errorMsg)
-        }
-        val rangeField = fields.find(_.column.equalsIgnoreCase(distIncludeCol.trim))
-        if ("binary".equalsIgnoreCase(rangeField.get.dataType.get)) {
-          throw new MalformedCarbonCommandException(
-            "DICTIONARY_INCLUDE is unsupported for binary data type column: " +
-                    distIncludeCol.trim)
-        }
-        if (varcharCols.exists(x => x.equalsIgnoreCase(distIncludeCol.trim))) {
-          throw new MalformedCarbonCommandException(
-            "DICTIONARY_INCLUDE is unsupported for long string datatype column: " +
-            distIncludeCol.trim)
-        }
-      }
+      throw new MalformedCarbonCommandException("Global dictionary is deprecated");
     }
 
     // include cols should not contain exclude cols

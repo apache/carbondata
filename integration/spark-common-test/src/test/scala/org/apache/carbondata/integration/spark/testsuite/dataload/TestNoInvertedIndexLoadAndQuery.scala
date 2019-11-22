@@ -153,7 +153,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
         (ID Int, date Timestamp, country String,
         name String, phonetype String, serialname String, salary Int)
         STORED BY 'org.apache.carbondata.format'
-        TBLPROPERTIES('DICTIONARY_INCLUDE'='ID','NO_INVERTED_INDEX'='ID')
+        TBLPROPERTIES('NO_INVERTED_INDEX'='ID')
       """)
 
     CarbonProperties.getInstance()
@@ -215,7 +215,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS index1
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_EXCLUDE'='city','NO_INVERTED_INDEX'='city')
+           TBLPROPERTIES('NO_INVERTED_INDEX'='city')
       """)
     sql(
       s"""
@@ -234,7 +234,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS carbonNoInvertedIndexTable
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('NO_INVERTED_INDEX'='name,city', 'DICTIONARY_EXCLUDE'='city')
+           TBLPROPERTIES('NO_INVERTED_INDEX'='name,city')
         """)
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData1' into table carbonNoInvertedIndexTable
@@ -272,7 +272,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS indexFormat
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_EXCLUDE'='city','NO_INVERTED_INDEX'='city')
+           TBLPROPERTIES('NO_INVERTED_INDEX'='city')
       """)
     sql(
       s"""
@@ -292,7 +292,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   test("filter query on dictionary and no inverted index column where all values are null"){
-    sql("""create table testNull (c1 string,c2 int,c3 string,c5 string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='C2','NO_INVERTED_INDEX'='C2')""")
+    sql("""create table testNull (c1 string,c2 int,c3 string,c5 string) STORED BY 'carbondata' TBLPROPERTIES('NO_INVERTED_INDEX'='C2')""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table testNull OPTIONS('delimiter'=';','fileheader'='c1,c2,c3,c5')""")
     sql("""select c2 from testNull where c2 is null""").show()
     checkAnswer(sql("""select c2 from testNull where c2 is null"""), Seq(Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
@@ -305,7 +305,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS index1
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_INCLUDE'='id','INVERTED_INDEX'='city,name', 'SORT_COLUMNS'='city,name')
+           TBLPROPERTIES('INVERTED_INDEX'='city,name', 'SORT_COLUMNS'='city,name')
       """)
     sql(
       s"""

@@ -28,7 +28,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.spark.util.GlobalDictionaryUtil
 
 /**
  * This is a partitioner class for dividing the newly added columns into partitions
@@ -84,10 +83,6 @@ class AlterTableAddColumnRDD[K, V](
           if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
             FileFactory.mkdirs(metadataDirectoryPath, fileType)
           }
-          GlobalDictionaryUtil.loadDefaultDictionaryValueForNewColumn(
-            columnSchema,
-            identifier,
-            rawData)
         }
       } catch {
         case ex: Exception =>

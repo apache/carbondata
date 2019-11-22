@@ -48,7 +48,7 @@ class TestPreAggregateMisc extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table y(year int,month int,name string,salary int) stored by 'carbondata' " +
       "tblproperties('NO_INVERTED_INDEX'='name','sort_scope'='Global_sort'," +
-      "'table_blocksize'='23','Dictionary_include'='month','Dictionary_exclude'='year,name'," +
+      "'table_blocksize'='23'," +
       "'sort_columns'='month,year,name')")
     sql("insert into y select 10,11,'babu',12")
     sql(

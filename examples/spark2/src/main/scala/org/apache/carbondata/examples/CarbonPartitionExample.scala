@@ -95,7 +95,7 @@ object CarbonPartitionExample {
                 | PARTITIONED BY (area String)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='LIST',
-                | 'LIST_INFO'='Asia, America, Europe', 'DICTIONARY_EXCLUDE' ='area')
+                | 'LIST_INFO'='Asia, America, Europe')
               """.stripMargin)
 
     // hash partition

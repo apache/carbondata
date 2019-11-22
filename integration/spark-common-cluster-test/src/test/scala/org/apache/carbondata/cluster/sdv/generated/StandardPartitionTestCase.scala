@@ -73,7 +73,7 @@ class StandardPartitionTestCase extends QueryTest with BeforeAndAfterAll {
   test("Standard-Partition_TC005", Include) {
     sql(s"""drop table if exists partition_table_string""")
     intercept[Exception] {
-      sql(s"""CREATE TABLE partition_table_string(shortField SHORT, intField INT, bigintField LONG, doubleField DOUBLE, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT, complexData ARRAY<STRING> ) PARTITIONED BY (stringField STRING) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='stringField')""")
+      sql(s"""CREATE TABLE partition_table_string(shortField SHORT, intField INT, bigintField LONG, doubleField DOUBLE, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT, complexData ARRAY<STRING> ) PARTITIONED BY (stringField STRING) STORED BY 'carbondata' """)
     }
     sql(s"""drop table if exists partition_table_string""")
   }
@@ -81,7 +81,7 @@ class StandardPartitionTestCase extends QueryTest with BeforeAndAfterAll {
   //Creating a partition table with DICTIONARY_EXCLUDE
   test("Standard-Partition_TC006", Include) {
     sql(s"""drop table if exists partition_table_string""")
-    sql(s"""CREATE TABLE partition_table_string(shortField SHORT, intField INT, bigintField LONG, doubleField DOUBLE, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT, complexData ARRAY<STRING> ) PARTITIONED BY (stringField STRING) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='stringField')""")
+    sql(s"""CREATE TABLE partition_table_string(shortField SHORT, intField INT, bigintField LONG, doubleField DOUBLE, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT, complexData ARRAY<STRING> ) PARTITIONED BY (stringField STRING) STORED BY 'carbondata' """)
     sql(s"""drop table if exists partition_table_string""")
   }
 

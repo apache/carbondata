@@ -883,7 +883,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
-         | 'sort_columns'='name', 'dictionary_include'='city,register')
+         | 'sort_columns'='name')
          | """.stripMargin)
 
     if (withBatchLoad) {
@@ -912,7 +912,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
-         | 'sort_columns'='name', 'dictionary_include'='id,name,salary,tax,percent,updated')
+         | 'sort_columns'='name')
          | """.stripMargin)
 
     if (withBatchLoad) {

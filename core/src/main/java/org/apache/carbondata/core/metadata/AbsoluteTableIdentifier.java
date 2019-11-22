@@ -38,12 +38,6 @@ public class AbsoluteTableIdentifier implements Serializable {
   private String tablePath;
 
   /**
-   * dictionary path of the table
-   */
-  private String dictionaryPath;
-
-
-  /**
    * carbon table identifier which will have table name and table database
    * name
    */
@@ -142,10 +136,6 @@ public class AbsoluteTableIdentifier implements Serializable {
     return true;
   }
 
-  public String uniqueName() {
-    return tablePath + "/" + carbonTableIdentifier.toString().toLowerCase();
-  }
-
   public String getDatabaseName() {
     return carbonTableIdentifier.getDatabaseName();
   }
@@ -158,11 +148,4 @@ public class AbsoluteTableIdentifier implements Serializable {
     return carbonTableIdentifier.toString();
   }
 
-  public String getDictionaryPath() {
-    return dictionaryPath;
-  }
-
-  public void setDictionaryPath(String dictionaryPath) {
-    this.dictionaryPath = dictionaryPath;
-  }
 }

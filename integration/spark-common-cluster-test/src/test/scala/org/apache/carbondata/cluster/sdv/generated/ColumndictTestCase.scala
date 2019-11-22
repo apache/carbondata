@@ -170,7 +170,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Load using external all_dictionary_path for table with table properties(DICTIONARY_EXCLUDE, DICTIONARY_INCLUDE, BLOCKSIZE)
   ignore("Columndict-TC017", Include) {
-     sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB','DICTIONARY_INCLUDE'='salary','DICTIONARY_EXCLUDE'='phonetype')""").collect
+     sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB')""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
   }
@@ -178,7 +178,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Load using external columndict for table with table properties(DICTIONARY_EXCLUDE, DICTIONARY_INCLUDE, BLOCKSIZE)
   test("Columndict-TC018", Include) {
-     sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB','DICTIONARY_INCLUDE'='salary','DICTIONARY_EXCLUDE'='phonetype')""").collect
+     sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB')""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
   }
@@ -186,7 +186,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Load using external all_dictionary_path for measure and table properties(DICTIONARY_EXCLUDE, DICTIONARY_INCLUDE, BLOCKSIZE)
   ignore("Columndict-TC019", Include) {
-     sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB','DICTIONARY_INCLUDE'='salary','DICTIONARY_EXCLUDE'='country')""").collect
+     sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB')""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='salary:$resourcesPath/Data/columndict/salary.csv', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
   }
@@ -195,7 +195,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
   //Load using external columndict for table with measure and tableproperties(DICTIONARY_EXCLUDE, DICTIONARY_INCLUDE, BLOCKSIZE)
   test("Columndict-TC020", Include) {
     intercept[Exception] {
-     sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB','DICTIONARY_EXCLUDE'='country')""").collect
+     sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB')""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:'resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     }
      sql(s"""drop table if exists t3""").collect
@@ -205,7 +205,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
   //Columndict parameter name validation
   ignore("Columndict-TC021", Include) {
     intercept[Exception] {
-     sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB','DICTIONARY_EXCLUDE'='country')""").collect
+     sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB')""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='countries:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     }
      sql(s"""drop table if exists t3""").collect

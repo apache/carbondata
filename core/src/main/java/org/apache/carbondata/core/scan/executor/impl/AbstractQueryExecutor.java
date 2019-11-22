@@ -155,17 +155,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     CarbonTable carbonTable = queryModel.getTable();
 
     queryStatistic = new QueryStatistic();
-    // dictionary column unique column id to dictionary mapping
-    // which will be used to get column actual data
-    queryProperties.columnToDictionaryMapping =
-        QueryUtil.getDimensionDictionaryDetail(
-            queryModel.getProjectionDimensions(),
-            queryProperties.complexFilterDimension,
-            carbonTable);
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
-    queryModel.setColumnToDictionaryMapping(queryProperties.columnToDictionaryMapping);
   }
 
   /**
@@ -513,7 +505,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .getComplexDimensionsMap(projectDimensions,
             segmentProperties.getDimensionOrdinalToChunkMapping(),
             segmentProperties.getEachComplexDimColumnValueSize(),
-            queryProperties.columnToDictionaryMapping, queryProperties.complexFilterDimension));
+            queryProperties.complexFilterDimension));
     IndexKey startIndexKey = null;
     IndexKey endIndexKey = null;
     if (null != queryModel.getDataMapFilter()) {

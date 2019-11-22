@@ -40,11 +40,8 @@ import org.apache.spark.util.CarbonReflectionUtils
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
-import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
-import org.apache.carbondata.core.metadata.ColumnIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -133,11 +130,7 @@ object CarbonScalaUtil {
    * @param column column which it value belongs to
    * @return converted String
    */
-  def convertToCarbonFormat(
-      value: String,
-      column: CarbonColumn,
-      forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary],
-      table: CarbonTable): String = {
+  def convertToCarbonFormat(value: String, column: CarbonColumn, table: CarbonTable): String = {
     if (column.hasEncoding(Encoding.DICTIONARY)) {
       if (column.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         if (column.getDataType.equals(CarbonDataTypes.TIMESTAMP)) {
@@ -160,15 +153,6 @@ object CarbonScalaUtil {
           return DateTimeUtils.dateToString(date.toString.toInt)
         }
       }
-      val dictionaryPath =
-        table.getTableInfo.getFactTable.getTableProperties.get(
-          CarbonCommonConstants.DICTIONARY_PATH)
-      val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
-        table.getAbsoluteTableIdentifier,
-        column.getColumnIdentifier, column.getDataType,
-        dictionaryPath)
-      return forwardDictionaryCache.get(
-        dictionaryColumnUniqueIdentifier).getDictionaryValueForKey(value.toInt)
     }
     try {
       column.getDataType match {
@@ -208,22 +192,6 @@ object CarbonScalaUtil {
             CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
           ).generateDirectSurrogateKey(value).toString
         }
-      } else if (column.hasEncoding(Encoding.DICTIONARY)) {
-        val cacheProvider: CacheProvider = CacheProvider.getInstance
-        val reverseCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-          cacheProvider.createCache(CacheType.REVERSE_DICTIONARY)
-        val dictionaryPath =
-          table.getTableInfo.getFactTable.getTableProperties.get(
-            CarbonCommonConstants.DICTIONARY_PATH)
-        val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
-          table.getAbsoluteTableIdentifier,
-          new ColumnIdentifier(
-            column.getColumnUniqueId,
-            column.getColumnProperties,
-            column.getDataType),
-          column.getDataType,
-          dictionaryPath)
-        return reverseCache.get(dictionaryColumnUniqueIdentifier).getSurrogateKey(value).toString
       }
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
@@ -247,9 +215,6 @@ object CarbonScalaUtil {
    */
   def updatePartitions(partitionSpec: mutable.LinkedHashMap[String, String],
       table: CarbonTable): mutable.LinkedHashMap[String, String] = {
-    val cacheProvider: CacheProvider = CacheProvider.getInstance
-    val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
     partitionSpec.map { case (col, pValue) =>
       // replace special string with empty value.
       val value = if (pValue == null) {
@@ -267,11 +232,7 @@ object CarbonScalaUtil {
           (col, value)
         } else {
           val convertedString =
-            CarbonScalaUtil.convertToCarbonFormat(
-              value,
-              carbonColumn,
-              forwardDictionaryCache,
-              table)
+            CarbonScalaUtil.convertToCarbonFormat(value, carbonColumn, table)
           if (convertedString == null) {
             (col, hiveDefaultPartition)
           } else {
@@ -514,19 +475,7 @@ object CarbonScalaUtil {
     // check if the same column is present in both dictionary include and local dictionary columns
     // configuration
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
-      dictIncludeColumns =
-        tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
-      localDictColumns.foreach { distCol =>
-        if (dictIncludeColumns.exists(x => x.equalsIgnoreCase(distCol.trim))) {
-          val commonColumn = (dictIncludeColumns ++ localDictColumns)
-            .diff((dictIncludeColumns ++ localDictColumns).distinct).distinct
-          val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
-                         commonColumn.mkString(",") +
-                         " specified in Dictionary include. Local Dictionary will not be " +
-                         "generated for Dictionary include columns. Please check the DDL."
-          throw new MalformedCarbonCommandException(errorMsg)
-        }
-      }
+      throw new MalformedCarbonCommandException("Global dictionary is deprecated");
     }
   }
 

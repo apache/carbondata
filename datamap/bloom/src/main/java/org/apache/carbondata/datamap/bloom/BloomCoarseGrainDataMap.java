@@ -32,6 +32,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -117,32 +118,28 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     }
     String parentTablePath = getAncestorTablePath(carbonTable);
 
-    try {
-      this.name2Converters = new HashMap<>(indexedColumn.size());
-      AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier
-          .from(carbonTable.getTablePath(), carbonTable.getCarbonTableIdentifier());
-      String nullFormat = "\\N";
-      Map<Object, Integer>[] localCaches = new Map[indexedColumn.size()];
+    this.name2Converters = new HashMap<>(indexedColumn.size());
+    AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier
+        .from(carbonTable.getTablePath(), carbonTable.getCarbonTableIdentifier());
+    String nullFormat = "\\N";
+    Map<Object, Integer>[] localCaches = new Map[indexedColumn.size()];
 
-      for (int i = 0; i < indexedColumn.size(); i++) {
-        localCaches[i] = new ConcurrentHashMap<>();
-        DataField dataField = new DataField(indexedColumn.get(i));
-        String dateFormat = CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
-        dataField.setDateFormat(dateFormat);
-        String tsFormat = CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-        dataField.setTimestampFormat(tsFormat);
-        FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
-            .createFieldEncoder(dataField, absoluteTableIdentifier, i, nullFormat, null, false,
-                localCaches[i], false, parentTablePath, false);
-        this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
-      }
-    } catch (IOException e) {
-      LOGGER.error("Exception occurs while init index columns", e);
-      throw new RuntimeException(e);
+    for (int i = 0; i < indexedColumn.size(); i++) {
+      localCaches[i] = new ConcurrentHashMap<>();
+      DataField dataField = new DataField(indexedColumn.get(i));
+      String dateFormat = CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+      dataField.setDateFormat(dateFormat);
+      String tsFormat = CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+      dataField.setTimestampFormat(tsFormat);
+      FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
+          .createFieldEncoder(dataField, absoluteTableIdentifier, i, nullFormat,
+              localCaches[i], false, false,
+              CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER);
+      this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
     }
     this.badRecordLogHolder = new BadRecordLogHolder();
     this.badRecordLogHolder.setLogged(false);
@@ -348,8 +345,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         convertedValue = BooleanConvert.boolean2Byte((Boolean)convertedValue);
       }
       internalFilterValue = CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
-    } else if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY) ||
-        carbonColumn.hasEncoding(Encoding.DICTIONARY)) {
+    } else if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       // for dictionary/date columns, convert the surrogate key to bytes
       internalFilterValue = CarbonUtil.getValueAsBytes(DataTypes.INT, convertedValue);
     } else {

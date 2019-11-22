@@ -212,7 +212,7 @@ public class CarbonFactDataHandlerModel {
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
     int[] colCardinality =
-        CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
+        CarbonUtil.getFormattedCardinality(wrapperColumnSchema);
 
     SegmentProperties segmentProperties =
         new SegmentProperties(wrapperColumnSchema, colCardinality);
@@ -367,8 +367,7 @@ public class CarbonFactDataHandlerModel {
       dimAndComplexColumnCardinality[segmentProperties.getDimColumnsCardinality().length + i] =
           segmentProperties.getComplexDimColumnCardinality()[i];
     }
-    int[] formattedCardinality =
-        CarbonUtil.getFormattedCardinality(dimAndComplexColumnCardinality, wrapperColumnSchema);
+    int[] formattedCardinality = CarbonUtil.getFormattedCardinality(wrapperColumnSchema);
     carbonFactDataHandlerModel.setColCardinality(formattedCardinality);
 
     carbonFactDataHandlerModel.setComplexIndexMap(

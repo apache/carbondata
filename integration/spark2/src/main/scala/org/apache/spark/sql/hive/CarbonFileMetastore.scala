@@ -37,7 +37,6 @@ import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -69,17 +68,11 @@ case class MetaData(var carbonTables: ArrayBuffer[CarbonTable]) {
   }
 }
 
-case class CarbonMetaData(dims: Seq[String],
+case class CarbonMetaData(
+    dims: Seq[String],
     msrs: Seq[String],
     carbonTable: CarbonTable,
-    dictionaryMap: DictionaryMap,
     hasAggregateDataMapSchema: Boolean)
-
-case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
-  def get(name: String): Option[Boolean] = {
-    dictionaryMap.get(name.toLowerCase)
-  }
-}
 
 object MatchLogicalRelation {
   def unapply(logicalPlan: LogicalPlan): Option[(BaseRelation, Any, Any)] = logicalPlan match {
@@ -476,10 +469,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val dbName = absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName
     val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
     val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName, tableName)
-    if (null != carbonTable) {
-      // clear driver B-tree and dictionary cache
-      ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
-    }
     CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
     val tableIdentifier = TableIdentifier(tableName, Option(dbName))

@@ -281,7 +281,6 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
         |     city STRING,
         |     age STRING)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('dictionary_include'='name,age')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table filtertable")
     sql(
@@ -308,7 +307,6 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
         |     city STRING,
         |     age STRING)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('dictionary_include'='name,age')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table grouptable")
     sql(
@@ -374,8 +372,7 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
 
   test("test PreAggregate table selection for avg with maintable containing dictionary include for group by column") {
     sql(
-      "create table maintabledict(year int,month int,name string,salary int,dob string) stored" +
-      " by 'carbondata' tblproperties('DICTIONARY_INCLUDE'='year')")
+      "create table maintabledict(year int,month int,name string,salary int,dob string) stored by 'carbondata' ")
     sql("insert into maintabledict select 10,11,'x',12,'2014-01-01 00:00:00'")
     sql("insert into maintabledict select 10,11,'x',12,'2014-01-01 00:00:00'")
     sql(

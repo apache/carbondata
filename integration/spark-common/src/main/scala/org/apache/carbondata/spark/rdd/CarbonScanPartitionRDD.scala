@@ -207,20 +207,6 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
         if (partitionValue.isInstanceOf[UTF8String]) {
           partitionValue = partitionValue.toString
         }
-      } else {  // normal dictionary
-        val dict = CarbonLoaderUtil.getDictionary(absoluteTableIdentifier,
-          dimension.getColumnIdentifier, partitionDataType)
-        if (partitionDataType == DataTypes.STRING) {
-          if (partitionType == PartitionType.RANGE) {
-            partitionValue = ByteUtil.
-              toBytes(dict.getDictionaryValueForKey(keyArray(partColIdx).toInt))
-          } else {
-            partitionValue = dict.getDictionaryValueForKey(keyArray(partColIdx).toInt)
-          }
-        } else {
-          partitionValue = dict.getDictionaryValueForKey(keyArray(partColIdx).toInt)
-        }
-
       }
     } else {
       partitionValue = row(measureIndexGroup(partColIdx))

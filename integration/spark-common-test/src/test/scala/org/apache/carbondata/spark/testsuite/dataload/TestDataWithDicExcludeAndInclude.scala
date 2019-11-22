@@ -52,8 +52,6 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_EXCLUDE'='country,phonetype,serialname',
-           'DICTIONARY_INCLUDE'='ID')
         """)
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.cache.dictionary;
+package org.apache.carbondata.core.localdictionary.dictionaryholder;
 
 import java.util.Arrays;
 

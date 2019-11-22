@@ -83,7 +83,7 @@ class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (empname String)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-        |  'RANGE_INFO'='Ben, Jack, Sam, Tom', 'DICTIONARY_EXCLUDE'='empname')
+        |  'RANGE_INFO'='Ben, Jack, Sam, Tom')
       """.stripMargin)
 
     sql(
@@ -119,7 +119,7 @@ class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (empname String)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('PARTITION_TYPE'='LIST',
-        |  'LIST_INFO'='0, 1, (2, 3)', 'DICTIONARY_EXCLUDE'='empname')
+        |  'LIST_INFO'='0, 1, (2, 3)')
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")

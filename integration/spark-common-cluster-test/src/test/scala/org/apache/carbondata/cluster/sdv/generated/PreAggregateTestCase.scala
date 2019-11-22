@@ -36,11 +36,9 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
     sql("CREATE TABLE PreAggMain (id Int, date date, country string, phonetype string, " +
-        "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' " +
-        "tblproperties('dictionary_include'='country')")
+        "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' ")
     sql("CREATE TABLE AggMain (id Int, date date, country string, phonetype string, " +
-        "serialname String,salary int ) STORED BY 'org.apache.carbondata.format'" +
-        "tblproperties('dictionary_include'='country')")
+        "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' ")
     sql("create datamap PreAggSum on table PreAggMain using 'preaggregate' as " +
         "select country,sum(salary) as sum from PreAggMain group by country")
     sql("create datamap PreAggAvg on table PreAggMain using 'preaggregate' as " +

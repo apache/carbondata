@@ -643,7 +643,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FAIL.name())
       sql("drop table if exists partdatecarb2")
       sql(
-        "create table partdatecarb2(name string, dob string) partitioned by(age Int) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='age')")
+        "create table partdatecarb2(name string, dob string) partitioned by(age Int) stored by 'carbondata' ")
 
       sql("insert into partdatecarb2 partition(age='12') select 'name1','2016-06-28'")
       checkAnswer(sql("select name,age,cast(dob as string) from partdatecarb2"),
@@ -658,7 +658,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partdatecarb3")
     intercept[Exception] {
       sql(
-        "create table partdatecarb3(name string, dob string) partitioned by(age Int) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='age')")
+        "create table partdatecarb3(name string, dob string) partitioned by(age Int) stored by 'carbondata' ")
     }
   }
 
@@ -760,7 +760,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   test("partition colunm test without partition column in fileheader of load command") {
     sql("DROP TABLE IF EXISTS partitiontablewithoutpartcolumninfileheader")
 
-    sql("CREATE TABLE partitiontablewithoutpartcolumninfileheader (CUST_ID int,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) partitioned by(CUST_NAME String) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1') ")
+    sql("CREATE TABLE partitiontablewithoutpartcolumninfileheader (CUST_ID int,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) partitioned by(CUST_NAME String) STORED BY 'org.apache.carbondata.format' ")
     sql(s"""LOAD DATA INPATH '$resourcesPath/data_with_all_types.csv' into table partitiontablewithoutpartcolumninfileheader partition(cust_name='ravi') OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME1,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""")
 
     checkAnswer(sql("select count(*) from partitiontablewithoutpartcolumninfileheader"), Seq(Row(10)))

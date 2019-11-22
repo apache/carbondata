@@ -56,9 +56,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
       "CREATE TABLE datamap_main (id Int, date date, country string,name String, phonetype " +
-      "string, " +
-      "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' " +
-      "tblproperties('dictionary_include'='country')")
+      "string, serialname String,salary int ) STORED BY 'org.apache.carbondata.format' ")
     val exception_otherdataType: Exception = intercept[Exception] {
       sql(
         s"""
@@ -202,7 +200,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "CREATE TABLE datamap_main (id Int, date string, country string,name String, phonetype " +
       "string, " +
       "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
-      "('SORT_COLUMNS'='country,name','SORT_SCOPE'='LOCAL_SORT','DICTIONARY_INCLUDE'='country')")
+      "('SORT_COLUMNS'='country,name','SORT_SCOPE'='LOCAL_SORT')")
     val exception_dicitionaryinclude: Exception = intercept[Exception] {
       sql(
         s"""

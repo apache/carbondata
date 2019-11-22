@@ -423,7 +423,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
-        | 'range_column'='name', 'DICTIONARY_INCLUDE'='name')
+        | 'range_column'='name')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +
@@ -455,7 +455,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
-        | 'range_column'='name', 'DICTIONARY_INCLUDE'='name')
+        | 'range_column'='name')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath2' INTO TABLE carbon_range_column1 " +

@@ -21,9 +21,7 @@ import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 
@@ -62,18 +60,6 @@ class AlterTableDropColumnRDD[K, V](
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val status = SegmentStatus.SUCCESS
     val iter = new Iterator[(Int, SegmentStatus)] {
-      try {
-        val columnSchema = split.asInstanceOf[DropColumnPartition].columnSchema
-        if (columnSchema.hasEncoding(Encoding.DICTIONARY) &&
-            !columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          ManageDictionaryAndBTree
-            .deleteDictionaryFileAndCache(columnSchema, carbonTableIdentifier)
-        }
-      } catch {
-        case ex: Exception =>
-          LOGGER.error(ex.getMessage, ex)
-          throw ex
-      }
 
       var finished = false
 

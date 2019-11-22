@@ -28,7 +28,6 @@ import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
@@ -402,8 +401,6 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
             if (tablePaths.exists { path => key.startsWith(path) }) {
               dbIndexSize += cacheable.getMemorySize
             }
-          case _: AbstractColumnDictionaryInfo =>
-            allDictSize += cacheable.getMemorySize
             // consider eveything else as a datamap.
           case _ =>
             allDatamapSize += cacheable.getMemorySize

@@ -702,11 +702,7 @@ public class CarbonTable implements Serializable, Writable {
    * @return absolute table identifier
    */
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-        tableInfo.getOrCreateAbsoluteTableIdentifier();
-    absoluteTableIdentifier.setDictionaryPath(
-        tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.DICTIONARY_PATH));
-    return absoluteTableIdentifier;
+    return tableInfo.getOrCreateAbsoluteTableIdentifier();
   }
 
   /**

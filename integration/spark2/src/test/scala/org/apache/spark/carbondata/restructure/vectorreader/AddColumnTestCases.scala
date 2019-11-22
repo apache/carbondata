@@ -44,7 +44,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
         s"OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField')")
     sql(
       "ALTER TABLE addcolumntest ADD COLUMNS(charField STRING) TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField', 'DEFAULT.VALUE.charfield'='def')")
+      "('DEFAULT.VALUE.charfield'='def')")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE addcolumntest " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql("CREATE TABLE hivetable STORED AS PARQUET SELECT * FROM addcolumntest")
@@ -89,7 +89,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     def test_add_and_filter() = {
       sql(
         "ALTER TABLE addcolumntest ADD COLUMNS(intnewField INT) TBLPROPERTIES" +
-          "('DICTIONARY_INCLUDE'='intnewField', 'DEFAULT.VALUE.intNewField'='5')")
+          "('DEFAULT.VALUE.intNewField'='5')")
       checkAnswer(sql("SELECT charField FROM addcolumntest WHERE intnewField > 2"),
         Seq(Row("abc"), Row("def")))
       checkAnswer(sql("SELECT charField FROM addcolumntest WHERE intnewField < 2"), Seq())
@@ -152,8 +152,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-        "TIMESTAMP,decimalField DECIMAL(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
-        "('DICTIONARY_EXCLUDE'='charField')")
+        "TIMESTAMP,decimalField DECIMAL(6,2))STORED BY 'carbondata' ")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
           s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
       sql("ALTER TABLE carbon_table DROP COLUMNS(timestampField)")
@@ -176,17 +175,14 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-        "TIMESTAMP,decimalField DECIMAL(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
-        "('DICTIONARY_EXCLUDE'='charField')")
+        "TIMESTAMP,decimalField DECIMAL(6,2))STORED BY 'carbondata' ")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
           s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
       sql("ALTER TABLE carbon_table DROP COLUMNS(charField)")
       sql("SELECT * FROM carbon_table").collect
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE carbon_table " +
           s"OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField')")
-      sql(
-        "ALTER TABLE carbon_table ADD COLUMNS(charField STRING) TBLPROPERTIES" +
-        "('DICTIONARY_EXCLUDE'='charField')")
+      sql("ALTER TABLE carbon_table ADD COLUMNS(charField STRING) ")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data2.csv' INTO TABLE carbon_table " +
           s"OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
       sql("SELECT * FROM carbon_table").collect
@@ -209,8 +205,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
     sql(
       "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-      "TIMESTAMP)STORED BY 'carbondata' TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
+      "TIMESTAMP)STORED BY 'carbondata' ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
@@ -231,8 +226,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
     sql(
       "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-      "TIMESTAMP)STORED BY 'carbondata' TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
+      "TIMESTAMP)STORED BY 'carbondata'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql("ALTER TABLE carbon_table ADD COLUMNS(newfield char(10)) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
@@ -246,9 +240,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-
-        "TIMESTAMP)STORED BY 'carbondata' TBLPROPERTIES" +
-        "('DICTIONARY_EXCLUDE'='charField')")
+        "TIMESTAMP)STORED BY 'carbondata' ")
       sql(
         "ALTER TABLE carbon_table ADD COLUMNS(newfield char) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       sql("DROP TABLE IF EXISTS carbon_table")
@@ -264,8 +256,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
     sql(
       "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-      "TIMESTAMP)STORED BY 'carbondata' TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
+      "TIMESTAMP)STORED BY 'carbondata' ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql("ALTER TABLE carbon_table ADD COLUMNS(newfield varchar(10)) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
@@ -280,8 +271,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
 
-        "TIMESTAMP)STORED BY 'carbondata' TBLPROPERTIES" +
-        "('DICTIONARY_EXCLUDE'='charField')")
+        "TIMESTAMP)STORED BY 'carbondata' ")
       sql(
         "ALTER TABLE carbon_table ADD COLUMNS(newfield varchar) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       sql("DROP TABLE IF EXISTS carbon_table")
@@ -298,8 +288,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
-        "TIMESTAMP)STORED BY 'carbondata' TBLPROPERTIES" +
-        "('DICTIONARY_EXCLUDE'='charField')")
+        "TIMESTAMP)STORED BY 'carbondata' ")
       val lockFilePath = s"${ TestQueryExecutor.storeLocation }/default/carbon_table/meta.lock"
       new File(lockFilePath).createNewFile()
       sql(
@@ -317,13 +306,12 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_new")
     sql(
       "CREATE TABLE carbon_new(intField INT,stringField STRING,charField STRING,timestampField " +
-      "TIMESTAMP,decimalField DECIMAL(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
+      "TIMESTAMP,decimalField DECIMAL(6,2))STORED BY 'carbondata' ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_new " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_new ADD COLUMNS(newField STRING) TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='newField','DEFAULT.VALUE.newField'='def')")
+      "('DEFAULT.VALUE.newField'='def')")
     checkAnswer(sql("SELECT * FROM carbon_new LIMIT 1"),
       Row(new Integer(100),
         "spark",
@@ -339,13 +327,11 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_new")
     sql(
       "CREATE TABLE carbon_new(intField INT,stringField STRING,charField STRING,timestampField " +
-      "TIMESTAMP,decimalField DECIMAL(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
+      "TIMESTAMP,decimalField DECIMAL(6,2))STORED BY 'carbondata' ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_new " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
-      "ALTER TABLE carbon_new ADD COLUMNS(newField STRING) TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='newField')")
+      "ALTER TABLE carbon_new ADD COLUMNS(newField STRING) ")
     assert(sql(
       "SELECT intField,stringField,charField,timestampField,decimalField, newField FROM " +
       "carbon_new LIMIT 1").count().equals(1L))
@@ -357,13 +343,12 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_new")
     sql(
       "CREATE TABLE carbon_new(intField INT,stringField STRING,charField STRING,timestampField " +
-      "TIMESTAMP,decimalField DECIMAL(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
+      "TIMESTAMP,decimalField DECIMAL(6,2))STORED BY 'carbondata' ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_new " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_new ADD COLUMNS(newField STRING) TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='newField','DEFAULT.VALUE.newField'='def')")
+      "('DEFAULT.VALUE.newField'='def')")
     checkAnswer(sql(
       "SELECT intField,stringField,charField,newField,timestampField,decimalField FROM " +
       "carbon_new LIMIT 1"), Row(new Integer(100),
@@ -392,7 +377,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
         "INTEGER_COLUMN1')")
     sql(
       """ALTER TABLE carbon_new ADD COLUMNS(CUST_NAME STRING) TBLPROPERTIES
-        ('DICTIONARY_EXCLUDE'='CUST_NAME', 'DEFAULT.VALUE.CUST_NAME'='testuser')""")
+        ('DEFAULT.VALUE.CUST_NAME'='testuser')""")
     checkAnswer(sql("SELECT DISTINCT(CUST_NAME) FROM carbon_new"),Row("testuser"))
   }
 
@@ -436,7 +421,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_table ADD COLUMNS(newField INT) TBLPROPERTIES" +
-      "('DEFAULT.VALUE.newField'='67890', 'DICTIONARY_EXCLUDE'='newField')")
+      "('DEFAULT.VALUE.newField'='67890')")
     checkAnswer(sql("SELECT DISTINCT(newField) FROM carbon_table"), Row(67890))
     sql("DROP TABLE IF EXISTS carbon_table")
   }
@@ -448,7 +433,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql(
       "ALTER TABLE carbon_table ADD COLUMNS(newField bigint) TBLPROPERTIES" +
-      "('DEFAULT.VALUE.newField'='67890', 'DICTIONARY_EXCLUDE'='newField')")
+      "('DEFAULT.VALUE.newField'='67890')")
     checkAnswer(sql("SELECT DISTINCT(newField) FROM carbon_table"), Row(67890))
     sql("DROP TABLE IF EXISTS carbon_table")
   }
@@ -502,8 +487,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       s"('BAD_RECORDS_LOGGER_ENABLE'='TRUE', " +
       s"'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME')")
     sql(
-      "ALTER TABLE carbon_dictionary_is_null ADD COLUMNS (a6 INT) TBLPROPERTIES" +
-      "('dictionary_include'='a6')")
+      "ALTER TABLE carbon_dictionary_is_null ADD COLUMNS (a6 INT) ")
     sql(
       s"LOAD DATA INPATH '$resourcesPath/restructure/data6.csv' INTO TABLE " +
       s"carbon_dictionary_is_null" +
@@ -586,7 +570,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   test("test compaction with all no dictionary columns") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS alter_no_dict")
-    sql("CREATE TABLE alter_no_dict(stringField STRING,charField STRING) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='stringField,charField')")
+    sql("CREATE TABLE alter_no_dict(stringField STRING,charField STRING) STORED BY 'carbondata' ")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_no_dict OPTIONS('FILEHEADER'='stringField,charField')")
     sql("ALTER TABLE alter_no_dict DROP COLUMNS(charField)")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_no_dict OPTIONS('FILEHEADER'='stringField')")

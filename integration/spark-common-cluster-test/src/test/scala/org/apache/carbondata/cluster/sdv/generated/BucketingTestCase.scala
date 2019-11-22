@@ -61,7 +61,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS bucket_table")
     sql("CREATE TABLE bucket_table (ID Int, date Timestamp, country String, name String, phonetype String," +
         "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
-        "('DICTIONARY_INCLUDE'='ID','BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='ID')")
+        "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='ID')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE bucket_table")
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_bucket_table")
     if (table != null && table.getBucketingInfo != null) {

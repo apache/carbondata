@@ -14,8 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.core.localdictionary;
 
-package org.apache.carbondata.core.cache.dictionary;
+import org.apache.carbondata.core.localdictionary.dictionaryholder.DictionaryByteArrayWrapper;
 
 import net.jpountz.xxhash.XXHashFactory;
 import org.junit.Assert;

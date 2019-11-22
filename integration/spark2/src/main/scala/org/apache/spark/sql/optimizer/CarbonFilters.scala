@@ -47,9 +47,6 @@ import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit}
-import org.apache.carbondata.spark.CarbonAliasDecoderRelation
-
-
 
 /**
  * All filter conversions are done here.
@@ -185,9 +182,9 @@ object CarbonFilters {
   // TODO - The Filters are first converted Intermediate sources filters expression and then these
   // expressions are again converted back to CarbonExpression. Instead of two step process of
   // evaluating the filters it can be merged into a single one.
-  def selectFilters(filters: Seq[Expression],
-      attrList: java.util.HashSet[AttributeReferenceWrapper],
-      aliasMap: CarbonAliasDecoderRelation): Unit = {
+  def selectFilters(
+      filters: Seq[Expression],
+      attrList: util.HashSet[AttributeReferenceWrapper]): Unit = {
     def translate(expr: Expression, or: Boolean = false): Option[sources.Filter] = {
       expr match {
         case or@Or(left, right) =>
@@ -199,7 +196,7 @@ object CarbonFilters {
           } else {
             or.collect {
               case attr: AttributeReference =>
-                attrList.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
+                attrList.add(AttributeReferenceWrapper(attr))
             }
             None
           }
@@ -295,7 +292,7 @@ object CarbonFilters {
           if (!or) {
             others.collect {
               case attr: AttributeReference =>
-                attrList.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
+                attrList.add(AttributeReferenceWrapper(attr))
             }
           }
           None

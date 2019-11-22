@@ -303,13 +303,6 @@ public final class DataLoadProcessBuilder {
     configuration.setDataFields(
         updateDataFieldsBasedOnSortColumns(dataFields).toArray(new DataField[dataFields.size()]));
     configuration.setBucketingInfo(carbonTable.getBucketingInfo());
-    // configuration for one pass load: dictionary server info
-    configuration.setUseOnePass(loadModel.getUseOnePass());
-    configuration.setDictionaryServerHost(loadModel.getDictionaryServerHost());
-    configuration.setDictionaryServerPort(loadModel.getDictionaryServerPort());
-    configuration.setDictionaryServerSecretKey(loadModel.getDictionaryServerSecretKey());
-    configuration.setDictionaryEncryptServerSecure(loadModel.getDictionaryEncryptServerSecure());
-    configuration.setDictionaryServiceProvider(loadModel.getDictionaryServiceProvider());
     configuration.setPreFetch(loadModel.isPreFetch());
     configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     configuration.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());

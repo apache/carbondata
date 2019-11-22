@@ -42,7 +42,6 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
         |  projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,
         |  salary int)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('DICTIONARY_INCLUDE'='deptname')
       """.stripMargin)
     // bloom
     sql("CREATE DATAMAP IF NOT EXISTS cache_1_bloom ON TABLE cache_db.cache_1 USING 'bloomfilter' " +

@@ -68,8 +68,7 @@ object DataFrameComplexTypeExample {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(
-         | 'sort_columns'='name',
-         | 'dictionary_include'='city')
+         | 'sort_columns'='name')
          | """.stripMargin)
 
     spark.sql(
@@ -83,8 +82,7 @@ object DataFrameComplexTypeExample {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(
-         | 'sort_columns'='name',
-         | 'dictionary_include'='city')
+         | 'sort_columns'='name')
          | """.stripMargin)
 
 

@@ -110,7 +110,7 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
       """
         |CREATE TABLE dict_exclude (ID int, date Timestamp, country String,
         |name String, phonetype String, serialname String, salary int)
-        |STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='country,name,serialname,phonetype')
+        |STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(
       s"""

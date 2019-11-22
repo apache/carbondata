@@ -264,7 +264,6 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
          |    stringField string,
          |    intField int)
          | USING org.apache.spark.sql.CarbonSource
-         | OPTIONS('DICTIONARY_EXCLUDE'='stringField')
       """.
         stripMargin
     )

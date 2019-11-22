@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
@@ -52,7 +51,7 @@ import org.apache.log4j.Logger;
 public class SessionParams implements Serializable, Cloneable {
 
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(CacheProvider.class.getName());
+      LogServiceFactory.getLogService(SessionParams.class.getCanonicalName());
   private static final long serialVersionUID = -7801994600594915264L;
 
   private Map<String, String> sProps;

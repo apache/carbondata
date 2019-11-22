@@ -25,7 +25,6 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
-import org.apache.carbondata.core.cache.dictionary.DictionaryByteArrayWrapper
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.TableBlockInfo
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk
@@ -35,6 +34,7 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
+import org.apache.carbondata.core.localdictionary.dictionaryholder.DictionaryByteArrayWrapper
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.util.{CarbonMetadataUtil, CarbonProperties, DataFileFooterConverterV3}
 
@@ -80,9 +80,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
 
   test("test local dictionary generation for local dictioanry include") {
     sql("drop table if exists local2")
-    sql(
-      "CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties" +
-      "('dictionary_include'='name')")
+    sql("CREATE TABLE local2(name string) STORED BY 'carbondata' ")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(!checkForLocalDictionary(getDimRawChunk(0)))
   }
@@ -91,7 +89,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties" +
-      "('local_dictionary_enable'='true','dictionary_exclude'='name')")
+      "('local_dictionary_enable'='true')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
