@@ -150,7 +150,7 @@ public class TableSpec {
   private void addMeasures(List<CarbonMeasure> measures) {
     for (int i = 0; i < measures.size(); i++) {
       CarbonMeasure measure = measures.get(i);
-      measureSpec[i] = new MeasureSpec(measure.getColName(), measure.getDataType());
+      measureSpec[i] = new MeasureSpec(measure);
     }
   }
 
@@ -228,13 +228,23 @@ public class TableSpec {
     // dimension type of this dimension
     private ColumnType columnType;
 
+    // flag for building page bloom when loading
+    private boolean isPageBloomColumn;
+
     public ColumnSpec() {
     }
 
-    private ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType) {
+    private ColumnSpec(String fieldName, DataType schemaDataType,
+                       ColumnType columnType) {
+      this(fieldName, schemaDataType, columnType, false);
+    }
+
+    private ColumnSpec(String fieldName, DataType schemaDataType,
+                       ColumnType columnType, boolean isPageBloomColumn) {
       this.fieldName = fieldName;
       this.schemaDataType = schemaDataType;
       this.columnType = columnType;
+      this.isPageBloomColumn = isPageBloomColumn;
     }
 
     public static ColumnSpec newInstance(String fieldName, DataType schemaDataType,
@@ -263,6 +273,10 @@ public class TableSpec {
 
     public ColumnType getColumnType() {
       return columnType;
+    }
+
+    public boolean isPageBloomColumn() {
+      return isPageBloomColumn;
     }
 
     public int getScale() {
@@ -323,8 +337,10 @@ public class TableSpec {
 
     // indicate the actual postion in blocklet
     private short actualPostion;
-    DimensionSpec(ColumnType columnType, CarbonDimension dimension, short actualPostion) {
-      super(dimension.getColName(), dimension.getDataType(), columnType);
+    DimensionSpec(ColumnType columnType, CarbonDimension dimension,
+                  short actualPostion) {
+      super(dimension.getColName(), dimension.getDataType(),
+              columnType, dimension.isBloomPageColumn());
       this.inSortColumns = dimension.isSortColumn();
       this.doInvertedIndex = dimension.isUseInvertedIndex();
       this.actualPostion = actualPostion;
@@ -355,8 +371,9 @@ public class TableSpec {
 
   public class MeasureSpec extends ColumnSpec implements Writable {
 
-    MeasureSpec(String fieldName, DataType dataType) {
-      super(fieldName, dataType, ColumnType.MEASURE);
+    MeasureSpec(CarbonMeasure measure) {
+      super(measure.getColName(), measure.getDataType(),
+              ColumnType.MEASURE, measure.isBloomPageColumn());
     }
 
     @Override

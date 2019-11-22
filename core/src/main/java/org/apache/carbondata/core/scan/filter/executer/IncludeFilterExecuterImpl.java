@@ -275,7 +275,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
     if (isDimensionPresentInCurrentBlock) {
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-      byte[] col = (byte[]) value.getVal(dimColumnEvaluatorInfo.getDimension().getOrdinal());
+      byte[] col = (byte[])value.getVal(dimColumnEvaluatorInfo.getDimension().getOrdinal());
       for (int i = 0; i < filterValues.length; i++) {
         if (0 == ByteUtil.UnsafeComparer.INSTANCE.compareTo(col, 0, col.length,
             filterValues[i], 0, filterValues[i].length)) {

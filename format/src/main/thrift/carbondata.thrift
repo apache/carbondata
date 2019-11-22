@@ -155,10 +155,10 @@ struct DataChunk3{
  }
 
  struct PageBloomChunk{
-    1: required i32 vector_size;
-    2: required i16 num_hash;
-    3: required i16 hash_type;
-    4: required list<binary> pagebloom_list;
+    1: required i32 vector_size; // vector size of page bloom filter
+    2: required i16 num_hash; // number of resulting hashed values
+    3: required i16 hash_type; // type of hash function
+    4: required list<binary> pagebloom_list; // list of compressed bitmap of page bloom filter, one for a page
  }
 
 /**

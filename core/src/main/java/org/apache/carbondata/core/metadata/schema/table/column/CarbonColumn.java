@@ -184,6 +184,10 @@ public class CarbonColumn implements Serializable {
     return this.schemaOrdinal;
   }
 
+  public boolean isBloomPageColumn() {
+    return this.columnSchema.isPageBloomColumn();
+  }
+
   public String getDateFormat() {
     return dateFormat;
   }

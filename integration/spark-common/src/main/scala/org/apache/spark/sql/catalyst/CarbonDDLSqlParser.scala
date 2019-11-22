@@ -518,8 +518,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     pageBloomFields.foreach { column =>
       val bloomFiled = fields.find(_.column.equalsIgnoreCase(column))
       if (bloomFiled.isDefined) {
-        // check if data type is supported
         val datatypeStr = bloomFiled.get.dataType.getOrElse("");
+        // here we only allow following data types
+        // because they are more reasonable to have discrete values for filters
+        // applicable for bloom like `col = 1` or `col in (1,2)`
         val supportedType = Array("string", "int", "bigint")
         if (!supportedType.exists(_.equalsIgnoreCase(datatypeStr))) {
           val errorMsg = datatypeStr.toUpperCase +" data type is not supported in property " +

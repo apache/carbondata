@@ -57,12 +57,11 @@ public abstract class AbstractRawColumnChunk {
   }
 
   public ColumnPagesBloomFilter getPageBloomFilter() {
-    // page bloom is disabled for current column in this blocklet
     if (!dataChunkV3.isSetPage_bloom_chunk()) {
+      // page bloom is disabled for current column in this blocklet
       return null;
-    } else {
-      return new ColumnPagesBloomFilter(dataChunkV3.page_bloom_chunk);
     }
+    return new ColumnPagesBloomFilter(dataChunkV3.page_bloom_chunk);
   }
 
   public byte[][] getMinValues() {

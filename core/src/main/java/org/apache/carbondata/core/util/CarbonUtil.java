@@ -3161,17 +3161,18 @@ public final class CarbonUtil {
     return columnLocalDictGenMap;
   }
 
-
+  /**
+   * sets the page bloom columns to wrapper schema, if the table property
+   * page_bloom_include is defined
+   * @param columns
+   * @param mainTableProperties
+   */
   public static void setPageBloomColumnsToWrapperSchema(List<ColumnSchema> columns,
         Map<String, String> mainTableProperties) {
-    if (!mainTableProperties.containsKey(CarbonCommonConstants.PAGE_BLOOM_INCLUDE)) {
-      return;
-    }
-    String[] pageBloomCols = null;
     String pageBloomIncludeColumns =
             mainTableProperties.get(CarbonCommonConstants.PAGE_BLOOM_INCLUDE);
     if (null != pageBloomIncludeColumns) {
-      pageBloomCols = pageBloomIncludeColumns.trim().split("\\s*,\\s*");
+      String[] pageBloomCols = pageBloomIncludeColumns.trim().split("\\s*,\\s*");
       for (String bloomColumn : pageBloomCols) {
         for (ColumnSchema column: columns) {
           if (bloomColumn.trim().equalsIgnoreCase(column.getColumnName())) {
@@ -3181,8 +3182,8 @@ public final class CarbonUtil {
         }
       }
     }
-
   }
+
   /**
    * This method get the carbon file format version
    *

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.bloom;
 
 import java.io.IOException;
@@ -45,6 +46,9 @@ public class BloomFilterUtil {
   }
 
   public static int[] getPageBloomParameters() {
+    // Use maximum page size(not quite large) to reduce number of bloom parameter to set.
+    // And same parameters of bloom has same hash functions, so hashing the filter value one time
+    // then we can check all pages in blocklet when query
     return getBloomParameters(
             CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT,
             CarbonCommonConstants.DEFAULT_PAGE_BLOOM_FPP);
@@ -81,11 +85,8 @@ public class BloomFilterUtil {
 
   public static RoaringBitmap convertBitSetToRoaringBitmap(BitSet bits) {
     RoaringBitmap bitmap = new RoaringBitmap();
-    int length = bits.cardinality();
-    int nextSetBit = bits.nextSetBit(0);
-    for (int i = 0; i < length; ++i) {
-      bitmap.add(nextSetBit);
-      nextSetBit = bits.nextSetBit(nextSetBit + 1);
+    for (int i = bits.nextSetBit(0); i >= 0; i = bits.nextSetBit(i + 1)) {
+      bitmap.add(i);
     }
     return bitmap;
   }

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.bloom;
 
 import java.io.*;
@@ -41,7 +42,7 @@ public class ColumnPagesBloomFilter {
   /** The vector size of page bloom filter. */
   private int vectorSize;
 
-  /** The number of hash function to consider. */
+  /** The number of resulting hashed values. */
   private short nbHash;
 
   /** Type of hashing function to use. */
@@ -77,7 +78,6 @@ public class ColumnPagesBloomFilter {
     this.bloomByteBuffers = pageBloomChunk.getPagebloom_list();
   }
 
-
   public void addPageBloomFilter(BloomFilter bloomFilter) {
     if (null == pageBitmaps) {
       pageBitmaps = new ArrayList<>();
@@ -93,27 +93,51 @@ public class ColumnPagesBloomFilter {
 
   /**
    * prune pages based on minmax result bitset
+   *
+   * For example, we apply filter `col1 in (5,6)`. And values in column pages are:
+   *        Column Page 1: 1,3,5,6,9
+   *        Column Page 2: 2,4,7,8,10
+   *        Column Page 3: 11,15,20,100
+   * So, min max will set the bitSet(minMaxBitSet) as (1,1,0). That means page 1 and page 2
+   * need to be scanned and we only deserialize bitmaps of these pages.
+   * Suppose bloom filter gives totally correct result here.
+   * First we check filter value 5, get the hash results(bit positions) by hash function.
+   * Then we check each page.
+   * For page 1, bitmap of this page is set for each bit position of value 5,
+   * that means bloom believes 5 is in this page and this page needs to be scanned.
+   * Flag is marked in another bitSet(pageBitSet) as (1,0,0).
+   * For page 2, some bit positions of value 5 is not set in this page's bitmap,
+   * so value 5 must not exist in this page, no need to mark the flag.
+   * For page 3, it is skipped by minmax(see minMaxBitSet), no need to check it with bloom.
+   * Secondly we check filter value 6, same as before, we get the bit positions.
+   * For page 1, we already decide to scan this page, no need to check it anymore.
+   * For page 2, some bit positions of value 6 is not set in this page's bitmap.
+   * For page 3, no need to check as before.
+   * Finally, page 1 will be scanned, compare to scan both page 1 and page 2 when only use min-max
    */
   public BitSet prunePages(byte[][] filterValues, BitSet minMaxBitSet) throws IOException {
-    // decode pages which is set to TRUE in minMaxBitSet
+    // deserialize bitmap  for pages which is set to TRUE in minMaxBitSet
+    // keep the deserialize result to use for multiple filter values
     RoaringBitmap[] candidatePageBitmaps = new RoaringBitmap[minMaxBitSet.length()];
-    int length = minMaxBitSet.cardinality();
-    int nextSetBit = minMaxBitSet.nextSetBit(0);
-    for (int i = 0; i < length; ++i) {
-      byte[] bloomFilterInBytes = bloomByteBuffers.get(nextSetBit).array();
+    for (int i = minMaxBitSet.nextSetBit(0); i >= 0; i = minMaxBitSet.nextSetBit(i + 1)) {
+      // get bitmap bytes of page
+      byte[] bloomFilterInBytes = bloomByteBuffers.get(i).array();
+      // wrap byte array as input stream
       DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bloomFilterInBytes));
+      dis.close();
       RoaringBitmap bitmap = new RoaringBitmap();
+      // deserialize the bitmap from input stream
       bitmap.deserialize(dis);
-      candidatePageBitmaps[nextSetBit] = bitmap;
-      nextSetBit = minMaxBitSet.nextSetBit(nextSetBit + 1);
+      candidatePageBitmaps[i] = bitmap;
     }
 
     // check if page is hit in bloom
     BitSet pageBitSet = new BitSet(minMaxBitSet.length());
     for (byte[] filterValue : filterValues) {
-      int[] ret = hash.hash(new Key(filterValue)); // only hash once
+      // only hash once to get which bits need to be checked
+      int[] ret = hash.hash(new Key(filterValue));
       for (int pageId = 0; pageId < minMaxBitSet.length(); pageId++) {
-        if (pageBitSet.get(pageId) // skip if bloom believed any filter in this page
+        if (pageBitSet.get(pageId) // skip if bloom already believed need to scan this page
             || !minMaxBitSet.get(pageId)) { // skip if minmax set this page false
           continue;
         }
@@ -121,12 +145,13 @@ public class ColumnPagesBloomFilter {
         boolean pageNeedCheck = true;
         for (int k : ret) {
           if (!bitmap.contains(k)) {
+            // a page must not contain the filter value if any bit check fails
             pageNeedCheck = false;
             break;
           }
         }
         if (pageNeedCheck) {
-          // all bit check pass
+          // all bit check pass, need to scan data of this page later
           pageBitSet.set(pageId);
         }
       }

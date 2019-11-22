@@ -25,6 +25,7 @@ CarbonData DDL statements are documented here,which includes:
   * [Inverted Index](#inverted-index-configuration)
   * [Sort Columns](#sort-columns-configuration)
   * [Sort Scope](#sort-scope-configuration)
+  * [Page Bloom](#page-bloom-configuration)
   * [Table Block Size](#table-block-size-configuration)
   * [Table Compaction](#table-compaction-configuration)
   * [Streaming](#streaming)
@@ -88,6 +89,7 @@ CarbonData DDL statements are documented here,which includes:
 | [INVERTED_INDEX](#inverted-index-configuration)              | Columns to include for inverted index generation             |
 | [SORT_COLUMNS](#sort-columns-configuration)                  | Columns to include in sort and its order of sort             |
 | [SORT_SCOPE](#sort-scope-configuration)                      | Sort scope of the load.Options include no sort, local sort ,batch sort and global sort |
+| [PAGE_BLOOM_INCLUDE](#page-bloom-configuration)      | Columns to include for page bloom generation |
 | [TABLE_BLOCKSIZE](#table-block-size-configuration)           | Size of blocks to write onto hdfs                            |
 | [TABLE_BLOCKLET_SIZE](#table-blocklet-size-configuration)    | Size of blocklet to write in the file                        |
 | [TABLE_PAGE_SIZE_INMB](#table-page-size-configuration)       | Size of page in MB; if page size crosses this value before 32000 rows, page will be cut to this many rows and remaining rows are processed in the subsequent pages. This helps in keeping page size to fit in cpu cache size|
@@ -259,6 +261,17 @@ CarbonData DDL statements are documented here,which includes:
    ```
 
    **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
+
+   - ##### Page Bloom Configuration
+
+     Page bloom acts as supplement to min-max index to optimize query by skipping pages to scan.
+     It will take effect when configured columns take place in Equal/In filter. A typical example is point query for phone number.
+     Please note that page bloom will  increase the storage size of carbondata file.
+     This property is for setting which columns need to build bloom filter for values at page level. 
+
+     ```
+     TBLPROPERTIES ('PAGE_BLOOM_INCLUDE'='column1, column2')
+     ```
 
    - ##### Table Block Size Configuration
 

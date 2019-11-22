@@ -49,7 +49,6 @@ import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGener
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 
@@ -105,14 +104,6 @@ public class TablePage {
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
     int tmpNumDictDimIdx = 0;
     int tmpNumNoDictDimIdx = 0;
-
-    // find columns config to build page bloom
-    List<String> pageBloomColumns = new ArrayList<>();
-    for (ColumnSchema columnSchema : model.getWrapperColumnSchema()) {
-      if (columnSchema.isPageBloomColumn()) {
-        pageBloomColumns.add(columnSchema.getColumnName().toLowerCase());
-      }
-    }
 
     // create page for each column
     for (int i = 0; i < dictDimensionPages.length + noDictDimensionPages.length; i++) {
@@ -175,7 +166,7 @@ public class TablePage {
         noDictDimensionPages[tmpNumNoDictDimIdx++] = page;
       }
       // init to build page bloom
-      if (pageBloomColumns.contains(page.getColumnSpec().getFieldName().toLowerCase())) {
+      if (page.getColumnSpec().isPageBloomColumn()) {
         page.initBloom();
       }
     }
@@ -200,7 +191,7 @@ public class TablePage {
       measurePages[i] = page;
 
       // init to build page bloom
-      if (pageBloomColumns.contains(page.getColumnSpec().getFieldName().toLowerCase())) {
+      if (page.getColumnSpec().isPageBloomColumn()) {
         page.initBloom();
       }
     }
@@ -348,7 +339,7 @@ public class TablePage {
     }
     byte[] output = new byte[input.length + 2];
     ByteBuffer buffer = ByteBuffer.wrap(output);
-    buffer.putShort((short)input.length);
+    buffer.putShort((short) input.length);
     buffer.put(input, 0, input.length);
     return output;
   }

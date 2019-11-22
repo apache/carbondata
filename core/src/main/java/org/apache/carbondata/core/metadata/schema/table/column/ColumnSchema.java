@@ -542,6 +542,7 @@ public class ColumnSchema implements Serializable, Writable {
       }
     }
     out.writeBoolean(isLocalDictColumn);
+    out.writeBoolean(isPageBloomColumn);
   }
 
   @Override
@@ -591,6 +592,7 @@ public class ColumnSchema implements Serializable, Writable {
       }
     }
     this.isLocalDictColumn = in.readBoolean();
+    this.isPageBloomColumn = in.readBoolean();
   }
 
   /**
