@@ -13,4 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '0.1.0'
+
+import os
+
+curdir = os.path.dirname(os.path.realpath(__file__))
+
+jardir = os.path.abspath(os.path.join(curdir, os.path.pardir, os.path.pardir))
+
+DEFAULT_CARBONSDK_PATH = os.path.join(jardir, '../store/sdk/target/carbondata-sdk.jar')
+
+S3_DATA_PATH = 's3a://sdk/binary'
+S3_DATA_PATH1 = 's3a://sdk/binary/sub1'
+S3_DATA_PATH2 = 's3a://sdk/binary/sub2'
+
+EXAMPLES_MANIFEST_PATH = os.path.join(jardir, 'examples/data/')
+
+LOCAL_DATA_PATH = os.path.join(jardir, 'examples/data/binary')
+
+IMAGE_DATA_PATH = os.path.join(jardir, 'examples/data/image')
+
+access_key = "your access key of S3"
+secret_key = "your secret key of S3"
+endpoint = "your endpoint of S3"
+proxy="your proxy"

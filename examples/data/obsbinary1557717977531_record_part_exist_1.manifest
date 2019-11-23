@@ -1,2 +1,0 @@
-{"source":"s3a://manifest/carbon/manifestcarbon/binary/part-0-934455751006252_batchno0-0-null-934455715299517.carbondata","source-type":"carbon","usage":"TRAIN","property":{"schema":{"name":"string","age":"int","image1":"BINARY","image2":"BINARY","image3":"BINARY"}}}
-{"source":"s3a://manifest-test/carbon/manifestcarbon/binary/part-0-934455449710731_batchno0-0-null-934454423350022.carbondata","source-type":"carbon","usage":"TRAIN","property":{"schema":{"name":"string","age":"int","image1":"BINARY","image2":"BINARY","image3":"BINARY"}}}
