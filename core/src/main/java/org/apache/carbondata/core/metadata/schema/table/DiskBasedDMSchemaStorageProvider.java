@@ -97,7 +97,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   @Override
   public DataMapSchema retrieveSchema(String dataMapName)
       throws IOException, NoSuchDataMapException {
-    checkAndReloadDataMapSchemas(true);
+    checkAndReloadDataMapSchemas(false);
     for (DataMapSchema dataMapSchema : dataMapSchemas) {
       if (dataMapSchema.getDataMapName().equalsIgnoreCase(dataMapName)) {
         return dataMapSchema;
@@ -130,7 +130,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
   @Override
   public List<DataMapSchema> retrieveAllSchemas() throws IOException {
-    checkAndReloadDataMapSchemas(true);
+    checkAndReloadDataMapSchemas(false);
     return new ArrayList<>(dataMapSchemas);
   }
 
