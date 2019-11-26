@@ -74,7 +74,7 @@ public class CarbonVectorBatch {
       return new CarbonVectorBatch(schema, readSupport,
           CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
     } else {
-      return new CarbonVectorBatch(schema, readSupport,DEFAULT_BATCH_SIZE);
+      return new CarbonVectorBatch(schema, readSupport, DEFAULT_BATCH_SIZE);
     }
   }
 

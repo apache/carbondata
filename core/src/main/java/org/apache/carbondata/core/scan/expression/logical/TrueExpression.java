@@ -36,7 +36,7 @@ public class TrueExpression extends BinaryConditionalExpression {
   private static final long serialVersionUID = -8390184061336799370L;
 
   public TrueExpression(Expression child1) {
-    super(child1, new LiteralExpression(null,null));
+    super(child1, new LiteralExpression(null, null));
   }
 
   /**
@@ -51,7 +51,7 @@ public class TrueExpression extends BinaryConditionalExpression {
   @Override
   public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    return new ExpressionResult(DataTypes.BOOLEAN,true);
+    return new ExpressionResult(DataTypes.BOOLEAN, true);
   }
 
   /**

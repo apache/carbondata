@@ -198,7 +198,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     // the filter values. The one that matches sets it Bitset.
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
-    FilterExecutorUtil.executeIncludeExcludeFilterForMeasure(columnPage,bitSet,
+    FilterExecutorUtil.executeIncludeExcludeFilterForMeasure(columnPage, bitSet,
         msrColumnExecutorInfo, msrColumnEvaluatorInfo, filterBitSetUpdater);
     return bitSet;
   }

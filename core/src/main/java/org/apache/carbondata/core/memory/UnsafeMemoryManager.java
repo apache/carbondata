@@ -41,7 +41,7 @@ public class UnsafeMemoryManager {
   private static boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
           CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
-  private static Map<String,Set<MemoryBlock>> taskIdToOffheapMemoryBlockMap;
+  private static Map<String, Set<MemoryBlock>> taskIdToOffheapMemoryBlockMap;
   static {
     long size = 0L;
     String configuredWorkingMemorySize = null;

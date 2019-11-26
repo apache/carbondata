@@ -2248,7 +2248,7 @@ public final class CarbonUtil {
     CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(fistFilePath, configuration);
     List<ColumnSchema> columnSchemaList = carbonHeaderReader.readSchema();
     // only columnSchema is the valid entry, reset all dummy entries.
-    TableSchema tableSchema = getDummyTableSchema(tableName,columnSchemaList);
+    TableSchema tableSchema = getDummyTableSchema(tableName, columnSchemaList);
 
     ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
         new ThriftWrapperSchemaConverterImpl();
@@ -2274,7 +2274,7 @@ public final class CarbonUtil {
     // This API will avoid IO operation to get the columnSchema list.
     // ColumnSchema list will be filled during blocklet loading (where actual IO happens)
     List<ColumnSchema> columnSchemaList = new ArrayList<>();
-    TableSchema tableSchema = getDummyTableSchema(tableName,columnSchemaList);
+    TableSchema tableSchema = getDummyTableSchema(tableName, columnSchemaList);
     ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
         new ThriftWrapperSchemaConverterImpl();
     org.apache.carbondata.format.TableSchema thriftFactTable =

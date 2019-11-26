@@ -46,7 +46,7 @@ public class MatchExpression extends Expression {
   @Override
   public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    return new ExpressionResult(DataTypes.BOOLEAN,true);
+    return new ExpressionResult(DataTypes.BOOLEAN, true);
   }
 
   @Override

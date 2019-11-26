@@ -550,7 +550,7 @@ public final class CarbonLoaderUtil {
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
       int noOfNodesInput, List<String> activeNodes) {
     return nodeBlockMapping(blockInfos, noOfNodesInput, activeNodes,
-        BlockAssignmentStrategy.BLOCK_NUM_FIRST,null);
+        BlockAssignmentStrategy.BLOCK_NUM_FIRST, null);
   }
 
   /**
@@ -562,7 +562,7 @@ public final class CarbonLoaderUtil {
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos) {
     // -1 if number of nodes has to be decided based on block location information
     return nodeBlockMapping(blockInfos, -1, null,
-        BlockAssignmentStrategy.BLOCK_NUM_FIRST,null);
+        BlockAssignmentStrategy.BLOCK_NUM_FIRST, null);
   }
 
   /**

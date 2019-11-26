@@ -123,9 +123,9 @@ public class Bits implements Serializable {
 
       long val = keys[i];
 
-      int idx = ll >> 6;// divide by 64 to get the new word index
-      int position = ll & 0x3f;// to ignore sign bit and consider the remaining
-      val = val & (LONG_MAX >> (MAX_LENGTH - lens[i]));// To control the
+      int idx = ll >> 6; // divide by 64 to get the new word index
+      int position = ll & 0x3f; // to ignore sign bit and consider the remaining
+      val = val & (LONG_MAX >> (MAX_LENGTH - lens[i])); // To control the
       // logic so that
       // any val do not
       // exceed the
@@ -135,13 +135,13 @@ public class Bits implements Serializable {
       words[idx] = (word | mask);
       ll += lens[i];
 
-      int nextIndex = ll >> 6;// This is divide by 64
+      int nextIndex = ll >> 6; // This is divide by 64
 
       if (nextIndex != idx) {
         int consideredBits = lens[i] - ll & 0x3f;
         //Check for spill over only if all the bits are not considered
         if (consideredBits < lens[i]) {
-          mask = (val >> (lens[i] - ll & 0x3f));//& (0x7fffffffffffffffL >> (0x3f-pos));
+          mask = (val >> (lens[i] - ll & 0x3f)); //& (0x7fffffffffffffffL >> (0x3f-pos));
           word = words[nextIndex];
           words[nextIndex] = (word | mask);
         }
@@ -160,9 +160,9 @@ public class Bits implements Serializable {
 
       long val = keys[i];
 
-      int index = ll >> 6;// divide by 64 to get the new word index
-      int pos = ll & 0x3f;// to ignore sign bit and consider the remaining
-      val = val & (LONG_MAX >> (MAX_LENGTH - lens[i]));// To control the
+      int index = ll >> 6; // divide by 64 to get the new word index
+      int pos = ll & 0x3f; // to ignore sign bit and consider the remaining
+      val = val & (LONG_MAX >> (MAX_LENGTH - lens[i])); // To control the
       // logic so that
       // any val do not
       // exceed the
@@ -172,7 +172,7 @@ public class Bits implements Serializable {
       words[index] = (word | mask);
       ll += lens[i];
 
-      int nextIndex = ll >> 6;// This is divide by 64
+      int nextIndex = ll >> 6; // This is divide by 64
 
       if (nextIndex != index) {
         int consideredBits = lens[i] - ll & 0x3f;

@@ -77,15 +77,15 @@ public class NumberCompressor {
 
       long val = keys[i];
 
-      index = ll >> 6;// divide by 64 to get the new word index
-      pos = ll & 0x3f;// to ignore sign bit and consider the remaining
+      index = ll >> 6; // divide by 64 to get the new word index
+      pos = ll & 0x3f; // to ignore sign bit and consider the remaining
       //            val = val & controlBits;
       long mask = (val << pos);
       long word = words[index];
       words[index] = (word | mask);
       ll += bitsLength;
 
-      nextIndex = ll >> 6;// This is divide by 64
+      nextIndex = ll >> 6; // This is divide by 64
 
       if (nextIndex != index) {
         int consideredBits = bitsLength - ll & 0x3f;

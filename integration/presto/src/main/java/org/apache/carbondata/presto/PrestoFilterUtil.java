@@ -94,7 +94,7 @@ public class PrestoFilterUtil {
       return DataTypes.TIMESTAMP;
     } else if (colType.getTypeInfo() instanceof DecimalTypeInfo) {
       DecimalTypeInfo typeInfo = (DecimalTypeInfo) colType.getTypeInfo();
-      return DataTypes.createDecimalType(typeInfo.getPrecision(),typeInfo.getScale());
+      return DataTypes.createDecimalType(typeInfo.getPrecision(), typeInfo.getScale());
     } else {
       return DataTypes.STRING;
     }

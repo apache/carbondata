@@ -281,7 +281,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     // Get the measure values from the chunk. compare sequentially with the
     // the filter values. The one that matches sets it Bitset.
     BitSet bitSet = new BitSet(rowsInPage);
-    FilterExecutorUtil.executeIncludeExcludeFilterForMeasure(columnPage,bitSet,
+    FilterExecutorUtil.executeIncludeExcludeFilterForMeasure(columnPage, bitSet,
         msrColumnExecutorInfo, msrColumnEvaluatorInfo, filterBitSetUpdater);
     return bitSet;
   }

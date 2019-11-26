@@ -373,7 +373,7 @@ public final class CarbonProperties {
       new SimpleDateFormat(dateFormat);
     } catch (Exception e) {
       LOGGER.warn(String.format("The value \"%s\" configured for key \"%s\" is invalid. " +
-              "Using the default value \"%s\"",dateFormat, key, key));
+              "Using the default value \"%s\"", dateFormat, key, key));
       carbonProperties.setProperty(key, defaultValue);
     }
   }
@@ -452,7 +452,7 @@ public final class CarbonProperties {
     boolean isValidBooleanValue = CarbonUtil.validateBoolean(customBlockDistributionStr);
     if (!isValidBooleanValue) {
       LOGGER.warn(String.format("The custom block distribution value \"%s\" is invalid. " +
-              "Using the default value \"false\"",customBlockDistributionStr));
+              "Using the default value \"false\"", customBlockDistributionStr));
       carbonProperties.setProperty(CARBON_CUSTOM_BLOCK_DISTRIBUTION, "false");
     }
   }

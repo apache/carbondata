@@ -39,7 +39,7 @@ public class CarbonLocalInputSplit {
   private String path;
   private long start; // the start offset of the block in a carbondata file.
   private long length; // the length of the block.
-  private List<String> locations;// locations are the locations for different replicas.
+  private List<String> locations; // locations are the locations for different replicas.
   private short version;
   private String[] deleteDeltaFiles;
   private String blockletId;

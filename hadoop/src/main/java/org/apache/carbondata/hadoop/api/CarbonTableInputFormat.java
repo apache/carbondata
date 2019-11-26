@@ -152,7 +152,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         if (filteredNormalSegments.size() == 0) {
           return getSplitsOfStreaming(job, streamSegments, carbonTable);
         }
-        setSegmentsToAccess(job.getConfiguration(),filteredNormalSegments);
+        setSegmentsToAccess(job.getConfiguration(), filteredNormalSegments);
       }
       // remove entry in the segment index if there are invalid segments
       for (Segment segment : segments.getInvalidSegments()) {

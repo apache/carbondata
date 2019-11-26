@@ -63,7 +63,7 @@ public class LoadOption {
 
     optionsFinal.put(
         "escapechar",
-        CarbonLoaderUtil.getEscapeChar(Maps.getOrDefault(options,"escapechar", "\\")));
+        CarbonLoaderUtil.getEscapeChar(Maps.getOrDefault(options, "escapechar", "\\")));
 
     optionsFinal.put(
         "serialization_null_format",

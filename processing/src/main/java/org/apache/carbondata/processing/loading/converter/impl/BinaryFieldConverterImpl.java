@@ -44,7 +44,7 @@ public class BinaryFieldConverterImpl implements FieldConverter {
   private DataField dataField;
   private BinaryDecoder binaryDecoder;
   public BinaryFieldConverterImpl(DataField dataField, String nullformat, int index,
-      boolean isEmptyBadRecord,BinaryDecoder binaryDecoder) {
+      boolean isEmptyBadRecord, BinaryDecoder binaryDecoder) {
     this.dataType = dataField.getColumn().getDataType();
     this.dimension = (CarbonDimension) dataField.getColumn();
     this.nullformat = nullformat;
