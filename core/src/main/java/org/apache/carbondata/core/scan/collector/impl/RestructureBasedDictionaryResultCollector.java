@@ -43,7 +43,6 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
     measureDefaultValues = new Object[queryMeasures.length];
     fillMeasureDefaultValues();
     initDimensionAndMeasureIndexesForFillingData();
-    initDimensionAndMeasureIndexesForFillingData();
     isDimensionExists = queryDimensions.length > 0;
   }
 
@@ -83,6 +82,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
         dictionaryColumnIndex = 0;
         noDictionaryColumnIndex = 0;
         complexTypeColumnIndex = 0;
+        int segmentDimensionsIdx = 0;
         for (int i = 0; i < queryDimensions.length; i++) {
           // fill default value in case the dimension does not exist in the current block
           if (!dimensionInfo.getDimensionExists()[i]) {
@@ -98,7 +98,8 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
             continue;
           }
           fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
-              comlexDimensionInfoMap, row, i);
+              comlexDimensionInfoMap, row, i, executionInfo
+                  .getProjectionDimensions()[segmentDimensionsIdx++].getDimension().getOrdinal());
         }
       } else {
         scannedResult.incrementCounter();

@@ -241,7 +241,12 @@ class AlterTableColumnSchemaGenerator(
     val tableSchema = tableInfo.getFactTable
     val tableCols = tableSchema.getListOfColumns.asScala
     val existingColsSize = tableCols.size
-    var allColumns = tableCols.filter(x => x.isDimensionColumn)
+    var longStringCols = Seq[ColumnSchema]()
+    // get all original dimension columns
+    // but exclude complex type columns and long string columns
+    var allColumns = tableCols.filter(x =>
+      (x.isDimensionColumn && !x.getDataType.isComplexType()
+          && x.getSchemaOrdinal != -1 && (x.getDataType != DataTypes.VARCHAR)))
     var newCols = Seq[ColumnSchema]()
     var invertedIndxCols: Array[String] = Array[String]()
     if (alterTableModel.tableProperties.get(CarbonCommonConstants.INVERTED_INDEX).isDefined) {
@@ -249,6 +254,7 @@ class AlterTableColumnSchemaGenerator(
         .split(',').map(_.trim)
     }
 
+    // add new dimension columns
     alterTableModel.dimCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
       encoders.add(Encoding.DICTIONARY)
@@ -263,10 +269,26 @@ class AlterTableColumnSchemaGenerator(
         alterTableModel.databaseName.getOrElse(dbName),
         isSortColumn(field.name.getOrElse(field.column)),
         isVarcharColumn(field.name.getOrElse(field.column)))
-      allColumns ++= Seq(columnSchema)
+      if (columnSchema.getDataType == DataTypes.VARCHAR) {
+        // put the new long string columns in 'longStringCols'
+        // and add them after old long string columns
+        longStringCols ++= Seq(columnSchema)
+      } else {
+        allColumns ++= Seq(columnSchema)
+      }
       newCols ++= Seq(columnSchema)
     })
+    // put the old long string columns
+    allColumns ++= tableCols.filter(x =>
+      (x.isDimensionColumn && (x.getDataType == DataTypes.VARCHAR)))
+    // put the new long string columns
+    allColumns ++= longStringCols
+    // put complex type columns at the end of dimension columns
+    allColumns ++= tableCols.filter(x =>
+      (x.isDimensionColumn && (x.getDataType.isComplexType() || x.getSchemaOrdinal == -1)))
+    // original measure columns
     allColumns ++= tableCols.filter(x => !x.isDimensionColumn)
+    // add new measure columns
     alterTableModel.msrCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
       val columnSchema: ColumnSchema = TableNewProcessor.createColumnSchema(
