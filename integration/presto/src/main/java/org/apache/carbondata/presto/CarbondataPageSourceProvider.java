@@ -53,7 +53,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class CarbondataPageSourceProvider extends HivePageSourceProvider {
 
   private CarbonTableReader carbonTableReader;
-  private String queryId ;
+  private String queryId;
   private HdfsEnvironment hdfsEnvironment;
 
   @Inject public CarbondataPageSourceProvider(

@@ -125,8 +125,8 @@ public class StreamBlockletWriter {
   }
 
   void skipRow() {
-    maxSize -- ;
-    maxRowNum -- ;
+    maxSize--;
+    maxRowNum--;
   }
 
   boolean isFull() {
