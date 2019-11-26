@@ -219,7 +219,7 @@
 
         <!-- Checks for there is no whitespace before unary operators. -->
         <module name="NoWhitespaceBefore">
-            <property name="severity" value="info"/>
+            <property name="severity" value="error"/>
             <property name="tokens" value="SEMI, DOT, POST_DEC, POST_INC"/>
             <property name="allowLineBreaks" value="true"/>
         </module>

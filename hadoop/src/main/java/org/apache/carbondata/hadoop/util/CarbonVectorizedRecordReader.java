@@ -194,7 +194,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   public Object getCurrentValue() throws IOException, InterruptedException {
     rowCount += 1;
     Object[] row = new Object[projectionMapping.size()];
-    for (int i = 0; i < projectionMapping.size(); i ++) {
+    for (int i = 0; i < projectionMapping.size(); i++) {
       // if projectionMapping.get(i) <i it means row is fetched already
       if (projectionMapping.get(i) < i) {
         row[i] = row[projectionMapping.get(i)];
