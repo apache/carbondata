@@ -57,7 +57,7 @@ public class FineGrainBlocklet extends Blocklet implements Serializable {
     return pages;
   }
 
-  public static class Page implements Writable,Serializable {
+  public static class Page implements Writable, Serializable {
 
     private int pageId;
 

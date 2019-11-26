@@ -100,7 +100,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     BitSet leftFilters = null;
     if (leftExecuter instanceof ImplicitColumnFilterExecutor) {
       leftFilters = ((ImplicitColumnFilterExecutor) leftExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue,uniqueBlockPath, isMinMaxSet);
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, isMinMaxSet);
     } else {
       leftFilters = leftExecuter
           .isScanRequired(maxValue, minValue, isMinMaxSet);

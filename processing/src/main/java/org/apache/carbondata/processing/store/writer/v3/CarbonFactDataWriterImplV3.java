@@ -140,7 +140,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    */
   @Override
   public void writeTablePage(TablePage tablePage)
-      throws CarbonDataWriterException,IOException {
+      throws CarbonDataWriterException, IOException {
 
     // condition for writting all the pages
     if (!tablePage.isLastPage()) {

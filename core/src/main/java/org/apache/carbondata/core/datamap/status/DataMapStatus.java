@@ -21,5 +21,5 @@ package org.apache.carbondata.core.datamap.status;
  * DataMap status
  */
 public enum DataMapStatus {
-  ENABLED,DISABLED,DROPPED
+  ENABLED, DISABLED, DROPPED
 }

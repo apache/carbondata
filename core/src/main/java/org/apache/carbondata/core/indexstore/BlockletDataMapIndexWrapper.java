@@ -38,7 +38,7 @@ public class BlockletDataMapIndexWrapper implements Cacheable, Serializable {
   // size of the wrapper. basically the total size of the datamaps this wrapper is holding
   private long wrapperSize;
 
-  public BlockletDataMapIndexWrapper(String segmentId,List<BlockDataMap> dataMaps) {
+  public BlockletDataMapIndexWrapper(String segmentId, List<BlockDataMap> dataMaps) {
     this.dataMaps = dataMaps;
     this.wrapperSize = 0L;
     this.segmentId = segmentId;

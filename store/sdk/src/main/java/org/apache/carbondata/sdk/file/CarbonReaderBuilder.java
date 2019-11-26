@@ -279,7 +279,7 @@ public class CarbonReaderBuilder {
       // set cache level to blocklet level
       Map<String, String> tableProperties =
           table.getTableInfo().getFactTable().getTableProperties();
-      tableProperties.put(CarbonCommonConstants.CACHE_LEVEL,"BLOCKLET");
+      tableProperties.put(CarbonCommonConstants.CACHE_LEVEL, "BLOCKLET");
       table.getTableInfo().getFactTable().setTableProperties(tableProperties);
     }
     final CarbonFileInputFormat format = new CarbonFileInputFormat();

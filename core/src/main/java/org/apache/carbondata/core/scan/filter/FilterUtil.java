@@ -823,7 +823,7 @@ public final class FilterUtil {
   }
 
   private static List<Integer> prepareExcludeFilterMembers(
-      Dictionary forwardDictionary,List<Integer> includeSurrogates)
+      Dictionary forwardDictionary, List<Integer> includeSurrogates)
       throws FilterUnsupportedException {
     DictionaryChunksWrapper dictionaryWrapper;
     RoaringBitmap bitMapOfSurrogates = RoaringBitmap.bitmapOf(

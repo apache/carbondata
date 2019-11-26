@@ -136,7 +136,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     } else {
       try {
         BooleanUtils.toBoolean(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE),"true", "false");
+            .getProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE), "true", "false");
         configuration.set(SKIP_EMPTY_LINE, CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE));
       } catch (Exception e) {

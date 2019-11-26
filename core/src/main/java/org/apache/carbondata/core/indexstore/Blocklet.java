@@ -27,7 +27,7 @@ import org.apache.hadoop.io.Writable;
 /**
  * Blocklet
  */
-public class Blocklet implements Writable,Serializable {
+public class Blocklet implements Writable, Serializable {
 
   /** file path of this blocklet */
   private String filePath;

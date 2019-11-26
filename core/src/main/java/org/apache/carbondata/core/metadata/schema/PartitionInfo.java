@@ -203,7 +203,7 @@ public class PartitionInfo implements Serializable, Writable {
   public void readFields(DataInput input) throws IOException {
     int colSchemaSize = input.readInt();
     this.columnSchemaList = new ArrayList<>(colSchemaSize);
-    for (int i = 0;i < colSchemaSize; i++) {
+    for (int i = 0; i < colSchemaSize; i++) {
       ColumnSchema colSchema = new ColumnSchema();
       colSchema.readFields(input);
       this.columnSchemaList.add(colSchema);

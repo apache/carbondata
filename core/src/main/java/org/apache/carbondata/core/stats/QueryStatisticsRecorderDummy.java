@@ -22,7 +22,7 @@ import java.io.Serializable;
 /**
  * Class will be used to record and log the query statistics
  */
-public class QueryStatisticsRecorderDummy implements QueryStatisticsRecorder,Serializable {
+public class QueryStatisticsRecorderDummy implements QueryStatisticsRecorder, Serializable {
 
   /**
    * serialization version

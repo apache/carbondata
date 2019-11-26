@@ -172,7 +172,6 @@
 
         <!-- Checks for redundant imports. -->
         <module name="RedundantImport">
-            <property name="severity" value="error"/>
             <message key="import.redundancy" value="Redundant import {0}."/>
         </module>
 
@@ -182,9 +181,7 @@
         </module>
 
         <!-- Checks for placement of the left curly brace ('{'). -->
-        <module name="LeftCurly">
-            <property name="severity" value="error"/>
-        </module>
+        <module name="LeftCurly"/>
 
         <!-- Checks for complicated boolean expressions. -->
         <module name="SimplifyBooleanExpression">
@@ -192,13 +189,10 @@
         </module>
 
         <!-- Checks for empty statements. -->
-        <module name="EmptyStatement">
-            <property name="severity" value="error"/>
-        </module>
+        <module name="EmptyStatement"/>
 
         <!-- Checks for empty line separator between tokens. -->
         <module name="EmptyLineSeparator">
-            <property name="severity" value="error"/>
             <property name="allowMultipleEmptyLines" value="false"/>
             <property name="tokens" value="PACKAGE_DEF, IMPORT, CLASS_DEF, INTERFACE_DEF, ENUM_DEF,
                                          STATIC_INIT, INSTANCE_INIT, METHOD_DEF,CTOR_DEF"/>
@@ -206,27 +200,23 @@
 
         <!-- Checks for commas, semicolons and typecasts are followed by whitespace. -->
         <module name="WhitespaceAfter">
-            <property name="severity" value="info"/>
-            <property name="tokens" value="COMMA, SEMI, TYPECAST"/>
+            <property name="tokens" value="COMMA, SEMI"/>
         </module>
 
         <!-- Checks for there is no whitespace after unary operators. -->
         <module name="NoWhitespaceAfter">
-            <property name="severity" value="error"/>
             <property name="tokens" value="BNOT, DEC, DOT, INC, LNOT, UNARY_MINUS, UNARY_PLUS"/>
             <property name="allowLineBreaks" value="true"/>
         </module>
 
         <!-- Checks for there is no whitespace before unary operators. -->
         <module name="NoWhitespaceBefore">
-            <property name="severity" value="error"/>
             <property name="tokens" value="SEMI, DOT, POST_DEC, POST_INC"/>
             <property name="allowLineBreaks" value="true"/>
         </module>
 
         <!-- Checks for assign operators are at the end of the line. -->
         <module name="OperatorWrap">
-            <property name="severity" value="error"/>
             <property name="option" value="eol"/>
             <property name="tokens" value="ASSIGN"/>
         </module>

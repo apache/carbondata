@@ -258,7 +258,7 @@ public class SortStepRowHandler implements Serializable {
     Object[] measure = new Object[this.measureCnt];
     // unpack the no sort fields and measure fields
     unpackNoSortFromBytes(noSortDimsAndMeasures, dictSortDims, noDictSortDims, measure);
-    return new IntermediateSortTempRow(dictSortDims, noDictSortDims,measure);
+    return new IntermediateSortTempRow(dictSortDims, noDictSortDims, measure);
   }
 
   /**
