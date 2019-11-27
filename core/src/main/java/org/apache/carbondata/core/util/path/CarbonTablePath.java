@@ -55,11 +55,17 @@ public class CarbonTablePath {
   private static final String STREAMING_DIR = ".streaming";
   private static final String STREAMING_LOG_DIR = "log";
   private static final String STREAMING_CHECKPOINT_DIR = "checkpoint";
+  private static final String STAGE_DIR = "stage";
+  public static final String  SUCCESS_FILE_SUBFIX = ".success";
 
   /**
    * This class provides static utility only.
    */
   private CarbonTablePath() {
+  }
+
+  public static String getStageDir(String tablePath) {
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + STAGE_DIR;
   }
 
   /**

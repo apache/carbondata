@@ -46,6 +46,9 @@ public class FileFormat implements Serializable {
   }
 
   public static FileFormat getByOrdinal(int ordinal) {
+    if (ordinal < 0) {
+      throw new IllegalArgumentException("Argument [ordinal] is less than 0.");
+    }
     switch (ordinal) {
       case 0:
         return COLUMNAR_V3;
