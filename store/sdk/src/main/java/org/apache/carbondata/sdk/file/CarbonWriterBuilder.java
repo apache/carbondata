@@ -272,6 +272,18 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * To support the carbon table for sdk writer
+   *
+   * @param table carbon table
+   * @return CarbonWriterBuilder object
+   */
+  public CarbonWriterBuilder withTable(CarbonTable table) {
+    Objects.requireNonNull(table, "Table should not be null");
+    this.carbonTable = table;
+    return this;
+  }
+
+  /**
    * To support the table properties for sdk writer
    *
    * @param options key,value pair of create table properties.
@@ -646,7 +658,7 @@ public class CarbonWriterBuilder {
 
   public CarbonLoadModel buildLoadModel(Schema carbonSchema)
       throws IOException, InvalidLoadOptionException {
-    timestamp = System.nanoTime();
+    timestamp = System.currentTimeMillis();
     // validate long_string_column
     Set<String> longStringColumns = new HashSet<>();
     if (options != null && options.get(CarbonCommonConstants.LONG_STRING_COLUMNS) != null) {

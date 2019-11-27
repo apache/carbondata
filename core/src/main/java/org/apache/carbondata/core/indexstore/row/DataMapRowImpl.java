@@ -41,6 +41,11 @@ public class DataMapRowImpl extends DataMapRow {
 
   @Override
   public int getLengthInBytes(int ordinal) {
+    // if the segment data is written in tablepath
+    // then the data[BlockletDataMapRowIndexes.SUMMARY_INDEX_PATH] will be null.
+    if (data[ordinal] == null) {
+      return 0;
+    }
     return ((byte[]) data[ordinal]).length;
   }
 

@@ -231,10 +231,12 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
         getUnsafe().putInt(memoryBlock.getBaseObject(),
             memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(), varPosition);
         runningLength += 4;
-        getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
-            memoryBlock.getBaseOffset() + startOffset + varPosition, data.length);
-        runningLength += data.length;
-        varPosition += data.length;
+        if (data != null) {
+          getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
+                  memoryBlock.getBaseOffset() + startOffset + varPosition, data.length);
+          runningLength += data.length;
+          varPosition += data.length;
+        }
         return varPosition;
       default:
         throw new UnsupportedOperationException(
