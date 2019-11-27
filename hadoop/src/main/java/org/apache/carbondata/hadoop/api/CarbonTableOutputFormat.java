@@ -122,6 +122,12 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
   private CarbonOutputCommitter committer;
 
+  /**
+   * Output format task id generator. It should generate a unique id for every task.
+   * It's may conflict when use System.nonaTime() as task id.
+   */
+  private static final AtomicLong DEFAULT_TASK_NO = new AtomicLong(0);
+
   public static void setDatabaseName(Configuration configuration, String databaseName) {
     if (null != databaseName) {
       configuration.set(DATABASE_NAME, databaseName);
@@ -255,7 +261,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     }
     if (null == loadModel.getTaskNo() || loadModel.getTaskNo().isEmpty()) {
       loadModel.setTaskNo(taskAttemptContext.getConfiguration()
-          .get("carbon.outputformat.taskno", String.valueOf(System.nanoTime())));
+          .get("carbon.outputformat.taskno", String.valueOf(DEFAULT_TASK_NO.getAndIncrement())));
     }
     loadModel.setDataWritePath(
         taskAttemptContext.getConfiguration().get("carbon.outputformat.writepath"));
