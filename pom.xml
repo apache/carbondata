@@ -113,6 +113,8 @@
     <module>datamap/mv/core</module>
     <module>examples/spark2</module>
     <module>integration/hive</module>
+    <module>integration/flink</module>
+    <module>integration/flink-proxy</module>
     <module>integration/presto</module>
     <module>examples/flink</module>
     <module>streaming</module>

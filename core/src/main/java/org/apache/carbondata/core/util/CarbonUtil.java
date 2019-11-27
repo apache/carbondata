@@ -2833,8 +2833,12 @@ public final class CarbonUtil {
           .getDataInputStream(localFilePath, FileFactory.getFileType(localFilePath), bufferSize);
       IOUtils.copyBytes(dataInputStream, dataOutputStream, bufferSize);
     } finally {
-      CarbonUtil.closeStream(dataInputStream);
-      CarbonUtil.closeStream(dataOutputStream);
+      try {
+        CarbonUtil.closeStream(dataInputStream);
+        CarbonUtil.closeStream(dataOutputStream);
+      } catch (IOException exception) {
+        LOGGER.error(exception.getMessage(), exception);
+      }
     }
   }
 
