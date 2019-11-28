@@ -100,10 +100,15 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
       org.apache.carbondata.format.BlockletInfo2 blockletInfoThrift, int numberOfDimensionColumns) {
     BlockletInfo blockletInfo = new BlockletInfo();
     List<Long> dimensionColumnChunkOffsets =
-        blockletInfoThrift.getColumn_data_chunks_offsets().subList(0, numberOfDimensionColumns);
-    List<Long> measureColumnChunksOffsets = blockletInfoThrift.getColumn_data_chunks_offsets()
-        .subList(numberOfDimensionColumns,
-            blockletInfoThrift.getColumn_data_chunks_offsets().size());
+        new ArrayList<>(
+            blockletInfoThrift.getColumn_data_chunks_offsets().subList(0, numberOfDimensionColumns)
+        );
+    List<Long> measureColumnChunksOffsets =
+        new ArrayList<>(
+            blockletInfoThrift.getColumn_data_chunks_offsets()
+                .subList(numberOfDimensionColumns,
+                    blockletInfoThrift.getColumn_data_chunks_offsets().size())
+        );
     List<Short> dimensionColumnChunkLength =
         blockletInfoThrift.getColumn_data_chunks_length().subList(0, numberOfDimensionColumns);
     List<Short> measureColumnChunksLength = blockletInfoThrift.getColumn_data_chunks_length()
