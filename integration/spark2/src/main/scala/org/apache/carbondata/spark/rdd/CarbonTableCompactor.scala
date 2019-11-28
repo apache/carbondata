@@ -374,14 +374,17 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
       carbonMergerMapping: CarbonMergerMapping): Array[(String, Boolean)] = {
-    val dataFrame = dataFrameOfSegments(
+    val splits = splitsOfSegments(
       sparkSession,
       carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
       carbonMergerMapping.validSegments)
+    val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(
+      sparkSession,
+      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+      splits.asScala)
     // generate LoadModel which can be used global_sort flow
-    val outputModel = getLoadModelForGlobalSort(
-      sparkSession, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-      carbonMergerMapping.validSegments)
+    val outputModel = DataLoadProcessBuilderOnSpark.createLoadModelForGlobalSort(
+      sparkSession, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable)
     outputModel.setSegmentId(carbonMergerMapping.mergedLoadName.split("_")(1))
     DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
       sparkSession,
@@ -391,38 +394,6 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       .map { row =>
         (row._1, FailureCauses.NONE == row._2._2.failureCauses)
       }
-  }
-
-  /**
-   * create DataFrame basing on specified segments
-   */
-  def dataFrameOfSegments(
-      sparkSession: SparkSession,
-      carbonTable: CarbonTable,
-      segments: Array[Segment]
-  ): DataFrame = {
-    val columns = carbonTable
-          .getCreateOrderColumn()
-      .asScala
-      .map(_.getColName)
-      .toArray
-    val schema = SparkTypeConverter.createSparkSchema(carbonTable, columns)
-    val rdd: RDD[Row] = new CarbonScanRDD[CarbonRow](
-      sparkSession,
-      columnProjection = new CarbonProjection(columns),
-      null,
-      carbonTable.getAbsoluteTableIdentifier,
-      carbonTable.getTableInfo.serialize,
-      carbonTable.getTableInfo,
-      new CarbonInputMetrics,
-      null,
-      null,
-      classOf[CarbonRowReadSupport],
-      splitsOfSegments(sparkSession, carbonTable, segments))
-      .map { row =>
-        new GenericRow(row.getData.asInstanceOf[Array[Any]])
-      }
-    sparkSession.createDataFrame(rdd, schema)
   }
 
   /**
@@ -445,38 +416,4 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     new CarbonTableInputFormat[Object].getSplits(job)
   }
 
-  /**
-   * create CarbonLoadModel for global_sort compaction
-   */
-  def getLoadModelForGlobalSort(
-      sparkSession: SparkSession,
-      carbonTable: CarbonTable,
-      segments: Array[Segment]
-  ): CarbonLoadModel = {
-    val conf = SparkSQLUtil.sessionState(sparkSession).newHadoopConf()
-    CarbonTableOutputFormat.setDatabaseName(conf, carbonTable.getDatabaseName)
-    CarbonTableOutputFormat.setTableName(conf, carbonTable.getTableName)
-    CarbonTableOutputFormat.setCarbonTable(conf, carbonTable)
-    val fieldList = carbonTable.getCreateOrderColumn
-      .asScala
-      .map { column =>
-        new StructField(column.getColName, column.getDataType)
-      }
-    CarbonTableOutputFormat.setInputSchema(conf, new StructType(fieldList.asJava))
-    val loadModel = CarbonTableOutputFormat.getLoadModel(conf)
-    loadModel.setSerializationNullFormat(
-      TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + ",\\N")
-    loadModel.setBadRecordsLoggerEnable(
-      TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + ",false")
-    loadModel.setBadRecordsAction(
-      TableOptionConstant.BAD_RECORDS_ACTION.getName() + ",force")
-    loadModel.setIsEmptyDataBadRecord(
-      DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + ",false")
-    val globalSortPartitions =
-      carbonTable.getTableInfo.getFactTable.getTableProperties.get("global_sort_partitions")
-    if (globalSortPartitions != null) {
-      loadModel.setGlobalSortPartitions(globalSortPartitions)
-    }
-    loadModel
-  }
 }

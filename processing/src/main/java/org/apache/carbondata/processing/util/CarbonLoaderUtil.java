@@ -165,6 +165,24 @@ public final class CarbonLoaderUtil {
   }
 
   /**
+   * Append a new load metadata into table status file
+   *
+   * @param loadModel load model
+   * @return boolean which determines whether status update is done or not
+   * @throws IOException
+   */
+  public static boolean recordNewLoadMetadata(CarbonLoadModel loadModel) throws IOException {
+    LoadMetadataDetails newLoadMetaEntry = new LoadMetadataDetails();
+    loadModel.setFactTimeStamp(System.currentTimeMillis());
+    CarbonLoaderUtil.populateNewLoadMetaEntry(
+        newLoadMetaEntry,
+        SegmentStatus.INSERT_IN_PROGRESS,
+        loadModel.getFactTimeStamp(),
+        false);
+    return recordNewLoadMetadata(newLoadMetaEntry, loadModel, true, false);
+  }
+
+  /**
    * This API deletes the content of the non Transactional Tables when insert overwrite is set true.
    *
    * @param loadModel

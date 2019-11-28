@@ -17,7 +17,15 @@
 
 package org.apache.carbondata.core.statusmanager;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
+
+import org.apache.hadoop.mapreduce.InputSplit;
 
 public class StageInput {
 
@@ -55,4 +63,16 @@ public class StageInput {
   public void setFiles(Map<String, Long> files) {
     this.files = files;
   }
+
+  public List<InputSplit> createSplits() {
+    return
+        files.entrySet().stream().filter(
+            entry -> entry.getKey().endsWith(CarbonCommonConstants.FACT_FILE_EXT)
+        ).map(
+            entry -> CarbonInputSplit.from("-1", "0",
+                base + CarbonCommonConstants.FILE_SEPARATOR + entry.getKey(),
+                0, entry.getValue(), ColumnarFormatVersion.V3, null)
+        ).collect(Collectors.toList());
+  }
+
 }
