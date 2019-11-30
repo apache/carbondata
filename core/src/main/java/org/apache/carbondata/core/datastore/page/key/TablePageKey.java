@@ -28,8 +28,6 @@ import org.apache.carbondata.core.util.NonDictionaryUtil;
 public class TablePageKey {
   private int pageSize;
 
-  private byte[][] currentNoDictionaryKey;
-
   // MDK start key
   private byte[] startKey;
 
@@ -37,10 +35,10 @@ public class TablePageKey {
   private byte[] endKey;
 
   // startkey for no dictionary columns
-  private byte[][] noDictStartKey;
+  private Object[] noDictStartKey;
 
   // endkey for no diciotn
-  private byte[][] noDictEndKey;
+  private Object[] noDictEndKey;
 
   // startkey for no dictionary columns after packing into one column
   private byte[] packedNoDictStartKey;
@@ -60,17 +58,17 @@ public class TablePageKey {
 
   /** update all keys based on the input row */
   public void update(int rowId, CarbonRow row, byte[] mdk) {
-    if (hasNoDictionary) {
-      Object[] noDictAndComplexDimension = WriteStepRowUtil.getNoDictAndComplexDimension(row);
-      currentNoDictionaryKey = new byte[noDictAndComplexDimension.length][0];
-    }
     if (rowId == 0) {
       startKey = mdk;
-      noDictStartKey = currentNoDictionaryKey;
+      if (hasNoDictionary) {
+        noDictStartKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      }
     }
-    noDictEndKey = currentNoDictionaryKey;
     if (rowId == pageSize - 1) {
       endKey = mdk;
+      if (hasNoDictionary) {
+        noDictEndKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      }
       finalizeKeys();
     }
   }
@@ -116,10 +114,18 @@ public class TablePageKey {
         noDictStartKey = newNoDictionaryStartKey;
         noDictEndKey = newNoDictionaryEndKey;
       }
+      byte[][] finalNoDictStartKey = new byte[noDictStartKey.length][];
+      byte[][] finalNoDictEndKey = new byte[noDictEndKey.length][];
+      for (int i = 0; i < noDictStartKey.length; i++) {
+        finalNoDictStartKey[i] = (byte[]) noDictStartKey[i];
+      }
+      for (int i = 0; i < noDictEndKey.length; i++) {
+        finalNoDictEndKey[i] = (byte[]) noDictEndKey[i];
+      }
       packedNoDictStartKey =
-          NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictStartKey);
+          NonDictionaryUtil.packByteBufferIntoSingleByteArray(finalNoDictStartKey);
       packedNoDictEndKey =
-          NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictEndKey);
+          NonDictionaryUtil.packByteBufferIntoSingleByteArray(finalNoDictEndKey);
     } else {
       noDictStartKey = new byte[0][];
       noDictEndKey = new byte[0][];
