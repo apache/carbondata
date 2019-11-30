@@ -21,8 +21,6 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience.*;
-
 /**
  * This annotation is ported and modified from Apache Hadoop project.
  *
@@ -34,9 +32,9 @@ import org.apache.carbondata.common.annotations.InterfaceAudience.*;
  * 2. {@link Evolving} means compatibility can break at minor release (m.x)
  * 3. {@link Unstable} means compatibility can break at any release
  *
- * <ul><li>All classes that are annotated with {@link User} or
- * {@link Developer} must have InterfaceStability annotation. </li>
- * <li>Classes that are {@link Internal} are to be considered unstable unless
+ * <ul><li>All classes that are annotated with {@link InterfaceAudience.User} or
+ * {@link InterfaceAudience.Developer} must have InterfaceStability annotation. </li>
+ * <li>Classes that are {@link InterfaceAudience.Internal} are to be considered unstable unless
  * a different InterfaceStability annotation states otherwise.</li>
  * <li>Incompatible changes must not be made to classes marked as stable.</li>
  * </ul>
