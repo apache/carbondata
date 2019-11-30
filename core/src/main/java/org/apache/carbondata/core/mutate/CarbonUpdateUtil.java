@@ -138,7 +138,7 @@ public class CarbonUpdateUtil {
           if (index != -1) {
             // update the element in existing list.
             SegmentUpdateDetails blockDetail = oldList.get(index);
-            if (blockDetail.getDeleteDeltaStartTimestamp().isEmpty() || (isCompaction == true)) {
+            if (blockDetail.getDeleteDeltaStartTimestamp().isEmpty() || (isCompaction)) {
               blockDetail
                   .setDeleteDeltaStartTimestamp(newBlockEntry.getDeleteDeltaStartTimestamp());
             }

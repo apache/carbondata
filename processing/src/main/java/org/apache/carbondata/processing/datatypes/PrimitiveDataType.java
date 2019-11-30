@@ -285,7 +285,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public void setSurrogateIndex(int surrIndex) {
     if (this.carbonDimension != null && !this.carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
       index = 0;
-    } else if (this.carbonDimension == null && isDictionary == false) {
+    } else if (this.carbonDimension == null && !isDictionary) {
       index = 0;
     } else {
       index = surrIndex;
