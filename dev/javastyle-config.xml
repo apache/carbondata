@@ -184,9 +184,7 @@
         <module name="LeftCurly"/>
 
         <!-- Checks for complicated boolean expressions. -->
-        <module name="SimplifyBooleanExpression">
-            <property name="severity" value="info"/>
-        </module>
+        <module name="SimplifyBooleanExpression"/>
 
         <!-- Checks for empty statements. -->
         <module name="EmptyStatement"/>
