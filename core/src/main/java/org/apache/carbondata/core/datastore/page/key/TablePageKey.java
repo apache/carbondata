@@ -18,17 +18,19 @@
 package org.apache.carbondata.core.datastore.page.key;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.NonDictionaryUtil;
 
 public class TablePageKey {
   private int pageSize;
-
-  private byte[][] currentNoDictionaryKey;
 
   // MDK start key
   private byte[] startKey;
@@ -37,10 +39,10 @@ public class TablePageKey {
   private byte[] endKey;
 
   // startkey for no dictionary columns
-  private byte[][] noDictStartKey;
+  private Object[] noDictStartKey;
 
   // endkey for no diciotn
-  private byte[][] noDictEndKey;
+  private Object[] noDictEndKey;
 
   // startkey for no dictionary columns after packing into one column
   private byte[] packedNoDictStartKey;
@@ -60,17 +62,17 @@ public class TablePageKey {
 
   /** update all keys based on the input row */
   public void update(int rowId, CarbonRow row, byte[] mdk) {
-    if (hasNoDictionary) {
-      Object[] noDictAndComplexDimension = WriteStepRowUtil.getNoDictAndComplexDimension(row);
-      currentNoDictionaryKey = new byte[noDictAndComplexDimension.length][0];
-    }
     if (rowId == 0) {
       startKey = mdk;
-      noDictStartKey = currentNoDictionaryKey;
+      if (hasNoDictionary) {
+        noDictStartKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      }
     }
-    noDictEndKey = currentNoDictionaryKey;
     if (rowId == pageSize - 1) {
       endKey = mdk;
+      if (hasNoDictionary) {
+        noDictEndKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      }
       finalizeKeys();
     }
   }
@@ -107,8 +109,8 @@ public class TablePageKey {
     if (numberOfNoDictSortColumns > 0) {
       // if sort_columns contain no-dictionary columns
       if (noDictStartKey.length > numberOfNoDictSortColumns) {
-        byte[][] newNoDictionaryStartKey = new byte[numberOfNoDictSortColumns][];
-        byte[][] newNoDictionaryEndKey = new byte[numberOfNoDictSortColumns][];
+        Object[] newNoDictionaryStartKey = new Object[numberOfNoDictSortColumns];
+        Object[] newNoDictionaryEndKey = new Object[numberOfNoDictSortColumns];
         System.arraycopy(
             noDictStartKey, 0, newNoDictionaryStartKey, 0, numberOfNoDictSortColumns);
         System.arraycopy(
@@ -116,16 +118,31 @@ public class TablePageKey {
         noDictStartKey = newNoDictionaryStartKey;
         noDictEndKey = newNoDictionaryEndKey;
       }
-      packedNoDictStartKey =
-          NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictStartKey);
-      packedNoDictEndKey =
-          NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictEndKey);
+      List<CarbonDimension> noDictSortColumns =
+          CarbonTable.getNoDictSortColumns(segmentProperties.getDimensions());
+      packedNoDictStartKey = NonDictionaryUtil.packByteBufferIntoSingleByteArray(
+          convertKeys(noDictStartKey, noDictSortColumns));
+      packedNoDictEndKey = NonDictionaryUtil.packByteBufferIntoSingleByteArray(
+          convertKeys(noDictEndKey, noDictSortColumns));
     } else {
       noDictStartKey = new byte[0][];
       noDictEndKey = new byte[0][];
       packedNoDictStartKey = new byte[0];
       packedNoDictEndKey = new byte[0];
     }
+  }
+
+  private byte[][] convertKeys(Object[] keys, List<CarbonDimension> noDictSortColumns) {
+    byte[][] finalKeys = new byte[keys.length][];
+    for (int i = 0; i < keys.length; i++) {
+      if (keys[i] instanceof byte[]) {
+        finalKeys[i] = (byte[]) keys[i];
+      } else {
+        finalKeys[i] = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(keys[i],
+            noDictSortColumns.get(i).getDataType());
+      }
+    }
+    return finalKeys;
   }
 
   public byte[] getNoDictStartKey() {

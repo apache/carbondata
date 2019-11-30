@@ -818,6 +818,18 @@ public class CarbonTable implements Serializable, Writable {
     return numberOfNoDictSortColumns;
   }
 
+  public static List<CarbonDimension> getNoDictSortColumns(List<CarbonDimension> dimensions) {
+    List<CarbonDimension> noDictSortColumns = new ArrayList<>(dimensions.size());
+    for (int i = 0; i < dimensions.size(); i++) {
+      CarbonDimension dimension = dimensions.get(i);
+      if (dimension.isSortColumn() &&
+          !dimension.getColumnSchema().hasEncoding(Encoding.DICTIONARY)) {
+        noDictSortColumns.add(dimension);
+      }
+    }
+    return noDictSortColumns;
+  }
+
   public CarbonColumn getRangeColumn() {
     String rangeColumn =
         tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.RANGE_COLUMN);
