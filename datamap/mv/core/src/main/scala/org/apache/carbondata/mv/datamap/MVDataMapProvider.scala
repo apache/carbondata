@@ -95,8 +95,17 @@ class MVDataMapProvider(
       dataMapSchema.getRelationIdentifier.getTableName,
       true)
     dropTableCommand.processMetadata(sparkSession)
-    DataMapStoreManager.getInstance.unRegisterDataMapCatalog(dataMapSchema)
-    DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName)
+    // First, drop datamapschema and unregister datamap from catalog, because if in
+    // case, unregister fails, datamapschema will not be deleted from system and cannot
+    // create datamap also again
+    try {
+      DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName)
+    } catch {
+      case e: IOException =>
+        throw e
+    } finally {
+      DataMapStoreManager.getInstance.unRegisterDataMapCatalog(dataMapSchema)
+    }
   }
 
   override def cleanData(): Unit = {

@@ -305,10 +305,10 @@ object MVHelper {
   }
 
   private def isValidSelect(isValidExp: Boolean,
-      s: Select): Boolean = {
+      filterPredicate: Seq[Expression], outputList: Seq[NamedExpression]): Boolean = {
     // Make sure all predicates are present in projections.
     var predicateList: Seq[AttributeReference] = Seq.empty
-    s.predicateList.map { f =>
+    filterPredicate.map { f =>
       f.children.collect {
         case p: AttributeReference =>
           predicateList = predicateList.+:(p)
@@ -321,7 +321,7 @@ object MVHelper {
     }
     if (predicateList.nonEmpty) {
       predicateList.forall { p =>
-        s.outputList.exists {
+        outputList.exists {
           case a: Alias =>
             a.semanticEquals(p) || a.child.semanticEquals(p) || a.collect {
               case attr: AttributeReference =>
@@ -364,11 +364,11 @@ object MVHelper {
         }
         g.child match {
           case s: Select =>
-            isValidSelect(isValidExp, s)
+            isValidSelect(isValidExp, s.predicateList, g.outputList)
           case m: ModularRelation => isValidExp
         }
       case s: Select =>
-        isValidSelect(true, s)
+        isValidSelect(true, s.predicateList, s.outputList)
       case _ => true
     }
     if (!isValid) {
