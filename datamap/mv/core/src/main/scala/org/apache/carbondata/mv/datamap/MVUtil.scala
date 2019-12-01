@@ -204,27 +204,27 @@ class MVUtil {
           "")
       }
     }
-    groupByExp map { grp =>
-      grp.collect {
-        case attr: AttributeReference =>
-          val carbonTable: CarbonTable = getCarbonTable(logicalRelation, attr)
-          if (null != carbonTable) {
-            val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new
-                ArrayBuffer[ColumnTableRelation]()
-            arrayBuffer += getColumnRelation(attr.name,
-              carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
-              carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
-              carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
-              carbonTable)
-            fieldToDataMapFieldMap +=
-            getFieldToDataMapFields(attr.name,
-              attr.dataType,
-              attr.qualifier,
-              "",
-              arrayBuffer,
-              carbonTable.getTableName)
-          }
-      }
+    groupByExp map {
+      case attr: AttributeReference =>
+        val carbonTable: CarbonTable = getCarbonTable(logicalRelation, attr)
+        if (null != carbonTable) {
+          val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new
+              ArrayBuffer[ColumnTableRelation]()
+          arrayBuffer += getColumnRelation(attr.name,
+            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
+            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
+            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
+            carbonTable)
+          fieldToDataMapFieldMap +=
+          getFieldToDataMapFields(attr.name,
+            attr.dataType,
+            attr.qualifier,
+            "",
+            arrayBuffer,
+            carbonTable.getTableName)
+        }
+        attr
+      case _ =>
     }
     fieldToDataMapFieldMap
   }

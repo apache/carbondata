@@ -685,4 +685,22 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists partitionone")
   }
 
+  test("test partition on timeseries column") {
+    sql("drop table if exists partitionone")
+    sql("create table partitionone(a int,b int) partitioned by (c timestamp,d timestamp) stored by 'carbondata'")
+    sql("insert into partitionone values(1,2,'2017-01-01 01:00:00','2018-01-01 01:00:00')")
+    sql("drop datamap if exists dm1")
+    sql("create datamap dm1 on table partitionone using 'mv' as select timeseries(c,'day'),sum(b) from partitionone group by timeseries(c,'day')")
+    assert(!CarbonEnv.getCarbonTable(Some("partition_mv"),"dm1_table")(sqlContext.sparkSession).isHivePartitionTable)
+    assert(sql("select timeseries(c,'day'),sum(b) from partitionone group by timeseries(c,'day')").count() == 1)
+    sql("drop table if exists partitionone")
+    sql("create table partitionone(a int,b timestamp) partitioned by (c timestamp) stored by 'carbondata'")
+    sql("insert into partitionone values(1,'2017-01-01 01:00:00','2018-01-01 01:00:00')")
+    sql("drop datamap if exists dm1")
+    sql("create datamap dm1 on table partitionone using 'mv' as select timeseries(b,'day'),c from partitionone group by timeseries(b,'day'),c")
+    assert(CarbonEnv.getCarbonTable(Some("partition_mv"),"dm1_table")(sqlContext.sparkSession).isHivePartitionTable)
+    assert(sql("select timeseries(b,'day'),c from partitionone group by timeseries(b,'day'),c").count() == 1)
+    sql("drop table if exists partitionone")
+  }
+
 }

@@ -95,8 +95,8 @@ class MVDataMapProvider(
       dataMapSchema.getRelationIdentifier.getTableName,
       true)
     dropTableCommand.processMetadata(sparkSession)
-    DataMapStoreManager.getInstance.unRegisterDataMapCatalog(dataMapSchema)
     DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName)
+    DataMapStoreManager.getInstance.unRegisterDataMapCatalog(dataMapSchema)
   }
 
   override def cleanData(): Unit = {
