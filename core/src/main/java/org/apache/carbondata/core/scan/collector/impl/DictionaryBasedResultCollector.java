@@ -239,6 +239,20 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     }
   }
 
+  /**
+   * fill the data of dimension columns into row
+   *
+   * @param scannedResult
+   * @param surrogateResult
+   * @param noDictionaryKeys
+   * @param complexTypeKeyArray
+   * @param complexDimensionInfoMap
+   * @param row: row data
+   * @param i: dimension columns index
+   * @param actualOrdinal: the actual ordinal of dimension columns in segment
+   * TODO :
+   *
+   */
   void fillDimensionData(BlockletScannedResult scannedResult, int[] surrogateResult,
       byte[][] noDictionaryKeys, byte[][] complexTypeKeyArray,
       Map<Integer, GenericQueryType> complexDimensionInfoMap, Object[] row, int i,
