@@ -80,8 +80,7 @@ public final class StageManager {
 
   private static void writeSuccessFile(final String successFilePath) throws IOException {
     final DataOutputStream segmentStatusSuccessOutputStream =
-        FileFactory.getDataOutputStream(
-            successFilePath, FileFactory.getFileType(successFilePath),
+        FileFactory.getDataOutputStream(successFilePath,
             CarbonCommonConstants.BYTEBUFFER_SIZE, 1024);
     try {
       IOUtils.copyBytes(

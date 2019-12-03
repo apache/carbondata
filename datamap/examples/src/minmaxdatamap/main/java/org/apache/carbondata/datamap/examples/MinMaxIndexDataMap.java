@@ -99,7 +99,7 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
         AtomicFileOperationFactory.getAtomicFileOperations(filePath);
 
     try {
-      if (!FileFactory.isFileExist(filePath) {
+      if (!FileFactory.isFileExist(filePath)) {
         return null;
       }
       dataInputStream = fileOperation.openForRead();

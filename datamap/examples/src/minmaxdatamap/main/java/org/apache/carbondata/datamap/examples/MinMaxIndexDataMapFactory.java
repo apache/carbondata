@@ -62,7 +62,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
     // will be supported by this datamap. Furthermore, we can add cache-support for this datamap.
 
     // columns that will be indexed
-    List<CarbonColumn> allColumns = getCarbonTable().getCreateOrderColumn(identifier.getTableName());
+    List<CarbonColumn> allColumns = getCarbonTable().getCreateOrderColumn();
 
     // operations that will be supported on the indexed columns
     List<ExpressionType> optOperations = new ArrayList<>();
