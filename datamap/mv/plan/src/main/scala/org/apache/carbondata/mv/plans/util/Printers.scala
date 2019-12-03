@@ -106,9 +106,9 @@ trait Printers {
     def printSelect(select: Seq[NamedExpression], flags: FlagSet): Unit = {
       if (flags.hasFlag(DISTINCT)) {
         print("SELECT DISTINCT %s "
-          .format(select.map(_.sql) mkString ", "))
+          .format(formatUDF(select)))
       } else {
-        print("SELECT %s ".format(select.map(_.sql) mkString ", "))
+        print("SELECT %s ".format(formatUDF(select)))
       }
     }
 
@@ -153,7 +153,7 @@ trait Printers {
     def printGroupby(groupby: (Seq[Expression], Seq[Seq[Expression]])): Unit = {
 
       if (groupby._1.nonEmpty) {
-        print("GROUP BY %s".format(groupby._1.map(_.sql).mkString(", ")))
+        print("GROUP BY %s".format(formatUDFinExpression(groupby._1)))
         if (groupby._2.nonEmpty) {
           print(" GROUPING SETS(%s)"
             .format(groupby._2.map(e => s"(${ e.map(_.sql).mkString(", ") })").mkString(", ")))
@@ -342,6 +342,56 @@ trait Printers {
   def newSQLFragmentOneLinePrinter(stream: OutputStream): SQLFragmentOneLinePrinter = {
     newSQLFragmentOneLinePrinter(
       new PrintWriter(stream))
+  }
+
+  def formatUDF(select: Seq[NamedExpression]): String = {
+    val result = select.map {
+      // if scala UDF, then don't do direct sql
+      case a@Alias(child: ScalaUDF, _) =>
+        val udf = child.udfName
+        if (udf.isDefined) {
+          udf.get + "(" + (formatExpressionsInUDF(child.children)) + " ) AS `" + a.name + "`"
+        } else {
+          child.sql
+        }
+      case other =>
+        other.sql
+    }
+    result mkString ", "
+  }
+
+  def formatExpressionsInUDF(exp: Seq[Expression]): String = {
+    val result = exp.map {
+      case attr: AttributeReference =>
+        if (attr.name.startsWith("gen_subsumer_")) {
+          attr.name
+        } else {
+          attr.sql
+        }
+      case literal: Literal =>
+        if (literal.value.toString.startsWith("`") || literal.value.toString.startsWith("'")) {
+          literal.value.toString
+        } else {
+          literal.sql
+        }
+      case other =>
+        other.sql
+    }
+    result mkString ","
+  }
+
+  def formatUDFinExpression(select: Seq[Expression]): String = {
+    val result = select.map {
+      case udf: ScalaUDF if udf.isInstanceOf[ScalaUDF] =>
+        if (udf.udfName.isDefined) {
+          udf.udfName.get + "(" + formatExpressionsInUDF(udf.children) + " )"
+        } else {
+          udf.sql
+        }
+      case other =>
+        other.sql
+    }
+    result mkString ", "
   }
 }
 // scalastyle:on println

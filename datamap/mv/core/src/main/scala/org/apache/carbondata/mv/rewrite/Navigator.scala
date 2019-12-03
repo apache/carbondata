@@ -17,8 +17,19 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap}
+import scala.collection.JavaConverters._
+import scala.util.control.Breaks._
 
+import org.apache.spark.sql.CarbonToSparkAdapter
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression, Literal, NamedExpression, ScalaUDF}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, LogicalPlan}
+import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
+import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.types.DataTypes
+import org.apache.spark.unsafe.types.UTF8String
+
+import org.apache.carbondata.core.metadata.schema.datamap.Granularity
+import org.apache.carbondata.core.preagg.TimeSeriesFunctionEnum
 import org.apache.carbondata.mv.datamap.MVUtil
 import org.apache.carbondata.mv.expressions.modular._
 import org.apache.carbondata.mv.plans.modular
@@ -26,6 +37,8 @@ import org.apache.carbondata.mv.plans.modular._
 import org.apache.carbondata.mv.session.MVSession
 
 private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) {
+
+  var modularPlan: java.util.Set[ModularPlan] = new java.util.HashSet[ModularPlan]()
 
   def rewriteWithSummaryDatasets(plan: ModularPlan, rewrite: QueryRewrite): ModularPlan = {
     val replaced = plan.transformAllExpressions {
@@ -66,9 +79,117 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
         }
     }
     if (rewrittenPlan.fastEquals(plan)) {
-      None
+      if (modularPlan.asScala.exists(p => p.sameResult(rewrittenPlan))) {
+        return None
+      }
+      getRolledUpModularPlan(rewrittenPlan, rewrite)
     } else {
       Some(rewrittenPlan)
+    }
+  }
+
+  /**
+   * Check if modular plan can be rolled up by rewriting and matching the modular plan
+   * with existing mv datasets.
+   * @param rewrittenPlan to check if can be rolled up
+   * @param rewrite
+   * @return new modular plan
+   */
+  def getRolledUpModularPlan(rewrittenPlan: ModularPlan,
+      rewrite: QueryRewrite): Option[ModularPlan] = {
+    var canDoRollUp = true
+    // check if modular plan contains timeseries udf
+    val timeSeriesUdf = rewrittenPlan match {
+      case s: Select =>
+        getTimeSeriesUdf(s.outputList)
+      case g: GroupBy =>
+        getTimeSeriesUdf(g.outputList)
+      case _ => (null, null)
+    }
+    // set canDoRollUp to false, in case of Join queries and if filter has timeseries udf function
+    // TODO: support rollUp for join queries
+    rewrite.optimizedPlan.transformDown {
+      case join@Join(_, _, _, _) =>
+        canDoRollUp = false
+        join
+      case f@Filter(condition: Expression, _) =>
+        condition.collect {
+          case s: ScalaUDF if s.function.isInstanceOf[TimeSeriesFunction] =>
+            canDoRollUp = false
+        }
+        f
+    }
+    if (null != timeSeriesUdf._2 && canDoRollUp) {
+      // check for rollup and rewrite the plan
+      // collect all the datasets which contains timeseries datamap's
+      val dataSets = catalog.lookupFeasibleSummaryDatasets(rewrittenPlan)
+      var granularity: java.util.List[TimeSeriesFunctionEnum] = new java.util
+      .ArrayList[TimeSeriesFunctionEnum]()
+      // Get all the lower granularities for the query from datasets
+      dataSets.foreach { dataset =>
+        if (dataset.dataMapSchema.isTimeSeries) {
+          dataset.plan.transformExpressions {
+            case a@Alias(udf: ScalaUDF, _) =>
+              if (udf.function.isInstanceOf[TimeSeriesFunction]) {
+                val gran = udf.children.last.asInstanceOf[Literal].toString().toUpperCase()
+                if (Granularity.valueOf(timeSeriesUdf._2.toUpperCase).ordinal() <=
+                    Granularity.valueOf(gran).ordinal()) {
+                  granularity.add(TimeSeriesFunctionEnum.valueOf(gran))
+                }
+              }
+              a
+          }
+        }
+      }
+      if (!granularity.isEmpty) {
+        granularity = granularity.asScala.sortBy(_.getOrdinal)(Ordering[Int].reverse).asJava
+        var orgTable: String = null
+        // get query Table
+        rewrittenPlan.collect {
+          case m: ModularRelation =>
+            orgTable = m.tableName
+        }
+        var queryGranularity: String = null
+        var newRewrittenPlan = rewrittenPlan
+        // replace granularities in the plan and check if plan can be changed
+        breakable {
+          granularity.asScala.foreach { func =>
+            newRewrittenPlan = rewriteGranularityInPlan(rewrittenPlan, func.getName)
+            modularPlan.add(newRewrittenPlan)
+            val logicalPlan = session
+              .sparkSession
+              .sql(newRewrittenPlan.asCompactSQL)
+              .queryExecution
+              .optimizedPlan
+            modularPlan.clear()
+            var rolledUpTable: String = null
+            logicalPlan.collect {
+              case l: LogicalRelation =>
+                rolledUpTable = l.catalogTable.get.identifier.table
+            }
+            if (!rolledUpTable.equalsIgnoreCase(orgTable)) {
+              queryGranularity = func.getName
+              break()
+            }
+          }
+        }
+        if (null != queryGranularity) {
+          // rewrite the plan and set it as rolled up plan
+          val modifiedPlan = rewriteWithSummaryDatasetsCore(newRewrittenPlan, rewrite)
+          if (modifiedPlan.isDefined) {
+            modifiedPlan.get.map(_.setRolledUp())
+            modifiedPlan
+          } else {
+            None
+          }
+        } else {
+          None
+        }
+      } else {
+        None
+      }
+    } else {
+      None
     }
   }
 
@@ -206,4 +327,60 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
     }
     true
   }
+
+  /**
+   * Replace the identified immediate lower level granularity in the modular plan
+   * to perform rollup
+   *
+   * @param plan             to be re-written
+   * @param queryGranularity to be replaced
+   * @return plan with granularity changed
+   */
+  private def rewriteGranularityInPlan(plan: ModularPlan, queryGranularity: String) = {
+    val newPlan = plan.transformDown {
+      case p => p.transformAllExpressions {
+        case udf: ScalaUDF =>
+          if (udf.function.isInstanceOf[TimeSeriesFunction]) {
+            val transformedUdf = udf.transformDown {
+              case _: Literal =>
+                new Literal(UTF8String.fromString(queryGranularity.toLowerCase),
+                  DataTypes.StringType)
+            }
+            transformedUdf
+          } else {
+            udf
+          }
+        case alias@Alias(udf: ScalaUDF, name) =>
+          if (udf.function.isInstanceOf[TimeSeriesFunction]) {
+            var literal: String = null
+            val transformedUdf = udf.transformDown {
+              case l: Literal =>
+                literal = l.value.toString
+                new Literal(UTF8String.fromString(queryGranularity.toLowerCase),
+                  DataTypes.StringType)
+            }
+            Alias(transformedUdf,
+              name.replace(", " + literal, ", " + queryGranularity))(alias.exprId,
+              alias.qualifier).asInstanceOf[NamedExpression]
+          } else {
+            alias
+          }
+      }
+    }
+    newPlan
+  }
+
+  def getTimeSeriesUdf(outputList: scala.Seq[NamedExpression]): (String, String) = {
+    outputList.collect {
+      case Alias(udf: ScalaUDF, name) =>
+        if (udf.function.isInstanceOf[TimeSeriesFunction]) {
+          udf.children.collect {
+            case l: Literal =>
+              return (name, l.value.toString)
+          }
+        }
+    }
+    (null, null)
+  }
+
 }

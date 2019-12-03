@@ -24,6 +24,7 @@
 * [Compaction](#compacting-mv-datamap)
 * [Data Management](#data-management-with-mv-tables)
 * [MV TimeSeries Support](#mv-timeseries-support)
+* [MV TimeSeries RollUp Support](#mv-timeseries-rollup-support)
 
 ## Quick example
 
@@ -236,3 +237,35 @@ Timeseries queries with Date type support's only year, month, day and week granu
  **NOTE**:
  1. Single select statement cannot contain timeseries udf(s) neither with different granularity nor
  with different timestamp/date columns.
+ 
+ ## MV TimeSeries RollUp Support
+  MV Timeseries queries can be rolledUp from existing mv datamaps.
+  ### Query RollUp
+ Consider an example where the query is on hour level granularity, but the datamap
+ of hour is not present but  minute level datamap is present, then we can get the data
+ from minute level and the aggregate the hour level data and give output.
+ This is called query rollup.
+ 
+ Consider if user create's below timeseries datamap,
+   ```
+   CREATE DATAMAP agg_sales
+   ON TABLE sales
+   USING "MV"
+   AS
+     SELECT timeseries(order_time,'minute'),avg(price)
+     FROM sales
+     GROUP BY timeseries(order_time,'minute')
+   ```
+ and fires the below query with hour level granularity.
+   ```
+    SELECT timeseries(order_time,'hour'),avg(price)
+    FROM sales
+    GROUP BY timeseries(order_time,'hour')
+   ```
+ Then, the above query can be rolled up from 'agg_sales' mv datamap, by adding hour
+ level timeseries aggregation on minute level datamap. Users can fire explain command
+ to check if query is rolled up from existing mv datamaps.
+ 
+  **NOTE**:
+  1. Queries cannot be rolled up, if filter contains timeseries function.
+  2. RollUp is not yet supported for queries having join clause or order by functions.

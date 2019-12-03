@@ -544,14 +544,19 @@ object GroupbyGroupbySelectOnlyChildDelta extends DefaultMatchPattern with Predi
    */
   private def isDerivableForUDF(exprE: Expression, exprListR: Seq[Expression]): Boolean = {
     var canBeDerived = false
-    exprListR.forall {
-      case a: ScalaUDF =>
-        a.references.foreach { a =>
-          canBeDerived = exprE.sql.contains(a.name)
-        }
-        canBeDerived
+    exprE match {
+      case f: ScalaUDF =>
+        canEvaluate(f, exprListR)
       case _ =>
-        canBeDerived
+        exprListR.forall {
+          case a: ScalaUDF =>
+            a.references.foreach { a =>
+              canBeDerived = exprE.sql.contains(a.name)
+            }
+            canBeDerived
+          case _ =>
+            canBeDerived
+        }
     }
   }
 
