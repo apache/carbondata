@@ -250,7 +250,6 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
    * @param row: row data
    * @param i: dimension columns index
    * @param actualOrdinal: the actual ordinal of dimension columns in segment
-   * TODO :
    *
    */
   void fillDimensionData(BlockletScannedResult scannedResult, int[] surrogateResult,
