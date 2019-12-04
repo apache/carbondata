@@ -29,7 +29,10 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.Strings
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
@@ -503,7 +506,37 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     assert(new File(s"$storeLocation/new_par/Metadata/segments/").listFiles().size == 1)
   }
 
+  test("test index and data size after merge index on partition table") {
+    sql("drop table if exists new_par")
+    sql("create table new_par(a int) partitioned by (b string) stored by 'carbondata'")
+    sql("insert into new_par select 1,'k'")
+    val result = sql("show segments for table new_par").collectAsList()
+    val dataAndIndexSize = getDataAndIndexSize(s"$storeLocation/new_par/b=k")
+    assert(result.get(0).get(6).equals(dataAndIndexSize._1))
+    assert(result.get(0).get(7).equals(dataAndIndexSize._2))
+  }
 
+  def getDataAndIndexSize(path: String): (String, String) = {
+    val mergeIndexFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)
+      }
+    })
+    val dataFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = {
+        file.getName.endsWith(CarbonTablePath.CARBON_DATA_EXT)
+      }
+    })
+    var indexSize: Long = 0
+    for (file <- mergeIndexFiles) {
+      indexSize += file.getSize
+    }
+    var dataSize: Long = 0
+    for (file <- dataFiles) {
+      dataSize += file.getSize
+    }
+    (Strings.formatSize(dataSize.toFloat), Strings.formatSize(indexSize.toFloat))
+  }
 
   def restoreData(dblocation: String, tableName: String) = {
     val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
