@@ -329,6 +329,18 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     checkPlan("datamap1", df)
   }
 
+  test("test create datamap with group by & filter columns not present in projection") {
+    sql("drop datamap if exists dm ")
+    intercept[UnsupportedOperationException] {
+      sql("create datamap dm using 'mv' as select timeseries(projectjoindate,'day') from maintable where empname='chandler' group by timeseries(projectjoindate,'day'),empname")
+    }.getMessage.contains("Group by/Filter columns must be present in project columns")
+    sql("create datamap dm using 'mv' as select timeseries(projectjoindate,'day'),empname from maintable where empname='chandler' group by timeseries(projectjoindate,'day'),empname")
+    var df = sql("select timeseries(projectjoindate,'day'),empname from maintable where empname='chandler' group by timeseries(projectjoindate,'day'),empname")
+    checkPlan("dm", df)
+    df = sql("select timeseries(projectjoindate,'day') from maintable where empname='chandler' group by timeseries(projectjoindate,'day'),empname")
+    checkPlan("dm", df)
+    sql("drop datamap if exists dm ")
+  }
 
   override def afterAll(): Unit = {
     drop()

@@ -17,7 +17,10 @@
 
 package org.apache.spark.sql
 
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+
+import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
@@ -121,10 +124,43 @@ class CarbonEnv {
         CarbonProperties.getInstance
           .addNonSerializableProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
         initialized = true
+        cleanChildTablesNotRegisteredInHive(sparkSession)
       }
     }
     Profiler.initialize(sparkSession.sparkContext)
     LOGGER.info("Initialize CarbonEnv completed...")
+  }
+
+  private def cleanChildTablesNotRegisteredInHive(sparkSession: SparkSession): Unit = {
+    // If in case JDBC application is killed/stopped, when create datamap was in progress, datamap
+    // table was created and datampschema was saved to the system, but table was not registered to
+    // metastore. So, when we restart JDBC application, we need to clean up
+    // stale tables and datamapschema's.
+    val dataMapSchemas = DataMapStoreManager.getInstance().getAllDataMapSchemas
+    dataMapSchemas.asScala.foreach {
+      dataMapSchema =>
+        if (null != dataMapSchema.getRelationIdentifier &&
+            !dataMapSchema.isIndexDataMap) {
+          if (!sparkSession.sessionState
+            .catalog
+            .tableExists(TableIdentifier(dataMapSchema.getRelationIdentifier.getTableName,
+              Some(dataMapSchema.getRelationIdentifier.getDatabaseName)))) {
+            try {
+              DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName)
+            } catch {
+              case e: IOException =>
+                throw e
+            } finally {
+              DataMapStoreManager.getInstance.unRegisterDataMapCatalog(dataMapSchema)
+              if (FileFactory.isFileExist(dataMapSchema.getRelationIdentifier.getTablePath)) {
+                CarbonUtil.deleteFoldersAndFilesSilent(FileFactory.getCarbonFile(dataMapSchema
+                  .getRelationIdentifier
+                  .getTablePath))
+              }
+            }
+          }
+        }
+    }
   }
 }
 
