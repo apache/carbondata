@@ -19,7 +19,7 @@ package org.apache.carbondata.mv.rewrite
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{CarbonSession, DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -108,7 +108,22 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   private[mv] def registerSchema(dataMapSchema: DataMapSchema): Unit = {
     writeLock {
       val updatedQuery = parser.addMVSkipFunction(dataMapSchema.getCtasQuery)
+      val currentDatabase = sparkSession match {
+        case carbonSession: CarbonSession =>
+          carbonSession.sessionState.catalog.getCurrentDatabase
+        case _ =>
+          sparkSession.catalog.currentDatabase
+      }
+      // This is required because datamap schemas are across databases, so while loading the
+      // catalog, if the datamap is in database other than sparkSession.currentDataBase(), then it
+      // fails to register, so set the database present in the dataMapSchema Object
+      setCurrentDataBase(dataMapSchema.getRelationIdentifier.getDatabaseName)
       val query = sparkSession.sql(updatedQuery)
+      // here setting back to current database of current session, because if the actual query
+      // contains db name in query like, select db1.column1 from table and current database is
+      // default and if we drop the db1, still the session has current db as db1.
+      // So setting back to current database.
+      setCurrentDataBase(currentDatabase)
       val planToRegister = MVHelper.dropDummFuc(query.queryExecution.analyzed)
       val modularPlan =
         mvSession.sessionState.modularizer.modularize(
@@ -140,6 +155,15 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
         planToRegister,
         dataMapSchema,
         MVPlanWrapper(select, dataMapSchema))
+    }
+  }
+
+  private def setCurrentDataBase(dataBaseName: String): Unit = {
+    sparkSession match {
+      case carbonSession: CarbonSession =>
+        carbonSession.sessionState.catalog.setCurrentDatabase(dataBaseName)
+      case _ =>
+        sparkSession.catalog.setCurrentDatabase(dataBaseName)
     }
   }
 
