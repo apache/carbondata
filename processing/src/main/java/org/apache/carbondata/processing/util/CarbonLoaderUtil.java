@@ -47,6 +47,7 @@ import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
@@ -1168,6 +1169,20 @@ public final class CarbonLoaderUtil {
     Long indexSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE);
     loadMetadataDetails.setIndexSize(String.valueOf(indexSize));
     return dataSize + indexSize;
+  }
+
+  public static void addIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
+      String segmentId, CarbonTable carbonTable) throws IOException {
+    Segment segment = new Segment(segmentId, loadMetadataDetails.getSegmentFile());
+    if (segment.getSegmentFileName() != null) {
+      SegmentFileStore fileStore =
+          new SegmentFileStore(carbonTable.getTablePath(), segment.getSegmentFileName());
+      if (fileStore.getLocationMap() != null) {
+        fileStore.readIndexFiles(FileFactory.getConfiguration());
+        long carbonIndexSize = CarbonUtil.getCarbonIndexSize(fileStore, fileStore.getLocationMap());
+        loadMetadataDetails.setIndexSize(String.valueOf(carbonIndexSize));
+      }
+    }
   }
 
   /**

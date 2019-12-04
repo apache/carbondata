@@ -39,6 +39,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -167,6 +168,14 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         } catch (Exception e) {
           throw new IOException(e);
         }
+      }
+      // After merging index, update newMetaEntry with updated merge index size
+      boolean isMergeIndexEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+              CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT));
+      if (isMergeIndexEnabled) {
+        CarbonLoaderUtil
+            .addIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(), carbonTable);
       }
       String uniqueId = null;
       if (overwriteSet) {
