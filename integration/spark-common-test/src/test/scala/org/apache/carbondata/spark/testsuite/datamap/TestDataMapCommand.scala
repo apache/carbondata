@@ -266,66 +266,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     sql(s"drop table if exists $tableName")
   }
 
-    test("test support bloomFilter on binary data type") {
-        val tableName = "datamapshowtest"
-        val datamapName = "bloomdatamap"
-        val datamapName2 = "bloomdatamap2"
-        sql(s"drop table if exists $tableName")
-        // for index datamap
-        sql(s"create table $tableName (a string, b string, c string, d binary, e binary) stored by 'carbondata'")
-
-        sql(s"insert into $tableName  values('a1','b1','c1','d1','e1')")
-        sql(s"insert into $tableName  values('a1','b2','c2','d1','e2')")
-        sql(s"insert into $tableName  values('a3','b3','c1','d2','e2')")
-        sql(
-            s"""
-               | create datamap $datamapName on table $tableName using 'bloomfilter'
-               | DMPROPERTIES ('index_columns'='d', 'bloom_size'='32000', 'bloom_fpp'='0.001')
-       """.stripMargin)
-        sql(
-            s"""
-               | create datamap $datamapName2 on table $tableName using 'bloomfilter'
-               | DMPROPERTIES ('index_columns'='e')
-       """.stripMargin)
-        var bloom1 = sql(s"select * from $tableName where d=cast('d1' as binary)")
-        assert(2 == bloom1.collect().length)
-        bloom1.collect().foreach { each =>
-            assert(5 == each.length)
-            assert("a1".equals(each.get(0)))
-            assert("d1".equals(new String(each.getAs[Array[Byte]](3))))
-            if ("b1".equals(each.get(1))) {
-                assert("c1".equals(each.get(2)))
-                assert("e1".equals(new String(each.getAs[Array[Byte]](4))))
-            } else if ("b2".equals(each.get(1))) {
-                assert("c2".equals(each.get(2)))
-                assert("e2".equals(new String(each.getAs[Array[Byte]](4))))
-            } else {
-                assert(false)
-            }
-        }
-
-        bloom1 = sql(s"select * from $tableName where d=cast('d1' as binary) and e=cast('e1' as binary)")
-        assert(1 == bloom1.collect().length)
-        bloom1.collect().foreach { each =>
-            assert(5 == each.length)
-            assert("a1".equals(each.get(0)))
-            assert("d1".equals(new String(each.getAs[Array[Byte]](3))))
-            if ("b1".equals(each.get(1))) {
-                assert("c1".equals(each.get(2)))
-                assert("e1".equals(new String(each.getAs[Array[Byte]](4))))
-            } else {
-                assert(false)
-            }
-        }
-
-        val result = sql(s"show datamap on table $tableName").cache()
-
-        checkAnswer(sql(s"show datamap on table $tableName"),
-            Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'bloom_fpp'='0.001', 'bloom_size'='32000', 'index_columns'='d'", "ENABLED", "NA"),
-                Row(datamapName2, "bloomfilter", s"default.$tableName", "'index_columns'='e'", "ENABLED", "NA")))
-        result.unpersist()
-        sql(s"drop table if exists $tableName")
-    }
+    
 
     test("test don't support timeseries on binary data type") {
         val tableName = "datamapshowtest"

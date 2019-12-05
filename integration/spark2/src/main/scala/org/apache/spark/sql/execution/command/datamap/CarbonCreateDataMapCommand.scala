@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -145,6 +146,12 @@ case class CarbonCreateDataMapCommand(
               "column '%s' already has %s index datamap created",
               column.getColName, thisDmProviderName))
           } else if (isBloomFilter) {
+            if (column.getDataType == DataTypes.BINARY) {
+              throw new MalformedDataMapCommandException(
+                s"BloomFilter datamap does not support Binary datatype column: ${
+                  column.getColName
+                }")
+            }
             // if datamap provider is bloomfilter,the index column datatype cannot be complex type
             if (column.isComplex) {
               throw new MalformedDataMapCommandException(
