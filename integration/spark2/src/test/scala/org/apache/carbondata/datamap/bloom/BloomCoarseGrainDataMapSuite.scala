@@ -590,6 +590,25 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
       "BloomFilter datamap does not support complex datatype column"))
   }
 
+  test("test create bloomfilter datamap which index column datatype is Binary ") {
+    sql("drop table if exists binaryTable")
+    sql(
+      "CREATE TABLE binaryTable (CUST_ID binary,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB " +
+      "timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 " +
+      "decimal(30,10), DECIMAL_COLUMN2 decimal(36,36),Double_COLUMN1 double, Double_COLUMN2 " +
+      "double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'")
+    val exception: MalformedDataMapCommandException = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP binaryBloom ON TABLE binaryTable
+           | USING 'bloomfilter'
+           | DMProperties('INDEX_COLUMNS'='cust_id', 'BLOOM_SIZE'='640000')
+           | """.stripMargin)
+    }
+    assert(exception.getMessage.equalsIgnoreCase(
+      "BloomFilter datamap does not support binary datatype column: cust_id"  ))
+  }
+
   test("test create bloom datamap on newly added column") {
     val datamap1 = "datamap1"
     val datamap2 = "datamap2"
