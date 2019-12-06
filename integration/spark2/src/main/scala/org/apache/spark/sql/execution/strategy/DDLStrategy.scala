@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand, CarbonLoadDataCommand, RefreshCarbonTableCommand}
-import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableAddHivePartitionCommand, CarbonAlterTableDropHivePartitionCommand, CarbonShowCarbonPartitionsCommand}
+import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableAddHivePartitionCommand, CarbonAlterTableDropHivePartitionCommand}
 import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDescribeFormattedCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
@@ -35,6 +35,7 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.util.{CarbonReflectionUtils, DataMapUtil, FileUtils, SparkUtil}
 
+import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
@@ -227,24 +228,6 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
               identifier)) :: Nil
         } else {
           Nil
-        }
-      case ShowPartitionsCommand(t, cols) =>
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(t)(sparkSession)
-        if (isCarbonTable) {
-          val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-            .lookupRelation(t)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
-          if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-            throw new MalformedCarbonCommandException(
-              "Unsupported operation on non transactional table")
-          }
-          if (!carbonTable.isHivePartitionTable) {
-            ExecutedCommandExec(CarbonShowCarbonPartitionsCommand(t)) :: Nil
-          } else {
-            ExecutedCommandExec(ShowPartitionsCommand(t, cols)) :: Nil
-          }
-        } else {
-          ExecutedCommandExec(ShowPartitionsCommand(t, cols)) :: Nil
         }
       case adp@AlterTableDropPartitionCommand(tableName, specs, ifExists, purge, retainData) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore

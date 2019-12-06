@@ -18,10 +18,8 @@
 package org.apache.carbondata.core.scan.filter;
 
 import java.io.IOException;
-import java.util.BitSet;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -41,9 +39,4 @@ public interface FilterProcessor {
       AbsoluteTableIdentifier tableIdentifier)
       throws FilterUnsupportedException, IOException;
 
-  /**
-   * This API will get the map of required partitions.
-   * @return BitSet the value "1" represent the required partition.
-   */
-  BitSet getFilteredPartitions(Expression expressionTree, PartitionInfo partitionInfo);
 }

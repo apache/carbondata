@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -239,15 +240,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     }
     switch (wrapperPartitionType) {
       case HASH:
-        return org.apache.carbondata.format.PartitionType.HASH;
       case LIST:
-        return org.apache.carbondata.format.PartitionType.LIST;
       case RANGE:
-        return org.apache.carbondata.format.PartitionType.RANGE;
       case RANGE_INTERVAL:
-        return org.apache.carbondata.format.PartitionType.RANGE_INTERVAL;
-      case NATIVE_HIVE:
-        return org.apache.carbondata.format.PartitionType.NATIVE_HIVE;
+        throw new DeprecatedFeatureException("Custom Partition");
       default:
         return org.apache.carbondata.format.PartitionType.NATIVE_HIVE;
     }
@@ -260,16 +256,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     for (ColumnSchema wrapperColumnSchema : wrapperPartitionInfo.getColumnSchemaList()) {
       thriftColumnSchema.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
     }
-    org.apache.carbondata.format.PartitionInfo externalPartitionInfo =
-        new org.apache.carbondata.format.PartitionInfo(thriftColumnSchema,
-            fromWrapperToExternalPartitionType(wrapperPartitionInfo.getPartitionType()));
-    externalPartitionInfo.setList_info(wrapperPartitionInfo.getListInfo());
-    externalPartitionInfo.setRange_info(wrapperPartitionInfo.getRangeInfo());
-    externalPartitionInfo.setNum_partitions(wrapperPartitionInfo.getNumPartitions());
-    externalPartitionInfo.setMax_partition(wrapperPartitionInfo.getMaxPartitionId());
-    externalPartitionInfo.setPartition_ids(wrapperPartitionInfo
-        .getPartitionIds());
-    return externalPartitionInfo;
+    return new org.apache.carbondata.format.PartitionInfo(thriftColumnSchema,
+        fromWrapperToExternalPartitionType(wrapperPartitionInfo.getPartitionType()));
   }
 
   /* (non-Javadoc)
@@ -578,15 +566,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     }
     switch (externalPartitionType) {
       case HASH:
-        return PartitionType.HASH;
       case LIST:
-        return PartitionType.LIST;
       case RANGE:
-        return PartitionType.RANGE;
       case RANGE_INTERVAL:
-        return PartitionType.RANGE_INTERVAL;
-      case NATIVE_HIVE:
-        return PartitionType.NATIVE_HIVE;
+        throw new DeprecatedFeatureException("Custom Partition");
       default:
         return PartitionType.NATIVE_HIVE;
     }
@@ -599,15 +582,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         externalPartitionInfo.getPartition_columns()) {
       wrapperColumnSchema.add(fromExternalToWrapperColumnSchema(columnSchema));
     }
-    PartitionInfo wrapperPartitionInfo = new PartitionInfo(wrapperColumnSchema,
+    return new PartitionInfo(wrapperColumnSchema,
         fromExternalToWrapperPartitionType(externalPartitionInfo.getPartition_type()));
-    wrapperPartitionInfo.setListInfo(externalPartitionInfo.getList_info());
-    wrapperPartitionInfo.setRangeInfo(externalPartitionInfo.getRange_info());
-    wrapperPartitionInfo.setNumPartitions(externalPartitionInfo.getNum_partitions());
-    wrapperPartitionInfo.setPartitionIds(externalPartitionInfo
-        .getPartition_ids());
-    wrapperPartitionInfo.setMaxPartitionId(externalPartitionInfo.getMax_partition());
-    return wrapperPartitionInfo;
   }
 
   /* (non-Javadoc)

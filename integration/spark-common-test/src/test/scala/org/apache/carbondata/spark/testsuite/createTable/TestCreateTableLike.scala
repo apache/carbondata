@@ -153,20 +153,6 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     checkTableProperties(TableIdentifier("sourceTable"), TableIdentifier("targetTable"))
   }
 
-  test("table with partition") {
-    sql("""
-          | CREATE TABLE IF NOT EXISTS pt_tbl(
-          |   a int, b string
-          | )
-          | PARTITIONED BY (area string)
-          | STORED BY 'carbondata'
-          | TBLPROPERTIES('PARTITION_TYPE'='LIST',
-          | 'LIST_INFO'='Asia, America, Europe')
-        """.stripMargin)
-    sql("create table targetTable like pt_tbl")
-    checkTableProperties(TableIdentifier("pt_tbl"), TableIdentifier("targetTable"))
-  }
-
   test("table with hive partition") {
     sql(
       """

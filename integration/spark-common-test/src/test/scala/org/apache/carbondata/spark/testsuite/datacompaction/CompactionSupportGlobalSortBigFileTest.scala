@@ -60,7 +60,7 @@ class CompactionSupportGlobalSortBigFileTest extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE compaction_globalsort(id INT, name STRING, city STRING, age INT)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='global_sort')
       """.stripMargin)
 
     sql("DROP TABLE IF EXISTS carbon_localsort")

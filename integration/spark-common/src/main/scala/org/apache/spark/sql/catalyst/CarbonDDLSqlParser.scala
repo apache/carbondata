@@ -414,7 +414,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
 
     // get partitionInfo
-    val partitionInfo = getPartitionInfo(partitionCols, tableProperties)
+    val partitionInfo = getPartitionInfo(partitionCols)
     if (tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
       // validate the column_meta_cache option
       val tableColumns = dims.map(x => x.name.get) ++ msrs.map(x => x.name.get)
@@ -550,7 +550,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       throw new MalformedCarbonCommandException(errMsg)
     }
 
-    if (!dataTypeErr.isEmpty) {
+    if (dataTypeErr.nonEmpty) {
       val errMsg = s"long_string_columns: ${
         dataTypeErr.mkString(",")
       } ,its data type is not string. Please check the create table statement."
@@ -558,45 +558,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
   }
 
-  /**
-   * @param partitionCols
-   * @param tableProperties
-   */
-  protected def getPartitionInfo(partitionCols: Seq[PartitionerField],
-      tableProperties: Map[String, String]): Option[PartitionInfo] = {
-    val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-    val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+  protected def getPartitionInfo(partitionCols: Seq[PartitionerField]): Option[PartitionInfo] = {
     if (partitionCols.isEmpty) {
       None
     } else {
-      var partitionType: String = ""
-      var numPartitions = 0
-      var rangeInfo = List[String]()
-      var listInfo = List[List[String]]()
-
-      val columnDataType = DataTypeConverterUtil.
-        convertToCarbonType(partitionCols.head.dataType.get)
-      if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
-        partitionType = tableProperties(CarbonCommonConstants.PARTITION_TYPE)
-      }
-      if (tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS).isDefined) {
-        numPartitions = tableProperties(CarbonCommonConstants.NUM_PARTITIONS)
-          .toInt
-      }
-      if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
-        rangeInfo = tableProperties(CarbonCommonConstants.RANGE_INFO).split(",")
-          .map(_.trim()).toList
-        CommonUtil.validateRangeInfo(rangeInfo, columnDataType, timestampFormatter, dateFormatter)
-      }
-      if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
-        val originListInfo = tableProperties(CarbonCommonConstants.LIST_INFO)
-        listInfo = PartitionUtils.getListInfo(originListInfo)
-        CommonUtil.validateListInfo(listInfo)
-      }
       val cols : ArrayBuffer[ColumnSchema] = new ArrayBuffer[ColumnSchema]()
       partitionCols.foreach(partition_col => {
         val columnSchema = new ColumnSchema
@@ -605,21 +570,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         columnSchema.setColumnName(partition_col.partitionColumn)
         cols += columnSchema
       })
-
-      var partitionInfo : PartitionInfo = null
-      partitionType.toUpperCase() match {
-        case "HASH" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
-          partitionInfo.initialize(numPartitions)
-        case "RANGE" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
-          partitionInfo.setRangeInfo(rangeInfo.asJava)
-          partitionInfo.initialize(rangeInfo.size + 1)
-        case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
-          partitionInfo.setListInfo(listInfo.map(_.asJava).asJava)
-          partitionInfo.initialize(listInfo.size + 1)
-        case _ => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.NATIVE_HIVE)
-          partitionInfo.setListInfo(listInfo.map(_.asJava).asJava)
-      }
-      Some(partitionInfo)
+      Some(new PartitionInfo(cols.asJava, PartitionType.NATIVE_HIVE))
     }
   }
 
@@ -759,8 +710,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // All long_string cols should be there in create table cols and should be of string data type
     if (tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS).isDefined) {
-      varcharCols =
-        tableProperties(CarbonCommonConstants.LONG_STRING_COLUMNS).split(",").map(_.trim)
+      varcharCols = tableProperties(CarbonCommonConstants.LONG_STRING_COLUMNS)
+        .split(",")
+        .map(_.trim.toLowerCase)
       validateLongStringColumns(fields, varcharCols)
     }
 
@@ -1088,12 +1040,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case Token("TOK_TABLEPROPLIST", list) =>
         list.map {
           case Token("TOK_TABLEPROPERTY", Token(key, Nil) :: Token(value, Nil) :: Nil) =>
-            val reslovedKey = unquoteString(key)
-            if (needToConvertToLowerCase(reslovedKey)) {
-              (reslovedKey, unquoteString(value))
-            } else {
-              (reslovedKey, unquoteStringWithoutLowerConversion(value))
-            }
+            (unquoteString(key), unquoteStringWithoutLowerConversion(value))
         }
     }
   }
@@ -1112,11 +1059,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case doubleQuotedString(s) => s
       case other => other
     }
-  }
-
-  private def needToConvertToLowerCase(key: String): Boolean = {
-    val noConvertList = Array("LIST_INFO", "RANGE_INFO")
-    !noConvertList.exists(x => x.equalsIgnoreCase(key))
   }
 
   protected def validateOptions(optionList: Option[List[(String, String)]]): Unit = {

@@ -39,7 +39,7 @@ import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.CarbonOption
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
  * Utility class to validate the create table and CTAS command,
@@ -271,9 +271,6 @@ object CarbonSparkSqlParserUtil {
     }
     // validate partition clause
     if (partitionerFields.nonEmpty) {
-      if (!CommonUtil.validatePartitionColumns(tableProperties, partitionerFields)) {
-        throw new MalformedCarbonCommandException("Error: Invalid partition definition")
-      }
       // partition columns should not be part of the schema
       val badPartCols = partitionerFields.map(_.partitionColumn.toLowerCase).toSet
         .intersect(colNames.map(_.toLowerCase).toSet)
@@ -302,23 +299,8 @@ object CarbonSparkSqlParserUtil {
         s"Values must be specified for key(s): ${ badKeys.mkString("[", ",", "]") }", ctx)
     }
     props.map { case (key, value) =>
-      if (needToConvertToLowerCase(key)) {
-        (key.toLowerCase, value.toLowerCase)
-      } else {
-        (key.toLowerCase, value)
-      }
+      (key.toLowerCase, value)
     }
-  }
-
-  /**
-   * check's whether need to convert to lower case
-   *
-   * @param key <String> property key
-   * @return returns <true> if lower case conversion is needed else <false>
-   */
-  def needToConvertToLowerCase(key: String): Boolean = {
-    val noConvertList = Array("LIST_INFO", "RANGE_INFO", "PATH")
-    !noConvertList.exists(x => x.equalsIgnoreCase(key))
   }
 
   /**

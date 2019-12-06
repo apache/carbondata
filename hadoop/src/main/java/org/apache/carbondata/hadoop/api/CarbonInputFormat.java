@@ -22,7 +22,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,9 +47,7 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
-import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -494,8 +491,7 @@ m filterExpression
    * get data blocks of given segment
    */
   protected List<CarbonInputSplit> getDataBlocksOfSegment(JobContext job, CarbonTable carbonTable,
-      DataMapFilter expression, BitSet matchedPartitions, List<Segment> segmentIds,
-      PartitionInfo partitionInfo, List<Integer> oldPartitionIdList,
+      DataMapFilter expression, List<Segment> segmentIds,
       List<Segment> invalidSegments, List<String> segmentsToBeRefreshed)
       throws IOException {
 
@@ -509,35 +505,13 @@ m filterExpression
         getPrunedBlocklets(job, carbonTable, expression, segmentIds, invalidSegments,
             segmentsToBeRefreshed);
     List<CarbonInputSplit> resultFilteredBlocks = new ArrayList<>();
-    int partitionIndex = 0;
-    List<Integer> partitionIdList = new ArrayList<>();
-    if (partitionInfo != null && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
-      partitionIdList = partitionInfo.getPartitionIds();
-    }
     for (ExtendedBlocklet blocklet : prunedBlocklets) {
-
-      // OldPartitionIdList is only used in alter table partition command because it change
-      // partition info first and then read data.
-      // For other normal query should use newest partitionIdList
-      if (partitionInfo != null && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
-        long partitionId = Long.parseLong(CarbonTablePath.DataFileUtil
-            .getTaskIdFromTaskNo(CarbonTablePath.DataFileUtil.getTaskNo(blocklet.getPath())));
-        if (oldPartitionIdList != null) {
-          partitionIndex = oldPartitionIdList.indexOf((int) partitionId);
-        } else {
-          partitionIndex = partitionIdList.indexOf((int) partitionId);
-        }
-      }
-      if (partitionIndex != -1) {
-        // matchedPartitions variable will be null in two cases as follows
-        // 1. the table is not a partition table
-        // 2. the table is a partition table, and all partitions are matched by query
-        // for partition table, the task id of carbaondata file name is the partition id.
-        // if this partition is not required, here will skip it.
-        if (matchedPartitions == null || matchedPartitions.get(partitionIndex)) {
-          resultFilteredBlocks.add(blocklet.getInputSplit());
-        }
-      }
+      // matchedPartitions variable will be null in two cases as follows
+      // 1. the table is not a partition table
+      // 2. the table is a partition table, and all partitions are matched by query
+      // for partition table, the task id of carbaondata file name is the partition id.
+      // if this partition is not required, here will skip it.
+      resultFilteredBlocks.add(blocklet.getInputSplit());
     }
     statistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());

@@ -58,10 +58,6 @@ CarbonData DDL statements are documented here,which includes:
 * [PARTITION](#partition)
   * [STANDARD PARTITION(HIVE)](#standard-partition)
     * [INSERT OVERWRITE PARTITION](#insert-overwrite)
-  * [CARBONDATA PARTITION](#create-hash-partition-table)
-    * [HASH PARTITION](#create-hash-partition-table)
-    * [RANGE PARTITION](#create-range-partition-table)
-    * [LIST PARTITION](#create-list-partition-table)
   * [SHOW PARTITIONS](#show-partitions)
   * [ADD PARTITION](#add-a-new-partition)
   * [SPLIT PARTITION](#split-a-partition)
@@ -958,95 +954,6 @@ Users can specify which columns to include and exclude for local dictionary gene
   PARTITION (country = 'US')
   SELECT * FROM another_user au 
   WHERE au.country = 'US';
-  ```
-
-### CARBONDATA PARTITION(HASH,RANGE,LIST) -- Alpha feature, this partition feature does not support update and delete data.
-
-  The partition supports three type:(Hash,Range,List), similar to other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column.
-
-### Create Hash Partition Table
-
-  This command allows us to create hash partition.
-
-  ```
-  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
-                    [(col_name data_type , ...)]
-  PARTITIONED BY (partition_col_name data_type)
-  STORED AS carbondata
-  [TBLPROPERTIES ('PARTITION_TYPE'='HASH',
-                  'NUM_PARTITIONS'='N' ...)]
-  ```
-
-  **NOTE:** N is the number of hash partitions
-
-
-  Example:
-  ```
-  CREATE TABLE IF NOT EXISTS hash_partition_table(
-      col_A STRING,
-      col_B INT,
-      col_C LONG,
-      col_D DECIMAL(10,2),
-      col_F TIMESTAMP
-  ) PARTITIONED BY (col_E LONG)
-  STORED AS carbondata TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='9')
-  ```
-
-### Create Range Partition Table
-
-  This command allows us to create range partition.
-  ```
-  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
-                    [(col_name data_type , ...)]
-  PARTITIONED BY (partition_col_name data_type)
-  STORED AS carbondata
-  [TBLPROPERTIES ('PARTITION_TYPE'='RANGE',
-                  'RANGE_INFO'='2014-01-01, 2015-01-01, 2016-01-01, ...')]
-  ```
-
-  **NOTE:**
-  * The 'RANGE_INFO' must be defined in ascending order in the table properties.
-  * The default format for partition column of Date/Timestamp type is yyyy-MM-dd. Alternate formats for Date/Timestamp could be defined in CarbonProperties.
-
-  Example:
-  ```
-  CREATE TABLE IF NOT EXISTS range_partition_table(
-      col_A STRING,
-      col_B INT,
-      col_C LONG,
-      col_D DECIMAL(10,2),
-      col_E LONG
-  ) partitioned by (col_F Timestamp)
-  STORED BY 'carbondata'
-  TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-  'RANGE_INFO'='2015-01-01, 2016-01-01, 2017-01-01, 2017-02-01')
-  ```
-
-### Create List Partition Table
-
-  This command allows us to create list partition.
-  ```
-  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
-                    [(col_name data_type , ...)]
-  PARTITIONED BY (partition_col_name data_type)
-  STORED AS carbondata
-  [TBLPROPERTIES ('PARTITION_TYPE'='LIST',
-                  'LIST_INFO'='A, B, C, ...')]
-  ```
-  **NOTE:** List partition supports list info in one level group.
-
-  Example:
-  ```
-  CREATE TABLE IF NOT EXISTS list_partition_table(
-      col_B INT,
-      col_C LONG,
-      col_D DECIMAL(10,2),
-      col_E LONG,
-      col_F TIMESTAMP
-   ) PARTITIONED BY (col_A STRING)
-  STORED AS carbondata
-  TBLPROPERTIES('PARTITION_TYPE'='LIST',
-  'LIST_INFO'='aaaa, bbbb, (cccc, dddd), eeee')
   ```
 
 

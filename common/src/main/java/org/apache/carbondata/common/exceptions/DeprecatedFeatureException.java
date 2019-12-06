@@ -15,30 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.filter.partition;
+package org.apache.carbondata.common.exceptions;
 
-import java.util.BitSet;
+public class DeprecatedFeatureException extends RuntimeException {
 
-import org.apache.carbondata.core.scan.partition.Partitioner;
-
-/**
- * the implement of AND logical filter
- */
-public class AndFilterImpl implements PartitionFilterIntf {
-
-  protected PartitionFilterIntf left;
-  protected PartitionFilterIntf right;
-
-  public AndFilterImpl(PartitionFilterIntf left, PartitionFilterIntf right) {
-    this.left = left;
-    this.right = right;
-  }
-
-  @Override
-  public BitSet applyFilter(Partitioner partitioner) {
-    BitSet leftBitSet = left.applyFilter(partitioner);
-    BitSet rightBitSet = right.applyFilter(partitioner);
-    leftBitSet.and(rightBitSet);
-    return leftBitSet;
+  public DeprecatedFeatureException(String featureName) {
+    super(featureName + " is deprecated in CarbonData 2.0");
   }
 }

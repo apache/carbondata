@@ -45,7 +45,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
-    checkExistence(sql("DESCRIBE FORMATTED tableWithGlobalSort"), true, "global_sort")
+    checkExistence(sql("DESCRIBE FORMATTED tableWithGlobalSort"), true, "GLOBAL_SORT")
 
     sql(
       s"""
@@ -59,7 +59,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
 
     sql("DESCRIBE FORMATTED tableWithLocalSort")
 
-    checkExistence(sql("DESCRIBE FORMATTED tableWithLocalSort"), true, "local_sort")
+    checkExistence(sql("DESCRIBE FORMATTED tableWithLocalSort"), true, "LOCAL_SORT")
 
     sql(
       s"""
@@ -71,7 +71,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='BATCH_SORT')
        """.stripMargin)
 
-    checkExistence(sql("DESCRIBE FORMATTED tableWithBatchSort"), true, "batch_sort")
+    checkExistence(sql("DESCRIBE FORMATTED tableWithBatchSort"), true, "BATCH_SORT")
 
     sql(
       s"""
@@ -83,7 +83,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='NO_SORT')
        """.stripMargin)
 
-    checkExistence(sql("DESCRIBE FORMATTED tableWithNoSort"), true, "no_sort")
+    checkExistence(sql("DESCRIBE FORMATTED tableWithNoSort"), true, "NO_SORT")
   }
 
   test("test create table with sort scope in abnormal cases") {

@@ -42,27 +42,32 @@ public class PartitionInfo implements Serializable, Writable {
   /**
    * range information defined for range partition table
    */
+  @Deprecated
   private List<String> rangeInfo;
 
   /**
-   * value list defined for list partition table
+   * list information defined for range partition table
    */
+  @Deprecated
   private List<List<String>> listInfo;
 
   /**
    * total count of partitions
    */
+  @Deprecated
   private int numPartitions;
 
   /**
    * current max partition id, increase only, will be used in alter table partition operation
    */
+  @Deprecated
   private int maxPartitionId;
 
   /**
    * record the partitionId in the logical ascending order
    * initiate when table created and changed when alter table
    */
+  @Deprecated
   private List<Integer> partitionIds;
 
   public PartitionInfo() {
@@ -75,36 +80,6 @@ public class PartitionInfo implements Serializable, Writable {
     this.partitionIds = new ArrayList<>();
   }
 
-  /**
-   * add partition means split default partition, add in last directly
-   */
-  public void  addPartition(int addPartitionCount) {
-    for (int i = 0; i < addPartitionCount; i++) {
-      partitionIds.add(++maxPartitionId);
-      numPartitions++;
-    }
-  }
-
-  /**
-   * e.g. original partition[0,1,2,3,4,5]
-   * split partition 2 to partition 6,7,8 (will not reuse 2)
-   * then sourcePartitionId is 2, newPartitionNumbers is 3
-   * @param sourcePartitionIndex
-   * @param newPartitionNumbers
-   */
-  public void splitPartition(int sourcePartitionIndex, int newPartitionNumbers) {
-    partitionIds.remove(sourcePartitionIndex);
-    for (int i = 0; i < newPartitionNumbers; i++) {
-      partitionIds.add(sourcePartitionIndex + i, ++maxPartitionId);
-    }
-    numPartitions = numPartitions - 1 + newPartitionNumbers;
-  }
-
-  public void dropPartition(int index) {
-    partitionIds.remove(index);
-    numPartitions--;
-  }
-
   public List<ColumnSchema> getColumnSchemaList() {
     return columnSchemaList;
   }
@@ -115,58 +90,6 @@ public class PartitionInfo implements Serializable, Writable {
 
   public PartitionType getPartitionType() {
     return partitionType;
-  }
-
-  public void setRangeInfo(List<String> rangeInfo) {
-    this.rangeInfo = rangeInfo;
-  }
-
-  public List<String> getRangeInfo() {
-    return rangeInfo;
-  }
-
-  public void setListInfo(List<List<String>> listInfo) {
-    this.listInfo = listInfo;
-  }
-
-  public List<List<String>> getListInfo() {
-    return listInfo;
-  }
-
-  public void initialize(int partitionNum) {
-    for (int i = 0; i < partitionNum; i++) {
-      partitionIds.add(i);
-    }
-    maxPartitionId = partitionNum - 1;
-    numPartitions = partitionNum;
-  }
-
-  public void setNumPartitions(int numPartitions) {
-    this.numPartitions = numPartitions;
-  }
-
-  public int getNumPartitions() {
-    return numPartitions;
-  }
-
-  public int getMaxPartitionId() {
-    return maxPartitionId;
-  }
-
-  public void setMaxPartitionId(int maxPartitionId) {
-    this.maxPartitionId = maxPartitionId;
-  }
-
-  public List<Integer> getPartitionIds() {
-    return partitionIds;
-  }
-
-  public void setPartitionIds(List<Integer> partitionIdList) {
-    this.partitionIds = partitionIdList;
-  }
-
-  public int getPartitionId(int index) {
-    return partitionIds.get(index);
   }
 
   @Override

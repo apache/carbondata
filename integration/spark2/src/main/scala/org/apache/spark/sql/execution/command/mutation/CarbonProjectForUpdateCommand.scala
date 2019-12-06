@@ -70,14 +70,6 @@ private[sql] case class CarbonProjectForUpdateCommand(
       return Array(Row(updatedRowCount)).toSeq
     }
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-    if (carbonTable.getPartitionInfo != null &&
-      (carbonTable.getPartitionInfo.getPartitionType == PartitionType.RANGE ||
-        carbonTable.getPartitionInfo.getPartitionType == PartitionType.HASH ||
-        carbonTable.getPartitionInfo.getPartitionType == PartitionType.LIST)) {
-      throw new UnsupportedOperationException("Unsupported update operation for range/" +
-        "hash/list partition table")
-    }
-
     setAuditTable(carbonTable)
     setAuditInfo(Map("plan" -> plan.simpleString))
     columns.foreach { col =>
