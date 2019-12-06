@@ -18,26 +18,22 @@
 package org.apache.carbondata.spark.rdd
 
 import java.io.File
-import java.text.SimpleDateFormat
 import java.util
-import java.util.TimeZone
 import java.util.concurrent._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
-import scala.util.control.Breaks._
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, NewHadoopRDD, RDD}
+import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
@@ -57,27 +53,22 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnarFormatVersion, SegmentFileStore}
-import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
-import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.indexserver.{DistributedRDDUtils, IndexServer}
-import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
-import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, StringArrayWritable}
+import org.apache.carbondata.processing.loading.csvinput.BlockDetails
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostStatusUpdateEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.processing.util.{Auditor, CarbonDataProcessorUtil, CarbonLoaderUtil}
-import org.apache.carbondata.spark.{DataLoadResultImpl, PartitionFactory, _}
+import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
+import org.apache.carbondata.spark.{DataLoadResultImpl, _}
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
 
@@ -369,12 +360,10 @@ object CarbonDataRDDFactory {
             }
           }
         } else {
-          status = if (carbonTable.getPartitionInfo() != null) {
-            loadDataForPartitionTable(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
-          } else if (dataFrame.isEmpty && isSortTable &&
-                     carbonLoadModel.getRangePartitionColumn != null &&
-                     (sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) ||
-                      sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT))) {
+          status = if (dataFrame.isEmpty && isSortTable &&
+                       carbonLoadModel.getRangePartitionColumn != null &&
+                       (sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) ||
+                        sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT))) {
             DataLoadProcessBuilderOnSpark
               .loadDataUsingRangeSort(sqlContext.sparkSession, carbonLoadModel, hadoopConf)
           } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
@@ -984,141 +973,6 @@ object CarbonDataRDDFactory {
       }
     }
     (done, metadataDetails)
-  }
-
-  /**
-   * repartition the input data for partition table.
-   */
-  private def repartitionInputData(
-      sqlContext: SQLContext,
-      dataFrame: Option[DataFrame],
-      carbonLoadModel: CarbonLoadModel,
-      hadoopConf: Configuration): RDD[Row] = {
-    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val partitionInfo = carbonTable.getPartitionInfo()
-    val partitionColumn = partitionInfo.getColumnSchemaList.get(0).getColumnName
-    val partitionColumnDataType = partitionInfo.getColumnSchemaList.get(0).getDataType
-    val columns = carbonLoadModel.getCsvHeaderColumns
-    var partitionColumnIndex = -1
-    breakable {
-      for (i <- 0 until columns.length) {
-        if (partitionColumn.equalsIgnoreCase(columns(i))) {
-          partitionColumnIndex = i
-          break
-        }
-      }
-    }
-    if (partitionColumnIndex == -1) {
-      throw new DataLoadingException("Partition column not found.")
-    }
-
-    val specificTimestampFormat = carbonLoadModel.getTimestampformat
-    val specificDateFormat = carbonLoadModel.getDateFormat
-    val timeStampFormat =
-      if (specificTimestampFormat != null && !specificTimestampFormat.trim.isEmpty) {
-        new SimpleDateFormat(specificTimestampFormat)
-      } else {
-        val timestampFormatString = CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-        new SimpleDateFormat(timestampFormatString)
-      }
-
-    val dateFormat = if (specificDateFormat != null && !specificDateFormat.trim.isEmpty) {
-      new SimpleDateFormat(specificDateFormat)
-    } else {
-      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-        .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-      new SimpleDateFormat(dateFormatString)
-    }
-    dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"))
-
-    // generate RDD[(K, V)] to use the partitionBy method of PairRDDFunctions
-    val inputRDD: RDD[(String, Row)] = if (dataFrame.isDefined) {
-      // input data from DataFrame
-      val complexDelimiters = carbonLoadModel.getComplexDelimiters
-      val serializationNullFormat =
-        carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
-      dataFrame.get.rdd.map { row =>
-        if (null != row && row.length > partitionColumnIndex &&
-            null != row.get(partitionColumnIndex)) {
-          (CarbonScalaUtil.getString(row.get(partitionColumnIndex), serializationNullFormat,
-            complexDelimiters, timeStampFormat, dateFormat), row)
-        } else {
-          (null, row)
-        }
-      }
-    } else {
-      // input data from csv files
-      CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
-      hadoopConf.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
-      val columnCount = columns.length
-      val jobConf = new JobConf(hadoopConf)
-      SparkHadoopUtil.get.addCredentials(jobConf)
-      new NewHadoopRDD[NullWritable, StringArrayWritable](
-        sqlContext.sparkContext,
-        classOf[CSVInputFormat],
-        classOf[NullWritable],
-        classOf[StringArrayWritable],
-        jobConf
-      ).map { currentRow =>
-        if (null == currentRow || null == currentRow._2) {
-          val row = new StringArrayRow(new Array[String](columnCount))
-          (null, row)
-        } else {
-          val row = new StringArrayRow(new Array[String](columnCount))
-          val values = currentRow._2.get()
-          if (values != null && values.length > partitionColumnIndex) {
-            (currentRow._2.get()(partitionColumnIndex), row.setValues(currentRow._2.get()))
-          } else {
-            (null, row.setValues(currentRow._2.get()))
-          }
-        }
-      }
-    }
-
-    val partitioner = PartitionFactory.getPartitioner(partitionInfo)
-    if (partitionColumnDataType == DataTypes.STRING) {
-      if (partitionInfo.getPartitionType == PartitionType.RANGE) {
-        inputRDD.map { row => (ByteUtil.toBytes(row._1), row._2) }
-          .partitionBy(partitioner)
-          .map(_._2)
-      } else {
-        inputRDD.partitionBy(partitioner)
-          .map(_._2)
-      }
-    } else {
-      inputRDD.map { row =>
-        (PartitionUtil.getDataBasedOnDataType(row._1, partitionColumnDataType, timeStampFormat,
-          dateFormat), row._2)
-      }
-        .partitionBy(partitioner)
-        .map(_._2)
-    }
-  }
-
-  /**
-   * Execute load process for partition table
-   */
-  private def loadDataForPartitionTable(
-      sqlContext: SQLContext,
-      dataFrame: Option[DataFrame],
-      carbonLoadModel: CarbonLoadModel,
-      hadoopConf: Configuration
-  ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
-    try {
-      val rdd = repartitionInputData(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
-      new PartitionTableDataLoaderRDD(
-        sqlContext.sparkSession,
-        new DataLoadResultImpl(),
-        carbonLoadModel,
-        rdd
-      ).collect()
-    } catch {
-      case ex: Exception =>
-        LOGGER.error("load data failed for partition table", ex)
-        throw ex
-    }
   }
 
   /**

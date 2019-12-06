@@ -463,13 +463,12 @@ class PartitionTableDataLoaderRDD[K, V](
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
       val model: CarbonLoadModel = carbonLoadModel
       val carbonTable = model.getCarbonDataLoadSchema.getCarbonTable
-      val partitionInfo = carbonTable.getPartitionInfo()
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
 
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
-        carbonLoadModel.setTaskNo(String.valueOf(partitionInfo.getPartitionId(theSplit.index)))
+        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         carbonLoadModel.setPreFetch(false)
         val recordReaders = Array[CarbonIterator[Array[AnyRef]]] {
           new NewRddIterator(firstParent[Row].iterator(theSplit, context), carbonLoadModel, context)

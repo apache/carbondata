@@ -152,7 +152,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 """.stripMargin)
         }
         assert(exception.getMessage.contains(
-            "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: binaryfield is not a string/complex/varchar datatype column. " +
+            "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: binaryField is not a string/complex/varchar datatype column. " +
                     "LOCAL_DICTIONARY_COLUMN should be no dictionary string/complex/varchar datatype column"))
     }
 
@@ -190,7 +190,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 """.stripMargin)
         }
         assert(exception.getMessage.contains(
-            "DICTIONARY_INCLUDE is unsupported for binary data type column: binaryfield"))
+            "DICTIONARY_INCLUDE is unsupported for binary data type column: binaryField"))
     }
 
     test("Unsupport DICTIONARY_INCLUDE for binary, multiple column") {
@@ -210,7 +210,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                 """.stripMargin)
         }
         assert(exception.getMessage.contains(
-            "DICTIONARY_INCLUDE is unsupported for binary data type column: binaryfield"))
+            "DICTIONARY_INCLUDE is unsupported for binary data type column: binaryField"))
     }
 
     test("Supports DICTIONARY_EXCLUDE for binary") {
@@ -262,7 +262,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                   | tblproperties('inverted_index'='binaryField','SORT_COLUMNS'='binaryField')
                 """.stripMargin)
         }
-        assert(exception.getMessage.contains("sort_columns is unsupported for binary datatype column: binaryfield"))
+        assert(exception.getMessage.contains("sort_columns is unsupported for binary datatype column: binaryField"))
     }
 
     test("COLUMN_META_CACHE doesn't support binary") {
@@ -1581,61 +1581,6 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
 
         checkAnswer(sql("select cast(photo as string) from carbon_partition_table"),
             Seq(Row("binary"), Row("1"), Row("binary"), Row("1"), Row("binary"), Row("1")))
-    }
-
-    test("Create table and load data with binary column for partition") {
-        sql("DROP TABLE IF EXISTS binaryTable")
-        sql(
-            s"""
-               | CREATE TABLE IF NOT EXISTS binaryTable (
-               |    id int,
-               |    label boolean,
-               |    name string,
-               |    autoLabel boolean)
-               | PARTITIONED BY(binaryfield binary)
-               | STORED BY 'carbondata'
-               | TBLPROPERTIES('SORT_COLUMNS'='','PARTITION_TYPE'='HASH','NUM_PARTITIONS'='9')
-             """.stripMargin)
-        sql(
-            s"""
-               | LOAD DATA LOCAL INPATH '$resourcesPath/binarystringdatawithHead.csv'
-               | INTO TABLE binaryTable
-               | partition(binaryfield)
-               | OPTIONS('header'='true','DELIMITER'='|')
-             """.stripMargin)
-
-        val result = sql("desc formatted binaryTable").collect()
-        var flag = false
-        result.foreach { each =>
-            if ("binary".equals(each.get(1))) {
-                flag = true
-            }
-        }
-        assert(flag)
-
-        checkAnswer(sql("SELECT COUNT(*) FROM binaryTable"), Seq(Row(3)))
-        try {
-            val df = sql("SELECT * FROM binaryTable").collect()
-            assert(3 == df.length)
-
-            df.foreach { each =>
-                assert(5 == each.length)
-                if (2 == each.get(0)) {
-                    assert("binary".equals(new String(each.getAs[Array[Byte]](4))))
-                } else if (1 == each.get(0)) {
-                    assert("Hello world".equals(new String(each.getAs[Array[Byte]](4))))
-                } else if (3 == each.get(0)) {
-                    assert("1".equals(new String(each.getAs[Array[Byte]](4))))
-                } else {
-                    assert(false)
-                }
-            }
-
-        } catch {
-            case e: Exception =>
-                e.printStackTrace()
-                assert(false)
-        }
     }
 
     test("Select query with average function for substring of binary column is executed.") {

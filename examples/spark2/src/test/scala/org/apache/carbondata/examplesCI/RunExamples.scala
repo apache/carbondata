@@ -62,10 +62,6 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
     CarbonDataFrameExample.exampleBody(spark)
   }
 
-  test("CarbonPartitionExample") {
-    CarbonPartitionExample.exampleBody(spark)
-  }
-
   test("CarbonSessionExample") {
     CarbonSessionExample.exampleBody(spark)
   }

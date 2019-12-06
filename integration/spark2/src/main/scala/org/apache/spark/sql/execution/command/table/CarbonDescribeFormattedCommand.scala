@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.command.MetadataCommand
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.Strings
+import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
@@ -197,14 +198,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
         ("Partition Columns",
           partitionInfo.getColumnSchemaList.asScala.map {
             col => s"${col.getColumnName}:${col.getDataType.getName}"}.mkString(", "), ""),
-        ("Number of Partitions", getNumberOfPartitions(carbonTable, sparkSession), ""),
-        ("Partitions Ids", partitionInfo.getPartitionIds.asScala.mkString(","), "")
+        ("Number of Partitions", getNumberOfPartitions(carbonTable, sparkSession), "")
       )
-      if (partitionInfo.getPartitionType == PartitionType.RANGE) {
-        results ++= Seq(("Range", partitionInfo.getRangeInfo.asScala.mkString(", "), ""))
-      } else if (partitionInfo.getPartitionType == PartitionType.LIST) {
-        results ++= Seq(("List", partitionInfo.getListInfo.asScala.mkString(", "), ""))
-      }
     }
     if (partitionSpec.nonEmpty) {
       val partitions = sparkSession.sessionState.catalog.getPartition(tblIdentifier, partitionSpec)
@@ -263,7 +258,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
           .listPartitions(new TableIdentifier(carbonTable.getTableName,
             Some(carbonTable.getDatabaseName))).size.toString
       case _ =>
-        carbonTable.getPartitionInfo.getNumPartitions.toString
+        throw new DeprecatedFeatureException("Custom Partition")
     }
   }
 

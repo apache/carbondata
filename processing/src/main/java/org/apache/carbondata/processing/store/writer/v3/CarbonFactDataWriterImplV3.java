@@ -376,14 +376,6 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     }
   }
 
-  private byte[][] toByteArray(List<ByteBuffer> buffers) {
-    byte[][] arrays = new byte[buffers.size()][];
-    for (int i = 0; i < arrays.length; i++) {
-      arrays[i] = buffers.get(i).array();
-    }
-    return arrays;
-  }
-
   /**
    * Method will be used to close the open file channel
    *

@@ -31,11 +31,8 @@ import scala.math.BigDecimal.RoundingMode
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, SparkEnv}
-import org.apache.spark.sql.{Row, RowFactory}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
-import org.apache.spark.sql.types.{MetadataBuilder, StringType}
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -44,14 +41,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
 import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
-import org.apache.carbondata.core.metadata.schema.PartitionInfo
-import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil, ThreadLocalTaskInfo}
-import org.apache.carbondata.core.util.comparator.Comparator
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -103,56 +95,6 @@ object CommonUtil {
             isValid = false
             throw new MalformedCarbonCommandException(s"Invalid table properties $key")
           }
-      }
-    }
-    isValid
-  }
-
-  /**
-   * 1. If partitioned by clause exists, then partition_type should be defined
-   * 2. If partition_type is Hash, then num_partitions should be defined
-   * 3. If partition_type is List, then list_info should be defined
-   * 4. If partition_type is Range, then range_info should be defined
-   * 5. Only support single level partition for now
-   * @param tableProperties
-   * @param partitionerFields
-   * @return partition clause and definition in tblproperties are valid or not
-   */
-  def validatePartitionColumns(tableProperties: Map[String, String],
-      partitionerFields: Seq[PartitionerField]): Boolean = {
-    var isValid: Boolean = true
-    val partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE)
-    val numPartitions = tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS)
-    val rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO)
-    val listInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO)
-
-    if (partitionType.isEmpty) {
-      isValid = true
-    } else {
-      partitionType.get.toUpperCase() match {
-        case "HASH" => if (!numPartitions.isDefined
-        || scala.util.Try(numPartitions.get.toInt).isFailure
-        || numPartitions.get.toInt <= 0) {
-          isValid = false
-        }
-        case "LIST" => if (!listInfo.isDefined) {
-          isValid = false
-        } else {
-          listInfo.get.replace("(", "").replace(")", "").split(",").map(_.trim).foreach(
-            isValid &= validateTypeConvert(partitionerFields(0), _))
-        }
-        case "RANGE" => if (!rangeInfo.isDefined) {
-          isValid = false
-        } else {
-          rangeInfo.get.split(",").map(_.trim).foreach(
-            isValid &= validateTypeConvert(partitionerFields(0), _))
-        }
-        case "RANGE_INTERVAL" => isValid = false
-        case _ => isValid = true
-      }
-      // only support one partition column for now
-      if (partitionerFields.length > 1 && !partitionType.get.toUpperCase.equals("NATIVE_HIVE")) {
-        isValid = false
       }
     }
     isValid
@@ -256,86 +198,6 @@ object CommonUtil {
         s"column: ${partitionerField.partitionColumn}")
     } else {
       result
-    }
-  }
-
-  /**
-   * To verify the range info is in correct order
-   * @param rangeInfo
-   * @param columnDataType
-   * @param timestampFormatter
-   * @param dateFormatter
-   */
-  def validateRangeInfo(rangeInfo: List[String], columnDataType: DataType,
-      timestampFormatter: SimpleDateFormat, dateFormatter: SimpleDateFormat): Unit = {
-    if (rangeInfo.size <= 1) {
-      throw new
-         MalformedCarbonCommandException("Range info must define a valid range.Please check again!")
-    }
-    val comparator = Comparator.getComparator(columnDataType)
-    var head = columnDataType match {
-      case DataTypes.STRING => ByteUtil.toBytes(rangeInfo.head)
-      case _ => PartitionUtil.getDataBasedOnDataType(rangeInfo.head, columnDataType,
-        timestampFormatter, dateFormatter)
-    }
-    val iterator = rangeInfo.tail.toIterator
-    while (iterator.hasNext) {
-      val next = columnDataType match {
-        case DataTypes.STRING => ByteUtil.toBytes(iterator.next())
-        case _ => PartitionUtil.getDataBasedOnDataType(iterator.next(), columnDataType,
-          timestampFormatter, dateFormatter)
-      }
-      if (next == null) {
-        sys.error(
-          "Data in range info must be the same type with the partition field's type "
-            + columnDataType)
-      }
-      if (comparator.compare(head, next) < 0) {
-        head = next
-      } else {
-        sys.error("Range info must be in ascending order, please check again!")
-      }
-    }
-  }
-
-  def validateSplitListInfo(originListInfo: List[String], newListInfo: List[String],
-      originList: List[List[String]]): Unit = {
-    if (originListInfo.size == 1) {
-      sys.error("The target list partition cannot be split, please check again!")
-    }
-    if (newListInfo.size == 1) {
-      sys.error("Can't split list to one partition, please check again!")
-    }
-    if (!(newListInfo.size < originListInfo.size)) {
-      sys.error("The size of new list must be smaller than original list, please check again!")
-    }
-    val tempList = newListInfo.mkString(",").split(",")
-      .map(_.replace("(", "").replace(")", "").trim)
-    if (tempList.length != originListInfo.size) {
-      sys.error("The total number of elements in new list must equal to original list!")
-    }
-    if (!(tempList diff originListInfo).isEmpty) {
-      sys.error("The elements in new list must exist in original list")
-    }
-  }
-
-  def validateAddListInfo(newListInfo: List[String], originList: List[List[String]]): Unit = {
-    if (newListInfo.size < 1) {
-      sys.error("Please add at least one new partition")
-    }
-    for (originElementGroup <- originList) {
-      for (newElement <- newListInfo ) {
-        if (originElementGroup.contains(newElement)) {
-          sys.error(s"The partition $newElement is already exist! Please check again!")
-        }
-      }
-    }
-  }
-
-  def validateListInfo(listInfo: List[List[String]]): Unit = {
-    val list = listInfo.flatten
-    if (list.distinct.size != list.size) {
-      sys.error("Duplicate elements defined in LIST_INFO!")
     }
   }
 
@@ -634,52 +496,6 @@ object CommonUtil {
       LOGGER.info(s"mapreduce.input.fileinputformat.split.maxsize: ${ newSplitSize.toString }")
     }
   }
-
-  def getPartitionInfo(columnName: String, partitionType: PartitionType,
-      partitionInfo: PartitionInfo): Seq[Row] = {
-    var result = Seq.newBuilder[Row]
-    partitionType match {
-      case PartitionType.RANGE =>
-        result.+=(RowFactory.create("0" + ", " + columnName + " = DEFAULT"))
-        val rangeInfo = partitionInfo.getRangeInfo
-        val size = rangeInfo.size() - 1
-        for (index <- 0 to size) {
-          if (index == 0) {
-            val id = partitionInfo.getPartitionId(index + 1).toString
-            val desc = columnName + " < " + rangeInfo.get(index)
-            result.+=(RowFactory.create(id + ", " + desc))
-          } else {
-            val id = partitionInfo.getPartitionId(index + 1).toString
-            val desc = rangeInfo.get(index - 1) + " <= " + columnName + " < " + rangeInfo.get(index)
-            result.+=(RowFactory.create(id + ", " + desc))
-          }
-        }
-      case PartitionType.RANGE_INTERVAL =>
-        result.+=(RowFactory.create(columnName + " = "))
-      case PartitionType.LIST =>
-        result.+=(RowFactory.create("0" + ", " + columnName + " = DEFAULT"))
-        val listInfo = partitionInfo.getListInfo
-        listInfo.asScala.foreach {
-          f =>
-            val id = partitionInfo.getPartitionId(listInfo.indexOf(f) + 1).toString
-            val desc = columnName + " = " + f.toArray().mkString(", ")
-            result.+=(RowFactory.create(id + ", " + desc))
-        }
-      case PartitionType.HASH =>
-        val hashNumber = partitionInfo.getNumPartitions
-        result.+=(RowFactory.create(columnName + " = HASH_NUMBER(" + hashNumber.toString() + ")"))
-        result.+=(RowFactory.create(s"partitionIds = ${partitionInfo.getPartitionIds}"))
-      case others =>
-        result.+=(RowFactory.create(columnName + " = "))
-    }
-    val rows = result.result()
-    rows
-  }
-
-  def partitionInfoOutput: Seq[Attribute] = Seq(
-    AttributeReference("Partition(Id, DESC)", StringType, false,
-      new MetadataBuilder().putString("comment", "partition").build())()
-  )
 
   /**
    * Method to clear the memory for a task

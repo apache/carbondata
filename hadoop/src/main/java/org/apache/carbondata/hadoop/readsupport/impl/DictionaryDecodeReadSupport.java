@@ -40,10 +40,6 @@ public class DictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
   protected Dictionary[] dictionaries;
 
   protected DataType[] dataTypes;
-  /**
-   * carbon columns
-   */
-  protected CarbonColumn[] carbonColumns;
 
   /**
    * This initialization is done inside executor task
@@ -55,7 +51,6 @@ public class DictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
   @Override
   public void initialize(CarbonColumn[] carbonColumns,
       CarbonTable carbonTable) throws IOException {
-    this.carbonColumns = carbonColumns;
     dictionaries = new Dictionary[carbonColumns.length];
     dataTypes = new DataType[carbonColumns.length];
     for (int i = 0; i < carbonColumns.length; i++) {

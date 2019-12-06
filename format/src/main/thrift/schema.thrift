@@ -64,6 +64,7 @@ enum Encoding{
 	DIRECT_COMPRESS_VARCHAR = 14;  // Identifies that a columm is encoded using DirectCompressCodec, it is used for long string columns
 }
 
+// Only NATIVE_HIVE is supported, others are deprecated since CarbonData 2.0
 enum PartitionType{
   RANGE = 0;
   RANGE_INTERVAL = 1;

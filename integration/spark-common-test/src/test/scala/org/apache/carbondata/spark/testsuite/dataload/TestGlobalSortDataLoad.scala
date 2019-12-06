@@ -138,20 +138,6 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   }
 
   // ----------------------------------- Configuration Validity -----------------------------------
-  test("Don't support GLOBAL_SORT on partitioned table") {
-    sql("DROP TABLE IF EXISTS carbon_globalsort_partitioned")
-    sql(
-      """
-        | CREATE TABLE carbon_globalsort_partitioned(name STRING, city STRING, age INT)
-        | PARTITIONED BY (id INT)
-        | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='3', 'SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
-      """.stripMargin)
-
-    intercept[MalformedCarbonCommandException] {
-      sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_partitioned")
-    }
-  }
 
   test("Number of partitions should be greater than 0") {
     intercept[MalformedCarbonCommandException] {

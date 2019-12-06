@@ -101,11 +101,7 @@ class CarbonMergerRDD[K, V](
     val iter = new Iterator[(K, V)] {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
       val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
-      if (carbonTable.isPartitionTable) {
-        carbonLoadModel.setTaskNo(String.valueOf(carbonSparkPartition.partitionId))
-      } else {
-        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-      }
+      carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
       val partitionSpec = if (carbonTable.isHivePartitionTable) {
         carbonSparkPartition.partitionSpec.get
       } else {
@@ -339,7 +335,6 @@ class CarbonMergerRDD[K, V](
     var defaultParallelism = sparkContext.defaultParallelism
     val result = new java.util.ArrayList[Partition](defaultParallelism)
     var taskPartitionNo = 0
-    var carbonPartitionId = 0
     var noOfBlocks = 0
 
     val taskInfoList = new java.util.ArrayList[Distributable]
@@ -464,7 +459,6 @@ class CarbonMergerRDD[K, V](
     val partitionTaskMap = new util.HashMap[PartitionSpec, String]()
     val counter = new AtomicInteger()
     var indexOfRangeColumn = -1
-    var taskIdCount = 0
     // As we are already handling null values in the filter expression separately so we
     // can remove the null from the ranges we get, else it may lead to duplicate data
     val newRanges = allRanges.filter { range =>
@@ -609,7 +603,6 @@ class CarbonMergerRDD[K, V](
     logInfo("no.of.nodes where data present=" + nodeBlockMap.size())
     defaultParallelism = sparkContext.defaultParallelism
 
-    val isPartitionTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isPartitionTable
     // Create Spark Partition for each task and assign blocks
     nodeBlockMap.asScala.foreach { case (nodeName, splitList) =>
       val taskSplitList = new java.util.ArrayList[NodeInfo](0)
@@ -633,15 +626,11 @@ class CarbonMergerRDD[K, V](
               splitListForRange,
               Array(nodeName))
           }
-          if (isPartitionTable) {
-            carbonPartitionId = Integer.parseInt(taskInfo.getTaskId)
-          }
           result.add(
             new CarbonSparkPartition(
               id,
               taskPartitionNo,
               multiBlockSplit,
-              carbonPartitionId,
               getPartitionNamesFromTask(taskInfo.getTaskId, partitionTaskMap)))
           taskPartitionNo += 1
         }

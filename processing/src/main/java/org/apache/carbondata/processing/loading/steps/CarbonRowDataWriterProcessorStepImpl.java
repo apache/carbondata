@@ -33,7 +33,6 @@ import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -66,8 +65,6 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private boolean[] isNoDictionaryDimensionColumn;
 
-  private DataType[] measureDataType;
-
   private int dimensionCount;
 
   private int measureCount;
@@ -75,8 +72,6 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   private long[] readCounter;
 
   private long[] writeCounter;
-
-  private int outputLength;
 
   private CarbonTableIdentifier tableIdentifier;
 
@@ -125,9 +120,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       dimensionCount = configuration.getDimensionCount() - noDictWithComplextCount;
       isNoDictionaryDimensionColumn =
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
-      measureDataType = configuration.getMeasureDataType();
       measureCount = configuration.getMeasureCount();
-      outputLength = measureCount + (this.noDictWithComplextCount > 0 ? 1 : 0) + 1;
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
               System.currentTimeMillis());

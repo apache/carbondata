@@ -461,7 +461,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
     }
     assert(exception1.getMessage
       .contains(
-        "sort_columns is unsupported for map datatype column: mapfield"))
+        "sort_columns is unsupported for map datatype column: mapField"))
   }
 
   test("Data Load Fail Issue") {

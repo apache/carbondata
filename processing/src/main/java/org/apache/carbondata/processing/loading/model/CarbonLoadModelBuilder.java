@@ -32,7 +32,6 @@ import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
-import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -176,7 +175,6 @@ public class CarbonLoadModelBuilder {
     String column_dict = optionsFinal.get("columndict");
     validateDateTimeFormat(timestampformat, "TimestampFormat");
     validateDateTimeFormat(dateFormat, "DateFormat");
-    validateSortScope(sort_scope);
 
     if (Boolean.parseBoolean(bad_records_logger_enable) ||
         LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {
@@ -217,12 +215,7 @@ public class CarbonLoadModelBuilder {
           List<String> columnNames = new ArrayList<>();
           List<String> partitionColumns = new ArrayList<>();
           for (int i = 0; i < columns.size(); i++) {
-            if (table.getPartitionInfo() != null && table.getPartitionInfo().getColumnSchemaList()
-                .contains(columns.get(i).getColumnSchema())) {
-              partitionColumns.add(columns.get(i).getColName());
-            } else {
-              columnNames.add(columns.get(i).getColName());
-            }
+            columnNames.add(columns.get(i).getColName());
           }
           columnNames.addAll(partitionColumns);
           fileHeader = Strings.mkString(columnNames.toArray(new String[columnNames.size()]), ",");
@@ -387,19 +380,6 @@ public class CarbonLoadModelBuilder {
         throw new InvalidLoadOptionException(
             "Error: Wrong option: " + dateTimeLoadFormat + " is provided for option "
                 + dateTimeLoadOption);
-      }
-    }
-  }
-
-  private void validateSortScope(String sortScope) throws InvalidLoadOptionException {
-    if (sortScope != null) {
-      // We support global sort for Hive standard partition, but don't support
-      // global sort for other partition type.
-      if (table.getPartitionInfo() != null &&
-          !table.isHivePartitionTable() &&
-          sortScope.equalsIgnoreCase(SortScopeOptions.SortScope.GLOBAL_SORT.toString())) {
-        throw new InvalidLoadOptionException("Don't support use global sort on "
-            + table.getPartitionInfo().getPartitionType() +  " partition table.");
       }
     }
   }

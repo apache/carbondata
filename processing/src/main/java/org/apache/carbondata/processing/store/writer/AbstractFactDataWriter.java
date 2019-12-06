@@ -37,7 +37,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
@@ -100,10 +99,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    * thrift column schema
    */
   protected List<org.apache.carbondata.format.ColumnSchema> thriftColumnSchemaList;
-  protected NumberCompressor numberCompressor;
   protected CarbonFactDataHandlerModel model;
-  protected List<List<Long>> dataChunksOffsets;
-  protected List<List<Short>> dataChunksLength;
   /**
    * data file size;
    */
@@ -195,11 +191,6 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     List<Integer> cardinalityList = new ArrayList<Integer>();
     thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
         this.model.getWrapperColumnSchema());
-    this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
-    this.dataChunksOffsets = new ArrayList<>();
-    this.dataChunksLength = new ArrayList<>();
     blockletMetadata = new ArrayList<BlockletInfo3>();
     blockletIndex = new ArrayList<>();
     listener = this.model.getDataMapWriterlistener();
@@ -235,8 +226,6 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
           + activeFile + ". Data block size: " + currentFileSize);
       // write meta data to end of the existing file
       writeFooterToFile();
-      this.dataChunksOffsets = new ArrayList<>();
-      this.dataChunksLength = new ArrayList<>();
       this.blockletMetadata = new ArrayList<>();
       this.blockletIndex = new ArrayList<>();
       commitCurrentFile(false);

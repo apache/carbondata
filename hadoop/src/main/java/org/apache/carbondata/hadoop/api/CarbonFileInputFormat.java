@@ -20,7 +20,6 @@ package org.apache.carbondata.hadoop.api;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -36,7 +35,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -131,7 +129,6 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         }
       }
       // this will be null in case of corrupt schema file.
-      PartitionInfo partitionInfo = carbonTable.getPartitionInfo();
       DataMapFilter filter = getFilterPredicates(job.getConfiguration());
 
       // if external table Segments are found, add it to the List
@@ -171,7 +168,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       }
       if (useBlockDataMap) {
         // do block filtering and get split
-        splits = getSplits(job, filter, externalTableSegments, null, partitionInfo, null);
+        splits = getSplits(job, filter, externalTableSegments);
       } else {
         List<CarbonFile> carbonFiles = null;
         if (null != this.fileLists) {
@@ -252,17 +249,18 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
    * @return
    * @throws IOException
    */
-  private List<InputSplit> getSplits(JobContext job, DataMapFilter dataMapFilter,
-      List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
-      List<Integer> oldPartitionIdList) throws IOException {
+  private List<InputSplit> getSplits(
+      JobContext job,
+      DataMapFilter dataMapFilter,
+      List<Segment> validSegments) throws IOException {
 
     numSegments = validSegments.size();
     List<InputSplit> result = new LinkedList<InputSplit>();
 
     // for each segment fetch blocks matching filter in Driver BTree
     List<CarbonInputSplit> dataBlocksOfSegment =
-        getDataBlocksOfSegment(job, carbonTable, dataMapFilter, matchedPartitions, validSegments,
-            partitionInfo, oldPartitionIdList, new ArrayList<Segment>(), new ArrayList<String>());
+        getDataBlocksOfSegment(job, carbonTable, dataMapFilter, validSegments,
+            new ArrayList<Segment>(), new ArrayList<String>());
     numBlocks = dataBlocksOfSegment.size();
     result.addAll(dataBlocksOfSegment);
     return result;

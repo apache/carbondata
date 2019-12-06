@@ -546,7 +546,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
     val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
     val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
-    assertResult(compressorName.toLowerCase())(tableColumnCompressor)
+    assertResult(compressorName)(tableColumnCompressor)
 
     sql(s"DROP TABLE IF EXISTS $tableName")
     // reuse the customize compressor again
@@ -555,7 +555,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
     val carbonTable2 = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
     val tableColumnCompressor2 = carbonTable2.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
-    assertResult(compressorName.toLowerCase())(tableColumnCompressor2)
+    assertResult(compressorName)(tableColumnCompressor2)
   }
 
   private def generateAllDataTypeFiles(lineNum: Int, csvDir: String,

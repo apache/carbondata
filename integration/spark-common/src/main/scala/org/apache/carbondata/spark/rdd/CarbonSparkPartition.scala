@@ -26,7 +26,6 @@ class CarbonSparkPartition(
     val rddId: Int,
     val idx: Int,
     @transient val multiBlockSplit: CarbonMultiBlockSplit,
-    val partitionId: Int = 0,
     val partitionSpec: Option[PartitionSpec] = None)
     extends Partition {
 

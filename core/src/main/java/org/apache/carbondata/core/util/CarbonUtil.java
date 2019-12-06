@@ -2034,16 +2034,6 @@ public final class CarbonUtil {
         column.setDataType(DataTypes.createDecimalType(column.getPrecision(), column.getScale()));
       }
     }
-    if (tableInfo.getFactTable().getPartitionInfo() != null) {
-      List<ColumnSchema> partitionColumns =
-          tableInfo.getFactTable().getPartitionInfo().getColumnSchemaList();
-      for (ColumnSchema column : partitionColumns) {
-        DataType dataType = column.getDataType();
-        if (DataTypes.isDecimal(dataType)) {
-          column.setDataType(DataTypes.createDecimalType(column.getPrecision(), column.getScale()));
-        }
-      }
-    }
   }
 
   /**

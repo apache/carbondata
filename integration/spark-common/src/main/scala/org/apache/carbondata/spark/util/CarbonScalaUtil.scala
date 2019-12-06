@@ -583,9 +583,9 @@ object CarbonScalaUtil {
       .isDefined
     if (isLocalDictIncludeDefined && isLocalDictExcludeDefined) {
       val localDictIncludeCols = tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
-        .split(",").map(_.trim)
+        .split(",").map(_.trim.toLowerCase)
       val localDictExcludeCols = tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
-        .split(",").map(_.trim)
+        .split(",").map(_.trim.toLowerCase)
       localDictIncludeCols.foreach { distCol =>
         if (localDictExcludeCols.exists(x => x.equalsIgnoreCase(distCol.trim))) {
           val duplicateColumns = (localDictIncludeCols ++ localDictExcludeCols)

@@ -709,11 +709,11 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .contains("Unsupported operation on non transactional table"))
 
     //9. Show partition
-    exception = intercept[MalformedCarbonCommandException] {
+    val ex = intercept[AnalysisException] {
       sql("Show partitions sdkOutputTable").show(false)
     }
-    assert(exception.getMessage()
-      .contains("Unsupported operation on non transactional table"))
+    assert(ex.getMessage()
+      .contains("SHOW PARTITIONS is not allowed on a table that is not partitioned"))
 
     //12. Streaming table creation
     // No need as External table don't accept table properties

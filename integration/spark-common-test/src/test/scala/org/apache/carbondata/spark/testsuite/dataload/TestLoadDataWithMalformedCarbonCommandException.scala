@@ -85,7 +85,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
     }
     assert(e.getMessage
       .equals(
-        "DICTIONARY_EXCLUDE column: ccc does not exist in table or unsupported for complex child " +
+        "DICTIONARY_EXCLUDE column: CCC does not exist in table or unsupported for complex child " +
         "column. Please check the create table statement."))
   }
 
@@ -95,7 +95,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
     }
     assert(e.getMessage
       .equals(
-        "DICTIONARY_INCLUDE column: aaa does not exist in table or unsupported for complex child " +
+        "DICTIONARY_INCLUDE column: AAA does not exist in table or unsupported for complex child " +
         "column. Please check the create table statement."))
   }
 
