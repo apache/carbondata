@@ -236,8 +236,8 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     Map<Integer, GenericQueryType> complexDimensionInfoMap = new HashMap<>();
 
     FilterResolverIntf resolverIntf = model.getDataMapFilter().getResolver();
-    filter =
-        FilterUtil.getFilterExecuterTree(resolverIntf, segmentProperties, complexDimensionInfoMap);
+    filter = FilterUtil.getFilterExecuterTree(
+        resolverIntf, segmentProperties, complexDimensionInfoMap, true);
     // for row filter, we need update column index
     FilterUtil.updateIndexOfColumnExpression(resolverIntf.getFilterExpression(),
         carbonTable.getDimensionOrdinalMax());

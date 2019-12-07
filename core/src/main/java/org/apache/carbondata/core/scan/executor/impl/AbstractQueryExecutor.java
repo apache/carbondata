@@ -522,7 +522,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       filterResolverIntf = queryModel.getDataMapFilter().getResolver();
       blockExecutionInfo.setFilterExecuterTree(
           FilterUtil.getFilterExecuterTree(filterResolverIntf, segmentProperties,
-              blockExecutionInfo.getComlexDimensionInfoMap()));
+              blockExecutionInfo.getComlexDimensionInfoMap(), false));
     }
     try {
       startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);

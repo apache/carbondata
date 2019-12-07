@@ -610,8 +610,8 @@ public class BlockDataMap extends CoarseGrainDataMap
 
   @Override
   public boolean isScanRequired(FilterResolverIntf filterExp) {
-    FilterExecuter filterExecuter = FilterUtil
-        .getFilterExecuterTree(filterExp, getSegmentProperties(), null, getMinMaxCacheColumns());
+    FilterExecuter filterExecuter = FilterUtil.getFilterExecuterTree(
+        filterExp, getSegmentProperties(), null, getMinMaxCacheColumns(), false);
     DataMapRow unsafeRow = taskSummaryDMStore
         .getDataMapRow(getTaskSummarySchema(), taskSummaryDMStore.getRowCount() - 1);
     boolean isScanRequired = FilterExpressionProcessor
@@ -741,8 +741,8 @@ public class BlockDataMap extends CoarseGrainDataMap
       // Remove B-tree jump logic as start and end key prepared is not
       // correct for old store scenarios
       int entryIndex = 0;
-      FilterExecuter filterExecuter = FilterUtil
-          .getFilterExecuterTree(filterExp, getSegmentProperties(), null, getMinMaxCacheColumns());
+      FilterExecuter filterExecuter = FilterUtil.getFilterExecuterTree(
+          filterExp, getSegmentProperties(), null, getMinMaxCacheColumns(), false);
       // flag to be used for deciding whether use min/max in executor pruning for BlockletDataMap
       boolean useMinMaxForPruning = useMinMaxForExecutorPruning(filterExp);
       // min and max for executor pruning
