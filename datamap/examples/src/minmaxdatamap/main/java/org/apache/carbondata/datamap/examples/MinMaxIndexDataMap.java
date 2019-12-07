@@ -135,7 +135,7 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
       }
     } else {
       FilterExecuter filterExecuter =
-          FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
+          FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null, false);
       for (int blkIdx = 0; blkIdx < readMinMaxDataMap.length; blkIdx++) {
         for (int blkltIdx = 0; blkltIdx < readMinMaxDataMap[blkIdx].length; blkltIdx++) {
 

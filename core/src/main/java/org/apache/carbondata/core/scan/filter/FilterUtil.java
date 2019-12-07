@@ -134,12 +134,16 @@ public final class FilterUtil {
    *
    * @param filterExpressionResolverTree
    * @param segmentProperties
+   * @param complexDimensionInfoMap
+   * @param minMaxCacheColumns
+   * @param isStreamDataFile: whether create filter executer tree for stream data files
    * @return FilterExecuter instance
+   *
    */
   private static FilterExecuter createFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap,
-      List<CarbonColumn> minMaxCacheColumns) {
+      List<CarbonColumn> minMaxCacheColumns, boolean isStreamDataFile) {
     FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
     if (null != filterExecuterType) {
       switch (filterExecuterType) {
@@ -154,7 +158,7 @@ public final class FilterUtil {
           }
           // return true filter expression if filter column min/max is not cached in driver
           if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(filterExpressionResolverTree,
-              segmentProperties, minMaxCacheColumns)) {
+              segmentProperties, minMaxCacheColumns, isStreamDataFile)) {
             return new TrueFilterExecutor();
           }
           return getIncludeFilterExecuter(
@@ -167,15 +171,15 @@ public final class FilterUtil {
         case OR:
           return new OrFilterExecuterImpl(
               createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
-                  complexDimensionInfoMap, minMaxCacheColumns),
+                  complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile),
               createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
-                  complexDimensionInfoMap, minMaxCacheColumns));
+                  complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile));
         case AND:
           return new AndFilterExecuterImpl(
               createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
-                  complexDimensionInfoMap, minMaxCacheColumns),
+                  complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile),
               createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
-                  complexDimensionInfoMap, minMaxCacheColumns));
+                  complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile));
         case ROWLEVEL_LESSTHAN:
         case ROWLEVEL_LESSTHAN_EQUALTO:
         case ROWLEVEL_GREATERTHAN_EQUALTO:
@@ -186,7 +190,7 @@ public final class FilterUtil {
           if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
               rowLevelRangeFilterResolver.getDimColEvaluatorInfoList(),
               rowLevelRangeFilterResolver.getMsrColEvalutorInfoList(), segmentProperties,
-              minMaxCacheColumns)) {
+              minMaxCacheColumns, isStreamDataFile)) {
             return new TrueFilterExecutor();
           }
           return RowLevelRangeTypeExecuterFactory
@@ -195,7 +199,7 @@ public final class FilterUtil {
         case RANGE:
           // return true filter expression if filter column min/max is not cached in driver
           if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(filterExpressionResolverTree,
-              segmentProperties, minMaxCacheColumns)) {
+              segmentProperties, minMaxCacheColumns, isStreamDataFile)) {
             return new TrueFilterExecutor();
           }
           return new RangeValueFilterExecuterImpl(
@@ -291,20 +295,21 @@ public final class FilterUtil {
   private static boolean checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvaluatorInfoList,
-      SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns) {
+      SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns,
+      boolean isStreamDataFile) {
     boolean replaceCurrentNodeWithTrueFilter = false;
     ColumnResolvedFilterInfo columnResolvedFilterInfo = null;
     if (!msrColEvaluatorInfoList.isEmpty()) {
       columnResolvedFilterInfo = msrColEvaluatorInfoList.get(0);
       replaceCurrentNodeWithTrueFilter =
           checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
-              minMaxCacheColumns, true);
+              minMaxCacheColumns, true, isStreamDataFile);
     } else {
       columnResolvedFilterInfo = dimColEvaluatorInfoList.get(0);
       if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         replaceCurrentNodeWithTrueFilter =
             checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
-                minMaxCacheColumns, false);
+                minMaxCacheColumns, false, isStreamDataFile);
       }
     }
     return replaceCurrentNodeWithTrueFilter;
@@ -317,24 +322,25 @@ public final class FilterUtil {
    * @param filterExpressionResolverTree
    * @param segmentProperties
    * @param minMaxCacheColumns
+   * @Param isStreamDataFile
    * @return
    */
   private static boolean checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
-      List<CarbonColumn> minMaxCacheColumns) {
+      List<CarbonColumn> minMaxCacheColumns, boolean isStreamDataFile) {
     boolean replaceCurrentNodeWithTrueFilter = false;
     ColumnResolvedFilterInfo columnResolvedFilterInfo = null;
     if (null != filterExpressionResolverTree.getMsrColResolvedFilterInfo()) {
       columnResolvedFilterInfo = filterExpressionResolverTree.getMsrColResolvedFilterInfo();
       replaceCurrentNodeWithTrueFilter =
           checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
-              minMaxCacheColumns, true);
+              minMaxCacheColumns, true, isStreamDataFile);
     } else {
       columnResolvedFilterInfo = filterExpressionResolverTree.getDimColResolvedFilterInfo();
       if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         replaceCurrentNodeWithTrueFilter =
             checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
-                minMaxCacheColumns, false);
+                minMaxCacheColumns, false, isStreamDataFile);
       }
     }
     return replaceCurrentNodeWithTrueFilter;
@@ -352,7 +358,7 @@ public final class FilterUtil {
    */
   private static boolean checkIfFilterColumnIsCachedInDriver(
       ColumnResolvedFilterInfo columnResolvedFilterInfo, SegmentProperties segmentProperties,
-      List<CarbonColumn> minMaxCacheColumns, boolean isMeasure) {
+      List<CarbonColumn> minMaxCacheColumns, boolean isMeasure, boolean isStreamDataFile) {
     boolean replaceCurrentNodeWithTrueFilter = false;
     CarbonColumn columnFromCurrentBlock = null;
     if (isMeasure) {
@@ -377,8 +383,17 @@ public final class FilterUtil {
         // if columns to be cached are not specified then in that case all columns will be cached
         // and  then the ordinal of column will be its index in the min/max byte array
         if (isMeasure) {
-          columnResolvedFilterInfo.setColumnIndexInMinMaxByteArray(
-              segmentProperties.getLastDimensionColOrdinal() + columnFromCurrentBlock.getOrdinal());
+          // when read from stream data file, minmax columns cache don't include complex columns,
+          // so it can not use 'segmentProperties.getLastDimensionColOrdinal()' as
+          // last dimension ordinal.
+          if (isStreamDataFile) {
+            columnResolvedFilterInfo.setColumnIndexInMinMaxByteArray(
+                segmentProperties.getDimensions().size() + columnFromCurrentBlock.getOrdinal());
+          } else {
+            columnResolvedFilterInfo.setColumnIndexInMinMaxByteArray(
+                segmentProperties.getLastDimensionColOrdinal() + columnFromCurrentBlock
+                .getOrdinal());
+          }
         } else {
           columnResolvedFilterInfo
               .setColumnIndexInMinMaxByteArray(columnFromCurrentBlock.getOrdinal());
@@ -1492,9 +1507,9 @@ public final class FilterUtil {
    */
   public static FilterExecuter getFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
-      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+      Map<Integer, GenericQueryType> complexDimensionInfoMap, boolean isStreamDataFile) {
     return getFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
-        complexDimensionInfoMap, null);
+        complexDimensionInfoMap, null, isStreamDataFile);
   }
 
   /**
@@ -1507,9 +1522,9 @@ public final class FilterUtil {
   public static FilterExecuter getFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap,
-      List<CarbonColumn> minMaxCacheColumns) {
+      List<CarbonColumn> minMaxCacheColumns, boolean isStreamDataFile) {
     return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
-        complexDimensionInfoMap, minMaxCacheColumns);
+        complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile);
   }
 
   /**
