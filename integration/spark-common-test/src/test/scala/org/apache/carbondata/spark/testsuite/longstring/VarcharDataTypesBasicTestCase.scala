@@ -30,7 +30,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.util.CarbonProperties
-
 import scala.collection.mutable
 
 class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -46,6 +45,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   private var originMemorySize = CarbonProperties.getInstance().getProperty(
     CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
     CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT)
+  private var longChar : String = _
 
   case class Content(head: Int, desc_line_head: String, note_line_head: String,
       mid: Int, desc_line_mid: String, note_line_mid: String,
@@ -61,6 +61,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
       new File(inputDir).mkdir()
     }
     content = createFile(inputFile, line = lineNum)
+    longChar = RandomStringUtils.randomAlphabetic(33000)
   }
 
   override def afterAll(): Unit = {
@@ -189,6 +190,80 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
            |""".stripMargin)
     }
     assert(exceptionCaught.getMessage.contains("both in no_inverted_index and long_string_columns"))
+  }
+
+  test("test alter table properties for long string columns") {
+    sql("drop table if exists testlongstring")
+    sql(
+      s"""
+         | CREATE TABLE if not exists testlongstring(id INT, name STRING, description STRING
+         | ) STORED BY 'carbondata'
+         |""".stripMargin)
+    sql("insert into testlongstring select 1, 'ab', 'cool'")
+    // describe formatted should not have long_string_columns
+    checkExistence(sql("describe formatted testlongstring"), false, "long_string_columns")
+    //Alter table add table property of long string columns
+    sql("ALTER TABLE testlongstring SET TBLPROPERTIES('long_String_columns'='name,description')")
+    sql(s""" insert into testlongstring select 1, 'ab1', '$longChar'""")
+    checkAnswer(sql("select * from testlongstring"), Seq(Row(1, "ab", "cool"), Row(1, "ab1", longChar)))
+    // describe formatted should have long_string_columns
+    checkExistence(sql("describe formatted testlongstring"), true, "LONG_STRING_COLUMNS")
+    //insert without without local dictionary
+    sql("ALTER TABLE testlongstring SET TBLPROPERTIES('local_dictionary_enable'='false')")
+    sql(s""" insert into testlongstring select 1, 'abc', '$longChar'""")
+    checkAnswer(sql("select * from testlongstring"),
+      Seq(Row(1, "ab", "cool"), Row(1, "ab1", longChar), Row(1, "abc", longChar)))
+    // Unset the long_String_columns
+    sql("ALTER TABLE testlongstring UNSET TBLPROPERTIES('long_string_columns')")
+    // describe formatted should not have long_string_columns
+    checkExistence(sql("describe formatted testlongstring"), false, "long_string_columns")
+    // query should pass
+    checkAnswer(sql("select * from testlongstring"),
+      Seq(Row(1, "ab", "cool"), Row(1, "ab1", longChar), Row(1, "abc", longChar)))
+    // insert long string should fail as unset is done
+    val e = intercept[Exception] {
+      sql(s""" insert into testlongstring select 1, 'abc', '$longChar'""")
+    }
+    assert(e.getMessage.contains("Dataload failed, String length cannot exceed 32000 characters"))
+    sql("ALTER TABLE testlongstring SET TBLPROPERTIES('long_String_columns'='description')")
+    sql(s""" insert into testlongstring select 1, 'ab1', '$longChar'""")
+    sql("drop table if exists testlongstring")
+  }
+
+  test("test alter table properties for long_string_columns with complex columns") {
+    sql("DROP TABLE IF EXISTS varchar_complex_table")
+    sql("""
+          | CREATE TABLE varchar_complex_table
+          | (m1 int,arr1 array<string>,varchar1 string,s1 string,varchar2 string,arr2 array<string>)
+          | STORED BY 'carbondata' TBLPROPERTIES('sort_columns'='s1,m1')
+          | """.stripMargin)
+    sql(
+      s"""insert into varchar_complex_table values(1, array('ar1.0','ar1.1'),
+         |'xx', 'normal string1', 'xx', array('ar2.0','ar2.1'))""".stripMargin)
+
+    sql("ALTER TABLE varchar_complex_table SET TBLPROPERTIES('long_String_columns'='varchar1,varchar2')")
+
+    sql(
+      s"""insert into varchar_complex_table values(1, array('ar1.0','ar1.1'), '$longChar',
+         |'normal string1', '$longChar', array('ar2.0','ar2.1')),(2, array('ar1.2','ar1.3'),
+         |'$longChar', 'normal string2', '$longChar', array('ar2.2','ar2.3'))""".stripMargin)
+
+    checkAnswer(
+      sql("SELECT * FROM varchar_complex_table where m1=1"),
+      Seq(Row(1,mutable.WrappedArray.make(Array("ar1.0","ar1.1")),"xx","normal string1",
+        "xx",mutable.WrappedArray.make(Array("ar2.0","ar2.1"))),
+      Row(1,mutable.WrappedArray.make(Array("ar1.0","ar1.1")),longChar,"normal string1",
+        longChar,mutable.WrappedArray.make(Array("ar2.0","ar2.1")))))
+    checkAnswer(
+      sql(
+        """
+          |SELECT varchar1,arr2,s1,m1,varchar2,arr1
+          |FROM varchar_complex_table
+          |WHERE arr1[1]='ar1.3'
+          |""".stripMargin),
+      Seq(Row(longChar,mutable.WrappedArray.make(Array("ar2.2","ar2.3")),"normal string2",2,
+        longChar,mutable.WrappedArray.make(Array("ar1.2","ar1.3")))))
+    sql("DROP TABLE IF EXISTS varchar_complex_table")
   }
 
   test("inverted index columns cannot be present in long_string_cols as they do not support sort_cols") {

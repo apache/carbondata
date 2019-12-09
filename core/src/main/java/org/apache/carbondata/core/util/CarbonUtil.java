@@ -36,7 +36,9 @@ import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -3395,5 +3397,102 @@ public final class CarbonUtil {
       LOGGER.info("Created index server temp directory" + path);
       return file;
     }
+  }
+
+  /**
+   * For alter table tableProperties of long string, modify ColumnSchema
+   * set operation:
+   * a. reset the current varchar datatype to string
+   * b. reorder back to original order (consider sort column and original schema ordinal)
+   * c. set the new columns to varchar
+   * d. reorder new varchar columns to be after dimensions
+   * <p>
+   * unset operation:
+   * a. reset the current varchar datatype to string
+   * b. reorder back to original order (consider sort column and original schema ordinal)
+   *
+   * @param columns                 list of column schema from thrift
+   * @param longStringColumnsString comma separated long string columns to be set, empty for unset
+   * @return updated columnSchema list
+   */
+  public static List<org.apache.carbondata.format.ColumnSchema> reorderColumnsForLongString(
+      List<org.apache.carbondata.format.ColumnSchema> columns, String longStringColumnsString) {
+    // schema will be like
+    // sortColumns-otherDimensions-varchar-[complexColumns + complex_child - measures]
+    List<org.apache.carbondata.format.ColumnSchema> sortColumns = new ArrayList<>();
+    List<org.apache.carbondata.format.ColumnSchema> dimColumns = new ArrayList<>();
+    List<org.apache.carbondata.format.ColumnSchema> otherColumns = new ArrayList<>();
+    // true if cleared the varchar type in dims to string
+    boolean isResetDone = false;
+    // complex type child also looks like dimension or measure,
+    // so just take all other columns at once.
+    int otherColumnStartIndex = -1;
+    for (int i = 0; i < columns.size(); i++) {
+      if (columns.get(i).getColumnProperties() != null) {
+        String isSortColumn =
+            columns.get(i).getColumnProperties().get(CarbonCommonConstants.SORT_COLUMNS);
+        if ((isSortColumn != null) && (isSortColumn.equalsIgnoreCase("true"))) {
+          // add sort column dimensions
+          sortColumns.add(columns.get(i));
+        }
+      } else if ((columns.get(i).getData_type() == org.apache.carbondata.format.DataType.ARRAY
+          || columns.get(i).getData_type() == org.apache.carbondata.format.DataType.STRUCT
+          || columns.get(i).getData_type() == org.apache.carbondata.format.DataType.MAP || (!columns
+          .get(i).isDimension()))) {
+        // complex type or measure starts here and processed all sort columns and other dimensions
+        otherColumnStartIndex = i;
+        break;
+      } else {
+        // if it is varchar, reset to string as new set and unset needs to be done.
+        // if not, just add it to dimColumns
+        org.apache.carbondata.format.ColumnSchema col = columns.get(i);
+        if (col.data_type == org.apache.carbondata.format.DataType.VARCHAR) {
+          col.data_type = org.apache.carbondata.format.DataType.STRING;
+          isResetDone = true;
+        }
+        dimColumns.add(col);
+      }
+    }
+    if (otherColumnStartIndex != -1) {
+      otherColumns.addAll(columns.subList(otherColumnStartIndex, columns.size()));
+    }
+    if (isResetDone) {
+      // reorder the dims based on original schema ordinal
+      dimColumns.sort(new Comparator<org.apache.carbondata.format.ColumnSchema>() {
+        @Override
+        public int compare(org.apache.carbondata.format.ColumnSchema o1,
+            org.apache.carbondata.format.ColumnSchema o2) {
+          return o1.getSchemaOrdinal() - o2.getSchemaOrdinal();
+        }
+      });
+    }
+    List<org.apache.carbondata.format.ColumnSchema> nonVarCharDims = new ArrayList<>();
+    // for setting long string columns
+    if (!longStringColumnsString.isEmpty()) {
+      String[] inputColumns = longStringColumnsString.split(",");
+      Set<String> longStringSet = new HashSet<>(Arrays.asList(inputColumns));
+      List<org.apache.carbondata.format.ColumnSchema> varCharColumns = new ArrayList<>();
+      // change data type to varchar and extract the varchar columns
+      for (org.apache.carbondata.format.ColumnSchema dim : dimColumns) {
+        if (longStringSet.contains(dim.getColumn_name())) {
+          dim.data_type = org.apache.carbondata.format.DataType.VARCHAR;
+          // extract varchar dimensions
+          varCharColumns.add(dim);
+        } else {
+          // extract non varchar, non sort dimensions
+          nonVarCharDims.add(dim);
+        }
+      }
+      // append varchar in the end of dimensions
+      nonVarCharDims.addAll(varCharColumns);
+    } else {
+      nonVarCharDims = dimColumns;
+    }
+    // combine all columns and return
+    if (otherColumns.size() != 0) {
+      nonVarCharDims.addAll(otherColumns);
+    }
+    sortColumns.addAll(nonVarCharDims);
+    return sortColumns;
   }
 }

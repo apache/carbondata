@@ -45,7 +45,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.format.{DataType, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 
@@ -170,6 +170,20 @@ object AlterTableUtil {
         columns.addAll(newColumns)
       }
     }
+  }
+
+  /**
+   * update schema when LONG_STRING_COLUMNS are changed
+   */
+  private def updateSchemaForLongStringColumns(
+      thriftTable: TableInfo,
+      longStringColumns: String) = {
+    val longStringColumnsString = CarbonUtil.unquoteChar(longStringColumns).trim
+    val newColumns = CarbonUtil.reorderColumnsForLongString(thriftTable
+      .getFact_table
+      .getTable_columns,
+      longStringColumnsString)
+    thriftTable.getFact_table.setTable_columns(newColumns)
   }
 
   /**
@@ -436,6 +450,15 @@ object AlterTableUtil {
       validateSortScopeAndSortColumnsProperties(carbonTable, lowerCasePropertiesMap)
       // if SORT_COLUMN is changed, it will move them to the head of column list
       updateSchemaForSortColumns(thriftTable, lowerCasePropertiesMap, schemaConverter)
+      // validate long string columns
+      val longStringColumns = lowerCasePropertiesMap.get("long_string_columns");
+      if (longStringColumns.isDefined) {
+        validateLongStringColumns(longStringColumns.get, carbonTable)
+        // update schema for long string columns
+        updateSchemaForLongStringColumns(thriftTable, longStringColumns.get)
+      } else if (propKeys.exists(_.equalsIgnoreCase("long_string_columns") && !set)) {
+        updateSchemaForLongStringColumns(thriftTable, "")
+      }
       // below map will be used for cache invalidation. As tblProperties map is getting modified
       // in the next few steps the original map need to be retained for any decision making
       val existingTablePropertiesMap = mutable.Map(tblPropertiesMap.toSeq: _*)
@@ -518,7 +541,8 @@ object AlterTableUtil {
       "RANGE_COLUMN",
       "SORT_SCOPE",
       "SORT_COLUMNS",
-      "GLOBAL_SORT_PARTITIONS")
+      "GLOBAL_SORT_PARTITIONS",
+      "LONG_STRING_COLUMNS")
     supportedOptions.contains(propKey.toUpperCase)
   }
 
@@ -820,6 +844,52 @@ object AlterTableUtil {
       false
     }
     allColumnsMatch
+  }
+
+  /**
+   * Validate LONG_STRING_COLUMNS property specified in Alter command
+   *
+   * @param longStringColumns
+   * @param carbonTable
+   */
+  def validateLongStringColumns(longStringColumns: String,
+      carbonTable: CarbonTable): Unit = {
+    // don't allow duplicate column names
+    val longStringCols = longStringColumns.split(",")
+    if (longStringCols.distinct.lengthCompare(longStringCols.size) != 0) {
+      val duplicateColumns = longStringCols
+        .diff(longStringCols.distinct).distinct
+      val errMsg =
+        "LONG_STRING_COLUMNS contains Duplicate Columns: " +
+        duplicateColumns.mkString(",") + ". Please check the DDL."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+    // check if the column specified exists in table schema and must be of string data type
+    val colSchemas = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
+    longStringCols.foreach { col =>
+      if (!colSchemas.exists(x => x.getColumnName.equalsIgnoreCase(col.trim))) {
+        val errorMsg = "LONG_STRING_COLUMNS column: " + col.trim +
+                       " does not exist in table. Please check the DDL."
+        throw new MalformedCarbonCommandException(errorMsg)
+      } else if (colSchemas.exists(x => x.getColumnName.equalsIgnoreCase(col.trim) &&
+                                          !x.getDataType.toString
+                                            .equalsIgnoreCase("STRING"))) {
+        val errMsg = "LONG_STRING_COLUMNS column: " + col.trim +
+                     " is not a string datatype column"
+        throw new MalformedCarbonCommandException(errMsg)
+      }
+    }
+    // should not be present in sort columns
+    val sortCols = carbonTable.getSortColumns
+    if (sortCols != null) {
+      for (col <- longStringCols) {
+        if (sortCols.contains(col)) {
+          val errMsg =
+            "LONG_STRING_COLUMNS cannot be present in sort columns: " + col
+          throw new MalformedCarbonCommandException(errMsg)
+        }
+      }
+    }
   }
 
   /**
