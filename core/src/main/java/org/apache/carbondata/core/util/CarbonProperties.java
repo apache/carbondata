@@ -1664,17 +1664,29 @@ public final class CarbonProperties {
   public boolean isDistributedPruningEnabled(String dbName, String tableName) {
     // Check if user has enabled/disabled the use of index server for the current session using
     // the set command
-    String configuredValue = getSessionPropertyValue(
-        CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER + "." + dbName + "." + tableName);
-    if (configuredValue == null) {
-      // if not set in session properties then check carbon.properties for the same.
-      configuredValue = getProperty(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER);
+    String configuredValueForTable = getSessionPropertyValue(
+            CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER + "." + dbName + "." + tableName);
+    String configuredValue = getProperty(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER);
+
+    /**
+     * Carbon.enable.index.server | carbon.enable.index.server.dbname.tablename | Output
+     *  False                         False                                         False
+     *  False                         True                                          False
+     *  True                          False                                         False
+     *  True                          True                                          True
+     *  True                          NULL                                          True
+     *  False                         NULL                                          False
+     */
+
+    if (!Boolean.parseBoolean(configuredValue)) {
+      return false;
+    } else if (Boolean.parseBoolean(configuredValue) && configuredValueForTable != null
+            && !Boolean.parseBoolean(configuredValueForTable)) {
+      return false;
+    } else {
+      LOGGER.info("Distributed Index Server is enabled for " + dbName + "." + tableName);
+      return true;
     }
-    boolean isServerEnabledByUser = Boolean.parseBoolean(configuredValue);
-    if (isServerEnabledByUser) {
-      LOGGER.info("Distributed Index server is enabled for " + dbName + "." + tableName);
-    }
-    return isServerEnabledByUser;
   }
 
   /**
