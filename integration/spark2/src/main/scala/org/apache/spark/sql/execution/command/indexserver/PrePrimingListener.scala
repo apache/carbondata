@@ -48,10 +48,10 @@ object PrePrimingEventListener extends OperationEventListener {
       }
       catch {
         /*
-         * A scenario where prepriming fails is when index server crashes or has not been
-         *  started but "carbon.indexserver.enable.prepriming" property and
-         * "carbon.enable.index.server" property is set to true in the
-         *  carbon properties.
+         * Consider a scenario where prepriming is in progress and the index server crashes, in
+         * this case since we should not fail the corresponding operation where pre-priming is triggered.
+         *  Because prepriming is an optimization for cache loading prior to query, so no exception
+         *  should be thrown.
          */
         case ex: Exception =>
           LOGGER.error(s"Prepriming failed for table ${carbonTable.getTableName} ", ex)

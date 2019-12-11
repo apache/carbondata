@@ -119,6 +119,10 @@ public class DataMapUtil {
     try {
       dataMapJob.execute(dataMapFormat);
     } catch (Exception e) {
+      /*
+       * Consider a scenario where clear datamap job is called from drop table and index server
+       *  crashes, in this no exception should be thrown and drop table should complete.
+       */
       LOGGER.error("Failed to execute Datamap clear Job", e);
     }
   }
