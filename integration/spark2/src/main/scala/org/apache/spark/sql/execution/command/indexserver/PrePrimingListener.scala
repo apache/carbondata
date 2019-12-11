@@ -21,7 +21,8 @@ import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DistributableDataMapFormat, Segment}
-import org.apache.carbondata.events.{Event, IndexServerLoadEvent, OperationContext, OperationEventListener}
+import org.apache.carbondata.events.{Event, IndexServerLoadEvent,
+  OperationContext, OperationEventListener}
 import org.apache.carbondata.indexserver.IndexServer
 
 // Listener for the PrePriming Event. This listener calls the index server using an Asynccall
@@ -47,12 +48,10 @@ object PrePrimingEventListener extends OperationEventListener {
         IndexServer.getClient.getCount(dataMapFormat)
       }
       catch {
-        /*
-         * Consider a scenario where prepriming is in progress and the index server crashes, in
-         * this case since we should not fail the corresponding operation where pre-priming is triggered.
-         *  Because prepriming is an optimization for cache loading prior to query, so no exception
-         *  should be thrown.
-         */
+        // Consider a scenario where prepriming is in progress and the index server crashes, in
+        // this case since we should not fail the corresponding operation where pre-priming is
+        // triggered. Because prepriming is an optimization for cache loading prior to query,
+        // so no exception should be thrown.
         case ex: Exception =>
           LOGGER.error(s"Prepriming failed for table ${carbonTable.getTableName} ", ex)
       }
