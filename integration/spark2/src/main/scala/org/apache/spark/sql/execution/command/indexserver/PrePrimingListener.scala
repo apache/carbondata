@@ -19,13 +19,16 @@ package org.apache.spark.sql.execution.command.indexserver
 
 import scala.collection.JavaConverters._
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DistributableDataMapFormat, Segment}
-import org.apache.carbondata.events.{Event, IndexServerLoadEvent,
-  OperationContext, OperationEventListener}
+import org.apache.carbondata.events.{Event, IndexServerLoadEvent, OperationContext, OperationEventListener}
 import org.apache.carbondata.indexserver.IndexServer
 
 // Listener for the PrePriming Event. This listener calls the index server using an Asynccall
 object PrePrimingEventListener extends OperationEventListener {
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+
   override def onEvent(event: Event,
       operationContext: OperationContext): Unit = {
     val prePrimingEvent = event.asInstanceOf[IndexServerLoadEvent]
@@ -40,7 +43,19 @@ object PrePrimingEventListener extends OperationEventListener {
       false,
       true)
     if (prePrimingEvent.segment.length != 0) {
-      IndexServer.getClient.getCount(dataMapFormat)
+      try {
+        IndexServer.getClient.getCount(dataMapFormat)
+      }
+      catch {
+        /*
+         * A scenario where prepriming fails is when index server crashes or has not been
+         *  started but "carbon.indexserver.enable.prepriming" property and
+         * "carbon.enable.index.server" property is set to true in the
+         *  carbon properties.
+         */
+        case ex: Exception =>
+          LOGGER.error(s"Prepriming failed for table ${carbonTable.getTableName} ", ex)
+      }
     }
   }
 }
