@@ -890,6 +890,23 @@ public final class CarbonCommonConstants {
   public static final String CARBON_HORIZONTAL_COMPACTION_ENABLE_DEFAULT = "true";
 
   /**
+   * For validating the key to value mapping in case of update.
+   * Update operation should throw exception if one key has more than one value to update.
+   * This validation might have slight degrade in performance of update query.
+   * If user knows that key value mapping is correct.
+   * can disable this validation for better update performance.
+   */
+  @CarbonProperty
+  public static final String CARBON_UPDATE_CHECK_UNIQUE_VALUE =
+      "carbon.update.check.unique.value";
+
+  /**
+   * Default validation of unique value check enabled for the update.
+   */
+  public static final String CARBON_UPDATE_CHECK_UNIQUE_VALUE_DEFAULT = "true";
+
+
+  /**
    * Which storage level to persist dataset when updating data
    * with 'carbon.update.persist.enable'='true'
    */
