@@ -121,9 +121,12 @@ object DataLoadProcessBuilderOnSpark {
         CarbonProperties.getInstance().getGlobalSortRddStorageLevel()))
     }
 
+    val numberOfSortColumns = configuration.getNumberOfSortColumns
+
     import scala.reflect.classTag
     val sortRDD = convertRDD
-      .sortBy(_.getData, numPartitions = numPartitions)(RowOrdering, classTag[Array[AnyRef]])
+      .sortBy(_.getKey(numberOfSortColumns), numPartitions = numPartitions)(RowOrdering,
+        classTag[Array[AnyRef]])
       .mapPartitionsWithIndex { case (index, rows) =>
         DataLoadProcessorStepOnSpark.convertTo3Parts(rows, index, modelBroadcast,
           sortStepRowCounter)
