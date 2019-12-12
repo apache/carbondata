@@ -294,7 +294,7 @@ public class CarbonWriterBuilder {
    * d. local_dictionary_enable -- true / false. Default is false
    * e. sort_columns -- comma separated column. "c1,c2". Default all dimensions are sorted.
    *                    If empty string "" is passed. No columns are sorted
-   * j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "local_sort"
+   * j. sort_scope -- "local_sort", "no_sort". default value is "local_sort"
    * k. long_string_columns -- comma separated string columns which are more than 32k length.
    *                           default value is null.
    * l. inverted_index -- comma separated string columns for which inverted index needs to be

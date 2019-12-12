@@ -126,14 +126,6 @@ class StandardPartitionTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(s"""select count(*) from partition_table"""), Seq(Row(10)))
   }
 
-  //Loading data into partitioned table with SORT_SCOPE=BATCH_SORT
-  test("Standard-Partition_TC012", Include) {
-    sql(s"""drop table if exists partition_table""")
-    sql(s"""CREATE TABLE partition_table(shortField SHORT, intField INT, bigintField LONG, doubleField DOUBLE, timestamp TIMESTAMP, decimalField DECIMAL(18,2),dateField DATE, charField CHAR(5), floatField FLOAT ) PARTITIONED BY (stringField STRING) STORED BY 'carbondata' TBLPROPERTIES('SORT_SCOPE'='BATCH_SORT')""")
-    sql(s"""load data inpath '$resourcesPath/Data/partition/list_partition_table.csv' into table partition_table""")
-    checkAnswer(sql(s"""select count(*) from partition_table"""), Seq(Row(10)))
-  }
-
   //Loading data into partitioned table with SORT_SCOPE=NO_SORT
   test("Standard-Partition_TC013", Include) {
     sql(s"""drop table if exists partition_table""")

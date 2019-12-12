@@ -87,13 +87,6 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_TABLE_LOAD_SORT_SCOPE = "carbon.table.load.sort.scope.";
 
   /**
-   * option to specify the batch sort size inmb
-   */
-  @CarbonProperty(dynamicConfigurable = true)
-  public static final String CARBON_OPTIONS_BATCH_SORT_SIZE_INMB =
-      "carbon.options.batch.sort.size.inmb";
-
-  /**
    * Option to enable/ disable single_pass
    */
   @CarbonProperty(dynamicConfigurable = true)

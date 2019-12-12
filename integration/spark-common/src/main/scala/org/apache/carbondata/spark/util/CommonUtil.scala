@@ -740,7 +740,7 @@ object CommonUtil {
       if (!CarbonUtil.isValidSortOption(sortScopeOption.get)) {
         throw new MalformedCarbonCommandException(
           s"Invalid SORT_SCOPE ${ sortScopeOption.get }, " +
-          s"valid SORT_SCOPE are 'NO_SORT', 'BATCH_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT'")
+          s"valid SORT_SCOPE are 'NO_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT'")
       }
     }
   }

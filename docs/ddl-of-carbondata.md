@@ -238,7 +238,6 @@ CarbonData DDL statements are documented here,which includes:
      
      * LOCAL_SORT: data will be locally sorted (task level sorting)             
      * NO_SORT: default scope. It will load the data in unsorted manner, it will significantly increase load performance.       
-     * BATCH_SORT: It increases the load performance but decreases the query performance if identified blocks > parallelism.
      * GLOBAL_SORT: It increases the query performance, especially high concurrent point query.
        And if you care about loading resources isolation strictly, because the system uses the spark GroupBy to sort data, the resource can be controlled by spark. 
 

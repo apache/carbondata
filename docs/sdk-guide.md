@@ -378,7 +378,7 @@ public CarbonWriterBuilder withLoadOptions(Map<String, String> options);
  * c. local_dictionary_threshold -- positive value, default is 10000
  * d. local_dictionary_enable -- true / false. Default is false
  * e. sort_columns -- comma separated column. "c1,c2". Default no columns are sorted.
- * j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "no_sort"
+ * j. sort_scope -- "local_sort", "no_sort". default value is "no_sort"
  * k. long_string_columns -- comma separated string columns which are more than 32k length. 
  *                           default value is null.
  * l. inverted_index -- comma separated string columns for which inverted index needs to be

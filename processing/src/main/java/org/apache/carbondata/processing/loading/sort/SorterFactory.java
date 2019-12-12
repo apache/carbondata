@@ -21,15 +21,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.sort.impl.ParallelReadMergeSorterImpl;
 import org.apache.carbondata.processing.loading.sort.impl.ParallelReadMergeSorterWithColumnRangeImpl;
-import org.apache.carbondata.processing.loading.sort.impl.UnsafeBatchParallelReadMergeSorterImpl;
 import org.apache.carbondata.processing.loading.sort.impl.UnsafeParallelReadMergeSorterImpl;
 import org.apache.carbondata.processing.loading.sort.impl.UnsafeParallelReadMergeSorterWithColumnRangeImpl;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.log4j.Logger;
 
@@ -42,7 +39,6 @@ public class SorterFactory {
     boolean offheapsort = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
             CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT));
-    SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     Sorter sorter;
     if (offheapsort) {
       if (configuration.getBucketingInfo() != null) {
@@ -63,15 +59,6 @@ public class SorterFactory {
             configuration.getSortColumnRangeInfo());
       } else {
         sorter = new ParallelReadMergeSorterImpl(counter);
-      }
-    }
-    if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
-      if (configuration.getBucketingInfo() == null) {
-        sorter = new UnsafeBatchParallelReadMergeSorterImpl(counter);
-      } else {
-        LOGGER.warn(
-            "Batch sort is not enabled in case of bucketing. Falling back to " + sorter.getClass()
-                .getName());
       }
     }
     return sorter;

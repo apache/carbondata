@@ -1082,7 +1082,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "COMMENTCHAR",
       "DATEFORMAT",
       "BAD_RECORD_PATH",
-      "BATCH_SORT_SIZE_INMB",
       "GLOBAL_SORT_PARTITIONS",
       "SINGLE_PASS",
       "IS_EMPTY_DATA_BAD_RECORD",
@@ -1194,7 +1193,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       if (!CarbonUtil.isValidSortOption(optionValue)) {
         throw new InvalidConfigurationException(
           s"Passing invalid SORT_SCOPE '$optionValue', valid SORT_SCOPE are 'NO_SORT'," +
-          s" 'BATCH_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT' ")
+          s" 'LOCAL_SORT' and 'GLOBAL_SORT' ")
       }
     }
 

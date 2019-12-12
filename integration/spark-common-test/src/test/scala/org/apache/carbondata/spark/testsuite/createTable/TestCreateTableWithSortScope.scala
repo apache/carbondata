@@ -29,7 +29,6 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
     sql("use default")
     sql("DROP TABLE IF EXISTS tableWithGlobalSort")
     sql("DROP TABLE IF EXISTS tableWithLocalSort")
-    sql("DROP TABLE IF EXISTS tableWithBatchSort")
     sql("DROP TABLE IF EXISTS tableWithNoSort")
     sql("DROP TABLE IF EXISTS tableWithUnsupportSortScope")
   }
@@ -63,18 +62,6 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-         | CREATE TABLE tableWithBatchSort(
-         | intField INT,
-         | stringField STRING
-         | )
-         | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='BATCH_SORT')
-       """.stripMargin)
-
-    checkExistence(sql("DESCRIBE FORMATTED tableWithBatchSort"), true, "BATCH_SORT")
-
-    sql(
-      s"""
          | CREATE TABLE tableWithNoSort(
          | intField INT,
          | stringField STRING
@@ -100,14 +87,13 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
     }
     assert(exception_unsupported_sortscope.getMessage.contains(
       "Passing invalid SORT_SCOPE 'abc', valid SORT_SCOPE are 'NO_SORT'," +
-      " 'BATCH_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT' "))
+      " 'LOCAL_SORT' and 'GLOBAL_SORT' "))
   }
 
   override def afterAll: Unit = {
     sql("use default")
     sql("DROP TABLE IF EXISTS tableWithGlobalSort")
     sql("DROP TABLE IF EXISTS tableWithLocalSort")
-    sql("DROP TABLE IF EXISTS tableWithBatchSort")
     sql("DROP TABLE IF EXISTS tableWithNoSort")
     sql("DROP TABLE IF EXISTS tableWithUnsupportSortScope")
     sql("DROP TABLE IF EXISTS tableLoadWithSortScope")

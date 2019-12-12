@@ -419,7 +419,7 @@ class SortColumnExcudeDictTestCase extends QueryTest with BeforeAndAfterAll {
 
   override protected def beforeAll() {
     // Adding new properties
-    prop.addProperty("carbon.load.sort.scope", "batch_sort")
+    prop.addProperty("carbon.load.sort.scope", "local_sort")
     prop.addProperty("enable.unsafe.sort", "true")
     prop.addProperty("enable.offheap.sort", "true")
   }

@@ -31,9 +31,6 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
 
   val suites = new AlterTableTestCase ::
                new BadRecordTestCase ::
-               new BatchSortLoad1TestCase ::
-               new BatchSortLoad2TestCase ::
-               new BatchSortQueryTestCase ::
                new ColumndictTestCase ::
                new CreateTableAsSelectTestCase ::
                new DataLoadingTestCase ::
@@ -43,7 +40,6 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                new OffheapQuery2TestCase ::
                new OffheapSort1TestCase ::
                new OffheapSort2TestCase ::
-               new PartitionTestCase ::
                new QueriesBasicTestCase ::
                new QueriesBVATestCase ::
                new QueriesCompactionTestCase ::
@@ -84,13 +80,9 @@ class SDVSuites1 extends Suites with BeforeAndAfterAll {
 
   val suites = new BadRecordTestCase ::
                new ComplexDataTypeTestCase ::
-               new BatchSortLoad1TestCase ::
-               new BatchSortQueryTestCase ::
                new DataLoadingTestCase ::
                new OffheapSort2TestCase ::
-               new PartitionTestCase ::
                new QueriesBasicTestCase ::
-               new BatchSortLoad3TestCase ::
                new GlobalSortTestCase ::
                new MergeIndexTestCase :: Nil
 
@@ -143,7 +135,6 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
 class SDVSuites4 extends Suites with BeforeAndAfterAll {
 
   val suites = new AlterTableTestCase ::
-               new BatchSortLoad2TestCase ::
                new BucketingTestCase ::
                new CreateTableAsSelectTestCase ::
                new InvertedindexTestCase ::

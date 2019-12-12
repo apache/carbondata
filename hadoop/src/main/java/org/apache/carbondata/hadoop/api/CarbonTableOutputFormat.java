@@ -86,8 +86,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       "mapreduce.carbontable.empty.data.bad.record";
   public static final String SKIP_EMPTY_LINE = "mapreduce.carbontable.skip.empty.line";
   public static final String SORT_SCOPE = "mapreduce.carbontable.load.sort.scope";
-  public static final String BATCH_SORT_SIZE_INMB =
-      "mapreduce.carbontable.batch.sort.size.inmb";
   public static final String GLOBAL_SORT_PARTITIONS =
       "mapreduce.carbontable.global.sort.partitions";
   public static final String BAD_RECORD_PATH = "mapreduce.carbontable.bad.record.path";
@@ -390,15 +388,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
             carbonProperty.getProperty(
                 CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS,
                 null)));
-
-    model.setBatchSortSizeInMb(
-        conf.get(
-            BATCH_SORT_SIZE_INMB,
-            carbonProperty.getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
-                carbonProperty.getProperty(
-                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))));
 
     String badRecordsPath = conf.get(BAD_RECORD_PATH);
     if (StringUtils.isEmpty(badRecordsPath)) {

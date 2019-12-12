@@ -95,12 +95,12 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
   }
 
-  test("dataload with LOAD_USE_BATCH_SORT='true' with bad_records_action='FAIL'") {
+  test("dataload with bad_records_action='FAIL'") {
     try {
         CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "batch_sort")
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "local_sort")
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
       sql("create table data_bm(name String, dob long, weight int) " +
@@ -124,12 +124,12 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
   }
 
-  test("dataload with LOAD_USE_BATCH_SORT='true' with bad_records_action='FORCE'") {
+  test("dataload with bad_records_action='FORCE'") {
     try {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "BATCH_SORT")
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "local_sort")
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
       sql("create table data_bmf(name String, dob long, weight int) " +
@@ -155,12 +155,12 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
   }
 
-  test("dataload with LOAD_USE_BATCH_SORT='true' with bad_records_action='REDIRECT'") {
+  test("dataload with bad_records_action='REDIRECT'") {
     try {
         CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "BATCH_SORT")
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "local_sort")
       sql("create table data_bm_no_good_data(name String, dob long, weight int) " +
           "STORED BY 'org.apache.carbondata.format'")
       val testData = s"$resourcesPath/badrecords/dummy2.csv"

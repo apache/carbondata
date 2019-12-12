@@ -527,34 +527,6 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * Get the batch sort size
-   * @param configuration
-   * @return
-   */
-  public static int getBatchSortSizeinMb(CarbonDataLoadConfiguration configuration) {
-    int batchSortSizeInMb;
-    try {
-      // First try get from user input from ddl , otherwise get from carbon properties.
-      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
-          == null) {
-        batchSortSizeInMb = Integer.parseInt(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-                CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT));
-      } else {
-        batchSortSizeInMb = Integer.parseInt(
-            configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
-                .toString());
-      }
-      LOGGER.info("batch sort size is set to " + batchSortSizeInMb);
-    } catch (Exception e) {
-      batchSortSizeInMb = 0;
-      LOGGER.warn("Exception occured while resolving batch sort size. " +
-          "batch sort size is set to " + batchSortSizeInMb);
-    }
-    return batchSortSizeInMb;
-  }
-
-  /**
    * Get the number of partitions in global sort
    * @param globalSortPartitions
    * @return the number of partitions

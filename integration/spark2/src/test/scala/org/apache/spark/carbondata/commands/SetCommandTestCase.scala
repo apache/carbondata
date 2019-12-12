@@ -104,18 +104,6 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE}"))
     }
   }
-  // batch_sort_size_inmb
-  test(s"test set command for ${CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB}=4") {
-    checkAnswer(sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB}=4"),
-      sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB}"))
-  }
-
-  test(s"test set ${CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB} for invalid option") {
-    intercept[InvalidConfigurationException] {
-      checkAnswer(sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB}=hjf"),
-        sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB}"))
-    }
-  }
   // single_pass
   test(s"test set command for ${CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS}=true") {
     checkAnswer(sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS}=true"),
@@ -132,10 +120,6 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
   test(s"test set carbon.table.load.sort.scope for valid options") {
     checkAnswer(
       sql(s"set carbon.table.load.sort.scope.db.tbl=no_sort"),
-      sql(s"set carbon.table.load.sort.scope.db.tbl"))
-
-    checkAnswer(
-      sql(s"set carbon.table.load.sort.scope.db.tbl=batch_sort"),
       sql(s"set carbon.table.load.sort.scope.db.tbl"))
 
     checkAnswer(

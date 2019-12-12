@@ -969,23 +969,12 @@ public final class CarbonCommonConstants {
   public static final String LOAD_SORT_SCOPE = "carbon.load.sort.scope";
 
   /**
-   * If set to BATCH_SORT, the sorting scope is smaller and more index tree will be created,
-   * thus loading is faster but query maybe slower.
    * If set to LOCAL_SORT, the sorting scope is bigger and one index tree per data node will be
    * created, thus loading is slower but query is faster.
    * If set to GLOBAL_SORT, the sorting scope is bigger and one index tree per task will be
    * created, thus loading is slower but query is faster.
    */
   public static final String LOAD_SORT_SCOPE_DEFAULT = "NO_SORT";
-
-  /**
-   * Size of batch data to keep in memory, as a thumb rule it supposed
-   * to be less than 45% of sort.inmemory.size.inmb otherwise it may spill intermediate data to disk
-   */
-  @CarbonProperty
-  public static final String LOAD_BATCH_SORT_SIZE_INMB = "carbon.load.batch.sort.size.inmb";
-
-  public static final String LOAD_BATCH_SORT_SIZE_INMB_DEFAULT = "0";
 
   /**
    * The Number of partitions to use when shuffling data for sort. If user don't configurate or

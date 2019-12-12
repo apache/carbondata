@@ -331,7 +331,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
       sql(
         s"""CREATE EXTERNAL TABLE sdkTable STORED BY
            |'carbondata' LOCATION
-           |'$writerPath' TBLPROPERTIES('sort_scope'='batch_sort') """.stripMargin)
+           |'$writerPath' TBLPROPERTIES('sort_scope'='local_sort') """.stripMargin)
     }
     assert(ex.message.contains("Table properties are not supported for external table"))
   }
