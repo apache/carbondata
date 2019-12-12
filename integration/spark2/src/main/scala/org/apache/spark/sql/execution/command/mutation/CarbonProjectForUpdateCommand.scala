@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.strategy.MixedFormatHandler
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{ArrayType, LongType}
 import org.apache.spark.storage.StorageLevel
 
@@ -135,7 +136,24 @@ private[sql] case class CarbonProjectForUpdateCommand(
           else {
             Dataset.ofRows(sparkSession, plan)
           }
-
+          if (CarbonProperties.isUniqueValueCheckEnabled) {
+            // If more than one value present for the update key, should fail the update
+            val ds = dataSet.select(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)
+              .groupBy(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)
+              .count()
+              .select("count")
+              .filter(col("count") > lit(1))
+              .limit(1)
+              .collect()
+            // tupleId represents the source rows that are going to get replaced.
+            // If same tupleId appeared more than once means key has more than one value to replace.
+            // which is undefined behavior.
+            if (ds.length > 0 && ds(0).getLong(0) > 1) {
+              throw new UnsupportedOperationException(
+                " update cannot be supported for 1 to N mapping, as more than one value present " +
+                "for the update key")
+            }
+          }
           // handle the clean up of IUD.
           CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 

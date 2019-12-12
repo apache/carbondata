@@ -1802,6 +1802,23 @@ public final class CarbonProperties {
   }
 
   /**
+   * Validate and get unique value check enabled
+   *
+   * @return boolean
+   */
+  public static Boolean isUniqueValueCheckEnabled() {
+    String needValidate = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE);
+    if (needValidate == null) {
+      return Boolean
+          .parseBoolean(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE_DEFAULT);
+    } else {
+      // return false only if false is set. any other case return true
+      return !needValidate.equalsIgnoreCase("false");
+    }
+  }
+
+  /**
    * get local dictionary size threshold in mb.
    */
   private void validateAndGetLocalDictionarySizeThresholdInMB() {
