@@ -780,8 +780,8 @@ test("test alter command for boolean data type with correct default measure valu
     sql("DROP TABLE IF EXISTS t1")
     sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
         s"('sort_columns'='age', 'sort_scope'='local_sort')")
-    sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='batch_sort')")
-    assert(sortScopeInDescFormatted("t1").equalsIgnoreCase("BATCH_SORT"))
+    sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='global_sort')")
+    assert(sortScopeInDescFormatted("t1").equalsIgnoreCase("global_sort"))
     sql("DROP TABLE t1")
   }
 

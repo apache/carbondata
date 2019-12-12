@@ -254,7 +254,6 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setSkipEmptyLine(optionsFinal.get("skip_empty_line"));
 
     carbonLoadModel.setSortScope(sort_scope);
-    carbonLoadModel.setBatchSortSizeInMb(optionsFinal.get("batch_sort_size_inmb"));
     carbonLoadModel.setGlobalSortPartitions(global_sort_partitions);
     carbonLoadModel.setUseOnePass(Boolean.parseBoolean(single_pass));
 

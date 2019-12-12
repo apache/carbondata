@@ -27,8 +27,6 @@ public class SortScopeOptions {
       sortScope = CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT;
     }
     switch (sortScope.toUpperCase()) {
-      case "BATCH_SORT":
-        return SortScope.BATCH_SORT;
       case "LOCAL_SORT":
         return SortScope.LOCAL_SORT;
       case "GLOBAL_SORT":
@@ -41,7 +39,7 @@ public class SortScopeOptions {
   }
 
   public enum SortScope {
-    NO_SORT, BATCH_SORT, LOCAL_SORT, GLOBAL_SORT
+    NO_SORT, LOCAL_SORT, GLOBAL_SORT
   }
 }
 

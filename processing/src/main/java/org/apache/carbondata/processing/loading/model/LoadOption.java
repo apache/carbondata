@@ -153,17 +153,6 @@ public class LoadOption {
 
     optionsFinal.put("maxcolumns", Maps.getOrDefault(options, "maxcolumns", null));
 
-    optionsFinal.put(
-        "batch_sort_size_inmb",
-        Maps.getOrDefault(
-            options,
-            "batch_sort_size_inmb",
-            CarbonProperties.getInstance().getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
-                CarbonProperties.getInstance().getProperty(
-                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))));
-
     String useOnePass = Maps.getOrDefault(
         options,
         "single_pass",

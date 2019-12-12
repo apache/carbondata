@@ -1491,7 +1491,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('dictionary_include'='city','sort_scope'='batch_sort',
+        | tblproperties('dictionary_include'='city','sort_scope'='local_sort',
         | 'sort_columns'='city,name')
       """.stripMargin)
 
@@ -1501,7 +1501,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       case Some(row) => assert(row.get(1).toString.contains("false"))
     }
     descLoc.find(_.get(0).toString.contains("Sort Scope")) match {
-      case Some(row) => assert(row.get(1).toString.contains("batch_sort"))
+      case Some(row) => assert(row.get(1).toString.contains("local_sort"))
     }
   }
   test("test local dictionary custom configuration with other table properties _003") {

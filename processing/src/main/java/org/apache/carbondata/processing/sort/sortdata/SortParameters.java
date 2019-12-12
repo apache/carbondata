@@ -138,7 +138,6 @@ public class SortParameters implements Serializable {
 
   private int numberOfCores;
 
-  private int batchSortSizeinMb;
   private int rangeId = 0;
 
   /**
@@ -190,7 +189,6 @@ public class SortParameters implements Serializable {
     parameters.numberOfSortColumns = numberOfSortColumns;
     parameters.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
     parameters.numberOfCores = numberOfCores;
-    parameters.batchSortSizeinMb = batchSortSizeinMb;
     parameters.rangeId = rangeId;
     parameters.carbonTable = carbonTable;
     parameters.isUpdateDictDims = isUpdateDictDims;
@@ -393,14 +391,6 @@ public class SortParameters implements Serializable {
     this.numberOfNoDictSortColumns = Math.min(numberOfNoDictSortColumns, noDictionaryCount);
   }
 
-  public int getBatchSortSizeinMb() {
-    return batchSortSizeinMb;
-  }
-
-  public void setBatchSortSizeinMb(int batchSortSizeinMb) {
-    this.batchSortSizeinMb = batchSortSizeinMb;
-  }
-
   public void setCarbonTable(CarbonTable carbonTable) {
     this.carbonTable = carbonTable;
   }
@@ -439,8 +429,6 @@ public class SortParameters implements Serializable {
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
     parameters.setIsVarcharDimensionColumn(
         CarbonDataProcessorUtil.getIsVarcharColumnMapping(configuration.getDataFields()));
-    parameters.setBatchSortSizeinMb(CarbonDataProcessorUtil.getBatchSortSizeinMb(configuration));
-
     parameters.setNumberOfSortColumns(configuration.getNumberOfSortColumns());
     parameters.setNumberOfNoDictSortColumns(configuration.getNumberOfNoDictSortColumns());
     parameters.setNoDictionarySortColumn(CarbonDataProcessorUtil

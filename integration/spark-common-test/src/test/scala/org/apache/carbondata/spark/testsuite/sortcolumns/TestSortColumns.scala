@@ -92,10 +92,10 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       " workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
       "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties" +
-      "('dictionary_exclude'='empno','sort_columns'='empno', 'SORT_SCOPE'='BATCH_SORT')")
+      "('dictionary_exclude'='empno','sort_columns'='empno', 'SORT_SCOPE'='local_sort')")
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1a OPTIONS
-         |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'batch_sort_size_inmb'='64')""".stripMargin)
+         |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
     checkAnswer(sql("select empname from sorttable1a"),
       sql("select empname from origintable1 order by empname"))
   }
@@ -111,10 +111,10 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
       "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties" +
       "('dictionary_exclude'='empno,empname,workgroupcategoryname','sort_columns'='empno,empname'," +
-      "'SORT_SCOPE'='BATCH_SORT')")
+      "'SORT_SCOPE'='local_sort')")
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1b OPTIONS
-          |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'batch_sort_size_inmb'='64')""".stripMargin)
+          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
     checkAnswer(sql("select empname from sorttable1b"),
       sql("select empname from origintable1 order by empname"))
   }
@@ -133,7 +133,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   test("create table with multi-sort_columns and data loading with offheap safe") {
     try {
-      setLoadingProperties("true", "false", "false")
+      setLoadingProperties("true", "false")
       sql("CREATE TABLE sorttable4_offheap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_offheap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
       checkAnswer(sql("select workgroupcategory, empname from sorttable4_offheap_safe"), sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
@@ -144,7 +144,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   test("create table with multi-sort_columns and data loading with offheap and unsafe sort") {
     try {
-      setLoadingProperties("true", "true", "false")
+      setLoadingProperties("true", "true")
       sql(
         "CREATE TABLE sorttable4_offheap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_offheap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
@@ -155,22 +155,9 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("create table with multi-sort_columns and data loading with offheap and inmemory sort") {
-    try {
-      setLoadingProperties("true", "false", "true")
-      sql(
-        "CREATE TABLE sorttable4_offheap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
-      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_offheap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      checkAnswer(sql("select workgroupcategory, empname from sorttable4_offheap_inmemory"),
-        sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
-    } finally {
-      defaultLoadingProperties
-    }
-  }
-
   test("create table with multi-sort_columns and data loading with heap") {
     try {
-      setLoadingProperties("false", "false", "false")
+      setLoadingProperties("false", "false")
       sql(
         "CREATE TABLE sorttable4_heap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_heap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
@@ -183,24 +170,11 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   test("create table with multi-sort_columns and data loading with heap and unsafe sort") {
     try {
-      setLoadingProperties("false", "true", "false")
+      setLoadingProperties("false", "true")
       sql(
         "CREATE TABLE sorttable4_heap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_heap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
       checkAnswer(sql("select workgroupcategory, empname from sorttable4_heap_unsafe"),
-        sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
-    } finally {
-      defaultLoadingProperties
-    }
-  }
-
-  test("create table with multi-sort_columns and data loading with heap and inmemory sort") {
-    try {
-      setLoadingProperties("false", "false", "true")
-      sql(
-        "CREATE TABLE sorttable4_heap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
-      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_heap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      checkAnswer(sql("select workgroupcategory, empname from sorttable4_heap_inmemory"),
         sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
     } finally {
       defaultLoadingProperties
@@ -241,7 +215,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       sql("drop table if exists origintable1")
       sql("CREATE TABLE origintable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE origintable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      setLoadingProperties("false", "false", "false")
+      setLoadingProperties("false", "false")
       sql("CREATE TABLE unsortedtable_heap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE unsortedtable_heap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'TIMESTAMPFORMAT'='dd-MM-yyyy')""")
       checkAnswer(sql("select * from unsortedtable_heap_safe where empno = 11"), sql("select * from origintable1 where empno = 11"))
@@ -256,26 +230,11 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       sql("drop table if exists origintable1")
       sql("CREATE TABLE origintable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE origintable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      setLoadingProperties("false", "true", "false")
+      setLoadingProperties("false", "true")
       sql("CREATE TABLE unsortedtable_heap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE unsortedtable_heap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'TIMESTAMPFORMAT'='dd-MM-yyyy')""")
       checkAnswer(sql("select * from unsortedtable_heap_unsafe where empno = 11"), sql("select * from origintable1 where empno = 11"))
       checkAnswer(sql("select * from unsortedtable_heap_unsafe order by empno"), sql("select * from origintable1 order by empno"))
-    } finally {
-      defaultLoadingProperties
-    }
-  }
-
-  test("unsorted table creation, query and loading with heap and inmemory sort config") {
-    try {
-      sql("drop table if exists origintable1")
-      sql("CREATE TABLE origintable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
-      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE origintable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      setLoadingProperties("false", "false", "true")
-      sql("CREATE TABLE unsortedtable_heap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
-      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE unsortedtable_heap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'TIMESTAMPFORMAT'='dd-MM-yyyy')""")
-      checkAnswer(sql("select * from unsortedtable_heap_inmemory where empno = 11"), sql("select * from origintable1 where empno = 11"))
-      checkAnswer(sql("select * from unsortedtable_heap_inmemory order by empno"), sql("select * from origintable1 order by empno"))
     } finally {
       defaultLoadingProperties
     }
@@ -286,7 +245,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       sql("drop table if exists origintable1")
       sql("CREATE TABLE origintable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE origintable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      setLoadingProperties("true", "false", "false")
+      setLoadingProperties("true", "false")
       sql("CREATE TABLE unsortedtable_offheap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE unsortedtable_offheap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'TIMESTAMPFORMAT'='dd-MM-yyyy')""")
       checkAnswer(sql("select * from unsortedtable_offheap_safe where empno = 11"), sql("select * from origintable1 where empno = 11"))
@@ -301,34 +260,11 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       sql("drop table if exists origintable1")
       sql("CREATE TABLE origintable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE origintable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      setLoadingProperties("true", "true", "false")
+      setLoadingProperties("true", "true")
       sql("CREATE TABLE unsortedtable_offheap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE unsortedtable_offheap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'TIMESTAMPFORMAT'='dd-MM-yyyy')""")
       checkAnswer(sql("select * from unsortedtable_offheap_unsafe where empno = 11"), sql("select * from origintable1 where empno = 11"))
       checkAnswer(sql("select * from unsortedtable_offheap_unsafe order by empno"), sql("select * from origintable1 order by empno"))
-    } finally {
-      defaultLoadingProperties
-    }
-  }
-
-  test("unsorted table creation, query and data loading with offheap and inmemory sort config") {
-    try {
-      sql("drop table if exists origintable1")
-      sql("CREATE TABLE origintable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
-      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE origintable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      setLoadingProperties("true", "false", "true")
-      sql("CREATE TABLE unsortedtable_offheap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
-      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE unsortedtable_offheap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'TIMESTAMPFORMAT'='dd-MM-yyyy')""")
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno = 11"), sql("select * from origintable1 where empno = 11"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno < 15 order by empno"), sql("select * from origintable1 where empno < 15 order by empno"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno <= 15 order by empno"), sql("select * from origintable1 where empno <= 15 order by empno"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno > 15 order by empno"), sql("select * from origintable1 where empno > 15 order by empno"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno >= 15 order by empno"), sql("select * from origintable1 where empno >= 15 order by empno"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno <> 15 order by empno"), sql("select * from origintable1 where empno <> 15 order by empno"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno in (15, 16, 17) order by empno"), sql("select * from origintable1 where empno in (15, 16, 17) order by empno"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno is null"), sql("select * from origintable1 where empno is null order by empno"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno is not null"), sql("select * from origintable1 where empno is not null order by empno"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory order by empno"), sql("select * from origintable1 order by empno"))
     } finally {
       defaultLoadingProperties
     }
@@ -444,12 +380,9 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS tableTwo")
   }
 
-  def setLoadingProperties(offheap: String, unsafe: String, useBatch: String): Unit = {
+  def setLoadingProperties(offheap: String, unsafe: String): Unit = {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, offheap)
-    if (useBatch.equalsIgnoreCase("true")) {
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "BATCH_SORT")
-    }
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, useBatch)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, unsafe)
   }
 
   def defaultLoadingProperties = {

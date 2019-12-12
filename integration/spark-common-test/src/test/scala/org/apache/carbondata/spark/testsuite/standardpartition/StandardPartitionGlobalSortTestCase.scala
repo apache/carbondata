@@ -939,19 +939,19 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     assert(exMessage.getMessage.contains("day is not a valid partition column in table default.partitionnocolumn"))
   }
 
-  ignore("data loading with default partition in static partition table with batchsort") {
-    sql("DROP TABLE IF EXISTS partitiondefaultbatchsort")
+  test("data loading with default partition in static partition table with local_sort") {
+    sql("DROP TABLE IF EXISTS partitiondefaultlocalsort")
     sql(
       """
-        | CREATE TABLE partitiondefaultbatchsort (empno int, designation String,
+        | CREATE TABLE partitiondefaultlocalsort (empno int, designation String,
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String)
         | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='BATCH_SORT')
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='local_sort')
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultbatchsort OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    checkAnswer(sql("select count(*) from partitiondefaultbatchsort"), Seq(Row(10)))
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultlocalsort OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(*) from partitiondefaultlocalsort"), Seq(Row(10)))
   }
 
   test("data loading with default partition in static partition table with nosort") {
@@ -1087,5 +1087,6 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partitiondatadelete")
     sql("drop table if exists comp_dt2")
     sql("drop table if exists partitionNoColumn")
+    sql("drop table if exists partitiondefaultlocalsort")
   }
 }

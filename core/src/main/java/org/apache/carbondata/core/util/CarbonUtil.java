@@ -1829,12 +1829,8 @@ public final class CarbonUtil {
       return false;
     }
     switch (sortScope.toUpperCase()) {
-      case "BATCH_SORT":
-        return true;
       case "LOCAL_SORT":
-        return true;
       case "NO_SORT":
-        return true;
       case "GLOBAL_SORT":
         return true;
       default:

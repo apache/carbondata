@@ -117,7 +117,7 @@ CarbonData DML statements are documented here,which includes:
     Requirement: Sort Columns must be set while creating table. If Sort Columns is null, Sort Scope is always NO_SORT.
   
     ```
-    OPTIONS('SORT_SCOPE'='BATCH_SORT')
+    OPTIONS('SORT_SCOPE'='GLOBAL_SORT')
     ```
     
     Priority order for choosing Sort Scope is:

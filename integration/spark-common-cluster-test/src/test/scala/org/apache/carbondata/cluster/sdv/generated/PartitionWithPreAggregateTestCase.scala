@@ -70,26 +70,6 @@ class PartitionWithPreAggregateTestCase extends QueryTest with BeforeAndAfterAll
       Seq(Row(159.10)))
   }
 
-  //Loading data into partitioned table with SORT_SCOPE=BATCH_SORT
-  test("Partition-With-PreAggregate_TC003", Include) {
-    sql("drop table if exists partition_table")
-    sql(
-      s"""CREATE TABLE partition_table(shortField SHORT, intField INT, bigintField LONG,
-         |doubleField DOUBLE, timestamp TIMESTAMP, decimalField DECIMAL(18,2),dateField DATE,
-         |charField CHAR(5), floatField FLOAT ) PARTITIONED BY (stringField STRING) STORED BY
-         |'carbondata' TBLPROPERTIES('SORT_SCOPE'='BATCH_SORT')""".stripMargin)
-    sql(
-      s"""load data inpath '$resourcesPath/Data/partition/list_partition_table.csv' into table
-         |partition_table""".stripMargin)
-    sql(
-      "create datamap ag1 on table partition_table using 'preaggregate' as select shortField, sum" +
-      "(intField) from partition_table group by shortField")
-    checkAnswer(sql(
-      s"""select decimalfield from partition_table where charfield='e' and
-         |floatfield=307.301 group by decimalfield limit 1""".stripMargin),
-      Seq(Row(159.10)))
-  }
-
   //Loading data into partitioned table with SORT_SCOPE=NO_SORT
   test("Partition-With-PreAggregate_TC004", Include) {
     sql("drop table if exists partition_table")

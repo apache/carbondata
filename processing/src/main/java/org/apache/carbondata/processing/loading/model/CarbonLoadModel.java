@@ -186,10 +186,6 @@ public class CarbonLoadModel implements Serializable {
   private String sortScope;
 
   /**
-   * Batch sort size in mb.
-   */
-  private String batchSortSizeInMb;
-  /**
    * bad record location
    */
   private String badRecordsLocation;
@@ -484,7 +480,6 @@ public class CarbonLoadModel implements Serializable {
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
     copy.skipEmptyLine = skipEmptyLine;
     copy.sortScope = sortScope;
-    copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.isAggLoadRequest = isAggLoadRequest;
     copy.badRecordsLocation = badRecordsLocation;
     copy.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
@@ -545,7 +540,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.isEmptyDataBadRecord = isEmptyDataBadRecord;
     copyObj.skipEmptyLine = skipEmptyLine;
     copyObj.sortScope = sortScope;
-    copyObj.batchSortSizeInMb = batchSortSizeInMb;
     copyObj.badRecordsLocation = badRecordsLocation;
     copyObj.isAggLoadRequest = isAggLoadRequest;
     copyObj.sortColumnsBoundsStr = sortColumnsBoundsStr;
@@ -858,14 +852,6 @@ public class CarbonLoadModel implements Serializable {
 
   public void setSortScope(String sortScope) {
     this.sortScope = sortScope;
-  }
-
-  public String getBatchSortSizeInMb() {
-    return batchSortSizeInMb;
-  }
-
-  public void setBatchSortSizeInMb(String batchSortSizeInMb) {
-    this.batchSortSizeInMb = batchSortSizeInMb;
   }
 
   public String getGlobalSortPartitions() {

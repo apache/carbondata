@@ -45,7 +45,6 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_COR
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH;
-import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD;
@@ -172,10 +171,9 @@ public class SessionParams implements Serializable, Cloneable {
         isValid = CarbonUtil.isValidSortOption(value);
         if (!isValid) {
           throw new InvalidConfigurationException("The sort scope " + key
-              + " can have only either NO_SORT, BATCH_SORT, LOCAL_SORT or GLOBAL_SORT.");
+              + " can have only either NO_SORT, LOCAL_SORT or GLOBAL_SORT.");
         }
         break;
-      case CARBON_OPTIONS_BATCH_SORT_SIZE_INMB:
       case CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS:
       case NUM_CORES_LOADING:
       case NUM_CORES_COMPACTING:
@@ -238,7 +236,7 @@ public class SessionParams implements Serializable, Cloneable {
           isValid = CarbonUtil.isValidSortOption(value);
           if (!isValid) {
             throw new InvalidConfigurationException("The sort scope " + key
-                + " can have only either NO_SORT, BATCH_SORT, LOCAL_SORT or GLOBAL_SORT.");
+                + " can have only either NO_SORT, LOCAL_SORT or GLOBAL_SORT.");
           }
         } else {
           throw new InvalidConfigurationException(

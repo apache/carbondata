@@ -41,7 +41,6 @@ import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingExcep
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.steps.CarbonRowDataWriterProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.DataConverterProcessorStepImpl;
-import org.apache.carbondata.processing.loading.steps.DataWriterBatchProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.DataWriterProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.InputProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.InputProcessorStepWithNoConverterImpl;
@@ -72,8 +71,6 @@ public final class DataLoadProcessBuilder {
       return buildInternalForNoSort(inputIterators, configuration);
     } else if (configuration.getBucketingInfo() != null) {
       return buildInternalForBucketing(inputIterators, configuration);
-    } else if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
-      return buildInternalForBatchSort(inputIterators, configuration);
     } else {
       return buildInternal(inputIterators, configuration);
     }
@@ -122,12 +119,6 @@ public final class DataLoadProcessBuilder {
           new SortProcessorStepImpl(configuration, inputProcessorStep);
       //  Writes the sorted data in carbondata format.
       return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
-    } else if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
-      //  Sorts the data by SortColumn or not
-      AbstractDataLoadProcessorStep sortProcessorStep =
-          new SortProcessorStepImpl(configuration, inputProcessorStep);
-      // Writes the sorted data in carbondata format.
-      return new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
     } else {
       // In all other cases like global sort and no sort uses this step
       return new CarbonRowDataWriterProcessorStepImpl(configuration, inputProcessorStep);
@@ -152,32 +143,10 @@ public final class DataLoadProcessBuilder {
           new SortProcessorStepImpl(configuration, converterProcessorStep);
       //  Writes the sorted data in carbondata format.
       return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
-    } else if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
-      //  Sorts the data by SortColumn or not
-      AbstractDataLoadProcessorStep sortProcessorStep =
-          new SortProcessorStepImpl(configuration, converterProcessorStep);
-      // Writes the sorted data in carbondata format.
-      return new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
     } else {
       // In all other cases like global sort and no sort uses this step
       return new CarbonRowDataWriterProcessorStepImpl(configuration, converterProcessorStep);
     }
-  }
-
-  private AbstractDataLoadProcessorStep buildInternalForBatchSort(CarbonIterator[] inputIterators,
-      CarbonDataLoadConfiguration configuration) {
-    // 1. Reads the data input iterators and parses the data.
-    AbstractDataLoadProcessorStep inputProcessorStep =
-        new InputProcessorStepImpl(configuration, inputIterators);
-    // 2. Converts the data like dictionary or non dictionary or complex objects depends on
-    // data types and configurations.
-    AbstractDataLoadProcessorStep converterProcessorStep =
-        new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
-    // 3. Sorts the data by SortColumn or not
-    AbstractDataLoadProcessorStep sortProcessorStep =
-        new SortProcessorStepImpl(configuration, converterProcessorStep);
-    // 4. Writes the sorted data in carbondata format.
-    return new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBucketing(CarbonIterator[] inputIterators,
@@ -253,8 +222,6 @@ public final class DataLoadProcessBuilder {
     configuration.setParentTablePath(loadModel.getParentTablePath());
     configuration
         .setDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, loadModel.getSortScope());
-    configuration.setDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-        loadModel.getBatchSortSizeInMb());
     configuration.setDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
         loadModel.getGlobalSortPartitions());
     configuration.setDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,

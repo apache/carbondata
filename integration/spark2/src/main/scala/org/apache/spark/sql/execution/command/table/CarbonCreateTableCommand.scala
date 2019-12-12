@@ -92,7 +92,7 @@ case class CarbonCreateTableCommand(
       if (!CarbonUtil.isValidSortOption(sortScope)) {
         throw new InvalidConfigurationException(
           s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT'," +
-          s" 'BATCH_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT' ")
+          s" 'LOCAL_SORT' and 'GLOBAL_SORT' ")
       }
 
       if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
