@@ -19,6 +19,7 @@
  * File format description for CarbonData sort index file
  */
 namespace java org.apache.carbondata.format
+namespace cpp carbondata.format
 
 struct ColumnSortInfo {
 	1: list<i32> sort_index; // The surrogate values sorted by the original value order

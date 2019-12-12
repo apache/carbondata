@@ -19,6 +19,7 @@
  * File format description for the CarbonData file format
  */
 namespace java org.apache.carbondata.format
+namespace cpp carbondata.format
 
 include "schema.thrift"
 include "dictionary.thrift"
@@ -141,6 +142,16 @@ struct DataChunk2{
     11: optional i32 numberOfRowsInpage;
  }
 
+struct LocalDictionaryChunkMeta {
+    1: required list<schema.Encoding> encoders; // The List of encoders overriden at node level
+    2: required list<binary> encoder_meta; // Extra information required by encoders
+}
+
+struct LocalDictionaryChunk {
+    1: required LocalDictionaryChunkMeta dictionary_meta
+    2: required binary dictionary_data; // the values in dictionary order, each value is represented in binary format
+    3: required binary dictionary_values; // surrogate keys used in the blocklet
+}
 
 /**
  * Represents a chunk of data. The chunk can be a single column stored in Column Major format or a group of columns stored in Row Major Format.
@@ -240,15 +251,4 @@ struct BlockletHeader{
 	3: optional BlockletIndex blocklet_index;  // Index for the following blocklet
 	4: required BlockletInfo blocklet_info;  // Info for the following blocklet
 	5: optional dictionary.ColumnDictionaryChunk dictionary; // Blocklet local dictionary
-}
-
-struct LocalDictionaryChunk {
-  1: required LocalDictionaryChunkMeta dictionary_meta
-	2: required binary dictionary_data; // the values in dictionary order, each value is represented in binary format
-	3: required binary dictionary_values; // surrogate keys used in the blocklet
-}
-
-struct LocalDictionaryChunkMeta {
-  1: required list<schema.Encoding> encoders; // The List of encoders overriden at node level
-  2: required list<binary> encoder_meta; // Extra information required by encoders
 }

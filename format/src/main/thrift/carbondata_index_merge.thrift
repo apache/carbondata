@@ -19,6 +19,7 @@
  * File format description for CarbonData merged index file.
  */
 namespace java org.apache.carbondata.format
+namespace cpp carbondata.format
 
 struct MergedBlockIndexHeader{
   1: required list<string> file_names; // list of carbon index file names

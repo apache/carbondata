@@ -19,6 +19,8 @@
  * File format description for CarbonData dictionary file
  */
 namespace java org.apache.carbondata.format
+namespace cpp carbondata.format
+
 struct ColumnDictionaryChunk {
 	1: list<binary> values; // the values in dictionary order, each value is represented in binary format
 }

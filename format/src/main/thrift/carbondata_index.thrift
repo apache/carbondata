@@ -19,6 +19,7 @@
  * File format description for CarbonData index file for btree.
  */
 namespace java org.apache.carbondata.format
+namespace cpp carbondata.format
 
 include "schema.thrift"
 include "carbondata.thrift"
