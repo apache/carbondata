@@ -17,14 +17,21 @@
 
 package org.apache.spark.sql.execution.command.management
 
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Dataset, Row, SparkSession}
-import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan, Project}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataCommand}
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import scala.collection.JavaConverters._
+
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, NamedExpression}
+
 
 case class CarbonInsertIntoCommand(
     relation: CarbonDatasourceHadoopRelation,
@@ -52,16 +59,56 @@ case class CarbonInsertIntoCommand(
         CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED_DEFAULT)
     val isPersistRequired =
       isPersistEnabledUserValue.equalsIgnoreCase("true") || containsLimit(child)
+    var isCarbonToCarbonInsert : Boolean = false
+    child.collect {
+      case l: LogicalRelation =>
+        l.relation match {
+          case relation: CarbonDatasourceHadoopRelation =>
+            isCarbonToCarbonInsert = true;
+            relation.setInsertIntoCarbon
+          case _ =>
+        }
+    }
+    val newChild =
+    if (isCarbonToCarbonInsert) {
+      val columnSchemas = relation.carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
+       child.transformDown {
+        case p :Project =>
+          // rearrange the project as per columnSchema
+          val oldList = p.projectList
+          if (columnSchemas.size != oldList.size) {
+            // TODO: handle this scenario !
+            throw new RuntimeException("TODO: yet to handle this scenario")
+          }
+          var newList : Seq[NamedExpression] = Seq.empty
+          for (columnSchema <- columnSchemas) {
+            newList = newList :+ oldList(columnSchema.getSchemaOrdinal)
+          }
+          Project(newList, p.child)
+      }
+    } else {
+      child
+    }
+
     val df =
       if (isPersistRequired) {
         LOGGER.info("Persist enabled for Insert operation")
-        Dataset.ofRows(sparkSession, child).persist(
+        Dataset.ofRows(sparkSession, newChild).persist(
           StorageLevel.fromString(
             CarbonProperties.getInstance.getInsertIntoDatasetStorageLevel))
       } else {
-        Dataset.ofRows(sparkSession, child)
+        if (!isCarbonToCarbonInsert) {
+          Dataset.ofRows(sparkSession, newChild)
+        } else {
+          // use RDD instead of dataFrame
+          null
+        }
       }
     val header = relation.tableSchema.get.fields.map(_.name).mkString(",")
+    var scanResultRdd : RDD[InternalRow] = null
+    if (isCarbonToCarbonInsert) {
+      scanResultRdd = sparkSession.sessionState.executePlan(newChild).toRdd
+    }
     loadCommand = CarbonLoadDataCommand(
       databaseNameOp = Some(relation.carbonRelation.databaseName),
       tableName = relation.carbonRelation.tableName,
@@ -71,10 +118,11 @@ case class CarbonInsertIntoCommand(
       isOverwriteTable = overwrite,
       inputSqlString = null,
       dataFrame = Some(df),
+      scanRDD = Some(scanResultRdd),
       updateModel = None,
       tableInfoOp = None,
       internalOptions = Map.empty,
-      partition = partition)
+      partition = partition, isCarbonToCarbonInsert = isCarbonToCarbonInsert)
     val load = loadCommand.processMetadata(sparkSession)
     if (isPersistRequired) {
       df.unpersist()

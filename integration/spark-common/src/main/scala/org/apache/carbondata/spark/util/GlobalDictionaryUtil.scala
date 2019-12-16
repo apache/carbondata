@@ -642,7 +642,7 @@ object GlobalDictionaryUtil {
             dimensions, carbonLoadModel, sqlContext, dictfolderPath)
         }
 
-        val headerOfInputData: Array[String] = if (dataFrame.isDefined) {
+        val headerOfInputData: Array[String] = if ((dataFrame.isDefined) && dataFrame.get != null) {
           dataFrame.get.columns
         } else {
           headers

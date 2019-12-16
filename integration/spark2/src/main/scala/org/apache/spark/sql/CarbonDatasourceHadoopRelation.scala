@@ -41,7 +41,9 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.hadoop.CarbonProjection
-import org.apache.carbondata.spark.rdd.CarbonScanRDD
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
+import org.apache.carbondata.spark.rdd.{CarbonScanRDD, SparkReadSupport}
+import org.apache.carbondata.spark.readsupport.SparkInsertIntoRowReadSupportImpl
 
 case class CarbonDatasourceHadoopRelation(
     sparkSession: SparkSession,
@@ -64,6 +66,10 @@ case class CarbonDatasourceHadoopRelation(
 
 
   @transient lazy val carbonTable: CarbonTable = carbonRelation.carbonTable
+
+  var isInsertToCarbon : Boolean = false
+
+  def setInsertIntoCarbon  = isInsertToCarbon = true
 
   override def sqlContext: SQLContext = sparkSession.sqlContext
 
@@ -182,6 +188,14 @@ case class CarbonDatasourceHadoopRelation(
 
     CarbonSession.threadUnset(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP)
     val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
+    // If it is scan for insert into carbon table, need to set read support
+    val readSupportClz: Class[_ <: CarbonReadSupport[_]] = if (isInsertToCarbon) {
+      //TODO: don't change hadoop relation ,  impact on concurrent query ?
+      isInsertToCarbon = false
+      classOf[SparkInsertIntoRowReadSupportImpl]
+    } else {
+      SparkReadSupport.readSupportClass
+    }
     new CarbonScanRDD(
       sparkSession,
       projection,
@@ -190,7 +204,8 @@ case class CarbonDatasourceHadoopRelation(
       carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo,
       inputMetricsStats,
-      partitions)
+      partitions,
+      readSupportClz = readSupportClz)
   }
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)

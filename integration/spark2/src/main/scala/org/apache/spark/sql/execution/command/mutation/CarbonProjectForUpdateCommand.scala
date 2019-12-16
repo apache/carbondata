@@ -307,6 +307,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       false,
       null,
       Some(dataFrame),
+      null,
       Some(updateTableModel)).run(sparkSession)
 
     executorErrors.errorMsg = updateTableModel.executorErrors.errorMsg

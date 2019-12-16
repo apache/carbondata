@@ -1293,7 +1293,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String ENABLE_VECTOR_READER = "carbon.enable.vector.reader";
 
-  public static final String ENABLE_VECTOR_READER_DEFAULT = "true";
+  public static final String ENABLE_VECTOR_READER_DEFAULT = "false";
 
   /**
    * property to set is IS_DRIVER_INSTANCE

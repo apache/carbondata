@@ -64,6 +64,29 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
   }
 
+  test("test insert into carbon partition table from non-partition carbon table") {
+    sql(
+      """
+        | CREATE TABLE partitionone (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empno int)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'SORT_COLUMNS'='empno,doj')
+      """.stripMargin)
+
+    sql(
+      "insert into partitionone select empname, designation, doj, workgroupcategory, " +
+      "workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, " +
+      "attendance, utilization, salary, empno from originTable")
+      .show(false)
+
+    checkAnswer(sql("select * from partitionone order by empno, doj"), sql(
+      "select empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, " +
+      "deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary, " +
+      "empno from originTable order by empno, doj"))
+  }
+
   test("data loading for global partition table for two partition column") {
     sql(
       """

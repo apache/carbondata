@@ -251,6 +251,8 @@ public class CarbonLoadModel implements Serializable {
    */
   private int scaleFactor;
 
+  private boolean isCarbonToCarbonInsert;
+
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;
   }
@@ -435,6 +437,14 @@ public class CarbonLoadModel implements Serializable {
     this.loadMinSize = loadMinSize;
   }
 
+  public boolean isCarbonToCarbonInsert() {
+    return isCarbonToCarbonInsert;
+  }
+
+  public void setCarbonToCarbonInsert(boolean carbonToCarbonInsert) {
+    isCarbonToCarbonInsert = carbonToCarbonInsert;
+  }
+
   /**
    * Get copy with taskNo.
    * Broadcast value is shared in process, so we need to copy it to make sure the value in each
@@ -492,6 +502,7 @@ public class CarbonLoadModel implements Serializable {
     copy.rangePartitionColumn = rangePartitionColumn;
     copy.scaleFactor = scaleFactor;
     copy.totalSize = totalSize;
+    copy.isCarbonToCarbonInsert = isCarbonToCarbonInsert;
     return copy;
   }
 
@@ -551,6 +562,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.rangePartitionColumn = rangePartitionColumn;
     copyObj.scaleFactor = scaleFactor;
     copyObj.totalSize = totalSize;
+    copyObj.isCarbonToCarbonInsert = isCarbonToCarbonInsert;
     return copyObj;
   }
 
