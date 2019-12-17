@@ -64,6 +64,11 @@ class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: Distributa
       .newFixedThreadPool(numOfThreads, new CarbonThreadFactory("IndexPruningPool", true))
     implicit val ec: ExecutionContextExecutor = ExecutionContext
       .fromExecutor(service)
+    if (dataMapFormat.ifAsyncCall()) {
+      // to clear cache of invalid segments during pre-priming in index server
+      DataMapStoreManager.getInstance().clearInvalidSegments(dataMapFormat.getCarbonTable,
+        dataMapFormat.getInvalidSegments)
+    }
     val futures = if (inputSplits.length <= numOfThreads) {
       inputSplits.map {
         split => generateFuture(Seq(split))
@@ -83,11 +88,6 @@ class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: Distributa
       CacheProvider.getInstance().getCarbonCache.getCurrentSize
     } else {
       0L
-    }
-    if (dataMapFormat.ifAsyncCall()) {
-      // to clear cache of invalid segments during pre-priming in index server
-      DataMapStoreManager.getInstance().clearInvalidSegments(dataMapFormat.getCarbonTable,
-        dataMapFormat.getInvalidSegments)
     }
     Iterator((executorIP + "_" + cacheSize.toString, results.map(_._2.toLong).sum.toString))
   }
