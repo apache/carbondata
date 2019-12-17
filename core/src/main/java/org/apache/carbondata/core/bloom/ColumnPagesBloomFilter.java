@@ -17,9 +17,16 @@
 
 package org.apache.carbondata.core.bloom;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.format.PageBloomChunk;
@@ -76,8 +83,12 @@ public class ColumnPagesBloomFilter {
     this.hashType = pageBloomChunk.getHash_type();
     this.hash = new HashFunction(vectorSize, nbHash, hashType);
     this.bloomByteBuffers = pageBloomChunk.getPagebloom_list();
+    this.pageBitmaps = Arrays.asList(new RoaringBitmap[bloomByteBuffers.size()]);
   }
 
+  /**
+   * compress BloomFilter of a page and add to holder
+   */
   public void addPageBloomFilter(BloomFilter bloomFilter) {
     if (null == pageBitmaps) {
       pageBitmaps = new ArrayList<>();
@@ -90,9 +101,51 @@ public class ColumnPagesBloomFilter {
     }
   }
 
+  /**
+   * deserialize bitmap of page on demand
+   */
+  private RoaringBitmap getBitmap(int pageIdx) throws IOException {
+    RoaringBitmap bitmap = pageBitmaps.get(pageIdx);
+    if (null == bitmap) {
+      // get bitmap bytes of page
+      byte[] bloomFilterInBytes = bloomByteBuffers.get(pageIdx).array();
+      // wrap byte array as input stream
+      DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bloomFilterInBytes));
+      dis.close();
+      bitmap = new RoaringBitmap();
+      // deserialize the bitmap from input stream
+      bitmap.deserialize(dis);
+      pageBitmaps.set(pageIdx, bitmap);
+    }
+    return bitmap;
+  }
 
   /**
-   * prune pages based on minmax result bitset
+   * check whether need to scan a single page
+   */
+  public boolean isScanRequired(byte[][] filterValues, int pageIdx) throws IOException {
+    RoaringBitmap bitmap = getBitmap(pageIdx);
+    for (byte[] filterValue : filterValues) {
+      int[] ret = hash.hash(new Key(filterValue));
+      boolean pageNeedCheck = true;
+      for (int k : ret) {
+        if (!bitmap.contains(k)) {
+          // a page must not contain the filter value if any bit check fails
+          pageNeedCheck = false;
+          break;
+        }
+      }
+      if (pageNeedCheck) {
+        // a page needed to be scanned if any filter value hit
+        return true;
+      }
+    }
+    return false;
+  }
+
+
+  /**
+   * prune pages in blocklet based on minmax result bitset
    *
    * For example, we apply filter `col1 in (5,6)`. And values in column pages are:
    *        Column Page 1: 1,3,5,6,9
@@ -116,21 +169,6 @@ public class ColumnPagesBloomFilter {
    * Finally, page 1 will be scanned, compare to scan both page 1 and page 2 when only use min-max
    */
   public BitSet prunePages(byte[][] filterValues, BitSet minMaxBitSet) throws IOException {
-    // deserialize bitmap  for pages which is set to TRUE in minMaxBitSet
-    // keep the deserialize result to use for multiple filter values
-    RoaringBitmap[] candidatePageBitmaps = new RoaringBitmap[minMaxBitSet.length()];
-    for (int i = minMaxBitSet.nextSetBit(0); i >= 0; i = minMaxBitSet.nextSetBit(i + 1)) {
-      // get bitmap bytes of page
-      byte[] bloomFilterInBytes = bloomByteBuffers.get(i).array();
-      // wrap byte array as input stream
-      DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bloomFilterInBytes));
-      dis.close();
-      RoaringBitmap bitmap = new RoaringBitmap();
-      // deserialize the bitmap from input stream
-      bitmap.deserialize(dis);
-      candidatePageBitmaps[i] = bitmap;
-    }
-
     // check if page is hit in bloom
     BitSet pageBitSet = new BitSet(minMaxBitSet.length());
     for (byte[] filterValue : filterValues) {
@@ -141,7 +179,7 @@ public class ColumnPagesBloomFilter {
             || !minMaxBitSet.get(pageId)) { // skip if minmax set this page false
           continue;
         }
-        RoaringBitmap bitmap = candidatePageBitmaps[pageId];
+        RoaringBitmap bitmap = getBitmap(pageId);
         boolean pageNeedCheck = true;
         for (int k : ret) {
           if (!bitmap.contains(k)) {

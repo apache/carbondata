@@ -118,17 +118,25 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
       BitSetGroup bitSetGroup = new BitSetGroup(dimensionRawColumnChunk.getPagesCount());
       filterValues = dimColumnExecuterInfo.getFilterKeys();
+      ColumnPagesBloomFilter bloomFilter = null;
       boolean isDecoded = false;
       for (int i = 0; i < dimensionRawColumnChunk.getPagesCount(); i++) {
         if (dimensionRawColumnChunk.getMaxValues() != null) {
           if (isScanRequired(dimensionRawColumnChunk, i)) {
-            DimensionColumnPage dimensionColumnPage = dimensionRawColumnChunk.decodeColumnPage(i);
             if (!isDecoded) {
               filterValues =  FilterUtil
                   .getEncodedFilterValues(dimensionRawColumnChunk.getLocalDictionary(),
                       dimColumnExecuterInfo.getFilterKeys());
+              // get page bloom filter for whole blocklet
+              bloomFilter = dimensionRawColumnChunk.getPageBloomFilter();
               isDecoded = true;
             }
+            // use page bloom to check page again
+            if (null != bloomFilter && !bloomFilter.isScanRequired(filterValues, i)) {
+              continue;
+            }
+            // scan detail column value
+            DimensionColumnPage dimensionColumnPage = dimensionRawColumnChunk.decodeColumnPage(i);
             BitSet bitSet = getFilteredIndexes(dimensionColumnPage,
                 dimensionRawColumnChunk.getRowCount()[i], useBitsetPipeLine,
                 rawBlockletColumnChunks.getBitSetGroup(), i);
