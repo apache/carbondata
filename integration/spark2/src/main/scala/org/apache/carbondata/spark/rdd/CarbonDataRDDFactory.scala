@@ -455,19 +455,25 @@ object CarbonDataRDDFactory {
         if (resultSize == 0) {
           return null
         }
-        if (CarbonUpdateUtil.updateTableMetadataStatus(
+        if (!CarbonUpdateUtil.updateTableMetadataStatus(
           segmentDetails,
           carbonTable,
           updateModel.get.updatedTimeStamp + "",
           true,
           new util.ArrayList[Segment](0),
           new util.ArrayList[Segment](segmentFiles), "")) {
-        } else {
           LOGGER.error("Data update failed due to failure in table status updation.")
           updateModel.get.executorErrors.errorMsg = errorMessage
           updateModel.get.executorErrors.failureCauses = FailureCauses
             .STATUS_FILE_UPDATION_FAILURE
           return null
+        }
+        // code to handle Pre-Priming cache for update command
+        if (!segmentFiles.isEmpty) {
+          val segmentsToPrePrime = segmentFiles.asScala.map(iterator => iterator.getSegmentNo).toSeq
+          DistributedRDDUtils
+            .triggerPrepriming(sqlContext.sparkSession, carbonTable, segmentsToPrePrime,
+              operationContext, hadoopConf, segmentsToPrePrime.toList)
         }
       }
       return null
