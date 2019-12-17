@@ -93,6 +93,37 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
     this.noDicAndComplexColumns = carbonFactDataHandlerModel.getNoDictAndComplexColumns();
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
   }
+  public RowResultMergerProcessor(String databaseName,
+      String tableName, SegmentProperties segProp, String[] tempStoreLocation,
+      CarbonLoadModel loadModel, CompactionType compactionType, PartitionSpec partitionSpec,
+                                  int bucketId)
+      throws IOException {
+    this.segprop = segProp;
+    this.partitionSpec = partitionSpec;
+    this.loadModel = loadModel;
+    CarbonDataProcessorUtil.createLocations(tempStoreLocation);
+
+    String carbonStoreLocation;
+    if (partitionSpec != null) {
+      carbonStoreLocation =
+          partitionSpec.getLocation().toString() + CarbonCommonConstants.FILE_SEPARATOR + loadModel
+              .getFactTimeStamp() + ".tmp";
+    } else {
+      carbonStoreLocation = CarbonDataProcessorUtil
+          .createCarbonStoreLocation(loadModel.getCarbonDataLoadSchema().getCarbonTable(),
+              loadModel.getSegmentId());
+    }
+    CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
+        .getCarbonFactDataHandlerModel(loadModel,
+            loadModel.getCarbonDataLoadSchema().getCarbonTable(), segProp, tableName,
+            tempStoreLocation, carbonStoreLocation);
+    setDataFileAttributesInModel(loadModel, compactionType, carbonFactDataHandlerModel);
+    carbonFactDataHandlerModel.setCompactionFlow(true);
+    carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
+    carbonFactDataHandlerModel.setBucketId(bucketId);
+    this.noDicAndComplexColumns = carbonFactDataHandlerModel.getNoDictAndComplexColumns();
+    dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
+  }
 
   private void initRecordHolderHeap(List<RawResultIterator> rawResultIteratorList) {
     // create the List of RawResultIterator.

@@ -148,6 +148,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
 
   private CarbonColumn[] noDicAndComplexColumns;
 
+  private int bucketId;
+
   public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
       SegmentProperties segmentProperties, CompactionType compactionType, String tableName,
       PartitionSpec partitionSpec) {
@@ -158,6 +160,18 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     this.compactionType = compactionType;
     this.tableName = tableName;
     this.partitionSpec = partitionSpec;
+  }
+  public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
+      SegmentProperties segmentProperties, CompactionType compactionType, String tableName,
+      PartitionSpec partitionSpec, int bucketId) {
+    this.carbonLoadModel = carbonLoadModel;
+    this.carbonTable = carbonTable;
+    this.segmentProperties = segmentProperties;
+    this.segmentId = carbonLoadModel.getSegmentId();
+    this.compactionType = compactionType;
+    this.tableName = tableName;
+    this.partitionSpec = partitionSpec;
+    this.bucketId = bucketId;
   }
 
   /**
@@ -514,6 +528,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         .getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
             tempStoreLocation, carbonStoreLocation);
     carbonFactDataHandlerModel.setSegmentId(carbonLoadModel.getSegmentId());
+    carbonFactDataHandlerModel.setBucketId(bucketId);
     setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonFactDataHandlerModel);
     this.noDicAndComplexColumns = carbonFactDataHandlerModel.getNoDictAndComplexColumns();
     dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel);
