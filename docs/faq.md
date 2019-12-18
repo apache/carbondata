@@ -29,6 +29,7 @@
 * [Why all executors are showing success in Spark UI even after Dataload command failed at Driver side?](#why-all-executors-are-showing-success-in-spark-ui-even-after-dataload-command-failed-at-driver-side)
 * [Why different time zone result for select query output when query SDK writer output?](#why-different-time-zone-result-for-select-query-output-when-query-sdk-writer-output)
 * [How to check LRU cache memory footprint?](#how-to-check-lru-cache-memory-footprint)
+* [How to deal with the trailing task in query?](#How-to-deal-with-the-trailing-task-in-query)
 
 # TroubleShooting
 
@@ -227,6 +228,29 @@ This property will enable the DEBUG log for the CarbonLRUCache and UnsafeMemoryM
 **Note:** If  `Removed entry from InMemory LRU cache` are frequently observed in logs, you may have to increase the configured LRU size.
 
 To observe the LRU cache from heap dump, check the heap used by CarbonLRUCache class.
+
+## How to deal with the trailing task in query?
+
+During the tuning process, it may be found that a few tasks slow down the overall query progress.  If the amount of data processed is the same, people will naturally think about the impact of IO, CPU and network bandwidth. Usually these tests can't able to have a quick result. So we need a way to solve and deal with these problems more quickly. spark.locality.wait and spark.speculation configuration it's an attempt, which can make the task that executes overtime retry in other nodes as soon as possible, and finally the task that ends first will be used. This may lose some of the data locality, but the actual verification helps to reduce the time-consuming of the trailing task.
+
+**Example:**
+
+```
+spark.locality.wait = 500
+spark.speculation = true
+spark.speculation.quantile = 0.75
+spark.speculation.multiplier = 5
+spark.blacklist.enabled = false
+```
+
+**Note:** 
+
+spark.locality control data locality the value of 500 is used to shorten the waiting time of spark. 
+
+spark.speculation is a group of configuration, that can monitor trailing tasks and start new tasks when conditions are met.
+
+spark.blacklist.enabled, avoid reduction of available executors due to blacklist mechanism.
+
 ## Getting tablestatus.lock issues When loading data
 
   **Symptom**
