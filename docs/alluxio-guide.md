@@ -131,6 +131,28 @@ false
 
 ```
 
+## Performance test and Applicable scenario 
+
+We used alluxio to test the query performance of the main table from 100k to 5000k data  size, dimension_table table with 800k data size.  From the results, we can see a significant performance improvement for tables over 5 million, but not for queries below 5 million. 
+
+### Main parameters:
+
+```--num-executors 3 --driver-memory 2g --executor-memory 15g --executor-cores 4```
+
+### Table information:
+
+| table           | records             |      |      | Carbon table size |
+| --------------- | ------------------- | ---- | ---- | :---------------- |
+| main_table      | 104170(will change) |      |      | 2.9 M             |
+| dimension_table | 802614(fix)         |      |      | 23.7 M            |
+
+### Performance comparison:
+![File Directory Structure](../docs/images/alluxio-comparison.png?raw=true)
+
+### Result :
+
+Alluxio can obviously improved for the larger table query, but will do no effect on small table. It seems that the main cost of small table query is not on IO.
+
 ## Reference
 [1] https://www.alluxio.org/docs/1.8/en/Getting-Started.html
 [2] https://www.alluxio.org/docs/1.8/en/compute/Spark.html
