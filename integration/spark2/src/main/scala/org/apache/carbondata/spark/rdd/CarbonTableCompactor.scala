@@ -26,38 +26,30 @@ import scala.collection.mutable
 
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{InputSplit, Job}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession, SQLContext}
-import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
-import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
-import org.apache.spark.util.MergeIndexUtil
-import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.expressions.GenericRow
+import org.apache.spark.sql.{CarbonUtils, SparkSession, SQLContext}
+import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
+import org.apache.spark.sql.util.SparkSQLUtil
+import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.datastore.row.CarbonRow
-import org.apache.carbondata.core.metadata.datatype.{StructField, StructType}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
-import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat, CarbonTableOutputFormat}
-import org.apache.carbondata.hadoop.CarbonProjection
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
+import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.indexserver.DistributedRDDUtils
 import org.apache.carbondata.processing.loading.FailureCauses
-import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.processing.util.TableOptionConstant
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 import org.apache.carbondata.spark.MergeResultImpl
-import org.apache.carbondata.store.CarbonRowReadSupport
 
 /**
  * This class is used to perform compaction on carbon table.
@@ -374,26 +366,40 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
       carbonMergerMapping: CarbonMergerMapping): Array[(String, Boolean)] = {
+    val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val splits = splitsOfSegments(
       sparkSession,
-      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+      table,
       carbonMergerMapping.validSegments)
-    val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(
-      sparkSession,
-      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-      splits.asScala)
-    // generate LoadModel which can be used global_sort flow
-    val outputModel = DataLoadProcessBuilderOnSpark.createLoadModelForGlobalSort(
-      sparkSession, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable)
-    outputModel.setSegmentId(carbonMergerMapping.mergedLoadName.split("_")(1))
-    DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
-      sparkSession,
-      Option(dataFrame),
-      outputModel,
-      SparkSQLUtil.sessionState(sparkSession).newHadoopConf())
-      .map { row =>
-        (row._1, FailureCauses.NONE == row._2._2.failureCauses)
-      }
+    var loadResult: Array[(String, Boolean)] = null
+    try {
+      CarbonUtils
+        .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+          table.getDatabaseName + CarbonCommonConstants.POINT + table.getTableName,
+          splits.asScala.map(s => s.asInstanceOf[CarbonInputSplit].getSegmentId).mkString(","))
+      val dataFrame = SparkSQLUtil.createInputDataFrame(
+        sparkSession,
+        table)
+
+      // generate LoadModel which can be used global_sort flow
+      val outputModel = DataLoadProcessBuilderOnSpark.createLoadModelForGlobalSort(
+        sparkSession, table)
+      outputModel.setSegmentId(carbonMergerMapping.mergedLoadName.split("_")(1))
+      loadResult = DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
+        sparkSession,
+        Option(dataFrame),
+        outputModel,
+        SparkSQLUtil.sessionState(sparkSession).newHadoopConf())
+        .map { row =>
+          (row._1, FailureCauses.NONE == row._2._2.failureCauses)
+        }
+    } finally {
+      CarbonUtils
+        .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+          table.getDatabaseName + "." +
+          table.getTableName)
+    }
+    loadResult
   }
 
   /**

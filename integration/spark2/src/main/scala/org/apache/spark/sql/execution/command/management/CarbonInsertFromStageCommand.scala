@@ -28,16 +28,12 @@ import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.log4j.Logger
-import org.apache.spark.CarbonInputMetrics
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession}
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.{CarbonEnv, CarbonUtils, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
-import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -46,13 +42,11 @@ import org.apache.carbondata.core.metadata.{ColumnarFormatVersion, SegmentFileSt
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection}
+import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
-import org.apache.carbondata.spark.rdd.CarbonScanRDD
-import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
 /**
  * Collect stage input files and trigger a loading into carbon table.
@@ -264,14 +258,25 @@ case class CarbonInsertFromStageCommand(
       LOGGER.info(s"start to load ${splits.size} files into " +
                   s"${table.getDatabaseName}.${table.getTableName}")
       val start = System.currentTimeMillis()
-      val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(spark, table, splits)
-      DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
-        spark,
-        Option(dataFrame),
-        loadModel,
-        SparkSQLUtil.sessionState(spark).newHadoopConf()
-      ).map { row =>
+      try {
+        CarbonUtils
+          .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+            table.getDatabaseName + CarbonCommonConstants.POINT + table.getTableName,
+            splits.map(s => s.asInstanceOf[CarbonInputSplit].getSegmentId).mkString(","))
+        val dataFrame = SparkSQLUtil.createInputDataFrame(spark, table)
+        DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
+          spark,
+          Option(dataFrame),
+          loadModel,
+          SparkSQLUtil.sessionState(spark).newHadoopConf()
+        ).map { row =>
           (row._1, FailureCauses.NONE == row._2._2.failureCauses)
+        }
+      } finally {
+        CarbonUtils
+          .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+            table.getDatabaseName + "." +
+            table.getTableName)
       }
       LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
 
@@ -311,15 +316,30 @@ case class CarbonInsertFromStageCommand(
     val start = System.currentTimeMillis()
     partitionDataList.map {
       case (partition, splits) =>
-        LOGGER.info(s"start to load ${splits.size} files into " +
-          s"${table.getDatabaseName}.${table.getTableName}. " +
-          s"Partition information: ${partition.mkString(",")}")
-        val dataFrame = createInputDataFrameOfInternalRow(spark, table, splits)
+        LOGGER.info(s"start to load ${ splits.size } files into " +
+          s"${ table.getDatabaseName }.${ table.getTableName }. " +
+          s"Partition information: ${ partition.mkString(",") }")
+        val dataFrame = try {
+          // Segments should be set for query here, because consider a scenario where custom
+          // compaction is triggered, so it can happen that all the segments might be taken into
+          // consideration instead of custom segments if we do not set, leading to duplicate data in
+          // compacted segment. To avoid this, segments to be considered are to be set in threadset.
+          CarbonUtils
+            .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+              table.getDatabaseName + CarbonCommonConstants.POINT +
+              table.getTableName,
+              splits.map(split => split.asInstanceOf[CarbonInputSplit].getSegmentId).mkString(","))
+          SparkSQLUtil.createInputDataFrame(spark, table)
+        } finally {
+          CarbonUtils.threadUnset(
+            CarbonCommonConstants.CARBON_INPUT_SEGMENTS + table.getDatabaseName +
+              CarbonCommonConstants.POINT +
+              table.getTableName)
+        }
         val columns = dataFrame.columns
         val header = columns.mkString(",")
         val selectColumns = columns.filter(!partition.contains(_))
         val selectedDataFrame = dataFrame.select(selectColumns.head, selectColumns.tail: _*)
-
         val loadCommand = CarbonLoadDataCommand(
           databaseNameOp = Option(table.getDatabaseName),
           tableName = table.getTableName,
@@ -337,7 +357,7 @@ case class CarbonInsertFromStageCommand(
         )
         loadCommand.run(spark)
     }
-    LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
+    LOGGER.info(s"finish data loading, time taken ${ System.currentTimeMillis() - start }ms")
   }
 
   /**
@@ -479,36 +499,6 @@ case class CarbonInsertFromStageCommand(
       throw new IOException(
         s"Not able to acquire the lock for table status file for $tableIdentifier")
     }
-  }
-
-  /**
-   * create DataFrame basing on specified splits
-   */
-  private def createInputDataFrameOfInternalRow(
-      sparkSession: SparkSession,
-      carbonTable: CarbonTable,
-      splits: Seq[InputSplit]
-    ): DataFrame = {
-    val columns = carbonTable
-      .getCreateOrderColumn
-      .asScala
-      .map(_.getColName)
-      .toArray
-    val schema = SparkTypeConverter.createSparkSchema(carbonTable, columns)
-    val rdd: RDD[InternalRow] = new CarbonScanRDD[InternalRow](
-      sparkSession,
-      columnProjection = new CarbonProjection(columns),
-      null,
-      carbonTable.getAbsoluteTableIdentifier,
-      carbonTable.getTableInfo.serialize,
-      carbonTable.getTableInfo,
-      new CarbonInputMetrics,
-      null,
-      classOf[SparkDataTypeConverterImpl],
-      classOf[SparkRowReadSupportImpl],
-      splits.asJava
-    )
-    SparkSQLUtil.execute(rdd, schema, sparkSession)
   }
 
   override protected def opName: String = "INSERT STAGE"
