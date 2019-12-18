@@ -221,7 +221,7 @@ object DataMapDropColumnPreListener extends OperationEventListener {
         if (null != dataMapSchema && !dataMapSchema.isIndexDataMap) {
           val listOfColumns = DataMapListeners.getDataMapTableColumns(dataMapSchema, carbonTable)
           val columnExistsInChild = listOfColumns.collectFirst {
-            case parentColumnName if columnsToBeDropped.contains(parentColumnName) =>
+            case parentColumnName if columnsToBeDropped.contains(parentColumnName.toLowerCase) =>
               parentColumnName
           }
           if (columnExistsInChild.isDefined) {
@@ -262,7 +262,7 @@ object DataMapChangeDataTypeorRenameColumnPreListener
       for (dataMapSchema <- dataMapSchemaList) {
         if (null != dataMapSchema && !dataMapSchema.isIndexDataMap) {
           val listOfColumns = DataMapListeners.getDataMapTableColumns(dataMapSchema, carbonTable)
-          if (listOfColumns.contains(columnToBeAltered)) {
+          if (listOfColumns.contains(columnToBeAltered.toLowerCase)) {
             throw new UnsupportedOperationException(
               s"Column $columnToBeAltered exists in a " + dataMapSchema.getProviderName +
               " datamap. Drop " + dataMapSchema.getProviderName + "  datamap to continue")

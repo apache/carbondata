@@ -36,15 +36,8 @@ class SelectAllColumnsSuite extends QueryTest {
       Seq(Row(26.0, 177.5, "tom")))
     val frame = sql("select avg(age),avg(height),name from all_table group by name")
     val analyzed = frame.queryExecution.analyzed
-    assert(verifyMVDataMap(analyzed, "all_table_mv"))
+    assert(TestUtil.verifyMVDataMap(analyzed, "all_table_mv"))
     sql("drop table if exists all_table")
-  }
-
-  def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
-    val tables = logicalPlan collect {
-      case l: LogicalRelation => l.catalogTable.get
-    }
-    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName+"_table"))
   }
 
 }

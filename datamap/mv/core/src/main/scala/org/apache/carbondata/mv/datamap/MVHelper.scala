@@ -46,6 +46,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSch
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.mv.plans.modular._
+import org.apache.carbondata.mv.plans.util.SQLBuilder
 import org.apache.carbondata.mv.rewrite.{MVPlanWrapper, QueryRewrite, SummaryDatasetCatalog}
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -82,7 +83,8 @@ object MVHelper {
       throw new MalformedCarbonCommandException(
         s"Non-Carbon table does not support creating MV datamap")
     }
-    val updatedQueryWithDb = validateMVQuery(sparkSession, logicalPlan)
+    val modularPlan = validateMVQuery(sparkSession, logicalPlan)
+    val updatedQueryWithDb = modularPlan.asCompactSQL
     val (timeSeriesColumn, granularity): (String, String) = validateMVTimeSeriesQuery(
       logicalPlan,
       dataMapSchema)
@@ -159,8 +161,9 @@ object MVHelper {
     tableProperties.put(CarbonCommonConstants.DATAMAP_NAME, dataMapSchema.getDataMapName)
     tableProperties.put(CarbonCommonConstants.PARENT_TABLES, parentTables.asScala.mkString(","))
 
-    val fieldRelationMap = mvUtil.getFieldsAndDataMapFieldsFromPlan(
-      logicalPlan, queryString, sparkSession)
+    val finalModularPlan = new SQLBuilder(modularPlan).SQLizer.execute(modularPlan)
+    val fieldRelationMap = mvUtil.getFieldsAndDataMapFieldsFromPlan(finalModularPlan,
+      getLogicalRelation(logicalPlan))
     // If dataMap is mapped to single main table, then inherit table properties from main table,
     // else, will use default table properties. If DMProperties contains table properties, then
     // table properties of datamap table will be updated
@@ -261,11 +264,11 @@ object MVHelper {
             mainTable =>
               if (null == mainTableToColumnsMap.get(mainTable.parentTableName)) {
                 val columns = new util.HashSet[String]()
-                columns.add(mainTable.parentColumnName)
+                columns.add(mainTable.parentColumnName.toLowerCase())
                 mainTableToColumnsMap.put(mainTable.parentTableName, columns)
               } else {
                 mainTableToColumnsMap.get(mainTable.parentTableName)
-                  .add(mainTable.parentColumnName)
+                  .add(mainTable.parentColumnName.toLowerCase())
               }
           }
       }
@@ -304,39 +307,8 @@ object MVHelper {
     }
   }
 
-  private def isValidSelect(isValidExp: Boolean,
-      filterPredicate: Seq[Expression], outputList: Seq[NamedExpression]): Boolean = {
-    // Make sure all predicates are present in projections.
-    var predicateList: Seq[AttributeReference] = Seq.empty
-    filterPredicate.map { f =>
-      f.children.collect {
-        case p: AttributeReference =>
-          predicateList = predicateList.+:(p)
-        case e: Expression =>
-          e.collect {
-            case attr: AttributeReference =>
-              predicateList = predicateList.+:(attr)
-          }
-      }
-    }
-    if (predicateList.nonEmpty) {
-      predicateList.forall { p =>
-        outputList.exists {
-          case a: Alias =>
-            a.semanticEquals(p) || a.child.semanticEquals(p) || a.collect {
-              case attr: AttributeReference =>
-                attr.semanticEquals(p)
-            }.exists(p => p.equals(true))
-          case other => other.semanticEquals(p)
-        }
-      }
-    } else {
-      isValidExp
-    }
-  }
-
   private def validateMVQuery(sparkSession: SparkSession,
-      logicalPlan: LogicalPlan): String = {
+      logicalPlan: LogicalPlan): ModularPlan = {
     val dataMapProvider = DataMapManager.get().getDataMapProvider(null,
       new DataMapSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
     var catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
@@ -355,25 +327,18 @@ object MVHelper {
     val isValid = modularPlan match {
       case g: GroupBy =>
         // Make sure all predicates are present in projections.
-        val isValidExp = g.predicateList.forall{p =>
+        g.predicateList.forall{p =>
           g.outputList.exists{
             case a: Alias =>
               a.semanticEquals(p) || a.child.semanticEquals(p)
             case other => other.semanticEquals(p)
           }
         }
-        g.child match {
-          case s: Select =>
-            isValidSelect(isValidExp, s.predicateList, g.outputList)
-          case m: ModularRelation => isValidExp
-        }
-      case s: Select =>
-        isValidSelect(true, s.predicateList, s.outputList)
       case _ => true
     }
     if (!isValid) {
       throw new UnsupportedOperationException(
-        "Group by/Filter columns must be present in project columns")
+        "Group by columns must be present in project columns")
     }
     if (catalog.isMVWithSameQueryPresent(logicalPlan)) {
       throw new UnsupportedOperationException("MV with same query present")
@@ -390,7 +355,7 @@ object MVHelper {
     if (!expressionValid) {
       throw new UnsupportedOperationException("MV doesn't support Coalesce")
     }
-    modularPlan.asCompactSQL
+    modularPlan
   }
 
   def getUpdatedName(name: String, counter: Int): String = {
@@ -415,6 +380,12 @@ object MVHelper {
   def getTables(logicalPlan: LogicalPlan): Seq[CatalogTable] = {
     logicalPlan.collect {
       case l: LogicalRelation => l.catalogTable.get
+    }
+  }
+
+  def getLogicalRelation(logicalPlan: LogicalPlan): Seq[LogicalRelation] = {
+    logicalPlan.collect {
+      case l: LogicalRelation => l
     }
   }
 

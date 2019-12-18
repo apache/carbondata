@@ -20,16 +20,16 @@ package org.apache.carbondata.mv.datamap
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, SparkSession}
+import org.apache.spark.sql.CarbonDatasourceHadoopRelation
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Count}
-import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, ModularRelation, Select}
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
@@ -42,39 +42,46 @@ class MVUtil {
   /**
    * Below method will be used to validate and get the required fields from select plan
    */
-  def getFieldsAndDataMapFieldsFromPlan(plan: LogicalPlan,
-      selectStmt: String,
-      sparkSession: SparkSession): scala.collection.mutable.LinkedHashMap[Field, DataMapField] = {
+  def getFieldsAndDataMapFieldsFromPlan(plan: ModularPlan,
+      logicalRelation: Seq[LogicalRelation]): scala.collection.mutable.LinkedHashMap[Field,
+    DataMapField] = {
     plan match {
-      case Project(projectList, child: Sort) =>
-        getFieldsFromProject(projectList, plan, child)
-      case Project(projectList, _) =>
-        getFieldsFromProject(projectList, plan)
-      case Aggregate(groupByExp, aggExp, _) =>
-        getFieldsFromAggregate(groupByExp, aggExp, plan)
+      case select: Select =>
+        select.children.map {
+          case groupBy: GroupBy =>
+            getFieldsFromProject(groupBy.outputList, groupBy.predicateList, logicalRelation)
+          case _: ModularRelation =>
+            getFieldsFromProject(select.outputList, select.predicateList, logicalRelation)
+        }.head
+      case groupBy: GroupBy =>
+        groupBy.child match {
+          case select: Select =>
+            getFieldsFromProject(groupBy.outputList, select.predicateList, logicalRelation)
+          case _: ModularRelation =>
+            getFieldsFromProject(groupBy.outputList, groupBy.predicateList, logicalRelation)
+        }
     }
   }
 
-  def getFieldsFromProject(projectList: Seq[NamedExpression],
-      plan: LogicalPlan, sort: LogicalPlan): mutable.LinkedHashMap[Field, DataMapField] = {
+  def getFieldsFromProject(outputList: Seq[NamedExpression],
+      predicateList: Seq[Expression],
+      logicalRelation: Seq[LogicalRelation]): mutable.LinkedHashMap[Field, DataMapField] = {
     var fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, DataMapField]
-    sort.transformDown {
-      case agg@Aggregate(groupByExp, aggExp, _) =>
-        fieldToDataMapFieldMap ++== getFieldsFromAggregate(groupByExp, aggExp, plan)
-        agg
+    fieldToDataMapFieldMap ++== getFieldsFromProject(outputList, logicalRelation)
+    var finalPredicateList: Seq[NamedExpression] = Seq.empty
+    predicateList.map { p =>
+      p.collect {
+        case attr: AttributeReference =>
+          finalPredicateList = finalPredicateList.:+(attr)
+      }
     }
-    fieldToDataMapFieldMap ++== getFieldsFromProject(projectList, plan)
+    fieldToDataMapFieldMap ++== getFieldsFromProject(finalPredicateList.distinct, logicalRelation)
     fieldToDataMapFieldMap
   }
 
   def getFieldsFromProject(projectList: Seq[NamedExpression],
-      plan: LogicalPlan): mutable.LinkedHashMap[Field, DataMapField] = {
+      logicalRelation: Seq[LogicalRelation]): mutable.LinkedHashMap[Field, DataMapField] = {
     var fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, DataMapField]
-    val logicalRelation =
-      plan.collect {
-        case lr: LogicalRelation =>
-          lr
-      }
     projectList.map {
       case attr: AttributeReference =>
         val carbonTable = getCarbonTable(logicalRelation, attr)
@@ -88,10 +95,18 @@ class MVUtil {
           if (null != relation) {
             arrayBuffer += relation
           }
+          var qualifier: Option[String] = None
+          if (attr.qualifier.isDefined) {
+            qualifier = if (attr.qualifier.get.startsWith("gen_sub")) {
+              Some(carbonTable.getTableName)
+            } else {
+              attr.qualifier
+            }
+          }
           fieldToDataMapFieldMap +=
           getFieldToDataMapFields(attr.name,
             attr.dataType,
-            attr.qualifier,
+            qualifier,
             "",
             arrayBuffer,
             carbonTable.getTableName)
@@ -111,7 +126,33 @@ class MVUtil {
           fieldToDataMapFieldMap +=
           getFieldToDataMapFields(name, attr.dataType, None, "", arrayBuffer, "")
         }
-      case a@Alias(_, name) =>
+
+      case a@Alias(agg: AggregateExpression, _) =>
+        checkIfComplexDataTypeExists(a)
+        val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new ArrayBuffer[ColumnTableRelation]()
+        a.collect {
+          case attr: AttributeReference =>
+            val carbonTable = getCarbonTable(logicalRelation, attr)
+            if (null != carbonTable) {
+              val relation = getColumnRelation(attr.name,
+                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
+                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
+                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
+                carbonTable)
+              if (null != relation) {
+                arrayBuffer += relation
+              }
+            }
+        }
+        fieldToDataMapFieldMap +=
+        getFieldToDataMapFields(a.name,
+          a.dataType,
+          None,
+          agg.aggregateFunction.nodeName,
+          arrayBuffer,
+          "")
+
+      case a@Alias(_, _) =>
         checkIfComplexDataTypeExists(a)
         val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new ArrayBuffer[ColumnTableRelation]()
         a.collect {
@@ -130,101 +171,6 @@ class MVUtil {
         }
         fieldToDataMapFieldMap +=
         getFieldToDataMapFields(a.name, a.dataType, None, "arithmetic", arrayBuffer, "")
-    }
-    fieldToDataMapFieldMap
-  }
-
-  def getFieldsFromAggregate(groupByExp: Seq[Expression],
-      aggExp: Seq[NamedExpression],
-      plan: LogicalPlan): mutable.LinkedHashMap[Field, DataMapField] = {
-    var fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, DataMapField]
-    val logicalRelation =
-      plan.collect {
-        case lr: LogicalRelation =>
-          lr
-      }
-    aggExp.map { agg =>
-      var aggregateType: String = ""
-      val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new ArrayBuffer[ColumnTableRelation]()
-      var isLiteralPresent = false
-      agg.collect {
-        case Alias(attr: AggregateExpression, name) =>
-          attr.aggregateFunction.collect {
-            case l@Literal(_, _) =>
-              isLiteralPresent = true
-          }
-          if (isLiteralPresent) {
-            fieldToDataMapFieldMap +=
-            getFieldToDataMapFields(name,
-              attr.aggregateFunction.dataType,
-              None,
-              attr.aggregateFunction.nodeName,
-              arrayBuffer,
-              "")
-            aggregateType = attr.aggregateFunction.nodeName
-          } else {
-            aggregateType = attr.aggregateFunction.nodeName
-          }
-        case a@Alias(_, name) =>
-          checkIfComplexDataTypeExists(a)
-          // In case of arithmetic expressions like sum(a)+sum(b)
-          aggregateType = "arithmetic"
-      }
-      agg.collect {
-        case attr: AttributeReference =>
-          val carbonTable: CarbonTable = getCarbonTable(logicalRelation, attr)
-          if (null != carbonTable) {
-            val relation = getColumnRelation(attr.name,
-              carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
-              carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
-              carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
-              carbonTable)
-            if (null != relation) {
-              arrayBuffer += relation
-            }
-            if (aggregateType.isEmpty && arrayBuffer.nonEmpty) {
-              val tableName = carbonTable.getTableName
-              fieldToDataMapFieldMap +=
-              getFieldToDataMapFields(agg.name,
-                agg.dataType,
-                attr.qualifier,
-                aggregateType,
-                arrayBuffer,
-                tableName)
-            }
-          }
-      }
-      if (!aggregateType.isEmpty && arrayBuffer.nonEmpty && !isLiteralPresent) {
-        fieldToDataMapFieldMap +=
-        getFieldToDataMapFields(agg.name,
-          agg.dataType,
-          agg.qualifier,
-          aggregateType,
-          arrayBuffer,
-          "")
-      }
-    }
-    groupByExp map {
-      case attr: AttributeReference =>
-        val carbonTable: CarbonTable = getCarbonTable(logicalRelation, attr)
-        if (null != carbonTable) {
-          val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new
-              ArrayBuffer[ColumnTableRelation]()
-          arrayBuffer += getColumnRelation(attr.name,
-            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
-            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
-            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
-            carbonTable)
-          fieldToDataMapFieldMap +=
-          getFieldToDataMapFields(attr.name,
-            attr.dataType,
-            attr.qualifier,
-            "",
-            arrayBuffer,
-            carbonTable.getTableName)
-        }
-        attr
-      case _ =>
     }
     fieldToDataMapFieldMap
   }

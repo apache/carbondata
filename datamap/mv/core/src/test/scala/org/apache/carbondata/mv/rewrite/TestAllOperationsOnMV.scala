@@ -556,9 +556,9 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB date, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'")
     sql("insert into maintable values(1, 'abc', 'abc001', '1975-06-11','1975-06-11 02:00:03.0', 120, 1234,4.34,24.56,12345, 2464, 45)")
     sql("drop datamap if exists dm ")
-    intercept[UnsupportedOperationException] {
-      sql("create datamap dm using 'mv' as select dob from maintable where (dob='1975-06-11' or cust_id=2)")
-    }.getMessage.contains("Group by/Filter columns must be present in project columns")
+    sql("create datamap dm using 'mv' as select dob from maintable where (dob='1975-06-11' or cust_id=2)")
+    val df = sql("select dob from maintable where (dob='1975-06-11' or cust_id=2)")
+    TestUtil.verifyMVDataMap(df.queryExecution.analyzed, "dm")
     sql("drop table IF EXISTS maintable")
   }
 
