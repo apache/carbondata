@@ -28,7 +28,7 @@ public enum SegmentStatus {
   /**
    * Data load success, it is visible for read
    */
-  @SerializedName(value = "S", alternate = "Success")
+  @SerializedName("Success")
   SUCCESS("Success"),
 
   /**
@@ -58,7 +58,7 @@ public enum SegmentStatus {
   /**
    * Segment is compacted
    */
-  @SerializedName(value = "C", alternate = "Compacted")
+  @SerializedName("Compacted")
   COMPACTED("Compacted"),
 
   /**
