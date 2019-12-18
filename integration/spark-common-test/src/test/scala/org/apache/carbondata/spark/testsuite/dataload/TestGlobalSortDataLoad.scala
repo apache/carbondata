@@ -140,6 +140,26 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   }
 
   // ----------------------------------- Compaction -----------------------------------
+  test("compaction major: timestamp and long data type confliction")
+  {sptc
+    sql("drop table if exists compactionTable")
+    sql("create table compactionTable (DOJ timestamp, DOB date) STORED BY 'org.apache.carbondata.format'")
+    sql("alter table compactionTable set tblproperties('sort_columns'='doj, dob', 'sort_scope'='global_sort')")
+    sql("INSERT INTO compactionTable select '2017-10-12 21:22:23', '1997-10-10'")
+    sql("INSERT INTO compactionTable select '2018-11-12 20:22:23', '1997-10-10'")
+    sql("alter table compactionTable compact 'major'")
+    val showSegments = sql("show segments for table compactiontable").collect()
+    showSegments.find(_.get(0).toString.equals("0.1")) match {
+      case Some(row) => assert(row.get(1).toString.equalsIgnoreCase("Success"))
+    }
+    showSegments.find(_.get(0).toString.equals("1")) match {
+      case Some(row) => assert(row.get(1).toString.equalsIgnoreCase("Compacted"))
+    }
+    showSegments.find(_.get(0).toString.equals("0")) match {
+      case Some(row) => assert(row.get(1).toString.equalsIgnoreCase("Compacted"))
+    }
+  }
+
   test("Compaction GLOBAL_SORT * 2") {
     sql("DROP TABLE IF EXISTS carbon_localsort_twice")
     sql(

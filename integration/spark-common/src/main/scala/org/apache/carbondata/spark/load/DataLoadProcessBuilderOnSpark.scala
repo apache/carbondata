@@ -22,20 +22,16 @@ import java.util.Comparator
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapreduce.InputSplit
-import org.apache.spark.{Accumulator, CarbonInputMetrics, DataSkewRangePartitioner, TaskContext}
+import org.apache.spark.{Accumulator, DataSkewRangePartitioner, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, StructField, StructType}
@@ -44,7 +40,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, Ca
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer
-import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat
 import org.apache.carbondata.processing.loading.{CarbonDataLoadConfiguration, DataField, DataLoadProcessBuilder, FailureCauses}
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
@@ -52,9 +47,8 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.sort.sortdata.{NewRowComparator, NewRowComparatorForNormalDims, SortParameters}
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, TableOptionConstant}
-import org.apache.carbondata.spark.rdd.{CarbonScanRDD, StringArrayRow}
+import org.apache.carbondata.spark.rdd.StringArrayRow
 import org.apache.carbondata.spark.util.CommonUtil
-import org.apache.carbondata.store.CarbonRowReadSupport
 
 /**
  * Use sortBy operator in spark to load the data
@@ -435,31 +429,16 @@ object DataLoadProcessBuilderOnSpark {
    */
   def createInputDataFrame(
       sparkSession: SparkSession,
-      carbonTable: CarbonTable,
-      splits: Seq[InputSplit]
+      carbonTable: CarbonTable
   ): DataFrame = {
-    val columns = carbonTable
-      .getCreateOrderColumn
-      .asScala
-      .map(_.getColName)
-      .toArray
-    val schema = SparkTypeConverter.createSparkSchema(carbonTable, columns)
-    val rdd: RDD[InternalRow] = new CarbonScanRDD[CarbonRow](
-      sparkSession,
-      columnProjection = new CarbonProjection(columns),
-      null,
-      carbonTable.getAbsoluteTableIdentifier,
-      carbonTable.getTableInfo.serialize,
-      carbonTable.getTableInfo,
-      new CarbonInputMetrics,
-      null,
-      classOf[SparkDataTypeConverterImpl],
-      classOf[CarbonRowReadSupport],
-      splits.asJava)
-      .map { row =>
-        new GenericInternalRow(row.getData.asInstanceOf[Array[Any]])
-      }
-    SparkSQLUtil.execute(rdd, schema, sparkSession)
+    /**
+     * [[org.apache.spark.sql.catalyst.expressions.objects.ValidateExternalType]] validates the
+     * datatype of column data and corresponding datatype in schema provided to create dataframe.
+     * Since carbonScanRDD gives Long data for timestamp column and corresponding column datatype in
+     * schema is Timestamp, this validation fails if we use createDataFrame API which takes rdd as
+     * input. Hence, using below API which creates dataframe from tablename.
+     */
+    sparkSession.sqlContext.table(carbonTable.getTableName)
   }
 }
 

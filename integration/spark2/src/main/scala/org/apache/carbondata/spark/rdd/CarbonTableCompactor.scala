@@ -26,38 +26,30 @@ import scala.collection.mutable
 
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{InputSplit, Job}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession, SQLContext}
-import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
-import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
-import org.apache.spark.util.MergeIndexUtil
-import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.expressions.GenericRow
+import org.apache.spark.sql.{CarbonUtils, SparkSession, SQLContext}
+import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
+import org.apache.spark.sql.util.SparkSQLUtil
+import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.datastore.row.CarbonRow
-import org.apache.carbondata.core.metadata.datatype.{StructField, StructType}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
-import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat, CarbonTableOutputFormat}
-import org.apache.carbondata.hadoop.CarbonProjection
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
+import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.indexserver.DistributedRDDUtils
 import org.apache.carbondata.processing.loading.FailureCauses
-import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.processing.util.TableOptionConstant
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 import org.apache.carbondata.spark.MergeResultImpl
-import org.apache.carbondata.store.CarbonRowReadSupport
 
 /**
  * This class is used to perform compaction on carbon table.
@@ -75,8 +67,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       loadsToMerge: java.util.List[LoadMetadataDetails]): Boolean = {
     // support to resort old segment with old sort_columns
     if (CompactionType.CUSTOM == compactionModel.compactionType &&
-        loadsToMerge.size() == 1 &&
-        SortScope.NO_SORT != compactionModel.carbonTable.getSortScope) {
+      loadsToMerge.size() == 1 &&
+      SortScope.NO_SORT != compactionModel.carbonTable.getSortScope) {
       !CarbonCompactionUtil.isSortedByCurrentSortColumns(
         carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
         loadsToMerge.get(0),
@@ -95,8 +87,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     var loadsToMerge = identifySegmentsToBeMerged()
 
     while (loadsToMerge.size() > 1 || needSortSingleSegment(loadsToMerge) ||
-           (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType &&
-            loadsToMerge.size() > 0)) {
+      (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType &&
+        loadsToMerge.size() > 0)) {
       val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
       deletePartialLoadsInCompaction()
 
@@ -215,9 +207,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           carbonMergerMapping
         ).collect
       } else if (SortScope.GLOBAL_SORT == carbonTable.getSortScope &&
-                 !carbonTable.getSortColumns.isEmpty &&
-                 carbonTable.getRangeColumn == null &&
-                 CarbonUtil.isStandardCarbonTable(carbonTable)) {
+        !carbonTable.getSortColumns.isEmpty &&
+        carbonTable.getRangeColumn == null &&
+        CarbonUtil.isStandardCarbonTable(carbonTable)) {
         compactSegmentsByGlobalSort(sc.sparkSession, carbonLoadModel, carbonMergerMapping)
       } else {
         new CarbonMergerRDD(
@@ -241,7 +233,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       if (carbonTable.isHivePartitionTable) {
         val readPath =
           CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
-          CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
+            CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
         // Merge all partition files into a single file.
         segmentFileName =
           mergedLoadNumber + "_" + carbonLoadModel.getFactTimeStamp
@@ -278,11 +270,11 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       operationContext.setProperty("isCompaction", "true")
       // trigger event for compaction
       val alterTableCompactionPreStatusUpdateEvent =
-      AlterTableCompactionPreStatusUpdateEvent(sc.sparkSession,
-        carbonTable,
-        carbonMergerMapping,
-        carbonLoadModel,
-        mergedLoadName)
+        AlterTableCompactionPreStatusUpdateEvent(sc.sparkSession,
+          carbonTable,
+          carbonMergerMapping,
+          carbonLoadModel,
+          mergedLoadName)
       OperationListenerBus.getInstance
         .fireEvent(alterTableCompactionPreStatusUpdateEvent, operationContext)
 
@@ -290,21 +282,21 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       LOGGER.info(s"time taken to merge $mergedLoadName is ${ endTime - startTime }")
       val statusFileUpdation =
         ((compactionType == CompactionType.IUD_UPDDEL_DELTA) &&
-         CarbonDataMergerUtil
-           .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
-             carbonTable.getMetadataPath,
-             carbonLoadModel,
-             segmentFilesForIUDCompact)) ||
-        CarbonDataMergerUtil.updateLoadMetadataWithMergeStatus(
-          loadsToMerge,
-          carbonTable.getMetadataPath,
-          mergedLoadNumber,
-          carbonLoadModel,
-          compactionType,
-          segmentFileName)
+          CarbonDataMergerUtil
+            .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
+              carbonTable.getMetadataPath,
+              carbonLoadModel,
+              segmentFilesForIUDCompact)) ||
+          CarbonDataMergerUtil.updateLoadMetadataWithMergeStatus(
+            loadsToMerge,
+            carbonTable.getMetadataPath,
+            mergedLoadNumber,
+            carbonLoadModel,
+            compactionType,
+            segmentFileName)
 
       if (compactionType != CompactionType.IUD_DELETE_DELTA &&
-          compactionType != CompactionType.IUD_UPDDEL_DELTA) {
+        compactionType != CompactionType.IUD_UPDDEL_DELTA) {
         MergeIndexUtil.mergeIndexFilesOnCompaction(compactionCallableModel)
       }
 
@@ -334,22 +326,22 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       // possible (level 1, 2 etc). so we need to check for either condition
       if (!statusFileUpdation || !commitComplete) {
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
-                     s"${ carbonLoadModel.getTableName }")
+          s"${ carbonLoadModel.getTableName }")
         throw new Exception(s"Compaction failed to update metadata for table" +
-                            s" ${ carbonLoadModel.getDatabaseName }." +
-                            s"${ carbonLoadModel.getTableName }")
+          s" ${ carbonLoadModel.getDatabaseName }." +
+          s"${ carbonLoadModel.getTableName }")
       } else {
         LOGGER.info(s"Compaction request completed for table " +
-                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+          s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
 
         // Prepriming index for compaction
         val segmentsForPriming = if (compactionType.equals(CompactionType.IUD_DELETE_DELTA) ||
-            compactionType.equals(CompactionType.IUD_UPDDEL_DELTA)) {
-            validSegments.asScala.map(_.getSegmentNo).toList
+          compactionType.equals(CompactionType.IUD_UPDDEL_DELTA)) {
+          validSegments.asScala.map(_.getSegmentNo).toList
         } else if (compactionType.equals(CompactionType.MAJOR) ||
-                   compactionType.equals(CompactionType.MINOR) ||
-                   compactionType.equals(CompactionType.CUSTOM)) {
-            scala.List(mergedLoadNumber)
+          compactionType.equals(CompactionType.MINOR) ||
+          compactionType.equals(CompactionType.CUSTOM)) {
+          scala.List(mergedLoadNumber)
         } else {
           scala.List()
         }
@@ -362,7 +354,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       }
     } else {
       LOGGER.error(s"Compaction request failed for table " +
-                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       throw new Exception("Compaction Failure in Merger Rdd.")
     }
   }
@@ -371,29 +363,43 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
    * compact segments by global sort
    */
   def compactSegmentsByGlobalSort(
-      sparkSession: SparkSession,
-      carbonLoadModel: CarbonLoadModel,
-      carbonMergerMapping: CarbonMergerMapping): Array[(String, Boolean)] = {
+   sparkSession: SparkSession,
+   carbonLoadModel: CarbonLoadModel,
+   carbonMergerMapping: CarbonMergerMapping): Array[(String, Boolean)] = {
+    val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val splits = splitsOfSegments(
       sparkSession,
-      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+      table,
       carbonMergerMapping.validSegments)
-    val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(
-      sparkSession,
-      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-      splits.asScala)
-    // generate LoadModel which can be used global_sort flow
-    val outputModel = DataLoadProcessBuilderOnSpark.createLoadModelForGlobalSort(
-      sparkSession, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable)
-    outputModel.setSegmentId(carbonMergerMapping.mergedLoadName.split("_")(1))
-    DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
-      sparkSession,
-      Option(dataFrame),
-      outputModel,
-      SparkSQLUtil.sessionState(sparkSession).newHadoopConf())
-      .map { row =>
-        (row._1, FailureCauses.NONE == row._2._2.failureCauses)
-      }
+    var loadResult: Array[(String, Boolean)] = null
+    try {
+      CarbonUtils
+        .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+          table.getDatabaseName + CarbonCommonConstants.POINT + table.getTableName,
+          splits.asScala.map(s => s.asInstanceOf[CarbonInputSplit].getSegmentId).mkString(","))
+      val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(
+        sparkSession,
+        table)
+
+      // generate LoadModel which can be used global_sort flow
+      val outputModel = DataLoadProcessBuilderOnSpark.createLoadModelForGlobalSort(
+        sparkSession, table)
+      outputModel.setSegmentId(carbonMergerMapping.mergedLoadName.split("_")(1))
+      loadResult = DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
+        sparkSession,
+        Option(dataFrame),
+        outputModel,
+        SparkSQLUtil.sessionState(sparkSession).newHadoopConf())
+        .map { row =>
+          (row._1, FailureCauses.NONE == row._2._2.failureCauses)
+        }
+    } finally {
+      CarbonUtils
+        .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+          table.getDatabaseName + "." +
+          table.getTableName)
+    }
+    loadResult
   }
 
   /**
