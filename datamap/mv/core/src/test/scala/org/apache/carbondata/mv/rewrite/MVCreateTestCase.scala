@@ -27,6 +27,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -455,9 +456,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap29")
   }
 
-  ignore("test create datamap with join with group by with filter") {
+  test("test create datamap with join with group by with filter") {
     sql("drop datamap if exists datamap30")
-    sql("create datamap datamap30 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) group by t1.empname, t2.designation")
+    sql("create datamap datamap30 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) group by t1.empname, t2.designation")
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t2.designation='SA' group by t1.empname, t2.designation")
@@ -489,7 +490,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap32")
   }
 
-  ignore("test create datamap with simple and sub group by query and avg agg") {
+  test("test create datamap with simple and sub group by query and avg agg") {
     sql(s"drop datamap if exists datamap33")
     sql("create datamap datamap33 using 'mv' as select empname, avg(utilization) from fact_table1 group by empname")
     val frame = sql("select empname,avg(utilization) from fact_table1 where empname='shivani' group by empname")
@@ -512,7 +513,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap34")
   }
 
-  ignore("test create datamap with simple and group by query with filter on datamap but not on projection") {
+  test("test create datamap with simple and group by query with filter on datamap but not on projection") {
     sql("create datamap datamap35 using 'mv' as select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
     val frame = sql(
       "select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
@@ -522,7 +523,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap35")
   }
 
-  ignore("test create datamap with simple and sub group by query with filter on datamap but not on projection") {
+  test("test create datamap with simple and sub group by query with filter on datamap but not on projection") {
     sql("create datamap datamap36 using 'mv' as select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
     val frame = sql(
       "select sum(utilization) from fact_table1 where empname='shivani' group by designation")
@@ -558,7 +559,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap38")
   }
 
-  ignore("test create datamap with agg push join with group by with filter") {
+  test("test create datamap with agg push join with group by with filter") {
     sql("drop datamap if exists datamap39")
     sql("create datamap datamap39 using 'mv' as select empname, designation, sum(utilization) from fact_table1 group by empname, designation ")
     val frame = sql(
@@ -584,7 +585,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap40")
   }
 
-  ignore("test create datamap with left join with group by with filter") {
+  test("test create datamap with left join with group by with filter") {
     sql("drop datamap if exists datamap41")
     sql("create datamap datamap41 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
     val frame = sql(
@@ -597,7 +598,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap41")
   }
 
-  ignore("test create datamap with left join with sub group by") {
+  test("test create datamap with left join with sub group by") {
     sql("drop datamap if exists datamap42")
     sql("create datamap datamap42 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
     val frame = sql(
@@ -610,7 +611,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap42")
   }
 
-  ignore("test create datamap with left join with sub group by with filter") {
+  test("test create datamap with left join with sub group by with filter") {
     sql("drop datamap if exists datamap43")
     sql("create datamap datamap43 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
     val frame = sql(
@@ -623,7 +624,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap43")
   }
 
-  ignore("test create datamap with left join with sub group by with filter on mv") {
+  test("test create datamap with left join with sub group by with filter on mv") {
     sql("drop datamap if exists datamap44")
     sql("create datamap datamap44 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation")
     val frame = sql(
@@ -1054,7 +1055,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table mv_like(name string, age int, address string, Country string, id int) stored by 'carbondata'")
     sql(
-      "create datamap mvlikedm1 using 'mv' as select name,address,sum(Country) from mv_like where Country NOT LIKE 'US' group by name,address")
+      "create datamap mvlikedm1 using 'mv' as select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
     sql(
       "create datamap mvlikedm2 using 'mv' as select name,address,Country from mv_like where Country = 'US' or Country = 'China' group by name,address,Country")
     sql("insert into mv_like select 'chandler', 32, 'newYork', 'US', 5")
@@ -1345,7 +1346,25 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
-
+  test("test join query with & without filter columns in projection") {
+    sql("drop table if exists t1")
+    sql("drop table if exists t2")
+    sql("drop datamap if exists mv1")
+    sql("create table t1(userId string,score int) stored by 'carbondata'")
+    sql("create table t2(userId string,age int,sex string) stored by 'carbondata'")
+    sql("insert into t1 values(1,100),(2,500)")
+    sql("insert into t2 values(1,20,'f'),(2,30,'m')")
+    val result  = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
+    sql("create datamap mv1 using 'mv' as select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
+    val df = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
+    TestUtil.verifyMVDataMap(df.queryExecution.analyzed, "mv1")
+    checkAnswer(df, result)
+    intercept[ProcessMetaDataException] {
+      sql("alter table t1 drop columns(userId)")
+    }.getMessage.contains("Column name cannot be dropped because it exists in mv datamap: mv1")
+    sql("drop table if exists t1")
+    sql("drop table if exists t2")
+  }
 
   def copy(oldLoc: String, newLoc: String): Unit = {
     val oldFolder = FileFactory.getCarbonFile(oldLoc)

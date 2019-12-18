@@ -273,8 +273,46 @@ object Utils extends PredicateHelper {
           matchable = false
           None
         }
-
-        derivative.getOrElse { matchable = false; avg_q }
+        // If derivative is empty, check if subsumer contains aggregateFunction instance of Average
+        // function and form an Average expression
+        if (derivative.isEmpty) {
+          matchable = true
+          operator_a.outputList.find {
+            case alias: Alias if alias_m.contains(alias.toAttribute) &&
+                                 alias_m(alias.toAttribute).child
+                                   .isInstanceOf[AggregateExpression] &&
+                                 alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
+                                   .aggregateFunction.isInstanceOf[Average] => {
+              val avg_a = alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
+              val expr_a = avg_a.aggregateFunction.asInstanceOf[Average].child
+              if (avg_a.isDistinct != avg_q.isDistinct) {
+                false
+              } else {
+                expr_a.semanticEquals(expr_q)
+              }
+            }
+            case attr: Attribute if alias_m.contains(attr) &&
+                                    alias_m(attr).child.isInstanceOf[AggregateExpression] &&
+                                    alias_m(attr).child.asInstanceOf[AggregateExpression]
+                                      .aggregateFunction.isInstanceOf[Average] => {
+              val avg_a = alias_m(attr).child.asInstanceOf[AggregateExpression]
+              val expr_a = avg_a.aggregateFunction.asInstanceOf[Average].child
+              if (avg_a.isDistinct != avg_q.isDistinct) {
+                false
+              } else {
+                expr_a.semanticEquals(expr_q)
+              }
+            }
+            case _ => false
+          }.map { avg => AggregateExpression(
+            Average(avg.toAttribute),
+            avg_q.mode,
+            isDistinct = false,
+            avg_q.resultId)
+          }.getOrElse { matchable = false; avg_q }
+        } else {
+          derivative.getOrElse { matchable = false; avg_q }
+        }
 
       case other: AggregateExpression =>
         matchable = false
