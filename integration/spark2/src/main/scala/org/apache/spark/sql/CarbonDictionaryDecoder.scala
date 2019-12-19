@@ -300,6 +300,12 @@ case class CarbonDictionaryDecoder(
           expr.genCode(ctx)
         }
       }
+      // clear dictionary cache
+      dicts.foreach { dict =>
+        if (null != dict) {
+          dict.clear()
+        }
+      }
       // Evaluation of non-deterministic expressions can't be deferred.
       s"""
          |${consume(ctx, resultVars)}
