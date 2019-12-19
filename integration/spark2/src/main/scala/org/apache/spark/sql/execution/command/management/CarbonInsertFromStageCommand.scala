@@ -17,15 +17,16 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import java.io.{InputStreamReader, IOException}
+import java.io.{IOException, InputStreamReader}
 import java.util
 import java.util.Collections
-import java.util.concurrent.{Executors, ExecutorService}
+import java.util.concurrent.{ExecutorService, Executors}
 
 import scala.collection.JavaConverters._
 
 import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
@@ -39,7 +40,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput}
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput, StageInputCollector}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -72,7 +73,6 @@ case class CarbonInsertFromStageCommand(
     }
 
     val tablePath = table.getTablePath
-    val stagePath = CarbonTablePath.getStageDir(tablePath)
     val snapshotFilePath = CarbonTablePath.getStageSnapshotFile(tablePath)
     val lock = acquireIngestLock(table)
 
@@ -108,8 +108,10 @@ case class CarbonInsertFromStageCommand(
       //   8) delete the snapshot file
 
       // 1) read all existing stage files
-      val stageFiles = listStageFiles(stagePath, hadoopConf)
-      if (stageFiles.isEmpty) {
+      val stageInputList = new util.LinkedList[CarbonFile]()
+      val successFileList = new util.LinkedList[CarbonFile]()
+      StageInputCollector.collectStageFiles(table, hadoopConf, stageInputList, successFileList)
+      if (stageInputList.isEmpty) {
         // no stage files, so do nothing
         LOGGER.warn("files not found under stage metadata folder")
         return Seq.empty
@@ -117,9 +119,9 @@ case class CarbonInsertFromStageCommand(
 
       // 2) read all stage files to collect input files for data loading
       // create a thread pool to read them
-      val numThreads = Math.min(Math.max(stageFiles.length, 1), 10)
+      val numThreads = Math.min(Math.max(stageInputList.size(), 1), 10)
       val executorService = Executors.newFixedThreadPool(numThreads)
-      val stageInputs = collectStageInputs(executorService, stageFiles)
+      val inputSplits = StageInputCollector.createInputSplits(executorService, stageInputList)
 
       // 3) add new segment with INSERT_IN_PROGRESS into table status
       val loadModel = DataLoadProcessBuilderOnSpark.createLoadModelForGlobalSort(spark, table)
@@ -128,12 +130,13 @@ case class CarbonInsertFromStageCommand(
       // 4) write all existing stage file names and segmentId into a new snapshot file
       // The content of snapshot file is: first line is segmentId, followed by each line is
       // one stage file name
+      val stageInputScala = stageInputList.asScala
       val content =
-        (Seq(loadModel.getSegmentId) ++ stageFiles.map(_._1.getAbsolutePath)).mkString("\n")
+        (Seq(loadModel.getSegmentId) ++ stageInputScala.map(_.getAbsolutePath)).mkString("\n")
       FileFactory.writeFile(content, snapshotFilePath)
 
       // 5) perform data loading
-      startLoading(spark, table, loadModel, stageInputs)
+      startLoading(spark, table, loadModel, inputSplits.asScala)
 
       // 6) write segment file and update the segment entry to SUCCESS
       val segmentFileName = SegmentFileStore.writeSegmentFile(
@@ -145,7 +148,7 @@ case class CarbonInsertFromStageCommand(
         SegmentStatus.SUCCESS)
 
       // 7) delete stage files
-      deleteStageFiles(executorService, stageFiles)
+      deleteStageFiles(executorService, stageInputScala, successFileList.asScala)
 
       // 8) delete the snapshot file
       FileFactory.getCarbonFile(snapshotFilePath).delete()
@@ -248,9 +251,8 @@ case class CarbonInsertFromStageCommand(
       spark: SparkSession,
       table: CarbonTable,
       loadModel: CarbonLoadModel,
-      stageInput: Seq[StageInput]
+      splits: Seq[InputSplit]
   ): Unit = {
-    val splits = stageInput.flatMap(_.createSplits().asScala)
     LOGGER.info(s"start to load ${splits.size} files into " +
                 s"${table.getDatabaseName}.${table.getTableName}")
     val start = System.currentTimeMillis()
@@ -270,7 +272,7 @@ case class CarbonInsertFromStageCommand(
   /**
    * Read stage files and return input files
    */
-  private def collectStageInputs(
+  private def readStageInputs(
       executorService: ExecutorService,
       stageFiles: Array[(CarbonFile, CarbonFile)]
   ): Seq[StageInput] = {
@@ -302,18 +304,19 @@ case class CarbonInsertFromStageCommand(
    */
   private def deleteStageFiles(
       executorService: ExecutorService,
-      stageFiles: Array[(CarbonFile, CarbonFile)]): Unit = {
+      stageInputFiles: Seq[CarbonFile],
+      successFiles: Seq[CarbonFile]): Unit = {
     val startTime = System.currentTimeMillis()
-    stageFiles.map { files =>
+    stageInputFiles.map { file =>
       executorService.submit(new Runnable {
-        override def run(): Unit = {
-          files._1.delete()
-          files._2.delete()
-        }
+        override def run() = file.delete()
       })
-    }.map { future =>
-      future.get()
-    }
+    }.map(_.get())
+    successFiles.map { file =>
+      executorService.submit(new Runnable {
+        override def run() = file.delete()
+      })
+    }.map(_.get())
     LOGGER.info(s"finished to delete stage files, time taken: " +
                 s"${System.currentTimeMillis() - startTime}ms")
   }

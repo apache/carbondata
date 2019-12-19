@@ -517,6 +517,13 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
+   * Return the stage input path
+   */
+  public String getStagePath() {
+    return CarbonTablePath.getStageDir(getTablePath());
+  }
+
+  /**
    * Return the segment path of the specified segmentId
    */
   public String getSegmentPath(String segmentId) {
