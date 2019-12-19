@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.statusmanager;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -39,13 +38,13 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
+import static org.apache.carbondata.core.util.path.CarbonTablePath.SUCCESS_FILE_SUBFIX;
+
 import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.log4j.Logger;
-
-import static org.apache.carbondata.core.util.path.CarbonTablePath.SUCCESS_FILE_SUBFIX;
 
 /**
  * Utilities to create input split from stage files
@@ -85,15 +84,20 @@ public class StageInputCollector {
     Objects.requireNonNull(successFileList);
     CarbonFile dir = FileFactory.getCarbonFile(table.getStagePath(), hadoopConf);
     if (dir.exists()) {
+      // list the stage folder and collect all stage files who has corresponding success file,
+      // which means the file is committed
       CarbonFile[] allFiles = dir.listFiles();
       Map<String, CarbonFile> map = new HashMap<>();
-      Arrays.stream(allFiles).filter(file -> file.getName().endsWith(SUCCESS_FILE_SUBFIX))
+      Arrays.stream(allFiles)
+          .filter(file -> file.getName().endsWith(SUCCESS_FILE_SUBFIX))
           .forEach(file -> map.put(file.getName().substring(0, file.getName().indexOf(".")), file));
-      Arrays.stream(allFiles).filter(file -> !file.getName().endsWith(SUCCESS_FILE_SUBFIX))
-          .filter(file -> map.containsKey(file.getName())).forEach(carbonFile -> {
-        stageInputList.add(carbonFile);
-        successFileList.add(map.get(carbonFile.getName()));
-      });
+      Arrays.stream(allFiles)
+          .filter(file -> !file.getName().endsWith(SUCCESS_FILE_SUBFIX))
+          .filter(file -> map.containsKey(file.getName()))
+          .forEach(carbonFile -> {
+            stageInputList.add(carbonFile);
+            successFileList.add(map.get(carbonFile.getName()));
+          });
     }
   }
 
@@ -109,23 +113,27 @@ public class StageInputCollector {
     long startTime = System.currentTimeMillis();
     List<InputSplit> output = Collections.synchronizedList(new ArrayList<>());
     Gson gson = new Gson();
-    List<Future<Boolean>> futures = stageFiles.stream().map(stageFile ->
-        executorService.submit(() -> {
-        String filePath = stageFile.getAbsolutePath();
-        DataInputStream stream = null;
-        try {
-          stream = FileFactory.getDataInputStream(filePath, FileFactory.getFileType(filePath));
-          StageInput stageInput = gson.fromJson(new InputStreamReader(stream), StageInput.class);
-          output.addAll(stageInput.createSplits());
-          return true;
-        } catch (IOException e) {
-          LOGGER.error("failed to read stage file " + filePath);
-          return false;
-        } finally {
-          IOUtils.closeQuietly(stream);
-        }
-      })
-    ).collect(Collectors.toList());
+
+    // read each stage file and create input split
+    // read them using a thread pool to increase parallelism
+    List<Future<Boolean>> futures = stageFiles.stream()
+        .map(stageFile ->
+            executorService.submit(() -> {
+              String filePath = stageFile.getAbsolutePath();
+              InputStreamReader reader = null;
+              try {
+                reader = new InputStreamReader(FileFactory.getDataInputStream(filePath));
+                StageInput stageInput = gson.fromJson(reader, StageInput.class);
+                output.addAll(stageInput.createSplits());
+                return true;
+              } catch (IOException e) {
+                LOGGER.error("failed to read stage file " + filePath);
+                return false;
+              } finally {
+                IOUtils.closeQuietly(reader);
+              }
+            }))
+        .collect(Collectors.toList());
     for (Future<Boolean> future : futures) {
       future.get();
     }

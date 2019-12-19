@@ -17,10 +17,10 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import java.io.{IOException, InputStreamReader}
+import java.io.{InputStreamReader, IOException}
 import java.util
 import java.util.Collections
-import java.util.concurrent.{ExecutorService, Executors}
+import java.util.concurrent.{Executors, ExecutorService}
 
 import scala.collection.JavaConverters._
 

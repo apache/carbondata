@@ -173,6 +173,10 @@ public final class FileFactory {
     return fileFileTypeInterface.getCarbonFile(path, hadoopConf);
   }
 
+  public static DataInputStream getDataInputStream(String path) throws IOException {
+    return getDataInputStream(path, getFileType(path));
+  }
+
   public static DataInputStream getDataInputStream(String path, FileType fileType)
       throws IOException {
     return getDataInputStream(path, fileType, -1);
