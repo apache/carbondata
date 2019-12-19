@@ -1834,4 +1834,10 @@ public final class CarbonProperties {
     }
   }
 
+  public static boolean isQueryStageInputEnabled() {
+    return Boolean.parseBoolean(getInstance().getProperty(
+        CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT,
+        CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT_DEFAULT));
+  }
+
 }

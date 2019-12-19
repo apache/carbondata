@@ -117,15 +117,17 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
     List<InputSplit> splits = new LinkedList<>();
 
-    // If there are stage files, collect them and create splits so that they are
-    // included for the query
-    try {
-      List<InputSplit> stageInputSplits =
-          StageInputCollector.createInputSplits(carbonTable, job.getConfiguration());
-      splits.addAll(stageInputSplits);
-    } catch (ExecutionException | InterruptedException e) {
-      LOG.error("Failed to create input splits from stage files", e);
-      throw new IOException(e);
+    if (CarbonProperties.isQueryStageInputEnabled()) {
+      // If there are stage files, collect them and create splits so that they are
+      // included for the query
+      try {
+        List<InputSplit> stageInputSplits =
+            StageInputCollector.createInputSplits(carbonTable, job.getConfiguration());
+        splits.addAll(stageInputSplits);
+      } catch (ExecutionException | InterruptedException e) {
+        LOG.error("Failed to create input splits from stage files", e);
+        throw new IOException(e);
+      }
     }
 
     this.readCommittedScope = getReadCommitted(job, identifier);

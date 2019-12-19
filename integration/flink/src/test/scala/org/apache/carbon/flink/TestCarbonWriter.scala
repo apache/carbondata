@@ -30,6 +30,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Test
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class TestCarbonWriter extends QueryTest {
@@ -97,7 +98,12 @@ class TestCarbonWriter extends QueryTest {
           throw new UnsupportedOperationException(exception)
       }
 
+      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(0)))
+
+      // query with stage input
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT, "true")
       checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(10000)))
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT, "false")
 
       sql(s"INSERT INTO $tableName STAGE")
 
