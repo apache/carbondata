@@ -689,8 +689,11 @@ public final class FileFactory {
       fileWrite.setFailed();
       throw ie;
     } finally {
-      CarbonUtil.closeStreams(brWriter);
-      fileWrite.close();
+      try {
+        CarbonUtil.closeStreams(brWriter);
+      } finally {
+        fileWrite.close();
+      }
     }
   }
 

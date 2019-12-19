@@ -63,15 +63,15 @@ public class CarbonFooterReaderV3 {
     if (footerOffset == 0) {
       Configuration conf = FileFactory.getConfiguration();
       FileFactory.FileType fileType = FileFactory.getFileType(filePath);
-      DataInputStream reader = FileFactory.getDataInputStream(filePath, fileType, conf);
-      long skipBytes = fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
-      long skipped = reader.skip(skipBytes);
-      if (skipped != skipBytes) {
-        throw new IOException(String.format(
-            "expect skip %d bytes, but actually skipped %d bytes", skipBytes, skipped));
+      try (DataInputStream reader = FileFactory.getDataInputStream(filePath, fileType, conf)) {
+        long skipBytes = fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
+        long skipped = reader.skip(skipBytes);
+        if (skipped != skipBytes) {
+          throw new IOException(String.format(
+              "expect skip %d bytes, but actually skipped %d bytes", skipBytes, skipped));
+        }
+        footerOffset = reader.readLong();
       }
-      footerOffset = reader.readLong();
-      reader.close();
     }
 
     // Set the offset from where it should read

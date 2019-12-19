@@ -97,7 +97,7 @@ class TestCarbonWriter extends QueryTest {
           throw new UnsupportedOperationException(exception)
       }
 
-      sql(s"INGEST $tableName")
+      sql(s"INSERT INTO $tableName STAGE")
 
       checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(10000)))
 

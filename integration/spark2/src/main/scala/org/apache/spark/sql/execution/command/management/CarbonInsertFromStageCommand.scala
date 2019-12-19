@@ -52,7 +52,7 @@ import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
  * @param databaseNameOp database name
  * @param tableName table name
  */
-case class CarbonIngestCommand(
+case class CarbonInsertFromStageCommand(
     databaseNameOp: Option[String],
     tableName: String
 ) extends DataCommand {
@@ -71,10 +71,10 @@ case class CarbonIngestCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    val lock = acquireIngestLock(table)
     val tablePath = table.getTablePath
     val stagePath = CarbonTablePath.getStageDir(tablePath)
     val snapshotFilePath = CarbonTablePath.getStageSnapshotFile(tablePath)
+    val lock = acquireIngestLock(table)
 
     try {
       // 1. Check whether we need to recover from previous failure
@@ -282,8 +282,12 @@ case class CarbonIngestCommand(
         override def run(): Unit = {
           val filePath = stage._1.getAbsolutePath
           val stream = FileFactory.getDataInputStream(filePath, FileFactory.getFileType(filePath))
-          val stageInput = gson.fromJson(new InputStreamReader(stream), classOf[StageInput])
-          output.add(stageInput)
+          try {
+            val stageInput = gson.fromJson(new InputStreamReader(stream), classOf[StageInput])
+            output.add(stageInput)
+          } finally {
+            stream.close()
+          }
         }
       })
     }.map { future =>
@@ -314,7 +318,7 @@ case class CarbonIngestCommand(
                 s"${System.currentTimeMillis() - startTime}ms")
   }
 
-  /**
+  /*
    * Collect all stage files and matched success files.
    * A stage file without success file will not be collected
    */

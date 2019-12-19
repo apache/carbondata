@@ -55,6 +55,7 @@ public class CarbonTablePath {
   private static final String STREAMING_CHECKPOINT_DIR = "checkpoint";
   private static final String STAGE_DIR = "stage";
   public static final String  SUCCESS_FILE_SUBFIX = ".success";
+  private static final String SNAPSHOT_FILE_NAME = "snapshot";
 
   /**
    * This class provides static utility only.
@@ -68,7 +69,7 @@ public class CarbonTablePath {
 
   public static String getStageSnapshotFile(String tablePath) {
     return CarbonTablePath.getStageDir(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
-        "snapshot";
+        SNAPSHOT_FILE_NAME;
   }
 
   /**
