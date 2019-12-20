@@ -296,6 +296,21 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     assert(sql("select * from partitionLoadTable").collect().length == 2)
   }
 
+  test("Test overwrite static partition when partition column is in capital letters ") {
+    sql(
+      """
+        | CREATE TABLE weather8 (type String)
+        | PARTITIONED BY (year int, month int, day int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql("insert into weather8 partition(year=2014, month=05, day=25) select 'rainy'")
+    sql("insert into weather8 partition(year=2014, month=04, day=23) select 'cloudy'")
+    sql("insert overwrite table weather8 partition(YEAR=2014, MONTH=5, DAY=25) select 'sunny'")
+    checkExistence(sql("select * from weather8"), true, "sunny")
+    checkAnswer(sql("select count(*) from weather8"), Seq(Row(3)))
+  }
+
   override def afterAll = {
     dropTable
   }
@@ -309,6 +324,7 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     sql("drop table if exists partitionallcompaction")
     sql("drop table if exists weather6")
     sql("drop table if exists weather7")
+    sql("drop table if exists weather8")
     sql("drop table if exists uniqdata_hive_static")
     sql("drop table if exists uniqdata_hive_dynamic")
     sql("drop table if exists uniqdata_string_static")
