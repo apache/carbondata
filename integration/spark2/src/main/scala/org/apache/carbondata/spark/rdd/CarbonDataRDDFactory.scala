@@ -33,9 +33,9 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer}
+import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, RDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
@@ -612,6 +612,247 @@ object CarbonDataRDDFactory {
     }
   }
 
+  def insertToCarbonData(
+      sqlContext: SQLContext,
+      carbonLoadModel: CarbonLoadModel,
+      columnar: Boolean,
+      partitionStatus: SegmentStatus = SegmentStatus.SUCCESS,
+      result: Option[DictionaryServer],
+      overwriteTable: Boolean,
+      hadoopConf: Configuration,
+      scanResultRDD: Option[RDD[InternalRow]] = None,
+      operationContext: OperationContext): LoadMetadataDetails = {
+    // Check if any load need to be deleted before loading new data
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
+
+    // create new segment folder  in carbon store
+    if (carbonLoadModel.isCarbonTransactionalTable) {
+      CarbonLoaderUtil.checkAndCreateCarbonDataLocation(carbonLoadModel.getSegmentId, carbonTable)
+    }
+    var loadStatus = SegmentStatus.SUCCESS
+    var errorMessage: String = "DataLoad failure"
+    var executorMessage: String = ""
+    val isSortTable = carbonTable.getNumberOfSortColumns > 0
+    val sortScope = CarbonDataProcessorUtil.getSortScope(carbonLoadModel.getSortScope)
+
+    val segmentLock = CarbonLockFactory.getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
+      CarbonTablePath.addSegmentPrefix(carbonLoadModel.getSegmentId) + LockUsage.LOCK)
+    try {
+      if (!carbonLoadModel.isCarbonTransactionalTable || segmentLock.lockWithRetries()) {
+        {
+          status = if (scanResultRDD.isEmpty && isSortTable &&
+                       carbonLoadModel.getRangePartitionColumn != null &&
+                       (sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) ||
+                        sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT))) {
+            DataLoadProcessBuilderOnSpark
+              .loadDataUsingRangeSort(sqlContext.sparkSession, carbonLoadModel, hadoopConf)
+          } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+            // TODO:
+            throw new UnsupportedOperationException(
+              "TODO need to handle global sort non-parition insert")
+            /*DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
+              dataFrame, carbonLoadModel, hadoopConf)*/
+          } else if (scanResultRDD.isDefined) {
+            // TODO:
+            throw new UnsupportedOperationException(
+              "TODO need to handle global sort non-parition insert")
+//            loadRdd(sqlContext, scanResultRDD, carbonLoadModel)
+          } else {
+            loadDataFile(sqlContext, carbonLoadModel, hadoopConf)
+          }
+          val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
+          if (status.nonEmpty) {
+            status.foreach { eachLoadStatus =>
+              val state = newStatusMap.get(eachLoadStatus._1)
+              state match {
+                case Some(SegmentStatus.LOAD_FAILURE) =>
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+                case Some(SegmentStatus.LOAD_PARTIAL_SUCCESS)
+                  if eachLoadStatus._2._1.getSegmentStatus ==
+                     SegmentStatus.SUCCESS =>
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+                case _ =>
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+              }
+            }
+
+            newStatusMap.foreach {
+              case (key, value) =>
+                if (value == SegmentStatus.LOAD_FAILURE) {
+                  loadStatus = SegmentStatus.LOAD_FAILURE
+                } else if (value == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
+                           loadStatus != SegmentStatus.LOAD_FAILURE) {
+                  loadStatus = SegmentStatus.LOAD_PARTIAL_SUCCESS
+                }
+            }
+          } else {
+            // if no value is there in data load, make load status Success
+            // and data load flow executes
+            if (scanResultRDD.isDefined) {
+              val rdd = scanResultRDD.get
+              if (rdd.partitions == null || rdd.partitions.length == 0) {
+                LOGGER.warn("DataLoading finished. No data was loaded.")
+                loadStatus = SegmentStatus.SUCCESS
+              }
+            } else {
+              loadStatus = SegmentStatus.LOAD_FAILURE
+            }
+          }
+
+          if (loadStatus != SegmentStatus.LOAD_FAILURE &&
+              partitionStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
+            loadStatus = partitionStatus
+          }
+        }
+      }
+    } catch {
+      case ex: Throwable =>
+        loadStatus = SegmentStatus.LOAD_FAILURE
+        val (extrMsgLocal, errorMsgLocal) = CarbonScalaUtil.retrieveAndLogErrorMsg(ex, LOGGER)
+        executorMessage = extrMsgLocal
+        errorMessage = errorMsgLocal
+        LOGGER.info(errorMessage)
+        LOGGER.error(ex)
+    } finally {
+      segmentLock.unlock()
+    }
+    val uniqueTableStatusId = Option(operationContext.getProperty("uuid")).getOrElse("")
+      .asInstanceOf[String]
+    if (loadStatus == SegmentStatus.LOAD_FAILURE) {
+      // update the load entry in table status file for changing the status to marked for delete
+      CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uniqueTableStatusId)
+      LOGGER.info("********starting clean up**********")
+      if (carbonLoadModel.isCarbonTransactionalTable) {
+        // delete segment is applicable for transactional table
+        CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+        clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
+      }
+      LOGGER.info("********clean up done**********")
+      LOGGER.warn("Cannot write load metadata file as data load failed")
+      throw new Exception(errorMessage)
+    } else {
+      // check if data load fails due to bad record and throw data load failure due to
+      // bad record exception
+      if (loadStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
+          status(0)._2._2.failureCauses == FailureCauses.BAD_RECORDS &&
+          carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
+        // update the load entry in table status file for changing the status to marked for delete
+        CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uniqueTableStatusId)
+        LOGGER.info("********starting clean up**********")
+        if (carbonLoadModel.isCarbonTransactionalTable) {
+          // delete segment is applicable for transactional table
+          CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+          clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
+        }
+        LOGGER.info("********clean up done**********")
+        throw new Exception(status(0)._2._2.errorMsg)
+      }
+      // as no record loaded in new segment, new segment should be deleted
+      val newEntryLoadStatus =
+        if (carbonLoadModel.isCarbonTransactionalTable &&
+            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap &&
+            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildTable &&
+            !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
+          LOGGER.warn("Cannot write load metadata file as there is no data to load")
+          SegmentStatus.MARKED_FOR_DELETE
+        } else {
+          loadStatus
+        }
+
+      writeDictionary(carbonLoadModel, result, writeAll = false)
+
+      val segmentFileName =
+        SegmentFileStore.writeSegmentFile(carbonTable, carbonLoadModel.getSegmentId,
+          String.valueOf(carbonLoadModel.getFactTimeStamp))
+
+      SegmentFileStore.updateTableStatusFile(
+        carbonTable,
+        carbonLoadModel.getSegmentId,
+        segmentFileName,
+        carbonTable.getCarbonTableIdentifier.getTableId,
+        new SegmentFileStore(carbonTable.getTablePath, segmentFileName))
+
+      operationContext.setProperty(carbonTable.getTableUniqueName + "_Segment",
+        carbonLoadModel.getSegmentId)
+      val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
+        new LoadTablePreStatusUpdateEvent(
+          carbonTable.getCarbonTableIdentifier,
+          carbonLoadModel)
+      OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
+      val (done, writtenSegment) =
+        updateTableStatus(
+          status,
+          carbonLoadModel,
+          newEntryLoadStatus,
+          overwriteTable,
+          segmentFileName,
+          uniqueTableStatusId)
+      val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =
+        new LoadTablePostStatusUpdateEvent(carbonLoadModel)
+      val commitComplete = try {
+        OperationListenerBus.getInstance()
+          .fireEvent(loadTablePostStatusUpdateEvent, operationContext)
+        true
+      } catch {
+        case ex: Exception =>
+          LOGGER.error("Problem while committing data maps", ex)
+          false
+      }
+      if (!done || !commitComplete) {
+        CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uniqueTableStatusId)
+        LOGGER.info("********starting clean up**********")
+        if (carbonLoadModel.isCarbonTransactionalTable) {
+          // delete segment is applicable for transactional table
+          CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+          // delete corresponding segment file from metadata
+          val segmentFile = CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
+                            File.separator + segmentFileName
+          FileFactory.deleteFile(segmentFile)
+          clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
+        }
+        LOGGER.info("********clean up done**********")
+        LOGGER.error("Data load failed due to failure in table status updation.")
+        throw new Exception("Data load failed due to failure in table status updation.")
+      }
+      if (SegmentStatus.LOAD_PARTIAL_SUCCESS == loadStatus) {
+        LOGGER.info("Data load is partially successful for " +
+                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+      } else {
+        LOGGER.info("Data load is successful for " +
+                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+      }
+
+      // code to handle Pre-Priming cache for loading
+
+      if (!StringUtils.isEmpty(carbonLoadModel.getSegmentId)) {
+        DistributedRDDUtils.triggerPrepriming(sqlContext.sparkSession, carbonTable, Seq(),
+          operationContext, hadoopConf, List(carbonLoadModel.getSegmentId))
+      }
+      try {
+        // compaction handling
+        if (carbonTable.isHivePartitionTable) {
+          carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
+        }
+        val compactedSegments = new util.ArrayList[String]()
+        handleSegmentMerging(sqlContext,
+          carbonLoadModel
+            .getCopyWithPartition(carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter),
+          carbonTable,
+          compactedSegments,
+          operationContext)
+        carbonLoadModel.setMergedSegmentIds(compactedSegments)
+        writtenSegment
+      } catch {
+        case e: Exception =>
+          LOGGER.error(
+            "Auto-Compaction has failed. Ignoring this exception because the" +
+            " load is passed.", e)
+          writtenSegment
+      }
+    }
+  }
+
   /**
    * clear datamap files for segment
    */
@@ -1007,6 +1248,39 @@ object CarbonDataRDDFactory {
         throw ex
     }
   }
+
+  /*/**
+   * Execute load process to load from input dataframe
+   */
+  private def loadRdd(
+      sqlContext: SQLContext,
+      scanResultRDD: Option[RDD[InternalRow]],
+      carbonLoadModel: CarbonLoadModel
+  ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+    try {
+      val rdd = scanResultRDD.get
+      val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]] { p =>
+        DataLoadPartitionCoalescer.getPreferredLocs(rdd, p).map(_.host)
+      }.distinct.length
+      val nodes = DistributionUtil.ensureExecutorsByNumberAndGetNodeList(
+        nodeNumOfData,
+        sqlContext.sparkContext)
+      // TODO: use internal Row itself
+      val newRdd = new DataLoadCoalescedRDD[Row](sqlContext.sparkSession, rdd, nodes.toArray
+        .distinct)
+
+      new NewDataFrameLoaderRDD(
+        sqlContext.sparkSession,
+        new DataLoadResultImpl(),
+        carbonLoadModel,
+        newRdd
+      ).collect()
+    } catch {
+      case ex: Exception =>
+        LOGGER.error("load data frame failed", ex)
+        throw ex
+    }
+  }*/
 
   /**
    * Execute load process to load from input file path specified in `carbonLoadModel`
