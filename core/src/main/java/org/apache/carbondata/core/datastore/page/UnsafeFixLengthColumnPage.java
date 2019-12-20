@@ -92,8 +92,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     this.eachRowSize = eachRowSize;
     totalLength = 0;
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE_ARRAY) {
-      memoryBlock =
-          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) pageSize * eachRowSize);
+      capacity = pageSize * eachRowSize;
+      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, capacity);
       baseAddress = memoryBlock.getBaseObject();
       baseOffset = memoryBlock.getBaseOffset();
     }
