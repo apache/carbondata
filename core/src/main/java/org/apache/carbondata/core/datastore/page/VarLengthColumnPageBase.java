@@ -73,7 +73,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     try {
       rowOffset = ColumnPage.newPage(
           new ColumnPageEncoderMeta(spec, DataTypes.INT, columnPageEncoderMeta.getCompressorName()),
-          pageSize);
+          pageSize + 1);
     } catch (MemoryException e) {
       throw new RuntimeException(e);
     }
