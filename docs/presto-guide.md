@@ -294,5 +294,5 @@ carbondata files.
 ### Supported features of presto carbon
 Presto carbon only supports reading the carbon table which is written by spark carbon or carbon SDK. 
 During reading, it supports the non-distributed datamaps like block datamap and bloom datamap.
-It doesn't support MV datamap and Pre-aggregate datamap as it needs query plan to be changed and presto does not allow it.
+It doesn't support Materialized View as it needs query plan to be changed and presto does not allow it.
 Also Presto carbon supports streaming segment read from streaming table created by spark.

@@ -671,16 +671,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
   }
 
-  def addPreAggFunction(sql: String): String = {
-    addPreAgg(new lexical.Scanner(sql)) match {
-      case Success(query, _) => query
-      case _ =>
-        throw new MalformedCarbonCommandException(s"Unsupported query")
-    }
-  }
-
-  def addPreAggLoadFunction(sql: String): String = {
-    addPreAggLoad(new lexical.Scanner(sql)) match {
+  def addMVSkipFunction(sql: String): String = {
+    addMVSkipUDF(new lexical.Scanner(sql)) match {
       case Success(query, _) => query
       case _ =>
         throw new MalformedCarbonCommandException(s"Unsupported query")

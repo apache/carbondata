@@ -140,11 +140,6 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     OperationContext operationContext = (OperationContext) getOperationContext();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String uuid = "";
-    if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() &&
-        operationContext != null) {
-      uuid = operationContext.getProperty("uuid").toString();
-    }
-
     SegmentFileStore.updateTableStatusFile(carbonTable, loadModel.getSegmentId(),
         segmentFileName + CarbonTablePath.SEGMENT_EXT,
         carbonTable.getCarbonTableIdentifier().getTableId(),
@@ -207,8 +202,10 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
           context.getConfiguration().get(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, "");
       List<Segment> segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","), null);
       Set<Segment> segmentSet = new HashSet<>(
-          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
-              context.getConfiguration()).getValidAndInvalidSegments(carbonTable.isChildTable())
+          new SegmentStatusManager(
+              carbonTable.getAbsoluteTableIdentifier(),
+              context.getConfiguration()
+          ).getValidAndInvalidSegments(carbonTable.isChildTableForMV())
               .getValidSegments());
       if (updateTime != null) {
         CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, updateTime, true,
@@ -244,7 +241,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     if (partitionSpecs != null && partitionSpecs.size() > 0) {
       List<Segment> validSegments =
           new SegmentStatusManager(table.getAbsoluteTableIdentifier())
-              .getValidAndInvalidSegments(table.isChildTable()).getValidSegments();
+              .getValidAndInvalidSegments(table.isChildTableForMV()).getValidSegments();
       String uniqueId = String.valueOf(System.currentTimeMillis());
       List<String> tobeUpdatedSegs = new ArrayList<>();
       List<String> tobeDeletedSegs = new ArrayList<>();

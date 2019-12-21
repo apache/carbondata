@@ -15,13 +15,14 @@
 * limitations under the License.
 */
 
-package org.apache.spark.sql.execution.command.cache
+package org.apache.spark.sql.listeners
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.execution.command.cache.{CacheUtil, CarbonDropCacheCommand}
 import org.apache.spark.util.DataMapUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -30,7 +31,6 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.events.{DropTableCacheEvent, Event, OperationContext, OperationEventListener}
-import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
 object DropCacheDataMapEventListener extends OperationEventListener {
 
@@ -48,7 +48,7 @@ object DropCacheDataMapEventListener extends OperationEventListener {
         val carbonTable = dropCacheEvent.carbonTable
         val sparkSession = dropCacheEvent.sparkSession
         val internalCall = dropCacheEvent.internalCall
-        if ((carbonTable.isChildDataMap || carbonTable.isChildTable) && !internalCall) {
+        if (carbonTable.isChildTableForMV && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 
@@ -108,10 +108,6 @@ object DropCacheBloomEventListener extends OperationEventListener {
         val cache = CacheProvider.getInstance().getCarbonCache
         val datamaps = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
           .asScala.toList
-        val segments = CarbonDataMergerUtil
-          .getValidSegmentList(carbonTable.getAbsoluteTableIdentifier, carbonTable.isChildTable)
-          .asScala.toList
-
         datamaps.foreach {
           case datamap if datamap.getProviderName
             .equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName) =>

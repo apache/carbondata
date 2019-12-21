@@ -103,21 +103,18 @@ case class CarbonCreateDataMapCommand(
     }
 
     if (null != mainTable) {
-      if (mainTable.isChildTable || mainTable.isChildDataMap) {
+      if (mainTable.isChildTableForMV) {
         throw new MalformedDataMapCommandException(
           "Cannot create DataMap on child table " + mainTable.getTableUniqueName)
       }
     }
-    if (!dataMapSchema.isIndexDataMap && !dataMapSchema.getProviderName
-      .equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.getShortName) && !dataMapSchema
-      .getProviderName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.getShortName)) {
+    if (!dataMapSchema.isIndexDataMap) {
       if (DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala
         .exists(_.getDataMapName.equalsIgnoreCase(dataMapSchema.getDataMapName))) {
         if (!ifNotExistsSet) {
           throw new MalformedDataMapCommandException(
             "DataMap with name " + dataMapSchema.getDataMapName + " already exists in storage")
-        }
-        else {
+        } else {
           return Seq.empty
         }
       }
@@ -189,11 +186,7 @@ case class CarbonCreateDataMapCommand(
     if (dataMapProvider != null) {
       dataMapProvider.initData()
       // TODO: remove these checks once the preaggregate and preaggregate timeseries are deprecated
-      if (mainTable != null && !deferredRebuild &&
-          (dataMapSchema.isIndexDataMap || dataMapSchema.getProviderName
-            .equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.getShortName) ||
-           dataMapSchema.getProviderName
-             .equalsIgnoreCase(DataMapClassProvider.TIMESERIES.getShortName))) {
+      if (mainTable != null && !deferredRebuild && dataMapSchema.isIndexDataMap) {
         dataMapProvider.rebuild()
         if (dataMapSchema.isIndexDataMap) {
           val operationContext: OperationContext = new OperationContext()

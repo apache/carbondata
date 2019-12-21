@@ -108,54 +108,6 @@ class TestRenameTableWithDataMap extends QueryTest with BeforeAndAfterAll {
        """.stripMargin).show(false)
   }
 
-  test("Creating a preaggregate datamap,then table rename") {
-    sql(
-      """
-        | CREATE TABLE fact_table1 (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
-        |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
-    sql(
-      s"""
-         | CREATE DATAMAP dm_agg_age ON TABLE fact_table1
-         | USING 'preaggregate'
-         | AS
-         |  select deptno,deptname,sum(salary) from fact_table1
-         |  group by deptno,deptname
-            """.stripMargin)
-
-    sql(
-      s"""
-         | show datamap on table fact_table1
-       """.stripMargin).show(false)
-    sql(
-      s"""
-         | select deptno,deptname,sum(salary) from fact_table1
-         | group by deptno,deptname
-       """.stripMargin).show(false)
-
-    sql(
-      s"""
-         | explain select deptno,deptname,sum(salary) from fact_table1
-         | group by deptno,deptname
-       """.stripMargin).show(false)
-
-    val exception_tb_rename: Exception = intercept[Exception] {
-      sql(
-        s"""
-           | alter TABLE fact_table1 rename to fact_tb
-       """.stripMargin)
-    }
-    assert(exception_tb_rename.getMessage
-      .contains("Rename operation is not supported for table"
-                + " with pre-aggregate tables"))
-  }
-
   /*
    * mv datamap does not support running here, now must run in mv project.
   test("Creating a mv datamap,then table rename") {

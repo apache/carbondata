@@ -20,7 +20,7 @@ import java.io.IOException
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonSession, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonSession, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
@@ -121,18 +121,10 @@ class MVDataMapProvider(
     val ctasQuery = dataMapSchema.getCtasQuery
     if (ctasQuery != null) {
       val identifier = dataMapSchema.getRelationIdentifier
-      val logicalPlan =
-        new FindDataSourceTable(sparkSession).apply(
-          SparkSQLUtil.sessionState(sparkSession).catalog.lookupRelation(
-          TableIdentifier(identifier.getTableName,
-            Some(identifier.getDatabaseName)))) match {
-          case s: SubqueryAlias => s.child
-          case other => other
-        }
-      val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(ctasQuery)
+      val updatedQuery = new CarbonSpark2SqlParser().addMVSkipFunction(ctasQuery)
       val queryPlan = SparkSQLUtil.execute(
         sparkSession.sql(updatedQuery).queryExecution.analyzed,
-        sparkSession).drop("preAgg")
+        sparkSession).drop("mv")
       var isOverwriteTable = false
       val isFullRefresh =
         if (null != dataMapSchema.getProperties.get("full_refresh")) {

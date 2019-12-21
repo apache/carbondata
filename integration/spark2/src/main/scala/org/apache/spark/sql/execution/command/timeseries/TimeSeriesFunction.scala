@@ -24,10 +24,9 @@ import org.apache.carbondata.core.preagg.TimeSeriesUDF
  * Time series udf class
  */
 
-class TimeSeriesFunction extends Function2[Timestamp, String, Timestamp] with Serializable{
+class TimeSeriesFunction extends ((Timestamp, String) => Timestamp) with Serializable{
 
-  override def apply(v1: Timestamp,
-      v2: String): Timestamp = {
+  override def apply(v1: Timestamp, v2: String): Timestamp = {
     TimeSeriesUDF.INSTANCE.applyUDF(v1, v2)
   }
 }

@@ -87,50 +87,6 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-
-  test("Test preaggregate datamap") {
-    val tableName = "t2"
-
-    sql(s"CREATE TABLE $tableName(empno int, empname String, designation String, " +
-        s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
-        s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
-        s"attendance int, utilization int, salary int) stored by 'carbondata'")
-    sql(s"CREATE DATAMAP dpagg ON TABLE $tableName USING 'preaggregate' AS " +
-        s"SELECT AVG(salary), workgroupcategoryname from $tableName GROUP BY workgroupcategoryname")
-    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
-    sql(s"SELECT * FROM $tableName").collect()
-    sql(s"SELECT AVG(salary), workgroupcategoryname from $tableName " +
-        s"GROUP BY workgroupcategoryname").collect()
-    val droppedCacheKeys = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
-
-    sql(s"DROP METACACHE ON TABLE $tableName")
-
-    val cacheAfterDrop = clone(CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet())
-    droppedCacheKeys.removeAll(cacheAfterDrop)
-
-    val tableIdentifier = new TableIdentifier(tableName, Some(dbName))
-    val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
-    val dbPath = CarbonEnv
-      .getDatabaseLocation(tableIdentifier.database.get, sqlContext.sparkSession)
-    val tablePath = carbonTable.getTablePath
-    val preaggPath = dbPath + CarbonCommonConstants.FILE_SEPARATOR + carbonTable.getTableName +
-                     "_" + carbonTable.getTableInfo.getDataMapSchemaList.get(0).getDataMapName +
-                     CarbonCommonConstants.FILE_SEPARATOR
-
-    // Check if table index entries are dropped
-    assert(droppedCacheKeys.asScala.exists(key => key.startsWith(tablePath)))
-
-    // check if cache does not have any more table index entries
-    assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(tablePath)))
-
-    // Check if preaggregate index entries are dropped
-    assert(droppedCacheKeys.asScala.exists(key => key.startsWith(preaggPath)))
-
-    // check if cache does not have any more preaggregate index entries
-    assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(preaggPath)))
-  }
-
-
   test("Test bloom filter") {
     val tableName = "t3"
 
@@ -169,28 +125,6 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
     // check if cache does not have any more bloom entries
     assert(!cacheAfterDrop.asScala.exists(key => key.contains(bloomPath)))
   }
-
-
-  test("Test preaggregate datamap fail") {
-    val tableName = "t4"
-
-    sql(s"CREATE TABLE $tableName(empno int, empname String, designation String, " +
-        s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
-        s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
-        s"attendance int, utilization int, salary int) stored by 'carbondata'")
-    sql(s"CREATE DATAMAP dpagg ON TABLE $tableName USING 'preaggregate' AS " +
-        s"SELECT AVG(salary), workgroupcategoryname from $tableName GROUP BY workgroupcategoryname")
-    sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
-    sql(s"SELECT * FROM $tableName").collect()
-    sql(s"SELECT AVG(salary), workgroupcategoryname from $tableName " +
-        s"GROUP BY workgroupcategoryname").collect()
-
-    val fail_message = intercept[UnsupportedOperationException] {
-      sql(s"DROP METACACHE ON TABLE ${tableName}_dpagg")
-    }.getMessage
-    assert(fail_message.contains("Operation not allowed on child table."))
-  }
-
 
   def clone(oldSet: util.Set[String]): util.HashSet[String] = {
     val newSet = new util.HashSet[String]

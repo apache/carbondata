@@ -1513,15 +1513,8 @@ public final class CarbonCommonConstants {
   public static final String CARBON_DATAMAP_VISIBLE = "carbon.datamap.visible.";
 
   /**
-   * Fetch and validate the segments.
-   * Used for aggregate table load as segment validation is not required.
-   */
-  @CarbonProperty(dynamicConfigurable = true)
-  public static final String VALIDATE_CARBON_INPUT_SEGMENTS = "validate.carbon.input.segments.";
-
-  /**
    * Whether load/insert command is fired internally or by the user.
-   * Used to block load/insert on pre-aggregate if fired by user
+   * Used to block load/insert on MV if fired by user
    */
   @CarbonProperty
   public static final String IS_INTERNAL_LOAD_CALL = "is.internal.load.call";

@@ -15,7 +15,7 @@
 * limitations under the License.
 */
 
-package org.apache.spark.sql.execution.command.cache
+package org.apache.spark.sql.listeners
 
 import scala.collection.JavaConverters._
 
@@ -25,7 +25,7 @@ import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.events._
 
-object ShowCachePreAggEventListener extends OperationEventListener {
+object ShowCachePreMVEventListener extends OperationEventListener {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -40,7 +40,7 @@ object ShowCachePreAggEventListener extends OperationEventListener {
       case showTableCacheEvent: ShowTableCacheEvent =>
         val carbonTable = showTableCacheEvent.carbonTable
         val internalCall = showTableCacheEvent.internalCall
-        if ((carbonTable.isChildDataMap || carbonTable.isChildTable) && !internalCall) {
+        if (carbonTable.isChildTableForMV && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 

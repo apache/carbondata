@@ -189,8 +189,7 @@ Concurrent queries can be more due to the BI dashboard
 
 - Use table block size as 128MB so that pruning is more effective
 - Use global sort mode so that the data to be fetched are grouped together
-- Create pre-aggregate tables for non timestamp based group by queries
-- For queries containing group by date, create timeseries based Datamap(pre-aggregate) tables so that the data is rolled up during creation and fetch is faster
+- Create Materialized View for aggregation queries
 - Reduce the Spark shuffle partitions.(In our configuration on 14 node cluster, it was reduced to 35 from default of 200)
 - Enable global dictionary for columns which have less cardinalities. Aggregation can be done on encoded data, there by improving the performance
 - For columns whose cardinality is high,enable the local dictionary so that store size is less and can take dictionary benefit for scan

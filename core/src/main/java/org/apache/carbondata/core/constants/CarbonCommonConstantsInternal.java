@@ -23,8 +23,6 @@ package org.apache.carbondata.core.constants;
  */
 public interface CarbonCommonConstantsInternal {
 
-  String QUERY_ON_PRE_AGG_STREAMING = "carbon.query.on.preagg.streaming.";
-
   String ROW_COUNT = "rowCount";
 
 }

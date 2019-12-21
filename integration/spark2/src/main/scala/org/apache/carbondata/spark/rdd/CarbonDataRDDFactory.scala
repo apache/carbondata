@@ -510,8 +510,7 @@ object CarbonDataRDDFactory {
       // as no record loaded in new segment, new segment should be deleted
       val newEntryLoadStatus =
         if (carbonLoadModel.isCarbonTransactionalTable &&
-            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap &&
-            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildTable &&
+            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildTableForMV &&
             !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
           LOGGER.warn("Cannot write load metadata file as there is no data to load")
           SegmentStatus.MARKED_FOR_DELETE
@@ -843,8 +842,7 @@ object CarbonDataRDDFactory {
       operationContext: OperationContext): Unit = {
     LOGGER.info(s"compaction need status is" +
                 s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable) }")
-    if (!carbonTable.isChildDataMap &&
-        CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable)) {
+    if (CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable)) {
       val compactionSize = 0
       val isCompactionTriggerByDDl = false
       val compactionModel = CompactionModel(

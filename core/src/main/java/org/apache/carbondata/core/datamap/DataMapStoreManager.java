@@ -52,7 +52,6 @@ import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
-import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -200,10 +199,6 @@ public final class DataMapStoreManager {
       String dataBaseName =  relationIdentifier.getDatabaseName();
       String tableId = relationIdentifier.getTableId();
       String providerName = dataMapSchema.getProviderName();
-      // if the preaggregate datamap,not be modified the schema
-      if (providerName.equalsIgnoreCase(PREAGGREGATE.toString())) {
-        continue;
-      }
       // if the mv datamap,not be modified the relationIdentifier
       if (!providerName.equalsIgnoreCase(MV.toString())) {
         RelationIdentifier newRelationIdentifier = new RelationIdentifier(dataBaseName,

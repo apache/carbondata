@@ -569,11 +569,6 @@ object AlterTableUtil {
       propertiesMap: mutable.Map[String, String]): Unit = {
     // validate column meta cache property
     if (propertiesMap.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
-      // Column meta cache is not allowed for child tables and dataMaps
-      if (carbonTable.isChildDataMap) {
-        throw new MalformedCarbonCommandException(s"Table property ${
-          CarbonCommonConstants.COLUMN_META_CACHE} is not allowed for child datamaps")
-      }
       val schemaList: util.List[ColumnSchema] = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions, carbonTable.getVisibleMeasures)
       val tableColumns: Seq[String] = schemaList.asScala
@@ -589,11 +584,6 @@ object AlterTableUtil {
     }
     // validate cache level property
     if (propertiesMap.get(CarbonCommonConstants.CACHE_LEVEL).isDefined) {
-      // Cache level is not allowed for child tables and dataMaps
-      if (carbonTable.isChildDataMap) {
-        throw new MalformedCarbonCommandException(s"Table property ${
-          CarbonCommonConstants.CACHE_LEVEL} is not allowed for child datamaps")
-      }
       CommonUtil.validateCacheLevel(
         propertiesMap.get(CarbonCommonConstants.CACHE_LEVEL).get,
         propertiesMap)
@@ -922,13 +912,7 @@ object AlterTableUtil {
       propertiesMap: mutable.Map[String, String]): Unit = {
     // validate load min size property
     if (propertiesMap.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB).isDefined) {
-      // load min size is not allowed for child tables and dataMaps
-      if (carbonTable.isChildDataMap) {
-        throw new MalformedCarbonCommandException(s"Table property ${
-          CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB} is not allowed for child datamaps")
-      }
-      CommonUtil.validateLoadMinSize(propertiesMap,
-        CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB)
+      CommonUtil.validateLoadMinSize(propertiesMap, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB)
     }
   }
 }

@@ -69,7 +69,7 @@ case class CarbonDropTableCommand(
                 CarbonLockUtil.getLockObject(identifier, lock)
       }
       // check for directly drop datamap table
-      if (carbonTable.isChildTable && !dropChildTable) {
+      if (carbonTable.isChildTableForMV && !dropChildTable) {
         if (!ifExistsSet) {
           throwMetadataException(dbName, tableName,
             "Child table which is associated with datamap cannot be dropped, " +
@@ -91,35 +91,6 @@ case class CarbonDropTableCommand(
       val relationIdentifiers = carbonTable.getTableInfo.getParentRelationIdentifiers
       if (relationIdentifiers != null && !relationIdentifiers.isEmpty) {
         var ignoreParentTableCheck = false
-        if (carbonTable.getTableInfo.getParentRelationIdentifiers.size() == 1) {
-          /**
-           * below handling in case when pre aggregation creation failed in scenario
-           * while creating a pre aggregate data map it created pre aggregate table and registered
-           * in hive, but failed to register in main table because of some exception.
-           * in this case if it will not allow user to drop datamap and data map table
-           * for this if user run drop table command for pre aggregate it should allow user to drop
-           * the same
-           */
-          val parentDbName =
-            carbonTable.getTableInfo.getParentRelationIdentifiers.get(0).getDatabaseName
-          val parentTableName =
-            carbonTable.getTableInfo.getParentRelationIdentifiers.get(0).getTableName
-          val parentCarbonTable = try {
-            Some(CarbonEnv.getCarbonTable(Some(parentDbName), parentTableName)(sparkSession))
-          } catch {
-            case _: Exception => None
-          }
-          if (parentCarbonTable.isDefined) {
-            val dataMapSchemaName = CarbonUtil.getDatamapNameFromTableName(carbonTable.getTableName)
-            if (null != dataMapSchemaName) {
-              val dataMapSchema = parentCarbonTable.get.getDataMapSchema(dataMapSchemaName)
-              if (null == dataMapSchema) {
-                LOGGER.info(s"Force dropping datamap ${carbonTable.getTableName}")
-                ignoreParentTableCheck = true
-              }
-            }
-          }
-        }
         if (!ignoreParentTableCheck && !dropChildTable) {
           if (!ifExistsSet) {
             throwMetadataException(dbName, tableName,
@@ -223,7 +194,7 @@ case class CarbonDropTableCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     // clear driver side index and dictionary cache
-    if (carbonTable != null && !(carbonTable.isChildTable && !dropChildTable)) {
+    if (carbonTable != null && !(carbonTable.isChildTableForMV && !dropChildTable)) {
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
       // delete the table folder
       val tablePath = carbonTable.getTablePath

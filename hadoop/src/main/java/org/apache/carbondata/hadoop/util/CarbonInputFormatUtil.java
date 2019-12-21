@@ -24,7 +24,6 @@ import java.util.Locale;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapJob;
 import org.apache.carbondata.core.datamap.DataMapUtil;
@@ -111,7 +110,7 @@ public class CarbonInputFormatUtil {
       AbsoluteTableIdentifier identifier,
       DataMapFilter dataMapFilter,
       CarbonProjection columnProjection,
-      DataMapJob dataMapJob) throws InvalidConfigurationException, IOException {
+      DataMapJob dataMapJob) throws IOException {
     CarbonTableInputFormat<V> format = new CarbonTableInputFormat<>();
     CarbonInputFormat.setTablePath(
         conf,
@@ -128,31 +127,12 @@ public class CarbonInputFormatUtil {
     CarbonSessionInfo carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
     if (carbonSessionInfo != null) {
       String tableUniqueKey = identifier.getDatabaseName() + "." + identifier.getTableName();
-      String validateInputSegmentsKey = CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-          tableUniqueKey;
-      CarbonInputFormat.setValidateSegmentsToAccess(
-          conf,
-          Boolean.valueOf(carbonSessionInfo.getThreadParams().getProperty(
-              validateInputSegmentsKey, "true")));
-      String queryOnPreAggStreamingKey = CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING +
-          tableUniqueKey;
-      boolean queryOnPreAggStreaming = Boolean.valueOf(carbonSessionInfo.getThreadParams()
-          .getProperty(queryOnPreAggStreamingKey, "false"));
       String inputSegmentsKey = CarbonCommonConstants.CARBON_INPUT_SEGMENTS + tableUniqueKey;
-      CarbonInputFormat.setValidateSegmentsToAccess(conf,
-          Boolean.valueOf(carbonSessionInfo.getThreadParams()
-              .getProperty(validateInputSegmentsKey, "true")));
       CarbonInputFormat.setQuerySegment(
           conf,
           carbonSessionInfo.getThreadParams().getProperty(
               inputSegmentsKey,
               CarbonProperties.getInstance().getProperty(inputSegmentsKey, "*")));
-      if (queryOnPreAggStreaming) {
-        CarbonInputFormat.setAccessStreamingSegments(conf, true);
-        carbonSessionInfo.getThreadParams().removeProperty(queryOnPreAggStreamingKey);
-        carbonSessionInfo.getThreadParams().removeProperty(inputSegmentsKey);
-        carbonSessionInfo.getThreadParams().removeProperty(validateInputSegmentsKey);
-      }
     }
     return format;
   }

@@ -86,26 +86,6 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("data loading for flat folder pre-agg") {
-    sql(
-      """
-        | CREATE TABLE flatfolder_preagg (empname String, designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
-        |  utilization int,salary int,empno int)
-        | STORED BY 'org.apache.carbondata.format' tblproperties('flat_folder'='true')
-      """.stripMargin)
-    sql("create datamap p2 on table flatfolder_preagg using 'preaggregate' as select empname, designation, min(salary) from flatfolder_preagg group by empname, designation ")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE flatfolder_preagg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
-    validateDataFiles("default_flatfolder_preagg", "0")
-    validateDataFiles("default_flatfolder_preagg_p2", "0")
-
-    checkAnswer(sql("select empname, designation, min(salary) from flatfolder_preagg group by empname, designation"),
-      sql("select empname, designation, min(salary) from originTable group by empname, designation"))
-
-  }
-
   test("merge index flat folder issue") {
     sql("drop table if exists t1")
     sql("create table t1(c1 int,c2 string,c3 float,c4 date) stored by 'carbondata' TBLPROPERTIES('flat_folder'='true')")

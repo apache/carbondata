@@ -60,15 +60,6 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
       val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
       if (carbonTable != null) {
-        if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
-          throw new UnsupportedOperationException(
-            "Update operation is not supported for tables which have a pre-aggregate table. " +
-            "Drop pre-aggregate tables to continue.")
-        }
-        if (carbonTable.isChildDataMap) {
-          throw new UnsupportedOperationException(
-            "Update operation is not supported for pre-aggregate table")
-        }
         val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
         if (DataMapUtil.hasMVDataMap(carbonTable)) {
           val allDataMapSchemas = DataMapStoreManager.getInstance
@@ -82,7 +73,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
           throw new UnsupportedOperationException(
             "Update operation is not supported for table which has index datamaps")
         }
-        if (carbonTable.isChildTable) {
+        if (carbonTable.isChildTableForMV) {
           throw new UnsupportedOperationException(
             "Update operation is not supported for mv datamap table")
         }
@@ -211,7 +202,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
         val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
         if (carbonTable != null) {
-          if (carbonTable.isChildTable) {
+          if (carbonTable.isChildTableForMV) {
             throw new UnsupportedOperationException(
               "Delete operation is not supported for datamap table")
           }

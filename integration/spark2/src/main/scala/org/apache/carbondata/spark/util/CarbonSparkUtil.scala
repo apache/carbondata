@@ -45,11 +45,11 @@ object CarbonSparkUtil {
           f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             !f.getDataType.isComplexType)
       }
-    CarbonMetaData(dimensionsAttr,
+    CarbonMetaData(
+      dimensionsAttr,
       measureAttr,
       carbonTable,
-      DictionaryMap(dictionary.toMap),
-      CarbonUtil.hasAggregationDataMap(carbonTable))
+      DictionaryMap(dictionary.toMap))
   }
 
   def createCarbonRelation(tableInfo: TableInfo, tablePath: String): CarbonRelation = {

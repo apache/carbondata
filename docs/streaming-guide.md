@@ -273,8 +273,8 @@ ALTER TABLE streaming_table COMPACT 'close_streaming'
 ## Constraint
 1. reject set streaming property from true to false.
 2. reject UPDATE/DELETE command on the streaming table.
-3. reject create pre-aggregation DataMap on the streaming table.
-4. reject add the streaming property on the table with pre-aggregation DataMap.
+3. reject create MV on the streaming table.
+4. reject add the streaming property on the table with MV DataMap.
 5. if the table has dictionary columns, it will not support concurrent data loading.
 6. block delete "streaming" segment while the streaming ingestion is running.
 7. block drop the streaming table while the streaming ingestion is running.

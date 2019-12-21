@@ -27,8 +27,6 @@ CarbonData has its own parser, in addition to Spark's SQL Parser, to parse and p
   - [DataMaps](./datamap/datamap-management.md)
     - [Bloom](./datamap/bloomfilter-datamap-guide.md)
     - [Lucene](./datamap/lucene-datamap-guide.md)
-    - [Pre-Aggregate](./datamap/preaggregate-datamap-guide.md)
-    - [Time Series](./datamap/timeseries-datamap-guide.md)
   - Materialized Views (MV)
   - [Streaming](./streaming-guide.md)
 - Data Manipulation Statements

@@ -15,7 +15,7 @@
 * limitations under the License.
 */
 
-package org.apache.spark.sql.execution.command.mv
+package org.apache.spark.sql.listeners
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -33,9 +33,8 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePostExecutionEvent
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.merger.CompactionType
-
 
 object DataMapListeners {
   def getDataMapTableColumns(dataMapSchema: DataMapSchema,
@@ -86,6 +85,21 @@ object AlterDataMaptableCompactionPostListener extends OperationEventListener {
         CarbonAlterTableCompactionCommand(alterTableModel, operationContext = operationContext)
           .run(sparkSession)
       }
+    }
+  }
+}
+
+object LoadMVTablePreListener extends OperationEventListener {
+  /**
+   * Called on LoadTablePreExecutionEvent event occurrence
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val loadEvent = event.asInstanceOf[LoadTablePreExecutionEvent]
+    val carbonLoadModel = loadEvent.getCarbonLoadModel
+    val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val isInternalLoadCall = carbonLoadModel.isAggLoadRequest
+    if (table.isChildTableForMV && !isInternalLoadCall) {
+      throw new UnsupportedOperationException("Cannot insert data directly into MV table")
     }
   }
 }
@@ -175,7 +189,7 @@ object DataMapDeleteSegmentPreListener extends OperationEventListener {
         throw new UnsupportedOperationException(
           "Delete segment operation is not supported on tables having child datamap")
       }
-      if (carbonTable.isChildTable) {
+      if (carbonTable.isChildTableForMV) {
         throw new UnsupportedOperationException(
           "Delete segment operation is not supported on datamap table")
       }
@@ -193,7 +207,7 @@ object DataMapAddColumnsPreListener extends OperationEventListener {
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     val dataTypeChangePreListener = event.asInstanceOf[AlterTableAddColumnPreEvent]
     val carbonTable = dataTypeChangePreListener.carbonTable
-    if (carbonTable.isChildTable) {
+    if (carbonTable.isChildTableForMV) {
       throw new UnsupportedOperationException(
         s"Cannot add columns in a DataMap table " +
         s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
@@ -233,7 +247,7 @@ object DataMapDropColumnPreListener extends OperationEventListener {
         }
       }
     }
-    if (carbonTable.isChildTable) {
+    if (carbonTable.isChildTableForMV) {
       throw new UnsupportedOperationException(
         s"Cannot drop columns present in a datamap table ${ carbonTable.getDatabaseName }." +
         s"${ carbonTable.getTableName }")
@@ -270,7 +284,7 @@ object DataMapChangeDataTypeorRenameColumnPreListener
         }
       }
     }
-    if (carbonTable.isChildTable) {
+    if (carbonTable.isChildTableForMV) {
       throw new UnsupportedOperationException(
         s"Cannot change data type or rename column for columns present in mv datamap table " +
         s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
@@ -354,7 +368,7 @@ object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener
         operationContext.setProperty("dropPartitionCommands", childDropPartitionCommands)
         childDropPartitionCommands.foreach(_.processMetadata(SparkSession.getActiveSession.get))
       }
-    } else if (parentCarbonTable.isChildTable) {
+    } else if (parentCarbonTable.isChildTableForMV) {
       if (operationContext.getProperty("isInternalDropCall") == null) {
         throw new UnsupportedOperationException("Cannot drop partition directly on child table")
       }

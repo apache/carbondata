@@ -101,9 +101,6 @@ trait CarbonMetaStore {
     (sparkSession: SparkSession): String
 
 
-  def revertTableSchemaForPreAggCreationFailure(absoluteTableIdentifier: AbsoluteTableIdentifier,
-      thriftTableInfo: org.apache.carbondata.format.TableInfo)(sparkSession: SparkSession): String
-
   /**
    * Prepare Thrift Schema from wrapper TableInfo and write to disk
    */

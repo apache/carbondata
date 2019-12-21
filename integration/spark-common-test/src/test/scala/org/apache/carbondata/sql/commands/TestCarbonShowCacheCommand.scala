@@ -101,10 +101,6 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
       "workgroupcategoryname,deptname,projectcode,projectjoindate,projectenddate,attendance," +
       "utilization,salary,deptno from cache_4").collect()
 
-    // datamap
-    sql("create datamap cache_4_count on table cache_4 using 'preaggregate' as " +
-        "select workgroupcategoryname,count(empname) as count from cache_4 group by workgroupcategoryname")
-
     // count star to cache index
     sql("select max(deptname) from cache_db.cache_1").collect()
     sql("SELECT deptno FROM cache_db.cache_1 where deptno=10").collect()
@@ -216,13 +212,6 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("show metacache on table cache_db.cache_3"),
       Seq(Row("Index", "0 B", "0/1 index files cached", "DRIVER"),
         Row("Dictionary", "0 B", "", "DRIVER")))
-
-    // Table with Index, Dictionary & PreAgg child table
-    val result4 = sql("show metacache on table default.cache_4").collect()
-    assertResult(3)(result4.length)
-    assertResult("1/1 index files cached")(result4(0).getString(2))
-    assertResult("0 B")(result4(1).getString(1))
-    assertResult("preaggregate")(result4(2).getString(2))
 
     sql("use default").collect()
 

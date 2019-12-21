@@ -31,7 +31,6 @@ import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.datamap.DataMapChooser;
 import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapJob;
@@ -102,8 +101,6 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   // comma separated list of input segment numbers
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
-  private static final String VALIDATE_INPUT_SEGMENT_IDs =
-      "mapreduce.input.carboninputformat.validsegments";
   // comma separated list of input files
   private static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
   private static final Logger LOG =
@@ -318,21 +315,6 @@ m filterExpression
       CarbonInputFormat
           .setSegmentsToAccess(conf, Segment.toSegmentList(segmentList.split(","), null));
     }
-  }
-
-  /**
-   * set list of segment to access
-   */
-  public static void setValidateSegmentsToAccess(Configuration configuration, Boolean validate) {
-    configuration.set(CarbonInputFormat.VALIDATE_INPUT_SEGMENT_IDs, validate.toString());
-  }
-
-  /**
-   * get list of segment to access
-   */
-  public static boolean getValidateSegmentsToAccess(Configuration configuration) {
-    return configuration.get(CarbonInputFormat.VALIDATE_INPUT_SEGMENT_IDs, "true")
-        .equalsIgnoreCase("true");
   }
 
   /**
@@ -842,25 +824,6 @@ m filterExpression
       throw new InvalidConfigurationException("Table name is not set");
     }
     return tableName;
-  }
-
-  public static void setAccessStreamingSegments(Configuration configuration, Boolean validate)
-      throws InvalidConfigurationException {
-    configuration.set(
-        CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING + "." + getDatabaseName(
-            configuration) + "." + getTableName(configuration), validate.toString());
-  }
-
-  public static boolean getAccessStreamingSegments(Configuration configuration) {
-    try {
-      return configuration.get(
-          CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING + "." + getDatabaseName(
-              configuration) + "." + getTableName(
-                  configuration), "false").equalsIgnoreCase("true");
-
-    } catch (InvalidConfigurationException e) {
-      return false;
-    }
   }
 
   /**

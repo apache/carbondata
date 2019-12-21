@@ -27,8 +27,6 @@ package org.apache.carbondata.core.metadata.schema.datamap;
  */
 
 public enum DataMapClassProvider {
-  PREAGGREGATE("org.apache.carbondata.core.datamap.AggregateDataMap", "preaggregate"),
-  TIMESERIES("org.apache.carbondata.core.datamap.TimeSeriesDataMap", "timeseries"),
   LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory", "lucene"),
   BLOOMFILTER("org.apache.carbondata.datamap.bloom.BloomCoarseGrainDataMapFactory", "bloomfilter"),
   MV("org.apache.carbondata.core.datamap.MVDataMap", "mv");
@@ -63,11 +61,7 @@ public enum DataMapClassProvider {
   }
 
   public static DataMapClassProvider getDataMapProviderOnName(String dataMapShortname) {
-    if (TIMESERIES.isEqual(dataMapShortname)) {
-      return TIMESERIES;
-    } else if (PREAGGREGATE.isEqual(dataMapShortname)) {
-      return PREAGGREGATE;
-    } else if (LUCENE.isEqual(dataMapShortname)) {
+    if (LUCENE.isEqual(dataMapShortname)) {
       return LUCENE;
     } else if (BLOOMFILTER.isEqual(dataMapShortname)) {
       return BLOOMFILTER;

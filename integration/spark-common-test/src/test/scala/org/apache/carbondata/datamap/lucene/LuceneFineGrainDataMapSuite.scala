@@ -471,24 +471,6 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists dm on table datamap_test_table")
   }
 
-  test("test lucene fine grain data map for show datamaps with Preaggregate and Lucene") {
-    sql("DROP TABLE IF EXISTS datamap_main")
-    sql("create table datamap_main (a string, b string, c string) stored by 'carbondata'")
-    sql(
-      s"""
-         | CREATE DATAMAP dm_lucene ON TABLE datamap_main
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='c')
-      """.stripMargin)
-    sql(
-      "create datamap dm_pre on table datamap_main USING 'preaggregate' as select a,sum(b) " +
-      "from datamap_main group by a")
-    checkExistence(sql("show datamap on table datamap_main"), true, "dm_pre")
-    checkExistence(sql("show datamap on table datamap_main"), true, "dm_lucene")
-    sql("drop datamap if exists dm_pre on table datamap_main")
-    sql("drop datamap if exists dm_lucene on table datamap_main")
-  }
-
   test("test lucene fine grain data map with CTAS") {
     sql("DROP TABLE IF EXISTS source_table")
     sql("DROP TABLE IF EXISTS target_table")

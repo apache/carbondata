@@ -86,9 +86,8 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                           }")
               val segmentsToMerge =
                 if (alterTableMergeIndexEvent.alterTableModel.customSegmentIds.isEmpty) {
-                  val validSegments = CarbonDataMergerUtil.getValidSegmentList(
-                    carbonMainTable.getAbsoluteTableIdentifier,
-                    carbonMainTable.isChildTable).asScala
+                  val validSegments =
+                    CarbonDataMergerUtil.getValidSegmentList(carbonMainTable).asScala
                   val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
                   validSegments.foreach { segment =>
                     validSegmentIds += segment.getSegmentNo

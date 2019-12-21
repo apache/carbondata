@@ -25,7 +25,6 @@
 - [DataMap Related Commands](#datamap-related-commands)
   - [Explain](#explain)
   - [Show DataMap](#show-datamap)
-  - [Compaction on DataMap](#compaction-on-datamap)
 
 
 
@@ -47,8 +46,6 @@ Currently, there are 5 DataMap implementations in CarbonData.
 
 | DataMap Provider | Description                              | DMPROPERTIES                             | Management       |
 | ---------------- | ---------------------------------------- | ---------------------------------------- | ---------------- |
-| preaggregate     | single table pre-aggregate table         | No DMPROPERTY is required                | Automatic        |
-| timeseries       | time dimension rollup table              | event_time, xx_granularity, please refer to [Timeseries DataMap](./timeseries-datamap-guide.md) | Automatic        |
 | mv               | multi-table pre-aggregate table          | No DMPROPERTY is required                | Manual/Automatic           |
 | lucene           | lucene indexing for text column          | index_columns to specifying the index columns | Automatic |
 | bloomfilter      | bloom filter for high cardinality column, geospatial column | index_columns to specifying the index columns | Automatic |
@@ -136,17 +133,9 @@ Scan Table: default.datamap1_table
 There is a SHOW DATAMAPS command, when this is issued, system will read all datamap from *system* folder and print all information on screen. The current information includes:
 
 - DataMapName
-- DataMapProviderName like mv, preaggreagte, timeseries, etc
+- DataMapProviderName like mv
 - Associated Table
 - DataMap Properties
 - DataMap status (ENABLED/DISABLED)
 - Sync Status - which displays Last segment Id of main table synced with datamap table and its load
   end time (Applicable only for mv datamap)
-
-### Compaction on DataMap
-
-This feature applies for preaggregate datamap only
-
-Running Compaction command (`ALTER TABLE COMPACT`) on main table will **not automatically** compact the pre-aggregate tables created on the main table. User need to run Compaction command separately on each pre-aggregate table to compact them.
-
-Compaction is an optional operation for pre-aggregate table. If compaction is performed on main table but not performed on pre-aggregate table, all queries still can benefit from pre-aggregate tables. To further improve the query performance, compaction on pre-aggregate tables can be triggered to merge the segments and files in the pre-aggregate tables.

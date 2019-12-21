@@ -24,7 +24,6 @@ import org.apache.spark.sql.execution.command.{DataMapField, Field}
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
 import org.apache.carbondata.core.metadata.schema.datamap.Granularity
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
@@ -81,19 +80,7 @@ object TimeSeriesUtil {
         }
       }
     }
-
-    // 2. check whether timeseries and granularity match
-    if (isFound && !dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
-      throw new MalformedDataMapCommandException(
-        s"${TIMESERIES.toString} keyword missing")
-    } else if (!isFound && dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
-      throw new MalformedDataMapCommandException(
-        s"${TIMESERIES.toString} should define time granularity")
-    } else if (isFound) {
-      true
-    } else {
-      false
-    }
+    isFound
   }
 
   /**

@@ -26,9 +26,7 @@ Currently, there are two types of DataMap supported:
 ### DataMap Provider
 When user issues `CREATE DATAMAP dm ON TABLE main USING 'provider'`, the corresponding DataMapProvider implementation will be created and initialized. 
 Currently, the provider string can be:
-1. preaggregate: A type of MVDataMap that do pre-aggregate of single table
-2. timeseries: A type of MVDataMap that do pre-aggregate based on time dimension of the table
-3. class name IndexDataMapFactory implementation: Developer can implement new type of IndexDataMap by extending IndexDataMapFactory
+1. class name IndexDataMapFactory implementation: Developer can implement new type of IndexDataMap by extending IndexDataMapFactory
 
 When user issues `DROP DATAMAP dm ON TABLE main`, the corresponding DataMapProvider interface will be called.
 

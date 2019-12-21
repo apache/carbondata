@@ -164,21 +164,6 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon2")
   }
 
-  test("test if delete is unsupported for pre-aggregate tables") {
-    sql("drop table if exists preaggMain")
-    sql("drop table if exists preaggmain_preagg1")
-    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
-    sql("create datamap preagg1 on table PreAggMain USING 'preaggregate' as select a,sum(b) from PreAggMain group by a")
-    intercept[RuntimeException] {
-      sql("delete from preaggmain where a = 'abc'").show()
-    }.getMessage.contains("Delete operation is not supported for tables")
-    intercept[RuntimeException] {
-      sql("delete from preaggmain_preagg1 where preaggmain_a = 'abc'").show()
-    }.getMessage.contains("Delete operation is not supported for pre-aggregate table")
-    sql("drop table if exists preaggMain")
-    sql("drop table if exists preaggmain_preagg1")
-  }
-
   test("test select query after compaction, delete and clean files") {
     sql("drop table if exists select_after_clean")
     sql("create table select_after_clean(id int, name string) stored by 'carbondata'")
@@ -300,30 +285,6 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists iud_db.dest_tuple_part")
     sql("drop table if exists iud_db.dest_tuple")
 
-  }
-
-  test("block deleting records from table which has preaggregate datamap") {
-    sql("drop table if exists test_dm_main")
-    sql("drop table if exists test_dm_main_preagg1")
-
-    sql("create table test_dm_main (a string, b string, c string) stored by 'carbondata'")
-    sql("insert into test_dm_main select 'aaa','bbb','ccc'")
-    sql("insert into test_dm_main select 'bbb','bbb','ccc'")
-    sql("insert into test_dm_main select 'ccc','bbb','ccc'")
-
-    sql(
-      "create datamap preagg1 on table test_dm_main using 'preaggregate' as select" +
-      " a,sum(b) from test_dm_main group by a")
-
-    assert(intercept[UnsupportedOperationException] {
-      sql("delete from test_dm_main_preagg1 where test_dm_main_a = 'bbb'")
-    }.getMessage.contains("Delete operation is not supported for pre-aggregate table"))
-    assert(intercept[UnsupportedOperationException] {
-      sql("delete from test_dm_main where a = 'ccc'")
-    }.getMessage.contains("Delete operation is not supported for tables which have a pre-aggregate table"))
-
-    sql("drop table if exists test_dm_main")
-    sql("drop table if exists test_dm_main_preagg1")
   }
 
   test("block deleting records from table which has index datamap") {
