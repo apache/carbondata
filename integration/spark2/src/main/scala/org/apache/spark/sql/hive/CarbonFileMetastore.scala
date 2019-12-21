@@ -69,11 +69,11 @@ case class MetaData(var carbonTables: ArrayBuffer[CarbonTable]) {
   }
 }
 
-case class CarbonMetaData(dims: Seq[String],
+case class CarbonMetaData(
+    dims: Seq[String],
     msrs: Seq[String],
     carbonTable: CarbonTable,
-    dictionaryMap: DictionaryMap,
-    hasAggregateDataMapSchema: Boolean)
+    dictionaryMap: DictionaryMap)
 
 case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
   def get(name: String): Option[Boolean] = {
@@ -350,23 +350,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
       absoluteTableIdentifier.getTablePath)
     val evolutionEntries = thriftTableInfo.fact_table.schema_evolution.schema_evolution_history
     evolutionEntries.remove(evolutionEntries.size() - 1)
-    val path = createSchemaThriftFile(absoluteTableIdentifier, thriftTableInfo)
-    addCarbonTableToCache(wrapperTableInfo, absoluteTableIdentifier)
-    path
-  }
-
-  override def revertTableSchemaForPreAggCreationFailure(
-      absoluteTableIdentifier: AbsoluteTableIdentifier,
-      thriftTableInfo: org.apache.carbondata.format.TableInfo)
-    (sparkSession: SparkSession): String = {
-    val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
-      thriftTableInfo,
-      absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
-      absoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
-      absoluteTableIdentifier.getTablePath)
-    val childSchemaList = wrapperTableInfo.getDataMapSchemaList
-    childSchemaList.remove(childSchemaList.size() - 1)
     val path = createSchemaThriftFile(absoluteTableIdentifier, thriftTableInfo)
     addCarbonTableToCache(wrapperTableInfo, absoluteTableIdentifier)
     path

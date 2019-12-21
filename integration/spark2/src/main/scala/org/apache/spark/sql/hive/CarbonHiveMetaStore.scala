@@ -208,19 +208,4 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       schemaConverter)
   }
 
-  override def revertTableSchemaForPreAggCreationFailure(absoluteTableIdentifier:
-  AbsoluteTableIdentifier,
-      thriftTableInfo: org.apache.carbondata.format.TableInfo)
-    (sparkSession: SparkSession): String = {
-    val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    val childSchemas = thriftTableInfo.dataMapSchemas
-    childSchemas.remove(childSchemas.size() - 1)
-    val carbonTableIdentifier = absoluteTableIdentifier.getCarbonTableIdentifier
-    updateHiveMetaStoreForAlter(carbonTableIdentifier,
-      carbonTableIdentifier,
-      thriftTableInfo,
-      absoluteTableIdentifier.getTablePath,
-      sparkSession,
-      schemaConverter)
-  }
 }

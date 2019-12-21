@@ -521,21 +521,6 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS iud.rand")
   }
 
-  test("test if update is unsupported for pre-aggregate tables") {
-    sql("drop table if exists preaggMain")
-    sql("drop table if exists preaggMain_preagg1")
-    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
-    sql("create datamap preagg1 on table PreAggMain using 'preaggregate' as select a,sum(b) from PreAggMain group by a")
-    intercept[RuntimeException] {
-      sql("update preaggmain set (a)=('a')").show
-    }.getMessage.contains("Update operation is not supported for tables")
-    intercept[RuntimeException] {
-      sql("update preaggMain_preagg1 set (a)=('a')").show
-    }.getMessage.contains("Update operation is not supported for pre-aggregate table")
-    sql("drop table if exists preaggMain")
-    sql("drop table if exists preaggMain_preagg1")
-  }
-
   test("Update operation on carbon table with singlepass") {
     sql(s"""set ${ CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS }=true""")
     sql("drop database if exists carbon1 cascade")
@@ -712,31 +697,6 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     errorMessage
       .contains("Unsupported data type: Array")
     sql("drop table if exists senten")
-  }
-
-  test("block updating table which has preaggreate datamap") {
-    sql("use iud")
-    sql("drop table if exists test_dm_main")
-    sql("drop table if exists test_dm_main_preagg1")
-
-    sql("create table test_dm_main (a string, b string, c string) stored by 'carbondata'")
-    sql("insert into test_dm_main select 'aaa','bbb','ccc'")
-    sql("insert into test_dm_main select 'bbb','bbb','ccc'")
-    sql("insert into test_dm_main select 'ccc','bbb','ccc'")
-
-    sql(
-      "create datamap preagg1 on table test_dm_main using 'preaggregate' as select" +
-      " a,sum(b) from test_dm_main group by a")
-
-    assert(intercept[UnsupportedOperationException] {
-      sql("update test_dm_main_preagg1 set(test_dm_main_a) = ('aaa') where test_dm_main_a = 'bbb'")
-    }.getMessage.contains("Update operation is not supported for pre-aggregate table"))
-    assert(intercept[UnsupportedOperationException] {
-      sql("update test_dm_main set(a) = ('aaa') where a = 'ccc'")
-    }.getMessage.contains("Update operation is not supported for tables which have a pre-aggregate table"))
-
-    sql("drop table if exists test_dm_main")
-    sql("drop table if exists test_dm_main_preagg1")
   }
 
   test("block updating table which has index datamap") {

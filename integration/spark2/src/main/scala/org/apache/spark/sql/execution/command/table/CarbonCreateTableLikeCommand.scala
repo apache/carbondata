@@ -48,7 +48,7 @@ case class CarbonCreateTableLikeCommand(
     if (!srcTable.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    if (srcTable.isChildTable || srcTable.isChildDataMap) {
+    if (srcTable.isChildTableForMV) {
       throw new MalformedCarbonCommandException("Unsupported operation on child table or datamap")
     }
 

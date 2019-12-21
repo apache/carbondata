@@ -23,6 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
@@ -816,7 +817,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists MV_exp1")
     sql("drop datamap if exists MV_exp2")
     sql("create datamap MV_exp1 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
-    intercept[UnsupportedOperationException] {
+    intercept[MalformedCarbonCommandException] {
       sql(
         "create datamap MV_exp2 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
 
@@ -884,7 +885,6 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create datamap with streaming table")  {
     sql("drop datamap if exists dm_stream_test1")
     sql("drop datamap if exists dm_stream_bloom")
-    sql("drop datamap if exists dm_stream_PreAggMax")
     sql("drop table if exists fact_streaming_table1")
     sql(
       """
@@ -902,9 +902,6 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
          | DMProperties('INDEX_COLUMNS'='empname,deptname', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    sql("create datamap dm_stream_PreAggMax on table fact_streaming_table1 using 'preaggregate' " +
-        "as select empname,max(salary) as max from fact_streaming_table1 group by empname")
-    
     val exception_tb_mv: Exception = intercept[Exception] {
       sql("create datamap dm_stream_test1 using 'mv' as select empname, sum(utilization) from " +
           "fact_streaming_table1 group by empname")

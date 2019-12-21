@@ -88,10 +88,7 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
           val relationIdentifier = s.getRelationIdentifier
           val table = relationIdentifier.getDatabaseName + "." + relationIdentifier.getTableName
           // preaggregate datamap does not support user specified property, therefor we return empty
-          val dmPropertieStr = if (s.getProviderName.equalsIgnoreCase(
-              DataMapClassProvider.PREAGGREGATE.getShortName)) {
-            ""
-          } else {
+          val dmPropertieStr =
             s.getProperties.asScala
               // ignore internal used property
               .filter(p => !p._1.equalsIgnoreCase(DataMapProperty.DEFERRED_REBUILD) &&
@@ -99,54 +96,50 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
                            !p._1.equalsIgnoreCase(DataMapProperty.QUERY_TYPE))
               .map(p => s"'${ p._1 }'='${ p._2 }'").toSeq
               .sorted.mkString(", ")
-          }
+
           // Get datamap status and sync information details
           var dataMapStatus = "NA"
           var syncInfo: String = "NA"
-          if (!s.getProviderName.equalsIgnoreCase(
-            DataMapClassProvider.PREAGGREGATE.getShortName) && !s.getProviderName.equalsIgnoreCase(
-            DataMapClassProvider.TIMESERIES.getShortName)) {
-            if (DataMapStatusManager.getEnabledDataMapStatusDetails
-              .exists(_.getDataMapName.equalsIgnoreCase(s.getDataMapName))) {
-              dataMapStatus = DataMapStatus.ENABLED.name()
-            } else {
-              dataMapStatus = DataMapStatus.DISABLED.name()
-            }
-            val loadMetadataDetails = SegmentStatusManager
-              .readLoadMetadata(CarbonTablePath
-                .getMetadataPath(s.getRelationIdentifier.getTablePath))
-            if (!s.isIndexDataMap && loadMetadataDetails.nonEmpty) {
-              breakable({
-                for (i <- loadMetadataDetails.length - 1 to 0 by -1) {
-                  if (loadMetadataDetails(i).getSegmentStatus.equals(SegmentStatus.SUCCESS)) {
-                    val segmentMaps =
-                      DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(i).getExtraInfo)
-                    val syncInfoMap = new util.HashMap[String, String]()
-                    val iterator = segmentMaps.entrySet().iterator()
-                    while (iterator.hasNext) {
-                      val entry = iterator.next()
-                      // when in join scenario, one table is loaded and one more is not loaded,
-                      // then put value as NA
-                      if (entry.getValue.isEmpty) {
-                        syncInfoMap.put(entry.getKey, "NA")
-                      } else {
-                        syncInfoMap.put(entry.getKey, DataMapUtil.getMaxSegmentID(entry.getValue))
-                      }
+          if (DataMapStatusManager.getEnabledDataMapStatusDetails
+            .exists(_.getDataMapName.equalsIgnoreCase(s.getDataMapName))) {
+            dataMapStatus = DataMapStatus.ENABLED.name()
+          } else {
+            dataMapStatus = DataMapStatus.DISABLED.name()
+          }
+          val loadMetadataDetails = SegmentStatusManager
+            .readLoadMetadata(CarbonTablePath
+              .getMetadataPath(s.getRelationIdentifier.getTablePath))
+          if (!s.isIndexDataMap && loadMetadataDetails.nonEmpty) {
+            breakable({
+              for (i <- loadMetadataDetails.length - 1 to 0 by -1) {
+                if (loadMetadataDetails(i).getSegmentStatus.equals(SegmentStatus.SUCCESS)) {
+                  val segmentMaps =
+                    DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(i).getExtraInfo)
+                  val syncInfoMap = new util.HashMap[String, String]()
+                  val iterator = segmentMaps.entrySet().iterator()
+                  while (iterator.hasNext) {
+                    val entry = iterator.next()
+                    // when in join scenario, one table is loaded and one more is not loaded,
+                    // then put value as NA
+                    if (entry.getValue.isEmpty) {
+                      syncInfoMap.put(entry.getKey, "NA")
+                    } else {
+                      syncInfoMap.put(entry.getKey, DataMapUtil.getMaxSegmentID(entry.getValue))
                     }
-                    val loadEndTime =
-                      if (loadMetadataDetails(i).getLoadEndTime ==
-                          CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
-                        "NA"
-                      } else {
-                        new java.sql.Timestamp(loadMetadataDetails(i).getLoadEndTime).toString
-                      }
-                    syncInfoMap.put(CarbonCommonConstants.LOAD_SYNC_TIME, loadEndTime)
-                    syncInfo = new Gson().toJson(syncInfoMap)
-                    break()
                   }
+                  val loadEndTime =
+                    if (loadMetadataDetails(i).getLoadEndTime ==
+                        CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
+                      "NA"
+                    } else {
+                      new java.sql.Timestamp(loadMetadataDetails(i).getLoadEndTime).toString
+                    }
+                  syncInfoMap.put(CarbonCommonConstants.LOAD_SYNC_TIME, loadEndTime)
+                  syncInfo = new Gson().toJson(syncInfoMap)
+                  break()
                 }
-              })
-            }
+              }
+            })
           }
           Row(s.getDataMapName, s.getProviderName, table, dmPropertieStr, dataMapStatus, syncInfo)
       }

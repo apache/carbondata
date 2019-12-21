@@ -85,7 +85,7 @@ case class CarbonAddLoadCommand(
       throw new MalformedCarbonCommandException(
         "Unsupported operation on global dictionary columns table")
     }
-    if (carbonTable.isChildTable || carbonTable.isChildDataMap) {
+    if (carbonTable.isChildTableForMV) {
       throw new MalformedCarbonCommandException("Unsupported operation on MV/Pre-aggrergated table")
     }
     // if insert overwrite in progress, do not allow add segment

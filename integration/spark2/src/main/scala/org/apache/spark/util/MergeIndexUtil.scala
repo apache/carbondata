@@ -20,7 +20,6 @@ package org.apache.spark.util
 import java.util
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.SparkSession
@@ -28,11 +27,9 @@ import org.apache.spark.sql.execution.command.CompactionCallableModel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
 object MergeIndexUtil {
@@ -72,8 +69,7 @@ object MergeIndexUtil {
     carbonTable: CarbonTable,
     mergedLoads: util.List[String]): Unit = {
     // get only the valid segments of the table
-    val validSegments: mutable.Buffer[Segment] = CarbonDataMergerUtil.getValidSegmentList(
-      carbonTable.getAbsoluteTableIdentifier, carbonTable.isChildTable).asScala
+    val validSegments = CarbonDataMergerUtil.getValidSegmentList(carbonTable).asScala
     val mergedSegmentIds = new util.ArrayList[String]()
     mergedLoads.asScala.foreach(mergedLoad => {
       val loadName = mergedLoad

@@ -249,13 +249,7 @@ public final class CarbonLoaderUtil {
         FileFactory.mkdirs(metadataPath);
       }
     }
-    String tableStatusPath;
-    if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !uuid.isEmpty()) {
-      tableStatusPath = CarbonTablePath.getTableStatusFilePathWithUUID(
-          identifier.getTablePath(), uuid);
-    } else {
-      tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
-    }
+    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     int retryCount = CarbonLockUtil
@@ -282,12 +276,7 @@ public final class CarbonLoaderUtil {
               String.valueOf(SegmentStatusManager.createNewSegmentId(listOfLoadFolderDetailsArray));
           loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
           LoadMetadataDetails entryTobeRemoved = null;
-          // Segment id would be provided in case this is compaction flow for aggregate data map.
-          // If that is true then used the segment id as the load name.
-          if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !loadModel
-              .getSegmentId().isEmpty()) {
-            newMetaEntry.setLoadName(loadModel.getSegmentId());
-          } else if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildTable()
+          if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildTableForMV()
               && !loadModel.getSegmentId().isEmpty()) {
             for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
               if (entry.getLoadName().equalsIgnoreCase(loadModel.getSegmentId())) {
@@ -369,14 +358,9 @@ public final class CarbonLoaderUtil {
           }
         }
 
-        if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !loadStartEntry
-            && !uuid.isEmpty() && segmentsToBeDeleted.isEmpty() && !insertOverwrite) {
-          SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath,
-              new LoadMetadataDetails[] { newMetaEntry });
-        } else {
-          SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
-              .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
-        }
+        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
+            .toArray(new LoadMetadataDetails[0]));
+
         // Delete all old stale segment folders
         for (CarbonFile staleFolder : staleFolders) {
           // try block is inside for loop because even if there is failure in deletion of 1 stale

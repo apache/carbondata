@@ -107,8 +107,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
    */
   private[mv] def registerSchema(dataMapSchema: DataMapSchema): Unit = {
     writeLock {
-      // TODO Add mvfunction here, don't use preagg function
-      val updatedQuery = parser.addPreAggFunction(dataMapSchema.getCtasQuery)
+      val updatedQuery = parser.addMVSkipFunction(dataMapSchema.getCtasQuery)
       val query = sparkSession.sql(updatedQuery)
       val planToRegister = MVHelper.dropDummFuc(query.queryExecution.analyzed)
       val modularPlan =

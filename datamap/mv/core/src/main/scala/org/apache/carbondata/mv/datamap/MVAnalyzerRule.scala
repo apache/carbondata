@@ -18,7 +18,7 @@ package org.apache.carbondata.mv.datamap
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, ScalaUDF}
@@ -53,10 +53,10 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     var needAnalysis = true
     plan.transformAllExpressions {
-      // first check if any preAgg scala function is applied it is present is in plan
-      // then call is from create preaggregate table class so no need to transform the query plan
+      // first check if any mv UDF is applied it is present is in plan
+      // then call is from create MV so no need to transform the query plan
       // TODO Add different UDF name
-      case al@Alias(udf: ScalaUDF, name) if name.equalsIgnoreCase("preAgg") =>
+      case al@Alias(udf: ScalaUDF, name) if name.equalsIgnoreCase(CarbonEnv.MV_SKIP_RULE_UDF) =>
         needAnalysis = false
         al
       // in case of query if any unresolve alias is present then wait for plan to be resolved
@@ -75,7 +75,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
           if (p.isInstanceOf[UnresolvedAlias]) {
             false
           } else {
-            p.name.equals("preAggLoad") || p.name.equals("preAgg")
+            p.name.equals(CarbonEnv.MV_SKIP_RULE_UDF)
           }
         }
         if (isPreAggLoad) {

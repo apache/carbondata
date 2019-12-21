@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.metadata.schema.table;
 
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
-
 public class DataMapSchemaFactory {
   public static final DataMapSchemaFactory INSTANCE = new DataMapSchemaFactory();
 
@@ -29,14 +27,6 @@ public class DataMapSchemaFactory {
    * @return data map schema
    */
   public DataMapSchema getDataMapSchema(String dataMapName, String providerName) {
-    if (providerName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString()) || providerName
-        .equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.getClassName())) {
-      return new AggregationDataMapSchema(dataMapName, providerName);
-    } else if (providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString())
-        || providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.getClassName())) {
-      return new AggregationDataMapSchema(dataMapName, providerName);
-    } else {
-      return new DataMapSchema(dataMapName, providerName);
-    }
+    return new DataMapSchema(dataMapName, providerName);
   }
 }

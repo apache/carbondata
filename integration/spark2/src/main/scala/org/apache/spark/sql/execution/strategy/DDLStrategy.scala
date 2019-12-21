@@ -309,7 +309,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
               throw new MalformedCarbonCommandException(
                 "The table which has MV datamap does not support set streaming property")
             }
-            if (carbonTable.isChildTable) {
+            if (carbonTable.isChildTableForMV) {
               throw new MalformedCarbonCommandException(
                 "Datamap table does not support set streaming property")
             }

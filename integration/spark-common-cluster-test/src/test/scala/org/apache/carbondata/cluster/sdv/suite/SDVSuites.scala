@@ -57,10 +57,7 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                new StandardPartitionTestCase ::
                new Vector1TestCase ::
                new Vector2TestCase ::
-               new PreAggregateTestCase ::
-               new TimeSeriesPreAggregateTestCase ::
                new TestPartitionWithGlobalSort ::
-               new PartitionWithPreAggregateTestCase ::
                new CreateTableWithLocalDictionaryTestCase ::
                new LoadTableWithLocalDictionaryTestCase :: Nil
 
@@ -157,13 +154,10 @@ class SDVSuites4 extends Suites with BeforeAndAfterAll {
                new TestRegisterCarbonTable ::
                new TableCommentAlterTableTestCase ::
                new StandardPartitionTestCase ::
-               new PreAggregateTestCase ::
                new LuceneTestCase ::
-               new TimeSeriesPreAggregateTestCase ::
                new TestPartitionWithGlobalSort ::
                new SDKwriterTestCase ::
                new SetParameterTestCase ::
-               new PartitionWithPreAggregateTestCase ::
                new CreateTableWithLocalDictionaryTestCase ::
                new LoadTableWithLocalDictionaryTestCase :: Nil
 

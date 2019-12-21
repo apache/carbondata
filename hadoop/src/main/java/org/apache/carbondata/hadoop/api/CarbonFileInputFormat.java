@@ -110,99 +110,96 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     }
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
 
-    if (getValidateSegmentsToAccess(job.getConfiguration())) {
-      // get all valid segments and set them into the configuration
-      // check for externalTable segment (Segment_null)
-      // process and resolve the expression
+    // get all valid segments and set them into the configuration
+    // check for externalTable segment (Segment_null)
+    // process and resolve the expression
 
-      ReadCommittedScope readCommittedScope = null;
-      if (carbonTable.isTransactionalTable()) {
-        readCommittedScope = new LatestFilesReadCommittedScope(
-            identifier.getTablePath() + "/Fact/Part0/Segment_null/", job.getConfiguration());
+    ReadCommittedScope readCommittedScope = null;
+    if (carbonTable.isTransactionalTable()) {
+      readCommittedScope = new LatestFilesReadCommittedScope(
+          identifier.getTablePath() + "/Fact/Part0/Segment_null/", job.getConfiguration());
+    } else {
+      readCommittedScope = getReadCommittedScope(job.getConfiguration());
+      if (readCommittedScope == null) {
+        readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath(), job
+            .getConfiguration());
       } else {
-        readCommittedScope = getReadCommittedScope(job.getConfiguration());
-        if (readCommittedScope == null) {
-          readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath(), job
-              .getConfiguration());
-        } else {
-          readCommittedScope.setConfiguration(job.getConfiguration());
-        }
+        readCommittedScope.setConfiguration(job.getConfiguration());
       }
-      // this will be null in case of corrupt schema file.
-      DataMapFilter filter = getFilterPredicates(job.getConfiguration());
-
-      // if external table Segments are found, add it to the List
-      List<Segment> externalTableSegments = new ArrayList<Segment>();
-      Segment seg;
-      if (carbonTable.isTransactionalTable()) {
-        // SDK some cases write into the Segment Path instead of Table Path i.e. inside
-        // the "Fact/Part0/Segment_null". The segment in this case is named as "null".
-        // The table is denoted by default as a transactional table and goes through
-        // the path of CarbonFileInputFormat. The above scenario is handled in the below code.
-        seg = new Segment("null", null, readCommittedScope);
-        externalTableSegments.add(seg);
-      } else {
-        LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
-        for (LoadMetadataDetails load : loadMetadataDetails) {
-          seg = new Segment(load.getLoadName(), null, readCommittedScope);
-          if (fileLists != null) {
-            for (int i = 0; i < fileLists.size(); i++) {
-              if (fileLists.get(i).toString().endsWith(seg.getSegmentNo()
-                  + CarbonTablePath.CARBON_DATA_EXT)) {
-                externalTableSegments.add(seg);
-                break;
-              }
-            }
-          } else {
-            externalTableSegments.add(seg);
-          }
-        }
-      }
-      List<InputSplit> splits = new ArrayList<>();
-      boolean useBlockDataMap = job.getConfiguration().getBoolean("filter_blocks", true);
-      // useBlockDataMap would be false in case of SDK when user has not provided any filter, In
-      // this case we don't want to load block/blocklet datamap. It would be true in all other
-      // scenarios
-      if (filter != null) {
-        filter.resolve(false);
-      }
-      if (useBlockDataMap) {
-        // do block filtering and get split
-        splits = getSplits(job, filter, externalTableSegments);
-      } else {
-        List<CarbonFile> carbonFiles = null;
-        if (null != this.fileLists) {
-          carbonFiles = getAllCarbonDataFiles(this.fileLists);
-        } else {
-          carbonFiles = getAllCarbonDataFiles(carbonTable.getTablePath());
-        }
-
-        for (CarbonFile carbonFile : carbonFiles) {
-          // Segment id is set to null because SDK does not write carbondata files with respect
-          // to segments. So no specific name is present for this load.
-          CarbonInputSplit split =
-              new CarbonInputSplit("null", carbonFile.getAbsolutePath(), 0,
-                  carbonFile.getLength(), carbonFile.getLocations(), FileFormat.COLUMNAR_V3);
-          split.setVersion(ColumnarFormatVersion.V3);
-          BlockletDetailInfo info = new BlockletDetailInfo();
-          split.setDetailInfo(info);
-          info.setBlockSize(carbonFile.getLength());
-          info.setVersionNumber(split.getVersion().number());
-          info.setUseMinMaxForPruning(false);
-          splits.add(split);
-        }
-        Collections.sort(splits, new Comparator<InputSplit>() {
-          @Override
-          public int compare(InputSplit o1, InputSplit o2) {
-            return ((CarbonInputSplit) o1).getFilePath()
-                .compareTo(((CarbonInputSplit) o2).getFilePath());
-          }
-        });
-      }
-      setAllColumnProjectionIfNotConfigured(job, carbonTable);
-      return splits;
     }
-    return null;
+    // this will be null in case of corrupt schema file.
+    DataMapFilter filter = getFilterPredicates(job.getConfiguration());
+
+    // if external table Segments are found, add it to the List
+    List<Segment> externalTableSegments = new ArrayList<Segment>();
+    Segment seg;
+    if (carbonTable.isTransactionalTable()) {
+      // SDK some cases write into the Segment Path instead of Table Path i.e. inside
+      // the "Fact/Part0/Segment_null". The segment in this case is named as "null".
+      // The table is denoted by default as a transactional table and goes through
+      // the path of CarbonFileInputFormat. The above scenario is handled in the below code.
+      seg = new Segment("null", null, readCommittedScope);
+      externalTableSegments.add(seg);
+    } else {
+      LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
+      for (LoadMetadataDetails load : loadMetadataDetails) {
+        seg = new Segment(load.getLoadName(), null, readCommittedScope);
+        if (fileLists != null) {
+          for (int i = 0; i < fileLists.size(); i++) {
+            if (fileLists.get(i).toString().endsWith(seg.getSegmentNo()
+                + CarbonTablePath.CARBON_DATA_EXT)) {
+              externalTableSegments.add(seg);
+              break;
+            }
+          }
+        } else {
+          externalTableSegments.add(seg);
+        }
+      }
+    }
+    List<InputSplit> splits = new ArrayList<>();
+    boolean useBlockDataMap = job.getConfiguration().getBoolean("filter_blocks", true);
+    // useBlockDataMap would be false in case of SDK when user has not provided any filter, In
+    // this case we don't want to load block/blocklet datamap. It would be true in all other
+    // scenarios
+    if (filter != null) {
+      filter.resolve(false);
+    }
+    if (useBlockDataMap) {
+      // do block filtering and get split
+      splits = getSplits(job, filter, externalTableSegments);
+    } else {
+      List<CarbonFile> carbonFiles = null;
+      if (null != this.fileLists) {
+        carbonFiles = getAllCarbonDataFiles(this.fileLists);
+      } else {
+        carbonFiles = getAllCarbonDataFiles(carbonTable.getTablePath());
+      }
+
+      for (CarbonFile carbonFile : carbonFiles) {
+        // Segment id is set to null because SDK does not write carbondata files with respect
+        // to segments. So no specific name is present for this load.
+        CarbonInputSplit split =
+            new CarbonInputSplit("null", carbonFile.getAbsolutePath(), 0,
+                carbonFile.getLength(), carbonFile.getLocations(), FileFormat.COLUMNAR_V3);
+        split.setVersion(ColumnarFormatVersion.V3);
+        BlockletDetailInfo info = new BlockletDetailInfo();
+        split.setDetailInfo(info);
+        info.setBlockSize(carbonFile.getLength());
+        info.setVersionNumber(split.getVersion().number());
+        info.setUseMinMaxForPruning(false);
+        splits.add(split);
+      }
+      Collections.sort(splits, new Comparator<InputSplit>() {
+        @Override
+        public int compare(InputSplit o1, InputSplit o2) {
+          return ((CarbonInputSplit) o1).getFilePath()
+              .compareTo(((CarbonInputSplit) o2).getFilePath());
+        }
+      });
+    }
+    setAllColumnProjectionIfNotConfigured(job, carbonTable);
+    return splits;
   }
 
   public void setAllColumnProjectionIfNotConfigured(JobContext job, CarbonTable carbonTable) {

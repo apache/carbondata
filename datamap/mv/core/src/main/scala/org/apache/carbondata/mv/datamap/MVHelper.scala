@@ -68,7 +68,7 @@ object MVHelper {
     }
     val mvUtil = new MVUtil
     mvUtil.validateDMProperty(dmProperties)
-    val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
+    val updatedQuery = new CarbonSpark2SqlParser().addMVSkipFunction(queryString)
     val query = sparkSession.sql(updatedQuery)
     val logicalPlan = MVHelper.dropDummFuc(query.queryExecution.analyzed)
     // if there is limit in MV ctas query string, throw exception, as its not a valid usecase
@@ -136,7 +136,7 @@ object MVHelper {
       if (!mainCarbonTable.get.getTableInfo.isTransactionalTable) {
         throw new MalformedCarbonCommandException("Unsupported operation on NonTransactional table")
       }
-      if (mainCarbonTable.get.isChildTable || mainCarbonTable.get.isChildDataMap) {
+      if (mainCarbonTable.get.isChildTableForMV) {
         throw new MalformedCarbonCommandException(
           "Cannot create Datamap on child table " + mainCarbonTable.get.getTableUniqueName)
       }
@@ -242,7 +242,6 @@ object MVHelper {
       tableProperties,
       None,
       isAlterFlow = false,
-      isPreAggFlow = false,
       None)
 
     val tablePath = if (dmProperties.contains("path")) {
@@ -403,8 +402,10 @@ object MVHelper {
 
   private def dropDummyExp(exps: Seq[NamedExpression]) = {
     exps.map {
-      case al@Alias(udf: ScalaUDF, name) if name.equalsIgnoreCase("preAgg") => None
-      case attr: AttributeReference if attr.name.equalsIgnoreCase("preAgg") => None
+      case al@Alias(udf: ScalaUDF, name) if name.equalsIgnoreCase(CarbonEnv.MV_SKIP_RULE_UDF) =>
+        None
+      case attr: AttributeReference if attr.name.equalsIgnoreCase(CarbonEnv.MV_SKIP_RULE_UDF) =>
+        None
       case other => Some(other)
     }.filter(_.isDefined).map(_.get)
   }

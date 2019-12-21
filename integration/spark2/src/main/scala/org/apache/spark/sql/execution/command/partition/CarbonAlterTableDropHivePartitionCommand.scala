@@ -154,26 +154,10 @@ case class CarbonAlterTableDropHivePartitionCommand(
         table.getDatabaseName,
         table.getTableName,
         locksToBeAcquired)(sparkSession)
-      // If flow is for child table then get the uuid from operation context.
-      // If flow is for parent table then generate uuid for child flows and set the uuid to ""
-      // for parent table
-      // If normal table then set uuid to "".
-      val uuid = if (table.isChildDataMap) {
-        val uuid = operationContext.getProperty("uuid")
-        if (uuid != null) {
-          uuid.toString
-        } else {
-          LOGGER.warn(s"UUID not set for table ${table.getTableUniqueName} in operation context.")
-          ""
-        }
-      } else if (table.hasAggregationDataMap) {
-        operationContext.setProperty("uuid", UUID.randomUUID().toString)
-        ""
-      } else {
-        ""
-      }
+      // If normal table then set uuid to ""
+      val uuid = "";
       val segments = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
-        .getValidAndInvalidSegments(table.isChildTable).getValidSegments
+        .getValidAndInvalidSegments(table.isChildTableForMV).getValidSegments
       // First drop the partitions from partition mapper files of each segment
       val tuples = new CarbonDropPartitionRDD(sparkSession,
         table.getTablePath,

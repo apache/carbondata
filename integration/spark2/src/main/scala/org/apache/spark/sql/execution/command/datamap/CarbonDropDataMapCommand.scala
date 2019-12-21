@@ -24,7 +24,6 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
-import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException
@@ -33,7 +32,6 @@ import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapProvider}
@@ -132,48 +130,7 @@ case class CarbonDropDataMapCommand(
           }
         }
 
-        // drop preaggregate datamap.
-        // If datamap to be dropped in parent table then drop the datamap from metastore and remove
-        // entry from parent table.
-        // If force drop is true then remove the datamap from hivemetastore. No need to remove from
-        // parent as the first condition would have taken care of it.
-        if (mainTable != null && mainTable.getTableInfo.getDataMapSchemaList.size() > 0) {
-          val dataMapSchemaOp = mainTable.getTableInfo.getDataMapSchemaList.asScala.zipWithIndex.
-            find(_._1.getDataMapName.equalsIgnoreCase(dataMapName))
-          if (dataMapSchemaOp.isDefined) {
-            dataMapSchema = dataMapSchemaOp.get._1
-            val operationContext = new OperationContext
-            val dropDataMapPreEvent =
-              DropDataMapPreEvent(
-                Some(dataMapSchema),
-                ifExistsSet,
-                sparkSession)
-            OperationListenerBus.getInstance.fireEvent(dropDataMapPreEvent, operationContext)
-            mainTable.getTableInfo.getDataMapSchemaList.remove(dataMapSchemaOp.get._2)
-            val schemaConverter = new ThriftWrapperSchemaConverterImpl
-            PreAggregateUtil.updateSchemaInfo(
-              mainTable,
-              schemaConverter.fromWrapperToExternalTableInfo(
-                mainTable.getTableInfo,
-                dbName,
-                tableName))(sparkSession)
-            if (dataMapProvider == null) {
-              dataMapProvider =
-                DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
-            }
-            dataMapProvider.cleanMeta()
-
-            // fires the event after dropping datamap from main table schema
-            val dropDataMapPostEvent =
-              DropDataMapPostEvent(
-                Some(dataMapSchema),
-                ifExistsSet,
-                sparkSession)
-            OperationListenerBus.getInstance.fireEvent(dropDataMapPostEvent, operationContext)
-          } else if (!ifExistsSet) {
-            throw new NoSuchDataMapException(dataMapName, tableName)
-          }
-        } else if (!ifExistsSet) {
+        if (!ifExistsSet) {
           throw new NoSuchDataMapException(dataMapName)
         }
       } catch {

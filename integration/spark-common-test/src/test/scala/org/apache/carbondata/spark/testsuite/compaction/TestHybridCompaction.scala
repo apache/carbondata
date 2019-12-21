@@ -232,31 +232,4 @@ class TestHybridCompaction extends QueryTest with BeforeAndAfterEach with Before
       Array("20", "23", "37", "39", "42", "44", "54", "54", "60", "61"))
   }
 
-
-  test("PREAGG") {
-    loadSortedData()
-    loadUnsortedData()
-    val datamapName = "d1"
-    val tableNameDatamapName = tableName + "_" + datamapName
-
-    sql(
-      s"""
-         | CREATE DATAMAP $datamapName
-         | ON TABLE $tableName
-         | USING 'preaggregate'
-         | AS
-         |   SELECT AVG(age), state
-         |   FROM $tableName
-         |   GROUP BY state
-      """.stripMargin)
-
-    loadSortedData()
-    loadUnsortedData()
-
-    sql(s"ALTER TABLE $tableName COMPACT 'major'")
-    val out = sql(s"SELECT * FROM $tableNameDatamapName").collect()
-    out.map(_.get(2).toString) should equal(
-      Array("AL", "CT", "IA", "KS", "ME", "MT", "ND", "WA"))
-  }
-
 }

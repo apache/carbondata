@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command.indexserver
+package org.apache.spark.sql.listeners
 
 import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DistributableDataMapFormat, Segment}
-import org.apache.carbondata.events.{Event, IndexServerLoadEvent,
-  OperationContext, OperationEventListener}
+import org.apache.carbondata.core.datamap.DistributableDataMapFormat
+import org.apache.carbondata.events.{Event, IndexServerLoadEvent, OperationContext, OperationEventListener}
 import org.apache.carbondata.indexserver.IndexServer
 
 // Listener for the PrePriming Event. This listener calls the index server using an Asynccall

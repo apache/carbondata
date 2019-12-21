@@ -353,7 +353,7 @@ public final class CarbonDataMergerUtil {
           loadMetadataDetails.setMajorCompacted("true");
         }
 
-        if (carbonTable.isChildTable()) {
+        if (carbonTable.isChildTableForMV()) {
           // If table is child table, then get segment mapping and set to extraInfo
           DataMapSchema dataMapSchema = null;
           try {
@@ -946,18 +946,14 @@ public final class CarbonDataMergerUtil {
 
   /**
    * This method returns the valid segments attached to the table Identifier.
-   *
-   * @param absoluteTableIdentifier
-   * @return
    */
-  public static List<Segment> getValidSegmentList(AbsoluteTableIdentifier absoluteTableIdentifier,
-      Boolean isChildTable)
+  public static List<Segment> getValidSegmentList(CarbonTable carbonTable)
           throws IOException {
 
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments = null;
     try {
-      validAndInvalidSegments = new SegmentStatusManager(absoluteTableIdentifier)
-          .getValidAndInvalidSegments(isChildTable);
+      validAndInvalidSegments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
+          .getValidAndInvalidSegments(carbonTable.isChildTableForMV());
     } catch (IOException e) {
       LOGGER.error("Error while getting valid segment list for a table identifier");
       throw new IOException();

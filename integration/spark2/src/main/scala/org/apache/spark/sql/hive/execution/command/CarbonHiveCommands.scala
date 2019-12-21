@@ -96,10 +96,6 @@ object CarbonSetCommand {
           "property should be in \" carbon.input.segments.<database_name>" +
           ".<table_name>=<seg_id list> \" format.")
       }
-    } else if (key.startsWith(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS)) {
-      sessionParams.addProperty(key.toLowerCase(), value)
-    } else if (key.startsWith(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING)) {
-      sessionParams.addProperty(key.toLowerCase(), value)
     } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
       if (key.split("\\.").length == 6) {
         val keyArray = key.split("\\.")

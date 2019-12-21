@@ -37,23 +37,13 @@ object CompactionFactory {
       storeLocation: String,
       mergedLoads: java.util.List[String],
       operationContext: OperationContext): Compactor = {
-    if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap) {
-      new AggregateDataMapCompactor(
-        carbonLoadModel,
-        compactionModel,
-        executor,
-        sqlContext,
-        storeLocation,
-        operationContext)
-    } else {
-      new CarbonTableCompactor(
-        carbonLoadModel,
-        compactionModel,
-        executor,
-        sqlContext,
-        storeLocation,
-        mergedLoads,
-        operationContext)
-    }
+    new CarbonTableCompactor(
+      carbonLoadModel,
+      compactionModel,
+      executor,
+      sqlContext,
+      storeLocation,
+      mergedLoads,
+      operationContext)
   }
 }

@@ -27,11 +27,9 @@ import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTa
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
 import org.apache.spark.sql.execution.command.cache._
-import org.apache.spark.sql.execution.command.indexserver.PrePrimingEventListener
-import org.apache.spark.sql.execution.command.mv._
-import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
+import org.apache.spark.sql.listeners.{AlterDataMaptableCompactionPostListener, DataMapAddColumnsPreListener, DataMapAlterTableDropPartitionMetaListener, DataMapAlterTableDropPartitionPreStatusListener, DataMapChangeDataTypeorRenameColumnPreListener, DataMapDeleteSegmentPreListener, DataMapDropColumnPreListener, DropCacheBloomEventListener, DropCacheDataMapEventListener, LoadMVTablePreListener, LoadPostDataMapListener, PrePrimingEventListener, ShowCacheDataMapEventListener, ShowCachePreMVEventListener}
 import org.apache.spark.sql.profiler.Profiler
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -75,13 +73,9 @@ class CarbonEnv {
     LOGGER.info(s"Initializing CarbonEnv, store location: $storePath")
 
     sparkSession.udf.register("getTupleId", () => "")
-    // added for handling preaggregate table creation. when user will fire create ddl for
+    // added for handling MV table creation. when user will fire create ddl for
     // create table we are adding a udf so no need to apply PreAggregate rules.
-    sparkSession.udf.register("preAgg", () => "")
-    // added to apply proper rules for loading data into pre-agg table. If this UDF is present
-    // only then the CarbonPreAggregateDataLoadingRules would be applied to split the average
-    // column to sum and count.
-    sparkSession.udf.register("preAggLoad", () => "")
+    sparkSession.udf.register(CarbonEnv.MV_SKIP_RULE_UDF, () => "")
 
     // register for lucene datamap
     // TODO: move it to proper place, it should be registered by datamap implementation
@@ -166,6 +160,8 @@ class CarbonEnv {
 
 object CarbonEnv {
 
+  lazy val MV_SKIP_RULE_UDF = "mv"
+
   val carbonEnvMap = new ConcurrentHashMap[SparkSession, CarbonEnv]
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -200,32 +196,10 @@ object CarbonEnv {
    */
   def initListeners(): Unit = {
     OperationListenerBus.getInstance()
-      .addListener(classOf[LoadTablePreStatusUpdateEvent], LoadPostAggregateListener)
-      .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
-      .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
-      .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
-      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
-      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
       .addListener(classOf[IndexServerLoadEvent], PrePrimingEventListener)
-      .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
-      .addListener(classOf[AlterTableRenamePreEvent], RenameTablePreListener)
-      .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
-        PreAggregateDataTypeChangePreListener)
-      .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
-      .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
-      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
-        AlterPreAggregateTableCompactionPostListener)
+      .addListener(classOf[LoadTablePreExecutionEvent], LoadMVTablePreListener)
       .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
         AlterDataMaptableCompactionPostListener)
-      .addListener(classOf[LoadMetadataEvent], LoadProcessMetaListener)
-      .addListener(classOf[LoadMetadataEvent], CompactionProcessMetaListener)
-      .addListener(classOf[LoadTablePostStatusUpdateEvent], CommitPreAggregateListener)
-      .addListener(classOf[AlterTableCompactionPostStatusUpdateEvent], CommitPreAggregateListener)
-      .addListener(classOf[AlterTableDropPartitionPreStatusEvent],
-        AlterTableDropPartitionPreStatusListener)
-      .addListener(classOf[AlterTableDropPartitionPostStatusEvent],
-        AlterTableDropPartitionPostStatusListener)
-      .addListener(classOf[AlterTableDropPartitionMetaEvent], AlterTableDropPartitionMetaListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new MergeIndexEventListener)
       .addListener(classOf[LoadTablePostExecutionEvent], LoadPostDataMapListener)
       .addListener(classOf[UpdateTablePostEvent], LoadPostDataMapListener )
@@ -234,7 +208,7 @@ object CarbonEnv {
       .addListener(classOf[BuildDataMapPostExecutionEvent], new MergeBloomIndexEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheDataMapEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheBloomEventListener)
-      .addListener(classOf[ShowTableCacheEvent], ShowCachePreAggEventListener)
+      .addListener(classOf[ShowTableCacheEvent], ShowCachePreMVEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCacheDataMapEventListener)
       .addListener(classOf[DeleteSegmentByIdPreEvent], DataMapDeleteSegmentPreListener)
       .addListener(classOf[DeleteSegmentByDatePreEvent], DataMapDeleteSegmentPreListener)

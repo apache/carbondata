@@ -69,7 +69,7 @@ case class CarbonDropTableCommand(
                 CarbonLockUtil.getLockObject(identifier, lock)
       }
       // check for directly drop datamap table
-      if (carbonTable.isChildTable && !dropChildTable) {
+      if (carbonTable.isChildTableForMV && !dropChildTable) {
         if (!ifExistsSet) {
           throwMetadataException(dbName, tableName,
             "Child table which is associated with datamap cannot be dropped, " +
@@ -223,7 +223,7 @@ case class CarbonDropTableCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     // clear driver side index and dictionary cache
-    if (carbonTable != null && !(carbonTable.isChildTable && !dropChildTable)) {
+    if (carbonTable != null && !(carbonTable.isChildTableForMV && !dropChildTable)) {
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
       // delete the table folder
       val tablePath = carbonTable.getTablePath

@@ -244,22 +244,6 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     sql("drop table if exists bloomtable")
   }
 
-  test("test rename column on table where preagg exists") {
-    sql("DROP TABLE IF EXISTS maintable")
-    sql(
-      """
-        | CREATE TABLE maintable(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-    sql(
-      s"""create datamap preagg_avg on table maintable using 'preaggregate' as select id,avg(age) from maintable group by id"""
-        .stripMargin)
-    intercept[Exception] {
-      sql("alter table maintable change id ids int")
-    }
-    sql("DROP TABLE IF EXISTS maintable")
-  }
-
   test("test rename on complex column") {
     sql("drop table if exists complex")
     sql(

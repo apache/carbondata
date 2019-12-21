@@ -80,7 +80,7 @@ object IndexDataMapRebuildRDD {
     val tableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val segmentStatusManager = new SegmentStatusManager(tableIdentifier)
     val validAndInvalidSegments = segmentStatusManager
-      .getValidAndInvalidSegments(carbonTable.isChildTable)
+      .getValidAndInvalidSegments(carbonTable.isChildTableForMV)
     val validSegments = validAndInvalidSegments.getValidSegments
     val indexedCarbonColumns = carbonTable.getIndexedColumns(schema)
     val operationContext = new OperationContext()

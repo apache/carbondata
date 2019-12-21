@@ -90,10 +90,6 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
     DataUpdateDeleteExample.exampleBody(spark)
   }
 
-  test("PreAggregateDataMapExample") {
-    PreAggregateDataMapExample.exampleBody(spark)
-  }
-
   test("QuerySegmentExample") {
     QuerySegmentExample.exampleBody(spark)
   }
@@ -104,10 +100,6 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
 
   test("TableLevelCompactionOptionExample") {
     TableLevelCompactionOptionExample.exampleBody(spark)
-  }
-
-  test("TimeSeriesPreAggregateTableExample") {
-    TimeSeriesPreAggregateTableExample.exampleBody(spark)
   }
 
   test("LuceneDataMapExample") {

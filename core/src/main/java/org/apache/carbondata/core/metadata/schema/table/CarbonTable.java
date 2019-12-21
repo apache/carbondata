@@ -861,21 +861,6 @@ public class CarbonTable implements Serializable, Writable {
     return streaming != null && streaming.equalsIgnoreCase("source");
   }
 
-  /**
-   * whether this table has aggregation DataMap or not
-   */
-  public boolean hasAggregationDataMap() {
-    List<DataMapSchema> dataMapSchemaList = tableInfo.getDataMapSchemaList();
-    if (dataMapSchemaList != null && !dataMapSchemaList.isEmpty()) {
-      for (DataMapSchema dataMapSchema : dataMapSchemaList) {
-        if (dataMapSchema instanceof AggregationDataMapSchema) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   public int getDimensionOrdinalMax() {
     return dimensionOrdinalMax;
   }
@@ -894,12 +879,7 @@ public class CarbonTable implements Serializable, Writable {
     return null;
   }
 
-  public boolean isChildDataMap() {
-    return null != tableInfo.getParentRelationIdentifiers() && !tableInfo
-        .getParentRelationIdentifiers().isEmpty();
-  }
-
-  public boolean isChildTable() {
+  public boolean isChildTableForMV() {
     return null != tableInfo.getFactTable().getTableProperties()
         .get(CarbonCommonConstants.PARENT_TABLES) && !tableInfo.getFactTable().getTableProperties()
         .get(CarbonCommonConstants.PARENT_TABLES).isEmpty();

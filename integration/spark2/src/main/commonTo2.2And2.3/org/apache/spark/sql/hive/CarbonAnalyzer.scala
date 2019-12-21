@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.hive
 
 import org.apache.spark.sql.SparkSession
@@ -39,9 +40,7 @@ class CarbonAnalyzer(catalog: SessionCatalog,
   }
 
   override def execute(plan: LogicalPlan): LogicalPlan = {
-    var logicalPlan = analyzer.execute(plan)
-    logicalPlan = CarbonPreAggregateDataLoadingRules(sparkSession).apply(logicalPlan)
-    logicalPlan = CarbonPreAggregateQueryRules(sparkSession).apply(logicalPlan)
+    val logicalPlan = analyzer.execute(plan)
     if (mvPlan != null) {
       mvPlan.apply(logicalPlan)
     } else {

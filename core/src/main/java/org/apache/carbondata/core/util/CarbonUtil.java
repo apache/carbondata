@@ -88,9 +88,7 @@ import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
-import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
@@ -2711,38 +2709,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * Utility function to check whether table has timseries datamap or not
-   * @param carbonTable
-   * @return timeseries data map present
-   */
-  public static boolean hasTimeSeriesDataMap(CarbonTable carbonTable) {
-    List<DataMapSchema> dataMapSchemaList = carbonTable.getTableInfo().getDataMapSchemaList();
-    for (DataMapSchema dataMapSchema : dataMapSchemaList) {
-      if (dataMapSchema instanceof AggregationDataMapSchema) {
-        if (((AggregationDataMapSchema) dataMapSchema).isTimeseriesDataMap()) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Utility function to check whether table has aggregation datamap or not
-   * @param carbonTable
-   * @return timeseries data map present
-   */
-  public static boolean hasAggregationDataMap(CarbonTable carbonTable) {
-    List<DataMapSchema> dataMapSchemaList = carbonTable.getTableInfo().getDataMapSchemaList();
-    for (DataMapSchema dataMapSchema : dataMapSchemaList) {
-      if (dataMapSchema instanceof AggregationDataMapSchema) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
    * Convert the bytes to base64 encode string
    * @param bytes
    * @return
@@ -3199,7 +3165,7 @@ public final class CarbonUtil {
       SegmentStatusManager segmentStatusManager =
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
       SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
-          segmentStatusManager.getValidAndInvalidSegments(carbonTable.isChildTable());
+          segmentStatusManager.getValidAndInvalidSegments(carbonTable.isChildTableForMV());
       List<Segment> validSegments = validAndInvalidSegmentsInfo.getValidSegments();
       if (validSegments.isEmpty()) {
         return carbonProperties.getFormatVersion();

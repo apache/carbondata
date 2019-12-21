@@ -81,7 +81,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
       throw new MalformedCarbonCommandException("alter rename is not supported for index datamap")
     }
     // if table have create mv datamap, not support table rename
-    if (DataMapUtil.hasMVDataMap(oldCarbonTable) || oldCarbonTable.isChildTable) {
+    if (DataMapUtil.hasMVDataMap(oldCarbonTable) || oldCarbonTable.isChildTableForMV) {
       throw new MalformedCarbonCommandException(
         "alter rename is not supported for datamap table or for tables which have child datamap")
     }

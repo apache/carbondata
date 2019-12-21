@@ -123,7 +123,7 @@ case class CarbonShowCacheCommand(tableIdentifier: Option[TableIdentifier],
       tableIdent =>
         try {
           val carbonTable = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
-          if (!carbonTable.isChildDataMap && !carbonTable.isChildTable) {
+          if (!carbonTable.isChildTableForMV) {
             carbonTables += carbonTable
           }
         } catch {

@@ -287,9 +287,7 @@ class CarbonAnalyzer(catalog: SessionCatalog,
   }
 
   override def execute(plan: LogicalPlan): LogicalPlan = {
-    var logicalPlan = analyzer.execute(plan)
-    logicalPlan = CarbonPreAggregateDataLoadingRules(sparkSession).apply(logicalPlan)
-    CarbonPreAggregateQueryRules(sparkSession).apply(logicalPlan)
+    val logicalPlan = analyzer.execute(plan)
     if (mvPlan != null) {
       mvPlan.apply(logicalPlan)
     } else {

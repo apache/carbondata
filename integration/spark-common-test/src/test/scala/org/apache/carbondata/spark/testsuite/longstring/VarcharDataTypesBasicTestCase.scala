@@ -304,66 +304,6 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
       CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
   }
 
-  test("Create datamap with long string column selected") {
-    val datamapName = "pre_agg_dm"
-    prepareTable()
-    sql(
-      s"""
-         | CREATE DATAMAP $datamapName ON TABLE $longStringTable
-         | USING 'preaggregate'
-         | DMPROPERTIES('LONG_STRING_COLUMNS'='description, note')
-         | AS SELECT id,description,note,count(*) FROM $longStringTable
-         | GROUP BY id,description,note
-         |""".
-        stripMargin)
-
-    val parentTable = CarbonMetadata.getInstance().getCarbonTable("default", longStringTable)
-    assert(null != parentTable)
-    val dmSchemaList = parentTable.getTableInfo.getDataMapSchemaList
-    assert(dmSchemaList.size() == 1)
-    assert(dmSchemaList.get(0).getDataMapName.equalsIgnoreCase(datamapName))
-
-    val dmTableName = longStringTable + "_" + datamapName
-    val dmTable = CarbonMetadata.getInstance().getCarbonTable("default", dmTableName)
-    assert(null != dmTable)
-    assert(dmTable.getColumnByName(longStringTable + "_description").getDataType
-      == DataTypes.VARCHAR)
-    assert(dmTable.getColumnByName(longStringTable + "_note").getDataType
-      == DataTypes.VARCHAR)
-    sql(s"DROP DATAMAP IF EXISTS $datamapName ON TABLE $longStringTable")
-  }
-
-  test("creating datamap with long string column selected and loading data should be success") {
-
-    sql(s"drop table if exists $longStringTable")
-    val datamapName = "pre_agg_dm"
-    sql(
-      s"""
-         | CREATE TABLE if not exists $longStringTable(
-         | id INT, name STRING, description STRING, address STRING, note STRING
-         | ) STORED BY 'carbondata'
-         | TBLPROPERTIES('LONG_STRING_COLUMNS'='description, note', 'SORT_COLUMNS'='name')
-         |""".stripMargin)
-
-    sql(
-      s"""
-         | CREATE DATAMAP $datamapName ON TABLE $longStringTable
-         | USING 'preaggregate'
-         | AS SELECT id,description,note,count(*) FROM $longStringTable
-         | GROUP BY id,description,note
-         |""".
-        stripMargin)
-
-    sql(
-      s"""
-         | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $longStringTable
-         | OPTIONS('header'='false')
-       """.stripMargin)
-
-    checkAnswer(sql(s"select count(*) from $longStringTable"), Row(1000))
-    sql(s"drop table if exists $longStringTable")
-  }
-
   test("create table with varchar column and complex column") {
     sql("DROP TABLE IF EXISTS varchar_complex_table")
     sql("""

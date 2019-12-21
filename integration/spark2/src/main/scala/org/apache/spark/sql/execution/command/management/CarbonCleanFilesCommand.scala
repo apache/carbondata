@@ -63,16 +63,7 @@ case class CarbonCleanFilesCommand(
     setAuditInfo(Map(
       "force" -> forceTableClean.toString,
       "internal" -> isInternalCleanCall.toString))
-    if (carbonTable.hasAggregationDataMap) {
-      cleanFileCommands = carbonTable.getTableInfo.getDataMapSchemaList.asScala.map {
-        dataMapSchema =>
-          val relationIdentifier = dataMapSchema.getRelationIdentifier
-          CarbonCleanFilesCommand(
-            Some(relationIdentifier.getDatabaseName), Some(relationIdentifier.getTableName),
-            isInternalCleanCall = true)
-      }.toList
-      cleanFileCommands.foreach(_.processMetadata(sparkSession))
-    } else if (DataMapUtil.hasMVDataMap(carbonTable)) {
+    if (DataMapUtil.hasMVDataMap(carbonTable)) {
       val allDataMapSchemas = DataMapStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
         .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
@@ -85,10 +76,6 @@ case class CarbonCleanFilesCommand(
             isInternalCleanCall = true)
       }.toList
       cleanFileCommands.foreach(_.processMetadata(sparkSession))
-    } else if (carbonTable.isChildDataMap && !isInternalCleanCall) {
-      throwMetadataException(
-        carbonTable.getDatabaseName, carbonTable.getTableName,
-        "Cannot clean files directly for aggregate table.")
     }
     Seq.empty
   }

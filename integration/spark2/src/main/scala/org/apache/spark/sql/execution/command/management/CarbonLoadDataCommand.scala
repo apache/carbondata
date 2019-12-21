@@ -135,17 +135,6 @@ case class CarbonLoadDataCommand(
         }.head
       sizeInBytes = logicalPartitionRelation.relation.sizeInBytes
     }
-    if (table.isChildDataMap) {
-      val parentTableIdentifier = table.getTableInfo.getParentRelationIdentifiers.get(0)
-      parentTablePath = CarbonEnv
-        .getCarbonTable(Some(parentTableIdentifier.getDatabaseName),
-          parentTableIdentifier.getTableName)(sparkSession).getTablePath
-    }
-    operationContext.setProperty("isOverwrite", isOverwriteTable)
-    if(CarbonUtil.hasAggregationDataMap(table)) {
-      val loadMetadataEvent = new LoadMetadataEvent(table, false, options.asJava)
-      OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
-    }
     Seq.empty
   }
 
@@ -270,16 +259,7 @@ case class CarbonLoadDataCommand(
     LOGGER.info(s"Deleting stale folders if present for table $dbName.$tableName")
     TableProcessingOperations.deletePartialLoadDataIfExist(table, false)
     var isUpdateTableStatusRequired = false
-    // if the table is child then extract the uuid from the operation context and the parent would
-    // already generated UUID.
-    // if parent table then generate a new UUID else use empty.
-    val uuid = if (table.isChildDataMap) {
-      Option(operationContext.getProperty("uuid")).getOrElse("").toString
-    } else if (table.hasAggregationDataMap) {
-      UUID.randomUUID().toString
-    } else {
-      ""
-    }
+    val uuid = ""
     try {
       operationContext.setProperty("uuid", uuid)
       val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
@@ -390,7 +370,7 @@ case class CarbonLoadDataCommand(
       case ex: Exception =>
         LOGGER.error(ex)
         // update the load entry in table status file for changing the status to marked for delete
-        if (isUpdateTableStatusRequired && !table.isChildDataMap) {
+        if (isUpdateTableStatusRequired) {
           CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
         }
         throw ex
@@ -963,8 +943,7 @@ case class CarbonLoadDataCommand(
     }
     // Rearrange the partition column at the end of output list
     if (catalogTable.partitionColumnNames.nonEmpty &&
-        (loadModel.getCarbonDataLoadSchema.getCarbonTable.isChildTable ||
-         loadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap) && output.nonEmpty) {
+        (loadModel.getCarbonDataLoadSchema.getCarbonTable.isChildTableForMV) && output.nonEmpty) {
       val partitionOutPut =
         catalogTable.partitionColumnNames.map(col => output.find(_.name.equalsIgnoreCase(col)).get)
       output = output.filterNot(partitionOutPut.contains(_)) ++ partitionOutPut

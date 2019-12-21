@@ -517,11 +517,6 @@ object CarbonFilters {
     if (!carbonTable.isHivePartitionTable) {
       return None
     }
-    // first try to read partitions in case if the trigger comes from the aggregation table load.
-    val partitionsForAggTable = getPartitionsForAggTable(sparkSession, carbonTable)
-    if (partitionsForAggTable.isDefined) {
-      return partitionsForAggTable
-    }
     val partitions = {
       try {
         if (CarbonProperties.getInstance().
@@ -553,39 +548,5 @@ object CarbonFilters {
           column + "=" + value}.toList.asJava), partition.location)
     })
   }
-
-  /**
-   * In case of loading aggregate tables it needs to be get only from the main table load in
-   * progress segment. So we should read from the segment file of that segment
-   */
-  def getPartitionsForAggTable(sparkSession: SparkSession,
-      table: CarbonTable): Option[Seq[PartitionSpec]] = {
-    // when validate segments is disabled then only read from partitionmap
-    val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (carbonSessionInfo != null) {
-      val validateSegments = carbonSessionInfo.getThreadParams
-        .getProperty(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-                     table.getDatabaseName + "." +
-                     table.getTableName, "true").toBoolean
-      if (!validateSegments) {
-        val segmentNumbersFromProperty = carbonSessionInfo.getThreadParams
-          .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-                       table.getDatabaseName + "." + table.getTableName, "*")
-        // In case of compaction multiple segments will be passed as CARBON_INPUT_SEGMENTS.
-        // Therefore partitionSpec will be extracted from all segments.
-        val segments = segmentNumbersFromProperty.split(",").flatMap { a =>
-          val segment = Segment.toSegment(a, null)
-          val segmentFile = new SegmentFileStore(table.getTablePath, segment.getSegmentFileName)
-          segmentFile.getPartitionSpecs.asScala
-        }
-        Some(segments.toSet.toSeq)
-      } else {
-        None
-      }
-    } else {
-      None
-    }
-  }
-
 
 }

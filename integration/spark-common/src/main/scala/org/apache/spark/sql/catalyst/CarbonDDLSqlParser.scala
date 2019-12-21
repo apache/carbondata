@@ -290,7 +290,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       tableProperties: Map[String, String],
       bucketFields: Option[BucketFields],
       isAlterFlow: Boolean = false,
-      isPreAggFlow: Boolean = false,
       tableComment: Option[String] = None): TableModel = {
 
     // do not allow below key words as column name
@@ -349,11 +348,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // validate the local dictionary columns defined, this we will validated if the local dictionary
     // is enabled, else it is not validated
-    // if it is preaggregate flow no need to validate anything, as all the properties will be
-    // inherited from parent table
     if ((tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).isDefined &&
           tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).trim
-            .equalsIgnoreCase("true")) && !isPreAggFlow) {
+            .equalsIgnoreCase("true"))) {
       var localDictIncludeColumns: Seq[String] = Seq[String]()
       var localDictExcludeColumns: Seq[String] = Seq[String]()
       val isLocalDictIncludeDefined = tableProperties
@@ -1297,16 +1294,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         Field(e1, e2.dataType, Some(e1), e2.children, null, e3)
     }
 
-  lazy val addPreAgg: Parser[String] =
+  lazy val addMVSkipUDF: Parser[String] =
     SELECT ~> restInput <~ opt(";") ^^ {
       case query =>
-        "select preAGG() as preAgg, " + query
-    }
-
-  lazy val addPreAggLoad: Parser[String] =
-    SELECT ~> restInput <~ opt(";") ^^ {
-      case query =>
-        "select preAggLoad() as preAggLoad, " + query
+        "select mv() as mv, " + query
     }
 
   protected lazy val primitiveFieldType: Parser[Field] =

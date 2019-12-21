@@ -152,21 +152,6 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     dropTable(table)
   }
 
-  test("test if delete segments by id is unsupported for pre-aggregate tables") {
-    dropTable("preaggMain")
-    dropTable("preaggMain_preagg1")
-    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
-    sql("create datamap preagg1 on table PreAggMain using 'preaggregate' as select a,sum(b) from PreAggMain group by a")
-    intercept[UnsupportedOperationException] {
-      sql("delete from table preaggMain where segment.id in (1,2)")
-    }.getMessage.contains("Delete segment operation is not supported on tables")
-    intercept[UnsupportedOperationException] {
-      sql("delete from table preaggMain_preagg1 where segment.id in (1,2)")
-    }.getMessage.contains("Delete segment operation is not supported on pre-aggregate tables")
-    dropTable("preaggMain")
-    dropTable("preagg1")
-  }
-
   test("separate visible and invisible segments info into two files") {
     val tableName = "test_tablestatus_history"
     sql(s"drop table if exists ${tableName}")

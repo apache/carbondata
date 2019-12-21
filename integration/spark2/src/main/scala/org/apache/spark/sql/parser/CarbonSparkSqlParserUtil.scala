@@ -215,7 +215,6 @@ object CarbonSparkSqlParserUtil {
         tableProperties,
         bucketFields,
         isAlterFlow = false,
-        false,
         tableComment)
       TableNewProcessor(tableModel)
     }

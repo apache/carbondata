@@ -662,20 +662,6 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     checkExistence(df, true, "Inverted Index Columns city, col2")
   }
 
-  test("test if adding column in pre-aggregate table throws exception") {
-    sql("drop table if exists preaggMain")
-    sql("drop table if exists preagg1")
-    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
-    sql(
-      "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
-      " a,sum(b) from PreAggMain group by a")
-    assert(intercept[ProcessMetaDataException] {
-      sql("alter table preaggmain_preagg1 add columns(d string)")
-    }.getMessage.contains("Cannot add columns"))
-    sql("drop table if exists preaggMain")
-    sql("drop table if exists preagg1")
-  }
-
   test("test rename textFileTable") {
     sql("drop table if exists renameTextFileTable")
     sql("drop table if exists new_renameTextFileTable")

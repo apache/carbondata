@@ -539,24 +539,6 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"Sort Columns empno, empname, role, doj")
   }
 
-  test("test to check if new parent table name is reflected in pre-aggregate tables") {
-    sql("drop table if exists preaggMain")
-    sql("drop table if exists preaggmain_new")
-    sql("drop table if exists preaggMain_preagg1")
-    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
-    sql(
-      "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
-      " a,sum(b) from PreAggMain group by a")
-    assert(intercept[ProcessMetaDataException] {
-      sql("alter table preAggmain_preagg1 rename to preagg2")
-    }.getMessage.contains("Rename operation for datamaps is not supported."))
-    assert(intercept[ProcessMetaDataException] {
-      sql("alter table preaggmain rename to preaggmain_new")
-    }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables"))
-    sql("drop table if exists preaggMain")
-    sql("drop table if exists preaggmain_new")
-    sql("drop table if exists preaggMain_preagg1")
-  }
   test("test to check select columns after alter commands with null values"){
     sql("drop table if exists restructure")
     sql("drop table if exists restructure1")

@@ -827,23 +827,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     assertResult("Cannot use struct<b:int> for partition column;")(structException.getMessage)
   }
 
-  test("test block preaggregate") {
-    sql("DROP TABLE IF EXISTS test")
-    sql("create table test(id int,a struct<b:int>) stored by 'carbondata'")
-    sql("insert into test values(1, named_struct('b', 2))")
-    sql("insert into test values(1, named_struct('b', 2))")
-    sql("insert into test values(1, named_struct('b', 2))")
-    val structException = intercept[UnsupportedOperationException](
-      sql("create datamap preagg_sum on table test using 'preaggregate' as select id,sum(a.b) from test group by id"))
-    assertResult("Preaggregate is unsupported for ComplexData type column: a.b")(structException.getMessage)
-    sql("DROP TABLE IF EXISTS test")
-    sql("create table test(id int,a array<int>) stored by 'carbondata'")
-    sql("insert into test values(1, array(2))")
-    val arrayException = intercept[UnsupportedOperationException](
-      sql("create datamap preagg_sum on table test using 'preaggregate' as select id,sum(a[0]) from test group by id"))
-    assertResult("Preaggregate is unsupported for ComplexData type column: a[0]")(arrayException.getMessage)
-  }
-
   test("test block dictionary exclude for child column") {
     sql("DROP TABLE IF EXISTS table1")
     sql(

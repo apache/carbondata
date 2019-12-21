@@ -261,7 +261,7 @@ public class DataMapUtil {
       CarbonTable carbonTable, Configuration configuration) throws IOException {
     SegmentStatusManager ssm =
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(), configuration);
-    return ssm.getValidAndInvalidSegments(carbonTable.isChildTable());
+    return ssm.getValidAndInvalidSegments(carbonTable.isChildTableForMV());
   }
 
   /**

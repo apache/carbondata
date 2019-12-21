@@ -392,22 +392,6 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
     sql("drop table if exists negativeTable")
   }
 
-  test("test preaggregate datamap on the adaptive encoded column") {
-    sql("drop table if exists negativeTable")
-    sql("create table negativeTable (intColumn int,stringColumn string,shortColumn short) stored by 'carbondata' TBLPROPERTIES('SORT_COLUMNS'='intColumn,shortColumn')")
-    sql(s"load data inpath '${resourcesPath + "/dataWithNegativeValues.csv"}' into table negativeTable options('FILEHEADER'='intColumn,stringColumn,shortColumn')")
-    // create preagg datamap on the encoded column
-    sql("create datamap negativeTable_preAgg1 on table negativeTable USING 'preaggregate' AS select count(intColumn),sum(intColumn) from negativeTable")
-    sql("create datamap negativeTable_preAgg2 on table negativeTable USING 'preaggregate' AS select count(shortColumn),sum(shortColumn) from negativeTable")
-    checkAnswer(sql("select * from negativeTable"), sql("select * from negativeTable_Compare"))
-    checkAnswer(sql("select count(intColumn),sum(intColumn) from negativeTable"),
-      Seq(Row(6, 20000)))
-    checkAnswer(sql("select count(shortColumn),sum(shortColumn) from negativeTable"),
-      Seq(Row(6, 200)))
-    sql("drop table if exists negativeTable")
-  }
-
-
   override def afterAll: Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
