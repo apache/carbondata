@@ -353,7 +353,8 @@ private class CarbonOutputWriter(path: String,
   def writeCarbon(row: InternalRow): Unit = {
     val data = new Array[AnyRef](fieldTypes.length + partitionData.length)
     var i = 0
-    while (i < fieldTypes.length) {
+    val fieldTypesLen = fieldTypes.length
+    while (i < fieldTypesLen) {
       if (!row.isNullAt(i)) {
         fieldTypes(i) match {
           case StringType =>
@@ -367,7 +368,7 @@ private class CarbonOutputWriter(path: String,
       i += 1
     }
     if (partitionData.length > 0) {
-      System.arraycopy(partitionData, 0, data, fieldTypes.length, partitionData.length)
+      System.arraycopy(partitionData, 0, data, fieldTypesLen, partitionData.length)
     }
     writable.set(data)
     recordWriter.write(NullWritable.get(), writable)
