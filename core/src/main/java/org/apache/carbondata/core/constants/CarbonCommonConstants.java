@@ -1295,6 +1295,12 @@ public final class CarbonCommonConstants {
 
   public static final String ENABLE_VECTOR_READER_DEFAULT = "true";
 
+  /**
+   * In cloud object store scenario, overwriting table status file is not an atomic
+   * operation since it uses rename API. Thus, it is possible that table status is corrupted
+   * if process crashed when overwriting the table status file.
+   * To protect from file corruption, user can enable this property.
+   */
   @CarbonProperty(dynamicConfigurable = true)
   public static final String ENABLE_TABLE_STATUS_BACKUP = "carbon.enable.tablestatus.backup";
 
