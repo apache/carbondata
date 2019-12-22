@@ -17,6 +17,7 @@
 
 package org.apache.carbon.flink
 
+import java.io.File
 import java.util.Properties
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -26,8 +27,10 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-
 import org.junit.Test
+
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class TestCarbonWriter extends QueryTest {
 
@@ -43,12 +46,14 @@ class TestCarbonWriter extends QueryTest {
       """.stripMargin
     ).collect()
 
+    val rootPath = System.getProperty("user.dir") + "/target/test-classes"
+
+    val dataTempPath = rootPath + "/data/temp/"
+    val dataPath = rootPath + "/data/"
+    new File(dataPath).delete()
+    new File(dataPath).mkdir()
+
     try {
-      val rootPath = System.getProperty("user.dir") + "/target/test-classes"
-
-      val dataTempPath = rootPath + "/data/temp/"
-      val dataPath = rootPath + "/data/"
-
       val tablePath = storeLocation + "/" + tableName + "/"
 
       val writerProperties = newWriterProperties(dataTempPath, dataPath, storeLocation)
@@ -69,7 +74,7 @@ class TestCarbonWriter extends QueryTest {
 
         @throws[InterruptedException]
         override def onFinish(): Unit = {
-          Thread.sleep(10000L)
+          Thread.sleep(5000L)
         }
       }
       val stream = environment.addSource(source)
@@ -92,9 +97,17 @@ class TestCarbonWriter extends QueryTest {
           throw new UnsupportedOperationException(exception)
       }
 
-      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(0)))
+      sql(s"INSERT INTO $tableName STAGE")
+
+      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(10000)))
+
+      // ensure the stage snapshot file and all stage files are deleted
+      assertResult(false)(FileFactory.isFileExist(CarbonTablePath.getStageSnapshotFile(tablePath)))
+      assertResult(true)(FileFactory.getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
+
     } finally {
-//      sql(s"drop table if exists $tableName").collect()
+      sql(s"drop table if exists $tableName").collect()
+      new File(dataPath).delete()
     }
   }
 

@@ -21,6 +21,7 @@ CarbonData DML statements are documented here,which includes:
 
 * [LOAD DATA](#load-data)
 * [INSERT DATA](#insert-data-into-carbondata-table)
+* [INSERT DATA STAGE](#insert-data-into-carbondata-table-from-stage-input-files)
 * [Load Data Using Static Partition](#load-data-using-static-partition)
 * [Load Data Using Dynamic Partition](#load-data-using-dynamic-partition)
 * [UPDATE AND DELETE](#update-and-delete)
@@ -354,6 +355,22 @@ CarbonData DML statements are documented here,which includes:
 
   ```
   INSERT OVERWRITE TABLE table1 SELECT * FROM TABLE2
+  ```
+
+### INSERT DATA INTO CARBONDATA TABLE From Stage Input Files
+
+  Stage input files are data files written by external application (such as Flink). These files 
+  are committed but not loaded into the table. 
+  
+  You can use this command to insert them into the table, so that making them visible for query.
+  
+  ```
+  INSERT INTO <CARBONDATA TABLE> STAGE
+  ```
+
+  Examples:
+  ```
+  INSERT INTO table1 STAGE
   ```
 
 ### Load Data Using Static Partition 
