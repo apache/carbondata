@@ -77,7 +77,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
     datamapManagement | alterTableFinishStreaming | stream | cli |
-    cacheManagement | alterDataMap
+    cacheManagement | alterDataMap | insertStageData
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew | addLoad
@@ -456,6 +456,15 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")") <~ opt(";") ^^ {
       case dbName ~ tableName ~ segment ~ optionsList =>
         CarbonAddLoadCommand(dbName, tableName, optionsList.toMap)
+    }
+
+  /**
+   * INSERT INTO [dbName.]tableName STAGE
+   */
+  protected lazy val insertStageData: Parser[LogicalPlan] =
+    INSERT ~ INTO ~> (ident <~ ".").? ~ ident <~ STAGE <~ opt(";") ^^ {
+      case dbName ~ tableName =>
+        CarbonInsertFromStageCommand(dbName, tableName)
     }
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =

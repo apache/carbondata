@@ -428,7 +428,7 @@ public class CSVCarbonWriterTest {
           dataFile.getPath()), dataFile.getSize() - 8, 8);
       fileReader.finish();
       CarbonFooterReaderV3 footerReader =
-          new CarbonFooterReaderV3(dataFile.getAbsolutePath(), buffer.getLong());
+          new CarbonFooterReaderV3(dataFile.getAbsolutePath(), dataFile.getSize(), buffer.getLong());
       FileFooter3 footer = footerReader.readFooterVersion3();
       Assert.assertEquals(2, footer.blocklet_index_list.size());
       Assert.assertEquals(2, footer.blocklet_info_list3.size());

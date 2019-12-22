@@ -17,19 +17,30 @@
 
 package org.apache.carbondata.core.datastore.impl;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
+import org.apache.carbondata.core.fileoperations.FileWriteOperation;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 
 import org.apache.commons.io.FileUtils;
@@ -613,5 +624,57 @@ public final class FileFactory {
    */
   public static short getDefaultReplication(String path) {
     return getCarbonFile(path).getDefaultReplication();
+  }
+
+  /**
+   * Write content into specified file path
+   * @param content content to write
+   * @param filePath file path to write
+   * @throws IOException if IO errors
+   */
+  public static void writeFile(String content, String filePath) throws IOException {
+    AtomicFileOperations fileWrite = AtomicFileOperationFactory.getAtomicFileOperations(filePath);
+    BufferedWriter brWriter = null;
+    DataOutputStream dataOutputStream = null;
+    try {
+      dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
+      brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+      brWriter.write(content);
+    } catch (IOException ie) {
+      LOGGER.error("Error message: " + ie.getLocalizedMessage());
+      fileWrite.setFailed();
+      throw ie;
+    } finally {
+      try {
+        CarbonUtil.closeStreams(brWriter);
+      } finally {
+        fileWrite.close();
+      }
+    }
+  }
+
+  /**
+   * Read all lines in a specified file
+   *
+   * @param filePath file to read
+   * @param conf hadoop configuration
+   * @return file content
+   * @throws IOException if IO errors
+   */
+  public static List<String> readLinesInFile(
+      String filePath, Configuration conf) throws IOException {
+    DataInputStream fileReader = null;
+    BufferedReader bufferedReader = null;
+    try {
+      fileReader = FileFactory.getDataInputStream(filePath, -1, conf);
+      bufferedReader =
+          new BufferedReader(
+              new InputStreamReader(
+                  fileReader, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+      return bufferedReader.lines().collect(Collectors.toList());
+    } finally {
+      CarbonUtil.closeStreams(fileReader, bufferedReader);
+    }
   }
 }

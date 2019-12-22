@@ -291,7 +291,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public static CarbonInputSplit from(String segmentId, String blockletId, String path, long start,
-      long length, ColumnarFormatVersion version, String dataMapWritePath) throws IOException {
+      long length, ColumnarFormatVersion version, String dataMapWritePath) {
     return new CarbonInputSplit(segmentId, blockletId, path, start, length, version, null,
         dataMapWritePath);
   }
