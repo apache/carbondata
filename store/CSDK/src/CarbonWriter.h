@@ -96,6 +96,13 @@ public:
     void withCsvInput(char *jsonSchema);
 
     /**
+     * configure the schema
+     *
+     * @return updated CarbonWriterBuilder
+     */
+    void withCsvInput( );
+
+    /**
     * configure parameter, including ak,sk and endpoint
     *
     * @param key key word
@@ -186,6 +193,12 @@ public:
      * @return updated CarbonWriterBuilder
      */
     void withBlockletSize(int blockletSize);
+
+    /**
+     * To set the path of carbon schema file
+     * @param schemaFilePath The path of carbon schema file
+     */
+    void withSchemaFile(char *schemaFilePath);
 
     /**
      * @param localDictionaryThreshold is localDictionaryThreshold, default is 10000

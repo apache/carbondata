@@ -90,6 +90,12 @@ void CarbonWriter::sortBy(int argc, char **argv) {
     }
 }
 
+/**
+ * configure the schema with json style schema
+ *
+ * @param jsonSchema json style schema
+ * @return updated CarbonWriterBuilder
+ */
 void CarbonWriter::withCsvInput(char *jsonSchema) {
     if (jsonSchema == NULL) {
         throw std::runtime_error("jsonSchema parameter can't be NULL.");
@@ -105,6 +111,20 @@ void CarbonWriter::withCsvInput(char *jsonSchema) {
     jvalue args[1];
     args[0].l = jPath;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+};
+
+void CarbonWriter::withCsvInput() {
+    checkBuilder();
+    jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
+    jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withCsvInput",
+                                             "()Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
+    if (methodID == NULL) {
+        throw std::runtime_error("Can't find the method in java: withCsvInput");
+    }
+    carbonWriterBuilderObject = jniEnv->CallObjectMethod(carbonWriterBuilderObject, methodID);
     if (jniEnv->ExceptionCheck()) {
         throw jniEnv->ExceptionOccurred();
     }
@@ -265,6 +285,26 @@ void CarbonWriter::withBlockletSize(int blockletSize) {
     }
     jvalue args[1];
     args[0].i = blockletSize;
+    carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+}
+
+/**
+ * To set the path of carbon schema file
+ * @param schemaFilePath The path of carbon schema file
+ */
+void CarbonWriter::withSchemaFile(char *schemaFilePath) {
+    checkBuilder();
+    jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
+    jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "withSchemaFile",
+                                             "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
+    if (methodID == NULL) {
+        throw std::runtime_error("Can't find the method in java: withSchemaFile");
+    }
+    jvalue args[1];
+    args[0].l = jniEnv->NewStringUTF(schemaFilePath);
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
     if (jniEnv->ExceptionCheck()) {
         throw jniEnv->ExceptionOccurred();
