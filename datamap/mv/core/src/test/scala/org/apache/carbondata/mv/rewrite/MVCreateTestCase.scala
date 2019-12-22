@@ -814,10 +814,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("jira carbondata-2560") {
 
-    sql("drop datamap if exists MV_exp1")
     sql("drop datamap if exists MV_exp2")
     sql("create datamap MV_exp1 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
-    intercept[MalformedCarbonCommandException] {
+    intercept[UnsupportedOperationException] {
       sql(
         "create datamap MV_exp2 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
 
