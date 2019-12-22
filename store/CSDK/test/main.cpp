@@ -740,6 +740,110 @@ bool testWriteData(JNIEnv *env, char *path, int argc, char *argv[]) {
     }
 }
 
+bool testWriteDataWithSchemaFile(JNIEnv *env, char *path, int argc, char *argv[]) {
+
+    CarbonReader carbonReader;
+    CarbonWriter writer;
+    try {
+        writer.builder(env);
+        writer.outputPath(path);
+        writer.withCsvInput();
+        writer.withSchemaFile("../../../integration/spark-common/target/warehouse/add_segment_test/Metadata/schema");
+        writer.writtenBy("CSDK");
+        writer.taskNo(15541554.81);
+        writer.withThreadSafe(1);
+        writer.uniqueIdentifier(1549911814000000);
+        writer.withBlockSize(1);
+        writer.withBlockletSize(16);
+        writer.enableLocalDictionary(true);
+        writer.localDictionaryThreshold(10000);
+        if (argc > 3) {
+            writer.withHadoopConf("fs.s3a.access.key", argv[1]);
+            writer.withHadoopConf("fs.s3a.secret.key", argv[2]);
+            writer.withHadoopConf("fs.s3a.endpoint", argv[3]);
+        }
+        writer.build();
+
+        int rowNum = 10;
+        int size = 14;
+        jclass objClass = env->FindClass("java/lang/String");
+        for (int i = 0; i < rowNum; ++i) {
+            jobjectArray arr = env->NewObjectArray(size, objClass, 0);
+            char ctrInt[10];
+            gcvt(i, 10, ctrInt);
+
+            char a[15] = "robot";
+            strcat(a, ctrInt);
+            jobject intField = env->NewStringUTF(ctrInt);
+            env->SetObjectArrayElement(arr, 0, intField);
+            jobject stringField = env->NewStringUTF(a);
+            env->SetObjectArrayElement(arr, 1, stringField);
+            jobject string2Field = env->NewStringUTF(a);
+            env->SetObjectArrayElement(arr, 2, string2Field);
+            jobject timeField = env->NewStringUTF("2019-02-12 03:03:34");
+            env->SetObjectArrayElement(arr, 3, timeField);
+            jobject int4Field = env->NewStringUTF(ctrInt);
+            env->SetObjectArrayElement(arr, 4, int4Field);
+            jobject string5Field = env->NewStringUTF(a);
+            env->SetObjectArrayElement(arr, 5, string5Field);
+            jobject int6Field = env->NewStringUTF(ctrInt);
+            env->SetObjectArrayElement(arr, 6, int6Field);
+            jobject string7Field = env->NewStringUTF(a);
+            env->SetObjectArrayElement(arr, 7, string7Field);
+            jobject int8Field = env->NewStringUTF(ctrInt);
+            env->SetObjectArrayElement(arr, 8, int8Field);
+            jobject time9Field = env->NewStringUTF("2019-02-12 03:03:34");
+            env->SetObjectArrayElement(arr, 9, time9Field);
+            jobject dateField = env->NewStringUTF(" 2019-03-02");
+            env->SetObjectArrayElement(arr, 10, dateField);
+            jobject int11Field = env->NewStringUTF(ctrInt);
+            env->SetObjectArrayElement(arr, 11, int11Field);
+            jobject int12Field = env->NewStringUTF(ctrInt);
+            env->SetObjectArrayElement(arr, 12, int12Field);
+            jobject int13Field = env->NewStringUTF(ctrInt);
+            env->SetObjectArrayElement(arr, 13, int13Field);
+
+            writer.write(arr);
+
+            env->DeleteLocalRef(stringField);
+            env->DeleteLocalRef(string2Field);
+            env->DeleteLocalRef(intField);
+            env->DeleteLocalRef(int4Field);
+            env->DeleteLocalRef(string5Field);
+            env->DeleteLocalRef(int6Field);
+            env->DeleteLocalRef(dateField);
+            env->DeleteLocalRef(timeField);
+            env->DeleteLocalRef(string7Field);
+            env->DeleteLocalRef(int8Field);
+            env->DeleteLocalRef(int11Field);
+            env->DeleteLocalRef(int12Field);
+            env->DeleteLocalRef(int13Field);
+            env->DeleteLocalRef(arr);
+        }
+
+        carbonReader.builder(env, path);
+        carbonReader.build();
+        int i = 0;
+        int printNum = 10;
+        CarbonRow carbonRow(env);
+        while (carbonReader.hasNext()) {
+            jobject row = carbonReader.readNextRow();
+            i++;
+            carbonRow.setCarbonRow(row);
+            if (i < printNum) {
+                printf("%s\t%d\t%ld\t", carbonRow.getString(1));
+            }
+            env->DeleteLocalRef(row);
+        }
+    } catch (jthrowable ex) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+    finally:
+        carbonReader.close();
+        writer.close();
+}
+
 void writeData(JNIEnv *env, CarbonWriter writer, int size, jclass objClass, char *stringField, short shortField) {
     jobjectArray arr = env->NewObjectArray(size, objClass, 0);
 
@@ -932,6 +1036,7 @@ int main(int argc, char *argv[]) {
         testValidateEscapeCharWithImproperValue(env, "./test");
         testWriteData(env, "./data", 1, argv);
         testWriteData(env, "./dataLoadOption", 1, argv);
+        testWriteDataWithSchemaFile(env, "./data122301", 1, argv);
         readFromLocalWithoutProjection(env, smallFilePath);
         readFromLocalWithProjection(env, smallFilePath);
         testWithTableProperty(env, "./dataProperty", 1, argv);
