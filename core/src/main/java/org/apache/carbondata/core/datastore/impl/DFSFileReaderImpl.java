@@ -163,8 +163,4 @@ public class DFSFileReaderImpl implements FileReader {
     return readPageByPage;
   }
 
-  public Map<String, FSDataInputStream> getFileNameAndStreamCache() {
-    return fileNameAndStreamCache;
-  }
-
 }

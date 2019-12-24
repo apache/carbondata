@@ -117,11 +117,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
       queryModel.setTableBlockInfos(tableBlockInfoList);
     }
     readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
-    try {
-      carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
-    } catch (QueryExecutionException e) {
-      throw new InterruptedException(e.getMessage());
-    }
+    carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
   }
 
   @Override

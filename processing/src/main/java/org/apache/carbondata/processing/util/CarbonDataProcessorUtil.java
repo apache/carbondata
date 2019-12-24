@@ -307,8 +307,8 @@ public final class CarbonDataProcessorUtil {
     return complexTypesMap;
   }
 
-  public static boolean isHeaderValid(String tableName, String[] csvHeader,
-      CarbonDataLoadSchema schema, List<String> ignoreColumns) {
+  public static boolean isHeaderValid(String[] csvHeader, CarbonDataLoadSchema schema,
+      List<String> ignoreColumns) {
     Iterator<String> columnIterator =
         CarbonDataProcessorUtil.getSchemaColumnNames(schema).iterator();
     Set<String> csvColumns = new HashSet<String>(csvHeader.length);
@@ -467,8 +467,7 @@ public final class CarbonDataProcessorUtil {
   /**
    * initialise data type for measures for their storage format
    */
-  public static DataType[] initDataType(CarbonTable carbonTable, String tableName,
-      int measureCount) {
+  public static DataType[] initDataType(CarbonTable carbonTable, int measureCount) {
     DataType[] type = new DataType[measureCount];
     for (int i = 0; i < type.length; i++) {
       type[i] = DataTypes.DOUBLE;

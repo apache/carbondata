@@ -52,9 +52,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -66,6 +63,7 @@ import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
+
 
 /**
  * Mapping class for Carbon actual table
@@ -245,19 +243,6 @@ public class CarbonTable implements Serializable, Writable {
       }
     }
     return carbonDimension;
-  }
-
-  /**
-   * Resolve the filter expression.
-   */
-  public static FilterResolverIntf resolveFilter(Expression filterExpression,
-      AbsoluteTableIdentifier identifier) {
-    try {
-      FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
-      return filterExpressionProcessor.getFilterResolver(filterExpression, identifier);
-    } catch (Exception e) {
-      throw new RuntimeException("Error while resolving filter expression", e);
-    }
   }
 
   /**
@@ -688,11 +673,6 @@ public class CarbonTable implements Serializable, Writable {
     return partition;
   }
 
-  public boolean isPartitionTable() {
-    return null != partition
-        && partition.getPartitionType() != PartitionType.NATIVE_HIVE;
-  }
-
   public boolean isHivePartitionTable() {
     PartitionInfo partitionInfo = partition;
     return null != partitionInfo && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE;
@@ -1086,22 +1066,6 @@ public class CarbonTable implements Serializable, Writable {
       }
     }
     return minMaxCachedColsList;
-  }
-
-  /**
-   * Return all inverted index columns in this table
-   */
-  public List<ColumnSchema> getInvertedIndexColumns() {
-    if (getSortScope() == SortScopeOptions.SortScope.NO_SORT) {
-      return new LinkedList<>();
-    }
-    List<ColumnSchema> columns = new LinkedList<>();
-    for (ColumnSchema column : tableInfo.getFactTable().getListOfColumns()) {
-      if (column.isUseInvertedIndex() && column.isSortColumn()) {
-        columns.add(column);
-      }
-    }
-    return columns;
   }
 
   /**

@@ -356,10 +356,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
         batchMinMaxIndex, output.generateBlockletMinMax(), measureDataTypes);
   }
 
-  public DataType[] getMeasureDataTypes() {
-    return measureDataTypes;
-  }
-
   @Override
   public void close(TaskAttemptContext context) throws IOException, InterruptedException {
     try {

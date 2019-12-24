@@ -35,7 +35,6 @@ import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -49,7 +48,6 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -965,33 +963,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * The method calculate the B-Tree metadata size.
-   *
-   * @param tableBlockInfo
-   * @return
-   */
-  public static long calculateMetaSize(TableBlockInfo tableBlockInfo) throws IOException {
-    FileReader fileReader = null;
-    try {
-      long completeBlockLength = tableBlockInfo.getBlockLength();
-      long footerPointer = completeBlockLength - 8;
-      String filePath = tableBlockInfo.getFilePath();
-      fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
-      long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
-      return footerPointer - actualFooterOffset;
-    } finally {
-      if (null != fileReader) {
-        try {
-          fileReader.finish();
-        } catch (IOException e) {
-          // ignore the exception as nothing we can do about it
-          fileReader = null;
-        }
-      }
-    }
-  }
-
-  /**
    * Below method will be used to get the surrogate key
    *
    * @param data   actual data
@@ -1008,32 +979,6 @@ public final class CarbonUtil {
     int surrogate = buffer.getInt();
     buffer.clear();
     return surrogate;
-  }
-
-  /**
-   * The method returns the B-Tree for a particular taskId
-   *
-   * @param taskId
-   * @param tableBlockInfoList
-   * @param identifier
-   */
-  public static long calculateDriverBTreeSize(String taskId, String bucketNumber,
-      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier identifier) {
-    // need to sort the  block info list based for task in ascending  order so
-    // it will be sinkup with block index read from file
-    Collections.sort(tableBlockInfoList);
-    // geting the index file path
-    //TODO need to pass proper partition number when partiton will be supported
-    String carbonIndexFilePath = CarbonTablePath
-        .getCarbonIndexFilePath(identifier.getTablePath(), taskId,
-            tableBlockInfoList.get(0).getSegmentId(),
-            bucketNumber, CarbonTablePath.DataFileUtil
-                .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
-            tableBlockInfoList.get(0).getVersion());
-    CarbonFile carbonFile = FileFactory
-        .getCarbonFile(carbonIndexFilePath);
-    // in case of carbonIndex file whole file is meta only so reading complete file.
-    return carbonFile.getSize();
   }
 
   /**
@@ -2292,43 +2237,6 @@ public final class CarbonUtil {
         tableInfo, dbName, tableName, carbonDataFilePath);
     wrapperTableInfo.setTransactionalTable(false);
     return wrapperTableInfo;
-  }
-
-  /**
-   * This method will infer the schema file from a given index file path
-   * @param indexFilePath
-   * @param tableName
-   * @return
-   * @throws IOException
-   */
-  public static org.apache.carbondata.format.TableInfo inferSchemaFromIndexFile(
-      String indexFilePath, String tableName) throws IOException {
-    CarbonIndexFileReader indexFileReader = new CarbonIndexFileReader();
-    try {
-      indexFileReader.openThriftReader(indexFilePath);
-      org.apache.carbondata.format.IndexHeader readIndexHeader = indexFileReader.readIndexHeader();
-      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-      List<org.apache.carbondata.format.ColumnSchema> table_columns =
-          readIndexHeader.getTable_columns();
-      for (int i = 0; i < table_columns.size(); i++) {
-        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
-      }
-      // only columnSchema is the valid entry, reset all dummy entries.
-      TableSchema tableSchema = getDummyTableSchema(tableName, columnSchemaList);
-
-      ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
-          new ThriftWrapperSchemaConverterImpl();
-      org.apache.carbondata.format.TableSchema thriftFactTable =
-          thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
-      org.apache.carbondata.format.TableInfo tableInfo =
-          new org.apache.carbondata.format.TableInfo(thriftFactTable,
-              new ArrayList<org.apache.carbondata.format.TableSchema>());
-
-      tableInfo.setDataMapSchemas(null);
-      return tableInfo;
-    } finally {
-      indexFileReader.closeThriftReader();
-    }
   }
 
   private static TableSchema getDummyTableSchema(String tableName,

@@ -645,16 +645,6 @@ m filterExpression
     return prunedBlocklets;
   }
 
-  static List<InputSplit> convertToCarbonInputSplit(List<ExtendedBlocklet> extendedBlocklets) {
-    List<InputSplit> resultFilteredBlocks = new ArrayList<>();
-    for (ExtendedBlocklet blocklet : extendedBlocklets) {
-      if (blocklet != null) {
-        resultFilteredBlocks.add(blocklet.getInputSplit());
-      }
-    }
-    return resultFilteredBlocks;
-  }
-
   @Override
   public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {

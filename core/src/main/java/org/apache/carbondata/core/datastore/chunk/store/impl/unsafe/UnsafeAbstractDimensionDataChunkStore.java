@@ -114,8 +114,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
   }
 
   @Override
-  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
-      ColumnVectorInfo vectorInfo) {
+  public void fillVector(int[] invertedIndex, byte[] data, ColumnVectorInfo vectorInfo) {
     throw new UnsupportedOperationException("This method not supposed to be called here");
   }
 

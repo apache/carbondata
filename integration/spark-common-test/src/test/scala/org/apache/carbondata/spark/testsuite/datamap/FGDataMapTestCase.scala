@@ -17,6 +17,7 @@
 package org.apache.carbondata.spark.testsuite.datamap
 
 import java.io.{ByteArrayInputStream, DataOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -185,10 +186,7 @@ class FGDataMap extends FineGrainDataMap {
    * @param filterExp
    * @return
    */
-  override def prune(
-      filterExp: FilterResolverIntf,
-      segmentProperties: SegmentProperties,
-      partitions: java.util.List[PartitionSpec]): java.util.List[FineGrainBlocklet] = {
+  override def prune(filterExp: FilterResolverIntf, partitions: util.List[PartitionSpec]): java.util.List[FineGrainBlocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()
     val expression = filterExp.getFilterExpression
     getEqualToExpression(expression, buffer)

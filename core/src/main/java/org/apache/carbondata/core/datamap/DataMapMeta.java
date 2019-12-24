@@ -52,10 +52,6 @@ public class DataMapMeta {
     this.dataMapName = dataMapName;
   }
 
-  public String getDataMapName() {
-    return dataMapName;
-  }
-
   public List<CarbonColumn> getIndexedColumns() {
     return indexedColumns;
   }

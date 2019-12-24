@@ -31,18 +31,12 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.format.FileFooter;
 
-import org.apache.hadoop.conf.Configuration;
-
 /**
  * Below class will be used to convert the thrift object of data file
  * meta data to wrapper object for version 2 data file
  */
 
 public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
-
-  public DataFileFooterConverter2(Configuration configuration) {
-    super(configuration);
-  }
 
   public DataFileFooterConverter2() {
     super(FileFactory.getConfiguration());
@@ -135,7 +129,6 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
    */
   private int getNumberOfDimensionColumns(List<ColumnSchema> columnSchemaList) {
     int numberOfDimensionColumns = 0;
-    int previousColumnGroupId = -1;
     ColumnSchema columnSchema = null;
     for (int i = 0; i < columnSchemaList.size(); i++) {
       columnSchema = columnSchemaList.get(i);

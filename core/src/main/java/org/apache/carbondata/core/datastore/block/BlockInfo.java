@@ -19,9 +19,6 @@ package org.apache.carbondata.core.datastore.block;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
-
 /**
  * Below class will be used to store table block info
  * As in blocklet distribution we are dividing the same block
@@ -36,10 +33,6 @@ public class BlockInfo implements Serializable {
    * about the block
    */
   private TableBlockInfo info;
-  /**
-   * unique blockName
-   */
-  private String blockUniqueName;
 
   /**
    * Constructor
@@ -48,18 +41,6 @@ public class BlockInfo implements Serializable {
    */
   public BlockInfo(TableBlockInfo info) {
     this.info = info;
-    init();
-  }
-
-  /**
-   * init the block unique name
-   */
-  private void init() {
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append(this.info.getSegmentId());
-    stringBuilder.append(CarbonCommonConstants.FILE_SEPARATOR);
-    stringBuilder.append(CarbonTablePath.getCarbonDataFileName(this.info.getFilePath()));
-    this.blockUniqueName = stringBuilder.toString();
   }
 
   /**
@@ -67,15 +48,6 @@ public class BlockInfo implements Serializable {
    */
   public TableBlockInfo getTableBlockInfo() {
     return info;
-  }
-
-  /**
-   * To set the table block info
-   *
-   * @param info
-   */
-  public void setTableBlockInfo(TableBlockInfo info) {
-    this.info = info;
   }
 
   /**
@@ -127,11 +99,4 @@ public class BlockInfo implements Serializable {
     return true;
   }
 
-  /**
-   * returns unique blockname
-   * @return
-   */
-  public String getBlockUniqueName() {
-    return blockUniqueName;
-  }
 }

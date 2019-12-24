@@ -63,7 +63,6 @@ import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 /**
@@ -663,8 +662,7 @@ public class CarbonCompactionUtil {
     }
   }
 
-  public static boolean isSortedByCurrentSortColumns(
-      CarbonTable table, LoadMetadataDetails load, Configuration hadoopConf) {
+  public static boolean isSortedByCurrentSortColumns(CarbonTable table, LoadMetadataDetails load) {
     List<String> sortColumnList = table.getSortColumns();
     if (sortColumnList.isEmpty()) {
       return false;

@@ -74,8 +74,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   private static final String TEMP_STORE_LOCATIONS = "mapreduce.carbontable.tempstore.locations";
   private static final String OVERWRITE_SET = "mapreduce.carbontable.set.overwrite";
   public static final String COMPLEX_DELIMITERS = "mapreduce.carbontable.complex_delimiters";
-  private static final String CARBON_TRANSACTIONAL_TABLE =
-      "mapreduce.input.carboninputformat.transactional";
   public static final String SERIALIZATION_NULL_FORMAT =
       "mapreduce.carbontable.serialization.null.format";
   public static final String BAD_RECORDS_LOGGER_ENABLE =
@@ -92,10 +90,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   public static final String DATE_FORMAT = "mapreduce.carbontable.date.format";
   public static final String TIMESTAMP_FORMAT = "mapreduce.carbontable.timestamp.format";
   public static final String IS_ONE_PASS_LOAD = "mapreduce.carbontable.one.pass.load";
-  public static final String DICTIONARY_SERVER_HOST =
-      "mapreduce.carbontable.dict.server.host";
-  public static final String DICTIONARY_SERVER_PORT =
-      "mapreduce.carbontable.dict.server.port";
   /**
    * Set the update timestamp if user sets in case of update query. It needs to be updated
    * in load status update time
@@ -109,11 +103,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
    */
   public static final String SEGMENTS_TO_BE_DELETED =
       "mapreduce.carbontable.segments.to.be.removed";
-
-  /**
-   * It is used only to fire events in case of any child tables to be loaded.
-   */
-  public static final String OPERATION_CONTEXT = "mapreduce.carbontable.operation.context";
 
   private static final Logger LOG =
       LogServiceFactory.getLogService(CarbonTableOutputFormat.class.getName());
@@ -485,9 +474,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       }
     }
 
-    public CarbonLoadModel getLoadModel() {
-      return loadModel;
-    }
   }
 
   /* CarbonMultiRecordWriter takes multiple iterators

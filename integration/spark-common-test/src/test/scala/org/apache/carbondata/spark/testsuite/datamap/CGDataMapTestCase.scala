@@ -17,6 +17,7 @@
 package org.apache.carbondata.spark.testsuite.datamap
 
 import java.io.{ByteArrayInputStream, DataOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -188,10 +189,7 @@ class CGDataMap extends CoarseGrainDataMap {
    * @param filterExp
    * @return
    */
-  override def prune(
-      filterExp: FilterResolverIntf,
-      segmentProperties: SegmentProperties,
-      partitions: java.util.List[PartitionSpec]): java.util.List[Blocklet] = {
+  override def prune(filterExp: FilterResolverIntf, partitions: util.List[PartitionSpec]): java.util.List[Blocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()
     val expression = filterExp.getFilterExpression
     getEqualToExpression(expression, buffer)

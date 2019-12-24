@@ -176,7 +176,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     try {
       initTempStoreLocation();
       initSortDataRows();
-      dataTypes = CarbonDataProcessorUtil.initDataType(carbonTable, tableName, measureCount);
+      dataTypes = CarbonDataProcessorUtil.initDataType(carbonTable, measureCount);
       processResult(unsortedResultIteratorList);
       // After delete command, if no records are fetched from one split,
       // below steps are not required to be initialized.

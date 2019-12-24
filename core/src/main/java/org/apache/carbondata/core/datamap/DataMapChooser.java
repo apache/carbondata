@@ -87,27 +87,6 @@ public class DataMapChooser {
   }
 
   /**
-   * Return a chosen datamap based on input filter. See {@link DataMapChooser}
-   */
-  public DataMapExprWrapper choose(FilterResolverIntf filter) {
-    if (filter != null) {
-      Expression expression = filter.getFilterExpression();
-      // First check for FG datamaps if any exist
-      ExpressionTuple tuple = selectDataMap(expression, fgDataMaps, filter);
-      if (tuple.dataMapExprWrapper == null) {
-        // Check for CG datamap
-        tuple = selectDataMap(expression, cgDataMaps, filter);
-      }
-      if (tuple.dataMapExprWrapper != null) {
-        return tuple.dataMapExprWrapper;
-      }
-    }
-    // Return the default datamap if no other datamap exists.
-    return new DataMapExprWrapperImpl(
-        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable), filter);
-  }
-
-  /**
    * Return a chosen FG datamap based on input filter. See {@link DataMapChooser}
    */
   public DataMapExprWrapper chooseFGDataMap(FilterResolverIntf resolverIntf) {

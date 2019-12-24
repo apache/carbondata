@@ -47,8 +47,7 @@ public interface DataMap<T extends Blocklet> {
    * Prune the datamap with resolved filter expression and partition information.
    * It returns the list of blocklets where these filters can exist.
    */
-  List<T> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions) throws IOException;
+  List<T> prune(FilterResolverIntf filterExp, List<PartitionSpec> partitions) throws IOException;
 
   /**
    * Prune the datamap with filter expression and partition information. It returns the list of

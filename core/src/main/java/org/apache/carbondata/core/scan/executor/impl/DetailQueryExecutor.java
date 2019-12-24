@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.RowBatch;
@@ -42,8 +41,7 @@ public class DetailQueryExecutor extends AbstractQueryExecutor<RowBatch> {
   }
 
   @Override
-  public CarbonIterator<RowBatch> execute(QueryModel queryModel)
-      throws QueryExecutionException, IOException {
+  public CarbonIterator<RowBatch> execute(QueryModel queryModel) throws IOException {
     this.setExecutorService(Executors.newCachedThreadPool());
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     this.queryIterator = new DetailQueryResultIterator(

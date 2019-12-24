@@ -88,14 +88,13 @@ class QueryTest extends PlanTest with Suite {
 
   protected def checkAnswer(carbon: String, hive: String, uniqueIdentifier: String): Unit = {
     val path = TestQueryExecutor.hiveresultpath + "/" + uniqueIdentifier
-    if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-      val objinp = new ObjectInputStream(FileFactory
-        .getDataInputStream(path, FileFactory.getFileType(path)))
+    if (FileFactory.isFileExist(path)) {
+      val objinp = new ObjectInputStream(FileFactory.getDataInputStream(path))
       val rows = objinp.readObject().asInstanceOf[Array[Row]]
       objinp.close()
       QueryTest.checkAnswer(sql(carbon), rows) match {
         case Some(errorMessage) => {
-          FileFactory.deleteFile(path, FileFactory.getFileType(path))
+          FileFactory.deleteFile(path)
           writeAndCheckAnswer(carbon, hive, path)
         }
         case None =>
@@ -107,8 +106,7 @@ class QueryTest extends PlanTest with Suite {
 
   private def writeAndCheckAnswer(carbon: String, hive: String, path: String): Unit = {
     val rows = sql(hive).collect()
-    val obj = new ObjectOutputStream(FileFactory.getDataOutputStream(path, FileFactory
-      .getFileType(path)))
+    val obj = new ObjectOutputStream(FileFactory.getDataOutputStream(path))
     obj.writeObject(rows)
     obj.close()
     checkAnswer(sql(carbon), rows)

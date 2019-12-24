@@ -23,19 +23,12 @@ import java.io.Serializable;
  * The class holds the blocks blocklets info
  */
 public class BlockletInfos implements Serializable {
-  /**
-   * no of blockLets
-   */
-  private int noOfBlockLets = 0;
 
   /**
    * start blocklet number
    */
   private int startBlockletNumber;
-  /**
-   * end blocklet number
-   */
-  private int numberOfBlockletToScan;
+
   /**
    * default constructor
    */
@@ -44,32 +37,11 @@ public class BlockletInfos implements Serializable {
 
   /**
    * constructor to initialize the blockletinfo
-   * @param noOfBlockLets
    * @param startBlockletNumber
-   * @param numberOfBlockletToScan
+   *
    */
-  public BlockletInfos(int noOfBlockLets, int startBlockletNumber, int numberOfBlockletToScan) {
-    this.noOfBlockLets = noOfBlockLets;
+  public BlockletInfos(int startBlockletNumber) {
     this.startBlockletNumber = startBlockletNumber;
-    this.numberOfBlockletToScan = numberOfBlockletToScan;
-  }
-
-  /**
-   * returns the number of blockLets
-   *
-   * @return
-   */
-  public int getNoOfBlockLets() {
-    return noOfBlockLets;
-  }
-
-  /**
-   * sets the number of blockLets
-   *
-   * @param noOfBlockLets
-   */
-  public void setNoOfBlockLets(int noOfBlockLets) {
-    this.noOfBlockLets = noOfBlockLets;
   }
 
   /**
@@ -79,33 +51,6 @@ public class BlockletInfos implements Serializable {
    */
   public int getStartBlockletNumber() {
     return startBlockletNumber;
-  }
-
-  /**
-   * set start blocklet number
-   *
-   * @param startBlockletNumber
-   */
-  public void setStartBlockletNumber(int startBlockletNumber) {
-    this.startBlockletNumber = startBlockletNumber;
-  }
-
-  /**
-   * returns end blocklet number
-   *
-   * @return
-   */
-  public int getNumberOfBlockletToScan() {
-    return numberOfBlockletToScan;
-  }
-
-  /**
-   * set end blocklet number to be scaned
-   *
-   * @param numberOfBlockletToScan
-   */
-  public void setNumberOfBlockletToScan(int numberOfBlockletToScan) {
-    this.numberOfBlockletToScan = numberOfBlockletToScan;
   }
 
 }

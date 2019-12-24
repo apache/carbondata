@@ -478,8 +478,6 @@ public class CarbonMetadataUtil {
   }
 
   private static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
-    ByteBuffer firstBuffer = null;
-    ByteBuffer secondBuffer = null;
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       if (first[0] > second[0]) {
         return 1;

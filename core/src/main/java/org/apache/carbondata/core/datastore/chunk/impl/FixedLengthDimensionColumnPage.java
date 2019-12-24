@@ -74,7 +74,7 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
     if (vectorInfo == null) {
       dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk);
     } else {
-      dataChunkStore.fillVector(invertedIndex, invertedIndexReverse, dataChunk, vectorInfo);
+      dataChunkStore.fillVector(invertedIndex, dataChunk, vectorInfo);
     }
   }
 

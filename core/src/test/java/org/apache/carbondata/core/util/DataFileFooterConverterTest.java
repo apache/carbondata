@@ -151,7 +151,6 @@ public class DataFileFooterConverterTest {
     String[] arr = { "a", "b", "c" };
     String fileName = "/part-0-0_batchno0-0-1495074251740.carbondata";
     TableBlockInfo tableBlockInfo = new TableBlockInfo(fileName, 3, "id", arr, 3, ColumnarFormatVersion.V1, null);
-    tableBlockInfo.getBlockletInfos().setNoOfBlockLets(3);
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     tableBlockInfoList.add(tableBlockInfo);
     String idxFileName = "0_batchno0-0-1495074251740.carbonindex";

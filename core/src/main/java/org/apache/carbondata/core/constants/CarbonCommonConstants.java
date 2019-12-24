@@ -1805,7 +1805,6 @@ public final class CarbonCommonConstants {
   /**
    * ARRAY separator
    */
-  public static final String ARRAY_SEPARATOR = "\001";
   public static final String STRING = "String";
   public static final String SHORT = "Short";
   public static final String BINARY = "Binary";
@@ -2073,111 +2072,6 @@ public final class CarbonCommonConstants {
 
   // As due to SnappyCompressor.MAX_BYTE_TO_COMPRESS is 1.75 GB
   public static final int TABLE_PAGE_SIZE_MAX_INMB = 1755;
-
-  //////////////////////////////////////////////////////////////////////////////////////////
-  // Unused constants and parameters start here
-  //////////////////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * BYTE_ENCODING
-   */
-  public static final String BYTE_ENCODING = "ISO-8859-1";
-
-  /**
-   * measure meta data file name
-   */
-  public static final String MEASURE_METADATA_FILE_NAME = "/msrMetaData_";
-
-  /**
-   * DUMMY aggregation function
-   */
-  public static final String DUMMY = "dummy";
-
-  /**
-   * Bytes for string 0, it is used in codegen in case of null values.
-   */
-  public static final byte[] ZERO_BYTE_ARRAY = "0".getBytes(Charset.forName(DEFAULT_CHARSET));
-
-  /**
-   * HIERARCHY_FILE_EXTENSION
-   */
-  public static final String HIERARCHY_FILE_EXTENSION = ".hierarchy";
-
-  /**
-   * CARBON_RESULT_SIZE_DEFAULT
-   */
-  public static final String LEVEL_FILE_EXTENSION = ".level";
-
-  /**
-   * MEASUREMETADATA_FILE_EXT
-   */
-  public static final String MEASUREMETADATA_FILE_EXT = ".msrmetadata";
-
-  /**
-   * Comment for <code>TYPE_MYSQL</code>
-   */
-  public static final String TYPE_MYSQL = "MYSQL";
-
-  /**
-   * Comment for <code>TYPE_MSSQL</code>
-   */
-  public static final String TYPE_MSSQL = "MSSQL";
-
-  /**
-   * Comment for <code>TYPE_ORACLE</code>
-   */
-  public static final String TYPE_ORACLE = "ORACLE";
-
-  /**
-   * Comment for <code>TYPE_SYBASE</code>
-   */
-  public static final String TYPE_SYBASE = "SYBASE";
-
-  /**
-   * BAD_RECORD_KEY_VALUE
-   */
-  public static final String BAD_RECORD_KEY = "BADRECORD";
-
-  /**
-   * Default value of number of cores to be used for block sort
-   */
-  public static final String NUM_CORES_BLOCK_SORT_DEFAULT_VAL = "7";
-
-  /**
-   * Max value of number of cores to be used for block sort
-   */
-  public static final int NUM_CORES_BLOCK_SORT_MAX_VAL = 12;
-
-  /**
-   * Min value of number of cores to be used for block sort
-   */
-  public static final int NUM_CORES_BLOCK_SORT_MIN_VAL = 1;
-
-  /**
-   * LEVEL_METADATA_FILE
-   */
-  public static final String LEVEL_METADATA_FILE = "levelmetadata_";
-
-  /**
-   * DASH
-   */
-  public static final String DASH = "-";
-
-  /**
-   * FACT_UPDATE_EXTENSION.
-   */
-  public static final String FACT_UPDATE_EXTENSION = ".carbondata_update";
-  public static final String FACT_DELETE_EXTENSION = "_delete";
-
-  /**
-   * MARKED_FOR_UPDATION
-   */
-  public static final String FACT_FILE_UPDATED = "update";
-
-  /**
-   * default value in size for cache size of bloom filter datamap.
-   */
-  public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL = "512";
 
   /**
    * The IP on which Index Server will be started.

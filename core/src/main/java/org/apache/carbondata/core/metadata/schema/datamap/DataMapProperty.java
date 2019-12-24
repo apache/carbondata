@@ -26,12 +26,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 public class DataMapProperty {
 
   /**
-   * Used to specify the store location of the datamap
-   */
-  public static final String PARTITIONING = "partitioning";
-  public static final String PATH = "path";
-
-  /**
    * For datamap created with 'WITH DEFERRED REBUILD' syntax, we will add this
    * property internally
    */

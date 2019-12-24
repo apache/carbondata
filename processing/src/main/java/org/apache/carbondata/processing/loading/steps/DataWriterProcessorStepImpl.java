@@ -39,7 +39,6 @@ import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
@@ -61,8 +60,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       LogServiceFactory.getLogService(DataWriterProcessorStepImpl.class.getName());
 
   private long readCounter;
-
-  private DataMapWriterListener listener;
 
   private final Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
 
@@ -100,9 +97,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   public CarbonFactDataHandlerModel getDataHandlerModel() {
     String[] storeLocation = getStoreLocation();
-    listener = getDataMapWriterListener(0);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
-        .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, 0, listener);
+        .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, 0);
     carbonFactDataHandlerModel.setColumnLocalDictGenMap(localDictionaryGeneratorMap);
     return carbonFactDataHandlerModel;
   }
@@ -172,10 +168,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private void processRange(Iterator<CarbonRowBatch> insideRangeIterator, int rangeId) {
     String[] storeLocation = getStoreLocation();
-
-    listener = getDataMapWriterListener(rangeId);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-        .createCarbonFactDataHandlerModel(configuration, storeLocation, rangeId, 0, listener);
+        .createCarbonFactDataHandlerModel(configuration, storeLocation, rangeId, 0);
     model.setColumnLocalDictGenMap(localDictionaryGeneratorMap);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;
@@ -239,15 +233,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
   public void close() {
     if (!closed) {
       super.close();
-      if (listener != null) {
-        try {
-          LOGGER.debug("closing all the DataMap writers registered to DataMap writer listener");
-          listener.finish();
-        } catch (IOException e) {
-          LOGGER.error("error while closing the datamap writers", e);
-          // ignoring the exception
-        }
-      }
       if (null != rangeExecutorService) {
         rangeExecutorService.shutdownNow();
       }

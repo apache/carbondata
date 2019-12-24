@@ -53,7 +53,7 @@ public class BloomDataMapWriter extends AbstractBloomDataMapWriter {
       Segment segment, String shardName, SegmentProperties segmentProperties,
       int bloomFilterSize, double bloomFilterFpp, boolean compressBloom)
       throws IOException {
-    super(tablePath, dataMapName, indexColumns, segment, shardName, segmentProperties,
+    super(tablePath, dataMapName, indexColumns, segment, shardName,
         bloomFilterSize, bloomFilterFpp, compressBloom);
 
     columnarSplitter = segmentProperties.getFixedLengthKeySplitter();

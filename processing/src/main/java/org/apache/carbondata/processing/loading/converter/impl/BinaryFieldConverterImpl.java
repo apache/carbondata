@@ -17,40 +17,21 @@
 
 package org.apache.carbondata.processing.loading.converter.impl;
 
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.FieldConverter;
 import org.apache.carbondata.processing.loading.converter.impl.binary.BinaryDecoder;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
-import org.apache.log4j.Logger;
-
 /**
  * Converter for binary
  */
 public class BinaryFieldConverterImpl implements FieldConverter {
-  private static final Logger LOGGER =
-      LogServiceFactory.getLogService(BinaryFieldConverterImpl.class.getName());
 
   private int index;
-  private DataType dataType;
-  private CarbonDimension dimension;
-  private String nullformat;
-  private boolean isEmptyBadRecord;
-  private DataField dataField;
   private BinaryDecoder binaryDecoder;
-  public BinaryFieldConverterImpl(DataField dataField, String nullformat, int index,
-      boolean isEmptyBadRecord, BinaryDecoder binaryDecoder) {
-    this.dataType = dataField.getColumn().getDataType();
-    this.dimension = (CarbonDimension) dataField.getColumn();
-    this.nullformat = nullformat;
+  public BinaryFieldConverterImpl(int index, BinaryDecoder binaryDecoder) {
     this.index = index;
-    this.isEmptyBadRecord = isEmptyBadRecord;
-    this.dataField = dataField;
     this.binaryDecoder = binaryDecoder;
   }
 

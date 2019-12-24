@@ -455,7 +455,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     List<CoarseGrainDataMap> dataMaps = getDataMaps(segment);
     for (CoarseGrainDataMap dataMap : dataMaps) {
       blocklets.addAll(
-          dataMap.prune((FilterResolverIntf) null, getSegmentProperties(segment), partitions));
+          dataMap.prune((FilterResolverIntf) null, partitions));
     }
     return blocklets;
   }
@@ -485,8 +485,6 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
               (BlockletDataMapDistributable) distributable);
       if (null == cache.getIfPresent(
           new TableBlockIndexUniqueIdentifierWrapper(validIdentifier, this.getCarbonTable()))) {
-        ((BlockletDataMapDistributable) distributable)
-            .setTableBlockIndexUniqueIdentifier(validIdentifier);
         distributablesToBeLoaded.add(distributable);
       }
     }

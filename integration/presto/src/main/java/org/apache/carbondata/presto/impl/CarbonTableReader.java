@@ -65,8 +65,6 @@ import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.google.inject.Inject;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
@@ -89,13 +87,6 @@ import static org.apache.hadoop.fs.s3a.Constants.SECRET_KEY;
  */
 public class CarbonTableReader {
 
-  // default PathFilter, accepts files in carbondata format (with .carbondata extension).
-  private static final PathFilter DefaultFilter = new PathFilter() {
-    @Override
-    public boolean accept(Path path) {
-      return CarbonTablePath.isCarbonDataFile(path.getName());
-    }
-  };
   public CarbonTableConfig config;
   /**
    * A cache for Carbon reader, with this cache,
@@ -110,11 +101,6 @@ public class CarbonTableReader {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonTableReader.class.getName());
-
-  /**
-   * List Of Schemas
-   */
-  private List<String> schemaNames = new ArrayList<>();
 
   @Inject public CarbonTableReader(CarbonTableConfig config) {
     this.config = Objects.requireNonNull(config, "CarbonTableConfig is null");

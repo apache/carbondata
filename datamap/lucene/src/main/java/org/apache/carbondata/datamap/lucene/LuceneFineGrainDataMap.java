@@ -29,7 +29,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -200,8 +199,8 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
    * blocklets where these filters can exist.
    */
   @Override
-  public List<FineGrainBlocklet> prune(FilterResolverIntf filterExp,
-      SegmentProperties segmentProperties, List<PartitionSpec> partitions) throws IOException {
+  public List<FineGrainBlocklet> prune(
+      FilterResolverIntf filterExp, List<PartitionSpec> partitions) throws IOException {
 
     // convert filter expr into lucene list query
     List<String> fields = new ArrayList<String>();

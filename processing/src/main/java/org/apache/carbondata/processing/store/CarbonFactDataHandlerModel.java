@@ -195,7 +195,7 @@ public class CarbonFactDataHandlerModel {
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
       CarbonDataLoadConfiguration configuration, String[] storeLocation, int bucketId,
-      int taskExtension, DataMapWriterListener listener) {
+      int taskExtension) {
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
 
@@ -295,19 +295,17 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     carbonFactDataHandlerModel.columnCompressor = configuration.getColumnCompressor();
 
-    if (listener == null) {
-      listener = new DataMapWriterListener();
-      listener.registerAllWriter(
-          configuration.getTableSpec().getCarbonTable(),
-          configuration.getSegmentId(),
-          CarbonTablePath.getShardName(
-              carbonDataFileAttributes.getTaskId(),
-              bucketId,
-              0,
-              String.valueOf(carbonDataFileAttributes.getFactTimeStamp()),
-              configuration.getSegmentId()),
-          segmentProperties);
-    }
+    DataMapWriterListener listener = new DataMapWriterListener();
+    listener.registerAllWriter(
+        configuration.getTableSpec().getCarbonTable(),
+        configuration.getSegmentId(),
+        CarbonTablePath.getShardName(
+            carbonDataFileAttributes.getTaskId(),
+            bucketId,
+            0,
+            String.valueOf(carbonDataFileAttributes.getFactTimeStamp()),
+            configuration.getSegmentId()),
+        segmentProperties);
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
     carbonFactDataHandlerModel.initNumberOfCores();

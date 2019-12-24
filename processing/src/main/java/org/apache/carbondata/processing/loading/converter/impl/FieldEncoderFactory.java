@@ -171,8 +171,7 @@ public class FieldEncoderFactory {
           binaryDecoderObject = new DefaultBinaryDecoder();
         }
 
-        return new BinaryFieldConverterImpl(dataField, nullFormat,
-            index, isEmptyBadRecord, binaryDecoderObject);
+        return new BinaryFieldConverterImpl(index, binaryDecoderObject);
       } else {
         // if the no dictionary column is a numeric column and no need to convert to binary
         // then treat it is as measure col

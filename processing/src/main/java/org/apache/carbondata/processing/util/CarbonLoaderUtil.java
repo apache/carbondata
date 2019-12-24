@@ -223,7 +223,7 @@ public final class CarbonLoaderUtil {
       return true;
     }
 
-    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, uuid,
+    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite,
         new ArrayList<Segment>(), new ArrayList<Segment>());
   }
 
@@ -233,13 +233,13 @@ public final class CarbonLoaderUtil {
    *
    * @param newMetaEntry
    * @param loadModel
-   * @param uuid
    * @return boolean which determines whether status update is done or not.
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid,
-      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated) throws IOException {
+      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite,
+      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated)
+      throws IOException {
     boolean status = false;
     AbsoluteTableIdentifier identifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();

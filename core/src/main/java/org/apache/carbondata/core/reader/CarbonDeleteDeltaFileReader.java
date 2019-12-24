@@ -26,17 +26,6 @@ import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
  */
 public interface CarbonDeleteDeltaFileReader {
 
-  /**
-   * This method will be used to read complete delete delta file.
-   * scenario:
-   * Whenever a query is executed then read the delete delta file
-   * and exclude the deleted data.
-   *
-   * @return All deleted records for specified block
-   * @throws IOException if an I/O error occurs
-   */
-  String read() throws IOException;
-
   DeleteDeltaBlockDetails readJson() throws IOException;
 
 }

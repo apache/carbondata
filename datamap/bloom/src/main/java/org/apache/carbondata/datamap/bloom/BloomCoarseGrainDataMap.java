@@ -34,7 +34,6 @@ import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
@@ -146,8 +145,8 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   }
 
   @Override
-  public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions) throws IOException {
+  public List<Blocklet> prune(
+      FilterResolverIntf filterExp, List<PartitionSpec> partitions) throws IOException {
     Set<Blocklet> hitBlocklets = null;
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.

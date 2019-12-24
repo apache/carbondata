@@ -25,7 +25,6 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,9 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -283,32 +280,6 @@ public class TableSchema implements Serializable, Writable, Cloneable {
       this.bucketingInfo = new BucketingInfo();
       this.bucketingInfo.readFields(in);
     }
-  }
-
-  /**
-   * Below method will be used to build child schema object which will be stored in
-   * parent table
-   *
-   */
-  public DataMapSchema buildChildSchema(String dataMapName, String className, String databaseName,
-      String queryString, String queryType) throws UnsupportedEncodingException {
-    RelationIdentifier relationIdentifier =
-        new RelationIdentifier(databaseName, tableName, tableId);
-    Map<String, String> properties = new HashMap<>();
-    if (queryString != null) {
-      properties.put(DataMapProperty.CHILD_SELECT_QUERY,
-          CarbonUtil.encodeToString(queryString.trim().getBytes(
-              // replace = to with & as hive metastore does not allow = inside. For base 64
-              // only = is allowed as special character , so replace with &
-              CarbonCommonConstants.DEFAULT_CHARSET)).replace("=", "&"));
-      properties.put(DataMapProperty.QUERY_TYPE, queryType);
-    }
-    DataMapSchema dataMapSchema = new DataMapSchema(dataMapName, className);
-    dataMapSchema.setProperties(properties);
-
-    dataMapSchema.setChildSchema(this);
-    dataMapSchema.setRelationIdentifier(relationIdentifier);
-    return dataMapSchema;
   }
 
   /**

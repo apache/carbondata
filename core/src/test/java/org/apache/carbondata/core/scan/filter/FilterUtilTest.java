@@ -333,21 +333,6 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     assertFalse(result);
   }
 
-  @Test public void testPrepareDefaultEndIndexKey() throws Exception {
-    List<ColumnSchema> columnsInTable = new ArrayList<>();
-    columnsInTable.add(columnSchema);
-    int[] columnCardinality = new int[] { 1, 2 };
-    new MockUp<ColumnSchema>() {
-      @Mock public List<Encoding> getEncodingList() {
-        List<Encoding> encodingList = new ArrayList<>();
-        encodingList.add(Encoding.DICTIONARY);
-        return encodingList;
-      }
-    };
-    SegmentProperties segmentProperties = new SegmentProperties(columnsInTable, columnCardinality);
-    assertTrue(FilterUtil.prepareDefaultEndIndexKey(segmentProperties) instanceof IndexKey);
-  }
-
   @Test public void testCheckIfRightExpressionRequireEvaluation() {
     Expression expression = new ColumnExpression("test", DataTypes.STRING);
     boolean result = FilterUtil.checkIfRightExpressionRequireEvaluation(expression);

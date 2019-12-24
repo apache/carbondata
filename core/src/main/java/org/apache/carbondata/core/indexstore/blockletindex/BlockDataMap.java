@@ -783,13 +783,11 @@ public class BlockDataMap extends CoarseGrainDataMap
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties properties,
       List<PartitionSpec> partitions, CarbonTable carbonTable) throws IOException {
-    return prune(new DataMapFilter(properties, carbonTable, expression).getResolver(), properties,
-        partitions);
+    return prune(new DataMapFilter(properties, carbonTable, expression).getResolver(), partitions);
   }
 
   @Override
-  public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions) {
+  public List<Blocklet> prune(FilterResolverIntf filterExp, List<PartitionSpec> partitions) {
     if (memoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
     }

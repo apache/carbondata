@@ -50,7 +50,6 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
    */
   public CarbonDeleteDeltaWriterImpl(String filePath) {
     this.filePath = filePath;
-
   }
 
   /**

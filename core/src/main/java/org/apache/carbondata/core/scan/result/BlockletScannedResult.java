@@ -197,10 +197,6 @@ public abstract class BlockletScannedResult {
     this.msrRawColumnChunks = msrRawColumnChunks;
   }
 
-  public LazyBlockletLoader getLazyBlockletLoader() {
-    return lazyBlockletLoader;
-  }
-
   public void setLazyBlockletLoader(LazyBlockletLoader lazyBlockletLoader) {
     this.lazyBlockletLoader = lazyBlockletLoader;
   }
@@ -465,10 +461,6 @@ public abstract class BlockletScannedResult {
 
   public int numberOfpages() {
     return pageFilteredRowCount.length;
-  }
-
-  public int[] getPageIdFiltered() {
-    return pageIdFiltered;
   }
 
   public void setPageIdFiltered(int[] pageIdFiltered) {
@@ -748,12 +740,6 @@ public abstract class BlockletScannedResult {
   public abstract int getCurrentRowId();
 
   /**
-   * @return dictionary key array for all the dictionary dimension
-   * selected in query
-   */
-  public abstract byte[] getDictionaryKeyArray();
-
-  /**
    * @return dictionary key array for all the dictionary dimension in integer array forat
    * selected in query
    */
@@ -821,7 +807,7 @@ public abstract class BlockletScannedResult {
    *
    * @return no dictionary keys for all no dictionary dimension
    */
-  public List<byte[][]> getNoDictionaryKeyArrayBatch(int batchSize) {
+  public List<byte[][]> getNoDictionaryKeyArrayBatch() {
     List<byte[][]> noDictionaryKeyArrayList = new ArrayList<>(validRowIds.size());
     byte[][] noDictionaryColumnsKeys = null;
     // everyTime it is initialized new as in case of prefetch it can modify the data

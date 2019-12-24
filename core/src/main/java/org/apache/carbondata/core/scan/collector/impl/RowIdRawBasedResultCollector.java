@@ -123,7 +123,7 @@ public class RowIdRawBasedResultCollector extends AbstractScannedResultCollector
     long startTime = System.currentTimeMillis();
     List<byte[]> dictionaryKeyArrayBatch = scannedResult.getDictionaryKeyArrayBatch(batchSize);
     List<byte[][]> noDictionaryKeyArrayBatch =
-        scannedResult.getNoDictionaryKeyArrayBatch(batchSize);
+        scannedResult.getNoDictionaryKeyArrayBatch();
     List<byte[][]> complexTypeKeyArrayBatch = scannedResult.getComplexTypeKeyArrayBatch(batchSize);
     // it will same for one blocklet so can be computed only once
     byte[] implicitColumnByteArray = scannedResult.getBlockletId()

@@ -37,7 +37,6 @@ import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
@@ -155,9 +154,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) throws IOException {
     String[] storeLocation = getStoreLocation();
-    DataMapWriterListener listener = getDataMapWriterListener(0);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
-        configuration, storeLocation, 0, iteratorIndex, listener);
+        configuration, storeLocation, 0, iteratorIndex);
     model.setColumnLocalDictGenMap(localDictionaryGeneratorMap);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;

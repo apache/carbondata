@@ -25,7 +25,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.SizeEstimator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DistributableDataMapFormat}
+import org.apache.carbondata.core.datamap.{DataMapJob, DistributableDataMapFormat}
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.scan.expression.BinaryExpression
@@ -39,7 +39,7 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil.logTime
  * Spark job to execute datamap job and prune all the datamaps distributable. This job will prune
  * and cache the appropriate datamaps in executor LRUCache.
  */
-class DistributedDataMapJob extends AbstractDataMapJob {
+class DistributedDataMapJob extends DataMapJob {
 
   val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -117,7 +117,7 @@ class DistributedDataMapJob extends AbstractDataMapJob {
  * Spark job to execute datamap job and prune all the datamaps distributable. This job will just
  * prune the datamaps but will not cache in executors.
  */
-class EmbeddedDataMapJob extends AbstractDataMapJob {
+class EmbeddedDataMapJob extends DataMapJob {
 
   override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
     val spark = SparkSQLUtil.getSparkSession

@@ -253,8 +253,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       }
       newMetaEntry.setUpdateStatusFileName(uniqueId);
       // Commit the removed partitions in carbon store.
-      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid,
-          Segment.toSegmentList(tobeDeletedSegs, null),
+      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false,
+          false, Segment.toSegmentList(tobeDeletedSegs, null),
           Segment.toSegmentList(tobeUpdatedSegs, null));
       return uniqueId;
     }
