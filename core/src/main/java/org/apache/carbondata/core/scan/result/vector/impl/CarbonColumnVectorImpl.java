@@ -60,12 +60,6 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   private int batchSize;
 
-  /**
-   * True if there is at least one NULL byte set. This is an optimization for the writer, to skip
-   * having to clear NULL bits.
-   */
-  protected boolean anyNullsSet;
-
   private CarbonDictionary carbonDictionary;
 
   private CarbonColumnVector dictionaryVector;
@@ -198,7 +192,6 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   @Override
   public void putNull(int rowId) {
     nullBytes.set(rowId);
-    anyNullsSet = true;
   }
 
   @Override
@@ -206,7 +199,6 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     for (int i = 0; i < count; ++i) {
       nullBytes.set(rowId + i);
     }
-    anyNullsSet = true;
   }
 
   @Override

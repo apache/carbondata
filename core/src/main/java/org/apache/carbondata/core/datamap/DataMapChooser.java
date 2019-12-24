@@ -61,12 +61,10 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditio
 @InterfaceAudience.Internal
 public class DataMapChooser {
 
-  private CarbonTable carbonTable;
   private List<TableDataMap> cgDataMaps;
   private List<TableDataMap> fgDataMaps;
 
   public DataMapChooser(CarbonTable carbonTable) throws IOException {
-    this.carbonTable = carbonTable;
     // read all datamaps for this table and populate CG and FG datamap list
     List<TableDataMap> visibleDataMaps =
         DataMapStoreManager.getInstance().getAllVisibleDataMap(carbonTable);
