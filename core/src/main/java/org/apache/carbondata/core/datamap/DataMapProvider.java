@@ -64,8 +64,6 @@ import org.apache.log4j.Logger;
  *
  * <br>Currently CarbonData supports following provider:
  * <ol>
- *   <li> preaggregate: pre-aggregate table of single table </li>
- *   <li> timeseries: pre-aggregate table based on time dimension of the table </li>
  *   <li> lucene: index backed by Apache Lucene </li>
  *   <li> bloomfilter: index backed by Bloom Filter </li>
  * </ol>

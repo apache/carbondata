@@ -25,7 +25,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.carbondata.examples.util.ExampleUtils
 
 /**
- * This example is for pre-aggregate tables.
+ * This example is for Materialized View.
  */
 
 object MVDataMapExample {
@@ -42,7 +42,6 @@ object MVDataMapExample {
                             + "../../../..").getCanonicalPath
     val testData = s"$rootPath/integration/spark-common-test/src/test/resources/sample.csv"
 
-    // 1. simple usage for Pre-aggregate tables creation and query
     spark.sql("DROP TABLE IF EXISTS mainTable")
     spark.sql("DROP TABLE IF EXISTS dimtable")
     spark.sql(

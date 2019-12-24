@@ -177,28 +177,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    */
 
   /**
-   * Below method will be used to get the filter segments when query is fired on pre Aggregate
-   * and main table in case of streaming.
-   * For Pre Aggregate rules it will set all the valid segments for both streaming and
-   * and normal for fact table, so if any handoff happened in between it will
-   * select only new hand off segments segments for fact.
-   * @param validSegments
-   * @param segmentsToAccess
-   * @return
-   */
-  private List<Segment> getFilteredNormalSegments(List<Segment> validSegments,
-      Segment[] segmentsToAccess) {
-    List<Segment> segmentToAccessSet = Arrays.asList(segmentsToAccess);
-    List<Segment> filteredSegment = new ArrayList<>();
-    for (Segment seg : validSegments) {
-      if (!segmentToAccessSet.contains(seg)) {
-        filteredSegment.add(seg);
-      }
-    }
-    return filteredSegment;
-  }
-
-  /**
    * Return segment list after filtering out valid segments and segments set by user by
    * `INPUT_SEGMENT_NUMBERS` in job configuration
    */

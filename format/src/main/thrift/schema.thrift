@@ -105,6 +105,7 @@ struct ColumnSchema{
 	/** 
 	 * Used when this column is part of an aggregate table.
 	 */
+	 /** Deprecated */
 	11: optional string aggregate_function;
 
 	12: optional binary default_value;
@@ -129,6 +130,7 @@ struct ColumnSchema{
   *  to maintain the column relation with parent table.
   *  will be usefull in case of pre-aggregate
   **/
+  /** Deprecated */
 	17: optional list<ParentColumnTableRelation> parentColumnTableRelations;
 }
 
@@ -204,10 +206,11 @@ struct DataMapSchema  {
     // stores properties of select query, query type like groupby, join in
     // case of preaggregate/timeseries
     3: optional map<string, string> properties;
-    // relation identifier of a table which stores data of datamaps like preaggregate/timeseries.
+    // relation identifier of a table which stores data of Materialize View.
     4: optional RelationIdentifier childTableIdentifier;
     // in case of preaggregate/timeseries datamap it will be used to maintain the child schema
     // which will be usefull in case of query and data load
+    // Deprecated
     5: optional TableSchema childTableSchema;
 }
 

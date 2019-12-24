@@ -32,7 +32,7 @@ import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.M
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
- * Utility class for keeping all the utility methods common for pre-aggregate and mv datamap
+ * Utility class for keeping all the utility methods common for MV
  */
 object DataMapUtil {
 

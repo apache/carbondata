@@ -50,7 +50,7 @@ public class LoadEvents {
 
   /**
    * Class for handling operations after data load completion and before final
-   * commit of load operation. Example usage: For loading pre-aggregate tables
+   * commit of load operation. Example usage: For loading MV
    */
 
   public static class LoadTablePostExecutionEvent extends Event {
@@ -74,7 +74,7 @@ public class LoadEvents {
 
   /**
    * Event for handling operations after data load completion and before final
-   * commit of load operation. Example usage: For loading pre-aggregate tables
+   * commit of load operation. Example usage: For loading MV
    */
 
   public static class LoadTablePreStatusUpdateEvent extends Event {

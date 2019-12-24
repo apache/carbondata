@@ -1503,7 +1503,7 @@ public final class CarbonCommonConstants {
 
   /**
    * Whether load/insert command is fired internally or by the user.
-   * Used to block load/insert on pre-aggregate if fired by user
+   * Used to block load/insert on MV if fired by user
    */
   @CarbonProperty
   public static final String IS_INTERNAL_LOAD_CALL = "is.internal.load.call";

@@ -33,7 +33,7 @@ case class CreateTablePreExecutionEvent(
 
 /**
  * Class for handling operations after data load completion and before final
- * commit of load operation. Example usage: For loading pre-aggregate tables
+ * commit of load operation.
  */
 case class CreateTablePostExecutionEvent(sparkSession: SparkSession,
     identifier: AbsoluteTableIdentifier) extends Event with TableEventInfo
