@@ -101,8 +101,17 @@ class TestMVTimeSeriesCreateDataMapCommand extends QueryTest with BeforeAndAfter
       sql(
         "create datamap datamap1 on table maintable_new using 'mv' as " +
         "select timeseries(projectjoindate,'second') from maintable_new")
-    }.getMessage
-      .contains("Granularity should be DAY,MONTH or YEAR, for timeseries column of Date type")
+    }.getMessage.contains("Granularity should be of DAY/WEEK/MONTH/YEAR, for timeseries column of Date type")
+    intercept[MalformedCarbonCommandException] {
+      sql(
+        "create datamap datamap1 on table maintable_new using 'mv' as " +
+        "select timeseries(projectjoindate,'five_minute') from maintable_new")
+    }.getMessage.contains("Granularity should be of DAY/WEEK/MONTH/YEAR, for timeseries column of Date type")
+    intercept[MalformedCarbonCommandException] {
+      sql(
+        "create datamap datamap1 on table maintable_new using 'mv' as " +
+        "select timeseries(projectjoindate,'hour') from maintable_new")
+      }.getMessage.contains("Granularity should be of DAY/WEEK/MONTH/YEAR, for timeseries column of Date type")
     sql("drop table IF EXISTS maintable_new")
   }
 
