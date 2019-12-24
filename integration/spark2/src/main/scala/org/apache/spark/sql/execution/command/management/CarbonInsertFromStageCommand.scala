@@ -70,8 +70,8 @@ case class CarbonInsertFromStageCommand(
     if (!table.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    if (table.isChildDataMap || table.isChildTable) {
-      throw new MalformedCarbonCommandException("Unsupported operation on child table")
+    if (table.isChildTableForMV) {
+      throw new MalformedCarbonCommandException("Unsupported operation on MV table")
     }
 
     val tablePath = table.getTablePath
