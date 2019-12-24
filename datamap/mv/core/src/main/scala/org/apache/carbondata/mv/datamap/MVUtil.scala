@@ -49,23 +49,37 @@ class MVUtil {
       case select: Select =>
         select.children.map {
           case groupBy: GroupBy =>
-            getFieldsFromProject(groupBy.outputList, groupBy.predicateList, logicalRelation)
+            getFieldsFromProject(groupBy.outputList, groupBy.predicateList,
+              logicalRelation, groupBy.flagSpec)
           case _: ModularRelation =>
-            getFieldsFromProject(select.outputList, select.predicateList, logicalRelation)
+            getFieldsFromProject(select.outputList, select.predicateList,
+              logicalRelation, select.flagSpec)
         }.head
       case groupBy: GroupBy =>
         groupBy.child match {
           case select: Select =>
-            getFieldsFromProject(groupBy.outputList, select.predicateList, logicalRelation)
+            getFieldsFromProject(groupBy.outputList, select.predicateList,
+              logicalRelation, select.flagSpec)
           case _: ModularRelation =>
-            getFieldsFromProject(groupBy.outputList, groupBy.predicateList, logicalRelation)
+            getFieldsFromProject(groupBy.outputList, groupBy.predicateList,
+              logicalRelation, groupBy.flagSpec)
         }
     }
   }
 
+  /**
+   * Create's main table to datamap table field relation map by using modular plan generated from
+   * user query
+   * @param outputList of the modular plan
+   * @param predicateList of the modular plan
+   * @param logicalRelation list of main table from query
+   * @param flagSpec to get SortOrder attribute if exists
+   * @return fieldRelationMap
+   */
   def getFieldsFromProject(outputList: Seq[NamedExpression],
       predicateList: Seq[Expression],
-      logicalRelation: Seq[LogicalRelation]): mutable.LinkedHashMap[Field, DataMapField] = {
+      logicalRelation: Seq[LogicalRelation],
+      flagSpec: Seq[Seq[Any]]): mutable.LinkedHashMap[Field, DataMapField] = {
     var fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, DataMapField]
     fieldToDataMapFieldMap ++== getFieldsFromProject(outputList, logicalRelation)
     var finalPredicateList: Seq[NamedExpression] = Seq.empty
@@ -73,6 +87,21 @@ class MVUtil {
       p.collect {
         case attr: AttributeReference =>
           finalPredicateList = finalPredicateList.:+(attr)
+      }
+    }
+    // collect sort by columns
+    if (flagSpec.nonEmpty) {
+      flagSpec.map { f =>
+        f.map {
+          case list: ArrayBuffer[_] =>
+            list.map {
+              case s: SortOrder =>
+                s.collect {
+                  case attr: AttributeReference =>
+                    finalPredicateList = finalPredicateList.:+(attr)
+                }
+            }
+        }
       }
     }
     fieldToDataMapFieldMap ++== getFieldsFromProject(finalPredicateList.distinct, logicalRelation)
