@@ -17,6 +17,7 @@
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
@@ -35,11 +36,9 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.util.{CarbonReflectionUtils, DataMapUtil, FileUtils, SparkUtil}
 
-import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
-import org.apache.carbondata.spark.util.Util
 
   /**
    * Carbon strategies for ddl commands
@@ -176,8 +175,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           val structField = (alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols)
             .map {
               a =>
-                StructField(a.column,
-                  Util.convertCarbonToSparkDataType(DataTypeUtil.valueOf(a.dataType.get)))
+                StructField(a.column, CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(
+                  DataTypeUtil.valueOf(a.dataType.get)))
             }
           val identifier = TableIdentifier(
             alterTableAddColumnsModel.tableName,
