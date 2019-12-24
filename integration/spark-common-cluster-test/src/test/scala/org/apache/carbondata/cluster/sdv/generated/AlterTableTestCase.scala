@@ -1022,8 +1022,31 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
       assert(exception.getMessage.contains("Unsupported alter operation on hive table"))
     } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       sql("alter table alter_hive add columns(add string)")
-      sql("insert into alter_hive select 'abc','banglore'")
       sql("alter table alter_hive add columns (var map<string, string>)")
+      sql("insert into alter_hive select 'abc','banglore',map('age','10','birth','2020')")
+      checkAnswer(
+        sql("select * from alter_hive"),
+        Seq(Row("abc", "banglore", Map("age" -> "10", "birth" -> "2020")))
+      )
+    }
+  }
+
+  test("Alter table add column for hive partitioned table for spark version above 2.1") {
+    sql("drop table if exists alter_hive")
+    sql("create table alter_hive(name string) stored as rcfile partitioned by (dt string)")
+    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      sql("alter table alter_hive add columns(add string)")
+      sql("alter table alter_hive add columns (var map<string, string>)")
+      sql("alter table alter_hive add columns (loves array<string>)")
+      sql(
+        s"""
+           |insert into alter_hive partition(dt='par')
+           |select 'abc', 'banglore', map('age', '10', 'birth', '2020'), array('a', 'b', 'c')
+         """.stripMargin)
+      checkAnswer(
+        sql("select * from alter_hive where dt='par'"),
+        Seq(Row("abc", "banglore", Map("age" -> "10", "birth" -> "2020"), Seq("a", "b", "c"), "par"))
+      )
     }
   }
 
