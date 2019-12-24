@@ -32,6 +32,7 @@ import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, NodeInfo}
 import org.apache.spark.sql.hive.DistributionUtil
@@ -680,7 +681,7 @@ class CarbonMergerRDD[K, V](
       partitionNames = null,
       splits = allSplits)
     val objectOrdering: Ordering[Object] = createOrderingForColumn(rangeColumn)
-    val sparkDataType = Util.convertCarbonToSparkDataType(dataType)
+    val sparkDataType = CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(dataType)
     // Change string type to support all types
     val sampleRdd = scanRdd
       .map(row => (row.get(0, sparkDataType), null))

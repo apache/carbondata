@@ -1023,6 +1023,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       sql("alter table alter_hive add columns(add string)")
       sql("insert into alter_hive select 'abc','banglore'")
+      sql("alter table alter_hive add columns (var map<string, string>)")
     }
   }
 
