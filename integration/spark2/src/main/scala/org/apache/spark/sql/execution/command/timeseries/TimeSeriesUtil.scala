@@ -154,10 +154,10 @@ object TimeSeriesUtil {
       timeSeriesFunction: String): Unit = {
     for (granularity <- Granularity.values()) {
       if (timeSeriesFunction.equalsIgnoreCase(granularity.getName
-        .substring(0, granularity.getName.indexOf(CarbonCommonConstants.UNDERSCORE)))) {
+        .substring(0, granularity.getName.lastIndexOf(CarbonCommonConstants.UNDERSCORE)))) {
         if (!supportedGranularitiesForDate.contains(granularity.getName)) {
           throw new MalformedCarbonCommandException(
-            "Granularity should be DAY,MONTH or YEAR, for timeseries column of Date type")
+            "Granularity should be of DAY/WEEK/MONTH/YEAR, for timeseries column of Date type")
         }
       }
     }

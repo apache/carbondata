@@ -541,6 +541,35 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table IF EXISTS maintable")
   }
 
+  test("test query aggregation on mv datamap ") {
+    sql("drop table if exists maintable")
+    sql("create table maintable(name string, age int, add string) stored by 'carbondata'")
+    sql("insert into maintable values('abc',1,'a'),('def',2,'b'),('ghi',3,'c')")
+    val res = sql("select sum(age) from maintable")
+    sql("drop datamap if exists mv3")
+    sql("create datamap mv3 on table maintable using 'mv' as select age,sum(age) from maintable group by age")
+    val df = sql("select sum(age) from maintable")
+    TestUtil.verifyMVDataMap(df.queryExecution.analyzed, "mv3")
+    checkAnswer(res, df)
+    sql("drop table if exists maintable")
+  }
+
+  test("test order by columns not given in projection") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    val res = sql("select name from maintable order by c_code")
+    sql("drop datamap if exists dm1")
+    sql("create datamap dm1 using 'mv' as select name from maintable order by c_code")
+    val df = sql("select name from maintable order by c_code")
+    TestUtil.verifyMVDataMap(df.queryExecution.analyzed, "dm1")
+    checkAnswer(res, df)
+    intercept[Exception] {
+      sql("alter table maintable drop columns(c_code)")
+    }.getMessage.contains("Column name cannot be dropped because it exists in mv datamap: dm1")
+   sql("drop table if exists maintable")
+  }
+
   test("drop meta cache on mv datamap table") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")

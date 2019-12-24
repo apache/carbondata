@@ -385,16 +385,15 @@ object GroupbyGroupbyNoChildDelta extends DefaultMatchPattern {
           gb_2a.predicateList.exists(_.semanticEquals(expr)))
         val isGroupingRmE = gb_2a.predicateList.forall(expr =>
           gb_2q.predicateList.exists(_.semanticEquals(expr)))
+        val isOutputEmR = gb_2q.outputList.forall {
+          case a @ Alias(_, _) =>
+            gb_2a.outputList.exists{
+              case a1: Alias => a1.child.semanticEquals(a.child)
+              case exp => exp.semanticEquals(a.child)
+            }
+          case exp => gb_2a.outputList.exists(_.semanticEquals(exp))
+        }
         if (isGroupingEmR && isGroupingRmE) {
-          val isOutputEmR = gb_2q.outputList.forall {
-            case a @ Alias(_, _) =>
-              gb_2a.outputList.exists{
-                case a1: Alias => a1.child.semanticEquals(a.child)
-                case exp => exp.semanticEquals(a.child)
-              }
-            case exp => gb_2a.outputList.exists(_.semanticEquals(exp))
-          }
-
           if (isOutputEmR) {
             // Mappings of output of two plans by checking semantic equals.
             val mappings = gb_2a.outputList.zipWithIndex.map { case(exp, index) =>
@@ -424,11 +423,35 @@ object GroupbyGroupbyNoChildDelta extends DefaultMatchPattern {
             Utils.tryMatch(
               gb_2a, gb_2q, aliasMap).flatMap {
               case g: GroupBy =>
-                Some(g.copy(child = g.child.withNewChildren(
-                  g.child.children.map {
-                    case modular.Select(_, _, _, _, _, _, _, _, _, _) => gb_2a;
-                    case other => other
-                  })));
+                // Check any agg function exists on outputlist, in case of expressions like
+                // sum(a), then create new alias and copy to group by node
+                val aggFunExists = g.outputList.exists { f =>
+                  f.find {
+                    case _: AggregateExpression => true
+                    case _ => false
+                  }.isDefined
+                }
+                if (aggFunExists && !isGroupingRmE && isOutputEmR) {
+                  val tChildren = new collection.mutable.ArrayBuffer[ModularPlan]()
+                  val sel_1a = g.child.asInstanceOf[Select]
+
+                  val usel_1a = sel_1a.copy(outputList = sel_1a.outputList)
+                  tChildren += gb_2a
+                  val sel_1q_temp = sel_1a.copy(
+                    predicateList = sel_1a.predicateList,
+                    children = tChildren,
+                    joinEdges = sel_1a.joinEdges,
+                    aliasMap = Seq(0 -> rewrite.newSubsumerName()).toMap)
+
+                  val res = factorOutSubsumer(sel_1q_temp, usel_1a, sel_1q_temp.aliasMap)
+                  Some(g.copy(child = res))
+                } else {
+                  Some(g.copy(child = g.child.withNewChildren(
+                    g.child.children.map {
+                      case modular.Select(_, _, _, _, _, _, _, _, _, _) => gb_2a;
+                      case other => other
+                    })));
+                }
               case _ => None}.map(Seq(_)).getOrElse(Nil)
           } else {
             Nil

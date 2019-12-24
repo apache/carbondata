@@ -73,7 +73,7 @@ EXPLAIN SELECT a, sum(b) from maintable group by a;
     GROUP BY country, sex
   ```
  **NOTE**:
- * Group by/Filter columns has to be provided in projection list while creating mv datamap
+ * Group by columns has to be provided in projection list while creating mv datamap
  * If only single parent table is involved in mv datamap creation, then TableProperties of Parent table
    (if not present in a aggregate function like sum(col)) listed below will be
    inherited to datamap table
@@ -91,7 +91,14 @@ EXPLAIN SELECT a, sum(b) from maintable group by a;
    12. NO_INVERTED_INDEX
    13. COLUMN_COMPRESSOR
 
- * All columns of main table at once cannot participate in mv datamap table creation
+ * Creating MV datamap with select query containing only project of all columns of maintable is unsupported 
+      
+   **Example:**
+   If table 'x' contains columns 'a,b,c',
+   then creating MV datamap with below queries is not supported.
+   
+   1. ```select a,b,c from x```
+   2. ```select * from x```
  * TableProperties can be provided in DMProperties excluding LOCAL_DICTIONARY_INCLUDE,
    LOCAL_DICTIONARY_EXCLUDE, DICTIONARY_INCLUDE, DICTIONARY_EXCLUDE, INVERTED_INDEX,
    NO_INVERTED_INDEX, SORT_COLUMNS, LONG_STRING_COLUMNS, RANGE_COLUMN & COLUMN_META_CACHE
