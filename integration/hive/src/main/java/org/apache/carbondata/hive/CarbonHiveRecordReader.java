@@ -83,8 +83,6 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     queryModel.setTableBlockInfos(tableBlockInfoList);
     readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
     carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
-    final TypeInfo rowTypeInfo;
-    final List<String> columnNames;
     List<TypeInfo> columnTypes;
     // Get column names and sort order
     final String colIds = conf.get("hive.io.file.readcolumn.ids");

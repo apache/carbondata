@@ -113,13 +113,9 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
     queryModel.setVectorReader(true);
-    try {
-      queryExecutor =
-          QueryExecutorFactory.getQueryExecutor(queryModel, taskAttemptContext.getConfiguration());
-      iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
-    } catch (QueryExecutionException e) {
-      throw new InterruptedException(e.getMessage());
-    }
+    queryExecutor =
+        QueryExecutorFactory.getQueryExecutor(queryModel, taskAttemptContext.getConfiguration());
+    iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
   }
 
   @Override
