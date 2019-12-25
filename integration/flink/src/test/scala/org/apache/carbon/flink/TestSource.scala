@@ -1,17 +1,19 @@
 package org.apache.carbon.flink
 
+import java.util.Random
+
 import org.apache.flink.api.common.state.{ListState, ListStateDescriptor}
 import org.apache.flink.runtime.state.{FunctionInitializationContext, FunctionSnapshotContext}
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 
-abstract class TestSource(val dataCount: Int) extends SourceFunction[String] with CheckpointedFunction {
+abstract class TestSource(val dataCount: Int) extends SourceFunction[Array[AnyRef]] with CheckpointedFunction {
   private var dataIndex = 0
   private var dataIndexState: ListState[Integer] = _
   private var running = false
 
   @throws[Exception]
-  def get(index: Int): String
+  def get(index: Int): Array[AnyRef]
 
   @throws[Exception]
   def onFinish(): Unit = {
@@ -19,7 +21,7 @@ abstract class TestSource(val dataCount: Int) extends SourceFunction[String] wit
   }
 
   @throws[Exception]
-  override def run(sourceContext: SourceFunction.SourceContext[String]): Unit = {
+  override def run(sourceContext: SourceFunction.SourceContext[Array[AnyRef]]): Unit = {
     this.running = true
     while ( {
       this.running && this.dataIndex < this.dataCount
@@ -49,4 +51,12 @@ abstract class TestSource(val dataCount: Int) extends SourceFunction[String] wit
       this.dataIndex = dataIndex
     }
   }
+}
+
+object TestSource {
+
+  val randomCache = new ThreadLocal[Random] {
+    override def initialValue(): Random = new Random()
+  }
+
 }

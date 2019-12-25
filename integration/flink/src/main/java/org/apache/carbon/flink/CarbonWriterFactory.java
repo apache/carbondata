@@ -24,7 +24,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.flink.core.fs.FSDataOutputStream;
 
-public abstract class CarbonWriterFactory extends ProxyFileWriterFactory<String> {
+public abstract class CarbonWriterFactory extends ProxyFileWriterFactory<Object[]> {
 
   public static CarbonWriterFactoryBuilder builder(final String type) {
     return CarbonWriterFactoryBuilder.get(type);
@@ -44,14 +44,14 @@ public abstract class CarbonWriterFactory extends ProxyFileWriterFactory<String>
   }
 
   @Override
-  public CarbonWriter create(final String partition) throws IOException {
+  public CarbonWriter create(final String identifier, final String path) throws IOException {
     this.setCarbonProperties();
-    return this.create0(partition);
+    return this.create0(identifier, path);
   }
 
   protected abstract CarbonWriter create0() throws IOException;
 
-  protected abstract CarbonWriter create0(String partition) throws IOException;
+  protected abstract CarbonWriter create0(String identifier, String path) throws IOException;
 
   protected CarbonTable getTable() throws IOException {
     final Configuration configuration = this.getConfiguration();

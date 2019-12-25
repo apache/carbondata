@@ -39,6 +39,12 @@ public class StageInput {
    */
   private Map<String, Long> files;
 
+  /**
+   * this list of partition data information in this StageInput
+   * @see PartitionLocation
+   */
+  private List<PartitionLocation> locations;
+
   public StageInput() {
 
   }
@@ -46,6 +52,11 @@ public class StageInput {
   public StageInput(String base, Map<String, Long> files) {
     this.base = base;
     this.files = files;
+  }
+
+  public StageInput(String base, List<PartitionLocation> locations) {
+    this.base = base;
+    this.locations = locations;
   }
 
   public String getBase() {
@@ -64,6 +75,14 @@ public class StageInput {
     this.files = files;
   }
 
+  public List<PartitionLocation> getLocations() {
+    return this.locations;
+  }
+
+  public void setLocations(final List<PartitionLocation> locations) {
+    this.locations = locations;
+  }
+
   public List<InputSplit> createSplits() {
     return
         files.entrySet().stream().filter(
@@ -73,6 +92,45 @@ public class StageInput {
                 base + CarbonCommonConstants.FILE_SEPARATOR + entry.getKey(),
                 0, entry.getValue(), ColumnarFormatVersion.V3, null)
         ).collect(Collectors.toList());
+  }
+
+  public static final class PartitionLocation {
+
+    public PartitionLocation() {
+
+    }
+
+    public PartitionLocation(final Map<String, String> partitions, final Map<String, Long> files) {
+      this.partitions = partitions;
+      this.files = files;
+    }
+
+    /**
+     * the list of (partitionColumn, partitionValue) of this partition.
+     */
+    private Map<String, String> partitions;
+
+    /**
+     * the list of (file, length) in this partition.
+     */
+    private Map<String, Long> files;
+
+    public Map<String, String> getPartitions() {
+      return this.partitions;
+    }
+
+    public void setPartitions(final Map<String, String> partitions) {
+      this.partitions = partitions;
+    }
+
+    public Map<String, Long> getFiles() {
+      return this.files;
+    }
+
+    public void setFiles(final Map<String, Long> files) {
+      this.files = files;
+    }
+
   }
 
 }

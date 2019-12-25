@@ -82,7 +82,8 @@ public final class ProxyRecoverableOutputStream extends RecoverableFsDataOutputS
         new ProxyRecoverable(
             this.writer.getFactory().getType(),
             this.writer.getFactory().getConfiguration(),
-            this.writer.getPartition()
+            this.writer.getIdentifier(),
+            this.writer.getPath()
         )
     );
   }
@@ -118,7 +119,8 @@ public final class ProxyRecoverableOutputStream extends RecoverableFsDataOutputS
         throw new UnsupportedOperationException();
       }
       writerFactory.setConfiguration(this.recoverable.getWriterConfiguration());
-      return writerFactory.create(this.recoverable.getPartition());
+      return writerFactory.create(this.recoverable.getWriterIdentifier(),
+          this.recoverable.getWritePath());
     }
 
   }
