@@ -469,11 +469,17 @@ class SparkCarbonDataSourceBinaryTest extends FunSuite with BeforeAndAfterAll {
              """.stripMargin)
         sql("insert into carbon_table select * from hivetable")
 
-        sqlContext.udf.register("decodeHex", (str: String) => Hex.decodeHex(str.toCharArray))
+        def getHexString(str: String) = {
+            str.toList.map(_.toInt.toHexString).mkString
+        }
+        sqlContext.udf.register("decodeHex", (str: String) =>
+            Hex.decodeHex(getHexString(str).toCharArray))
+        sqlContext.udf.register("encodeHex", (str: String) =>
+            org.apache.spark.sql.catalyst.expressions.Hex.unhex(getHexString(str).getBytes))
         sqlContext.udf.register("decodeBase64", (str: String) => Base64.decodeBase64(str.getBytes()))
 
         val udfHexResult = sql("SELECT decodeHex(image) FROM carbon_table")
-        val unhexResult = sql("SELECT unhex(image) FROM carbon_table")
+        val unhexResult = sql("SELECT encodeHex(image) FROM carbon_table")
         checkAnswer(udfHexResult, unhexResult)
 
         val udfBase64Result = sql("SELECT decodeBase64(image) FROM carbon_table")
