@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.rdd
 
 import java.io.IOException
 import java.util
-import java.util.{Collections, List, Map}
+import java.util.{Collections, List}
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.mutable
@@ -36,7 +36,7 @@ import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSour
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, NodeInfo}
 import org.apache.spark.sql.hive.DistributionUtil
-import org.apache.spark.sql.util.{CarbonException, SparkTypeConverter}
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
@@ -65,8 +65,8 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.MergeResult
-import org.apache.carbondata.spark.load.{ByteArrayOrdering, DataLoadProcessBuilderOnSpark, PrimtiveOrdering, StringOrdering}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
+import org.apache.carbondata.spark.load.{DataLoadProcessBuilderOnSpark, PrimtiveOrdering, StringOrdering}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 class CarbonMergerRDD[K, V](
     @transient private val ss: SparkSession,
