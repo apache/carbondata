@@ -167,7 +167,6 @@ class ScanBenchmark implements Command {
   }
 
   private DataFileFooter readAndConvertFooter(DataFile file) throws IOException {
-    int numBlocklets = file.getNumBlocklet();
     BlockletInfos blockletInfos = new BlockletInfos(0);
     String segmentId = CarbonTablePath.DataFileUtil.getSegmentNo(file.getFilePath());
     TableBlockInfo blockInfo =
