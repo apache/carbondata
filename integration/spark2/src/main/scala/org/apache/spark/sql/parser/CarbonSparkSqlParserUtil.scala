@@ -754,10 +754,6 @@ object CarbonSparkSqlParserUtil {
       options = optionsMap,
       isOverwriteTable = isOverwrite.isDefined,
       inputSqlString = null,
-      dataFrame = None,
-      updateModel = None,
-      tableInfoOp = None,
-      internalOptions = Map.empty,
       partition = partitionSpec)
   }
 }

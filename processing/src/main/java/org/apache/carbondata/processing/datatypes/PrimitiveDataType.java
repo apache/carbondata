@@ -26,7 +26,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
@@ -46,15 +45,12 @@ import org.apache.carbondata.processing.loading.dictionary.DirectDictionary;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-import org.apache.log4j.Logger;
-
 /**
  * Primitive DataType stateless object used in data loading
  */
 public class PrimitiveDataType implements GenericDataType<Object> {
 
-  private static final Logger LOGGER =
-      LogServiceFactory.getLogService(PrimitiveDataType.class.getName());
+  private static final long serialVersionUID = -1518322888733363638L;
 
   /**
    * surrogate index
@@ -91,7 +87,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    */
   private int dataCounter;
 
-  private BiDictionary<Integer, Object> dictionaryGenerator;
+  private transient BiDictionary<Integer, Object> dictionaryGenerator;
 
   private CarbonDimension carbonDimension;
 
@@ -103,7 +99,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private DataType dataType;
 
-  private BinaryDecoder binaryDecoder;
+  private transient BinaryDecoder binaryDecoder;
 
   private PrimitiveDataType(int outputArrayIndex, int dataCounter) {
     this.outputArrayIndex = outputArrayIndex;

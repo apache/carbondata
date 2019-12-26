@@ -23,7 +23,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
+import org.apache.spark.sql.execution.command.management.CarbonInsertIntoWithDf
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.strategy.MixedFormatHandler
 import org.apache.spark.sql.functions._
@@ -38,11 +38,10 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
-import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
 import org.apache.carbondata.processing.loading.FailureCauses
 
 private[sql] case class CarbonProjectForUpdateCommand(
@@ -317,16 +316,13 @@ private[sql] case class CarbonProjectForUpdateCommand(
 
     val header = getHeader(carbonRelation, plan)
 
-    CarbonLoadDataCommand(
-      Some(carbonRelation.identifier.getCarbonTableIdentifier.getDatabaseName),
-      carbonRelation.identifier.getCarbonTableIdentifier.getTableName,
-      null,
-      Seq(),
-      Map(("fileheader" -> header)),
-      false,
-      null,
-      Some(dataFrame),
-      Some(updateTableModel)).run(sparkSession)
+    CarbonInsertIntoWithDf(
+      databaseNameOp = Some(carbonRelation.identifier.getCarbonTableIdentifier.getDatabaseName),
+      tableName = carbonRelation.identifier.getCarbonTableIdentifier.getTableName,
+      options = Map(("fileheader" -> header)),
+      isOverwriteTable = false,
+      dataFrame = dataFrame,
+      updateModel = Some(updateTableModel)).process(sparkSession)
 
     executorErrors.errorMsg = updateTableModel.executorErrors.errorMsg
     executorErrors.failureCauses = updateTableModel.executorErrors.failureCauses

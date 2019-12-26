@@ -20,6 +20,8 @@ package org.apache.carbondata.spark.load
 import java.util.Comparator
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.reflect.classTag
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.InputSplit
@@ -27,8 +29,8 @@ import org.apache.spark.{CarbonInputMetrics, DataSkewRangePartitioner, TaskConte
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
 import org.apache.spark.storage.StorageLevel
@@ -47,6 +49,7 @@ import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat
+import org.apache.carbondata.processing.datatypes.GenericDataType
 import org.apache.carbondata.processing.loading.{CarbonDataLoadConfiguration, DataField, DataLoadProcessBuilder, FailureCauses}
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
@@ -54,7 +57,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.sort.sortdata.{NewRowComparator, NewRowComparatorForNormalDims, SortParameters}
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, TableOptionConstant}
 import org.apache.carbondata.spark.rdd.{CarbonScanRDD, StringArrayRow}
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CommonUtil, Util}
 import org.apache.carbondata.store.CarbonRowReadSupport
 
 /**
@@ -177,6 +180,95 @@ object DataLoadProcessBuilderOnSpark {
     LOGGER.info("Total rows processed in step Data Writer: " + writeStepRowCounter.value)
 
     updateLoadStatus(model, partialSuccessAccum)
+  }
+
+  def insertDataUsingGlobalSortWithInternalRow(
+      sparkSession: SparkSession,
+      scanResultRDD : RDD[InternalRow],
+      model: CarbonLoadModel,
+      hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+    val originRDD = scanResultRDD
+
+    val sc = sparkSession.sparkContext
+    val modelBroadcast = sc.broadcast(model)
+    val partialSuccessAccum = sc.longAccumulator("Partial Success Accumulator")
+    val sortStepRowCounter = sc.longAccumulator("Sort Processor Accumulator")
+    val writeStepRowCounter = sc.longAccumulator("Write Processor Accumulator")
+
+    hadoopConf
+      .set(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, sparkSession.sparkContext.appName)
+
+    val conf = SparkSQLUtil.broadCastHadoopConf(sc, hadoopConf)
+    val configuration = DataLoadProcessBuilder.createConfiguration(model)
+
+    // 1. Convert internalRow to object array
+    val fields = Util
+      .convertToSparkSchemaFromColumnSchema(model.getCarbonDataLoadSchema.getCarbonTable, true)
+      .fields
+      .toSeq
+
+    val dataTypes = fields.map(field => field.dataType)
+    val map: mutable.Map[String, GenericDataType[_]] = mutable.Map[String, GenericDataType[_]]()
+    CommonUtil.convertComplexDataType(map, configuration)
+    val rdd = originRDD.map { internalRow =>
+      CommonUtil.getObjectArrayFromInternalRowAndConvertComplexTypeForGlobalSort(internalRow,
+        fields,
+        map)
+    }
+
+    // 2. sort
+    var numPartitions = CarbonDataProcessorUtil.getGlobalSortPartitions(
+      configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS))
+    if (numPartitions <= 0) {
+      numPartitions = originRDD.partitions.length
+    }
+    // Because if the number of partitions greater than 1, there will be action operator
+    // (sample) in
+    // sortBy operator. So here we cache the rdd to avoid do input and convert again.
+    if (numPartitions > 1) {
+      rdd.persist(StorageLevel.fromString(
+        CarbonProperties.getInstance().getGlobalSortRddStorageLevel()))
+    }
+    val sortColumnsLength = model.getCarbonDataLoadSchema.getCarbonTable.getSortColumns.size()
+    val sortColumnDataTypes = dataTypes.take(sortColumnsLength)
+    val rowComparator = GlobalSortHelper.generateRowComparator(sortColumnDataTypes)
+    val sortRDD = rdd.sortBy(row =>
+      getKey(row, sortColumnsLength, sortColumnDataTypes),
+      true,
+      numPartitions)(
+      rowComparator, classTag[Array[AnyRef]])
+    val newRDD = sortRDD
+      .mapPartitionsWithIndex { case (index, rows) =>
+        DataLoadProcessorStepOnSpark.convertTo3PartsFromObjectArray(rows, index, model,
+          sortStepRowCounter)
+      }
+
+    // 3. Write
+    sc.runJob(newRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
+      setTaskListener()
+      val model = modelBroadcast.value.getCopyWithTaskNo(context.partitionId.toString)
+      DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, model,
+        writeStepRowCounter, conf.value.value)
+    })
+    // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will
+    // not have any functional impact as spark automatically monitors the cache usage on each node
+    // and drops out old data partiotions in a least-recently used (LRU) fashion.
+    if (numPartitions > 1) {
+      rdd.unpersist(false)
+    }
+    // Log the number of rows in each step
+    LOGGER.info("Total rows processed in step Sort Processor: " + sortStepRowCounter.value)
+    LOGGER.info("Total rows processed in step Data Writer: " + writeStepRowCounter.value)
+
+    updateLoadStatus(model, partialSuccessAccum)
+  }
+
+  def getKey(row: Array[AnyRef],
+      sortColumnsLength: Int,
+      dataTypes: Seq[org.apache.spark.sql.types.DataType]): Array[AnyRef] = {
+    val key: Array[AnyRef] = new Array[AnyRef](sortColumnsLength)
+    System.arraycopy(row, 0, key, 0, sortColumnsLength)
+    key
   }
 
   private def updateLoadStatus(model: CarbonLoadModel, partialSuccessAccum: LongAccumulator

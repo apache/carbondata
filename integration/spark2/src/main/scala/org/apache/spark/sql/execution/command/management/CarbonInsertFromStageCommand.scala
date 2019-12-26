@@ -275,7 +275,7 @@ case class CarbonInsertFromStageCommand(
         loadModel,
         SparkSQLUtil.sessionState(spark).newHadoopConf()
       ).map { row =>
-          (row._1, FailureCauses.NONE == row._2._2.failureCauses)
+        (row._1, FailureCauses.NONE == row._2._2.failureCauses)
       }
       LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
 
@@ -321,22 +321,18 @@ case class CarbonInsertFromStageCommand(
         val header = columns.mkString(",")
         val selectColumns = columns.filter(!partition.contains(_))
         val selectedDataFrame = dataFrame.select(selectColumns.head, selectColumns.tail: _*)
-        val loadCommand = CarbonLoadDataCommand(
+        CarbonInsertIntoWithDf(
           databaseNameOp = Option(table.getDatabaseName),
           tableName = table.getTableName,
-          factPathFromUser = null,
-          dimFilesPath = Seq(),
           options = scala.collection.immutable.Map("fileheader" -> header,
             "binary_decoder" -> "base64"),
           isOverwriteTable = false,
-          inputSqlString = null,
-          dataFrame = Some(selectedDataFrame),
+          dataFrame = selectedDataFrame,
           updateModel = None,
           tableInfoOp = None,
           internalOptions = Map.empty,
           partition = partition
-        )
-        loadCommand.run(spark)
+        ).process(spark)
     }
     LOGGER.info(s"finish data loading, time taken ${ System.currentTimeMillis() - start }ms")
   }

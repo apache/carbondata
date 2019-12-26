@@ -36,11 +36,6 @@ object DMLHelper {
       dimFilesPath = Seq(),
       options = loadOptions,
       isOverwriteTable = loadDataCommand.isOverwrite,
-      inputSqlString = null,
-      dataFrame = None,
-      updateModel = None,
-      tableInfoOp = None,
-      internalOptions = Map.empty,
       partition =
         loadDataCommand
           .partition

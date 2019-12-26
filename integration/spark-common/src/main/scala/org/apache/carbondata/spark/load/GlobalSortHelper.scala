@@ -21,7 +21,6 @@ import java.util.Comparator
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.types._
 import org.apache.spark.util.LongAccumulator
 
@@ -51,10 +50,10 @@ object GlobalSortHelper {
 
   def sortBy(updatedRdd: RDD[InternalRow],
       numPartitions: Int,
-      sortColumns: Seq[AttributeReference]
+      dataTypes: Seq[DataType]
   ): RDD[InternalRow] = {
-    val keyExtractors = generateKeyExtractor(sortColumns)
-    val rowComparator = generateRowComparator(sortColumns)
+    val keyExtractors = generateKeyExtractor(dataTypes)
+    val rowComparator = generateRowComparator(dataTypes)
     import scala.reflect.classTag
     updatedRdd.sortBy(x => getKey(x, keyExtractors), true, numPartitions)(
       rowComparator, classTag[Array[AnyRef]])
@@ -69,11 +68,11 @@ object GlobalSortHelper {
     key
   }
 
-  def generateKeyExtractor(sortColumns: Seq[AttributeReference]): Array[KeyExtractor] = {
-    sortColumns
+  def generateKeyExtractor(dataTypes: Seq[DataType]): Array[KeyExtractor] = {
+    dataTypes
       .zipWithIndex
       .map { attr =>
-        attr._1.dataType match {
+        attr._1 match {
           case StringType => UTF8StringKeyExtractor(attr._2)
           case ShortType => ShortKeyExtractor(attr._2)
           case IntegerType => IntKeyExtractor(attr._2)
@@ -86,17 +85,17 @@ object GlobalSortHelper {
           case decimal: DecimalType =>
             DecimalKeyExtractor(attr._2, decimal.precision, decimal.scale)
           case _ =>
-            throw new UnsupportedOperationException("unsupported sort by " + attr._1.dataType)
+            throw new UnsupportedOperationException("unsupported sort by " + attr._1)
         }
       }
       .toArray
   }
 
-  def generateRowComparator(sortColumns: Seq[AttributeReference]): InternalRowComparator = {
-    val comparators = sortColumns
+  def generateRowComparator(dataTypes: Seq[DataType]): InternalRowComparator = {
+    val comparators = dataTypes
       .zipWithIndex
       .map { attr =>
-        val comparator = attr._1.dataType match {
+        val comparator = attr._1 match {
           case StringType => new StringSerializableComparator()
           case ShortType => new ShortSerializableComparator()
           case IntegerType => new IntSerializableComparator()
@@ -108,7 +107,7 @@ object GlobalSortHelper {
           case BinaryType => new ByteArraySerializableComparator()
           case _: DecimalType => new DecimalSerializableComparator()
           case _ =>
-            throw new UnsupportedOperationException("unsupported compare " + attr._1.dataType)
+            throw new UnsupportedOperationException("unsupported compare " + attr._1)
         }
         comparator.asInstanceOf[Comparator[AnyRef]]
       }

@@ -47,11 +47,11 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   /**
    * min value supported for date type column
    */
-  private static final long MIN_VALUE;
+  public static final long MIN_VALUE;
   /**
    * MAx value supported for date type column
    */
-  private static final long MAX_VALUE;
+  public static final long MAX_VALUE;
   /**
    * Logger instance
    */

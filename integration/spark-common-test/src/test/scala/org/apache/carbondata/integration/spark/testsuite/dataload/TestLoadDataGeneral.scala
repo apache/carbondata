@@ -146,6 +146,8 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test insert / update with data more than 32000 characters") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     val testdata =s"$resourcesPath/32000char.csv"
     sql("drop table if exists load32000chardata")
     sql("drop table if exists load32000chardata_dup")
@@ -159,6 +161,8 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     intercept[Exception] {
       sql("update load32000chardata_dup set(load32000chardata_dup.dim2)=(select concat(load32000chardata.dim2,'aaaa') from load32000chardata)").show()
     }
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
   }
 
   test("test load / insert / update with data more than 32000 bytes - dictionary_exclude") {

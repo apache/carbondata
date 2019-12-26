@@ -38,6 +38,7 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.DataSourceRegister
 import org.apache.spark.sql.types._
 import org.apache.spark.TaskContext
+import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
@@ -133,7 +134,11 @@ with Serializable {
       model,
       conf)
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
-    model.setLoadWithoutConverterStep(true)
+    if (options.contains("no_rearrange_of_rows")) {
+      model.setLoadWithoutConverterWithoutReArrangeStep(true)
+    } else {
+      model.setLoadWithoutConverterStep(true)
+    }
     val staticPartition = options.getOrElse("staticpartition", null)
     if (staticPartition != null) {
       conf.set("carbon.staticpartition", staticPartition)
@@ -438,7 +443,7 @@ private trait AbstractCarbonOutputWriter {
 
 private class CarbonOutputWriter(path: String,
     context: TaskAttemptContext,
-    fieldTypes: Seq[DataType],
+    nonPartitionFieldTypes: Seq[DataType],
     taskNo : String,
     model: CarbonLoadModel)
   extends OutputWriter with AbstractCarbonOutputWriter {
@@ -507,29 +512,17 @@ private class CarbonOutputWriter(path: String,
 
   // TODO Implement writesupport interface to support writing Row directly to recordwriter
   def writeCarbon(row: InternalRow): Unit = {
-    val data = new Array[AnyRef](fieldTypes.length + partitionData.length)
-    var i = 0
-    val fieldTypesLen = fieldTypes.length
-    while (i < fieldTypesLen) {
-      if (!row.isNullAt(i)) {
-        fieldTypes(i) match {
-          case StringType =>
-            data(i) = row.getString(i)
-          case d: DecimalType =>
-            data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
-          case other =>
-            data(i) = row.get(i, other)
-        }
-      }
-      i += 1
-    }
+    val numOfColumns = nonPartitionFieldTypes.length + partitionData.length
+    val data: Array[AnyRef] = CommonUtil.getObjectArrayFromInternalRowAndConvertComplexType(
+      row,
+      nonPartitionFieldTypes,
+      numOfColumns)
     if (partitionData.length > 0) {
-      System.arraycopy(partitionData, 0, data, fieldTypesLen, partitionData.length)
+      System.arraycopy(partitionData, 0, data, nonPartitionFieldTypes.length, partitionData.length)
     }
     writable.set(data)
     recordWriter.write(NullWritable.get(), writable)
   }
-
 
   override def writeInternal(row: InternalRow): Unit = {
     writeCarbon(row)
@@ -596,6 +589,7 @@ object CarbonOutputWriter {
         col.getDataType
       }
       if (staticPartition != null && staticPartition.get(col.getColumnName.toLowerCase)) {
+        // TODO: why not use CarbonScalaUtil.convertToDateAndTimeFormats ?
         val converetedVal =
           CarbonScalaUtil.convertStaticPartitions(partitionData(index), col)
         if (col.getDataType.equals(DataTypes.DATE)) {

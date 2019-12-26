@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
-import java.io.File
+import java.io.{ByteArrayOutputStream, DataOutputStream, File}
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util
@@ -31,21 +31,30 @@ import scala.math.BigDecimal.RoundingMode
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, SparkEnv}
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
+import org.apache.spark.sql.catalyst.expressions.{UnsafeArrayData, UnsafeMapData, UnsafeRow}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
+import org.apache.spark.sql.types.{ArrayType, DataType, DateType, DecimalType, MapType, StringType, StructField, StructType, TimestampType}
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
 import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.processing.datatypes.{ArrayDataType, GenericDataType, StructDataType}
+import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration
+import org.apache.carbondata.processing.loading.complexobjects.{ArrayObject, StructObject}
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
+import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder
+import org.apache.carbondata.processing.loading.converter.impl.FieldEncoderFactory
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
@@ -832,6 +841,182 @@ object CommonUtil {
       displaySize = size + " B"
     }
     displaySize
+  }
+
+  def getObjectArrayFromInternalRowAndConvertComplexType(row: InternalRow,
+      fieldTypes: Seq[DataType],
+      outputArrayLength: Int): Array[AnyRef] = {
+    val data = new Array[AnyRef](outputArrayLength)
+    var i = 0
+    val fieldTypesLen = fieldTypes.length
+    while (i < fieldTypesLen) {
+      if (!row.isNullAt(i)) {
+        fieldTypes(i) match {
+          case StringType =>
+            // get normal (non-UTF8) string
+            data(i) = row.getString(i)
+          case d: DecimalType =>
+            data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
+          case arrayType : ArrayType =>
+            data(i) = convertSparkComplexTypeToCarbonObject(row.getArray(i), arrayType)
+          case structType : StructType =>
+            data(i) = convertSparkComplexTypeToCarbonObject(row.getStruct(i,
+              structType.fields.length), structType)
+          case mapType : MapType =>
+            data(i) = convertSparkComplexTypeToCarbonObject(row.getMap(i), mapType)
+          case other =>
+            data(i) = row.get(i, other)
+        }
+      }
+      i += 1
+    }
+    data
+  }
+
+  /**
+   * After converting complex objects to carbon objects, need to convert to byte array
+   *
+   * @param row
+   * @param fields
+   * @param dataFieldsWithComplexDataType
+   * @return
+   */
+  def getObjectArrayFromInternalRowAndConvertComplexTypeForGlobalSort(
+      row: InternalRow,
+      fields: Seq[StructField],
+      dataFieldsWithComplexDataType: Map[String, GenericDataType[_]]): Array[AnyRef] = {
+    val data = new Array[AnyRef](fields.size)
+    val badRecordLogHolder = new BadRecordLogHolder();
+    var i = 0
+    val fieldTypesLen = fields.length
+    while (i < fieldTypesLen) {
+      if (!row.isNullAt(i)) {
+        fields(i).dataType match {
+          case StringType =>
+            data(i) = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(row.getString(i),
+              DataTypes.STRING)
+          case d: DecimalType =>
+            data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
+          case arrayType : ArrayType =>
+            val result = convertSparkComplexTypeToCarbonObject(row.get(i, arrayType), arrayType)
+            // convert carbon complex object to byte array
+            val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
+            val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
+            dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[ArrayDataType]
+              .writeByteArray(result.asInstanceOf[ArrayObject],
+                dataOutputStream,
+                badRecordLogHolder)
+            dataOutputStream.close()
+            data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
+          case structType : StructType =>
+            val result = convertSparkComplexTypeToCarbonObject(row.get(i, structType), structType)
+            // convert carbon complex object to byte array
+            val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
+            val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
+            dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[StructDataType]
+              .writeByteArray(result.asInstanceOf[StructObject],
+                dataOutputStream,
+                badRecordLogHolder)
+            dataOutputStream.close()
+            data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
+          case mapType : MapType =>
+            val result = convertSparkComplexTypeToCarbonObject(row.get(i, mapType), mapType)
+            // convert carbon complex object to byte array
+            val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
+            val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
+            dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[ArrayDataType]
+              .writeByteArray(result.asInstanceOf[ArrayObject],
+                dataOutputStream,
+                badRecordLogHolder)
+            dataOutputStream.close()
+            data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
+          case other =>
+            data(i) = row.get(i, other)
+        }
+      }
+      i += 1
+    }
+    data
+  }
+
+  private def convertSparkComplexTypeToCarbonObject(data: AnyRef,
+      objectDataType: DataType): AnyRef = {
+    objectDataType match {
+      case _: ArrayType =>
+        val arrayDataType = objectDataType.asInstanceOf[ArrayType]
+        val arrayData = data.asInstanceOf[UnsafeArrayData]
+        val size = arrayData.numElements()
+        val childDataType = arrayDataType.elementType
+        val arrayChildObjects = new Array[AnyRef](size)
+        var i = 0
+        while (i < size) {
+          arrayChildObjects(i) = convertSparkComplexTypeToCarbonObject(arrayData.get(i,
+            childDataType), childDataType)
+          i = i + 1
+        }
+        new ArrayObject(arrayChildObjects)
+      case _: MapType =>
+        val mapDataType = objectDataType.asInstanceOf[MapType]
+        val keyDataType = mapDataType.keyType
+        val valueDataType = mapDataType.valueType
+        val mapData = data.asInstanceOf[UnsafeMapData]
+        val size = mapData.numElements()
+        val keys = mapData.keyArray()
+        val values = mapData.valueArray()
+        val arrayMapChildObjects = new Array[AnyRef](size)
+        var i = 0
+        while (i < size) {
+          val structChildObjects = new Array[AnyRef](2)
+          structChildObjects(0) = convertSparkComplexTypeToCarbonObject(keys.get(i, keyDataType),
+            keyDataType)
+          structChildObjects(1) = convertSparkComplexTypeToCarbonObject(values.get(i,
+            valueDataType), valueDataType)
+          arrayMapChildObjects(i) = new StructObject(structChildObjects)
+          i = i + 1
+        }
+        new ArrayObject(arrayMapChildObjects)
+      case _: StructType =>
+        val structDataType = objectDataType.asInstanceOf[StructType]
+        val structData = data.asInstanceOf[UnsafeRow]
+        val size = structData.numFields()
+        val structChildObjects = new Array[AnyRef](size)
+        var i = 0
+        val childrenSchema = structDataType.fields
+        while (i < size) {
+          structChildObjects(i) = convertSparkComplexTypeToCarbonObject(structData.get(i,
+            childrenSchema(i).dataType), childrenSchema(i).dataType)
+          i = i + 1
+        }
+        new StructObject(structChildObjects)
+      case _: DateType =>
+        if (data == null) {
+          CarbonCommonConstants.DIRECT_DICT_VALUE_NULL.asInstanceOf[AnyRef]
+        } else {
+          (data.asInstanceOf[Int] + DateDirectDictionaryGenerator.cutOffDate).asInstanceOf[AnyRef]
+        }
+      case _: TimestampType =>
+        if (data == null) {
+          null
+        } else {
+          (data.asInstanceOf[Long] / 1000).asInstanceOf[AnyRef]
+        }
+      case _ => data
+    }
+  }
+
+  def convertComplexDataType(dataFieldsWithComplexDataType: Map[String,
+    GenericDataType[_]], configuration: CarbonDataLoadConfiguration): Unit = {
+    val fields = configuration.getDataFields
+    val nullFormat = configuration
+      .getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
+      .toString
+    for (field <- fields) {
+      if (field.getColumn.isComplex) {
+        dataFieldsWithComplexDataType +=
+        (field.getColumn.getColName ->
+         FieldEncoderFactory.createComplexDataType(field, nullFormat, null))
+      }
+    }
   }
 
 }

@@ -907,6 +907,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
 
   test("date with struct and array") {
     CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
+    CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
         CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
     sql("DROP TABLE IF EXISTS test")
@@ -940,6 +942,9 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
+        CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
   }
   test("test null values in primitive data type and select all data types including complex data type") {
     sql("DROP TABLE IF EXISTS table1")

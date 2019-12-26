@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
+import org.apache.spark.sql.execution.command.management.CarbonInsertIntoWithDf
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
 
@@ -52,15 +52,13 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
    */
   private def loadDataFrame(options: CarbonOption): Unit = {
     val header = dataFrame.columns.mkString(",")
-    CarbonLoadDataCommand(
-      Some(CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)),
-      options.tableName,
-      null,
-      Seq(),
-      Map("fileheader" -> header) ++ options.toMap,
+    CarbonInsertIntoWithDf(
+      databaseNameOp = Some(CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)),
+      tableName = options.tableName,
+      options = Map("fileheader" -> header) ++ options.toMap,
       isOverwriteTable = options.overwriteEnabled,
-      null,
-      Some(dataFrame)).run(sqlContext.sparkSession)
+      dataFrame = dataFrame
+      ).process(sqlContext.sparkSession)
   }
 
   private def convertToCarbonType(sparkType: DataType): String = {

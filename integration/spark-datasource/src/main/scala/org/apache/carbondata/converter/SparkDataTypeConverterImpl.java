@@ -112,7 +112,7 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
     return row.values();
   }
 
-  private static org.apache.spark.sql.types.DataType convertCarbonToSparkDataType(
+  public static org.apache.spark.sql.types.DataType convertCarbonToSparkDataType(
       DataType carbonDataType) {
     if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.STRING
         || carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.VARCHAR) {

@@ -33,10 +33,11 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer}
+import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, RDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
+import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.{CarbonException, SparkSQLUtil}
@@ -304,11 +305,11 @@ object CarbonDataRDDFactory {
   def loadCarbonData(
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      columnar: Boolean,
       partitionStatus: SegmentStatus = SegmentStatus.SUCCESS,
       overwriteTable: Boolean,
       hadoopConf: Configuration,
       dataFrame: Option[DataFrame] = None,
+      scanResultRdd : Option[RDD[InternalRow]] = None,
       updateModel: Option[UpdateTableModel] = None,
       operationContext: OperationContext): LoadMetadataDetails = {
     // Check if any load need to be deleted before loading new data
@@ -358,19 +359,41 @@ object CarbonDataRDDFactory {
             }
           }
         } else {
-          status = if (dataFrame.isEmpty && isSortTable &&
-                       carbonLoadModel.getRangePartitionColumn != null &&
-                       (sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) ||
-                        sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT))) {
-            DataLoadProcessBuilderOnSpark
-              .loadDataUsingRangeSort(sqlContext.sparkSession, carbonLoadModel, hadoopConf)
-          } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
-            DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
-              dataFrame, carbonLoadModel, hadoopConf)
-          } else if (dataFrame.isDefined) {
-            loadDataFrame(sqlContext, dataFrame, carbonLoadModel)
+          status = if (scanResultRdd.isDefined) {
+            val colSchema = carbonLoadModel
+              .getCarbonDataLoadSchema
+              .getCarbonTable
+              .getTableInfo
+              .getFactTable
+              .getListOfColumns
+              .asScala.filterNot(col => col.isInvisible || col.getColumnName.contains("."))
+            val convertedRdd = CommonLoadUtils.getConvertedInternalRow(colSchema, scanResultRdd.get)
+            if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+              DataLoadProcessBuilderOnSpark.insertDataUsingGlobalSortWithInternalRow(sqlContext
+                .sparkSession,
+                convertedRdd,
+                carbonLoadModel,
+                hadoopConf)
+            } else {
+              loadDataFrame(sqlContext, None, Some(convertedRdd), carbonLoadModel)
+            }
           } else {
-            loadDataFile(sqlContext, carbonLoadModel, hadoopConf)
+            if (dataFrame.isEmpty && isSortTable &&
+                carbonLoadModel.getRangePartitionColumn != null &&
+                (sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) ||
+                 sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT))) {
+              DataLoadProcessBuilderOnSpark
+                .loadDataUsingRangeSort(sqlContext.sparkSession, carbonLoadModel, hadoopConf)
+            } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+              DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
+                dataFrame,
+                carbonLoadModel,
+                hadoopConf)
+            } else if (dataFrame.isDefined) {
+              loadDataFrame(sqlContext, dataFrame, None, carbonLoadModel)
+            } else {
+              loadDataFile(sqlContext, carbonLoadModel, hadoopConf)
+            }
           }
           val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
           if (status.nonEmpty) {
@@ -400,11 +423,19 @@ object CarbonDataRDDFactory {
           } else {
             // if no value is there in data load, make load status Success
             // and data load flow executes
-            if (dataFrame.isDefined && updateModel.isEmpty) {
-              val rdd = dataFrame.get.rdd
-              if (rdd.partitions == null || rdd.partitions.length == 0) {
-                LOGGER.warn("DataLoading finished. No data was loaded.")
-                loadStatus = SegmentStatus.SUCCESS
+            if ((dataFrame.isDefined || scanResultRdd.isDefined) && updateModel.isEmpty) {
+              if (dataFrame.isDefined) {
+                val rdd = dataFrame.get.rdd
+                if (rdd.partitions == null || rdd.partitions.length == 0) {
+                  LOGGER.warn("DataLoading finished. No data was loaded.")
+                  loadStatus = SegmentStatus.SUCCESS
+                }
+              } else {
+                if (scanResultRdd.get.partitions == null ||
+                    scanResultRdd.get.partitions.length == 0) {
+                  LOGGER.warn("DataLoading finished. No data was loaded.")
+                  loadStatus = SegmentStatus.SUCCESS
+                }
               }
             } else {
               loadStatus = SegmentStatus.LOAD_FAILURE
@@ -449,7 +480,6 @@ object CarbonDataRDDFactory {
           }
         }
         val segmentFiles = updateSegmentFiles(carbonTable, segmentDetails, updateModel.get)
-
         // this means that the update doesnt have any records to update so no need to do table
         // status file updation.
         if (resultSize == 0) {
@@ -535,8 +565,8 @@ object CarbonDataRDDFactory {
         carbonLoadModel.getSegmentId)
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
         new LoadTablePreStatusUpdateEvent(
-        carbonTable.getCarbonTableIdentifier,
-        carbonLoadModel)
+          carbonTable.getCarbonTableIdentifier,
+          carbonLoadModel)
       OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
       val (done, writtenSegment) =
         updateTableStatus(
@@ -575,10 +605,10 @@ object CarbonDataRDDFactory {
       }
       if (SegmentStatus.LOAD_PARTIAL_SUCCESS == loadStatus) {
         LOGGER.info("Data load is partially successful for " +
-                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       } else {
         LOGGER.info("Data load is successful for " +
-                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       }
 
       // code to handle Pre-Priming cache for loading
@@ -953,24 +983,43 @@ object CarbonDataRDDFactory {
 
   /**
    * Execute load process to load from input dataframe
+   *
+   * @param sqlContext sql context
+   * @param dataFrame optional dataframe for insert
+   * @param scanResultRDD optional internal row rdd for direct insert
+   * @param carbonLoadModel load model
+   * @return Return an array that contains all of the elements in NewDataFrameLoaderRDD.
    */
   private def loadDataFrame(
       sqlContext: SQLContext,
       dataFrame: Option[DataFrame],
+      scanResultRDD: Option[RDD[InternalRow]],
       carbonLoadModel: CarbonLoadModel
   ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     try {
-      val rdd = dataFrame.get.rdd
-
+      val rdd = if (dataFrame.isDefined) {
+        dataFrame.get.rdd
+      } else {
+        // For internal row, no need of converter and re-arrange step,
+        carbonLoadModel.setLoadWithoutConverterWithoutReArrangeStep(true)
+        scanResultRDD.get
+      }
       val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]] { p =>
         DataLoadPartitionCoalescer.getPreferredLocs(rdd, p).map(_.host)
       }.distinct.length
       val nodes = DistributionUtil.ensureExecutorsByNumberAndGetNodeList(
         nodeNumOfData,
         sqlContext.sparkContext)
-      val newRdd = new DataLoadCoalescedRDD[Row](sqlContext.sparkSession, rdd, nodes.toArray
-        .distinct)
-
+      val newRdd =
+        if (dataFrame.isDefined) {
+          new DataLoadCoalescedRDD[Row](
+            sqlContext.sparkSession, dataFrame.get.rdd, nodes.toArray.distinct)
+        } else {
+          new DataLoadCoalescedRDD[InternalRow](
+            sqlContext.sparkSession,
+            scanResultRDD.get,
+            nodes.toArray.distinct)
+        }
       new NewDataFrameLoaderRDD(
         sqlContext.sparkSession,
         new DataLoadResultImpl(),
