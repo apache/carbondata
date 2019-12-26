@@ -82,14 +82,19 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Inserting and selecting table: create one column boolean table and insert two columns") {
+    // send to old flow, as for one column two values are inserted.
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     sql("insert into boolean_one_column values(true,false)")
     sql("insert into boolean_one_column values(True)")
     sql("insert into boolean_one_column values(false,true)")
-
     checkAnswer(
       sql("select * from boolean_one_column"),
       Seq(Row(true), Row(true), Row(false))
     )
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
+        CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
   }
 
   test("Inserting and selecting table: two columns boolean and many rows, should support") {
@@ -613,6 +618,9 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Inserting overwrite: create one column boolean table and insert two columns") {
+    // send to old flow, as for one column two values are inserted.
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     sql("insert overwrite table boolean_one_column values(true,false)")
     checkAnswer(
       sql("select * from boolean_one_column"),
@@ -624,6 +632,9 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
       sql("select * from boolean_one_column"),
       Seq(Row(false))
     )
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
+        CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
   }
 
   test("Inserting overwrite: two columns boolean and many rows, should support") {

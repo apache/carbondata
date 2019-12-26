@@ -1599,24 +1599,6 @@ public final class CarbonProperties {
    * Return valid storage level for CARBON_INSERT_STORAGE_LEVEL
    * @return String
    */
-  public String getInsertIntoDatasetStorageLevel() {
-    String storageLevel = getProperty(CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL,
-        CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL_DEFAULT);
-    boolean validateStorageLevel = CarbonUtil.isValidStorageLevel(storageLevel);
-    if (!validateStorageLevel) {
-      LOGGER.warn("The " + CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL
-          + " configuration value is invalid. It will use default storage level("
-          + CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL_DEFAULT
-          + ") to persist dataset.");
-      storageLevel = CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL_DEFAULT;
-    }
-    return storageLevel.toUpperCase();
-  }
-
-  /**
-   * Return valid storage level for CARBON_INSERT_STORAGE_LEVEL
-   * @return String
-   */
   public int getSortMemorySpillPercentage() {
     int spillPercentage = 0;
     try {
@@ -1963,5 +1945,21 @@ public final class CarbonProperties {
       return CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DEFAULT;
     }
     return provider.toUpperCase();
+  }
+
+  /**
+   * Validate and get bad record handling for insert
+   *
+   * @return boolean
+   */
+  public static Boolean isBadRecordHandlingEnabledForInsert() {
+    String badRecordHandling = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT);
+    if (badRecordHandling == null) {
+      return Boolean
+          .parseBoolean(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT);
+    } else {
+      return badRecordHandling.equalsIgnoreCase("true");
+    }
   }
 }

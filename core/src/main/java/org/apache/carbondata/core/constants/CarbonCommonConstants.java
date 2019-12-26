@@ -802,45 +802,6 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MERGE_SORT_PREFETCH_DEFAULT = "true";
 
   /**
-   * If we are executing insert into query from source table using select statement
-   * & loading the same source table concurrently, when select happens on source table
-   * during the data load , it gets new record for which dictionary is not generated,
-   * So there will be inconsistency. To avoid this condition we can persist the dataframe
-   * into MEMORY_AND_DISK and perform insert into operation. By default this value
-   * will be false because no need to persist the dataframe in all cases. If user want
-   * to run load and insert queries on source table concurrently then user can enable this flag
-   */
-  @InterfaceStability.Evolving
-  @CarbonProperty
-  public static final String CARBON_INSERT_PERSIST_ENABLED = "carbon.insert.persist.enable";
-
-  /**
-   * by default rdd will not be persisted in the insert case.
-   */
-  public static final String CARBON_INSERT_PERSIST_ENABLED_DEFAULT = "false";
-
-  /**
-   * Which storage level to persist dataset when insert into data
-   * with 'carbon.insert.persist.enable'='true'
-   */
-  @InterfaceStability.Evolving
-  @CarbonProperty
-  public static final String CARBON_INSERT_STORAGE_LEVEL =
-      "carbon.insert.storage.level";
-
-  /**
-   * The default value(MEMORY_AND_DISK) is the same as the default storage level of Dataset.
-   * Unlike `RDD.cache()`, the default storage level is set to be `MEMORY_AND_DISK` because
-   * recomputing the in-memory columnar representation of the underlying table is expensive.
-   *
-   * if user's executor has less memory, set the CARBON_INSERT_STORAGE_LEVEL
-   * to MEMORY_AND_DISK_SER or other storage level to correspond to different environment.
-   * You can get more recommendations about storage level in spark website:
-   * http://spark.apache.org/docs/latest/rdd-programming-guide.html#rdd-persistence.
-   */
-  public static final String CARBON_INSERT_STORAGE_LEVEL_DEFAULT = "MEMORY_AND_DISK";
-
-  /**
    * Number of unmerged segments to be merged.
    */
   @CarbonProperty(dynamicConfigurable = true)
@@ -1260,6 +1221,14 @@ public final class CarbonCommonConstants {
   public static final int CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB_DEFAULT = 4;
 
   public static final int CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB_MAX = 16;
+
+  /**
+  * by default, disable the bad record and converter during "insert into"
+  */
+  public static final String CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT =
+      "carbon.enable.bad.record.handling.for.insert";
+
+  public static final String CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT = "false";
 
   //////////////////////////////////////////////////////////////////////////////////////////
   // Query parameter start here

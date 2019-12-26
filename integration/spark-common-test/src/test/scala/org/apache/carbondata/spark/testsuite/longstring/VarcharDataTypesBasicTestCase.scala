@@ -165,6 +165,8 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   }
 
   test("test alter table properties for long string columns") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     sql("drop table if exists testlongstring")
     sql(
       s"""
@@ -200,6 +202,9 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     sql("ALTER TABLE testlongstring SET TBLPROPERTIES('long_String_columns'='description')")
     sql(s""" insert into testlongstring select 1, 'ab1', '$longChar'""")
     sql("drop table if exists testlongstring")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
+        CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
   }
 
   test("test alter table properties for long_string_columns with complex columns") {

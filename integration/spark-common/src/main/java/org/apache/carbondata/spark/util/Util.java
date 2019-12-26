@@ -60,7 +60,7 @@ public class Util {
   }
 
   public static org.apache.spark.sql.types.DataType convertCarbonToSparkDataType(
-      DataType carbonDataType) {
+      DataType carbonDataType, boolean forGlobalSort) {
     if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.STRING) {
       return DataTypes.StringType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT) {
@@ -76,9 +76,21 @@ public class Util {
     } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(carbonDataType)) {
       return DataTypes.createDecimalType();
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.TIMESTAMP) {
+      if (forGlobalSort) {
+        // data is already converted, so need to change data type also
+        return DataTypes.LongType;
+      }
       return DataTypes.TimestampType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
+      if (forGlobalSort) {
+        // data is already converted, so need to change data type also
+        return DataTypes.IntegerType;
+      }
       return DataTypes.DateType;
+    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BINARY) {
+      return DataTypes.BinaryType;
+    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.VARCHAR) {
+      return DataTypes.StringType;
     } else {
       return null;
     }
@@ -91,10 +103,24 @@ public class Util {
     for (CarbonColumn column : columns) {
       schema[i++] = column.getColumnSchema();
     }
-    return convertToSparkSchema(table, schema);
+    return convertToSparkSchema(table, schema, false);
   }
 
-  public static StructType convertToSparkSchema(CarbonTable table, ColumnSchema[] carbonColumns) {
+  public static StructType convertToSparkSchemaFromColumnSchema(CarbonTable table,
+      boolean forGlobalSort) {
+    List<ColumnSchema> columns = table.getTableInfo().getFactTable().getListOfColumns();
+    List<ColumnSchema> validColumnSchema = new ArrayList<>();
+    for (ColumnSchema column : columns) {
+      if (!column.isInvisible() && !column.getColumnName().contains(".")) {
+        validColumnSchema.add(column);
+      }
+    }
+    return convertToSparkSchema(table, validColumnSchema.toArray(new ColumnSchema[0]),
+        forGlobalSort);
+  }
+
+  public static StructType convertToSparkSchema(CarbonTable table, ColumnSchema[] carbonColumns,
+      boolean forGlobalSort) {
     List<StructField> fields = new ArrayList<>(carbonColumns.length);
     for (int i = 0; i < carbonColumns.length; i++) {
       ColumnSchema carbonColumn = carbonColumns[i];
@@ -123,9 +149,21 @@ public class Util {
                             carbonColumn.getColumnName()))),
                 true,
                 Metadata.empty()));
+      } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isMapType(dataType)) {
+        fields.add(
+            new StructField(
+                carbonColumn.getColumnName(),
+                CarbonMetastoreTypes.toDataType(
+                    String.format("map<%s>",
+                        SparkTypeConverter.getMapChildren(
+                            table,
+                            carbonColumn.getColumnName()))),
+                true,
+                Metadata.empty()));
       } else {
         fields.add(new StructField(carbonColumn.getColumnName(),
-            convertCarbonToSparkDataType(carbonColumn.getDataType()), true, Metadata.empty()));
+            convertCarbonToSparkDataType(carbonColumn.getDataType(), forGlobalSort), true,
+            Metadata.empty()));
       }
     }
     return new StructType(fields.toArray(new StructField[0]));

@@ -285,7 +285,7 @@ case class CarbonCreateStreamCommand(
     val cols = sourceTable.getTableInfo.getFactTable.getListOfColumns.asScala.toArray
     val sortedCols = cols.filter(_.getSchemaOrdinal != -1)
       .sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
-    Util.convertToSparkSchema(sourceTable, sortedCols)
+    Util.convertToSparkSchema(sourceTable, sortedCols, false)
   }
 
   override protected def opName: String = "CREATE STREAM"

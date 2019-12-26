@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.datatypes;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
  * Generic DataType interface which will be used while data loading for complex types like Array &
  * Struct
  */
-public interface GenericDataType<T> {
+public interface GenericDataType<T> extends Serializable {
 
   /**
    * @return name of the column

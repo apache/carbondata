@@ -327,6 +327,30 @@ object DataLoadProcessorStepOnSpark {
     }
   }
 
+  def convertTo3PartsFromObjectArray(
+      rows: Iterator[Array[AnyRef]],
+      index: Int,
+      model: CarbonLoadModel,
+      rowCounter: LongAccumulator): Iterator[CarbonRow] = {
+    val conf = DataLoadProcessBuilder.createConfiguration(model)
+    val sortParameters = SortParameters.createSortParameters(conf)
+    val sortStepRowHandler = new SortStepRowHandler(sortParameters)
+    TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
+      wrapException(e, model)
+    }
+
+    new Iterator[CarbonRow] {
+      override def hasNext: Boolean = rows.hasNext
+
+      override def next(): CarbonRow = {
+        val row =
+          new CarbonRow(sortStepRowHandler.convertRawRowTo3Parts(rows.next()))
+        rowCounter.add(1)
+        row
+      }
+    }
+  }
+
   def writeFunc(
       rows: Iterator[CarbonRow],
       index: Int,

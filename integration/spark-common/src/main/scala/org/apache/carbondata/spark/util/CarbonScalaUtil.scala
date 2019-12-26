@@ -42,11 +42,12 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil}
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
@@ -138,6 +139,89 @@ object CarbonScalaUtil {
         throw new MalformedCarbonCommandException(
           s"Value $value with datatype $dataType on static partition is not correct")
     }
+  }
+
+  /**
+   * Converts incoming value to String after converting data as per the data type.
+   *
+   * @param value           Input value to convert
+   * @param dataType        Datatype to convert and then convert to String
+   * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
+   * @param dateFormat      DataFormat to convert in case of DateType datatype
+   * @return converted String
+   */
+  def convertStaticPartitionToValues(
+      value: String,
+      dataType: DataType,
+      timeStampFormat: SimpleDateFormat,
+      dateFormat: SimpleDateFormat): AnyRef = {
+    val defaultValue = value != null && value.equalsIgnoreCase(hiveDefaultPartition)
+    try {
+      dataType match {
+        case TimestampType if timeStampFormat != null =>
+          val formattedString =
+            if (defaultValue) {
+              timeStampFormat.format(new Date())
+            } else {
+              timeStampFormat.format(DateTimeUtils.stringToTime(value))
+            }
+          val convertedValue =
+            DataTypeUtil
+              .getDataBasedOnDataType(formattedString,
+                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(TimestampType))
+          convertedValue
+        case DateType if dateFormat != null =>
+          val formattedString =
+            if (defaultValue) {
+              dateFormat.format(new Date())
+            } else {
+              dateFormat.format(DateTimeUtils.stringToTime(value))
+            }
+          val convertedValue =
+            DataTypeUtil
+              .getDataBasedOnDataType(formattedString,
+                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(TimestampType))
+          val date = generateDictionaryKey(convertedValue.asInstanceOf[Long])
+          date.asInstanceOf[AnyRef]
+        case BinaryType =>
+          // TODO: decode required ? currently it is working
+          ByteUtil.toBytes(value)
+        case _ =>
+          val convertedValue =
+            DataTypeUtil
+              .getDataBasedOnDataType(value,
+                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType))
+          if (convertedValue == null) {
+            if (defaultValue) {
+              dataType match {
+                case BooleanType =>
+                  return false.asInstanceOf[AnyRef]
+                case _ =>
+                  return 0.asInstanceOf[AnyRef]
+              }
+            }
+            throw new MalformedCarbonCommandException(
+              s"Value $value with datatype $dataType on static partition is not correct")
+          }
+          convertedValue
+      }
+    } catch {
+      case e: Exception =>
+        throw new MalformedCarbonCommandException(
+          s"Value $value with datatype $dataType on static partition is not correct")
+    }
+  }
+
+  def generateDictionaryKey(timeValue: Long): Int = {
+    if (timeValue < DateDirectDictionaryGenerator.MIN_VALUE ||
+        timeValue > DateDirectDictionaryGenerator.MAX_VALUE) {
+      if (LOGGER.isDebugEnabled) {
+        LOGGER.debug("Value for date type column is not in valid range. Value considered as null.")
+      }
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL
+    }
+    Math.floor(timeValue.toDouble / DateDirectDictionaryGenerator.MILLIS_PER_DAY).toInt +
+     DateDirectDictionaryGenerator.cutOffDate
   }
 
   /**
