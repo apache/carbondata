@@ -3321,7 +3321,7 @@ public final class CarbonUtil {
         .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_TEMP_PATH);
     if (null == tempFolderPath) {
       tempFolderPath =
-              "/tmp/" + CarbonCommonConstants.INDEX_SERVER_TEMP_FOLDER_NAME + "/" + queryId;
+          "/tmp/" + CarbonCommonConstants.INDEX_SERVER_TEMP_FOLDER_NAME + "/" + queryId;
     } else {
       tempFolderPath =
           tempFolderPath + "/" + CarbonCommonConstants.INDEX_SERVER_TEMP_FOLDER_NAME + "/"
