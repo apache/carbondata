@@ -76,7 +76,7 @@ import org.apache.carbondata.processing.loading.model.{CarbonLoadModel, CarbonLo
 import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
 import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
-import org.apache.carbondata.spark.load.{CsvRDDHelper, DataLoadProcessorStepOnSpark}
+import org.apache.carbondata.spark.load.{CsvRDDHelper, DataLoadProcessorStepOnSpark, GlobalSortHelper}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
 
@@ -218,6 +218,13 @@ case class CarbonLoadDataCommand(
               carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
                 carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
                   CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))))
+      if (!StringUtils.isBlank(tableProperties.get("global_sort_partitions"))) {
+        if (options.get("global_sort_partitions").isEmpty) {
+          optionsFinal.put(
+            "global_sort_partitions",
+            tableProperties.get("global_sort_partitions"))
+        }
+      }
     }
 
     optionsFinal
@@ -374,14 +381,6 @@ case class CarbonLoadDataCommand(
         throw ex
     } finally {
       releaseConcurrentLoadLock(concurrentLoadLock, LOGGER)
-      // Once the data load is successful delete the unwanted partition files
-      val partitionLocation = CarbonProperties.getStorePath + "/partition/" +
-                              table.getDatabaseName + "/" +
-                              table.getTableName + "/"
-      if (FileFactory.isFileExist(partitionLocation)) {
-        val file = FileFactory.getCarbonFile(partitionLocation)
-        CarbonUtil.deleteFoldersAndFiles(file)
-      }
     }
     Seq.empty
   }
@@ -791,26 +790,11 @@ case class CarbonLoadDataCommand(
         carbonLoadModel,
         sparkSession,
         operationContext)
-      val logicalPlan = if (sortScope == SortScopeOptions.SortScope.GLOBAL_SORT) {
-        var numPartitions =
-          CarbonDataProcessorUtil.getGlobalSortPartitions(carbonLoadModel.getGlobalSortPartitions)
-        if (numPartitions <= 0) {
-          numPartitions = partitionsLen
-        }
-        if (numPartitions > 0) {
-          Dataset.ofRows(sparkSession, query).repartition(numPartitions).logicalPlan
-        } else {
-          query
-        }
-      } else {
-        query
-      }
-
       val convertedPlan =
         CarbonReflectionUtils.getInsertIntoCommand(
           table = convertRelation,
           partition = partition,
-          query = logicalPlan,
+          query = query,
           overwrite = false,
           ifPartitionNotExists = false)
       SparkUtil.setNullExecutionId(sparkSession)
@@ -930,25 +914,25 @@ case class CarbonLoadDataCommand(
       // Update attribute datatypes in case of dictionary columns, in case of dictionary columns
       // datatype is always int
       val column = table.getColumnByName(attr.name)
-      if (column.hasEncoding(Encoding.DICTIONARY)) {
-        CarbonToSparkAdapter.createAttributeReference(attr.name,
-          IntegerType,
-          attr.nullable,
-          attr.metadata,
-          attr.exprId,
-          attr.qualifier,
-          attr)
-      } else if (attr.dataType == TimestampType || attr.dataType == DateType) {
-        CarbonToSparkAdapter.createAttributeReference(attr.name,
-          LongType,
-          attr.nullable,
-          attr.metadata,
-          attr.exprId,
-          attr.qualifier,
-          attr)
+      val updatedDataType = if (column.hasEncoding(Encoding.DICTIONARY)) {
+        IntegerType
       } else {
-        attr
+        attr.dataType match {
+          case TimestampType | DateType =>
+            LongType
+          case _: StructType | _: ArrayType | _: MapType =>
+            BinaryType
+          case _ =>
+            attr.dataType
+        }
       }
+      CarbonToSparkAdapter.createAttributeReference(attr.name,
+        updatedDataType,
+        attr.nullable,
+        attr.metadata,
+        attr.exprId,
+        attr.qualifier,
+        attr)
     }
     // Only select the required columns
     var output = if (partition.nonEmpty) {
@@ -976,16 +960,29 @@ case class CarbonLoadDataCommand(
         updatedRdd.persist(StorageLevel.fromString(
           CarbonProperties.getInstance().getGlobalSortRddStorageLevel))
       }
-      val child = Project(output, LogicalRDD(attributes, updatedRdd)(sparkSession))
-      val sortColumns = table.getSortColumns()
-      val sortPlan =
-        Sort(
-          output.filter(f => sortColumns.contains(f.name)).map(SortOrder(_, Ascending)),
-          global = true,
-          child)
-      (sortPlan, partitionsLen, Some(updatedRdd))
+      var numPartitions =
+        CarbonDataProcessorUtil.getGlobalSortPartitions(loadModel.getGlobalSortPartitions)
+      if (numPartitions <= 0) {
+        numPartitions = partitionsLen
+      }
+      val sortColumns = attributes.take(table.getSortColumns().size())
+      val sortedRDD: RDD[InternalRow] =
+        GlobalSortHelper.sortBy(updatedRdd, numPartitions, sortColumns)
+      val outputOrdering = sortColumns.map(SortOrder(_, Ascending))
+      (
+        Project(
+          output,
+          LogicalRDD(attributes, sortedRDD, outputOrdering = outputOrdering)(sparkSession)
+        ),
+        partitionsLen,
+        Some(updatedRdd)
+      )
     } else {
-      (Project(output, LogicalRDD(attributes, updatedRdd)(sparkSession)), partitionsLen, None)
+      (
+        Project(output, LogicalRDD(attributes, updatedRdd)(sparkSession)),
+        partitionsLen,
+        None
+      )
     }
   }
 

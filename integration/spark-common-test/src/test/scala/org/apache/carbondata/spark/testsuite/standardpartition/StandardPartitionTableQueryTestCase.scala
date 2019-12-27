@@ -444,7 +444,6 @@ test("Creation of partition table should fail if the colname in table schema and
   }
 
   test("add external partition with static column partition with load command") {
-
     sql(
       """
         | CREATE TABLE staticpartitionlocloadother_new (empno int, designation String,
@@ -456,19 +455,22 @@ test("Creation of partition table should fail if the colname in table schema and
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     val location = metaStoreDB +"/" +"ravi1"
-    sql(s"""alter table staticpartitionlocloadother_new add partition (empname='ravi') location '$location'""")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='indra') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(20)))
-    sql(s"""ALTER TABLE staticpartitionlocloadother_new DROP PARTITION(empname='ravi')""")
-    checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(10)))
-    sql(s"""alter table staticpartitionlocloadother_new add partition (empname='ravi') location '$location'""")
-    checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(20)))
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(30)))
-    val file = FileFactory.getCarbonFile(location)
-    if(file.exists()) {
-      FileFactory.deleteAllCarbonFilesOfDir(file)
+    try {
+      sql(s"""alter table staticpartitionlocloadother_new add partition (empname='ravi') location '$location'""")
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='indra') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+      checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(20)))
+      sql(s"""ALTER TABLE staticpartitionlocloadother_new DROP PARTITION(empname='ravi')""")
+      checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(10)))
+      sql(s"""alter table staticpartitionlocloadother_new add partition (empname='ravi') location '$location'""")
+      checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(20)))
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+      checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(30)))
+    } finally {
+      val file = FileFactory.getCarbonFile(location)
+      if(file.exists()) {
+        FileFactory.deleteAllCarbonFilesOfDir(file)
+      }
     }
   }
 

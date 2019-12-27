@@ -118,4 +118,8 @@
     <Class name="org.apache.carbondata.core.datamap.DataMapFilter"/>
     <Bug pattern="SE_BAD_FIELD"/>
   </Match>
+  <Match>
+    <Class name="org.apache.carbondata.events.OperationContext"/>
+    <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+  </Match>
 </FindBugsFilter>

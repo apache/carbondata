@@ -15,31 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.events;
+package org.apache.carbondata.core.util.comparator;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import java.math.BigDecimal;
 
-/**
- * One OperationContext per one operation.
- * OperationContext active till operation execution completes
- */
-public class OperationContext implements Serializable {
-
-  private static final long serialVersionUID = -8808813829717624986L;
-
-  private transient Map<String, Object> operationProperties = new HashMap<>();
-
-  public Map<String, Object> getProperties() {
-    return operationProperties;
-  }
-
-  public void setProperty(String key, Object value) {
-    this.operationProperties.put(key, value);
-  }
-
-  public Object getProperty(String key) {
-    return this.operationProperties.get(key);
+public class BigDecimalSerializableComparator implements SerializableComparator {
+  @Override
+  public int compare(Object key1, Object key2) {
+    if (key1 == null && key2 == null) {
+      return 0;
+    } else if (key1 == null) {
+      return -1;
+    } else if (key2 == null) {
+      return 1;
+    }
+    return ((BigDecimal) key1).compareTo((BigDecimal) key2);
   }
 }

@@ -23,16 +23,21 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.io.NullWritable
-import org.apache.hadoop.mapreduce.{Job, TaskAttemptContext}
+import org.apache.hadoop.mapreduce.{Job, JobContext, TaskAttemptContext}
 import org.apache.spark.internal.Logging
+import org.apache.spark.internal.io.FileCommitProtocol
+import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.DataSourceRegister
 import org.apache.spark.sql.types._
+import org.apache.spark.TaskContext
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
@@ -42,7 +47,7 @@ import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, DataTypeConverterImpl, DataTypeUtil, ObjectSerializationUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, DataTypeConverter, DataTypeConverterImpl, DataTypeUtil, ObjectSerializationUtil, OutputFilesInfoHolder, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonOutputCommitter, CarbonTableOutputFormat}
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat.CarbonRecordWriter
@@ -79,7 +84,10 @@ with Serializable {
       SQLConf.OUTPUT_COMMITTER_CLASS.key,
       classOf[CarbonOutputCommitter],
       classOf[CarbonOutputCommitter])
-    conf.set("carbon.commit.protocol", "carbon.commit.protocol")
+    conf.set("carbondata.commit.protocol", "carbondata.commit.protocol")
+    conf.set("mapreduce.task.deleteTaskAttemptPath", "false")
+    conf.set("mapreduce.fileoutputcommitter.marksuccessfuljobs", "false")
+    conf.set("mapreduce.fileoutputcommitter.algorithm.version", "2")
     job.setOutputFormatClass(classOf[CarbonTableOutputFormat])
     val table = CarbonEnv.getCarbonTable(
       TableIdentifier(options("tableName"), options.get("dbName")))(sparkSession)
@@ -88,6 +96,7 @@ with Serializable {
       .getOrElse(CarbonCommonConstants.COMPRESSOR,
         CompressorFactory.getInstance().getCompressor.getName)
     model.setColumnCompressor(columnCompressor)
+    model.setOutputFilesInfoHolder(new OutputFilesInfoHolder())
 
     val carbonProperty = CarbonProperties.getInstance()
     val optionsFinal = LoadOption.fillOptionWithDefaultValue(options.asJava)
@@ -206,15 +215,202 @@ with Serializable {
 
 case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, isAppend: Boolean)
   extends SQLHadoopMapReduceCommitProtocol(jobId, path, isAppend) {
+
+  override def setupTask(taskContext: TaskAttemptContext): Unit = {
+    if (isCarbonDataFlow(taskContext.getConfiguration)) {
+      ThreadLocalSessionInfo.setConfigurationToCurrentThread(taskContext.getConfiguration)
+    }
+    super.setupTask(taskContext)
+  }
+
+  /**
+   * collect carbon partition info from TaskCommitMessage list
+   */
+  override def commitJob(jobContext: JobContext,
+      taskCommits: Seq[TaskCommitMessage]): Unit = {
+    if (isCarbonDataFlow(jobContext.getConfiguration)) {
+      var dataSize = 0L
+      val partitions =
+        taskCommits
+          .flatMap { taskCommit =>
+            taskCommit.obj match {
+              case (map: Map[String, String], _) =>
+                val partition = map.get("carbon.partitions")
+                val size = map.get("carbon.datasize")
+                if (size.isDefined) {
+                  dataSize = dataSize + java.lang.Long.parseLong(size.get)
+                }
+                if (partition.isDefined) {
+                  ObjectSerializationUtil
+                    .convertStringToObject(partition.get)
+                    .asInstanceOf[util.ArrayList[String]]
+                    .asScala
+                } else {
+                  Array.empty[String]
+                }
+              case _ => Array.empty[String]
+            }
+          }
+          .distinct
+          .toList
+          .asJava
+
+      jobContext.getConfiguration.set(
+        "carbon.output.partitions.name",
+        ObjectSerializationUtil.convertObjectToString(partitions))
+      jobContext.getConfiguration.set("carbon.datasize", dataSize.toString)
+
+      val newTaskCommits = taskCommits.map { taskCommit =>
+        taskCommit.obj match {
+          case (map: Map[String, String], set) =>
+            new TaskCommitMessage(
+              map
+                .filterNot(e => "carbon.partitions".equals(e._1) || "carbon.datasize".equals(e._1)),
+              set)
+          case _ => taskCommit
+        }
+      }
+      super
+        .commitJob(jobContext, newTaskCommits)
+    } else {
+      super
+        .commitJob(jobContext, taskCommits)
+    }
+  }
+
+  /**
+   * set carbon partition info into TaskCommitMessage
+   */
+  override def commitTask(
+      taskContext: TaskAttemptContext
+  ): FileCommitProtocol.TaskCommitMessage = {
+    var taskMsg = super.commitTask(taskContext)
+    if (isCarbonDataFlow(taskContext.getConfiguration)) {
+      ThreadLocalSessionInfo.unsetAll()
+      val partitions: String = taskContext.getConfiguration.get("carbon.output.partitions.name", "")
+      val files = taskContext.getConfiguration.get("carbon.output.files.name", "")
+      var sum = 0L
+      var indexSize = 0L
+      if (!StringUtils.isEmpty(files)) {
+        val filesList = ObjectSerializationUtil
+          .convertStringToObject(files)
+          .asInstanceOf[util.ArrayList[String]]
+          .asScala
+        for (file <- filesList) {
+          if (file.contains(".carbondata")) {
+            sum += java.lang.Long.parseLong(file.substring(file.lastIndexOf(":") + 1))
+          } else if (file.contains(".carbonindex")) {
+            indexSize += java.lang.Long.parseLong(file.substring(file.lastIndexOf(":") + 1))
+          }
+        }
+      }
+      if (!StringUtils.isEmpty(partitions)) {
+        taskMsg = taskMsg.obj match {
+          case (map: Map[String, String], set) =>
+            new TaskCommitMessage(
+              map ++ Map("carbon.partitions" -> partitions, "carbon.datasize" -> sum.toString),
+              set)
+          case _ => taskMsg
+        }
+      }
+      // Update outputMetrics with carbondata and index size
+      TaskContext.get().taskMetrics().outputMetrics.setBytesWritten(sum + indexSize)
+    }
+    taskMsg
+  }
+
+  override def abortTask(taskContext: TaskAttemptContext): Unit = {
+    super.abortTask(taskContext)
+    if (isCarbonDataFlow(taskContext.getConfiguration)) {
+      val files = taskContext.getConfiguration.get("carbon.output.files.name", "")
+      if (!StringUtils.isEmpty(files)) {
+        val filesList = ObjectSerializationUtil
+          .convertStringToObject(files)
+          .asInstanceOf[util.ArrayList[String]]
+          .asScala
+        for (file <- filesList) {
+          val outputFile: String = file.substring(0, file.lastIndexOf(":"))
+          if (outputFile.endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
+            FileFactory
+              .deleteAllCarbonFilesOfDir(FileFactory
+                .getCarbonFile(outputFile,
+                  taskContext.getConfiguration))
+          }
+        }
+      }
+      ThreadLocalSessionInfo.unsetAll()
+    }
+  }
+
   override def newTaskTempFileAbsPath(taskContext: TaskAttemptContext,
       absoluteDir: String,
       ext: String): String = {
-    val carbonFlow = taskContext.getConfiguration.get("carbon.commit.protocol")
-    if (carbonFlow != null) {
+    if (isCarbonFileFlow(taskContext.getConfiguration) ||
+        isCarbonDataFlow(taskContext.getConfiguration)) {
       super.newTaskTempFile(taskContext, Some(absoluteDir), ext)
     } else {
       super.newTaskTempFileAbsPath(taskContext, absoluteDir, ext)
     }
+  }
+
+  /**
+   * set carbon temp folder to task temp folder
+   */
+  override def newTaskTempFile(
+      taskContext: TaskAttemptContext,
+      dir: Option[String],
+      ext: String): String = {
+    if (isCarbonDataFlow(taskContext.getConfiguration)) {
+      val path = super.newTaskTempFile(taskContext, dir, ext)
+      taskContext.getConfiguration.set("carbon.newTaskTempFile.path", path)
+      val model = CarbonTableOutputFormat.getLoadModel(taskContext.getConfiguration)
+      val partitions = CarbonOutputWriter.getPartitionsFromPath(
+        path, taskContext, model).map(ExternalCatalogUtils.unescapePathName)
+      val staticPartition: util.HashMap[String, Boolean] = {
+        val staticPart = taskContext.getConfiguration.get("carbon.staticpartition")
+        if (staticPart != null) {
+          ObjectSerializationUtil.convertStringToObject(
+            staticPart).asInstanceOf[util.HashMap[String, Boolean]]
+        } else {
+          null
+        }
+      }
+      val converter = new DataTypeConverterImpl
+      var (updatedPartitions, partitionData) = if (partitions.nonEmpty) {
+        val linkedMap = mutable.LinkedHashMap[String, String]()
+        val updatedPartitions = partitions.map(CarbonOutputWriter.splitPartition)
+        updatedPartitions.foreach {
+          case (k, v) => linkedMap.put(k, v)
+        }
+        (linkedMap, CarbonOutputWriter.updatePartitions(
+          updatedPartitions.map(_._2), model, staticPartition, converter))
+      } else {
+        (mutable.LinkedHashMap.empty[String, String], Array.empty)
+      }
+      val currPartitions: util.List[indexstore.PartitionSpec] = {
+        val currParts = taskContext.getConfiguration.get("carbon.currentpartition")
+        if (currParts != null) {
+          ObjectSerializationUtil.convertStringToObject(
+            currParts).asInstanceOf[util.List[indexstore.PartitionSpec]]
+        } else {
+          new util.ArrayList[indexstore.PartitionSpec]()
+        }
+      }
+      val writePath =
+        CarbonOutputWriter.getPartitionPath(path, taskContext, model, updatedPartitions)
+      writePath + "/" + model.getSegmentId + "_" + model.getFactTimeStamp + ".tmp"
+    } else {
+      super.newTaskTempFile(taskContext, dir, ext)
+    }
+
+  }
+
+  private def isCarbonFileFlow(conf: Configuration): Boolean = {
+    conf.get("carbon.commit.protocol") != null
+  }
+
+  private def isCarbonDataFlow(conf: Configuration): Boolean = {
+    conf.get("carbondata.commit.protocol") != null
   }
 }
 
@@ -238,11 +434,12 @@ private class CarbonOutputWriter(path: String,
     taskNo : String,
     model: CarbonLoadModel)
   extends OutputWriter with AbstractCarbonOutputWriter {
-
+  var actualPath = path
+  var tmpPath = context.getConfiguration.get("carbon.newTaskTempFile.path", actualPath)
   val converter = new DataTypeConverterImpl
 
-  val partitions =
-    getPartitionsFromPath(path, context, model).map(ExternalCatalogUtils.unescapePathName)
+  val partitions = CarbonOutputWriter.getPartitionsFromPath(
+    tmpPath, context, model).map(ExternalCatalogUtils.unescapePathName)
   val staticPartition: util.HashMap[String, Boolean] = {
     val staticPart = context.getConfiguration.get("carbon.staticpartition")
     if (staticPart != null) {
@@ -252,7 +449,7 @@ private class CarbonOutputWriter(path: String,
       null
     }
   }
-  lazy val currPartitions: util.List[indexstore.PartitionSpec] = {
+  val currPartitions: util.List[indexstore.PartitionSpec] = {
     val currParts = context.getConfiguration.get("carbon.currentpartition")
     if (currParts != null) {
       ObjectSerializationUtil.convertStringToObject(
@@ -263,88 +460,39 @@ private class CarbonOutputWriter(path: String,
   }
   var (updatedPartitions, partitionData) = if (partitions.nonEmpty) {
     val linkedMap = mutable.LinkedHashMap[String, String]()
-    val updatedPartitions = partitions.map(splitPartition)
+    val updatedPartitions = partitions.map(CarbonOutputWriter.splitPartition)
     updatedPartitions.foreach {
       case (k, v) => linkedMap.put(k, v)
     }
-    (linkedMap, updatePartitions(updatedPartitions.map(_._2)))
+    (linkedMap, CarbonOutputWriter.updatePartitions(
+      updatedPartitions.map(_._2), model, staticPartition, converter))
   } else {
-    (mutable.LinkedHashMap.empty[String, String], Array.empty)
-  }
-
-  private def splitPartition(p: String) = {
-    val value = p.substring(p.indexOf("=") + 1, p.length)
-    val col = p.substring(0, p.indexOf("="))
-    // NUll handling case. For null hive creates with this special name
-    if (value.equals("__HIVE_DEFAULT_PARTITION__")) {
-      (col, null)
-      // we should replace back the special string with empty value.
-    } else if (value.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-      (col, "")
-    } else {
-      (col, value)
-    }
-  }
-
-  lazy val writePath = {
-    val updatedPath = getPartitionPath(path, context, model)
-    // in case of partition location specified by user then search the partitions from the current
-    // partitions to get the corresponding partitions.
-    if (partitions.isEmpty) {
-      val writeSpec = new indexstore.PartitionSpec(null, updatedPath)
-      val index = currPartitions.indexOf(writeSpec)
-      if (index > -1) {
-        val spec = currPartitions.get(index)
-        spec.getPartitions.asScala.map(splitPartition).foreach {
-          case (k, v) => updatedPartitions.put(k, v)
-        }
-        partitionData = updatePartitions(updatedPartitions.map(_._2).toSeq)
+    val tempUpdatedPartitions = mutable.LinkedHashMap.empty[String, String]
+    var tempPartitionData = Array.empty[AnyRef]
+    val updatePath = CarbonOutputWriter.getPartitionPath(
+      tmpPath, context, model, tempUpdatedPartitions)
+    val writeSpec = new indexstore.PartitionSpec(null, updatePath)
+    val index = currPartitions.indexOf(writeSpec)
+    if (index > -1) {
+      val spec = currPartitions.get(index)
+      spec.getPartitions.asScala.map(CarbonOutputWriter.splitPartition).foreach {
+        case (k, v) => tempUpdatedPartitions.put(k, v)
       }
+      tempPartitionData = CarbonOutputWriter.updatePartitions(
+        tempUpdatedPartitions.map(_._2).toSeq, model, staticPartition, converter)
     }
-    updatedPath
+    actualPath = updatePath + "/" + model.getSegmentId + "_" + model.getFactTimeStamp + ".tmp"
+    (tempUpdatedPartitions, tempPartitionData)
   }
 
   val writable = new ObjectArrayWritable
 
-  private def updatePartitions(partitionData: Seq[String]): Array[AnyRef] = {
-    model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo.getFactTable.getPartitionInfo
-      .getColumnSchemaList.asScala.zipWithIndex.map { case (col, index) =>
-
-      val dataType = if (col.hasEncoding(Encoding.DICTIONARY)) {
-        DataTypes.INT
-      } else if (col.getDataType.equals(DataTypes.TIMESTAMP) ||
-                         col.getDataType.equals(DataTypes.DATE)) {
-        DataTypes.LONG
-      } else {
-        col.getDataType
-      }
-      if (staticPartition != null && staticPartition.get(col.getColumnName.toLowerCase)) {
-        val converetedVal =
-          CarbonScalaUtil.convertStaticPartitions(
-            partitionData(index),
-            col,
-            model.getCarbonDataLoadSchema.getCarbonTable)
-        if (col.hasEncoding(Encoding.DICTIONARY)) {
-          converetedVal.toInt.asInstanceOf[AnyRef]
-        } else {
-          DataTypeUtil.getDataBasedOnDataType(
-            converetedVal,
-            dataType,
-            converter)
-        }
-      } else {
-        DataTypeUtil.getDataBasedOnDataType(partitionData(index), dataType, converter)
-      }
-    }.toArray
-  }
-
   private val recordWriter: CarbonRecordWriter = {
     context.getConfiguration.set("carbon.outputformat.taskno", taskNo)
-    context.getConfiguration.set("carbon.outputformat.writepath",
-      writePath + "/" + model.getSegmentId + "_" + model.getFactTimeStamp + ".tmp")
+    context.getConfiguration.set("carbon.outputformat.writepath", actualPath)
     new CarbonTableOutputFormat() {
       override def getDefaultWorkFile(context: TaskAttemptContext, extension: String): Path = {
-        new Path(path)
+        new Path(tmpPath)
       }
     }.getRecordWriter(context).asInstanceOf[CarbonRecordWriter]
   }
@@ -381,47 +529,18 @@ private class CarbonOutputWriter(path: String,
 
   override def close(): Unit = {
     recordWriter.close(context)
-    // write partition info to new file.
-    val partitionList = new util.ArrayList[String]()
-    val formattedPartitions =
-    // All dynamic partitions need to be converted to proper format
-      CarbonScalaUtil.updatePartitions(
-        updatedPartitions.asInstanceOf[mutable.LinkedHashMap[String, String]],
-        model.getCarbonDataLoadSchema.getCarbonTable)
-    formattedPartitions.foreach(p => partitionList.add(p._1 + "=" + p._2))
-    SegmentFileStore.writeSegmentFile(
-      model.getTablePath,
-      taskNo,
-      writePath,
-      model.getSegmentId + "_" + model.getFactTimeStamp + "",
-      partitionList)
+    ThreadLocalSessionInfo.setConfigurationToCurrentThread(context.getConfiguration)
   }
+}
 
-  def getPartitionPath(path: String,
-      attemptContext: TaskAttemptContext,
-      model: CarbonLoadModel): String = {
-    if (updatedPartitions.nonEmpty) {
-      val formattedPartitions =
-      // All dynamic partitions need to be converted to proper format
-        CarbonScalaUtil.updatePartitions(
-          updatedPartitions.asInstanceOf[mutable.LinkedHashMap[String, String]],
-          model.getCarbonDataLoadSchema.getCarbonTable)
-      val partitionstr = formattedPartitions.map{p =>
-        ExternalCatalogUtils.escapePathName(p._1) + "=" + ExternalCatalogUtils.escapePathName(p._2)
-      }.mkString(CarbonCommonConstants.FILE_SEPARATOR)
-      model.getCarbonDataLoadSchema.getCarbonTable.getTablePath +
-        CarbonCommonConstants.FILE_SEPARATOR + partitionstr
-    } else {
-      var updatedPath = FileFactory.getUpdatedFilePath(path)
-      updatedPath.substring(0, updatedPath.lastIndexOf("/"))
-    }
-  }
+
+object CarbonOutputWriter {
 
   def getPartitionsFromPath(
       path: String,
       attemptContext: TaskAttemptContext,
       model: CarbonLoadModel): Array[String] = {
-    var attemptId = attemptContext.getTaskAttemptID.toString + "/"
+    val attemptId = attemptContext.getTaskAttemptID.toString + "/"
     if (path.indexOf(attemptId) > -1) {
       val str = path.substring(path.indexOf(attemptId) + attemptId.length, path.lastIndexOf("/"))
       if (str.length > 0) {
@@ -433,4 +552,80 @@ private class CarbonOutputWriter(path: String,
       Array.empty
     }
   }
+
+  def splitPartition(p: String): (String, String) = {
+    val value = p.substring(p.indexOf("=") + 1, p.length)
+    val col = p.substring(0, p.indexOf("="))
+    // NUll handling case. For null hive creates with this special name
+    if (value.equals("__HIVE_DEFAULT_PARTITION__")) {
+      (col, null)
+      // we should replace back the special string with empty value.
+    } else if (value.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+      (col, "")
+    } else {
+      (col, value)
+    }
+  }
+
+  /**
+   * update partition folder path
+   */
+  def updatePartitions(
+      partitionData: Seq[String],
+      model: CarbonLoadModel,
+      staticPartition: util.HashMap[String, Boolean],
+      converter: DataTypeConverter
+  ): Array[AnyRef] = {
+    model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo.getFactTable.getPartitionInfo
+      .getColumnSchemaList.asScala.zipWithIndex.map { case (col, index) =>
+
+      val dataType = if (col.hasEncoding(Encoding.DICTIONARY)) {
+        DataTypes.INT
+      } else if (col.getDataType.equals(DataTypes.TIMESTAMP) ||
+                 col.getDataType.equals(DataTypes.DATE)) {
+        DataTypes.LONG
+      } else {
+        col.getDataType
+      }
+      if (staticPartition != null && staticPartition.get(col.getColumnName.toLowerCase)) {
+        val converetedVal =
+          CarbonScalaUtil.convertStaticPartitions(
+            partitionData(index),
+            col,
+            model.getCarbonDataLoadSchema.getCarbonTable)
+        if (col.hasEncoding(Encoding.DICTIONARY)) {
+          converetedVal.toInt.asInstanceOf[AnyRef]
+        } else {
+          DataTypeUtil.getDataBasedOnDataType(
+            converetedVal,
+            dataType,
+            converter)
+        }
+      } else {
+        DataTypeUtil.getDataBasedOnDataType(partitionData(index), dataType, converter)
+      }
+    }.toArray
+  }
+
+  def getPartitionPath(path: String,
+      attemptContext: TaskAttemptContext,
+      model: CarbonLoadModel,
+      updatedPartitions: mutable.LinkedHashMap[String, String]
+  ): String = {
+    if (updatedPartitions.nonEmpty) {
+      // All dynamic partitions need to be converted to proper format
+      val formattedPartitions = CarbonScalaUtil.updatePartitions(
+        updatedPartitions.asInstanceOf[mutable.LinkedHashMap[String, String]],
+        model.getCarbonDataLoadSchema.getCarbonTable)
+      val partitionstr = formattedPartitions.map { p =>
+        ExternalCatalogUtils.escapePathName(p._1) + "=" + ExternalCatalogUtils.escapePathName(p._2)
+      }.mkString(CarbonCommonConstants.FILE_SEPARATOR)
+      model.getCarbonDataLoadSchema.getCarbonTable.getTablePath +
+      CarbonCommonConstants.FILE_SEPARATOR + partitionstr
+    } else {
+      var updatedPath = FileFactory.getUpdatedFilePath(path)
+      updatedPath.substring(0, updatedPath.lastIndexOf("/"))
+    }
+  }
 }
+

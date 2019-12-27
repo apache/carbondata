@@ -111,7 +111,7 @@ public class SegmentFileStore {
     if (!carbonFile.exists()) {
       carbonFile.mkdirs();
     }
-    CarbonFile tempFolder = null;
+    CarbonFile tempFolder;
     if (isMergeIndexFlow) {
       tempFolder = FileFactory.getCarbonFile(location);
     } else {
@@ -1228,12 +1228,12 @@ public class SegmentFileStore {
       locationMap = new HashMap<>();
     }
 
-    SegmentFile merge(SegmentFile mapper) {
-      if (this == mapper) {
+    public SegmentFile merge(SegmentFile segmentFile) {
+      if (this == segmentFile) {
         return this;
       }
-      if (locationMap != null && mapper.locationMap != null) {
-        for (Map.Entry<String, FolderDetails> entry : mapper.locationMap.entrySet()) {
+      if (locationMap != null && segmentFile.locationMap != null) {
+        for (Map.Entry<String, FolderDetails> entry : segmentFile.locationMap.entrySet()) {
           FolderDetails folderDetails = locationMap.get(entry.getKey());
           if (folderDetails != null) {
             folderDetails.merge(entry.getValue());
@@ -1243,7 +1243,7 @@ public class SegmentFileStore {
         }
       }
       if (locationMap == null) {
-        locationMap = mapper.locationMap;
+        locationMap = segmentFile.locationMap;
       }
       return this;
     }
@@ -1266,6 +1266,12 @@ public class SegmentFileStore {
     public void setOptions(Map<String, String> options) {
       this.options = options;
     }
+  }
+
+  public static SegmentFile createSegmentFile(String partitionPath, FolderDetails folderDetails) {
+    SegmentFile segmentFile = new SegmentFile();
+    segmentFile.addPath(partitionPath, folderDetails);
+    return segmentFile;
   }
 
   /**

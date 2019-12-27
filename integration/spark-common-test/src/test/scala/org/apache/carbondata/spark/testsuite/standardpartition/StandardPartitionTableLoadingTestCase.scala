@@ -339,7 +339,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("merge carbon index disable data loading for partition table for three partition column") {
+  ignore("merge carbon index disable data loading for partition table for three partition column") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
     sql(

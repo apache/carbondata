@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.MergedBlockIndex;
 import org.apache.carbondata.format.MergedBlockIndexHeader;
@@ -88,7 +90,8 @@ public class CarbonIndexFileMergeWriter {
           // in case of partition table, merge index files of a partition
           List<CarbonFile> indexFilesInPartition = new ArrayList<>();
           for (CarbonFile indexCarbonFile : indexCarbonFiles) {
-            if (indexCarbonFile.getParentFile().getPath().equals(partitionPath)) {
+            if (FileFactory.getUpdatedFilePath(indexCarbonFile.getParentFile().getPath())
+                .equals(partitionPath)) {
               indexFilesInPartition.add(indexCarbonFile);
             }
           }
@@ -114,6 +117,69 @@ public class CarbonIndexFileMergeWriter {
           "Failed to merge index files in path: " + tablePath, e);
     }
     return null;
+  }
+
+  /**
+   * merge index files and return the index details
+   */
+  public SegmentFileStore.FolderDetails mergeCarbonIndexFilesOfSegment(String segmentId,
+      String tablePath, String partitionPath, List<String> partitionInfo, String uuid,
+      String tempFolderPath, String currPartitionSpec) throws IOException {
+    SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
+    String partitionTempPath = "";
+    for (String partition : partitionInfo) {
+      if (partitionPath.equalsIgnoreCase(partition)) {
+        partitionTempPath = partition + "/" + tempFolderPath;
+        break;
+      }
+    }
+    if (null != partitionPath && !partitionTempPath.isEmpty()) {
+      fileStore.readAllIIndexOfSegment(partitionTempPath);
+    }
+    Map<String, byte[]> indexMap = fileStore.getCarbonIndexMapWithFullPath();
+    Map<String, Map<String, byte[]>> indexLocationMap = new HashMap<>();
+    for (Map.Entry<String, byte[]> entry : indexMap.entrySet()) {
+      Path path = new Path(entry.getKey());
+      Map<String, byte[]> map = indexLocationMap.get(path.getParent().toString());
+      if (map == null) {
+        map = new HashMap<>();
+        indexLocationMap.put(path.getParent().toString(), map);
+      }
+      map.put(path.getName(), entry.getValue());
+    }
+    SegmentFileStore.FolderDetails folderDetails = null;
+    for (Map.Entry<String, Map<String, byte[]>> entry : indexLocationMap.entrySet()) {
+      String mergeIndexFile = writeMergeIndexFile(null, partitionPath, entry.getValue(), segmentId);
+      folderDetails = new SegmentFileStore.FolderDetails();
+      folderDetails.setMergeFileName(mergeIndexFile);
+      folderDetails.setStatus("Success");
+      List<String> partitions = new ArrayList<>();
+      if (partitionPath.startsWith(tablePath)) {
+        partitionPath = partitionPath.substring(tablePath.length() + 1, partitionPath.length());
+        partitions.addAll(Arrays.asList(partitionPath.split("/")));
+
+        folderDetails.setPartitions(partitions);
+        folderDetails.setRelative(true);
+      } else {
+        List<PartitionSpec> partitionSpecs;
+        if (currPartitionSpec != null) {
+          partitionSpecs = (ArrayList<PartitionSpec>) ObjectSerializationUtil
+              .convertStringToObject(currPartitionSpec);
+          PartitionSpec writeSpec = new PartitionSpec(null, partitionPath);
+          int index = partitionSpecs.indexOf(writeSpec);
+          if (index > -1) {
+            PartitionSpec spec = partitionSpecs.get(index);
+            folderDetails.setPartitions(spec.getPartitions());
+            folderDetails.setRelative(false);
+          } else {
+            throw new IOException("Unable to get PartitionSpec for: " + partitionPath);
+          }
+        } else {
+          throw new IOException("Unable to get PartitionSpec for: " + partitionPath);
+        }
+      }
+    }
+    return folderDetails;
   }
 
   private String writeMergeIndexFileBasedOnSegmentFolder(List<String> indexFileNamesTobeAdded,
@@ -197,11 +263,9 @@ public class CarbonIndexFileMergeWriter {
       SegmentFileStore.updateTableStatusFile(table, segmentId, newSegmentFileName,
           table.getCarbonTableIdentifier().getTableId(), segmentFileStore);
     }
-
     for (CarbonFile file : indexFiles) {
       file.delete();
     }
-
     return uuid;
   }
 

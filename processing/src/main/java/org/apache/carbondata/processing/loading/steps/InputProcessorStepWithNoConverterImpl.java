@@ -202,6 +202,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private BadRecordLogHolder logHolder = new BadRecordLogHolder();
 
+    private boolean isHivePartitionTable = false;
+
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators, int batchSize,
         boolean preFetch, AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
         DataType[] dataTypes, CarbonDataLoadConfiguration configuration,
@@ -219,6 +221,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       this.dataFields = configuration.getDataFields();
       this.orderOfData = orderOfData;
       this.dataFieldsWithComplexDataType = dataFieldsWithComplexDataType;
+      this.isHivePartitionTable =
+          configuration.getTableSpec().getCarbonTable().isHivePartitionTable();
     }
 
     @Override
@@ -282,7 +286,9 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
           }
         } else {
           // if this is a complex column then recursively comver the data into Byte Array.
-          if (dataTypes[i].isComplexType()) {
+          if (dataTypes[i].isComplexType() && isHivePartitionTable) {
+            newData[i] = data[orderOfData[i]];
+          } else if (dataTypes[i].isComplexType()) {
             ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
             DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
             try {
