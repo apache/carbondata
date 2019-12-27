@@ -49,8 +49,7 @@ class DistributedDataMapJob extends AbstractDataMapJob {
       LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
     }
     val splitFolderPath = CarbonUtil
-      .createTempFolderForIndexServer(dataMapFormat.getCarbonTable.getTablePath,
-        dataMapFormat.getQueryId)
+      .createTempFolderForIndexServer(dataMapFormat.getQueryId)
     LOGGER
       .info("Temp folder path for Query ID: " + dataMapFormat.getQueryId + " is " + splitFolderPath)
     val (resonse, time) = logTime {
@@ -67,11 +66,9 @@ class DistributedDataMapJob extends AbstractDataMapJob {
           .getExtendedBlockets(dataMapFormat.getCarbonTable.getTablePath, dataMapFormat
             .getQueryId, dataMapFormat.isCountStarJob)
       } finally {
-        val tmpPath = CarbonUtil
-          .getIndexServerTempPath(dataMapFormat.getCarbonTable.getTablePath,
-            dataMapFormat.getQueryId)
         if (null != splitFolderPath && !splitFolderPath.deleteFile()) {
-          LOGGER.error("Problem while deleting the temp directory:" + tmpPath)
+          LOGGER.error("Problem while deleting the temp directory:"
+            + splitFolderPath.getAbsolutePath)
         }
       }
     }

@@ -117,7 +117,7 @@ meaning that no matter how small the splits are they would be written to the fil
 be written to file.
 
 The user can set the location for these files by using 'carbon.indexserver.temp.path'. By default
-table path would be used to write the files.
+the files are written in the path /tmp/indexservertmp.
 
 ## Prepriming
 As each query is responsible for caching the pruned datamaps, thus a lot of execution time is wasted in reading the 

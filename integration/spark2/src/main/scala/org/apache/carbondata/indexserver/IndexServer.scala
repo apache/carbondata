@@ -241,6 +241,8 @@ object IndexServer extends ServerInterface {
       })
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants
         .CARBON_ENABLE_INDEX_SERVER, "true")
+      CarbonProperties.getInstance().addNonSerializableProperty(CarbonCommonConstants
+        .IS_DRIVER_INSTANCE, "true")
       LOGGER.info(s"Index cache server running on ${ server.getPort } port")
     }
   }
