@@ -210,6 +210,17 @@ class TestMVTimeSeriesCreateDataMapCommand extends QueryTest with BeforeAndAfter
     }.getMessage.contains("MV Timeseries is only supported on Timestamp/Date column")
   }
 
+  test("test timeseries with case sensitive granularity") {
+    sql("drop datamap if exists datamap1")
+    sql("create datamap datamap1 on table maintable using 'mv'" +
+      " as select timeseries(projectjoindate,'Second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'Second')")
+    val df1 = sql("select timeseries(projectjoindate,'SECOND'), sum(projectcode) from maintable group by timeseries(projectjoindate,'SECOND')")
+    val df2 = sql("select timeseries(projectjoinDATE,'SECOnd'), sum(projectcode) from maintable where projectcode=8 group by timeseries(projectjoinDATE,'SECOnd')")
+    TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1")
+    TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "datamap1")
+    sql("drop datamap if exists datamap1")
+  }
+
   class QueryTask(query: String) extends Callable[String] {
     override def call(): String = {
       var result = "PASS"

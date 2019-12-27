@@ -149,7 +149,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
         if (!outPutUDFColumn.equalsIgnoreCase("") && compactSQL.contains("WHERE")) {
           queryArray = compactSQL.split("\n")
           queryArray(queryArray.indexOf("WHERE") + 1) = queryArray(
-            queryArray.indexOf("WHERE") + 1).replace(outPutUDFColumn,
+            queryArray.indexOf("WHERE") + 1).toLowerCase.replace(outPutUDFColumn.toLowerCase,
             s"gen_subsumer_0.`$outPutUDFColumn`")
           reWrittenQuery = queryArray.mkString("\n")
         }
