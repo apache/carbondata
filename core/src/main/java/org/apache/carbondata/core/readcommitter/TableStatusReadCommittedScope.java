@@ -94,7 +94,7 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
       throws IOException {
     SegmentRefreshInfo segmentRefreshInfo;
     if (updateVo != null) {
-      segmentRefreshInfo = new SegmentRefreshInfo(updateVo.getCreatedOrUpdatedTimeStamp(), 0);
+      segmentRefreshInfo = new SegmentRefreshInfo(updateVo.getLatestUpdateTimestamp(), 0);
     } else {
       segmentRefreshInfo = new SegmentRefreshInfo(0L, 0);
     }

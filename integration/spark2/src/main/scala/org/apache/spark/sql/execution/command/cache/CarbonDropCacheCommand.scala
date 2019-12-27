@@ -49,18 +49,19 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
     OperationListenerBus.getInstance.fireEvent(dropCacheEvent, operationContext)
 
     val cache = CacheProvider.getInstance().getCarbonCache
+    // Clea cache from IndexServer
+    if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable.getDatabaseName,
+      carbonTable.getTableName)) {
+      LOGGER.info("Clearing cache from IndexServer")
+      DataMapUtil.executeClearDataMapJob(carbonTable, DataMapUtil.DISTRIBUTED_JOB_NAME)
+    }
     if (cache != null) {
-      // Get all Index files for the specified table.
-      if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable.getDatabaseName,
-        carbonTable.getTableName)) {
-        DataMapUtil.executeClearDataMapJob(carbonTable, DataMapUtil.DISTRIBUTED_JOB_NAME)
-      } else {
-        // Extract dictionary keys for the table and create cache keys from those
-        val dictKeys: List[String] = CacheUtil.getAllDictCacheKeys(carbonTable)
-        // Remove elements from cache
-        cache.removeAll(dictKeys.asJava)
-        DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getAbsoluteTableIdentifier)
-      }
+      LOGGER.info("Clearing cache from driver side")
+      // Create cache keys from the extracted dictionary keys for the table.
+      val dictKeys: List[String] = CacheUtil.getAllDictCacheKeys(carbonTable)
+      // Remove elements from cache
+      cache.removeAll(dictKeys.asJava)
+      DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getAbsoluteTableIdentifier)
     }
     LOGGER.info("Drop cache request served for table " + carbonTable.getTableUniqueName)
   }

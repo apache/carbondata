@@ -26,7 +26,6 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
-import org.apache.spark.sql.execution.command.cache._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.listeners.{AlterDataMaptableCompactionPostListener, DataMapAddColumnsPreListener, DataMapAlterTableDropPartitionMetaListener, DataMapAlterTableDropPartitionPreStatusListener, DataMapChangeDataTypeorRenameColumnPreListener, DataMapDeleteSegmentPreListener, DataMapDropColumnPreListener, DropCacheBloomEventListener, DropCacheDataMapEventListener, LoadMVTablePreListener, LoadPostDataMapListener, PrePrimingEventListener, ShowCacheDataMapEventListener, ShowCachePreMVEventListener}
@@ -71,6 +70,8 @@ class CarbonEnv {
       properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
     }
     LOGGER.info(s"Initializing CarbonEnv, store location: $storePath")
+    // Creating the index server temp folder where splits for select query is written
+    CarbonUtil.createTempFolderForIndexServer(null);
 
     sparkSession.udf.register("getTupleId", () => "")
     // added for handling MV table creation. when user will fire create ddl for

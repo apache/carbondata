@@ -3320,29 +3320,42 @@ public final class CarbonUtil {
     return UUID.randomUUID().toString();
   }
 
-  public static String getIndexServerTempPath(String tablePath, String queryId) {
+  public static String getIndexServerTempPath() {
     String tempFolderPath = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_TEMP_PATH);
     if (null == tempFolderPath) {
       tempFolderPath =
-          tablePath + "/" + CarbonCommonConstants.INDEX_SERVER_TEMP_FOLDER_NAME + "/" + queryId;
+          "/tmp/" + CarbonCommonConstants.INDEX_SERVER_TEMP_FOLDER_NAME;
     } else {
       tempFolderPath =
-          tempFolderPath + "/" + CarbonCommonConstants.INDEX_SERVER_TEMP_FOLDER_NAME + "/"
-              + queryId;
+          tempFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+              + CarbonCommonConstants.INDEX_SERVER_TEMP_FOLDER_NAME;
     }
-    return tempFolderPath;
+    return CarbonUtil.checkAndAppendFileSystemURIScheme(tempFolderPath);
   }
 
-  public static CarbonFile createTempFolderForIndexServer(String tablePath, String queryId)
-      throws IOException {
-    final String path = getIndexServerTempPath(tablePath, queryId);
-    CarbonFile file = FileFactory.getCarbonFile(path);
+  public static CarbonFile createTempFolderForIndexServer(String queryId)
+          throws IOException {
+    final String path = getIndexServerTempPath();
+    if (queryId == null) {
+      if (!FileFactory.isFileExist(path)) {
+        // Create the new index server temp directory if it does not exist
+        LOGGER.info("Creating Index Server temp folder:" + path);
+        FileFactory
+                .createDirectoryAndSetPermission(path,
+                        new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
+      }
+      return null;
+    }
+    CarbonFile file = FileFactory.getCarbonFile(path + CarbonCommonConstants.FILE_SEPARATOR
+            + queryId);
     if (!file.mkdirs()) {
-      LOGGER.info("Unable to create table directory for index server");
+      LOGGER.info("Unable to create table directory: " + path + CarbonCommonConstants.FILE_SEPARATOR
+              + queryId);
       return null;
     } else {
-      LOGGER.info("Created index server temp directory" + path);
+      LOGGER.info("Successfully Created directory: " + path + CarbonCommonConstants.FILE_SEPARATOR
+              + queryId);
       return file;
     }
   }
