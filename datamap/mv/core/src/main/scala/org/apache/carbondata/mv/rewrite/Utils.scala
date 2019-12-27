@@ -17,8 +17,9 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Divide, Expression, Multiply, PredicateHelper, ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Divide, Expression, Literal, Multiply, PredicateHelper, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
+import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 
 import org.apache.carbondata.mv.plans.modular
 import org.apache.carbondata.mv.plans.modular.{ModularPlan, Select}
@@ -321,7 +322,8 @@ object Utils extends PredicateHelper {
       case expr: Expression if !expr.isInstanceOf[AggregateFunction] =>
         operator_a.outputList.find {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
-                               alias_m(alias.toAttribute).child.semanticEquals(expr) &&
+                               (alias_m(alias.toAttribute).child.semanticEquals(expr) ||
+                                Utils.isExpressionMatchesUDF(alias_m(alias.toAttribute), expr)) &&
                                !alias_m(alias.toAttribute).child
                                  .isInstanceOf[AggregateExpression] => true
           case attr: Attribute if alias_m.contains(attr) &&
@@ -459,14 +461,14 @@ object Utils extends PredicateHelper {
     subsumer.asInstanceOf[Select].outputList.forall {
       case Alias(s: ScalaUDF, _) =>
         expE.children.foreach { expr =>
-          if (s.semanticEquals(expr)) {
+          if (s.semanticEquals(expr)|| isExpressionMatchesUDF(s, expr)) {
             canBeDerived = true
           }
           // It is because when expression is like between filter, the expr will be as Cast
           // expression and its child will be ScalaUDF(timeseries), So compare the child also.
           if (!canBeDerived && null != expr.children) {
             expr.children.foreach { expC =>
-              if (s.semanticEquals(expC)) {
+              if (s.semanticEquals(expC) || isExpressionMatchesUDF(s, expC)) {
                 canBeDerived = true
               }
             }
@@ -519,4 +521,86 @@ object Utils extends PredicateHelper {
     }
   }
 
+  /**
+   * Check's if timeseries udf function exists. If exists, compare literal with case insensitive
+   * value
+   */
+  def isExpressionMatchesUDF(subsumeExp: Expression, subsumerExprList: Seq[Expression]): Boolean = {
+    // Check if expression has a ScalaUDF of timeSeries function and verify it's children
+    // irrespective of case. The structure of scalaUDF function will look like,
+    //                ScalaUDF
+    //                    |
+    //             TimeSeriesFunction
+    //                 /    \
+    //                /      \
+    //   AttributeReference   Literal
+    subsumeExp match {
+      case Alias(udf: ScalaUDF, _) if udf.function.isInstanceOf[TimeSeriesFunction] =>
+        val children = udf.children
+        val subsumerTimeSeriesExp = subsumerExprList.filter(a1 =>
+          a1.isInstanceOf[Alias] && a1.asInstanceOf[Alias].child.isInstanceOf[ScalaUDF] &&
+          a1.asInstanceOf[Alias].child.asInstanceOf[ScalaUDF].function.
+            isInstanceOf[TimeSeriesFunction])
+        subsumerTimeSeriesExp.exists(f => {
+          val childExprsOfTimeSeriesUDF = f.asInstanceOf[Alias].child
+            .asInstanceOf[ScalaUDF].children
+          childExprsOfTimeSeriesUDF.head.semanticEquals(children.head) &&
+          childExprsOfTimeSeriesUDF.last.asInstanceOf[Literal].toString().equalsIgnoreCase(
+            children.last.asInstanceOf[Literal].toString())
+        })
+      case udf: ScalaUDF if udf.function.isInstanceOf[TimeSeriesFunction] =>
+        val children = udf.children
+        var subsumerTimeSeriesExprList: Seq[Expression] = Seq.empty
+        subsumerExprList foreach {
+          case s: ScalaUDF if s.function.isInstanceOf[TimeSeriesFunction] =>
+            subsumerTimeSeriesExprList = subsumerTimeSeriesExprList.+:(s)
+          case Alias(s: ScalaUDF, _) if s.function.isInstanceOf[TimeSeriesFunction] =>
+            subsumerTimeSeriesExprList = subsumerTimeSeriesExprList.+:(s.asInstanceOf[Expression])
+          case _ =>
+        }
+        subsumerTimeSeriesExprList.exists(f => {
+          val childExprsOfTimeSeriesUDF = f.asInstanceOf[ScalaUDF].children
+          childExprsOfTimeSeriesUDF.head.semanticEquals(children.head) &&
+          childExprsOfTimeSeriesUDF.last.asInstanceOf[Literal].toString().equalsIgnoreCase(
+            children.last.asInstanceOf[Literal].toString())
+        })
+      case exp: Expression =>
+        val transformedExpwithLowerCase = exp.transform {
+          case s: ScalaUDF if s.function.isInstanceOf[TimeSeriesFunction] =>
+            getTransformedTimeSeriesUDF(s)
+          case other => other
+        }
+        val transformedExprListWithLowerCase = subsumerExprList map { expr =>
+          expr.transform {
+            case s: ScalaUDF if s.function.isInstanceOf[TimeSeriesFunction] =>
+              getTransformedTimeSeriesUDF(s)
+            case other => other
+          }
+        }
+        transformedExprListWithLowerCase.exists(_.semanticEquals(transformedExpwithLowerCase))
+      case _ => false
+    }
+  }
+
+  def getTransformedTimeSeriesUDF(s: ScalaUDF): Expression = {
+    s.transform {
+      case l: Literal =>
+        Literal(l.toString().toLowerCase, l.dataType)
+    }
+  }
+
+  /**
+   * Check if expr1 and expr2 matches TimeSeriesUDF function. If both expressions are
+   * timeseries udf functions, then check it's childrens are same irrespective of case.
+   */
+  def isExpressionMatchesUDF(expr1: Expression, expr2: Expression): Boolean = {
+    (expr1, expr2) match {
+      case (s1: ScalaUDF, s2: ScalaUDF) if s1.function.isInstanceOf[TimeSeriesFunction] &&
+                                           s2.function.isInstanceOf[TimeSeriesFunction] =>
+        s1.children.head.semanticEquals(s2.children.head) &&
+        s1.children.last.asInstanceOf[Literal].toString()
+          .equalsIgnoreCase(s2.children.last.asInstanceOf[Literal].toString())
+      case _ => false
+    }
+  }
 }

@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftOuter}
+import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.types.{DataType, Metadata}
 
 import org.apache.carbondata.mv.datamap.MVHelper
@@ -59,7 +60,12 @@ abstract class DefaultMatchPattern extends MatchPattern[ModularPlan] {
       subsumer.outputList.collect {
         case a: Alias if a.child.isInstanceOf[Expression] &&
                          !a.child.isInstanceOf[AggregateExpression] =>
-          a.child -> a.toAttribute
+          a.child match {
+            case s: ScalaUDF if s.function.isInstanceOf[TimeSeriesFunction] =>
+              Utils.getTransformedTimeSeriesUDF(s) -> a.toAttribute
+            case _ =>
+              a.child -> a.toAttribute
+          }
       }.toMap
 
     // Check and replace all alias references with subsumer alias map references.
@@ -76,8 +82,18 @@ abstract class DefaultMatchPattern extends MatchPattern[ModularPlan] {
                   qualifier = a.qualifier)
               }.getOrElse(a)
           case a: Expression =>
-            aliasMapExp
+            var attribute = aliasMapExp
               .get(a)
+            // attribute will be empty, if attribute name is of different case. If empty, change
+            // case of scalaUDF present in expression and get updated expression from aliasMap
+            if (attribute.isEmpty) {
+              val newExp = a transform {
+                case s: ScalaUDF if s.function.isInstanceOf[TimeSeriesFunction] =>
+                  Utils.getTransformedTimeSeriesUDF(s)
+              }
+              attribute = aliasMapExp.get(newExp)
+            }
+            attribute
               .map { ref =>
                 AttributeReference(
                   ref.name, ref.dataType)(
@@ -137,17 +153,20 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
       compensation: Option[ModularPlan]): Boolean = {
     if (subsumee.asInstanceOf[Select].predicateList.contains(exprE)) {
       subsumer.asInstanceOf[Select].predicateList.exists(_.semanticEquals(exprE)) ||
-      canEvaluate(exprE, subsumer)
+      canEvaluate(exprE, subsumer) ||
+      Utils.isExpressionMatchesUDF(exprE, subsumer.asInstanceOf[Select].predicateList)
     } else if (subsumee.asInstanceOf[Select].outputList.contains(exprE)) {
       exprE match {
         case a@Alias(_, _) =>
           exprListR.exists(a1 => a1.isInstanceOf[Alias] &&
                                  a1.asInstanceOf[Alias].child.semanticEquals(a.child)) ||
-          exprListR.exists(_.semanticEquals(exprE) || canEvaluate(exprE, subsumer))
+          exprListR.exists(_.semanticEquals(exprE) || canEvaluate(exprE, subsumer)) ||
+          Utils.isExpressionMatchesUDF(exprE, exprListR)
         case exp =>
           exprListR.exists(a1 => a1.isInstanceOf[Alias] &&
                                  a1.asInstanceOf[Alias].child.semanticEquals(exp)) ||
-          exprListR.exists(_.semanticEquals(exprE) || canEvaluate(exprE, subsumer))
+          exprListR.exists(_.semanticEquals(exprE) || canEvaluate(exprE, subsumer)) ||
+          Utils.isExpressionMatchesUDF(exprE, exprListR)
       }
     } else {
       false
@@ -199,7 +218,8 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
         val rejoinOutputList = rejoin.flatMap(_.output)
 
         val isPredicateRmE = sel_1a.predicateList.forall(expr =>
-          sel_1q.predicateList.exists(_.semanticEquals(expr)))
+          sel_1q.predicateList.exists(_.semanticEquals(expr)) ||
+          Utils.isExpressionMatchesUDF(expr, sel_1q.predicateList))
         val isPredicateEmdR = sel_1q.predicateList.forall(expr =>
           isDerivable(expr, sel_1a.outputList ++ rejoinOutputList, sel_1q, sel_1a, None))
         // Check if sel_1q.outputList is non empty and then check whether
@@ -244,19 +264,24 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
                     val sel_1q_join = sel_1q.extractJoinConditions(
                       sel_1q.children(mappedEdge.left),
                       sel_1q.children(mappedEdge.right))
-                    sel_1a_join.forall(e => sel_1q_join.exists(e.semanticEquals(_))) &&
-                    sel_1q_join.forall(e => sel_1a_join.exists(e.semanticEquals(_)))
+                    sel_1a_join.forall(e => sel_1q_join.exists(e.semanticEquals(_)) ||
+                    Utils.isExpressionMatchesUDF(e, sel_1q_join)) &&
+                    sel_1q_join.forall(e => sel_1a_join.exists(e.semanticEquals(_)) ||
+                    Utils.isExpressionMatchesUDF(e, sel_1a_join))
                   } else false
                 case _ => false
               }
           }
 
           val isPredicateEmR = sel_1q.predicateList.forall(expr =>
-            sel_1a.predicateList.exists(_.semanticEquals(expr)))
+            sel_1a.predicateList.exists(_.semanticEquals(expr)) ||
+            Utils.isExpressionMatchesUDF(expr, sel_1a.predicateList))
           val isOutputEmR = sel_1q.outputList.forall(expr =>
-            sel_1a.outputList.exists(_.semanticEquals(expr)))
+            sel_1a.outputList.exists(_.semanticEquals(expr)) ||
+            Utils.isExpressionMatchesUDF(expr, sel_1a.outputList))
           val isOutputRmE = sel_1a.outputList.forall(expr =>
-            sel_1q.outputList.exists(_.semanticEquals(expr)))
+            sel_1q.outputList.exists(_.semanticEquals(expr)) ||
+            Utils.isExpressionMatchesUDF(expr, sel_1q.outputList))
           val isLOEmLOR = !(isLeftJoinView(sel_1a) && sel_1q.joinEdges.head.joinType == Inner)
 
           if (r2eJoinsMatch) {
@@ -329,10 +354,13 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
            sel_3q.children.forall(_.isInstanceOf[GroupBy]) =>
         val isPredicateRmE = sel_3a.predicateList.isEmpty ||
                              sel_3a.predicateList.forall(expr =>
-                               sel_3q.predicateList.exists(_.semanticEquals(expr)))
+                               sel_3q.predicateList.exists(_.semanticEquals(expr)) ||
+                               Utils.isExpressionMatchesUDF(expr, sel_3q.predicateList))
         val isPredicateEmdR = sel_3q.predicateList.isEmpty ||
                               sel_3q.predicateList.forall(expr =>
-                                sel_3a.predicateList.exists(_.semanticEquals(expr)) ||
+                                sel_3a.predicateList.exists(_.semanticEquals(expr) ||
+                                                            Utils.isExpressionMatchesUDF(expr,
+                                                              sel_3a.predicateList)) ||
                                 isDerivable(expr, sel_3a.outputList, sel_3q, sel_3a, None))
         val isOutputEdR = sel_3q.outputList.forall(expr =>
           isDerivable(expr, sel_3a.outputList, sel_3q, sel_3a, None))
@@ -341,7 +369,8 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
         if (isPredicateRmE && isPredicateEmdR && isOutputEdR && isSingleChild) {
           val isPredicateEmR = sel_3q.predicateList.isEmpty ||
                                sel_3q.predicateList.forall(expr =>
-                                 sel_3a.predicateList.exists(_.semanticEquals(expr)))
+                                 sel_3a.predicateList.exists(_.semanticEquals(expr)) ||
+                                 Utils.isExpressionMatchesUDF(expr, sel_3a.predicateList))
           val isOutputRmE = sel_3a.outputList.forall(expr =>
             isDerivable(expr, sel_3q.outputList, sel_3a, sel_3q, None))
           val isOutputEmR = sel_3q.outputList.forall(expr =>
@@ -355,7 +384,8 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
               case a: Alias => sel_3a.outputList
                 .find { a1 =>
                   a1.isInstanceOf[Alias] &&
-                  a1.asInstanceOf[Alias].child.semanticEquals(a.child)
+                  (a1.asInstanceOf[Alias].child.semanticEquals(a.child) ||
+                    Utils.isExpressionMatchesUDF(a1.asInstanceOf[Alias].child, a.child))
                 }.map(_.toAttribute).get
             })
             val wip = sel_3q_exp.copy(
@@ -386,9 +416,11 @@ object GroupbyGroupbyNoChildDelta extends DefaultMatchPattern {
         gb_2q @ modular.GroupBy(_, _, _, _, _, _, _, _),
         None) =>
         val isGroupingEmR = gb_2q.predicateList.forall(expr =>
-          gb_2a.predicateList.exists(_.semanticEquals(expr)))
+          gb_2a.predicateList.exists(_.semanticEquals(expr)) ||
+          Utils.isExpressionMatchesUDF(expr, gb_2a.predicateList))
         val isGroupingRmE = gb_2a.predicateList.forall(expr =>
-          gb_2q.predicateList.exists(_.semanticEquals(expr)))
+          gb_2q.predicateList.exists(_.semanticEquals(expr)) ||
+          Utils.isExpressionMatchesUDF(expr, gb_2q.predicateList))
         val isOutputEmR = gb_2q.outputList.forall {
           case a @ Alias(_, _) =>
             gb_2a.outputList.exists{
@@ -403,7 +435,8 @@ object GroupbyGroupbyNoChildDelta extends DefaultMatchPattern {
             val mappings = gb_2a.outputList.zipWithIndex.map { case(exp, index) =>
               (exp, gb_2q.outputList.find {
                 case a: Alias if exp.isInstanceOf[Alias] =>
-                  a.child.semanticEquals(exp.children.head)
+                  a.child.semanticEquals(exp.children.head) ||
+                  Utils.isExpressionMatchesUDF(a.child, exp.children.head)
                 case a: Alias => a.child.semanticEquals(exp)
                 case other => other.semanticEquals(exp)
               }.getOrElse(gb_2a.outputList(index)))
@@ -476,7 +509,7 @@ object GroupbyGroupbySelectOnlyChildDelta extends DefaultMatchPattern with Predi
       compensation: Option[ModularPlan]) = {
     if (subsumee.asInstanceOf[GroupBy].predicateList.contains(exprE)) {
       if (exprListR.exists(_.semanticEquals(exprE)) || canEvaluate(exprE, exprListR) ||
-          isDerivableForUDF(exprE, exprListR)) {
+          isDerivableForUDF(exprE, exprListR) || Utils.isExpressionMatchesUDF(exprE, exprListR)) {
         true
       } else {
         false
@@ -484,7 +517,7 @@ object GroupbyGroupbySelectOnlyChildDelta extends DefaultMatchPattern with Predi
     } else if (compensation.getOrElse(throw new RuntimeException("compensation cannot be None"))
       .asInstanceOf[Select].predicateList.contains(exprE)) {
       if (canEvaluate(exprE, exprListR) || exprListR.exists(_.semanticEquals(exprE)) ||
-          isDerivableForUDF(exprE, exprListR)) {
+          isDerivableForUDF(exprE, exprListR) || Utils.isExpressionMatchesUDF(exprE, exprListR)) {
         true
       } else {
         false
@@ -546,7 +579,9 @@ object GroupbyGroupbySelectOnlyChildDelta extends DefaultMatchPattern with Predi
         val rejoinOutputList = sel_1c1.children.tail.flatMap(_.output)
         val isGroupingEdR = gb_2q.predicateList.forall(expr =>
           isDerivable(expr, gb_2a.predicateList ++ rejoinOutputList, gb_2q, gb_2a, compensation))
-        val needRegrouping = !gb_2a.predicateList.forall(gb_2q.predicateList.contains)
+        val needRegrouping = !gb_2a.predicateList
+          .forall(f => gb_2q.predicateList.contains(f) ||
+                       Utils.isExpressionMatchesUDF(f, gb_2q.predicateList))
         val canPullup = sel_1c1.predicateList.forall(expr =>
           isDerivable(expr, gb_2a.predicateList ++ rejoinOutputList, gb_2q, gb_2a, compensation))
         val isAggEmR = gb_2q.outputList.collect {
@@ -558,9 +593,12 @@ object GroupbyGroupbySelectOnlyChildDelta extends DefaultMatchPattern with Predi
           // pull up
           val pullupOutputList = gb_2a.outputList.map(_.toAttribute) ++ rejoinOutputList
           val myOutputList = gb_2a.outputList.filter {
-            case alias: Alias => gb_2q.outputList.filter(_.isInstanceOf[Alias])
-              .exists(_.asInstanceOf[Alias].child.semanticEquals(alias.child))
-            case attr: Attribute => gb_2q.outputList.exists(_.semanticEquals(attr))
+            case alias: Alias =>
+              val aliasList = gb_2q.outputList.filter(_.isInstanceOf[Alias])
+              aliasList.exists(_.asInstanceOf[Alias].child.semanticEquals(alias.child)) ||
+              Utils.isExpressionMatchesUDF(alias.child, aliasList)
+            case attr: Attribute =>
+              gb_2q.outputList.exists(_.semanticEquals(attr))
           }.map(_.toAttribute) ++ rejoinOutputList
           // TODO: find out if we really need to check needRegrouping or just use myOutputList
           val sel_2c1 = if (needRegrouping) {
@@ -707,10 +745,13 @@ object SelectSelectGroupbyChildDelta extends DefaultMatchPattern with PredicateH
 
         val isPredicateRmE = sel_3a.predicateList.forall(expr =>
           sel_3q.predicateList.exists(_.semanticEquals(expr)) ||
-          gb_2c.predicateList.exists(_.semanticEquals(expr)))
+          Utils.isExpressionMatchesUDF(expr, sel_3q.predicateList) ||
+          gb_2c.predicateList.exists(_.semanticEquals(expr)) ||
+          Utils.isExpressionMatchesUDF(expr, gb_2c.predicateList))
         val isPredicateEmdR = sel_3q.predicateList
           .forall(expr =>
             sel_3a.predicateList.exists(_.semanticEquals(expr)) ||
+            Utils.isExpressionMatchesUDF(expr, sel_3a.predicateList) ||
             isDerivable(
               expr,
               sel_3a.outputList ++ rejoinOutputList,
@@ -769,7 +810,8 @@ object SelectSelectGroupbyChildDelta extends DefaultMatchPattern with PredicateH
               val mappings = sel_3q_exp.outputList.zipWithIndex.map { case(exp, index) =>
                 (exp, gb_2c.outputList.find {
                   case a: Alias if exp.isInstanceOf[Alias] =>
-                    a.child.semanticEquals(exp.children.head)
+                    a.child.semanticEquals(exp.children.head) ||
+                    Utils.isExpressionMatchesUDF(a.child, exp.children.head)
                   case a: Alias => a.child.semanticEquals(exp)
                   case other => other.semanticEquals(exp)
                 }.getOrElse(gb_2c.outputList(index)))

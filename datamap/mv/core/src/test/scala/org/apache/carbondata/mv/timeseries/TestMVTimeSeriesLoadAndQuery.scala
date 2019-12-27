@@ -48,6 +48,8 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     val df1 = sql("select timeseries(projectjoindate,'minute'),sum(projectcode) from maintable where timeseries(projectjoindate,'minute') = '2016-02-23 09:17:00'" +
                   "group by timeseries(projectjoindate,'minute')")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1"))
+    val df2 = sql("select timeseries(projectjoindate,'MINUTE'), sum(projectcode) from maintable where timeseries(projectjoindate,'MINute') = '2016-02-23 09:17:00' group by timeseries(projectjoindate,'MINUTE')")
+    TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "datamap1")
     dropDataMap("datamap1")
   }
 
@@ -181,8 +183,10 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       "create datamap datamap1 on table maintable using 'mv' as " +
       "select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' or  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'month')")
     loadData("maintable")
-    val df1 = sql("select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' or  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'month')")
+    var df1 = sql("select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' or  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'month')")
     checkPlan("datamap1", df1)
+    df1 = sql("select timeseries(projectjoindate,'MONth'), max(salary) from maintable where timeseries(projectjoindate,'MoNtH') = '2016-03-01 00:00:00' or  timeseries(projectjoinDATE,'MONth') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'MONth')")
+    TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1")
     sql(
       "create datamap datamap2 on table maintable using 'mv' as " +
       "select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' and  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'month')")
