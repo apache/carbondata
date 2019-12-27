@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -221,9 +222,11 @@ public class DataMapFilter implements Serializable {
    */
   private FilterResolverIntf resolveFilter() {
     try {
+      AbsoluteTableIdentifier absoluteTableIdentifier =
+              table != null ? table.getAbsoluteTableIdentifier() : null;
       FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
       return filterExpressionProcessor
-          .getFilterResolver(expression, table.getAbsoluteTableIdentifier());
+          .getFilterResolver(expression, absoluteTableIdentifier);
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }

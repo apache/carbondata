@@ -710,7 +710,7 @@ public final class DataMapStoreManager {
         UpdateVO updateVO = statusManager.getInvalidTimestampRange(updateDetails.getSegmentName());
         SegmentRefreshInfo segmentRefreshInfo;
         if (updateVO != null && updateVO.getLatestUpdateTimestamp() != null) {
-          segmentRefreshInfo = new SegmentRefreshInfo(updateVO.getCreatedOrUpdatedTimeStamp(), 0);
+          segmentRefreshInfo = new SegmentRefreshInfo(updateVO.getLatestUpdateTimestamp(), 0);
         } else {
           segmentRefreshInfo = new SegmentRefreshInfo(0L, 0);
         }
