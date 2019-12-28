@@ -49,6 +49,12 @@ public class CarbonRow implements Serializable {
     return data;
   }
 
+  public Object[] getKey(int numberOfSortColumns) {
+    Object[] key = new Object[numberOfSortColumns];
+    System.arraycopy(data, 0, key, 0, numberOfSortColumns);
+    return key;
+  }
+
   public void setData(Object[] data) {
     this.data = data;
   }
