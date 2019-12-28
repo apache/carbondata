@@ -740,8 +740,8 @@ case class CarbonLoadDataCommand(
             i = i + 1
           }
           var j = 0
-          val len = partitionBounds.length
-          while (j < len) {
+          val boundLength = partitionBounds.length
+          while (j < boundLength) {
             data(partitionBounds(j)) = UTF8String.fromString(partitionValues(j))
             j = j + 1
           }
