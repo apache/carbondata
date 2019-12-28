@@ -65,8 +65,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
       }
       writer.close()
     } catch {
-      case ex: Exception => None
-      case _ => None
+      case _: Throwable => None
     }
   }
 

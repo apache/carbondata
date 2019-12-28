@@ -50,10 +50,6 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("AllDictionaryExample") {
-    AllDictionaryExample.exampleBody(spark)
-  }
-
   test("AlterTableExample") {
     AlterTableExample.exampleBody(spark)
   }

@@ -121,7 +121,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name','local_dictionary_include'='name')
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_include'='name')
         """.
           stripMargin)
     }
@@ -352,8 +352,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000','local_dictionary_include'='name',
-          | 'dictionary_include'='name')
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000','local_dictionary_include'='name')
         """.stripMargin)
     }
   }
@@ -396,7 +395,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
           | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='23213497321591234324',
-          | 'local_dictionary_include'='name','dictionary_include'='name')
+          | 'local_dictionary_include'='name')
         """.stripMargin)
     }
   }
@@ -512,7 +511,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name',
+          | tblproperties('local_dictionary_enable'='true',
           | 'local_dictionary_include'='name')
         """.
           stripMargin)
@@ -611,7 +610,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name',
+          | tblproperties('local_dictionary_enable'='true',
           | 'local_dictionary_exclude'='name')
         """.
           stripMargin)
@@ -704,7 +703,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
           | tblproperties('local_dictionary_exclude'='name','local_dictionary_include'='city',
-          | 'local_dictionary_enable'='true','dictionary_include'='name,city')
+          | 'local_dictionary_enable'='true')
         """.
           stripMargin)
     }
@@ -1014,7 +1013,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
           | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000',
-          | 'local_dictionary_include'='name','dictionary_include'='name')
+          | 'local_dictionary_include'='name' )
         """.stripMargin)
     }
   }
@@ -1062,8 +1061,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
           | tblproperties('local_dictionary_enable'='true',
-          | 'local_dictionary_threshold'='23213497321591234324','local_dictionary_include'='name',
-          | 'dictionary_include'='name')
+          | 'local_dictionary_threshold'='23213497321591234324','local_dictionary_include'='name')
         """.stripMargin)
     }
   }
@@ -1165,7 +1163,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='false','dictionary_include'='name',
+        | tblproperties('local_dictionary_enable'='false' ,
         | 'local_dictionary_include'='name')
       """.
         stripMargin)
@@ -1397,7 +1395,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
         | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='20000',
-        | 'local_dictionary_include'='name','dictionary_include'='name')
+        | 'local_dictionary_include'='name' )
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -1454,8 +1452,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
         | tblproperties('local_dictionary_enable'='false',
-        | 'local_dictionary_threshold'='23213497321591234324','local_dictionary_include'='name',
-        | 'dictionary_include'='name')
+        | 'local_dictionary_threshold'='23213497321591234324','local_dictionary_include'='name')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -1471,7 +1468,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('dictionary_include'='city','sort_scope'='global_sort',
+        | tblproperties(
+        | 'sort_scope'='global_sort',
         | 'sort_columns'='city,name')
       """.stripMargin)
 
@@ -1491,7 +1489,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('dictionary_include'='city','sort_scope'='local_sort',
+        | tblproperties('sort_scope'='local_sort',
         | 'sort_columns'='city,name')
       """.stripMargin)
 
@@ -1510,7 +1508,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('dictionary_include'='city','sort_scope'='no_sort',
+        | tblproperties(
+        | 'sort_scope'='no_sort',
         | 'sort_columns'='city,name')
       """.stripMargin)
 
@@ -1529,7 +1528,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('dictionary_include'='city','sort_scope'='local_sort',
+        | tblproperties(
+        | 'sort_scope'='local_sort',
         | 'sort_columns'='city,name')
       """.stripMargin)
 
@@ -1696,7 +1696,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       sql(
         """
           | CREATE TABLE local1 STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name',
+          | tblproperties('local_dictionary_enable'='true' ,
           | 'local_dictionary_include'='name') as select * from local
         """.
           stripMargin)
@@ -1828,7 +1828,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       sql(
         """
           | CREATE TABLE local1 STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name',
+          | tblproperties('local_dictionary_enable'='true' ,
           | 'local_dictionary_exclude'='name') as select * from local
         """.
           stripMargin)
@@ -1910,7 +1910,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1 STORED BY 'org.apache.carbondata.format'
           | tblproperties('local_dictionary_exclude'='name','local_dictionary_include'='city',
-          | 'local_dictionary_enable'='true','dictionary_include'='name,city') as select * from local
+          | 'local_dictionary_enable'='true') as select * from local
         """.
           stripMargin)
     }

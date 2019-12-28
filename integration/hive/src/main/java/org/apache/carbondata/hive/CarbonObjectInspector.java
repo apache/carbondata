@@ -60,14 +60,16 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
   }
 
   private ObjectInspector getObjectInspector(final TypeInfo typeInfo) {
-    if (typeInfo.equals(TypeInfoFactory.doubleTypeInfo)) {
+    if (typeInfo.equals(TypeInfoFactory.stringTypeInfo)) {
+      return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
+    } else if (typeInfo.equals(TypeInfoFactory.doubleTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableDoubleObjectInspector;
+    } else if (typeInfo.equals(TypeInfoFactory.floatTypeInfo)) {
+      return PrimitiveObjectInspectorFactory.writableFloatObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.intTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableIntObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.longTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableLongObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.stringTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
     } else if (typeInfo instanceof DecimalTypeInfo) {
       return PrimitiveObjectInspectorFactory
           .getPrimitiveWritableObjectInspector((DecimalTypeInfo) typeInfo);

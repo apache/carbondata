@@ -60,8 +60,6 @@ class DoubleDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       .format("carbondata")
       .option("tableName", "doubleTypeCarbonTable")
       .option("tempCSV", "false")
-      .option("single_pass", "true")
-      .option("dictionary_exclude", "city")
       .option("table_blocksize", "32")
       .mode(SaveMode.Overwrite)
       .save()
@@ -79,7 +77,7 @@ class DoubleDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("duplicate values") {
-    sql("create table uniq_carbon(name string, double_column double) stored by 'carbondata' TBLPROPERTIES ('DICTIONARY_INCLUDE'='double_column')")
+    sql("create table uniq_carbon(name string, double_column double) stored by 'carbondata' ")
     sql(s"load data inpath '$resourcesPath/uniq.csv' into table uniq_carbon")
     sql("create table uniq_hive(name string, double_column double) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
     sql(s"load data local inpath '$resourcesPath/uniqwithoutheader.csv' into table uniq_hive")

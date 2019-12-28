@@ -129,7 +129,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
         109.0, 2738.562)))
   }
 
-  // check create table with complex data type with dictionary_include columns and insert into
+  // check create table with complex data type and insert into
   // into complex table
   test("test Complex_DataType-003") {
     CarbonProperties.getInstance()
@@ -138,8 +138,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql(
       "create table test(person struct<detail:struct<id:int,name:string,height:double," +
-      "status:boolean,dob:date,dobt:timestamp>>) stored by 'carbondata' tblproperties" +
-      "('dictionary_include'='person')")
+      "status:boolean,dob:date,dobt:timestamp>>) stored by 'carbondata' ")
     sql("insert into test values(named_struct('detail', named_struct('id', 1, 'name', 'abc', 'height', 4.30, 'status', true, 'dob', '2017-08-09', 'dobt', '2017-08-09 00:00:00.0')))")
     checkAnswer(sql("select * from test"),
       Seq(Row(Row(Row(1,
@@ -148,8 +147,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql(
       "create table test(p1 array<int>,p2 array<string>,p3 array<double>,p4 array<boolean>,p5 " +
-      "array<date>,p6 array<timestamp>) stored by 'carbondata' tblproperties" +
-      "('dictionary_include'='p1,p2,p3,p4,p5,p6')")
+      "array<date>,p6 array<timestamp>) stored by 'carbondata' ")
     sql("insert into test values(array(1,2,3), array('abc','def','mno'), array(4.30,4.60,5.20), array(true,true,false), array('2017-08-09','2017-08-09','2017-07-07'), array('2017-08-09 00:00:00.0','2017-08-09 00:00:00.0','2017-07-07 00:00:00.0'))")
     checkAnswer(sql("select * from test"),
       Seq(Row(mutable.WrappedArray.make(Array(1, 2, 3)),

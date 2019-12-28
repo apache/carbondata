@@ -31,7 +31,6 @@ class TestQueryWithoutDataLoad extends QueryTest with BeforeAndAfterAll {
     sql("""
         CREATE TABLE no_load(imei string, age int, productdate timestamp, gamePointId double)
         STORED BY 'org.apache.carbondata.format'
-        TBLPROPERTIES('DICTIONARY_INCLUDE'='gamePointId')
       """)
   }
 

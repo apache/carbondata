@@ -146,7 +146,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     sql(
@@ -167,7 +167,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     sql(
@@ -263,7 +263,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     sql(
@@ -284,7 +284,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     val rootPath = new File(this.getClass.getResource("/").getPath
@@ -334,7 +334,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     sql(
@@ -354,7 +354,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     val rootPath = new File(this.getClass.getResource("/").getPath
@@ -390,7 +390,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
            | complexData ARRAY<STRING>
            | )
            | STORED BY 'carbondata'
-           | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+           | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
       sql(
@@ -411,7 +411,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
            | booleanField2 BOOLEAN
            | )
            | STORED BY 'carbondata'
-           | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+           | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
       val rootPath = new File(this.getClass.getResource("/").getPath
@@ -448,7 +448,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     sql(
@@ -541,7 +541,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     val rootPath = new File(this.getClass.getResource("/").getPath
@@ -699,7 +699,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     sql(
@@ -720,7 +720,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     sql(
@@ -816,7 +816,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     sql(
@@ -909,7 +909,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     val rootPath = new File(this.getClass.getResource("/").getPath

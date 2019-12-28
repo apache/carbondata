@@ -160,13 +160,9 @@ object CarbonScalaUtil {
           return DateTimeUtils.dateToString(date.toString.toInt)
         }
       }
-      val dictionaryPath =
-        table.getTableInfo.getFactTable.getTableProperties.get(
-          CarbonCommonConstants.DICTIONARY_PATH)
       val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
         table.getAbsoluteTableIdentifier,
-        column.getColumnIdentifier, column.getDataType,
-        dictionaryPath)
+        column.getColumnIdentifier, column.getDataType)
       return forwardDictionaryCache.get(
         dictionaryColumnUniqueIdentifier).getDictionaryValueForKey(value.toInt)
     }
@@ -193,8 +189,7 @@ object CarbonScalaUtil {
    */
   def convertStaticPartitions(
       value: String,
-      column: ColumnSchema,
-      table: CarbonTable): String = {
+      column: ColumnSchema): String = {
     try {
       if (column.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         if (column.getDataType.equals(CarbonDataTypes.TIMESTAMP)) {
@@ -208,22 +203,6 @@ object CarbonScalaUtil {
             CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
           ).generateDirectSurrogateKey(value).toString
         }
-      } else if (column.hasEncoding(Encoding.DICTIONARY)) {
-        val cacheProvider: CacheProvider = CacheProvider.getInstance
-        val reverseCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-          cacheProvider.createCache(CacheType.REVERSE_DICTIONARY)
-        val dictionaryPath =
-          table.getTableInfo.getFactTable.getTableProperties.get(
-            CarbonCommonConstants.DICTIONARY_PATH)
-        val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
-          table.getAbsoluteTableIdentifier,
-          new ColumnIdentifier(
-            column.getColumnUniqueId,
-            column.getColumnProperties,
-            column.getDataType),
-          column.getDataType,
-          dictionaryPath)
-        return reverseCache.get(dictionaryColumnUniqueIdentifier).getSurrogateKey(value).toString
       }
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
@@ -267,7 +246,7 @@ object CarbonScalaUtil {
           (col, value)
         } else {
           val convertedString =
-            CarbonScalaUtil.convertToCarbonFormat(
+            convertToCarbonFormat(
               value,
               carbonColumn,
               forwardDictionaryCache,
@@ -498,8 +477,6 @@ object CarbonScalaUtil {
    */
   def validateLocalDictionaryColumns(tableProperties: mutable.Map[String, String],
       localDictColumns: Seq[String]): Unit = {
-    var dictIncludeColumns: Seq[String] = Seq[String]()
-
     // check if the duplicate columns are specified in table schema
     if (localDictColumns.distinct.lengthCompare(localDictColumns.size) != 0) {
       val duplicateColumns = localDictColumns
@@ -509,24 +486,6 @@ object CarbonScalaUtil {
         duplicateColumns.mkString(",") +
         ". Please check the DDL."
       throw new MalformedCarbonCommandException(errMsg)
-    }
-
-    // check if the same column is present in both dictionary include and local dictionary columns
-    // configuration
-    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
-      dictIncludeColumns =
-        tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
-      localDictColumns.foreach { distCol =>
-        if (dictIncludeColumns.exists(x => x.equalsIgnoreCase(distCol.trim))) {
-          val commonColumn = (dictIncludeColumns ++ localDictColumns)
-            .diff((dictIncludeColumns ++ localDictColumns).distinct).distinct
-          val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
-                         commonColumn.mkString(",") +
-                         " specified in Dictionary include. Local Dictionary will not be " +
-                         "generated for Dictionary include columns. Please check the DDL."
-          throw new MalformedCarbonCommandException(errorMsg)
-        }
-      }
     }
   }
 
@@ -628,10 +587,8 @@ object CarbonScalaUtil {
    */
   def validateLocalConfiguredDictionaryColumns(fields: Seq[Field],
       tableProperties: mutable.Map[String, String], localDictColumns: Seq[String]): Unit = {
-    var dictIncludeColumns: Seq[String] = Seq[String]()
-
     // validate the local dict columns
-    CarbonScalaUtil.validateLocalDictionaryColumns(tableProperties, localDictColumns)
+    validateLocalDictionaryColumns(tableProperties, localDictColumns)
     // check if the column specified exists in table schema
     localDictColumns.foreach { distCol =>
       if (!fields.exists(x => x.column.equalsIgnoreCase(distCol.trim))) {

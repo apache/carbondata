@@ -85,7 +85,6 @@ carbon.major.compaction.size=1024
 ##Min max feature is added to enhance query performance. To disable this feature, make it false.
 #carbon.enableMinMax=true
 
-######## Global Dictionary Configurations ########
 ##The property to set the date to be considered as start date for calculating the timestamp.
 #carbon.cutOffTimestamp
 ##The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR or DAY level.

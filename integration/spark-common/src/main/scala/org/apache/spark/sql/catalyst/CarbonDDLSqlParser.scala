@@ -32,6 +32,7 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -412,8 +413,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       }
     }
 
-    // get partitionInfo
-    val partitionInfo = getPartitionInfo(partitionCols)
     if (tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
       // validate the column_meta_cache option
       val tableColumns = dims.map(x => x.name.get) ++ msrs.map(x => x.name.get)
@@ -430,7 +429,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           // first element is taken as each column with have a unique name
           // check for complex type column
           if (dimFieldToBeCached.nonEmpty &&
-              isComplexDimDictionaryExclude(dimFieldToBeCached(0).dataType.get)) {
+              isComplexType(dimFieldToBeCached(0).dataType.get)) {
             val errorMessage =
               s"$column is a complex type column and complex type is not allowed for " +
               s"the option(s): ${ CarbonCommonConstants.COLUMN_META_CACHE }"
@@ -496,7 +495,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       Option(invertedIdxCols),
       Some(colProps),
       bucketFields: Option[BucketFields],
-      partitionInfo,
+      getPartitionInfo(partitionCols),
       tableComment)
   }
 
@@ -702,9 +701,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   (Seq[Field], Seq[Field], Seq[String], Seq[String], Seq[String]) = {
     var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
     var msrFields: Seq[Field] = Seq[Field]()
-    var dictExcludeCols: Array[String] = Array[String]()
     var noDictionaryDims: Seq[String] = Seq[String]()
-    var dictIncludeCols: Seq[String] = Seq[String]()
     var varcharCols: Seq[String] = Seq[String]()
 
     // All long_string cols should be there in create table cols and should be of string data type
@@ -767,78 +764,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       }
     }
 
-    // All excluded cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
-      LOGGER.warn("dictionary_exclude option was deprecated, " +
-                  "by default string column does not use global dictionary.")
-      dictExcludeCols =
-        tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
-      dictExcludeCols
-        .foreach { dictExcludeCol =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
-            val errorMsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
-                           " does not exist in table or unsupported for complex child column. " +
-                           "Please check the create table statement."
-            throw new MalformedCarbonCommandException(errorMsg)
-          } else {
-            val dataType = fields.find(x =>
-              x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
-            if (!isDataTypeSupportedForDictionary_Exclude(dataType)) {
-              val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
-                             " data type column: " + dictExcludeCol
-              throw new MalformedCarbonCommandException(errorMsg)
-            } else if (varcharCols.exists(x => x.equalsIgnoreCase(dictExcludeCol))) {
-              throw new MalformedCarbonCommandException(
-                "DICTIONARY_EXCLUDE is unsupported for long string datatype column: " +
-                dictExcludeCol)
-            }
-          }
-        }
+      // dictionary_exclude is not supported since 2.0
+      throw new DeprecatedFeatureException("dictionary_exclude")
     }
-    // All included cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
-      dictIncludeCols =
-        tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
-      dictIncludeCols.foreach { distIncludeCol =>
-        if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
-          val errorMsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
-                         " does not exist in table or unsupported for complex child column. " +
-                         "Please check the create table statement."
-          throw new MalformedCarbonCommandException(errorMsg)
-        }
-        val rangeField = fields.find(_.column.equalsIgnoreCase(distIncludeCol.trim))
-        if ("binary".equalsIgnoreCase(rangeField.get.dataType.get)) {
-          throw new MalformedCarbonCommandException(
-            "DICTIONARY_INCLUDE is unsupported for binary data type column: " +
-                    distIncludeCol.trim)
-        }
-        if (varcharCols.exists(x => x.equalsIgnoreCase(distIncludeCol.trim))) {
-          throw new MalformedCarbonCommandException(
-            "DICTIONARY_INCLUDE is unsupported for long string datatype column: " +
-            distIncludeCol.trim)
-        }
-      }
-    }
-
-    // include cols should not contain exclude cols
-    dictExcludeCols.foreach { dicExcludeCol =>
-      if (dictIncludeCols.exists(x => x.equalsIgnoreCase(dicExcludeCol))) {
-        val errorMsg = "DICTIONARY_EXCLUDE can not contain the same column: " + dicExcludeCol +
-                       " with DICTIONARY_INCLUDE. Please check the create table statement."
-        throw new MalformedCarbonCommandException(errorMsg)
-      }
+      // dictionary_include is not supported since 2.0
+      throw new DeprecatedFeatureException("dictionary_include")
     }
 
     // by default consider all String cols as dims and if any dictionary include isn't present then
     // add it to noDictionaryDims list. consider all dictionary excludes/include cols as dims
     fields.foreach { field =>
-      if (dictExcludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
-        noDictionaryDims :+= field.column
-        dimFields += field
-      } else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
-        dimFields += field
-      } else if (field.dataType.get.toUpperCase.equals("TIMESTAMP") &&
-                 !dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
+      if (field.dataType.get.toUpperCase.equals("TIMESTAMP")) {
         noDictionaryDims :+= field.column
         dimFields += field
       } else if (isDetectAsDimensionDataType(field.dataType.get)) {
@@ -867,7 +805,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       // if SORT_COLUMNS was not defined,
       // add all dimension(except long string columns) to SORT_COLUMNS.
       dimFields.foreach { field =>
-        if (!isComplexDimDictionaryExclude(field.dataType.get) &&
+        if (!isComplexType(field.dataType.get) &&
             !varcharCols.contains(field.column)) {
           sortKeyDims :+= field.column
         }
@@ -888,29 +826,13 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * It fills non string dimensions in dimFields
-   */
-  def fillNonStringDimension(dictIncludeCols: Seq[String],
-      field: Field, dimFields: LinkedHashSet[Field]) {
-    var dictInclude = false
-    if (dictIncludeCols.nonEmpty) {
-      dictIncludeCols.foreach(dictIncludeCol =>
-        if (field.column.equalsIgnoreCase(dictIncludeCol)) {
-          dictInclude = true
-        })
-    }
-    if (dictInclude) {
-      dimFields += field
-    }
-  }
-
-  /**
    * detect dimension data type
    *
    * @param dimensionDatatype
    */
   def isDetectAsDimensionDataType(dimensionDatatype: String): Boolean = {
-    val dimensionType = Array("string",
+    val dimensionType = Array(
+      "string",
       "array",
       "struct",
       "map",
@@ -922,29 +844,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * detects whether complex dimension is part of dictionary_exclude
+   * detects whether it is complex type
    */
-  def isComplexDimDictionaryExclude(dimensionDataType: String): Boolean = {
+  def isComplexType(dimensionDataType: String): Boolean = {
     val dimensionType = Array("array", "struct", "map")
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDataType))
-  }
-
-  /**
-   * detects whether datatype is part of sort_column
-   */
-  private def isDataTypeSupportedForSortColumn(columnDataType: String): Boolean = {
-    val dataTypes = Array("array", "struct", "map", "double", "float", "decimal", "binary")
-    dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
-  }
-
-  /**
-   * detects whether datatype is part of dictionary_exclude
-   */
-  def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
-    val dataTypes =
-      Array("string", "timestamp", "int", "integer", "long", "bigint", "struct", "array",
-        "map", "binary")
-    dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
   /**
@@ -1072,17 +976,14 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "COMPLEX_DELIMITER_LEVEL_1",
       "COMPLEX_DELIMITER_LEVEL_2",
       "COMPLEX_DELIMITER_LEVEL_3",
-      "COLUMNDICT",
       "SERIALIZATION_NULL_FORMAT",
       "BAD_RECORDS_LOGGER_ENABLE",
       "BAD_RECORDS_ACTION",
-      "ALL_DICTIONARY_PATH",
       "MAXCOLUMNS",
       "COMMENTCHAR",
       "DATEFORMAT",
       "BAD_RECORD_PATH",
       "GLOBAL_SORT_PARTITIONS",
-      "SINGLE_PASS",
       "IS_EMPTY_DATA_BAD_RECORD",
       "HEADER",
       "TIMESTAMPFORMAT",
@@ -1130,14 +1031,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       if (escapeChar.length > 1 && !CarbonLoaderUtil.isValidEscapeSequence(escapeChar)) {
         throw new MalformedCarbonCommandException("ESCAPECHAR cannot be more than one character.")
       }
-    }
-
-    //  COLUMNDICT and ALL_DICTIONARY_PATH can not be used together.
-    if (options.exists(_._1.equalsIgnoreCase("COLUMNDICT")) &&
-        options.exists(_._1.equalsIgnoreCase("ALL_DICTIONARY_PATH"))) {
-      val errorMessage = "Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together" +
-                         " in options"
-      throw new MalformedCarbonCommandException(errorMessage)
     }
 
     if (options.exists(_._1.equalsIgnoreCase("MAXCOLUMNS"))) {

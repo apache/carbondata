@@ -546,7 +546,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (TBLPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
       case dbName ~ table ~ fields ~ tblProp =>
         fields.foreach{ f =>
-          if (isComplexDimDictionaryExclude(f.dataType.get)) {
+          if (isComplexType(f.dataType.get)) {
             throw new MalformedCarbonCommandException(
               s"Add column is unsupported for complex datatype column: ${f.column}")
           }

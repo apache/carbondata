@@ -32,8 +32,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
-import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -43,8 +41,6 @@ import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModel, CarbonLoadModelBuilder, LoadOption}
 import org.apache.carbondata.processing.util.CarbonBadRecordUtil
-import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
-import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
 import org.apache.carbondata.streaming.segment.StreamSegment
 
 /**
@@ -111,16 +107,6 @@ object StreamSinkFactory {
     // Used to generate load commands for child tables in case auto-handoff is fired.
     val loadMetaEvent = new LoadMetadataEvent(carbonTable, false, parameters.asJava)
     OperationListenerBus.getInstance().fireEvent(loadMetaEvent, operationContext)
-    // start server if necessary
-    val server = startDictionaryServer(
-      sparkSession,
-      carbonTable,
-      carbonLoadModel)
-    if (server.isDefined) {
-      carbonLoadModel.setUseOnePass(true)
-    } else {
-      carbonLoadModel.setUseOnePass(false)
-    }
 
     // default is carbon appended stream sink
     val carbonAppendableStreamSink = new CarbonAppendableStreamSink(
@@ -129,7 +115,6 @@ object StreamSinkFactory {
       segmentId,
       parameters,
       carbonLoadModel,
-      server,
       operationContext)
 
     // fire post event before streamin is started
@@ -181,63 +166,6 @@ object StreamSinkFactory {
     segmentId
   }
 
-  def startDictionaryServer(
-      sparkSession: SparkSession,
-      carbonTable: CarbonTable,
-      carbonLoadModel: CarbonLoadModel): Option[DictionaryServer] = {
-    // start dictionary server when use one pass load and dimension with DICTIONARY
-    // encoding is present.
-    val allDimensions = carbonTable.getAllDimensions.asScala.toList
-    val createDictionary = allDimensions.exists {
-      carbonDimension => carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-                         !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
-    }
-    val carbonSecureModeDictServer = CarbonProperties.getInstance.
-      getProperty(CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER,
-        CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER_DEFAULT)
-
-    val sparkConf = sparkSession.sqlContext.sparkContext.getConf
-    val sparkDriverHost = sparkSession.sqlContext.sparkContext.
-      getConf.get("spark.driver.host")
-
-    val server: Option[DictionaryServer] = if (createDictionary) {
-      if (sparkConf.get("spark.authenticate", "false").equalsIgnoreCase("true") &&
-          carbonSecureModeDictServer.toBoolean) {
-        val dictionaryServer = SecureDictionaryServer.getInstance(sparkConf,
-          sparkDriverHost.toString, carbonLoadModel.getDictionaryServerPort, carbonTable)
-        carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
-        carbonLoadModel.setDictionaryServerHost(dictionaryServer.getHost)
-        carbonLoadModel.setDictionaryServerSecretKey(dictionaryServer.getSecretKey)
-        carbonLoadModel.setDictionaryEncryptServerSecure(dictionaryServer.isEncryptSecureServer)
-        carbonLoadModel.setDictionaryServiceProvider(new SecureDictionaryServiceProvider())
-        sparkSession.sparkContext.addSparkListener(new SparkListener() {
-          override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
-            dictionaryServer.shutdown()
-          }
-        })
-        Some(dictionaryServer)
-      } else {
-        val dictionaryServer = NonSecureDictionaryServer
-          .getInstance(carbonLoadModel.getDictionaryServerPort, carbonTable)
-        carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
-        carbonLoadModel.setDictionaryServerHost(dictionaryServer.getHost)
-        carbonLoadModel.setDictionaryEncryptServerSecure(false)
-        carbonLoadModel
-          .setDictionaryServiceProvider(new NonSecureDictionaryServiceProvider(dictionaryServer
-            .getPort))
-        sparkSession.sparkContext.addSparkListener(new SparkListener() {
-          override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
-            dictionaryServer.shutdown()
-          }
-        })
-        Some(dictionaryServer)
-      }
-    } else {
-      None
-    }
-    server
-  }
-
   private def buildCarbonLoadModelForStream(
       sparkSession: SparkSession,
       hadoopConf: Configuration,
@@ -261,16 +189,6 @@ object StreamSinkFactory {
       carbonLoadModel,
       hadoopConf)
     carbonLoadModel.setSegmentId(segmentId)
-    // stream should use one pass
-    val dictionaryServerPort = parameters.getOrElse(
-      CarbonCommonConstants.DICTIONARY_SERVER_PORT,
-      carbonProperty.getProperty(
-        CarbonCommonConstants.DICTIONARY_SERVER_PORT,
-        CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT))
-    val sparkDriverHost = sparkSession.sqlContext.sparkContext.
-      getConf.get("spark.driver.host")
-    carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
-    carbonLoadModel.setDictionaryServerPort(dictionaryServerPort.toInt)
     val columnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.COMPRESSOR,
         CompressorFactory.getInstance().getCompressor.getName)

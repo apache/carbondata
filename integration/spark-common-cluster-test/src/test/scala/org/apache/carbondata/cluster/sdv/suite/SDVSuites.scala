@@ -31,7 +31,6 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
 
   val suites = new AlterTableTestCase ::
                new BadRecordTestCase ::
-               new ColumndictTestCase ::
                new CreateTableAsSelectTestCase ::
                new DataLoadingTestCase ::
                new DataLoadingV3TestCase ::
@@ -49,7 +48,6 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                new QueriesRangeFilterTestCase ::
                new QueriesSparkBlockDistTestCase ::
                new ShowLoadsTestCase ::
-               new SinglepassTestCase ::
                new SortColumnTestCase ::
                new TableCommentAlterTableTestCase ::
                new TimestamptypesTestCase ::
@@ -139,14 +137,12 @@ class SDVSuites4 extends Suites with BeforeAndAfterAll {
                new OffheapQuery2TestCase ::
                new OffheapSort1TestCase ::
                new ShowLoadsTestCase ::
-               new SinglepassTestCase ::
                new SortColumnTestCase ::
                new TimestamptypesTestCase ::
                new V3offheapvectorTestCase ::
                new Vector1TestCase ::
                new Vector2TestCase ::
                new QueriesNormalTestCase ::
-               new ColumndictTestCase ::
                new QueriesRangeFilterTestCase ::
                new QueriesSparkBlockDistTestCase ::
                new DataLoadingV3TestCase ::

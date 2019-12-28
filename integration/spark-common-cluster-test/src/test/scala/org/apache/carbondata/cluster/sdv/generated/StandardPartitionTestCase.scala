@@ -69,22 +69,6 @@ class StandardPartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  //Verify exception while Creating a partition table with DICTIONARY_INCLUDE
-  test("Standard-Partition_TC005", Include) {
-    sql(s"""drop table if exists partition_table_string""")
-    intercept[Exception] {
-      sql(s"""CREATE TABLE partition_table_string(shortField SHORT, intField INT, bigintField LONG, doubleField DOUBLE, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT, complexData ARRAY<STRING> ) PARTITIONED BY (stringField STRING) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='stringField')""")
-    }
-    sql(s"""drop table if exists partition_table_string""")
-  }
-
-  //Creating a partition table with DICTIONARY_EXCLUDE
-  test("Standard-Partition_TC006", Include) {
-    sql(s"""drop table if exists partition_table_string""")
-    sql(s"""CREATE TABLE partition_table_string(shortField SHORT, intField INT, bigintField LONG, doubleField DOUBLE, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT, complexData ARRAY<STRING> ) PARTITIONED BY (stringField STRING) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='stringField')""")
-    sql(s"""drop table if exists partition_table_string""")
-  }
-
   //Verify exception if datatype is not provided with partition column
   test("Standard-Partition_TC007", Include) {
     sql(s"""drop table if exists uniqdata""")
@@ -165,22 +149,6 @@ class StandardPartitionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""CREATE TABLE partition_table(shortField SHORT, intField INT, bigintField LONG, doubleField DOUBLE, timestamp TIMESTAMP, decimalField DECIMAL(18,2),dateField DATE, charField CHAR(5), floatField FLOAT ) PARTITIONED BY (stringField STRING) STORED BY 'carbondata'""")
     sql(s"""load data inpath '$resourcesPath/Data/partition/list_partition_table.csv' into table partition_table options('FILEHEADER'='shortfield,intfield,bigintfield,doublefield,stringfield,timestamp,decimalfield,datefield,charfield,floatfield','BAD_RECORDS_ACTION'='REDIRECT')""")
     checkAnswer(sql(s"""select count(*) from partition_table"""), Seq(Row(0)))
-  }
-
-  //Loading data into a partitioned table with SINGLE_PASS=TRUE
-  test("Standard-Partition_TC018", Include) {
-    sql(s"""drop table if exists partition_table""")
-    sql(s"""CREATE TABLE partition_table(shortField SHORT, intField INT, bigintField LONG, doubleField DOUBLE, timestamp TIMESTAMP, decimalField DECIMAL(18,2),dateField DATE, charField CHAR(5), floatField FLOAT ) PARTITIONED BY (stringField STRING) STORED BY 'carbondata'""")
-    sql(s"""load data inpath '$resourcesPath/Data/partition/list_partition_table.csv' into table partition_table options('SINGLE_PASS'='TRUE')""")
-    checkAnswer(sql(s"""select count(*) from partition_table"""), Seq(Row(10)))
-  }
-
-  //Loading data into a partitioned table with SINGLE_PASS=FALSE
-  test("Standard-Partition_TC019", Include) {
-    sql(s"""drop table if exists partition_table""")
-    sql(s"""CREATE TABLE partition_table(shortField SHORT, intField INT, bigintField LONG, doubleField DOUBLE, timestamp TIMESTAMP, decimalField DECIMAL(18,2),dateField DATE, charField CHAR(5), floatField FLOAT ) PARTITIONED BY (stringField STRING) STORED BY 'carbondata'""")
-    sql(s"""load data inpath '$resourcesPath/Data/partition/list_partition_table.csv' into table partition_table options('SINGLE_PASS'='FALSE')""")
-    checkAnswer(sql(s"""select count(*) from partition_table"""), Seq(Row(10)))
   }
 
   //Verify load with Standard Partition

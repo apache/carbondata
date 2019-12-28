@@ -172,63 +172,6 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         assert(true)
     }
 
-
-    test("Unsupport DICTIONARY_INCLUDE for binary") {
-
-        sql("DROP TABLE IF EXISTS binaryTable")
-        val exception = intercept[MalformedCarbonCommandException] {
-            sql(
-                """
-                  | CREATE TABLE binaryTable(
-                  |     id int,
-                  |     name string,
-                  |     city string,
-                  |     age int,
-                  |     binaryField binary)
-                  | STORED BY 'carbondata'
-                  | tblproperties('dictionary_include'='binaryField')
-                """.stripMargin)
-        }
-        assert(exception.getMessage.contains(
-            "DICTIONARY_INCLUDE is unsupported for binary data type column: binaryField"))
-    }
-
-    test("Unsupport DICTIONARY_INCLUDE for binary, multiple column") {
-
-        sql("DROP TABLE IF EXISTS binaryTable")
-        val exception = intercept[MalformedCarbonCommandException] {
-            sql(
-                """
-                  | CREATE TABLE binaryTable(
-                  |     id int,
-                  |     name string,
-                  |     city string,
-                  |     age int,
-                  |     binaryField binary)
-                  | STORED BY 'carbondata'
-                  | tblproperties('dictionary_include'='name,binaryField')
-                """.stripMargin)
-        }
-        assert(exception.getMessage.contains(
-            "DICTIONARY_INCLUDE is unsupported for binary data type column: binaryField"))
-    }
-
-    test("Supports DICTIONARY_EXCLUDE for binary") {
-        sql("DROP TABLE IF EXISTS binaryTable")
-        sql(
-            """
-              | CREATE TABLE binaryTable(
-              |     id int,
-              |     name string,
-              |     city string,
-              |     age int,
-              |     binaryField binary)
-              | STORED BY 'org.apache.carbondata.format'
-              | tblproperties('DICTIONARY_EXCLUDE'='binaryField')
-            """.stripMargin)
-        assert(true)
-    }
-
     test("Unsupport inverted_index for binary") {
         sql("DROP TABLE IF EXISTS binaryTable")
         val exception = intercept[MalformedCarbonCommandException] {

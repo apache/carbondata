@@ -37,7 +37,6 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbon_table")
     sql("drop table if exists emptyColumnValues")
     sql("drop table if exists carbon_table_bad_record_logger")
-    sql("drop table if exists carbon_table_single_pass")
     sql("drop table if exists carbon_table_disable_bad_record_logger")
     sql("drop table if exists carbon_table_load")
     sqlContext.sparkSession.catalog.clearCache()
@@ -166,7 +165,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       """)
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/badrecord/doubleqoute.csv' into table
-         |emptyColumnValues options('SINGLE_PASS'='true')"""
+         |emptyColumnValues """
         .stripMargin)
     checkAnswer(
       s"""select count(*) from emptyColumnValues""",
@@ -185,22 +184,11 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       """)
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/badrecord/doubleqoute.csv' into table
-         |emptyColumnValues options('SINGLE_PASS'='true')"""
+         |emptyColumnValues """
         .stripMargin)
     checkAnswer(
       s"""select count(*) from emptyColumnValues""",
       Seq(Row(1)), "SetParameterTestCase-TC_008-test SET property IS__EMPTY_DATA_BAD_RECORD=TRUE")
-  }
-
-  test("TC_009-test SET property for Single Pass") {
-    sql("drop table if exists carbon_table_single_pass")
-    sql("SET carbon.options.single.pass=true")
-    sql(
-      "create table carbon_table_single_pass(empno int, empname String, designation String, doj " +
-      "Timestamp,workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
-      "String," +
-      "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
   }
 
   test("TC_010-test SET property for Sort Scope-Local_Sort") {

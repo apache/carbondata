@@ -93,11 +93,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   public static final String BAD_RECORD_PATH = "mapreduce.carbontable.bad.record.path";
   public static final String DATE_FORMAT = "mapreduce.carbontable.date.format";
   public static final String TIMESTAMP_FORMAT = "mapreduce.carbontable.timestamp.format";
-  public static final String IS_ONE_PASS_LOAD = "mapreduce.carbontable.one.pass.load";
-  public static final String DICTIONARY_SERVER_HOST =
-      "mapreduce.carbontable.dict.server.host";
-  public static final String DICTIONARY_SERVER_PORT =
-      "mapreduce.carbontable.dict.server.port";
   /**
    * Set the update timestamp if user sets in case of update query. It needs to be updated
    * in load status update time
@@ -405,12 +400,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       }
     }
     model.setBadRecordsLocation(badRecordsPath);
-    model.setUseOnePass(
-        conf.getBoolean(IS_ONE_PASS_LOAD,
-            Boolean.parseBoolean(
-                carbonProperty.getProperty(
-                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
-                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT))));
     return model;
   }
 

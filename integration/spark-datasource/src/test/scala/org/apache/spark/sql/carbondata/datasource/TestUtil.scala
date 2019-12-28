@@ -110,18 +110,7 @@ object TestUtil {
       }
       if (!isSorted) converted.sortBy(_.toString()) else converted
     }
-    val sparkAnswer = try df.collect().toSeq catch {
-      case e: Exception =>
-        val errorMessage =
-          s"""
-             |Exception thrown while executing query:
-             |${df.queryExecution}
-             |== Exception ==
-             |$e
-             |${org.apache.spark.sql.catalyst.util.stackTraceToString(e)}
-          """.stripMargin
-        return Some(errorMessage)
-    }
+    val sparkAnswer = df.collect().toSeq
 
     if (prepareAnswer(expectedAnswer) != prepareAnswer(sparkAnswer)) {
       val errorMessage =

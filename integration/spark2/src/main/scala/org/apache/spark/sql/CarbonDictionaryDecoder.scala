@@ -333,11 +333,8 @@ case class CarbonDictionaryDecoder(
     val dicts: Seq[Dictionary] = getDictionaryColumnIds.map { f =>
       if (f._2 != null) {
         try {
-          val dictionaryPath = atiMap(f._1).getTableInfo.getFactTable.getTableProperties
-            .get(CarbonCommonConstants.DICTIONARY_PATH)
           cache.get(new DictionaryColumnUniqueIdentifier(
-            atiMap(f._1).getAbsoluteTableIdentifier,
-            f._2, f._3.getDataType, dictionaryPath))
+            atiMap(f._1).getAbsoluteTableIdentifier, f._2, f._3.getDataType))
         } catch {
           case _: Throwable => null
         }
@@ -369,12 +366,9 @@ case class CarbonDictionaryDecoder(
               } else {
                 (atiMap(tableName).getAbsoluteTableIdentifier, columnIdentifier)
               }
-            val dictionaryPath = atiMap(tableName).getTableInfo.getFactTable.getTableProperties
-              .get(CarbonCommonConstants.DICTIONARY_PATH)
             val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
               newAbsoluteTableIdentifier,
-              newColumnIdentifier, carbonDimension.getDataType,
-              dictionaryPath)
+              newColumnIdentifier, carbonDimension.getDataType)
             allDictIdentifiers += dictionaryColumnUniqueIdentifier
             new ForwardDictionaryWrapper(dictionaryColumnUniqueIdentifier, broadcastConf)
           } catch {
@@ -608,11 +602,8 @@ class CarbonDecoderRDD(
     val dicts: Seq[Dictionary] = getDictionaryColumnIds.map { f =>
       if (f._2 != null) {
         try {
-          val dictionaryPath = atiMap(f._1).getTableInfo.getFactTable.getTableProperties
-            .get(CarbonCommonConstants.DICTIONARY_PATH)
           cache.get(new DictionaryColumnUniqueIdentifier(
-            atiMap(f._1).getAbsoluteTableIdentifier,
-            f._2, f._3.getDataType, dictionaryPath))
+            atiMap(f._1).getAbsoluteTableIdentifier, f._2, f._3.getDataType))
         } catch {
           case _: Throwable => null
         }

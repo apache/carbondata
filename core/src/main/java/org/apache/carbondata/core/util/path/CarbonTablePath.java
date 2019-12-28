@@ -141,49 +141,10 @@ public class CarbonTablePath {
   }
 
   /**
-   * Return absolute path of dictionary file
-   */
-  public static String getExternalDictionaryFilePath(String dictionaryPath, String columnId) {
-    return dictionaryPath + CarbonCommonConstants.FILE_SEPARATOR +
-        getDictionaryFileName(columnId);
-  }
-
-  /**
    * Return metadata path
    */
   public static String getMetadataPath(String tablePath) {
     return tablePath + CarbonCommonConstants.FILE_SEPARATOR + METADATA_DIR;
-  }
-
-  /**
-   * Return absolute path of dictionary meta file
-   */
-  public static String getExternalDictionaryMetaFilePath(String dictionaryPath, String columnId) {
-    return dictionaryPath + CarbonCommonConstants.FILE_SEPARATOR + columnId + DICTIONARY_META_EXT;
-  }
-
-  /**
-   * Return absolute path of dictionary meta file
-   */
-  public static String getDictionaryMetaFilePath(String tablePath, String columnId) {
-    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + columnId +
-        DICTIONARY_META_EXT;
-  }
-
-  /**
-   * Return sortindex file path based on specified dictionary path
-   */
-  public static String getExternalSortIndexFilePath(String dictionaryPath, String columnId) {
-    return dictionaryPath + CarbonCommonConstants.FILE_SEPARATOR + columnId + SORT_INDEX_EXT;
-  }
-
-  /**
-   * Return sortindex file path for columnId and offset based on specified dictionary path
-   */
-  public static String getExternalSortIndexFilePath(String dictionaryPath, String columnId,
-      long dictOffset) {
-    return dictionaryPath + CarbonCommonConstants.FILE_SEPARATOR +
-        columnId + "_" + dictOffset + SORT_INDEX_EXT;
   }
 
   /**
@@ -585,27 +546,6 @@ public class CarbonTablePath {
   }
 
   /**
-   * Below method will be used to get sort index file present in mentioned folder
-   *
-   * @param sortIndexDir directory where sort index file resides
-   * @param columnUniqueId   columnunique id
-   * @return sort index carbon files
-   */
-  public static CarbonFile[] getSortIndexFiles(CarbonFile sortIndexDir,
-      final String columnUniqueId) {
-    if (null != sortIndexDir) {
-      return sortIndexDir.listFiles(new CarbonFileFilter() {
-        @Override
-        public boolean accept(CarbonFile file) {
-          return file.getName().startsWith(columnUniqueId) && file.getName()
-              .endsWith(SORT_INDEX_EXT);
-        }
-      });
-    }
-    return null;
-  }
-
-  /**
    * Return the carbondata file name
    */
   public static String getCarbonDataFileName(String carbonDataFilePath) {
@@ -691,10 +631,6 @@ public class CarbonTablePath {
    */
   public static String addSegmentPrefix(String value) {
     return SEGMENT_PREFIX + value;
-  }
-
-  public static String getCarbonIndexFileName(String actualBlockName) {
-    return getShardName(actualBlockName) + INDEX_FILE_EXT;
   }
 
   /**

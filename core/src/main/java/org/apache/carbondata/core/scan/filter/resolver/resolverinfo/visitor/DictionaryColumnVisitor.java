@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
@@ -55,26 +54,22 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
       } catch (FilterIllegalMemberException e) {
         throw new FilterUnsupportedException(e);
       }
-      try {
 
-        resolvedFilterObject = FilterUtil
-            .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
-                evaluateResultListFinal, metadata.isIncludeFilter());
-        if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
-          // Adding default surrogate key of null member inorder to not display the same while
-          // displaying the report as per hive compatibility.
-          // first check of surrogate key for null value is already added then
-          // no need to add again otherwise result will be wrong in case of exclude filter
-          // this is because two times it will flip the same bit
-          if (!resolvedFilterObject.getExcludeFilterList()
-              .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
-            resolvedFilterObject.getExcludeFilterList()
-                .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
-          }
-          Collections.sort(resolvedFilterObject.getExcludeFilterList());
+      resolvedFilterObject = FilterUtil
+          .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
+              evaluateResultListFinal, metadata.isIncludeFilter());
+      if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
+        // Adding default surrogate key of null member inorder to not display the same while
+        // displaying the report as per hive compatibility.
+        // first check of surrogate key for null value is already added then
+        // no need to add again otherwise result will be wrong in case of exclude filter
+        // this is because two times it will flip the same bit
+        if (!resolvedFilterObject.getExcludeFilterList()
+            .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+          resolvedFilterObject.getExcludeFilterList()
+              .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
         }
-      } catch (QueryExecutionException e) {
-        throw new FilterUnsupportedException(e);
+        Collections.sort(resolvedFilterObject.getExcludeFilterList());
       }
       resolveDimension.setFilterValues(resolvedFilterObject);
     }

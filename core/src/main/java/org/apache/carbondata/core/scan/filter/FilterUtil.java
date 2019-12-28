@@ -64,7 +64,6 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -717,11 +716,10 @@ public final class FilterUtil {
    * @param evaluateResultList
    * @param isIncludeFilter
    * @return
-   * @throws QueryExecutionException
    */
   public static ColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
-      throws QueryExecutionException, FilterUnsupportedException, IOException {
+      throws IOException {
     Dictionary forwardDictionary = null;
     ColumnFilterInfo filterInfo = null;
     List<Integer> surrogates =
@@ -789,7 +787,7 @@ public final class FilterUtil {
   }
 
   private static ColumnFilterInfo getDimColumnFilterInfoAfterApplyingCBO(
-      Dictionary forwardDictionary, ColumnFilterInfo filterInfo) throws FilterUnsupportedException {
+      Dictionary forwardDictionary, ColumnFilterInfo filterInfo) {
     List<Integer> excludeMemberSurrogates =
         prepareExcludeFilterMembers(forwardDictionary, filterInfo.getFilterList());
     filterInfo.setExcludeFilterList(excludeMemberSurrogates);
@@ -838,8 +836,7 @@ public final class FilterUtil {
   }
 
   private static List<Integer> prepareExcludeFilterMembers(
-      Dictionary forwardDictionary, List<Integer> includeSurrogates)
-      throws FilterUnsupportedException {
+      Dictionary forwardDictionary, List<Integer> includeSurrogates) {
     DictionaryChunksWrapper dictionaryWrapper;
     RoaringBitmap bitMapOfSurrogates = RoaringBitmap.bitmapOf(
         ArrayUtils.toPrimitive(includeSurrogates.toArray(new Integer[includeSurrogates.size()])));
@@ -1444,12 +1441,12 @@ public final class FilterUtil {
    * This API will get the max value of surrogate key which will be used for
    * determining the end key of particular btree.
    *
-   * @param dimCarinality
+   * @param dimCardinality
    */
-  private static long getMaxValue(CarbonDimension carbonDimension, int[] dimCarinality) {
+  private static long getMaxValue(CarbonDimension carbonDimension, int[] dimCardinality) {
     // Get data from all the available slices of the table
-    if (null != dimCarinality) {
-      return dimCarinality[carbonDimension.getKeyOrdinal()];
+    if (null != dimCardinality) {
+      return dimCardinality[carbonDimension.getKeyOrdinal()];
     }
     return -1;
   }
@@ -1462,12 +1459,7 @@ public final class FilterUtil {
   public static Dictionary getForwardDictionaryCache(
       AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
       CarbonDimension carbonDimension) throws IOException {
-    String dictionaryPath = null;
     ColumnIdentifier columnIdentifier = carbonDimension.getColumnIdentifier();
-    String dicPath = dictionarySourceAbsoluteTableIdentifier.getDictionaryPath();
-    if (null != dicPath && !dicPath.trim().isEmpty()) {
-      dictionaryPath = dicPath;
-    }
     if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations()
         && carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
       dictionarySourceAbsoluteTableIdentifier =
@@ -1478,7 +1470,7 @@ public final class FilterUtil {
     }
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(dictionarySourceAbsoluteTableIdentifier,
-            columnIdentifier, carbonDimension.getDataType(), dictionaryPath);
+            columnIdentifier, carbonDimension.getDataType());
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);

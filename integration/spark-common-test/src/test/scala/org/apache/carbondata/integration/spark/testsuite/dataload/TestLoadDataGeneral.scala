@@ -127,24 +127,6 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE load_test")
   }
 
-  test("test data loading into table with Single Pass") {
-    sql("DROP TABLE IF EXISTS load_test_singlepass")
-    sql(""" CREATE TABLE load_test_singlepass(id int, name string, city string, age int)
-        STORED BY 'org.apache.carbondata.format' """)
-    val testData = s"$resourcesPath/sample.csv"
-    try {
-      sql(s"LOAD DATA LOCAL INPATH '$testData' into table load_test_singlepass options ('SINGLE_PASS'='TRUE')")
-    } catch {
-      case ex: Exception =>
-        assert(false)
-    }
-    checkAnswer(
-      sql("SELECT id,name FROM load_test_singlepass where name='eason'"),
-      Seq(Row(2,"eason"))
-    )
-    sql("DROP TABLE load_test_singlepass")
-  }
-
   test("test load data with decimal type and sort intermediate files as 1") {
     sql("drop table if exists carbon_table")
     CarbonProperties.getInstance()
@@ -187,30 +169,6 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     assert(intercept[Exception] {
       sql(s"load data local inpath '$testdata' into table load32000bytes OPTIONS ('FILEHEADER'='name')")
     }.getMessage.contains("DataLoad failure: Dataload failed, String size cannot exceed 32000 bytes"))
-
-    val source = scala.io.Source.fromFile(testdata, CarbonCommonConstants.DEFAULT_CHARSET)
-    val data = source.mkString
-
-    intercept[Exception] {
-      sql(s"insert into load32000bytes values('$data')")
-    }
-
-    intercept[Exception] {
-      sql(s"update load32000bytes set(name)= ('$data')").show()
-    }
-
-    sql("drop table if exists load32000bytes")
-  }
-
-  test("test load / insert / update with data more than 32000 bytes - dictionary_include") {
-    val testdata = s"$resourcesPath/unicodechar.csv"
-    sql("drop table if exists load32000bytes")
-    sql("create table load32000bytes(name string) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='name')")
-    sql("insert into table load32000bytes select 'aaa'")
-
-    assert(intercept[Exception] {
-      sql(s"load data local inpath '$testdata' into table load32000bytes OPTIONS ('FILEHEADER'='name')")
-    }.getMessage.contains("generate global dictionary failed, Dataload failed, String size cannot exceed 32000 bytes"))
 
     val source = scala.io.Source.fromFile(testdata, CarbonCommonConstants.DEFAULT_CHARSET)
     val data = source.mkString

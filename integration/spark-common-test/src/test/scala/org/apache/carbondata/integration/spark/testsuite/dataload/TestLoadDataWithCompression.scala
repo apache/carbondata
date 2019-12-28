@@ -227,7 +227,6 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
          |  ${if (StringUtils.isBlank(columnCompressor)) "" else s"'${CarbonCommonConstants.COMPRESSOR}'='$columnCompressor',"}
          |  ${if (streaming) "" else s"'LONG_STRING_COLUMNS'='longStringField',"}
          |  'SORT_COLUMNS'='stringSortField',
-         |  'DICTIONARY_INCLUDE'='stringDictField',
          |  'local_dictionary_enable'='true',
          |  'local_dictionary_threshold'='10000',
          |  'local_dictionary_include'='stringLocalDictField' ${if (streaming) s", 'STREAMING'='true'" else ""})

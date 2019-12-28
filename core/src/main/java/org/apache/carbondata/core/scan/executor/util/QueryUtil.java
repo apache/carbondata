@@ -385,11 +385,9 @@ public class QueryUtil {
           dictionarySourceAbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
           columnIdentifier = dimension.getColumnIdentifier();
         }
-        String dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
-            .get(CarbonCommonConstants.DICTIONARY_PATH);
         dictionaryColumnUniqueIdentifiers.add(
             new DictionaryColumnUniqueIdentifier(dictionarySourceAbsoluteTableIdentifier,
-                columnIdentifier, dimension.getDataType(), dictionaryPath));
+                columnIdentifier, dimension.getDataType()));
       }
     }
     return dictionaryColumnUniqueIdentifiers;
@@ -623,9 +621,6 @@ public class QueryUtil {
         boolean isDirectDictionary = CarbonUtil
             .hasEncoding(dimension.getListOfChildDimensions().get(i).getEncoder(),
                 Encoding.DIRECT_DICTIONARY);
-        boolean isDictionary = CarbonUtil
-            .hasEncoding(dimension.getListOfChildDimensions().get(i).getEncoder(),
-                Encoding.DICTIONARY);
 
         parentQueryType.addChildren(
             new PrimitiveQueryType(dimension.getListOfChildDimensions().get(i).getColName(),

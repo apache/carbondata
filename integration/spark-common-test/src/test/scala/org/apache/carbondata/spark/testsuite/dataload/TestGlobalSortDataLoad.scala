@@ -125,18 +125,6 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
   }
 
-  // ----------------------------------- Single Pass -----------------------------------
-  // Waiting for merge [CARBONDATA-1145]
-  test("Test GLOBAL_SORT with SINGLE_PASS") {
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      "OPTIONS('SINGLE_PASS'='TRUE')")
-
-    assert(getIndexFileCount("carbon_globalsort") === 2)
-    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
-      sql("SELECT * FROM carbon_localsort_once ORDER BY name"))
-  }
-
   // ----------------------------------- Configuration Validity -----------------------------------
 
   test("Number of partitions should be greater than 0") {

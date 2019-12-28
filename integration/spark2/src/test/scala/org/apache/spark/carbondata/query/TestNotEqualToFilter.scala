@@ -40,7 +40,7 @@ class TestNotEqualToFilter extends Spark2QueryTest with BeforeAndAfterAll {
         CREATE TABLE IF NOT EXISTS test_not_equal_to_carbon
         (ID Int, date Timestamp, country String,
         name String, phonetype String, serialname String, salary Int)
-        STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='id')
+        STORED BY 'org.apache.carbondata.format'
       """)
     sql(
       """

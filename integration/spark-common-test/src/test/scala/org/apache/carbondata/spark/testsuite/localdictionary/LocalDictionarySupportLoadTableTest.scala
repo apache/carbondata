@@ -78,20 +78,19 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
 
-  test("test local dictionary generation for local dictioanry include") {
+  test("test local dictionary generation for local dictionary include") {
     sql("drop table if exists local2")
-    sql(
-      "CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties" +
-      "('dictionary_include'='name')")
+    sql("CREATE TABLE local2(name string) STORED BY 'carbondata' " +
+        "TBLPROPERTIES ('local_dictionary_enable'='true', 'local_dictionary_include'='name')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
-    assert(!checkForLocalDictionary(getDimRawChunk(0)))
+    assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
 
   test("test local dictionary generation for local dictioanry exclude"){
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties" +
-      "('local_dictionary_enable'='true','dictionary_exclude'='name')")
+      "('local_dictionary_enable'='true')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }

@@ -78,7 +78,6 @@ object S3Example {
          | )
          | STORED BY 'carbondata'
          | LOCATION '${args(2)}'
-         | TBLPROPERTIES('SORT_COLUMNS'='', 'DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
     spark.sql(

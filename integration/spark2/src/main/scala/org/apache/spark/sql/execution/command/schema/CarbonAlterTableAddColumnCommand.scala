@@ -32,7 +32,6 @@ import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverte
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.events.{AlterTableAddColumnPostEvent, AlterTableAddColumnPreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.TableInfo
-import org.apache.carbondata.spark.rdd.{AlterTableAddColumnRDD, AlterTableDropColumnRDD}
 
 private[sql] case class CarbonAlterTableAddColumnCommand(
     alterTableAddColumnsModel: AlterTableAddColumnsModel)
@@ -83,10 +82,6 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
         sparkSession.sparkContext).process
       setAuditInfo(Map(
         "newColumn" -> newCols.map(x => s"${x.getColumnName}:${x.getDataType}").mkString(",")))
-      // generate dictionary files for the newly added columns
-      new AlterTableAddColumnRDD(sparkSession,
-        newCols,
-        carbonTable.getAbsoluteTableIdentifier).collect()
       timeStamp = System.currentTimeMillis
       val schemaEvolutionEntry = new org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
       schemaEvolutionEntry.setTimeStamp(timeStamp)
@@ -126,9 +121,6 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
       case e: Exception =>
         if (newCols.nonEmpty) {
           LOGGER.info("Cleaning up the dictionary files as alter table add operation failed")
-          new AlterTableDropColumnRDD(sparkSession,
-            newCols,
-            carbonTable.getAbsoluteTableIdentifier).collect()
           AlterTableUtil.revertAddColumnChanges(dbName, tableName, timeStamp)(sparkSession)
         }
         throwMetadataException(dbName, tableName,

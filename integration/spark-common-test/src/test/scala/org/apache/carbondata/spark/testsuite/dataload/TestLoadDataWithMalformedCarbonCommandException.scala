@@ -35,78 +35,6 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
     sql("drop table TestLoadTableOptions")
   }
 
-  def buildTableWithNoExistDictExclude() = {
-      sql(
-        """
-           CREATE TABLE IF NOT EXISTS t3
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_EXCLUDE'='country,phonetype,CCC')
-        """)
-  }
-
-  def buildTableWithNoExistDictInclude() = {
-      sql(
-        """
-           CREATE TABLE IF NOT EXISTS t3
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_INCLUDE'='AAA,country')
-        """)
-  }
-
-  def buildTableWithSameDictExcludeAndInclude() = {
-      sql(
-        """
-           CREATE TABLE IF NOT EXISTS t3
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_INCLUDE'='country','DICTIONARY_EXCLUDE'='country')
-        """)
-  }
-
-  def buildTableWithSameDictExcludeAndIncludeWithSpaces() = {
-    sql(
-      """
-           CREATE TABLE IF NOT EXISTS t3
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_INCLUDE'='country','DICTIONARY_EXCLUDE'='country ')
-      """)
-  }
-
-  test("test load data with dictionary exclude columns which no exist in table.") {
-    val e = intercept[MalformedCarbonCommandException] {
-      buildTableWithNoExistDictExclude()
-    }
-    assert(e.getMessage
-      .equals(
-        "DICTIONARY_EXCLUDE column: CCC does not exist in table or unsupported for complex child " +
-        "column. Please check the create table statement."))
-  }
-
-  test("test load data with dictionary include columns which no exist in table.") {
-    val e = intercept[MalformedCarbonCommandException] {
-      buildTableWithNoExistDictInclude()
-    }
-    assert(e.getMessage
-      .equals(
-        "DICTIONARY_INCLUDE column: AAA does not exist in table or unsupported for complex child " +
-        "column. Please check the create table statement."))
-  }
-
-  test("test load data with dictionary include is same with dictionary exclude") {
-    val e = intercept[MalformedCarbonCommandException] {
-      buildTableWithSameDictExcludeAndInclude()
-    }
-    assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
-      "with DICTIONARY_INCLUDE. Please check the create table statement."))
-  }
-
   test("test load data with invalid option") {
     val e = intercept[MalformedCarbonCommandException] {
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE " +
@@ -134,11 +62,4 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
     }
   }
 
-  test("test load data with dictionary include is same with dictionary exclude with spaces") {
-    val e = intercept[MalformedCarbonCommandException] {
-      buildTableWithSameDictExcludeAndIncludeWithSpaces()
-    }
-    assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
-      "with DICTIONARY_INCLUDE. Please check the create table statement."))
-  }
 }

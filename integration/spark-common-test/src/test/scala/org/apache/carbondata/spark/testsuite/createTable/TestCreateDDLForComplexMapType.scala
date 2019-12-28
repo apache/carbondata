@@ -234,7 +234,6 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | mapField map<STRING,STRING>
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('DICTIONARY_INCLUDE'='mapField')
          | """
         .stripMargin)
     sql("insert into carbon values(map('vi','Nalla','sh','Singh','al','Gupta'))")

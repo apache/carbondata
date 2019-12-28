@@ -56,9 +56,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
       "CREATE TABLE datamap_main (id Int, date date, country string,name String, phonetype " +
-      "string, " +
-      "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' " +
-      "tblproperties('dictionary_include'='country')")
+      "string, serialname String,salary int ) STORED BY 'org.apache.carbondata.format' ")
     val exception_otherdataType: Exception = intercept[Exception] {
       sql(
         s"""
@@ -164,7 +162,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
          | DMProperties('INDEX_COLUMNS'='country')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main OPTIONS('header'='false'," +
-        s"'BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE','SINGLE_PASS'='TRUE')")
+        s"'BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE')")
     checkAnswer(sql("SELECT COUNT(*) FROM datamap_main WHERE TEXT_MATCH('country:china')"),
       sql("select COUNT(*) from datamap_main where country='china'"))
     sql("drop datamap if exists lucene_datamap on table datamap_main")
@@ -192,27 +190,6 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("update datamap_main set (country)=('fed') where id=2")
     checkAnswer(sql("SELECT COUNT(*) FROM datamap_main WHERE TEXT_MATCH('country:fed')"),
       sql("select COUNT(*) from datamap_main where country='fed'"))
-    sql("drop datamap if exists lucene_datamap on table datamap_main")
-  }
-
-  //Check Lucene DataMap when Dictionary_Include is provided for TEXT_COLUMN in Main Table
-  test("LuceneDataMap_TC008", Include) {
-    sql("DROP TABLE IF EXISTS datamap_main")
-    sql(
-      "CREATE TABLE datamap_main (id Int, date string, country string,name String, phonetype " +
-      "string, " +
-      "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
-      "('SORT_COLUMNS'='country,name','SORT_SCOPE'='LOCAL_SORT','DICTIONARY_INCLUDE'='country')")
-    val exception_dicitionaryinclude: Exception = intercept[Exception] {
-      sql(
-        s"""
-           | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
-           | USING 'lucene'
-           | DMProperties('INDEX_COLUMNS'='country')
-      """.stripMargin)
-    }
-    assert(exception_dicitionaryinclude.getMessage
-      .contains("Dictionary column is not supported, column 'country' is dictionary column"))
     sql("drop datamap if exists lucene_datamap on table datamap_main")
   }
 

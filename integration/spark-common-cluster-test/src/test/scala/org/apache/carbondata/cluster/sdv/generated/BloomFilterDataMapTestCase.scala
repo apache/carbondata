@@ -70,7 +70,6 @@ class BloomFilterDataMapTestCase extends QueryTest with BeforeAndAfterEach with 
          | TBLPROPERTIES(
          |  'LONG_STRING_COLUMNS'='longStringField',
          |  'SORT_COLUMNS'='stringSortField',
-         |  'DICTIONARY_INCLUDE'='stringDictField',
          |  'local_dictionary_enable'='true',
          |  'local_dictionary_threshold'='10000',
          |  'local_dictionary_include'='stringLocalDictField',
@@ -152,7 +151,6 @@ class BloomFilterDataMapTestCase extends QueryTest with BeforeAndAfterEach with 
          | STORED BY 'carbondata'
          | TBLPROPERTIES(
          |  'LONG_STRING_COLUMNS'='longStringField',
-         |  'DICTIONARY_INCLUDE'='stringDictField',
          |  'local_dictionary_enable'='true',
          |  'local_dictionary_threshold'='10000',
          |  'local_dictionary_include'='stringLocalDictField',

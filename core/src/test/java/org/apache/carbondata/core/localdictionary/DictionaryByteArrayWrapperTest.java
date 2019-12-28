@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.cache.dictionary;
+package org.apache.carbondata.core.localdictionary;
+
+import org.apache.carbondata.core.cache.dictionary.DictionaryByteArrayWrapper;
 
 import net.jpountz.xxhash.XXHashFactory;
 import org.junit.Assert;
@@ -34,7 +36,6 @@ public class DictionaryByteArrayWrapperTest {
     dictionaryByteArrayWrapper = new DictionaryByteArrayWrapper(data);
     dictionaryByteArrayWrapper1 =
         new DictionaryByteArrayWrapper(data, XXHashFactory.fastestInstance().hash32());
-
   }
 
   @Test public void equalsTestWithSameObject() {

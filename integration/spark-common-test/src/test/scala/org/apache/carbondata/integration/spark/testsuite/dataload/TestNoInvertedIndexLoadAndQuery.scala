@@ -143,41 +143,6 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
 
   }
 
-
-  test("no inverted index with measure as dictionary_include") {
-    sql("drop table if exists index2")
-
-    sql(
-      """
-        CREATE TABLE IF NOT EXISTS index2
-        (ID Int, date Timestamp, country String,
-        name String, phonetype String, serialname String, salary Int)
-        STORED BY 'org.apache.carbondata.format'
-        TBLPROPERTIES('DICTIONARY_INCLUDE'='ID','NO_INVERTED_INDEX'='ID')
-      """)
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-
-    sql(
-      s"""
-           LOAD DATA LOCAL INPATH '$testData2' into table index2
-           """)
-
-    checkAnswer(
-      sql(
-        """
-           SELECT country, count(salary) AS amount
-           FROM index2
-           WHERE country IN ('china','france')
-           GROUP BY country
-        """),
-      Seq(Row("china", 96), Row("france", 1))
-    )
-
-  }
-
-
   test("no inverted index with measure as sort_column") {
     sql("drop table if exists index2")
     sql(
@@ -208,14 +173,14 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("no inverted index with Dictionary_EXCLUDE and NO_INVERTED_INDEX") {
+  test("no inverted index with NO_INVERTED_INDEX") {
     sql("drop table if exists index1")
     sql(
       """
            CREATE TABLE IF NOT EXISTS index1
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_EXCLUDE'='city','NO_INVERTED_INDEX'='city')
+           TBLPROPERTIES('NO_INVERTED_INDEX'='city')
       """)
     sql(
       s"""
@@ -234,7 +199,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS carbonNoInvertedIndexTable
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('NO_INVERTED_INDEX'='name,city', 'DICTIONARY_EXCLUDE'='city')
+           TBLPROPERTIES('NO_INVERTED_INDEX'='name,city')
         """)
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData1' into table carbonNoInvertedIndexTable
@@ -272,7 +237,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS indexFormat
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_EXCLUDE'='city','NO_INVERTED_INDEX'='city')
+           TBLPROPERTIES('NO_INVERTED_INDEX'='city')
       """)
     sql(
       s"""
@@ -292,38 +257,10 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   test("filter query on dictionary and no inverted index column where all values are null"){
-    sql("""create table testNull (c1 string,c2 int,c3 string,c5 string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='C2','NO_INVERTED_INDEX'='C2')""")
+    sql("""create table testNull (c1 string,c2 int,c3 string,c5 string) STORED BY 'carbondata' TBLPROPERTIES('NO_INVERTED_INDEX'='C2')""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table testNull OPTIONS('delimiter'=';','fileheader'='c1,c2,c3,c5')""")
     sql("""select c2 from testNull where c2 is null""").show()
     checkAnswer(sql("""select c2 from testNull where c2 is null"""), Seq(Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
-  }
-
-  test("inverted index with Dictionary_INCLUDE and INVERTED_INDEX") {
-    sql("drop table if exists index1")
-    sql(
-      """
-           CREATE TABLE IF NOT EXISTS index1
-           (id Int, name String, city String)
-           STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_INCLUDE'='id','INVERTED_INDEX'='city,name', 'SORT_COLUMNS'='city,name')
-      """)
-    sql(
-      s"""
-           LOAD DATA LOCAL INPATH '$testData1' into table index1
-           """)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "index1")
-    assert(carbonTable.getColumnByName("city").getColumnSchema.getEncodingList
-      .contains(Encoding.INVERTED_INDEX))
-    assert(carbonTable.getColumnByName("name").getColumnSchema.getEncodingList
-      .contains(Encoding.INVERTED_INDEX))
-    assert(!carbonTable.getColumnByName("id").getColumnSchema.getEncodingList
-      .contains(Encoding.INVERTED_INDEX))
-    checkAnswer(
-      sql(
-        """
-           SELECT * FROM index1 WHERE city = "Bangalore"
-        """),
-      Seq(Row(19.0, "Emily", "Bangalore")))
   }
 
   test("inverted index with measure column in INVERTED_INDEX") {

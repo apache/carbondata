@@ -51,8 +51,7 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql(s"CREATE TABLE $tableName(empno int, empname String, designation String, " +
         s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
         s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
-        s"attendance int,utilization int, salary int) stored by 'carbondata' " +
-        s"TBLPROPERTIES('DICTIONARY_INCLUDE'='designation, workgroupcategoryname')")
+        s"attendance int,utilization int, salary int) stored by 'carbondata' ")
     sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
     sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
     sql(s"SELECT * FROM $tableName").collect()

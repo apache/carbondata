@@ -43,7 +43,7 @@ test("Range_Filter_01_1", Include) {
   sql("drop table if exists NO_DICTIONARY_CARBON")
   sql("drop table if exists NO_DICTIONARY_CARBON_hive")
 
-  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON(empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno, empname,designation')""").collect
+  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON(empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' """).collect
 
   sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_hive(empno string, empname String, designation String,doj Timestamp, workgroupcategory Int,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
@@ -51,7 +51,7 @@ test("Range_Filter_01_1", Include) {
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata_hive1.csv' INTO TABLE NO_DICTIONARY_CARBON_hive """).collect
 
-  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_6 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno, empname,designation')""").collect
+  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_6 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' """).collect
 
   sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_6_hive (empno string, empname String, designation String,doj Timestamp, workgroupcategory Int,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
@@ -59,7 +59,7 @@ test("Range_Filter_01_1", Include) {
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata_hive2.csv' INTO TABLE NO_DICTIONARY_CARBON_6_hive """).collect
 
-  sql(s"""CREATE TABLE DICTIONARY_CARBON_6 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate timestamp,projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empname,designation')""").collect
+  sql(s"""CREATE TABLE DICTIONARY_CARBON_6 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate timestamp,projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' """).collect
 
   sql(s"""CREATE TABLE DICTIONARY_CARBON_6_hive (empno string, empname String, designation String,doj Timestamp, workgroupcategory Int,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
@@ -67,7 +67,7 @@ test("Range_Filter_01_1", Include) {
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata_hive3.csv' INTO TABLE DICTIONARY_CARBON_6_hive """).collect
 
-  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_7 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')""").collect
+  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_7 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' """).collect
 
   sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_7_hive (empno string, empname String, designation String,doj Timestamp, workgroupcategory Int,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
@@ -75,7 +75,7 @@ test("Range_Filter_01_1", Include) {
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata_hive4.csv' INTO TABLE NO_DICTIONARY_CARBON_7_hive  """).collect
 
-  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_8 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')""").collect
+  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_8 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' """).collect
 
   sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_8_hive (empno string, empname String, designation String,doj Timestamp, workgroupcategory Int,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 

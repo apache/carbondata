@@ -150,7 +150,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
     sql(
       "create table test_timestamp(col timestamp) stored by 'carbondata' tblproperties" +
-      "('no_inverted_index'='col','dictionary_include'='col')")
+      "('no_inverted_index'='col')")
     val csvFilePath = s"$resourcesPath/data_timestamp.csv"
     sql(
       "load data inpath '" + csvFilePath +
