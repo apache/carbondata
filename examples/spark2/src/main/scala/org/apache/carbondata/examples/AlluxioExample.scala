@@ -91,7 +91,6 @@ object AlluxioExample {
          | STORED BY 'carbondata'
          | TBLPROPERTIES(
          |    'SORT_COLUMNS' = 'phonetype,name',
-         |    'DICTIONARY_INCLUDE'='phonetype',
          |    'TABLE_BLOCKSIZE'='32',
          |    'AUTO_LOAD_MERGE'='true')
        """.stripMargin)

@@ -49,7 +49,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       s"""
          | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
-         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128', 'dictionary_include'='id', 'sort_columns'='id')
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128', 'sort_columns'='id')
          |  """.stripMargin)
     sql(
       s"""
@@ -95,7 +95,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       s"""
          | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
-         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128', 'dictionary_include'='id', 'sort_columns'='name')
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128', 'sort_columns'='name')
          |  """.stripMargin)
     sql(
       s"""
@@ -232,7 +232,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       s"""
          | CREATE TABLE $bloomDMSampleTable(empno string, doj date, salary float)
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMNS'='empno', 'dictionary_include'='salary')
+         | TBLPROPERTIES('SORT_COLUMNS'='empno')
        """.stripMargin)
     sql(
       s"""
@@ -310,7 +310,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       s"""
          | CREATE TABLE $bloomDMSampleTable(empno string, doj date, salary float)
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMNS'='empno', 'dictionary_include'='doj', 'sort_columns'='doj')
+         | TBLPROPERTIES('SORT_COLUMNS'='empno', 'sort_columns'='doj')
        """.stripMargin)
     sql(
       s"""
@@ -329,8 +329,6 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE doj='2016-03-15'"),
       sql(s"SELECT * FROM $normalTable WHERE doj='2016-03-15'"))
   }
-
-  // since date cannot be dictionary_exclude, we skip the test case
 
   // timestamp is naturally not dictionary
   test("test bloom datamap: index column is timestamp") {
@@ -472,7 +470,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
          | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('table_blocksize'='128', 'dictionary_include'='id, name, s1', 'sort_columns'='id')
+         | TBLPROPERTIES('table_blocksize'='128', 'sort_columns'='id')
          |  """.stripMargin)
 
     sql(
@@ -513,7 +511,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
          | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('table_blocksize'='128', 'dictionary_include'='id, name, s1', 'sort_columns'='name')
+         | TBLPROPERTIES('table_blocksize'='128', 'sort_columns'='name')
          |  """.stripMargin)
 
     sql(
@@ -554,7 +552,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
          | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('table_blocksize'='128', 'dictionary_include'='name, s1', 'sort_columns'='id')
+         | TBLPROPERTIES('table_blocksize'='128', 'sort_columns'='id')
          |  """.stripMargin)
 
     sql(
@@ -633,7 +631,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       s"""
          | CREATE TABLE $bloomDMSampleTable(empno string, doj date, salary float)
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMNS'='empno', 'DICTIONARY_INCLUDE'='salary')
+         | TBLPROPERTIES('SORT_COLUMNS'='empno')
        """.stripMargin)
     sql(
       s"""
@@ -709,7 +707,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       s"""
          | CREATE TABLE $bloomDMSampleTable(empno string, doj date, salary float)
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMNS'='empno,doj', 'DICTIONARY_INCLUDE'='doj,empno')
+         | TBLPROPERTIES('SORT_COLUMNS'='empno,doj')
        """.stripMargin)
     sql(
       s"""

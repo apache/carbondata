@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
@@ -166,13 +165,6 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       logStatistics(rowCount, queryModel.getStatisticsRecorder());
       vectorProxy.close();
       vectorProxy = null;
-    }
-    // clear dictionary cache
-    Map<String, Dictionary> columnToDictionaryMapping = queryModel.getColumnToDictionaryMapping();
-    if (null != columnToDictionaryMapping) {
-      for (Map.Entry<String, Dictionary> entry : columnToDictionaryMapping.entrySet()) {
-        CarbonUtil.clearDictionaryCache(entry.getValue());
-      }
     }
     try {
       queryExecutor.finish();

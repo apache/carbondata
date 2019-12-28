@@ -61,10 +61,7 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
 
   test("test data loading with single no dictionary column") {
     sql("DROP TABLE IF EXISTS nomeasureTest_sd")
-    sql(
-      "CREATE TABLE nomeasureTest_sd (city String) STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES ('DICTIONARY_EXCLUDE'='city')"
-    )
+    sql("CREATE TABLE nomeasureTest_sd (city String) STORED BY 'org.apache.carbondata.format' ")
     val testData = s"$resourcesPath/datasingleCol.csv"
     sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_sd options " +
       "('FILEHEADER'='city')"

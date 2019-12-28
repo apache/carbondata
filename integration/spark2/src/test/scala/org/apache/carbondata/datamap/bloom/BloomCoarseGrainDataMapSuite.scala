@@ -619,8 +619,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
       s"""
          | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
-         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128',
-         | 'DICTIONARY_INCLUDE'='s1,s2', 'CACHE_LEVEL'='BLOCKLET')
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128','CACHE_LEVEL'='BLOCKLET')
          |  """.stripMargin)
 
     // load data into table (segment0)
@@ -643,9 +642,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
       s"""
          | ALTER TABLE $bloomDMSampleTable
          | ADD COLUMNS(num1 INT, dictString STRING, noDictString STRING)
-         | TBLPROPERTIES('DEFAULT.VALUE.num1'='999', 'DEFAULT.VALUE.dictString'='old',
-         | 'DICTIONARY_INCLUDE'='dictString'
-         | )
+         | TBLPROPERTIES('DEFAULT.VALUE.num1'='999', 'DEFAULT.VALUE.dictString'='old')
          """.stripMargin)
 
     // load data into table (segment1)
@@ -902,7 +899,6 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
              | TBLPROPERTIES(
              | 'SORT_COLUMNS'='market_code, device_code, country_code, category_id, date,product_id',
              | 'NO_INVERTED_INDEX'='est_free_app_download, est_paid_app_download,est_revenue',
-             | 'DICTIONARY_INCLUDE' = 'market_code, device_code, country_code,category_id, product_id',
              | 'SORT_SCOPE'='GLOBAL_SORT',
              | 'CACHE_LEVEL'='BLOCKLET',  'TABLE_BLOCKSIZE'='256',
              | 'GLOBAL_SORT_PARTITIONS'='2'

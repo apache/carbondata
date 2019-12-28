@@ -108,8 +108,7 @@ public class TablePage {
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
       ColumnType columnType = tableSpec.getDimensionSpec(i).getColumnType();
       ColumnPage page;
-      if (ColumnType.GLOBAL_DICTIONARY == columnType
-          || ColumnType.DIRECT_DICTIONARY == columnType) {
+      if (ColumnType.DIRECT_DICTIONARY == columnType) {
         page = ColumnPage.newPage(
             new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor), pageSize);
         page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
@@ -380,7 +379,6 @@ public class TablePage {
       EncodedColumnPage encodedPage;
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
       switch (spec.getColumnType()) {
-        case GLOBAL_DICTIONARY:
         case DIRECT_DICTIONARY:
           columnPageEncoder = encodingFactory.createEncoder(
               spec,
@@ -434,7 +432,7 @@ public class TablePage {
     int numDimensions = spec.getNumDimensions();
     for (int i = 0; i < numDimensions; i++) {
       ColumnType type = spec.getDimensionSpec(i).getColumnType();
-      if ((type == ColumnType.GLOBAL_DICTIONARY) || (type == ColumnType.DIRECT_DICTIONARY)) {
+      if (type == ColumnType.DIRECT_DICTIONARY) {
         page = dictDimensionPages[++dictDimensionIndex];
       } else if (type == ColumnType.PLAIN_VALUE) {
         page = noDictDimensionPages[++noDictDimensionIndex];

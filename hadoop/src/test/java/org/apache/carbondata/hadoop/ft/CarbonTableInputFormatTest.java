@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapFilter;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -126,8 +127,8 @@ public class CarbonTableInputFormatTest {
   }
 
   @Test public void testInputFormatMapperReadAllRowsAndColumns() throws Exception {
+    String outPath = "target/output";
     try {
-      String outPath = "target/output";
       CarbonProjection carbonProjection = new CarbonProjection();
       carbonProjection.addColumn("ID");
       carbonProjection.addColumn("date");
@@ -145,6 +146,7 @@ public class CarbonTableInputFormatTest {
       throw e;
     } finally {
       creator.clearDataMaps();
+      FileFactory.deleteAllFilesOfDir(new File(outPath));
     }
   }
 

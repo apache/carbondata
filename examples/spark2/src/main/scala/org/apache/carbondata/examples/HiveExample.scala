@@ -82,8 +82,7 @@ object HiveExample {
       .sql(
         s"""CREATE TABLE TEST_BOUNDARY (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,30),
            |c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string)
-           |STORED BY 'org.apache.carbondata.format' TBLPROPERTIES
-           |('DICTIONARY_INCLUDE'='c6_Timestamp')""".stripMargin)
+           |STORED BY 'org.apache.carbondata.format' """.stripMargin)
 
     inputPath = FileFactory
       .getUpdatedFilePath(s"$rootPath/examples/spark2/src/main/resources/Test_Data1.csv")

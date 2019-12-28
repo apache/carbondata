@@ -50,7 +50,6 @@ import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion, SegmentFileStore}
@@ -307,7 +306,6 @@ object CarbonDataRDDFactory {
       carbonLoadModel: CarbonLoadModel,
       columnar: Boolean,
       partitionStatus: SegmentStatus = SegmentStatus.SUCCESS,
-      result: Option[DictionaryServer],
       overwriteTable: Boolean,
       hadoopConf: Configuration,
       dataFrame: Option[DataFrame] = None,
@@ -442,8 +440,6 @@ object CarbonDataRDDFactory {
       } else {
         // in success case handle updation of the table status file.
         // success case.
-        // write the dictionary file in case of single_pass true
-        writeDictionary(carbonLoadModel, result, false)
         val segmentDetails = new util.HashSet[Segment]()
         var resultSize = 0
         res.foreach { resultOfSeg =>
@@ -517,8 +513,6 @@ object CarbonDataRDDFactory {
         } else {
           loadStatus
         }
-
-      writeDictionary(carbonLoadModel, result, writeAll = false)
 
       val segmentFileName =
         SegmentFileStore.writeSegmentFile(carbonTable, carbonLoadModel.getSegmentId,
@@ -807,28 +801,6 @@ object CarbonDataRDDFactory {
       }
     }
     resultIter
-  }
-
-  /**
-   * Trigger to write dictionary files
-   */
-  private def writeDictionary(carbonLoadModel: CarbonLoadModel,
-      result: Option[DictionaryServer], writeAll: Boolean): Unit = {
-    // write dictionary file
-    val uniqueTableName: String =
-      CarbonTable.buildUniqueName(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-    result match {
-      case Some(server) =>
-        try {
-          server.writeTableDictionary(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-            .getCarbonTableIdentifier.getTableId)
-        } catch {
-          case _: Exception =>
-            LOGGER.error(s"Error while writing dictionary file for $uniqueTableName")
-            throw new Exception("Dataload failed due to error while writing dictionary file!")
-        }
-      case _ =>
-    }
   }
 
   /**

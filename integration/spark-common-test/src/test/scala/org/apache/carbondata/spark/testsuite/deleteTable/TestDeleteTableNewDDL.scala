@@ -105,8 +105,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table CaseInsensitiveTable (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
-      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID, salary')"
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
     )
     // table should drop wihout any error
     sql("drop table caseInsensitiveTable")
@@ -115,8 +114,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table CaseInsensitiveTable (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
-      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID, salary')"
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
     )
 
   }
@@ -126,8 +124,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table default.table3 (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
-      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID, salary')"
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
     )
     // table should drop without any error
     sql("drop table default.table3")
@@ -166,8 +163,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table dropTableTest2 (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' " +
-      "TBLPROPERTIES('DICTIONARY_INCLUDE'='salary')"
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' "
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest2 " +
@@ -176,8 +172,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table dropTableTest2 (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' " +
-      "TBLPROPERTIES('DICTIONARY_INCLUDE'='date')"
+      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' "
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest2 " +
@@ -192,8 +187,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       sql(
         "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
         "String," +
-        "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_INCLUDE'='salary')"
+        "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' "
       )
       sql(
         s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE test.dropTableTest3 " +
@@ -202,8 +196,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       sql(
         "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
         "String," +
-        "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_EXCLUDE'='date')"
+        "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' "
       )
       sql(
         s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE test.dropTableTest3 " +
@@ -230,9 +223,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table dropTableTest4 (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata" +
-      ".format' " +
-      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='date')"
+      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' "
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest4 " +

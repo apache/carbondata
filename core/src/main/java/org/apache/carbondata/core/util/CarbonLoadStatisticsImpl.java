@@ -49,7 +49,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   private long loadCsvfilesToDfStartTime = 0;
   private long loadCsvfilesToDfCostTime = 0;
   private long dicShuffleAndWriteFileTotalStartTime = 0;
-  private long dicShuffleAndWriteFileTotalCostTime = 0;
 
   //LRU cache load one time
   private double lruCacheLoadTime = 0;
@@ -95,19 +94,14 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
 
   //Record the time
   public void recordDicShuffleAndWriteTime() {
-    Long dicShuffleAndWriteTimePoint = System.currentTimeMillis();
+    long dicShuffleAndWriteTimePoint = System.currentTimeMillis();
     if (0 == dicShuffleAndWriteFileTotalStartTime) {
       dicShuffleAndWriteFileTotalStartTime = dicShuffleAndWriteTimePoint;
-    }
-    if (dicShuffleAndWriteTimePoint - dicShuffleAndWriteFileTotalStartTime >
-            dicShuffleAndWriteFileTotalCostTime) {
-      dicShuffleAndWriteFileTotalCostTime =
-          dicShuffleAndWriteTimePoint - dicShuffleAndWriteFileTotalStartTime;
     }
   }
 
   public void recordLoadCsvfilesToDfTime() {
-    Long loadCsvfilesToDfTimePoint = System.currentTimeMillis();
+    long loadCsvfilesToDfTimePoint = System.currentTimeMillis();
     if (0 == loadCsvfilesToDfStartTime) {
       loadCsvfilesToDfStartTime = loadCsvfilesToDfTimePoint;
     }
@@ -234,11 +228,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     this.totalRecords = totalRecords;
   }
 
-  //Get the time
-  private double getDicShuffleAndWriteFileTotalTime() {
-    return dicShuffleAndWriteFileTotalCostTime / 1000.0;
-  }
-
   private double getLoadCsvfilesToDfTime() {
     return loadCsvfilesToDfCostTime / 1000.0;
   }
@@ -282,10 +271,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     return (int)(totalRecords / totalTime);
   }
 
-  private int getGenDicSpeed() {
-    return (int)(totalRecords / getLoadCsvfilesToDfTime() + getDicShuffleAndWriteFileTotalTime());
-  }
-
   private int getReadCSVSpeed(String partitionID) {
     return (int)(totalRecords / getCsvInputStepTime(partitionID));
   }
@@ -303,7 +288,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   }
 
   private double getTotalTime(String partitionID) {
-    this.totalTime = getLoadCsvfilesToDfTime() + getDicShuffleAndWriteFileTotalTime() +
+    this.totalTime = getLoadCsvfilesToDfTime() +
         getLruCacheLoadTime() + getDictionaryValuesTotalTime(partitionID) +
         getDictionaryValue2MdkAdd2FileTime(partitionID);
     return totalTime;
@@ -314,35 +299,32 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     double loadCsvfilesToDfTime = getLoadCsvfilesToDfTime();
     LOGGER.info("STAGE 1 ->Load csv to DataFrame and generate" +
             " block distinct values: " + loadCsvfilesToDfTime + "(s)");
-    double dicShuffleAndWriteFileTotalTime = getDicShuffleAndWriteFileTotalTime();
-    LOGGER.info("STAGE 2 ->Global dict shuffle and write dict file: " +
-            dicShuffleAndWriteFileTotalTime + "(s)");
   }
 
   private void printLruCacheLoadTimeInfo() {
-    LOGGER.info("STAGE 3 ->LRU cache load: " + getLruCacheLoadTime() + "(s)");
+    LOGGER.info("STAGE 2 ->LRU cache load: " + getLruCacheLoadTime() + "(s)");
   }
 
   private void printDictionaryValuesGenStatisticsInfo(String partitionID) {
     double dictionaryValuesTotalTime = getDictionaryValuesTotalTime(partitionID);
-    LOGGER.info("STAGE 4 ->Total cost of gen dictionary values, sort and write to temp files: "
+    LOGGER.info("STAGE 3 ->Total cost of gen dictionary values, sort and write to temp files: "
             + dictionaryValuesTotalTime + "(s)");
     double csvInputStepTime = getCsvInputStepTime(partitionID);
     double generatingDictionaryValuesTime = getGeneratingDictionaryValuesTime(partitionID);
-    LOGGER.info("STAGE 4.1 ->  |_read csv file: " + csvInputStepTime + "(s)");
-    LOGGER.info("STAGE 4.2 ->  |_transform to surrogate key: "
+    LOGGER.info("STAGE 3.1 ->  |_read csv file: " + csvInputStepTime + "(s)");
+    LOGGER.info("STAGE 3.2 ->  |_transform to surrogate key: "
             + generatingDictionaryValuesTime + "(s)");
   }
 
   private void printSortRowsStepStatisticsInfo(String partitionID) {
     double sortRowsStepTotalTime = getSortRowsStepTotalTime(partitionID);
-    LOGGER.info("STAGE 4.3 ->  |_sort rows and write to temp file: "
+    LOGGER.info("STAGE 3.3 ->  |_sort rows and write to temp file: "
             + sortRowsStepTotalTime + "(s)");
   }
 
   private void printGenMdkStatisticsInfo(String partitionID) {
     double dictionaryValue2MdkAdd2FileTime = getDictionaryValue2MdkAdd2FileTime(partitionID);
-    LOGGER.info("STAGE 5 ->Transform to MDK, compress and write fact files: "
+    LOGGER.info("STAGE 4 ->Transform to MDK, compress and write fact files: "
             + dictionaryValue2MdkAdd2FileTime + "(s)");
   }
 
@@ -369,7 +351,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     LOGGER.info("Total Num of Records Processed: " + getTotalRecords());
     LOGGER.info("Total Time Cost: " + getTotalTime(partitionID) + "(s)");
     LOGGER.info("Total Load Speed: " + getLoadSpeed() + "records/s");
-    LOGGER.info("Generate Dictionaries Speed: " + getGenDicSpeed() + "records/s");
     LOGGER.info("Read CSV Speed: " + getReadCSVSpeed(partitionID) + " records/s");
     LOGGER.info("Generate Surrogate Key Speed: " + getGenSurKeySpeed(partitionID) + " records/s");
     LOGGER.info("Sort Key/Write Temp Files Speed: " + getSortKeySpeed(partitionID) + " records/s");
@@ -399,7 +380,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     loadCsvfilesToDfStartTime = 0;
     loadCsvfilesToDfCostTime = 0;
     dicShuffleAndWriteFileTotalStartTime = 0;
-    dicShuffleAndWriteFileTotalCostTime = 0;
     lruCacheLoadTime = 0;
     totalRecords = 0;
     totalTime = 0;

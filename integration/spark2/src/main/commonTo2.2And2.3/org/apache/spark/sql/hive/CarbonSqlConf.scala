@@ -72,11 +72,6 @@ class CarbonSQLConf(sparkSession: SparkSession) {
         .stringConf
         .createWithDefault(carbonProperties.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
           CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
-    val SINGLE_PASS =
-      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS)
-        .doc("Property to enable/disable single_pass.")
-        .booleanConf
-        .createWithDefault(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT.toBoolean)
     val BAD_RECORD_PATH =
       buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH)
         .doc("Property to configure the bad record location.")
@@ -122,8 +117,6 @@ class CarbonSQLConf(sparkSession: SparkSession) {
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
       carbonProperties.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
         CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT.toBoolean)
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
       carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
         CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))

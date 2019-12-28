@@ -166,76 +166,6 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       sql("SELECT count(*) FROM carbon2"),Seq(Row(32000)))
   }
 
-  test("test load dataframe with integer columns included in the dictionary"){
-    df2.write
-      .format("carbondata")
-      .option("tableName", "carbon5")
-      .option("compress", "true")
-      .option("dictionary_include","c3,c4")
-      .mode(SaveMode.Overwrite)
-      .save()
-    checkAnswer(
-      sql("select count(*) from carbon5 where c3 > 300"), Row(700)
-    )
-  }
-
-  test("test load dataframe with string column excluded from the dictionary"){
-    df2.write
-      .format("carbondata")
-      .option("tableName", "carbon6")
-      .option("compress", "true")
-      .option("dictionary_exclude","c2")
-      .mode(SaveMode.Overwrite)
-      .save()
-    checkAnswer(
-      sql("select count(*) from carbon6 where c3 > 300"), Row(700)
-    )
-  }
-
-  test("test load dataframe with both dictionary include and exclude specified"){
-    df2.write
-      .format("carbondata")
-      .option("tableName", "carbon7")
-      .option("compress", "true")
-      .option("dictionary_include","c3,c4")
-      .option("dictionary_exclude","c2")
-      .mode(SaveMode.Overwrite)
-      .save()
-    checkAnswer(
-      sql("select count(*) from carbon7 where c3 > 300"), Row(700)
-    )
-  }
-
-  test("test load dataframe with single pass enabled") {
-    // save dataframe to carbon file
-    df2.write
-      .format("carbondata")
-      .option("tableName", "carbon8")
-      .option("tempCSV", "false")
-      .option("single_pass", "true")
-      .option("compress", "false")
-      .mode(SaveMode.Overwrite)
-      .save()
-    checkAnswer(
-      sql("select count(*) from carbon8 where c3 > 500"), Row(500)
-    )
-  }
-
-  test("test load dataframe with single pass disabled") {
-    // save dataframe to carbon file
-    df2.write
-      .format("carbondata")
-      .option("tableName", "carbon9")
-      .option("tempCSV", "true")
-      .option("single_pass", "false")
-      .option("compress", "false")
-      .mode(SaveMode.Overwrite)
-      .save()
-    checkAnswer(
-      sql("select count(*) from carbon9 where c3 > 500"), Row(500)
-    )
-  }
-
   test("test datasource table with specified table path") {
     val path = "./source"
     df2.write
@@ -260,7 +190,6 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .format("carbondata")
       .option("tableName", "carbon11")
       .option("tempCSV", "true")
-      .option("single_pass", "false")
       .option("compress", "false")
       .option("streaming", "true")
       .mode(SaveMode.Overwrite)
@@ -299,7 +228,6 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .format("carbondata")
       .option("tableName", tableName)
       .option("tempCSV", "false")
-      .option("single_pass", "false")
       .option("table_blocksize", "256")
       .option("compress", "false")
       .mode(SaveMode.Overwrite)

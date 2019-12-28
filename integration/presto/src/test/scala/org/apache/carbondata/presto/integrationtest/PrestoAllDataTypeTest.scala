@@ -506,19 +506,6 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       .executeQuery("SELECT id AS RESULT FROM TESTDB.TESTTABLE WHERE isCurrentEmployee is NOT null AND ID>8")
     assert(actualResult.head("RESULT").toString.toInt==9)
   }
-  test("test the is null operator when null is included in string data type dictionary_include"){
-    // See CARBONDATA-2155
-    val actualResult: List[Map[String, Any]] = prestoServer.executeQuery("SELECT SERIALNAME  FROM TESTDB.TESTTABLE WHERE SERIALNAME IS NULL")
-    assert(actualResult equals List(Map("SERIALNAME" -> null)))
-  }
-  test("test the min function when null is included in string data type with dictionary_include"){
-    // See CARBONDATA-2152
-    val actualResult = prestoServer.executeQuery("SELECT MIN(SERIALNAME) FROM TESTDB.TESTTABLE")
-    val expectedResult = List(Map("_col0" -> "ASD14875"))
-
-    assert(actualResult.equals(expectedResult))
-  }
-
 
   test("test the show schemas result"){
    val actualResult = prestoServer.executeQuery("SHOW SCHEMAS")

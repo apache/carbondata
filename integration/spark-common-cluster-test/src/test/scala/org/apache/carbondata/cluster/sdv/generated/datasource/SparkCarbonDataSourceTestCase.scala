@@ -745,8 +745,7 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
 
   test("test read using old data") {
     val store = new StoreCreator(new File(warehouse1).getAbsolutePath,
-      new File(warehouse1 + "../../../../../hadoop/src/test/resources/data.csv").getCanonicalPath,
-      false)
+      new File(warehouse1 + "../../../../../hadoop/src/test/resources/data.csv").getCanonicalPath)
     store.createCarbonStore()
     FileFactory
       .deleteAllFilesOfDir(new File(warehouse1 + "/testdb/testtable/Fact/Part0/Segment_0/0"))

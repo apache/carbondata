@@ -20,7 +20,7 @@ package org.apache.carbondata.mv.rewrite
 import scala.collection.JavaConverters._
 import java.util
 
-import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
@@ -403,17 +403,6 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop datamap if exists dm ")
     sql("create datamap dm using 'mv' as select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'")
     checkExistence(sql("select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'"), true, "1975-06-11 1975-06-11")
-  }
-
-  test("test global dictionary inherited from parent table") {
-    sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('dictionary_include'='name')")
-    sql("insert into table maintable select 'abc',21,2000")
-    sql("drop datamap if exists dm ")
-    sql("create datamap dm using 'mv' as select name, sum(price) from maintable group by name")
-    checkExistence(sql("describe formatted dm_table"), true, "Global Dictionary maintable_name")
-    checkAnswer(sql("select name, sum(price) from maintable group by name"), Seq(Row("abc", 2000)))
-    sql("drop table IF EXISTS maintable")
   }
 
   test("test preagg and mv") {

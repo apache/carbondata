@@ -22,10 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.cache.dictionary.ForwardDictionaryCache;
-import org.apache.carbondata.core.cache.dictionary.ReverseDictionaryCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -89,13 +85,13 @@ public class CacheProvider {
   public <K, V> Cache<K, V> createCache(CacheType cacheType) {
     //check if lru cache is null, if null create one
     //check if cache is null for given cache type, if null create one
-    if (!dictionaryCacheAlreadyExists(cacheType)) {
+    if (!isCacheExists(cacheType)) {
       synchronized (lock) {
-        if (!dictionaryCacheAlreadyExists(cacheType)) {
+        if (!isCacheExists(cacheType)) {
           if (null == carbonLRUCache) {
             createLRULevelCacheInstance();
           }
-          createDictionaryCacheForGivenType(cacheType);
+          createBlockletDataMapCache(cacheType);
         }
       }
     }
@@ -110,9 +106,9 @@ public class CacheProvider {
       throws Exception {
     //check if lru cache is null, if null create one
     //check if cache is null for given cache type, if null create one
-    if (!dictionaryCacheAlreadyExists(cacheType)) {
+    if (!isCacheExists(cacheType)) {
       synchronized (lock) {
-        if (!dictionaryCacheAlreadyExists(cacheType)) {
+        if (!isCacheExists(cacheType)) {
           if (null == carbonLRUCache) {
             createLRULevelCacheInstance();
           }
@@ -132,14 +128,14 @@ public class CacheProvider {
    *
    * @param cacheType       type of cache
    */
-  private void createDictionaryCacheForGivenType(CacheType cacheType) {
+  private void createBlockletDataMapCache(CacheType cacheType) {
     Cache cacheObject = null;
     if (cacheType.equals(CacheType.REVERSE_DICTIONARY)) {
-      cacheObject =
-          new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonLRUCache);
+      // TODO: remove cache for dictionary after dictionary id deprecated
+      return;
     } else if (cacheType.equals(CacheType.FORWARD_DICTIONARY)) {
-      cacheObject =
-          new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonLRUCache);
+      // TODO: remove cache for dictionary after dictionary id deprecated
+      return;
     } else if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
       cacheObject = new BlockletDataMapIndexStore(carbonLRUCache);
     }
@@ -181,19 +177,8 @@ public class CacheProvider {
    * @param cacheType
    * @return
    */
-  private boolean dictionaryCacheAlreadyExists(CacheType cacheType) {
+  private boolean isCacheExists(CacheType cacheType) {
     return null != cacheTypeToCacheMap.get(cacheType);
-  }
-
-  /**
-   * Below method will be used to clear the cache
-   */
-  public void dropAllCache() {
-    if (null != carbonLRUCache) {
-      carbonLRUCache.clear();
-      carbonLRUCache = null;
-    }
-    cacheTypeToCacheMap.clear();
   }
 
   public CarbonLRUCache getCarbonCache() {

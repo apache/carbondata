@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.cache.dictionary;
 
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,19 +50,9 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
   protected long fileTimeStamp;
 
   /**
-   * offset till where file is read
-   */
-  protected long offsetTillFileIsRead;
-
-  /**
    * memory size of this object.We store it as calculation everytime is costly
    */
   protected long memorySize;
-
-  /**
-   * length of dictionary metadata file
-   */
-  private long dictionaryMetaFileLength;
 
   /**
    * size of one dictionary bucket
@@ -102,31 +91,6 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
     return memorySize;
   }
 
-  @Override
-  public void setMemorySize(long memorySize) {
-    this.memorySize = memorySize;
-  }
-
-  /**
-   * This method will increment the access count for a column by 1
-   * whenever a column is getting used in query or incremental data load
-   */
-  @Override
-  public void incrementAccessCount() {
-    accessCount.incrementAndGet();
-  }
-
-  /**
-   * This method will return the size of of last dictionary chunk so that only that many
-   * values are read from the dictionary reader
-   *
-   * @return size of last dictionary chunk
-   */
-  @Override
-  public int getSizeOfLastDictionaryChunk() {
-    return 0;
-  }
-
   /**
    * This method will decrement the access count for a column by 1
    * whenever a column usage is complete
@@ -135,32 +99,6 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
     if (accessCount.get() > 0) {
       accessCount.decrementAndGet();
     }
-  }
-
-  /**
-   * This method will update the end offset of file everytime a file is read
-   *
-   * @param offsetTillFileIsRead
-   */
-  @Override
-  public void setOffsetTillFileIsRead(long offsetTillFileIsRead) {
-    this.offsetTillFileIsRead = offsetTillFileIsRead;
-  }
-
-  @Override
-  public long getOffsetTillFileIsRead() {
-    return offsetTillFileIsRead;
-  }
-
-  /**
-   * This method will update the timestamp of a file if a file is modified
-   * like in case of incremental load
-   *
-   * @param fileTimeStamp
-   */
-  @Override
-  public void setFileTimeStamp(long fileTimeStamp) {
-    this.fileTimeStamp = fileTimeStamp;
   }
 
   /**
@@ -181,56 +119,6 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
   @Override
   public void clear() {
     decrementAccessCount();
-  }
-
-  /**
-   * This method will find and return the sort index for a given dictionary id.
-   * Applicable scenarios:
-   * 1. Used in case of order by queries when data sorting is required
-   *
-   * @param surrogateKey a unique ID for a dictionary value
-   * @return if found returns key else 0
-   */
-  @Override
-  public int getSortedIndex(int surrogateKey) {
-    return 0;
-  }
-
-  /**
-   * dictionary metadata file length which will be set whenever we reload dictionary
-   * data from disk
-   *
-   * @param dictionaryMetaFileLength length of dictionary metadata file
-   */
-  @Override
-  public void setDictionaryMetaFileLength(long dictionaryMetaFileLength) {
-    this.dictionaryMetaFileLength = dictionaryMetaFileLength;
-  }
-
-  /**
-   * Dictionary meta file offset which will be read to check whether length of dictionary
-   * meta file has been modified
-   *
-   * @return
-   */
-  @Override
-  public long getDictionaryMetaFileLength() {
-    return dictionaryMetaFileLength;
-  }
-
-  /**
-   * This method will find and return the dictionary value from sorted index.
-   * Applicable scenarios:
-   * 1. Query final result preparation in case of order by queries:
-   * While convert the final result which will
-   * be surrogate key back to original dictionary values this method will be used
-   *
-   * @param sortedIndex sort index of dictionary value
-   * @return value if found else null
-   */
-  @Override
-  public String getDictionaryValueFromSortedIndex(int sortedIndex) {
-    return null;
   }
 
   /**
@@ -297,22 +185,6 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
       }
     }
     return dictionaryValueInBytes;
-  }
-
-  /**
-   * This method will find and return the surrogate key for a given dictionary value
-   * Applicable scenario:
-   * 1. Incremental data load : Dictionary will not be generated for existing values. For
-   * that values have to be looked up in the existing dictionary cache.
-   * 2. Filter scenarios where from value surrogate key has to be found.
-   *
-   * @param value dictionary value
-   * @return if found returns key else INVALID_SURROGATE_KEY
-   */
-  @Override
-  public int getSurrogateKey(String value) {
-    byte[] keyData = value.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-    return getSurrogateKey(keyData);
   }
 
   @Override

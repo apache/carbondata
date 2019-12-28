@@ -58,7 +58,6 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
     sql(
       s"""
@@ -366,7 +365,7 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+
        """.stripMargin)
     sql(
       s"""
@@ -408,7 +407,7 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+
        """.stripMargin)
     sql(
       s"""

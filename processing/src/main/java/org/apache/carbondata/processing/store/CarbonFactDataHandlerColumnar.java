@@ -43,7 +43,6 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -51,7 +50,6 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 
@@ -531,38 +529,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       LOGGER.debug("Number of rows per column page is configured as pageSize = " + pageSize);
     }
     dataRows = new ArrayList<>(this.pageSize);
-    int dimSet =
-        Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
-    // if at least one dimension is present then initialize column splitter otherwise null
-    int[] keyBlockSize = new int[getExpandedComplexColsCount()];
-
-    // agg type
-    List<Integer> otherMeasureIndexList =
-        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    List<Integer> customMeasureIndexList =
-        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    DataType[] type = model.getMeasureDataType();
-    for (int j = 0; j < type.length; j++) {
-      if (type[j] != DataTypes.BYTE && !DataTypes.isDecimal(type[j])) {
-        otherMeasureIndexList.add(j);
-      } else {
-        customMeasureIndexList.add(j);
-      }
-    }
-
-    int[] otherMeasureIndex = new int[otherMeasureIndexList.size()];
-    int[] customMeasureIndex = new int[customMeasureIndexList.size()];
-    for (int i = 0; i < otherMeasureIndex.length; i++) {
-      otherMeasureIndex[i] = otherMeasureIndexList.get(i);
-    }
-    for (int i = 0; i < customMeasureIndex.length; i++) {
-      customMeasureIndex[i] = customMeasureIndexList.get(i);
-    }
     setComplexMapSurrogateIndex(model.getDimensionCount());
-    int[] blockKeySize = getBlockKeySizeWithComplexTypes(new MultiDimKeyVarLengthEquiSplitGenerator(
-        CarbonUtil.getIncrementedCardinalityFullyFilled(model.getDimLens().clone()), (byte) dimSet)
-        .getBlockKeySize());
-    System.arraycopy(blockKeySize, 0, keyBlockSize, 0, blockKeySize.length);
     this.dataWriter = getFactDataWriter();
     // initialize the channel;
     this.dataWriter.initializeWriter();

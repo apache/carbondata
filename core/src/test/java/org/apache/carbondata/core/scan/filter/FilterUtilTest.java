@@ -21,13 +21,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.carbondata.core.cache.dictionary.AbstractDictionaryCacheTest;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -54,18 +52,11 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
-public class FilterUtilTest extends AbstractDictionaryCacheTest {
+public class FilterUtilTest {
 
   private ColumnSchema columnSchema;
 
   @Before public void setUp() throws Exception {
-    init();
-    this.databaseName = props.getProperty("database", "testSchema");
-    this.tableName = props.getProperty("tableName", "carbon");
-    this.carbonStorePath = props.getProperty("storePath", "carbonStore");
-    carbonTableIdentifier =
-        new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
-    this.carbonStorePath = props.getProperty("storePath", "carbonStore");
     columnSchema = new ColumnSchema();
     columnSchema.setColumnName("IMEI");
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString());

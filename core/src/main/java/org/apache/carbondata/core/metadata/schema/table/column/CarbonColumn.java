@@ -72,7 +72,7 @@ public class CarbonColumn implements Serializable {
     this.ordinal = ordinal;
     this.schemaOrdinal = schemaOrdinal;
     this.columnIdentifier =
-     new ColumnIdentifier(getColumnId(), getColumnProperties(), getDataType());
+        new ColumnIdentifier(getColumnId(), getColumnProperties(), getDataType());
   }
 
   /**

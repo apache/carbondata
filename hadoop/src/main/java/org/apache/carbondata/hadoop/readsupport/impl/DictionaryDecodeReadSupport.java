@@ -24,7 +24,6 @@ import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -60,11 +59,9 @@ public class DictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
         Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
             .createCache(CacheType.FORWARD_DICTIONARY);
         dataTypes[i] = carbonColumns[i].getDataType();
-        String dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
-            .get(CarbonCommonConstants.DICTIONARY_PATH);
         dictionaries[i] = forwardDictionaryCache.get(new DictionaryColumnUniqueIdentifier(
             carbonTable.getAbsoluteTableIdentifier(),
-            carbonColumns[i].getColumnIdentifier(), dataTypes[i], dictionaryPath));
+            carbonColumns[i].getColumnIdentifier(), dataTypes[i]));
       } else {
         dataTypes[i] = carbonColumns[i].getDataType();
       }

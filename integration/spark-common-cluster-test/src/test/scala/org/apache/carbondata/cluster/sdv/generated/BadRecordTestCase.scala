@@ -143,14 +143,14 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Show segments for table when data loading having parameters BAD_RECORDS_ACTION=FAIL/FORCE/REDIRECT/IGNORE,BAD_RECORD_LOGGER_ENABLE=true/false and IS_EMPTY_DATA_BAD_RECORD=false/true
   test("BadRecords-001_PTS020_TC001", Include) {
-     sql(s"""CREATE TABLE badrecordTest13 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID')""").collect
+     sql(s"""CREATE TABLE badrecordTest13 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format' """).collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test3.csv' into table badrecordTest13 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='ID,CUST_ID,cust_name')""").collect
     sql(s"""SHOW SEGMENTS FOR TABLE badrecordTest13""").collect
      sql(s"""drop table if exists badrecordTest13""").collect
   }
 
 
-  //Create table and Load data with parameters BAD_RECORDS_ACTION=FAIL/FORCE/REDIRECT/IGNORE,BAD_RECORD_LOGGER_ENABLE=true/false and IS_EMPTY_DATA_BAD_RECORD=false/true  for date and char types using single pass and vectorized reader parameters
+  //Create table and Load data with parameters BAD_RECORDS_ACTION=FAIL/FORCE/REDIRECT/IGNORE,BAD_RECORD_LOGGER_ENABLE=true/false and IS_EMPTY_DATA_BAD_RECORD=false/true  for date and char types using vectorized reader parameters
   test("BadRecords-001_PTS012_TC001", Include) {
      sql(s"""CREATE TABLE badrecordtest14 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test3.csv' into table badrecordtest14 OPTIONS('FILEHEADER'='ID,CUST_ID,cust_name','DELIMITER'=',' , 'QUOTECHAR'='"','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE')""").collect

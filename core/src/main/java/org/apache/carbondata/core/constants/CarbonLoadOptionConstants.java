@@ -87,15 +87,6 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_TABLE_LOAD_SORT_SCOPE = "carbon.table.load.sort.scope.";
 
   /**
-   * Option to enable/ disable single_pass
-   */
-  @CarbonProperty(dynamicConfigurable = true)
-  public static final String CARBON_OPTIONS_SINGLE_PASS =
-      "carbon.options.single.pass";
-
-  public static final String CARBON_OPTIONS_SINGLE_PASS_DEFAULT = "false";
-
-  /**
    * specify bad record path option
    */
   @CarbonProperty(dynamicConfigurable = true)

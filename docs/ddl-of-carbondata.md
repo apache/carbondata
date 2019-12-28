@@ -83,7 +83,6 @@ CarbonData DDL statements are documented here,which includes:
 
 | Property                                                     | Description                                                  |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| [DICTIONARY_INCLUDE](#dictionary-encoding-configuration)     | Columns for which dictionary needs to be generated           |
 | [NO_INVERTED_INDEX](#inverted-index-configuration)           | Columns to exclude from inverted index generation            |
 | [INVERTED_INDEX](#inverted-index-configuration)              | Columns to include for inverted index generation             |
 | [SORT_COLUMNS](#sort-columns-configuration)                  | Columns to include in sort and its order of sort             |
@@ -112,19 +111,6 @@ CarbonData DDL statements are documented here,which includes:
 
  Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
 
-   - ##### Dictionary Encoding Configuration
-
-     Dictionary encoding is turned off for all columns by default from 1.3 onwards, you can use this command for including or excluding columns to do dictionary encoding.
-     Suggested use cases : do dictionary encoding for low cardinality columns, it might help to improve data compression ratio and performance.
-
-     ```
-     TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
-     ```
-
-     **NOTE**: 
-      * Dictionary Include/Exclude for complex child columns is not supported. Dictionary Include doesn't support binary data type.  
-      * Dictionary is global. Except global dictionary, there are local dictionary and non-dictionary in CarbonData.
-      
    - ##### Local Dictionary Configuration
 
    Columns for which dictionary is not generated needs more storage space and in turn more IO. Also since more data will have to be read during query, query performance also would suffer.Generating dictionary per blocklet for such columns would help in saving storage space and assist in improving query performance as carbondata is optimized for handling dictionary encoded columns more effectively.Generating dictionary internally per blocklet is termed as local dictionary. Please refer to [File structure of Carbondata](./file-structure-of-carbondata.md) for understanding about the file structure of carbondata and meaning of terms like blocklet.
@@ -171,7 +157,7 @@ CarbonData DDL statements are documented here,which includes:
 | ---------- | ------------- | ----------- |
 | LOCAL_DICTIONARY_ENABLE | false | Whether to enable local dictionary generation. **NOTE:** If this property is defined, it will override the value configured at system level by '***carbon.local.dictionary.enable***'.Local dictionary will be generated for all string/varchar/char columns unless LOCAL_DICTIONARY_INCLUDE, LOCAL_DICTIONARY_EXCLUDE is configured. |
 | LOCAL_DICTIONARY_THRESHOLD | 10000 | The maximum cardinality of a column upto which carbondata can try to generate local dictionary (maximum - 100000). **NOTE:** When LOCAL_DICTIONARY_THRESHOLD is defined for Complex columns, the count of distinct records of all child columns are summed up. |
-| LOCAL_DICTIONARY_INCLUDE | string/varchar/char columns| Columns for which Local Dictionary has to be generated.**NOTE:** Those string/varchar/char columns which are added into DICTIONARY_INCLUDE option will not be considered for local dictionary generation. This property needs to be configured only when local dictionary needs to be generated for few columns, skipping others. This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
+| LOCAL_DICTIONARY_INCLUDE | string/varchar/char columns| Columns for which Local Dictionary has to be generated. This property needs to be configured only when local dictionary needs to be generated for few columns, skipping others. This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
 | LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary need not be generated. This property needs to be configured only when local dictionary needs to be skipped for few columns, generating for others. This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
 
    **Fallback behavior:** 
@@ -203,9 +189,6 @@ CarbonData DDL statements are documented here,which includes:
    **NOTE:** 
 
    * We recommend to use Local Dictionary when cardinality is high but is distributed across multiple loads
-   * On a large cluster, decoding data can become a bottleneck for global dictionary as there will be many remote reads. In this scenario, it is better to use Local Dictionary.
-   * When cardinality is less, but loads are repetitive, it is better to use global dictionary as local dictionary generates multiple dictionary files at blocklet level increasing redundancy.
-   * If want to use non-dictionary, users can set LOCAL_DICTIONARY_ENABLE as false and don't set DICTIONARY_INCLUDE.
       
    - ##### Inverted Index Configuration
 
@@ -463,7 +446,7 @@ CarbonData DDL statements are documented here,which includes:
      If you are using Carbon-SDK, you can specify the datatype of long string column as `varchar`.
      You can refer to SDKwriterTestCase for example.
 
-     **NOTE:** The LONG_STRING_COLUMNS can only be string/char/varchar columns and cannot be dictionary_include/sort_columns/complex columns.
+     **NOTE:** The LONG_STRING_COLUMNS can only be string/char/varchar columns and cannot be sort_columns/complex columns.
 
    - ##### Compression for table
 
@@ -669,17 +652,12 @@ CarbonData DDL statements are documented here,which includes:
      This command is used to add a new column to the existing table.
      ```
      ALTER TABLE [db_name.]table_name ADD COLUMNS (col_name data_type,...)
-     TBLPROPERTIES('DICTIONARY_INCLUDE'='col_name,...',
-     'DEFAULT.VALUE.COLUMN_NAME'='default_value')
+     TBLPROPERTIES('DEFAULT.VALUE.COLUMN_NAME'='default_value')
      ```
 
      Examples:
      ```
      ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING)
-     ```
-
-     ```
-     ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DICTIONARY_INCLUDE'='a1')
      ```
 
      ```
@@ -866,7 +844,6 @@ Users can specify which columns to include and exclude for local dictionary gene
                                 productNumber Int COMMENT 'unique serial number for product')
   COMMENT "This is table comment"
   STORED AS carbondata
-  TBLPROPERTIES ('DICTIONARY_INCLUDE'='productNumber')
   ```
 
   You can also SET and UNSET table comment using ALTER command.

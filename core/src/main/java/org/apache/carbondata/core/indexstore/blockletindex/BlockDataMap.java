@@ -206,7 +206,7 @@ public class BlockDataMap extends CoarseGrainDataMap
    * @throws IOException
    */
   private SegmentProperties initSegmentProperties(BlockletDataMapModel blockletDataMapInfo,
-      DataFileFooter fileFooter) throws IOException {
+      DataFileFooter fileFooter) {
     List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
     int[] columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
     segmentPropertiesWrapper = SegmentPropertiesAndSchemaHolder.getInstance()

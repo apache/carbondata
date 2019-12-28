@@ -191,7 +191,6 @@ Concurrent queries can be more due to the BI dashboard
 - Use global sort mode so that the data to be fetched are grouped together
 - Create Materialized View for aggregation queries
 - Reduce the Spark shuffle partitions.(In our configuration on 14 node cluster, it was reduced to 35 from default of 200)
-- Enable global dictionary for columns which have less cardinalities. Aggregation can be done on encoded data, there by improving the performance
 - For columns whose cardinality is high,enable the local dictionary so that store size is less and can take dictionary benefit for scan
 
 ## Handling near realtime data ingestion scenario

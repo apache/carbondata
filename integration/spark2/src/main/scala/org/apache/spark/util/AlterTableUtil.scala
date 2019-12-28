@@ -891,9 +891,7 @@ object AlterTableUtil {
   def ValidateSetTablePropertiesForLocalDict(tblPropertiesMap: mutable.Map[String, String],
       carbonTable: CarbonTable,
       property: (String, String)): Unit = {
-    var primitiveComplexChildColumns = new mutable.HashSet[String]
     var localDictColumns: Seq[String] = Seq[String]()
-    var dictIncludeColumns: Seq[String] = Seq[String]()
 
     val allColumns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
     localDictColumns = property._2.toString.toLowerCase.split(",").map(_.trim)

@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE TABLE alldatatypestableJoin (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='empno','TABLE_BLOCKSIZE'='4')")
+    sql("CREATE TABLE alldatatypestableJoin (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('TABLE_BLOCKSIZE'='4')")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE alldatatypestableJoin OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""");
 
     sql("CREATE TABLE alldatatypestableJoin_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
@@ -61,9 +61,9 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table1")
     sql("DROP TABLE IF EXISTS carbon_table2")
 
-    sql("CREATE TABLE carbon_table1(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')")
+    sql("CREATE TABLE carbon_table1(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' ")
 
-    sql("CREATE TABLE carbon_table2(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')")
+    sql("CREATE TABLE carbon_table2(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' ")
 
     val path1 = s"$resourcesPath/join/data1.csv"
     val path2 = s"$resourcesPath/join/data2.csv"

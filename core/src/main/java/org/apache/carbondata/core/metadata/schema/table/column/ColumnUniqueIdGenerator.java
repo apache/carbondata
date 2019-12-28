@@ -15,28 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.dictionary.service;
+package org.apache.carbondata.core.metadata.schema.table.column;
 
-import org.apache.carbondata.core.dictionary.client.DictionaryClient;
-import org.apache.carbondata.core.dictionary.client.NonSecureDictionaryClient;
+import java.util.UUID;
 
-public class NonSecureDictionaryServiceProvider implements DictionaryServiceProvider {
-  private int port = 0;
+/**
+ * It returns unique id given column
+ */
+public class ColumnUniqueIdGenerator {
 
-  /**
-   * default serial version ID.
-   */
-  private static final long serialVersionUID = 1L;
-
-  public NonSecureDictionaryServiceProvider(int port) {
-    this.port = port;
+  public static String generateUniqueId() {
+    return UUID.randomUUID().toString();
   }
 
-  //  @Override public DictionaryServer getDictionaryServer() {
-  //    return NonSecureDictionaryServer.getInstance(port);
-  //  }
-  @Override
-  public DictionaryClient getDictionaryClient() {
-    return new NonSecureDictionaryClient();
-  }
 }

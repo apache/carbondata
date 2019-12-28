@@ -29,7 +29,6 @@ import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -37,7 +36,6 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.hive.common.type.HiveDecimal;
@@ -89,11 +87,9 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
         Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
             .createCache(CacheType.FORWARD_DICTIONARY);
         dataTypes[i] = carbonColumns[i].getDataType();
-        String dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
-            .get(CarbonCommonConstants.DICTIONARY_PATH);
         dictionaries[i] = forwardDictionaryCache.get(
             new DictionaryColumnUniqueIdentifier(carbonTable.getAbsoluteTableIdentifier(),
-                carbonColumns[i].getColumnIdentifier(), dataTypes[i], dictionaryPath));
+                carbonColumns[i].getColumnIdentifier(), dataTypes[i]));
       } else {
         dataTypes[i] = carbonColumns[i].getDataType();
       }
@@ -267,12 +263,6 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
     DataType dataType = carbonColumn.getDataType();
     if (obj == null) {
       return null;
-    }
-    if (carbonColumn.hasEncoding(Encoding.DICTIONARY)) {
-      obj = DataTypeUtil.getDataBasedOnDataType(obj.toString(), dataType);
-      if (obj == null) {
-        return null;
-      }
     }
     if (dataType == DataTypes.NULL) {
       return null;

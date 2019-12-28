@@ -138,7 +138,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBoolean.csv"
@@ -183,7 +183,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"

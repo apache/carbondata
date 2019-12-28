@@ -82,7 +82,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
     checkExistence(sql("describe formatted carbon_table"), true, "boolean")
   }
@@ -157,7 +157,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
 
   test("test boolean as dictionary include column and codegen=false"){
     sql("drop table if exists carbon_table")
-    sql("create table carbon_table(a1 boolean,a2 string,a3 int) stored by 'carbondata' tblproperties('dictionary_include'='a1')")
+    sql("create table carbon_table(a1 boolean,a2 string,a3 int) stored by 'carbondata' ")
     sql("insert into carbon_table select false,'a',1")
     sql("set spark.sql.codegen.wholestage=false")
     checkAnswer(sql("select a1 from carbon_table"), Seq(Row(false)))

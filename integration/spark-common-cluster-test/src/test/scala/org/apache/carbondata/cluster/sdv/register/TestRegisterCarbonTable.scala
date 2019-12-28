@@ -167,7 +167,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
       sql("refresh table carbontable")
     }
     sql("Alter table carbontable add columns(c4 string) " +
-        "TBLPROPERTIES('DICTIONARY_EXCLUDE'='c4', 'DEFAULT.VALUE.c4'='def')")
+        "TBLPROPERTIES('DEFAULT.VALUE.c4'='def')")
     checkAnswer(
       sql("""select c1,c2,c3,c5,c4 from carbon.carbontable"""),
       Seq(Row("a", 1, "aa", "aaa", "def"), Row("b", 1, "bb", "bbb", "def"))

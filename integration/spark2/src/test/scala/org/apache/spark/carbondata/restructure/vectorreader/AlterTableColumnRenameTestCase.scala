@@ -153,7 +153,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
       "CREATE TABLE rename (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='empno,empname'," +
+      "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties(" +
       "'local_dictionary_include'='workgroupcategoryname','local_dictionary_exclude'='deptname','COLUMN_META_CACHE'='projectcode,attendance'," +
       "'SORT_COLUMNS'='workgroupcategory,utilization,salary')")
     sql("alter table rename change eMPName name string")
@@ -163,10 +163,6 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     sql("alter table rename change uTiLIZation utILIty int")
 
     val descLoc = sql("describe formatted rename").collect
-    descLoc.find(_.get(0).toString.contains("Global Dictionary")) match {
-      case Some(row) => assert(row.get(1).toString.contains("empno,name"))
-      case None => assert(false)
-    }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("workgroup"))
       case None => assert(false)

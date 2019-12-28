@@ -35,10 +35,7 @@ delimiter=,
 #csv comment character
 #commentchar=#
 
-#column dictionary list
-#columndict=
-
-#null value's serialization format  
+#null value's serialization format
 #serialization_null_format=\\N
 
 #bad records logger
@@ -46,9 +43,6 @@ delimiter=,
 
 #bad records action
 #bad_records_action=force
-
-#all dictionary folder path
-#all_dictionary_path=
 
 #complex column's level 1 delimiter
 #complex_delimiter_level_1='\\\001'

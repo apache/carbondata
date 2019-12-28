@@ -59,7 +59,7 @@ object StreamingWithRowParserExample {
              | )
              | STORED BY 'carbondata'
              | TBLPROPERTIES(
-             | 'streaming'='true', 'sort_columns'='name', 'dictionary_include'='city')
+             | 'streaming'='true', 'sort_columns'='name')
              | """.stripMargin)
       } else {
         spark.sql(

@@ -105,20 +105,14 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
   private void convertComplexDataType(Map<Integer, GenericDataType> dataFieldsWithComplexDataType) {
     DataField[] srcDataField = configuration.getDataFields();
-    FieldEncoderFactory fieldConverterFactory = FieldEncoderFactory.getInstance();
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
-    boolean isEmptyBadRecord = Boolean.parseBoolean(
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
-            .toString());
     for (int i = 0; i < srcDataField.length; i++) {
       if (srcDataField[i].getColumn().isComplex()) {
         // create a ComplexDataType
         dataFieldsWithComplexDataType.put(srcDataField[i].getColumn().getOrdinal(),
-            fieldConverterFactory
-                .createComplexDataType(srcDataField[i], configuration.getTableIdentifier(), null,
-                    false, null, i, nullFormat, isEmptyBadRecord));
+            FieldEncoderFactory.createComplexDataType(srcDataField[i], nullFormat));
       }
     }
   }

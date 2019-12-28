@@ -166,7 +166,6 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  utilization int,salary int)
         | PARTITIONED BY (workgroupcategory int, empname String, designation String)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('DICTIONARY_INCLUDE'='deptname')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -211,21 +210,6 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql(s"""insert into staticpartitionone PARTITION(empno='1') select empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary from originTable""")
 
     validateDataFiles("default_staticpartitionone", "0", 1)
-  }
-
-  test("single pass loading for partition table for one partition column") {
-    sql(
-      """
-        | CREATE TABLE singlepasspartitionone (empname String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
-        |  utilization int,salary int)
-        | PARTITIONED BY (designation String)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE singlepasspartitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'SINGLE_PASS'='true')""")
-
-    validateDataFiles("default_singlepasspartitionone", "0", 8)
   }
 
   test("data loading for partition table for one static partition column with load syntax") {

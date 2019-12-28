@@ -37,7 +37,7 @@ class TestNotNullFilter extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS carbonTableNotNull
            (ID Int, date timestamp, country String,
            name String, phonetype String, serialname char(10), salary Int)
-           STORED BY 'carbondata' TBLPROPERTIES ('DICTIONARY_INCLUDE'='ID')
+           STORED BY 'carbondata'
            """)
      sql(s"""
            LOAD DATA LOCAL INPATH '$csvFilePath' into table carbonTableNotNull OPTIONS('BAD_RECORDS_ACTION'='FORCE')

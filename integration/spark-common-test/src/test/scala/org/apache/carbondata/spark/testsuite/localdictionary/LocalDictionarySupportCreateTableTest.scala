@@ -132,19 +132,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "be no dictionary string/complex/varchar datatype column"))
   }
 
-  test("test local dictionary custom configurations for local dict columns _006") {
-    sql("drop table if exists local1")
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1(id int, name string, city string, age int)
-          | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name','local_dictionary_include'='name')
-        """.
-          stripMargin)
-    }
-  }
-
   test("test local dictionary custom configurations for local dict threshold _001") {
     sql("drop table if exists local1")
     sql(
@@ -370,20 +357,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_008") {
-    sql("drop table if exists local1")
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1(id int, name string, city string, age int)
-          | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000','local_dictionary_include'='name',
-          | 'dictionary_include'='name')
-        """.stripMargin)
-    }
-  }
-
-  test("test local dictionary custom configurations with both columns and threshold configured " +
        "_009") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
@@ -405,20 +378,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
           | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='-100','local_dictionary_include'='Hello')
-        """.stripMargin)
-    }
-  }
-
-  test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_011") {
-    sql("drop table if exists local1")
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1(id int, name string, city string, age int)
-          | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='23213497321591234324',
-          | 'local_dictionary_include'='name','dictionary_include'='name')
         """.stripMargin)
     }
   }
@@ -531,20 +490,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "be no dictionary string/complex/varchar datatype column"))
   }
 
-  test("test local dictionary custom configurations when enabled for local dict columns _006") {
-    sql("drop table if exists local1")
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1(id int, name string, city string, age int)
-          | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name',
-          | 'local_dictionary_include'='name')
-        """.
-          stripMargin)
-    }
-  }
-
   test("test local dictionary custom configurations when local_dictionary_exclude is " +
        "configured _001") {
     sql("drop table if exists local1")
@@ -640,21 +585,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "be no dictionary string/complex/varchar datatype column"))
   }
 
-  test("test local dictionary custom configurations when local_dictionary_exclude is " +
-       "configured _006") {
-    sql("drop table if exists local1")
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1(id int, name string, city string, age int)
-          | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name',
-          | 'local_dictionary_exclude'='name')
-        """.
-          stripMargin)
-    }
-  }
-
   test("test local dictionary custom configurations when local_dictionary_include and " +
        "local_dictionary_exclude is configured _001") {
     sql("drop table if exists local1")
@@ -731,21 +661,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
 
     checkExistence(sql("describe formatted local1"), false, "Local Dictionary Include")
     checkExistence(sql("describe formatted local1"), false, "Local Dictionary Exclude")
-  }
-
-  test("test local dictionary custom configurations when local_dictionary_include and " +
-       "local_dictionary_exclude is configured _004") {
-    sql("drop table if exists local1")
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1(id int, name string, city string, age int)
-          | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_exclude'='name','local_dictionary_include'='city',
-          | 'local_dictionary_enable'='true','dictionary_include'='name,city')
-        """.
-          stripMargin)
-    }
   }
 
   test("test local dictionary custom configurations when local_dictionary_include and " +
@@ -1044,20 +959,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations when enabled with both columns and threshold " +
-       "configured _008") {
-    sql("drop table if exists local1")
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1(id int, name string, city string, age int)
-          | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000',
-          | 'local_dictionary_include'='name','dictionary_include'='name')
-        """.stripMargin)
-    }
-  }
-
-  test("test local dictionary custom configurations when enabled with both columns and threshold " +
        "configured _009") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
@@ -1081,21 +982,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
           | STORED BY 'org.apache.carbondata.format'
           | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='-100',
           | 'local_dictionary_include'='Hello')
-        """.stripMargin)
-    }
-  }
-
-  test("test local dictionary custom configurations when enabled with both columns and threshold " +
-       "configured _011") {
-    sql("drop table if exists local1")
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1(id int, name string, city string, age int)
-          | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true',
-          | 'local_dictionary_threshold'='23213497321591234324','local_dictionary_include'='name',
-          | 'dictionary_include'='name')
         """.stripMargin)
     }
   }
@@ -1202,7 +1088,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='false','dictionary_include'='name',
+        | tblproperties('local_dictionary_enable'='false',
         | 'local_dictionary_include'='name')
       """.
         stripMargin)
@@ -1429,7 +1315,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
         | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='20000',
-        | 'local_dictionary_include'='name','dictionary_include'='name')
+        | 'local_dictionary_include'='name')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -1483,8 +1369,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
         | tblproperties('local_dictionary_enable'='false',
-        | 'local_dictionary_threshold'='23213497321591234324','local_dictionary_include'='name',
-        | 'dictionary_include'='name')
+        | 'local_dictionary_threshold'='23213497321591234324','local_dictionary_include'='name')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -1501,7 +1386,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='true','dictionary_include'='city','sort_scope'='global_sort',
+        | tblproperties('local_dictionary_enable'='true','sort_scope'='global_sort',
         | 'sort_columns'='city,name')
       """.stripMargin)
 
@@ -1523,7 +1408,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('dictionary_include'='city','sort_scope'='local_sort',
+        | tblproperties(
+        | 'sort_scope'='local_sort',
         | 'sort_columns'='city,name')
       """.stripMargin)
 
@@ -1544,7 +1430,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('dictionary_include'='city','sort_scope'='no_sort',
+        | tblproperties(
+        | 'sort_scope'='no_sort',
         | 'sort_columns'='city,name')
       """.stripMargin)
 
@@ -1565,7 +1452,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('dictionary_include'='city','sort_scope'='local_sort',
+        | tblproperties(
+        | 'sort_scope'='local_sort',
         | 'sort_columns'='city,name')
       """.stripMargin)
 
@@ -1733,26 +1621,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "be no dictionary string/complex/varchar datatype column"))
   }
 
-  test("test CTAS statements for local dictionary custom configurations when enabled for local dict " +
-       "columns _006") {
-    sql("drop table if exists local")
-    sql("drop table if exists local1")
-    sql(
-      """
-        | CREATE TABLE local(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='false')
-      """.stripMargin)
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1 STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name',
-          | 'local_dictionary_include'='name') as select * from local
-        """.
-          stripMargin)
-    }
-  }
-
   test("test CTAS statements for local dictionary custom configurations when " +
        "local_dictionary_exclude is configured _001") {
     sql("drop table if exists local")
@@ -1874,26 +1742,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test CTAS statements for local dictionary custom configurations when " +
-       "local_dictionary_exclude is configured _006") {
-    sql("drop table if exists local1")
-    sql("drop table if exists local")
-    sql(
-      """
-        | CREATE TABLE local(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='false')
-      """.stripMargin)
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1 STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name',
-          | 'local_dictionary_exclude'='name') as select * from local
-        """.
-          stripMargin)
-    }
-  }
-
-  test("test CTAS statements for local dictionary custom configurations when " +
        "local_dictionary_include and local_dictionary_exclude is configured _001") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
@@ -1950,27 +1798,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
 
     checkExistence(sql("describe formatted local1"), false, "Local Dictionary Include")
     checkExistence(sql("describe formatted local1"), false, "Local Dictionary Exclude")
-  }
-
-  test("test CTAS statements for local dictionary custom configurations when " +
-       "local_dictionary_include and local_dictionary_exclude is configured _003") {
-    sql("drop table if exists local1")
-    sql("drop table if exists local")
-    sql(
-      """
-        | CREATE TABLE local(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='false')
-      """.stripMargin)
-    intercept[MalformedCarbonCommandException] {
-      sql(
-        """
-          | CREATE TABLE local1 STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_exclude'='name','local_dictionary_include'='city',
-          | 'local_dictionary_enable'='true','dictionary_include'='name,city') as select * from
-          | local
-        """.
-          stripMargin)
-    }
   }
 
   test("test CTAS statements for local dictionary custom configurations when " +

@@ -268,7 +268,7 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
-         | 'sort_columns'='name', 'dictionary_include'='name,tax,percent,updated', 'LONG_STRING_COLUMNS'='longstr')
+         | 'sort_columns'='name', 'LONG_STRING_COLUMNS'='longstr')
          | """.stripMargin)
 
     if (withBatchLoad) {

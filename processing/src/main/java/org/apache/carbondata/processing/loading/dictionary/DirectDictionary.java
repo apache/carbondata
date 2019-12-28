@@ -18,7 +18,6 @@
 package org.apache.carbondata.processing.loading.dictionary;
 
 import org.apache.carbondata.core.devapi.BiDictionary;
-import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 
 /**
@@ -34,7 +33,7 @@ public class DirectDictionary implements BiDictionary<Integer, Object> {
   }
 
   @Override
-  public Integer getOrGenerateKey(Object value) throws DictionaryGenerationException {
+  public Integer getOrGenerateKey(Object value) {
     Integer key = getKey(value);
     if (key == null) {
       throw new UnsupportedOperationException("trying to add new entry in DirectDictionary");

@@ -33,7 +33,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists Test_Boundary""").collect
     sql(s"""drop table if exists Test_Boundary_hive""").collect
 
-    sql(s"""create table Test_Boundary (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,30),c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='c6_Timestamp')""").collect
+    sql(s"""create table Test_Boundary (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,30),c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string) STORED BY 'org.apache.carbondata.format' """).collect
 
     sql(s"""create table Test_Boundary_hive (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,30),c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 

@@ -663,7 +663,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select * from stream_table_filter where register is null"),
       Seq(Row(null, "", "", null, null, null, null, null, null)))
-    assert(1 == partitionNums("select * from stream_table_filter where register is null"))
+    assert(3 == partitionNums("select * from stream_table_filter where register is null"))
 
     checkAnswer(
       sql("select * from stream_table_filter where id is null and register is not null"),
@@ -2185,7 +2185,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
-         | 'sort_columns'='name', 'dictionary_include'='city,register', 'BAD_RECORD_PATH'='$badRecordFilePath')
+         | 'sort_columns'='name', 'BAD_RECORD_PATH'='$badRecordFilePath')
          | """.stripMargin)
 
     if (withBatchLoad) {
@@ -2214,7 +2214,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
-         | 'sort_columns'='name', 'dictionary_include'='id,name,salary,tax,percent,updated', 'BAD_RECORD_PATH'='$badRecordFilePath')
+         | 'sort_columns'='name', 'BAD_RECORD_PATH'='$badRecordFilePath')
          | """.stripMargin)
 
     if (withBatchLoad) {

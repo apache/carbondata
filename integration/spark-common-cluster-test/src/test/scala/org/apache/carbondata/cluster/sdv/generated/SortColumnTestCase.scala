@@ -281,42 +281,19 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   //create table with dictioanry_exclude sort_columns
   test("Sortcolumn-001_TC024", Include) {
     sql(s"""drop table if exists sorttable""").collect
-     sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_exclude'='empname','sort_columns'='empname')""").collect
+     sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empname')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
     sql(s"""select doj from sorttable""").collect
 
      sql(s"""drop table if exists sorttable""").collect
   }
-
-
-  //create table with dictionary_include,  sort_columns
-  test("Sortcolumn-001_TC025", Include) {
-    sql(s"""drop table if exists sorttable""").collect
-     sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='doj','sort_columns'='doj')""").collect
-   sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
-    sql(s"""select doj from sorttable""").collect
-
-     sql(s"""drop table if exists sorttable""").collect
-  }
-
-
-  //create table with dictionary_include, dictioanry_exclude sort_columns
-  test("Sortcolumn-001_TC026", Include) {
-    sql(s"""drop table if exists sorttable""").collect
-     sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='doj','dictionary_exclude'='empname','sort_columns'='doj')""").collect
-   sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
-    sql(s"""select doj from sorttable""").collect
-
-     sql(s"""drop table if exists sorttable""").collect
-  }
-
 
   //create table with alter table and sort_columns with dimension
   test("Sortcolumn-001_TC027", Include) {
     sql(s"""drop table if exists sorttable""").collect
      sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='doj')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
-   sql(s"""alter table sorttable add columns(newField String) tblproperties('dictionary_include'='newField')""").collect
+   sql(s"""alter table sorttable add columns(newField String)  """).collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/dataString.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
     sql(s"""select doj from sorttable""").collect
 
@@ -329,7 +306,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists sorttable""").collect
      sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='doj')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
-   sql(s"""alter table sorttable add columns(newField Int) tblproperties('dictionary_include'='newField')""").collect
+   sql(s"""alter table sorttable add columns(newField Int)  """).collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/dataInt.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
     sql(s"""select doj from sorttable""").collect
 
@@ -347,33 +324,10 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists sorttable""").collect
   }
 
-
-  //create table with dictionary_include ,no_inverted_index and sort_columns
-  test("Sortcolumn-001_TC030", Include) {
-    sql(s"""drop table if exists sorttable""").collect
-     sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='doj','sort_columns'='doj','no_inverted_index'='doj')""").collect
-   sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
-    sql(s"""select doj from sorttable""").collect
-
-     sql(s"""drop table if exists sorttable""").collect
-  }
-
-
-  //create table with dictionary_include ,no_inverted_index and sort_columns with measure
-  test("Sortcolumn-001_TC031", Include) {
-    sql(s"""drop table if exists sorttable""").collect
-     sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='empno','sort_columns'='empno','no_inverted_index'='empno')""").collect
-   sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
-    sql(s"""select doj from sorttable""").collect
-
-     sql(s"""drop table if exists sorttable""").collect
-  }
-
-
   //test sort_column for different order of column name
   test("Sortcolumn-001_TC032", Include) {
     sql(s"""drop table if exists sorttable""").collect
-     sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='empno','sort_columns'='empname,empno,workgroupcategory,doj')""").collect
+     sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties( 'sort_columns'='empname,empno,workgroupcategory,doj')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
     sql(s"""select doj from sorttable""").collect
 
@@ -384,7 +338,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   //default behavior if sort_column not provided
   test("Sortcolumn-001_TC033", Include) {
     sql(s"""drop table if exists sorttable""").collect
-     sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='empno')""").collect
+     sql(s"""CREATE TABLE sorttable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' """).collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
     sql(s"""select doj from sorttable""").collect
 
@@ -411,7 +365,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists sorttable1""").collect
      sql(s"""CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
-   sql(s"""alter table sorttable1 add columns(newField Float) tblproperties('DICTIONARY_INCLUDE'='newField')""").collect
+   sql(s"""alter table sorttable1 add columns(newField Float)  """).collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/dataFloat.csv' INTO TABLE sorttable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
     sql(s"""select * from sorttable1""").collect
 
@@ -425,7 +379,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists sorttable1""").collect
      sql(s"""CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE sorttable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
-   sql(s"""alter table sorttable1 add columns(newField decimal) tblproperties('dictionary_include'='newField')""").collect
+   sql(s"""alter table sorttable1 add columns(newField decimal)  """).collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/dataDecimal.csv' INTO TABLE sorttable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
     sql(s"""select * from sorttable1""").collect
 
@@ -437,7 +391,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
   test("Sortcolumn-001_TC039", Include) {
     sql(s"""drop table if exists sorttable""").collect
     sql(s"""drop table if exists sorttable1""").collect
-     sql(s"""CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int,newField decimal) STORED BY 'org.apache.carbondata.format' tblproperties('DICTIONARY_INCLUDE'='empno')""").collect
+     sql(s"""CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int,newField decimal) STORED BY 'org.apache.carbondata.format' """).collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/dataDecimal.csv' INTO TABLE sorttable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
     sql(s"""select * from sorttable1""").collect
 

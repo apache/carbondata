@@ -901,7 +901,7 @@ test("IUD-01-01-01_005-11", Include) {
 //Check for update Carbon table where a update column is measue and is defined with include ddictionary. Check dictionary file being updated.
 test("IUD-01-01-01_005-12", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Item_type_cd INT, Profit DECIMAL(3,2))STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='Item_type_cd')""").collect
+ sql(s"""create table default.t_carbn01 (Item_type_cd INT, Profit DECIMAL(3,2))STORED BY 'org.apache.carbondata.format' """).collect
  sql(s"""insert into default.t_carbn01  select item_type_cd, profit from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd) = (100100)""").collect
   checkAnswer(s"""select item_type_cd from default.t_carbn01  group by item_type_cd""",
@@ -913,7 +913,7 @@ test("IUD-01-01-01_005-12", Include) {
 //Check for update Carbon table where a update column is dimension and is defined with exclude dictionary. 
 test("IUD-01-01-01_005-13", Include) {
   sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-  sql(s"""create table default.t_carbn01 (Item_type_cd INT, Profit DECIMAL(3,2))STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='Item_type_cd')""").collect
+  sql(s"""create table default.t_carbn01 (Item_type_cd INT, Profit DECIMAL(3,2))STORED BY 'org.apache.carbondata.format' """).collect
   sql(s"""insert into default.t_carbn01  select item_type_cd, profit from default.t_carbn01b""").collect
   val currProperty = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
     .CARBON_BAD_RECORDS_ACTION);
@@ -932,7 +932,7 @@ test("IUD-01-01-01_005-13", Include) {
 
 //Check for update Carbon table where a update column is dimension and is defined with exclude dictionary. 
 test("IUD-01-01-01_005-14", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='Item_code')""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format' """).collect
  sql(s""" insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (Item_code) = ('Ram')""").collect
   checkAnswer(s"""select item_code from default.t_carbn01  group by item_code""",
@@ -943,7 +943,7 @@ test("IUD-01-01-01_005-14", Include) {
 
 //Check for update Carbon table where a update column is dimension and is defined with exclude dictionary. 
 test("IUD-01-01-01_005-15", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='Item_code')""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format' """).collect
  sql(s""" insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (Item_code) = ('123')""").collect
   checkAnswer(s"""select item_code from default.t_carbn01  group by item_code""",
@@ -2582,12 +2582,12 @@ test("IUD-01-01-02_023-18", Include) {
    sql(s"""drop table if exists  t_carbn1""").collect
  sql(s"""drop table if exists  t_carbn2""").collect
  sql(s"""drop table if exists  t_hive01""").collect
- sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='sell_price')""").collect
+ sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 2,300000,33.3,'Orange','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Banana','2012-11-11 11:11:11'""").collect
  sql(s"""create table t_hive01 as select * from t_carbn1""").collect
- sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='sell_price')""").collect
+ sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
  sql(s"""insert into t_carbn2 select * from t_hive01""").collect
  sql(s"""insert into t_carbn2 select 2, 200000,23.3,'Banana','2012-11-11 11:11:11'""").collect
  sql(s"""delete from t_carbn2 where item_name = 'Banana'""").collect
@@ -2630,10 +2630,10 @@ test("IUD-01-01-02_023-20", Include) {
 test("IUD-01-01-02_023-21", Include) {
    sql(s"""drop table if exists  t_carbn1""").collect
  sql(s"""drop table if exists  t_carbn2""").collect
- sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='sell_price')""").collect
+ sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 2,300000,33.3,'Orange','2012-11-11 11:11:11'""").collect
- sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='sell_price')""").collect
+ sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
  sql(s"""insert into t_carbn2 select * from t_carbn1""").collect
  sql(s"""delete from t_carbn2 where item_name = 'Apple'""").collect
  sql(s"""clean files for table t_carbn2""").collect
@@ -2647,10 +2647,10 @@ test("IUD-01-01-02_023-21", Include) {
 test("IUD-01-01-02_023-22", Include) {
    sql(s"""drop table if exists  t_carbn1""").collect
  sql(s"""drop table if exists  t_carbn2""").collect
- sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='sell_price')""").collect
+ sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 2,300000,33.3,'Orange','2012-11-11 11:11:11'""").collect
- sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='sell_price')""").collect
+ sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
  sql(s"""insert into t_carbn2 select * from t_carbn1""").collect
  sql(s"""delete from t_carbn2 where item_name in ('Orange','Apple')""").collect
  sql(s"""clean files for table t_carbn2""").collect
@@ -2663,7 +2663,7 @@ test("IUD-01-01-02_023-22", Include) {
 //Test horizontal compaction when different segments same data ,full delete across all segments
 test("IUD-01-01-02_023-23", Include) {
    sql(s"""drop table if exists  t_carbn1""").collect
- sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='sell_price')""").collect
+ sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 2,300000,33.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""delete from t_carbn1 where item_name = 'Apple'""").collect
@@ -2820,7 +2820,7 @@ test("IUD-01-01-02_023-28", Include) {
 //Test horizontal compaction when h-compcation threshold set to higher value(10),full updates multiple time
 test("IUD-01-01-02_023-29", Include) {
    sql(s"""drop table if exists  t_carbn1""").collect
- sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='sell_price')""").collect
+ sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 3, 300000,33.3,'Orange','2012-11-11 11:11:11'""").collect
  sql(s"""update t_carbn1 set (sell_price) = (2)""").collect

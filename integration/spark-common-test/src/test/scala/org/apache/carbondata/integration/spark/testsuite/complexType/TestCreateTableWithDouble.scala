@@ -46,7 +46,7 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
     try {
       sql("CREATE TABLE doubleComplex (Id int, number double, name string, " +
         "gamePoint array<double>, mac struct<num:double>) " +
-        "STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include' = 'gamePoint,mac')")
+        "STORED BY 'org.apache.carbondata.format' ")
       sql(s"LOAD DATA LOCAL INPATH '$dataPath' INTO TABLE doubleComplex")
       countNum = sql(s"SELECT COUNT(*) FROM doubleComplex").collect
       doubleField = sql("SELECT number FROM doubleComplex SORT BY Id").collect
@@ -64,22 +64,13 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
     try {
       sql("CREATE TABLE doubleComplex2 (Id int, number double, name string, " +
         "gamePoint array<double>, mac struct<num:double>) " +
-        "STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_INCLUDE'='number,gamePoint,mac')")
+        "STORED BY 'org.apache.carbondata.format' ")
       sql(s"LOAD DATA LOCAL INPATH '$dataPath' INTO TABLE doubleComplex2")
       countNum = sql(s"SELECT COUNT(*) FROM doubleComplex2").collect
       doubleField = sql(s"SELECT number FROM doubleComplex2 SORT BY Id").collect
     } catch {
       case e : Throwable => fail(e)
     }
-    // assert that field 'number' is a dimension
-    val tableIdentifier = new CarbonTableIdentifier(
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME, "doubleComplex2".toLowerCase(), "uniqueid")
-    val carbonTable =
-      CarbonMetadata.getInstance().getCarbonTable(tableIdentifier.getTableUniqueName)
-    val dimExist = carbonTable.getVisibleDimensions().toArray.
-      exists(_.asInstanceOf[CarbonDimension].getColName.equalsIgnoreCase("number"))
-    assertResult(dimExist)(true)
     // assert that load and query is successful
     assertResult(countNum)(Array(Row(3)))
     assertResult(doubleField)(Array(Row(1.5), Row(2.0), Row(3.0)))

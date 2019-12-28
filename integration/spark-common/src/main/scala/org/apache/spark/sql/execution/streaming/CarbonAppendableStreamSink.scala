@@ -38,7 +38,6 @@ import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -67,7 +66,6 @@ class CarbonAppendableStreamSink(
     var currentSegmentId: String,
     parameters: Map[String, String],
     carbonLoadModel: CarbonLoadModel,
-    server: Option[DictionaryServer],
     operationContext: OperationContext) extends Sink {
 
   private val fileLogPath = CarbonTablePath.getStreamingLogDir(carbonTable.getTablePath)
@@ -156,7 +154,6 @@ class CarbonAppendableStreamSink(
         committer,
         hadoopConf,
         carbonLoadModel,
-        server,
         msrDataTypes)
       // fire post event on every batch add
       val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
@@ -233,7 +230,6 @@ object CarbonAppendableStreamSink {
       committer: FileCommitProtocol,
       hadoopConf: Configuration,
       carbonLoadModel: CarbonLoadModel,
-      server: Option[DictionaryServer],
       msrDataTypes: Array[DataType]): Unit = {
 
     // create job
@@ -254,10 +250,6 @@ object CarbonAppendableStreamSink {
       var result: Array[(TaskCommitMessage, StreamFileIndex)] = null
       try {
         committer.setupJob(job)
-        // initialize dictionary server
-        if (server.isDefined) {
-          server.get.initializeDictionaryGenerator(carbonTable)
-        }
 
         val rowSchema = queryExecution.analyzed.schema
         val isVarcharTypeMapping = {
@@ -284,19 +276,6 @@ object CarbonAppendableStreamSink {
               isVarcharTypeMapping
             )
           })
-
-        // write dictionary
-        if (server.isDefined) {
-          try {
-            server.get.writeTableDictionary(carbonTable.getCarbonTableIdentifier.getTableId)
-          } catch {
-            case _: Exception =>
-              LOGGER.error(
-                s"Error while writing dictionary file for ${carbonTable.getTableUniqueName}")
-              throw new Exception(
-                "Streaming ingest failed due to error while writing dictionary file")
-          }
-        }
 
         // update data file info in index file
         StreamSegment.updateIndexFile(

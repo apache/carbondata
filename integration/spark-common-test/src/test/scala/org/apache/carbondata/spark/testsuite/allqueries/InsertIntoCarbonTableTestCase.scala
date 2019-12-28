@@ -117,7 +117,6 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
          |    floatField float
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
     sql(
@@ -135,7 +134,6 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
          |    floatField float
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
     sql(
       s"""

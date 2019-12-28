@@ -69,7 +69,6 @@ object S3CsvExample {
          | )
          | STORED BY 'carbondata'
          | LOCATION '$rootPath/examples/spark2/target/store'
-         | TBLPROPERTIES('SORT_COLUMNS'='', 'DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
     spark.sql(

@@ -424,9 +424,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
           "designation String, doj Timestamp, workgroupcategory int, " +
           "workgroupcategoryname String, deptno int, deptname String, projectcode int, " +
           "projectjoindate Timestamp, projectenddate Timestamp, attendance int, " +
-          "utilization int,salary int) STORED BY 'org.apache.carbondata.format' " +
-          "TBLPROPERTIES('DICTIONARY_INCLUDE'='empno,workgroupcategory,deptno,projectcode'," +
-          "'DICTIONARY_EXCLUDE'='empname')")
+          "utilization int,salary int) STORED BY 'org.apache.carbondata.format' ")
     }
   }
 
@@ -509,7 +507,6 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       .option("tableName", "study_carbondata")
       .option("compress", "true")  // just valid when tempCSV is true
       .option("tempCSV", "false")
-      .option("single_pass", "true")
       .option("sort_scope", "LOCAL_SORT")
       .mode(SaveMode.Append)
       .save()
@@ -554,24 +551,6 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS iud.rand")
   }
 
-  test("Update operation on carbon table with singlepass") {
-    sql(s"""set ${ CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS }=true""")
-    sql("drop database if exists carbon1 cascade")
-    sql(s"create database carbon1 location '$dblocation'")
-    sql("use carbon1")
-    sql("""CREATE TABLE carbontable(id int, name string, city string, age int)
-         STORED BY 'org.apache.carbondata.format'""")
-    val testData = s"$resourcesPath/sample.csv"
-    sql(s"LOAD DATA LOCAL INPATH '$testData' into table carbontable")
-    // update operation
-    sql("""update carbon1.carbontable d  set (d.id) = (d.id + 1) where d.id > 2""").show()
-    checkAnswer(
-      sql("select count(*) from carbontable"),
-      Seq(Row(6))
-    )
-    sql(s"""set ${ CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS }=false""")
-    sql("drop table carbontable")
-  }
   test("Update operation on carbon table with persist false") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE, "false")

@@ -26,14 +26,16 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
-import org.apache.spark.sql.types.{BinaryType, IntegerType, StringType, StructField => SparkStructField, StructType}
+import org.apache.spark.sql.types.{BinaryType, IntegerType, StringType, StructType, StructField => SparkStructField}
 import org.apache.spark.util.SparkUtil
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.testutil.StoreCreator
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 
@@ -1233,8 +1235,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
   test("test read using old data") {
     val store = new StoreCreator(new File(warehouse1).getAbsolutePath,
-      new File(warehouse1 + "../../../../../hadoop/src/test/resources/data.csv").getCanonicalPath,
-      false)
+      new File(warehouse1 + "../../../../../hadoop/src/test/resources/data.csv").getCanonicalPath)
     store.createCarbonStore()
     FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/testdb/testtable/Fact/Part0/Segment_0/0"))
     val dfread = spark.read.format("carbon").load(warehouse1+"/testdb/testtable/Fact/Part0/Segment_0")
@@ -1243,12 +1244,12 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
   }
 
   test("test read using different sort order data") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "test")
     if (!spark.sparkContext.version.startsWith("2.1")) {
       spark.sql("drop table if exists old_comp")
       FileFactory.deleteAllFilesOfDir(new File(warehouse1 + "/testdb"))
       val store = new StoreCreator(new File(warehouse1).getAbsolutePath,
-        new File(warehouse1 + "../../../../../hadoop/src/test/resources/data.csv").getCanonicalPath,
-        false)
+        new File(warehouse1 + "../../../../../hadoop/src/test/resources/data.csv").getCanonicalPath)
       store.setSortColumns(new util.ArrayList[String](Seq("name").asJava))
       var model = store.createTableAndLoadModel(false)
       model.setSegmentId("0")
@@ -1451,7 +1452,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       }
     } catch {
       case ex: Exception => throw new RuntimeException(ex)
-      case _ => None
+      case _: Throwable => None
     }
     checkAnswer(spark.sql("select * from complextable limit 1"), Seq(Row("name0", Row(0
       .asInstanceOf[Byte], 0.012.asInstanceOf[Float]))))
@@ -1536,7 +1537,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
         spark.sql("select * from sort_table"))
     } catch {
       case ex: Exception => throw new RuntimeException(ex)
-      case _ => None
+      case _: Throwable => None
     }
   }
 
@@ -1583,7 +1584,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       }
     } catch {
       case ex: Exception => throw new RuntimeException(ex)
-      case _ => None
+      case _: Throwable => None
     }
     checkAnswer(spark.sql("select * from complextable limit 1"), Seq(Row("name0", mutable
       .WrappedArray.make(Array[Byte](0, 0)), mutable.WrappedArray.make(Array[Float](0.0f, 0.0f)))))
@@ -1671,7 +1672,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       writer.close()
     } catch {
       case ex: Exception => throw new RuntimeException(ex)
-      case _ => None
+      case _: Throwable => None
     }
   }
 
@@ -1945,22 +1946,19 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     }
 
     test("test spark doesn't support input string value for binary data type") {
+        val rdd = spark.sparkContext.parallelize(1 to 3)
+                .map(x => Row("a" + x % 10, "b", x, "YWJj".getBytes()))
+        val customSchema = StructType(Array(
+            SparkStructField("c1", StringType),
+            SparkStructField("c2", StringType),
+            SparkStructField("number", IntegerType),
+            SparkStructField("c4", BinaryType)))
+
         try {
-            val rdd = spark.sparkContext.parallelize(1 to 3)
-                    .map(x => Row("a" + x % 10, "b", x, "YWJj".getBytes()))
-            val customSchema = StructType(Array(
-                SparkStructField("c1", StringType),
-                SparkStructField("c2", StringType),
-                SparkStructField("number", IntegerType),
-                SparkStructField("c4", BinaryType)))
-
-            try {
-                spark.createDataFrame(rdd, customSchema);
-            } catch {
-                case e: RuntimeException => e.getMessage.contains(
-                    "java.lang.String is not a valid external type for schema of binary")
-            }
-
+            spark.createDataFrame(rdd, customSchema);
+        } catch {
+            case e: RuntimeException => e.getMessage.contains(
+                "java.lang.String is not a valid external type for schema of binary")
         }
     }
 

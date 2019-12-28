@@ -48,7 +48,6 @@ import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.FileReader;
@@ -1686,22 +1685,6 @@ public final class CarbonUtil {
         }
       }
     }
-  }
-
-  /**
-   * This method will check if dictionary and its metadata file exists for a given column
-   *
-   * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
-   *                                         tableName and columnIdentifier
-   * @return
-   */
-  public static boolean isFileExistsForGivenColumn(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    String dictionaryFilePath = dictionaryColumnUniqueIdentifier.getDictionaryFilePath();
-    String dictionaryMetadataFilePath =
-        dictionaryColumnUniqueIdentifier.getDictionaryMetaFilePath();
-    // check if both dictionary and its metadata file exists for a given column
-    return isFileExists(dictionaryFilePath) && isFileExists(dictionaryMetadataFilePath);
   }
 
   /**
