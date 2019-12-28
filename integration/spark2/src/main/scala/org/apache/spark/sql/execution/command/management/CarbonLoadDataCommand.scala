@@ -734,12 +734,14 @@ case class CarbonLoadDataCommand(
         val transRdd = rdd.map { f =>
           val data = new Array[Any](len)
           var i = 0
-          while (i < f.length) {
+          val length = f.length
+          while (i < length) {
             data(nonPartitionBounds(i)) = f.get(i)
             i = i + 1
           }
           var j = 0
-          while (j < partitionBounds.length) {
+          val len = partitionBounds.length
+          while (j < len) {
             data(partitionBounds(j)) = UTF8String.fromString(partitionValues(j))
             j = j + 1
           }

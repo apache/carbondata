@@ -238,7 +238,8 @@ object DistributionUtil {
     val maxRetryCount = calculateMaxRetry
     var maxTimes = maxRetryCount
     breakable {
-      while (nodes.length < requiredExecutors && maxTimes > 0) {
+      val len = nodes.length
+      while (requiredExecutors > len && maxTimes > 0) {
         Thread.sleep(threadSleepTime);
         nodes = DistributionUtil.getNodeList(sparkContext)
         maxTimes = maxTimes - 1;

@@ -173,8 +173,11 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
   private def assignPartitionNodeLocality(
       noEmptyHosts: Seq[(String, LinkedHashSet[Int])]): Array[ArrayBuffer[Int]] = {
     val localityResult = new Array[ArrayBuffer[Int]](noEmptyHosts.length)
-    for (i <- 0 until localityResult.length) {
+    var i = 0
+    val len = localityResult.length
+    while (i < len) {
       localityResult(i) = new ArrayBuffer[Int]
+      i += 1
     }
     val noEmptyHostSet = new HashSet[String]
     noEmptyHosts.foreach {loc => noEmptyHostSet.add(loc._1)}
