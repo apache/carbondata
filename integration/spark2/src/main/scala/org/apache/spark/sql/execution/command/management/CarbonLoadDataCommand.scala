@@ -926,7 +926,13 @@ case class CarbonLoadDataCommand(
             attr.dataType
         }
       }
-      attr.copy(dataType = updatedDataType)(attr.exprId, attr.qualifier)
+      CarbonToSparkAdapter.createAttributeReference(attr.name,
+        updatedDataType,
+        attr.nullable,
+        attr.metadata,
+        attr.exprId,
+        attr.qualifier,
+        attr)
     }
     // Only select the required columns
     var output = if (partition.nonEmpty) {
