@@ -50,7 +50,7 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.sort.sortdata.{NewRowComparator, NewRowComparatorForNormalDims, SortParameters}
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, TableOptionConstant}
-import org.apache.carbondata.spark.rdd.CarbonScanRDD
+import org.apache.carbondata.spark.rdd.{CarbonScanRDD, StringArrayRow}
 import org.apache.carbondata.spark.util.CommonUtil
 import org.apache.carbondata.store.CarbonRowReadSupport
 
@@ -65,10 +65,12 @@ object DataLoadProcessBuilderOnSpark {
       dataFrame: Option[DataFrame],
       model: CarbonLoadModel,
       hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+    var isLoadFromCSV = false
     val originRDD = if (dataFrame.isDefined) {
       dataFrame.get.rdd
     } else {
       // input data from files
+      isLoadFromCSV = true
       val columnCount = model.getCsvHeaderColumns.length
       CsvRDDHelper.csvFileScanRDD(sparkSession, model, hadoopConf)
         .map(DataLoadProcessorStepOnSpark.toStringArrayRow(_, columnCount))
@@ -88,11 +90,24 @@ object DataLoadProcessBuilderOnSpark {
 
     val conf = SparkSQLUtil.broadCastHadoopConf(sc, hadoopConf)
     // 1. Input
-    val inputRDD = originRDD
-      .mapPartitions(rows => DataLoadProcessorStepOnSpark.toRDDIterator(rows, modelBroadcast))
-      .mapPartitionsWithIndex { case (index, rows) =>
-        DataLoadProcessorStepOnSpark.inputFunc(rows, index, modelBroadcast, inputStepRowCounter)
+    val inputRDD = if (isLoadFromCSV) {
+      // No need of wrap with NewRDDIterator, which converts object to string,
+      // as it is already a string.
+      // So, this will avoid new object creation in case of CSV global sort load for each row
+      originRDD.mapPartitionsWithIndex { case (index, rows) =>
+        DataLoadProcessorStepOnSpark.inputFuncForCsvRows(
+          rows.asInstanceOf[Iterator[StringArrayRow]],
+          index,
+          modelBroadcast,
+          inputStepRowCounter)
       }
+    } else {
+      originRDD
+        .mapPartitions(rows => DataLoadProcessorStepOnSpark.toRDDIterator(rows, modelBroadcast))
+        .mapPartitionsWithIndex { case (index, rows) =>
+          DataLoadProcessorStepOnSpark.inputFunc(rows, index, modelBroadcast, inputStepRowCounter)
+        }
+    }
 
     // 2. Convert
     val convertRDD = inputRDD.mapPartitionsWithIndex { case (index, rows) =>

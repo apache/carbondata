@@ -97,6 +97,35 @@ object DataLoadProcessorStepOnSpark {
     }
   }
 
+  def inputFuncForCsvRows(
+      rows: Iterator[StringArrayRow],
+      index: Int,
+      modelBroadcast: Broadcast[CarbonLoadModel],
+      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+    val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
+    val conf = DataLoadProcessBuilder.createConfiguration(model)
+    val rowParser = new RowParserImpl(conf.getDataFields, conf)
+    val isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(conf)
+    TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
+      wrapException(e, model)
+    }
+
+    new Iterator[CarbonRow] {
+      override def hasNext: Boolean = rows.hasNext
+
+      override def next(): CarbonRow = {
+        val rawRow = rows.next().values.asInstanceOf[Array[Object]]
+        val row = if (isRawDataRequired) {
+          new CarbonRow(rowParser.parseRow(rawRow), rawRow)
+        } else {
+          new CarbonRow(rowParser.parseRow(rawRow))
+        }
+        rowCounter.add(1)
+        row
+      }
+    }
+  }
+
   def internalInputFunc(
       rows: Iterator[InternalRow],
       index: Int,
