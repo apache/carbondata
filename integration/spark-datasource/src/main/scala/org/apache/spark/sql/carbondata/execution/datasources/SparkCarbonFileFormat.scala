@@ -220,7 +220,8 @@ class SparkCarbonFileFormat extends FileFormat
     private def extractData(row: InternalRow, fieldTypes: Array[StructField]): Array[AnyRef] = {
       val data = new Array[AnyRef](fieldTypes.length)
       var i = 0
-      while (i < fieldTypes.length) {
+      val len = fieldTypes.length
+      while (i < len) {
         if (!row.isNullAt(i)) {
           fieldTypes(i).dataType match {
             case StringType =>
@@ -274,7 +275,8 @@ class SparkCarbonFileFormat extends FileFormat
     private def extractData(row: ArrayData, dataType: DataType): Array[AnyRef] = {
       val data = new Array[AnyRef](row.numElements())
       var i = 0
-      while (i < data.length) {
+      val len = data.length
+      while (i < len) {
         if (!row.isNullAt(i)) {
           dataType match {
             case StringType =>

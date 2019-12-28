@@ -102,11 +102,14 @@ object FieldConverter {
         case r: org.apache.spark.sql.Row =>
           val delimiter = complexDelimiters.get(level)
           val builder = new StringBuilder()
-          for (i <- 0 until r.length) {
+          val len = r.length
+          var i = 0
+          while (i < len) {
             val nextLevel = level + 1
             builder.append(objectToString(r(i), serializationNullFormat, complexDelimiters,
               timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
               .append(delimiter)
+            i += 1
           }
           builder.substring(0, builder.length - delimiter.length())
         case other => other.toString

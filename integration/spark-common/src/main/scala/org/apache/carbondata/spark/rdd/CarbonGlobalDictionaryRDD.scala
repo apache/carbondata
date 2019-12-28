@@ -159,8 +159,11 @@ class StringArrayRow(var values: Array[String]) extends Row {
   override def getString(i: Int): String = values(i)
 
   private def reset(): Unit = {
-    for (i <- 0 until values.length) {
+    val len = values.length
+    var i = 0
+    while (i < len) {
       values(i) = null
+      i = i + 1
     }
   }
 
