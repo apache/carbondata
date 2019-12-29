@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.command.{PartitionerField, TableModel, Tab
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
 import org.apache.spark.sql.types.StructField
 
+import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -135,6 +136,11 @@ object CarbonSparkSqlParserUtil {
     }
 
     // validate tblProperties
+    if (tableProperties.contains(CarbonCommonConstants.DICTIONARY_INCLUDE) ||
+        tableProperties.contains(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
+      throw new DeprecatedFeatureException("global dictionary")
+    }
+
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)
     var isTransactionalTable: Boolean = true
 

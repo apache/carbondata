@@ -392,7 +392,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm ")
     intercept[MalformedCarbonCommandException] {
-      sql("create datamap dm using 'mv' dmproperties('dictionary_include'='name', 'sort_columns'='name') as select name from maintable")
+      sql("create datamap dm using 'mv' dmproperties('sort_columns'='name') as select name from maintable")
     }.getMessage.contains("DMProperties dictionary_include,sort_columns are not allowed for this datamap")
   }
 
