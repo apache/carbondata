@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -40,13 +41,20 @@ public class MapParserImpl extends ArrayParserImpl {
   public ArrayObject parse(Object data) {
     if (data != null) {
       String value = data.toString();
-      if (!value.isEmpty() && !value.equals(nullFormat)) {
+      if (!value.isEmpty() && !value.equals(nullFormat)
+          // && !value.equals(keyValueDelimiter)
+          && !value.equals(CarbonCommonConstants.SIZE_ZERO_DATA_RETURN)) {
         String[] split = pattern.split(value, -1);
         if (ArrayUtils.isNotEmpty(split)) {
           ArrayList<Object> array = new ArrayList<>();
           Map<Object, String> map = new HashMap<>();
           for (int i = 0; i < split.length; i++) {
-            Object currKey = split[i].split(keyValueDelimiter)[0];
+            Object[] splitedKeyAndValue = split[i].split(keyValueDelimiter);
+            // When both key and value are EMPTY_STRING, the length of the splitted
+            // result will be 0. Then the currKey should be initialized as a empty object.
+            // Otherwise, the arrayindexoutexception will be throwed.
+            Object currKey = splitedKeyAndValue.length > 0 ? split[i].split(keyValueDelimiter)[0]
+                : new Object();
             map.put(currKey, split[i]);
           }
           for (Map.Entry<Object, String> entry : map.entrySet()) {
@@ -54,6 +62,10 @@ public class MapParserImpl extends ArrayParserImpl {
           }
           return new ArrayObject(array.toArray());
         }
+      } else if (value.equals(CarbonCommonConstants.SIZE_ZERO_DATA_RETURN)) {
+        // When the data is not map('','') but map(), an array with zero size should be returned.
+        Object[] array = new Object[0];
+        return new ArrayObject(array);
       }
     }
     return null;
