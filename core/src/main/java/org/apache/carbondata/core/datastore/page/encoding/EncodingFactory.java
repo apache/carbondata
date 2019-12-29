@@ -216,14 +216,6 @@ public abstract class EncodingFactory {
           new ColumnPageEncoderMeta(spec, stats.getDataType(), stats, compressor);
       meta.setFillCompleteVector(fullVectorFill);
       return new DirectCompressCodec(stats.getDataType()).createDecoder(meta);
-    } else if (dataType == DataTypes.LEGACY_LONG) {
-      // In case of older versions like in V1 format it has special datatype to handle
-      AdaptiveIntegralCodec adaptiveCodec =
-          new AdaptiveIntegralCodec(DataTypes.LONG, DataTypes.LONG, stats, false);
-      ColumnPageEncoderMeta meta =
-          new ColumnPageEncoderMeta(spec, adaptiveCodec.getTargetDataType(), stats, compressor);
-      meta.setFillCompleteVector(fullVectorFill);
-      return adaptiveCodec.createDecoder(meta);
     } else {
       throw new RuntimeException("unsupported data type: " + stats.getDataType());
     }

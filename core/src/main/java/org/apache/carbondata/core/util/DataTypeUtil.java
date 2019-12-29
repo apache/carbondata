@@ -1014,8 +1014,6 @@ public final class DataTypeUtil {
       return DataTypes.INT;
     } else if (DataTypes.LONG.getName().equalsIgnoreCase(name)) {
       return DataTypes.LONG;
-    } else if (DataTypes.LEGACY_LONG.getName().equalsIgnoreCase(name)) {
-      return DataTypes.LEGACY_LONG;
     } else if (DataTypes.FLOAT.getName().equalsIgnoreCase(name)) {
       return DataTypes.FLOAT;
     } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(name)) {
@@ -1064,8 +1062,6 @@ public final class DataTypeUtil {
       return DataTypes.INT;
     } else if (DataTypes.LONG.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.LONG;
-    } else if (DataTypes.LEGACY_LONG.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.LEGACY_LONG;
     } else if (DataTypes.FLOAT.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.FLOAT;
     } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(dataType.getName())) {

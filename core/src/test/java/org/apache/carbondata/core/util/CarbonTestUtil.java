@@ -28,9 +28,6 @@ public class CarbonTestUtil {
         CarbonProperties.getInstance().getFormatVersion();
 
     switch (version) {
-      case V1:
-      case V2:
-        return new ValueEncoderMeta();
       case V3:
         return new ColumnPageEncoderMeta();
       default:

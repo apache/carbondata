@@ -30,7 +30,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
-import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunkReaderV2V3Format;
+import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractDimensionChunkReader;
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
@@ -63,7 +63,7 @@ import org.apache.commons.lang.ArrayUtils;
  * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
  * <File Footer>
  */
-public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkReaderV2V3Format {
+public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
 
   private EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
 
@@ -72,7 +72,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
    */
   private long lastDimensionOffsets;
 
-  public CompressedDimensionChunkFileBasedReaderV3(BlockletInfo blockletInfo,
+  public DimensionChunkReaderV3(BlockletInfo blockletInfo,
       int[] eachColumnValueSize, String filePath) {
     super(blockletInfo, eachColumnValueSize, filePath);
     lastDimensionOffsets = blockletInfo.getDimensionOffset();

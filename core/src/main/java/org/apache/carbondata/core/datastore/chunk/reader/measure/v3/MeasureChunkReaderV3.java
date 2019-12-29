@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
+import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReader;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
@@ -53,14 +53,14 @@ import org.apache.commons.lang.ArrayUtils;
  * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
  * <File Footer>
  */
-public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChunkReaderV2V3Format {
+public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
 
   /**
    * end position of last measure in carbon data file
    */
   private long measureOffsets;
 
-  public CompressedMeasureChunkFileBasedReaderV3(BlockletInfo blockletInfo, String filePath) {
+  public MeasureChunkReaderV3(BlockletInfo blockletInfo, String filePath) {
     super(blockletInfo, filePath);
     measureOffsets = blockletInfo.getMeasureOffsets();
   }

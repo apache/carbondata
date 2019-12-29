@@ -47,15 +47,15 @@ import org.apache.carbondata.format.DataChunk3;
  * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
  * <File Footer>
  */
-public class CompressedMsrChunkFileBasedPageLevelReaderV3
-    extends CompressedMeasureChunkFileBasedReaderV3 {
+public class MeasureChunkPageReaderV3
+    extends MeasureChunkReaderV3 {
 
   /**
    * end position of last measure in carbon data file
    */
   private long measureOffsets;
 
-  public CompressedMsrChunkFileBasedPageLevelReaderV3(BlockletInfo blockletInfo, String filePath) {
+  public MeasureChunkPageReaderV3(BlockletInfo blockletInfo, String filePath) {
     super(blockletInfo, filePath);
     measureOffsets = blockletInfo.getMeasureOffsets();
   }

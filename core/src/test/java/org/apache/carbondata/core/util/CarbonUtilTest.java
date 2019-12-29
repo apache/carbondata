@@ -568,25 +568,25 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToReadMetadataFile() throws IOException {
-    new MockUp<DataFileFooterConverter>() {
+    new MockUp<DataFileFooterConverterV3>() {
       @SuppressWarnings("unused") @Mock
       public DataFileFooter readDataFileFooter(TableBlockInfo info) {
         DataFileFooter fileFooter = new DataFileFooter();
-        fileFooter.setVersionId(ColumnarFormatVersion.V1);
+        fileFooter.setVersionId(ColumnarFormatVersion.V3);
         return fileFooter;
       }
     };
     TableBlockInfo info =
-        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V3, null);
 
-    assertEquals(CarbonUtil.readMetadataFile(info).getVersionId().number(), 1);
+    assertEquals(CarbonUtil.readMetadataFile(info).getVersionId().number(), 3);
   }
 
   @Test(expected = IOException.class)
   public void testToReadMetadataFileWithException()
       throws Exception {
     TableBlockInfo info =
-        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V3, null);
     CarbonUtil.readMetadataFile(info);
   }
 

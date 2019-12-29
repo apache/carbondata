@@ -69,7 +69,6 @@ import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
-import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.localdictionary.generator.ColumnLocalDictionaryGenerator;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.locks.ICarbonLock;
@@ -531,20 +530,6 @@ public final class CarbonUtil {
     }
 
     return ++currentIndex;
-  }
-
-  public static int[] getUnCompressColumnIndex(int totalLength, byte[] columnIndexData,
-      NumberCompressor numberCompressor, int offset) {
-    ByteBuffer buffer = ByteBuffer.wrap(columnIndexData, offset, totalLength);
-    int indexDataLength = buffer.getInt();
-    byte[] indexData = new byte[indexDataLength];
-    byte[] indexMap =
-        new byte[totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE];
-    buffer.get(indexData);
-    buffer.get(indexMap);
-    return UnBlockIndexer
-        .uncompressIndex(numberCompressor.unCompress(indexData, 0, indexData.length),
-            numberCompressor.unCompress(indexMap, 0, indexMap.length));
   }
 
   public static int[] getUnCompressColumnIndex(int totalLength, ByteBuffer buffer, int offset) {

@@ -21,29 +21,66 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
+import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
- * Abstract class for V2, V3 format dimension column reader
+ * Class which will have all the common properties and behavior among all type
+ * of reader
  */
-public abstract class AbstractChunkReaderV2V3Format extends AbstractChunkReader {
+public abstract class AbstractDimensionChunkReader implements DimensionColumnChunkReader {
+
+  /**
+   * compressor will be used to uncompress the data
+   */
+  protected Compressor compressor;
+
+  /**
+   * size of the each column value
+   * for no dictionary column it will be -1
+   */
+  protected int[] eachColumnValueSize;
+
+  /**
+   * full qualified path of the data file from
+   * which data will be read
+   */
+  protected String filePath;
 
   /**
    * dimension chunks offset
    */
   protected List<Long> dimensionChunksOffset;
-
   /**
    * dimension chunks length
    */
   protected List<Integer> dimensionChunksLength;
 
-  public AbstractChunkReaderV2V3Format(final BlockletInfo blockletInfo,
+  /**
+   * Constructor to get minimum parameter to create
+   * instance of this class
+   *  @param eachColumnValueSize  size of the each column value
+   * @param filePath             file from which data will be read
+   */
+  public AbstractDimensionChunkReader(final BlockletInfo blockletInfo,
       final int[] eachColumnValueSize, final String filePath) {
-    super(eachColumnValueSize, filePath, blockletInfo.getNumberOfRows());
+    this.eachColumnValueSize = eachColumnValueSize;
+    this.filePath = filePath;
     dimensionChunksOffset = blockletInfo.getDimensionChunkOffsets();
     dimensionChunksLength = blockletInfo.getDimensionChunksLength();
+  }
+
+  @Override
+  public void decodeColumnPageAndFillVector(DimensionRawColumnChunk dimensionRawColumnChunk,
+      int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
+      throws IOException, MemoryException {
+    throw new UnsupportedOperationException(
+        "This operation is not supported in this reader " + this.getClass().getName());
   }
 
   /**
@@ -112,5 +149,4 @@ public abstract class AbstractChunkReaderV2V3Format extends AbstractChunkReader 
    */
   protected abstract DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileReader fileReader,
       int startColumnBlockletIndex, int endColumnBlockletIndex) throws IOException;
-
 }
