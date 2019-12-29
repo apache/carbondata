@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -40,7 +41,9 @@ public class MapParserImpl extends ArrayParserImpl {
   public ArrayObject parse(Object data) {
     if (data != null) {
       String value = data.toString();
-      if (!value.isEmpty() && !value.equals(nullFormat)) {
+      if (!value.isEmpty() && !value.equals(nullFormat)
+          && !value.equals(keyValueDelimiter)
+          && !value.equals(CarbonCommonConstants.EMPTY_DATA_RETURN)) {
         String[] split = pattern.split(value, -1);
         if (ArrayUtils.isNotEmpty(split)) {
           ArrayList<Object> array = new ArrayList<>();
@@ -54,6 +57,13 @@ public class MapParserImpl extends ArrayParserImpl {
           }
           return new ArrayObject(array.toArray());
         }
+      } else if (value.equals(keyValueDelimiter)) {
+        Object[] array = new Object[1];
+        array[0] = child.parse(value);
+        return new ArrayObject(array);
+      } else if (value.equals(CarbonCommonConstants.EMPTY_DATA_RETURN)) {
+        Object[] array = new Object[0];
+        return new ArrayObject(array);
       }
     }
     return null;

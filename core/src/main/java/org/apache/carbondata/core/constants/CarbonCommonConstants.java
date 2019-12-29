@@ -300,6 +300,9 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_SKIP_EMPTY_LINE_DEFAULT = "false";
 
+
+  public static final String EMPTY_DATA_RETURN = "!EMPTY_DATA_RETURN!";
+
   /**
    * Currently the segment lock files are not deleted immediately when unlock,
    * this value indicates the number of hours the segment lock files will be preserved.

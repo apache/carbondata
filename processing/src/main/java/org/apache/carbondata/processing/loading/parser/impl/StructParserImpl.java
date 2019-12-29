@@ -59,6 +59,12 @@ public class StructParserImpl implements ComplexParser<StructObject> {
           }
           return new StructObject(array);
         }
+      } else if (value.isEmpty()) {
+        Object[] array = new Object[1];
+        if (children.size() > 0) {
+          array[0] = children.get(0).parse(value);
+          return new StructObject(array);
+        }
       }
     }
     return null;
