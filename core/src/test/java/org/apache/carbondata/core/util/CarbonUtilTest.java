@@ -572,12 +572,12 @@ public class CarbonUtilTest {
       @SuppressWarnings("unused") @Mock
       public DataFileFooter readDataFileFooter(TableBlockInfo info) {
         DataFileFooter fileFooter = new DataFileFooter();
-        fileFooter.setVersionId(ColumnarFormatVersion.V1);
+        fileFooter.setVersionId(ColumnarFormatVersion.V3);
         return fileFooter;
       }
     };
     TableBlockInfo info =
-        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V3, null);
 
     assertEquals(CarbonUtil.readMetadataFile(info).getVersionId().number(), 1);
   }

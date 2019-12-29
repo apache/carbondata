@@ -249,13 +249,13 @@ public class CarbonTablePath {
   public static String getCarbonIndexFilePath(String tablePath, String taskId, String segmentId,
       String bucketNumber, String timeStamp, ColumnarFormatVersion columnarFormatVersion) {
     switch (columnarFormatVersion) {
-      case V1:
-      case V2:
-        return getCarbonIndexFilePath(tablePath, taskId, segmentId, bucketNumber);
-      default:
+      case V3:
         String segmentDir = getSegmentPath(tablePath, segmentId);
         return segmentDir + CarbonCommonConstants.FILE_SEPARATOR + getCarbonIndexFileName(taskId,
             Integer.parseInt(bucketNumber), timeStamp, segmentId);
+      default:
+        throw new UnsupportedOperationException(
+            "Unsupported file version: " + columnarFormatVersion);
     }
   }
 

@@ -45,7 +45,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.TableBlockInfo
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk
 import org.apache.carbondata.core.datastore.chunk.reader.CarbonDataReaderFactory
-import org.apache.carbondata.core.datastore.chunk.reader.dimension.v3.CompressedDimensionChunkFileBasedReaderV3
+import org.apache.carbondata.core.datastore.chunk.reader.dimension.v3.DimensionChunkReaderV3
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -2674,7 +2674,7 @@ object testUtil{
             blockletInfo,
             dataFileFooter.getSegmentInfo.getColumnCardinality,
             carbonDataFiles.getAbsolutePath,
-            false).asInstanceOf[CompressedDimensionChunkFileBasedReaderV3]
+            false).asInstanceOf[DimensionChunkReaderV3]
       dimensionRawColumnChunks
         .add(dimensionColumnChunkReader.readRawDimensionChunk(fileReader, blockIndex))
     }

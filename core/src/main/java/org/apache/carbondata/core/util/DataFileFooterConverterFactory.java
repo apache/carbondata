@@ -55,13 +55,10 @@ public class DataFileFooterConverterFactory {
   public AbstractDataFileFooterConverter getDataFileFooterConverter(
       final ColumnarFormatVersion version) {
     switch (version) {
-      case V1:
-        return new DataFileFooterConverter();
-      case V2:
-        return new DataFileFooterConverter2();
       case V3:
-      default:
         return new DataFileFooterConverterV3();
+      default:
+        throw new UnsupportedOperationException("Unsupported file version: " + version);
     }
   }
 

@@ -36,21 +36,6 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    * @param invertedIndexReverse reverse inverted index
    * @param numberOfRows         number of rows
    * @param dictionary           carbon local dictionary for string column.
-   */
-  public VariableLengthDimensionColumnPage(byte[] dataChunks, int[] invertedIndex,
-      int[] invertedIndexReverse, int numberOfRows, DimensionStoreType dimStoreType,
-      CarbonDictionary dictionary, int dataLength) {
-    this(dataChunks, invertedIndex, invertedIndexReverse, numberOfRows, dimStoreType, dictionary,
-        null, dataLength);
-  }
-
-  /**
-   * Constructor for this class
-   * @param dataChunks           data chunk
-   * @param invertedIndex        inverted index
-   * @param invertedIndexReverse reverse inverted index
-   * @param numberOfRows         number of rows
-   * @param dictionary           carbon local dictionary for string column.
    * @param vectorInfo           vector to be filled with decoded column page.
    */
   public VariableLengthDimensionColumnPage(byte[] dataChunks, int[] invertedIndex,
