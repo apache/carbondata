@@ -234,7 +234,7 @@ class CarbonMergeFilesRDD(
         .readLoadMetadata(CarbonTablePath.getMetadataPath(carbonTable.getTablePath))
       // in case of partition table make rdd partitions per partition of the carbon table
       val partitionPaths: java.util.Map[String, java.util.List[String]] = new java.util.HashMap()
-      if (partitionInfo == null) {
+      if (partitionInfo == null || partitionInfo.isEmpty) {
         segments.foreach(segment => {
           val partitionSpecs = SegmentFileStore
             .getPartitionSpecs(segment, carbonTable.getTablePath, metadataDetails)
@@ -277,7 +277,7 @@ class CarbonMergeFilesRDD(
       if (isHivePartitionedTable && partitionInfo.isEmpty) {
         CarbonLoaderUtil
           .mergeIndexFilesInPartitionedSegment(carbonTable, split.segmentId,
-            segmentFileNameToSegmentIdMap.get(split.segmentId), split.partitionPath).toIterator
+            segmentFileNameToSegmentIdMap.get(split.segmentId), split.partitionPath)
       } else if (isHivePartitionedTable && !partitionInfo.isEmpty) {
         val folderDetails = CarbonLoaderUtil
           .mergeIndexFilesInPartitionedTempSegment(carbonTable,

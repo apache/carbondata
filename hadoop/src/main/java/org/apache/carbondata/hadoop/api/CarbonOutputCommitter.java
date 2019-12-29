@@ -186,8 +186,6 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         }
       }
       // After merging index, update newMetaEntry with updated merge index size
-      CarbonLoaderUtil
-          .addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(), carbonTable);
       boolean isMergeIndexEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
               CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT));
