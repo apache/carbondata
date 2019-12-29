@@ -66,31 +66,39 @@ object FieldConverter {
         case bs: Array[Byte] => new String(bs,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))
         case s: scala.collection.Seq[Any] =>
-          val delimiter = complexDelimiters.get(level)
-          val builder = new StringBuilder()
-          s.foreach { x =>
-            val nextLevel = level + 1
-            builder.append(objectToString(x, serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
-              .append(delimiter)
+          if (s.nonEmpty) {
+            val delimiter = complexDelimiters.get(level)
+            val builder = new StringBuilder()
+            s.foreach { x =>
+              val nextLevel = level + 1
+              builder.append(objectToString(x, serializationNullFormat, complexDelimiters,
+                timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
+                .append(delimiter)
+            }
+            builder.substring(0, builder.length - delimiter.length())
+          } else {
+            CarbonCommonConstants.SIZE_ZERO_DATA_RETURN
           }
-          builder.substring(0, builder.length - delimiter.length())
         // First convert the 'key' of Map and then append the keyValueDelimiter and then convert
         // the 'value of the map and append delimiter
         case m: scala.collection.Map[_, _] =>
-          val nextLevel = level + 2
-          val delimiter = complexDelimiters.get(level)
-          val keyValueDelimiter = complexDelimiters.get(level + 1)
-          val builder = new StringBuilder()
-          m.foreach { x =>
-            builder.append(objectToString(x._1, serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
-              .append(keyValueDelimiter)
-            builder.append(objectToString(x._2, serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
-              .append(delimiter)
+          if (m.nonEmpty) {
+            val nextLevel = level + 2
+            val delimiter = complexDelimiters.get(level)
+            val keyValueDelimiter = complexDelimiters.get(level + 1)
+            val builder = new StringBuilder()
+            m.foreach { x =>
+              builder.append(objectToString(x._1, serializationNullFormat, complexDelimiters,
+                timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
+                .append(keyValueDelimiter)
+              builder.append(objectToString(x._2, serializationNullFormat, complexDelimiters,
+                timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
+                .append(delimiter)
+            }
+            builder.substring(0, builder.length - delimiter.length())
+          } else {
+            CarbonCommonConstants.SIZE_ZERO_DATA_RETURN
           }
-          builder.substring(0, builder.length - delimiter.length())
         case r: org.apache.spark.sql.Row =>
           val delimiter = complexDelimiters.get(level)
           val builder = new StringBuilder()

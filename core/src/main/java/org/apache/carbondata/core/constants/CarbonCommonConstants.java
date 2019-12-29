@@ -294,6 +294,15 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_SKIP_EMPTY_LINE_DEFAULT = "false";
 
+
+  /**
+   *In the write processing, data needs to be converted to string, where the string forms of
+   * array("") and array() are EMPTY_STRING, causing confusion about the write results.
+   * In order to distinguish between array and array(), or map("") and map (), we need to
+   * identity array("") as the EMPTY_STRING, while array() is the SIZE_ZERO_DATA_RETURN
+   */
+  public static final String SIZE_ZERO_DATA_RETURN = "!LENGTH_ZERO_DATA_RETURN!";
+
   /**
    * Currently the segment lock files are not deleted immediately when unlock,
    * this value indicates the number of hours the segment lock files will be preserved.
