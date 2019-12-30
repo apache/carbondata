@@ -64,8 +64,7 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
     try {
       sql("CREATE TABLE doubleComplex2 (Id int, number double, name string, " +
         "gamePoint array<double>, mac struct<num:double>) " +
-        "STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_INCLUDE'='number,gamePoint,mac')")
+        "STORED BY 'org.apache.carbondata.format' ")
       sql(s"LOAD DATA LOCAL INPATH '$dataPath' INTO TABLE doubleComplex2")
       countNum = sql(s"SELECT COUNT(*) FROM doubleComplex2").collect
       doubleField = sql(s"SELECT number FROM doubleComplex2 SORT BY Id").collect

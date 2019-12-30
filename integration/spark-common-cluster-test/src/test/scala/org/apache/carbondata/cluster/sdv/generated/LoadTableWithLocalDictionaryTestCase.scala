@@ -24,6 +24,7 @@ import java.util.Collections
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
+import org.apache.carbondata.core.cache.dictionary.DictionaryByteArrayWrapper
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.TableBlockInfo
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk
@@ -33,7 +34,6 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
-import org.apache.carbondata.core.localdictionary.dictionaryholder.DictionaryByteArrayWrapper
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.util.{CarbonMetadataUtil, CarbonProperties, DataFileFooterConverterV3}
 
@@ -297,8 +297,7 @@ class LoadTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAfter
       val decoder = encodingFactory.createDecoder(encodings, encoderMetas, compressorName)
       val dictionaryPage = decoder
         .decode(local_dictionary.getDictionary_data, 0, local_dictionary.getDictionary_data.length)
-      val dictionaryMap = new
-          util.HashMap[DictionaryByteArrayWrapper, Integer]
+      val dictionaryMap = new util.HashMap[DictionaryByteArrayWrapper, Integer]
       val usedDictionaryValues = util.BitSet
         .valueOf(CompressorFactory.getInstance.getCompressor(compressorName)
           .unCompressByte(local_dictionary.getDictionary_values))

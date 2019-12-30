@@ -42,8 +42,6 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                new QueriesBasicTestCase ::
                new QueriesBVATestCase ::
                new QueriesCompactionTestCase ::
-               new QueriesExcludeDictionaryTestCase ::
-               new QueriesIncludeDictionaryTestCase ::
                new QueriesNormalTestCase ::
                new QueriesRangeFilterTestCase ::
                new QueriesSparkBlockDistTestCase ::
@@ -96,7 +94,6 @@ class SDVSuites1 extends Suites with BeforeAndAfterAll {
 class SDVSuites2 extends Suites with BeforeAndAfterAll {
 
   val suites = new QueriesBVATestCase ::
-               new QueriesExcludeDictionaryTestCase ::
                new DataLoadingIUDTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
@@ -146,7 +143,6 @@ class SDVSuites4 extends Suites with BeforeAndAfterAll {
                new QueriesRangeFilterTestCase ::
                new QueriesSparkBlockDistTestCase ::
                new DataLoadingV3TestCase ::
-               new QueriesIncludeDictionaryTestCase ::
                new TestRegisterCarbonTable ::
                new TableCommentAlterTableTestCase ::
                new StandardPartitionTestCase ::
