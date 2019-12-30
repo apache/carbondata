@@ -1228,12 +1228,12 @@ public class SegmentFileStore {
       locationMap = new HashMap<>();
     }
 
-    public SegmentFile merge(SegmentFile mapper) {
-      if (this == mapper) {
+    public SegmentFile merge(SegmentFile segmentFile) {
+      if (this == segmentFile) {
         return this;
       }
-      if (locationMap != null && mapper.locationMap != null) {
-        for (Map.Entry<String, FolderDetails> entry : mapper.locationMap.entrySet()) {
+      if (locationMap != null && segmentFile.locationMap != null) {
+        for (Map.Entry<String, FolderDetails> entry : segmentFile.locationMap.entrySet()) {
           FolderDetails folderDetails = locationMap.get(entry.getKey());
           if (folderDetails != null) {
             folderDetails.merge(entry.getValue());
@@ -1243,7 +1243,7 @@ public class SegmentFileStore {
         }
       }
       if (locationMap == null) {
-        locationMap = mapper.locationMap;
+        locationMap = segmentFile.locationMap;
       }
       return this;
     }

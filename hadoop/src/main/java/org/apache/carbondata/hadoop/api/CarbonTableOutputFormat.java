@@ -487,7 +487,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
         }
         OutputFilesInfoHolder outputFilesInfoHolder = loadModel.getOutputFilesInfoHolder();
         if (null != outputFilesInfoHolder) {
-          //TODO: fix to sum
           taskAttemptContext.getConfiguration()
               .set("carbon.number.of.output.files", outputFilesInfoHolder.getFileCount() + "");
           if (outputFilesInfoHolder.getOutputFiles() != null) {

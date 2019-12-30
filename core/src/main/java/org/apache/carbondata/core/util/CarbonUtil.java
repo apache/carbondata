@@ -2736,26 +2736,27 @@ public final class CarbonUtil {
     return Base64.decodeBase64(objectString.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
   }
 
-  public static void copyCarbonDataFileToCarbonStorePath(String localFilePath,
-      String carbonDataDirectoryPath, long fileSizeInBytes,
+  public static void copyCarbonDataFileToCarbonStorePath(
+      String localFilePath,
+      String targetPath, long fileSizeInBytes,
       OutputFilesInfoHolder outputFilesInfoHolder) throws CarbonDataWriterException {
-    if (carbonDataDirectoryPath.endsWith(".tmp") && localFilePath
+    if (targetPath.endsWith(".tmp") && localFilePath
         .endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
       // for partition case, write carbondata file directly to final path, keep index in temp path.
       // This can improve the commit job performance on s3a.
-      carbonDataDirectoryPath =
-          carbonDataDirectoryPath.substring(0, carbonDataDirectoryPath.lastIndexOf("/"));
+      targetPath =
+          targetPath.substring(0, targetPath.lastIndexOf("/"));
       if (outputFilesInfoHolder != null) {
-        outputFilesInfoHolder.addToPartitionPath(carbonDataDirectoryPath);
+        outputFilesInfoHolder.addToPartitionPath(targetPath);
       }
     }
-    long targetSize = copyCarbonDataFileToCarbonStorePath(localFilePath, carbonDataDirectoryPath,
+    long targetSize = copyCarbonDataFileToCarbonStorePath(localFilePath, targetPath,
         fileSizeInBytes);
     if (outputFilesInfoHolder != null) {
       // Storing the number of files written by each task.
       outputFilesInfoHolder.incrementCount();
       // Storing the files written by each task.
-      outputFilesInfoHolder.addToOutputFiles(carbonDataDirectoryPath + localFilePath
+      outputFilesInfoHolder.addToOutputFiles(targetPath + localFilePath
           .substring(localFilePath.lastIndexOf(File.separator)) + ":" + targetSize);
     }
   }
@@ -2765,6 +2766,7 @@ public final class CarbonUtil {
    *
    * @param localFilePath local file name with full path
    * @throws CarbonDataWriterException
+   * @return the file size
    */
   public static long copyCarbonDataFileToCarbonStorePath(String localFilePath,
       String carbonDataDirectoryPath, long fileSizeInBytes)
@@ -2790,8 +2792,7 @@ public final class CarbonUtil {
       // the size of carbon file must be greater than 0
       // and the same as the size of local carbon file
       targetSize = targetCarbonFile.getSize();
-      if (targetSize == 0L ||
-          (targetSize != localFileSize)) {
+      if (targetSize == 0L || targetSize != localFileSize) {
         LOGGER.error("The size of carbon file: " + carbonFilePath + " is 0 "
             + "or is not the same as the size of local carbon file: ("
             + "carbon file size=" + targetSize

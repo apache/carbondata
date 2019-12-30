@@ -119,6 +119,9 @@ public class CarbonIndexFileMergeWriter {
     return null;
   }
 
+  /**
+   * merge index files and return the index details
+   */
   public SegmentFileStore.FolderDetails mergeCarbonIndexFilesOfSegment(String segmentId,
       String tablePath, String partitionPath, List<String> partitionInfo, String uuid,
       String tempFolderPath, String currPartitionSpec) throws IOException {

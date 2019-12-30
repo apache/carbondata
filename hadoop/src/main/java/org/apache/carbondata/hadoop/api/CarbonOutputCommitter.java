@@ -247,6 +247,9 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     }
   }
 
+  /**
+   * re-factory commitJob flow for partition table
+   */
   private void commitJobForPartition(JobContext context, boolean overwriteSet,
       CarbonLoadModel loadModel, String partitionPath) throws IOException {
     String size = context.getConfiguration().get("carbon.datasize", "");

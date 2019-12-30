@@ -275,9 +275,11 @@ class CarbonMergeFilesRDD(
       var segmentFile: SegmentFileStore.SegmentFile = null
       var indexSize: String = ""
       if (isHivePartitionedTable && partitionInfo.isEmpty) {
-        CarbonLoaderUtil
-          .mergeIndexFilesInPartitionedSegment(carbonTable, split.segmentId,
-            segmentFileNameToSegmentIdMap.get(split.segmentId), split.partitionPath)
+        CarbonLoaderUtil.mergeIndexFilesInPartitionedSegment(
+          carbonTable,
+          split.segmentId,
+          segmentFileNameToSegmentIdMap.get(split.segmentId),
+          split.partitionPath)
       } else if (isHivePartitionedTable && !partitionInfo.isEmpty) {
         val folderDetails = CarbonLoaderUtil
           .mergeIndexFilesInPartitionedTempSegment(carbonTable,

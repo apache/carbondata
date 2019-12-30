@@ -223,6 +223,9 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
     super.setupTask(taskContext)
   }
 
+  /**
+   * collect carbon partition info from TaskCommitMessage list
+   */
   override def commitJob(jobContext: JobContext,
       taskCommits: Seq[TaskCommitMessage]): Unit = {
     if (isCarbonDataFlow(jobContext.getConfiguration)) {
@@ -275,6 +278,9 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
     }
   }
 
+  /**
+   * set carbon partition info into TaskCommitMessage
+   */
   override def commitTask(
       taskContext: TaskAttemptContext
   ): FileCommitProtocol.TaskCommitMessage = {
@@ -347,7 +353,11 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
     }
   }
 
-  override def newTaskTempFile(taskContext: TaskAttemptContext,
+  /**
+   * set carbon temp folder to task temp folder
+   */
+  override def newTaskTempFile(
+      taskContext: TaskAttemptContext,
       dir: Option[String],
       ext: String): String = {
     if (isCarbonDataFlow(taskContext.getConfiguration)) {
@@ -557,6 +567,9 @@ object CarbonOutputWriter {
     }
   }
 
+  /**
+   * update partition folder path
+   */
   def updatePartitions(
       partitionData: Seq[String],
       model: CarbonLoadModel,
