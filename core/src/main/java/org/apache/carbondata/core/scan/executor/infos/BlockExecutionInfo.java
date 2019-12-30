@@ -228,6 +228,12 @@ public class BlockExecutionInfo {
   private ReusableDataBuffer[] measureResusableDataBuffer;
 
   /**
+   * It is used to read only the deleted data of a particular version. It will be used to get the
+   * old updated/deleted data before update.
+   */
+  private boolean readOnlyDelta;
+
+  /**
    * @param blockIndex the tableBlock to set
    */
   public void setDataBlock(AbstractIndex blockIndex) {
@@ -658,5 +664,13 @@ public class BlockExecutionInfo {
 
   public void setMeasureResusableDataBuffer(ReusableDataBuffer[] measureResusableDataBuffer) {
     this.measureResusableDataBuffer = measureResusableDataBuffer;
+  }
+
+  public boolean isReadOnlyDelta() {
+    return readOnlyDelta;
+  }
+
+  public void setReadOnlyDelta(boolean readOnlyDelta) {
+    this.readOnlyDelta = readOnlyDelta;
   }
 }

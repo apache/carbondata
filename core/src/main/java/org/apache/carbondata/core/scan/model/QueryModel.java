@@ -118,6 +118,12 @@ public class QueryModel {
    */
   private boolean isDirectVectorFill;
 
+  /**
+   * It is used to read only the deleted data of a particular version. It will be used to get the
+   * old updated/deleted data before update.
+   */
+  private boolean readOnlyDelta;
+
   private QueryModel(CarbonTable carbonTable) {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     this.table = carbonTable;
@@ -394,6 +400,14 @@ public class QueryModel {
 
   public void setDirectVectorFill(boolean directVectorFill) {
     isDirectVectorFill = directVectorFill;
+  }
+
+  public boolean isReadOnlyDelta() {
+    return readOnlyDelta;
+  }
+
+  public void setReadOnlyDelta(boolean readOnlyDelta) {
+    this.readOnlyDelta = readOnlyDelta;
   }
 
   @Override

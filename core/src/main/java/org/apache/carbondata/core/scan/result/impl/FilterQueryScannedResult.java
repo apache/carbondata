@@ -42,7 +42,6 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
    */
   @Override
   public byte[] getDictionaryKeyArray() {
-    ++currentRow;
     return getDictionaryKeyArray(pageFilteredRowId[pageCounter][currentRow]);
   }
 
@@ -52,7 +51,6 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
    */
   @Override
   public int[] getDictionaryKeyIntegerArray() {
-    ++currentRow;
     return getDictionaryKeyIntegerArray(pageFilteredRowId[pageCounter][currentRow]);
   }
 

@@ -28,6 +28,7 @@ import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.QueryExecution
+import org.apache.spark.sql.execution.command.mutation.merge.MergeDataSetBuilder
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.sql.profiler.{Profiler, SQLStart}
@@ -280,6 +281,16 @@ object CarbonSession {
         p.name.toString.equals(name)
       }.get.asTerm
       instanceMirror.reflectField(m).get
+    }
+  }
+
+  implicit class DataSetMerge(val ds: Dataset[Row]) {
+    def merge(srcDS: Dataset[Row], expr: String): MergeDataSetBuilder = {
+      new MergeDataSetBuilder(ds, srcDS, expr, ds.sparkSession)
+    }
+
+    def merge(srcDS: Dataset[Row], expr: Column): MergeDataSetBuilder = {
+      new MergeDataSetBuilder(ds, srcDS, expr, ds.sparkSession)
     }
   }
 

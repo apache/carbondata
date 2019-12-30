@@ -98,6 +98,8 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
   private Map<Integer, Map<CarbonDimension, ByteBuffer>> mergedComplexDimensionDataMap =
       new HashMap<>();
 
+  private boolean readOnlyDelta;
+
   public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
     queryDimensions = executionInfo.getProjectionDimensions();
@@ -105,7 +107,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     initDimensionAndMeasureIndexesForFillingData();
     isDimensionExists = queryDimensions.length > 0;
     this.comlexDimensionInfoMap = executionInfo.getComlexDimensionInfoMap();
-
+    this.readOnlyDelta = executionInfo.isReadOnlyDelta();
   }
 
   /**
@@ -136,6 +138,16 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       }
     }
     while (scannedResult.hasNext() && rowCounter < batchSize) {
+      scannedResult.incrementCounter();
+      if (readOnlyDelta) {
+        if (!scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
+          continue;
+        }
+      } else {
+        if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
+          continue;
+        }
+      }
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
       if (isDimensionExists) {
         surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
@@ -151,11 +163,6 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
           fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
               comlexDimensionInfoMap, row, i, queryDimensions[i].getDimension().getOrdinal());
         }
-      } else {
-        scannedResult.incrementCounter();
-      }
-      if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
-        continue;
       }
       fillMeasureData(scannedResult, row);
       if (isStructQueryType) {

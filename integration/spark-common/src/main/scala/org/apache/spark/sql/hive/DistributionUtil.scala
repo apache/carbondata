@@ -206,7 +206,7 @@ object DistributionUtil {
    * @param sparkContext
    * @return
    */
-  private def getConfiguredExecutors(sparkContext: SparkContext): Int = {
+  def getConfiguredExecutors(sparkContext: SparkContext): Int = {
     var confExecutors: Int = 0
     if (sparkContext.getConf.getBoolean("spark.dynamicAllocation.enabled", false)) {
       // default value for spark.dynamicAllocation.maxExecutors is infinity

@@ -134,30 +134,7 @@ public class CarbonUpdateUtil {
         List<SegmentUpdateDetails> oldList = new ArrayList(Arrays.asList(oldDetails));
 
         for (SegmentUpdateDetails newBlockEntry : updateDetailsList) {
-          int index = oldList.indexOf(newBlockEntry);
-          if (index != -1) {
-            // update the element in existing list.
-            SegmentUpdateDetails blockDetail = oldList.get(index);
-            if (blockDetail.getDeleteDeltaStartTimestamp().isEmpty() || (isCompaction)) {
-              blockDetail
-                  .setDeleteDeltaStartTimestamp(newBlockEntry.getDeleteDeltaStartTimestamp());
-            }
-            blockDetail.setDeleteDeltaEndTimestamp(newBlockEntry.getDeleteDeltaEndTimestamp());
-            blockDetail.setSegmentStatus(newBlockEntry.getSegmentStatus());
-            blockDetail.setDeletedRowsInBlock(newBlockEntry.getDeletedRowsInBlock());
-            // If the start and end time is different then the delta is there in multiple files so
-            // add them to the list to get the delta files easily with out listing.
-            if (!blockDetail.getDeleteDeltaStartTimestamp()
-                .equals(blockDetail.getDeleteDeltaEndTimestamp())) {
-              blockDetail.addDeltaFileStamp(blockDetail.getDeleteDeltaStartTimestamp());
-              blockDetail.addDeltaFileStamp(blockDetail.getDeleteDeltaEndTimestamp());
-            } else {
-              blockDetail.setDeltaFileStamps(null);
-            }
-          } else {
-            // add the new details to the list.
-            oldList.add(newBlockEntry);
-          }
+          mergeSegmentUpdate(isCompaction, oldList, newBlockEntry);
         }
 
         segmentUpdateStatusManager.writeLoadDetailsIntoFile(oldList, updateStatusFileIdentifier);
@@ -178,6 +155,34 @@ public class CarbonUpdateUtil {
       }
     }
     return status;
+  }
+
+  public static void mergeSegmentUpdate(boolean isCompaction, List<SegmentUpdateDetails> oldList,
+      SegmentUpdateDetails newBlockEntry) {
+    int index = oldList.indexOf(newBlockEntry);
+    if (index != -1) {
+      // update the element in existing list.
+      SegmentUpdateDetails blockDetail = oldList.get(index);
+      if (blockDetail.getDeleteDeltaStartTimestamp().isEmpty() || isCompaction) {
+        blockDetail
+            .setDeleteDeltaStartTimestamp(newBlockEntry.getDeleteDeltaStartTimestamp());
+      }
+      blockDetail.setDeleteDeltaEndTimestamp(newBlockEntry.getDeleteDeltaEndTimestamp());
+      blockDetail.setSegmentStatus(newBlockEntry.getSegmentStatus());
+      blockDetail.setDeletedRowsInBlock(newBlockEntry.getDeletedRowsInBlock());
+      // If the start and end time is different then the delta is there in multiple files so
+      // add them to the list to get the delta files easily with out listing.
+      if (!blockDetail.getDeleteDeltaStartTimestamp()
+          .equals(blockDetail.getDeleteDeltaEndTimestamp())) {
+        blockDetail.addDeltaFileStamp(blockDetail.getDeleteDeltaStartTimestamp());
+        blockDetail.addDeltaFileStamp(blockDetail.getDeleteDeltaEndTimestamp());
+      } else {
+        blockDetail.setDeltaFileStamps(null);
+      }
+    } else {
+      // add the new details to the list.
+      oldList.add(newBlockEntry);
+    }
   }
 
   /**

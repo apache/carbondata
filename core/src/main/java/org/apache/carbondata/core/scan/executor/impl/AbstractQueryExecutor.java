@@ -487,6 +487,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo
         .setTotalNumberDimensionToRead(
             segmentProperties.getDimensionOrdinalToChunkMapping().size());
+    blockExecutionInfo.setReadOnlyDelta(queryModel.isReadOnlyDelta());
     if (queryModel.isReadPageByPage()) {
       blockExecutionInfo.setPrefetchBlocklet(false);
       LOGGER.info("Query prefetch is: false, read page by page");

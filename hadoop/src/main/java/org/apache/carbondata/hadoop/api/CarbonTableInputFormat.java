@@ -85,6 +85,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       "mapreduce.input.carboninputformat.transactional";
   public static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
   public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
+  public static final String UPDATE_DELTA_VERSION = "updateDeltaVersion";
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
   private ReadCommittedScope readCommittedScope;
@@ -107,9 +108,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
     this.readCommittedScope = getReadCommitted(job, identifier);
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
-
-    SegmentUpdateStatusManager updateStatusManager =
-        new SegmentUpdateStatusManager(carbonTable, loadMetadataDetails);
+    String updateDeltaVersion = job.getConfiguration().get(UPDATE_DELTA_VERSION);
+    SegmentUpdateStatusManager updateStatusManager;
+    if (updateDeltaVersion != null) {
+      updateStatusManager =
+          new SegmentUpdateStatusManager(carbonTable, loadMetadataDetails, updateDeltaVersion);
+    } else {
+      updateStatusManager =
+          new SegmentUpdateStatusManager(carbonTable, loadMetadataDetails);
+    }
     List<String> invalidSegmentIds = new ArrayList<>();
     List<Segment> streamSegments = null;
     // get all valid segments and set them into the configuration
