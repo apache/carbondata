@@ -135,17 +135,25 @@ class CarbonEnv {
       dataMapSchema =>
         if (null != dataMapSchema.getRelationIdentifier &&
             !dataMapSchema.isIndexDataMap) {
-          if (!sparkSession.sessionState
-            .catalog
-            .tableExists(TableIdentifier(dataMapSchema.getRelationIdentifier.getTableName,
-              Some(dataMapSchema.getRelationIdentifier.getDatabaseName)))) {
+          val isTableExists = try {
+            sparkSession.sessionState
+              .catalog
+              .tableExists(TableIdentifier(dataMapSchema.getRelationIdentifier.getTableName,
+                Some(dataMapSchema.getRelationIdentifier.getDatabaseName)))
+          } catch {
+            // we need to take care of cleanup when the table does not exists, if table exists and
+            // some other user tries to access the table, it might fail, that time no need to handle
+            case ex: Exception =>
+              LOGGER.error("Error while checking the table existence", ex)
+              return
+          }
+          if (!isTableExists) {
             try {
               DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName)
             } catch {
               case e: IOException =>
                 throw e
             } finally {
-              DataMapStoreManager.getInstance.unRegisterDataMapCatalog(dataMapSchema)
               if (FileFactory.isFileExist(dataMapSchema.getRelationIdentifier.getTablePath)) {
                 CarbonUtil.deleteFoldersAndFilesSilent(FileFactory.getCarbonFile(dataMapSchema
                   .getRelationIdentifier
