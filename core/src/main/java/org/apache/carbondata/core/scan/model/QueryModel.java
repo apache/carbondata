@@ -118,6 +118,8 @@ public class QueryModel {
    */
   private boolean isDirectVectorFill;
 
+  private boolean readOnlyDelta;
+
   private QueryModel(CarbonTable carbonTable) {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     this.table = carbonTable;
@@ -394,6 +396,14 @@ public class QueryModel {
 
   public void setDirectVectorFill(boolean directVectorFill) {
     isDirectVectorFill = directVectorFill;
+  }
+
+  public boolean isReadOnlyDelta() {
+    return readOnlyDelta;
+  }
+
+  public void setReadOnlyDelta(boolean readOnlyDelta) {
+    this.readOnlyDelta = readOnlyDelta;
   }
 
   @Override

@@ -227,6 +227,8 @@ public class BlockExecutionInfo {
 
   private ReusableDataBuffer[] measureResusableDataBuffer;
 
+  private boolean readOnlyDelta;
+
   /**
    * @param blockIndex the tableBlock to set
    */
@@ -658,5 +660,13 @@ public class BlockExecutionInfo {
 
   public void setMeasureResusableDataBuffer(ReusableDataBuffer[] measureResusableDataBuffer) {
     this.measureResusableDataBuffer = measureResusableDataBuffer;
+  }
+
+  public boolean isReadOnlyDelta() {
+    return readOnlyDelta;
+  }
+
+  public void setReadOnlyDelta(boolean readOnlyDelta) {
+    this.readOnlyDelta = readOnlyDelta;
   }
 }

@@ -247,7 +247,6 @@ public abstract class BlockletScannedResult {
       column = dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter]
           .fillSurrogateKey(rowId, column, completeKey);
     }
-    rowCounter++;
     return completeKey;
   }
 
@@ -873,12 +872,11 @@ public abstract class BlockletScannedResult {
   /**
    * Below method will be used to check row got deleted
    *
-   * @param rowId
    * @return is present in deleted row
    */
-  public boolean containsDeletedRow(int rowId) {
+  public boolean containsDeletedRow(int currentRow) {
     if (null != currentDeleteDeltaVo) {
-      return currentDeleteDeltaVo.containsRow(rowId);
+      return currentDeleteDeltaVo.containsRow(currentRow);
     }
     return false;
   }

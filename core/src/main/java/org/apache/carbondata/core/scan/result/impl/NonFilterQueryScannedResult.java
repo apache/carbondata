@@ -51,7 +51,6 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
    */
   @Override
   public int[] getDictionaryKeyIntegerArray() {
-    ++currentRow;
     return getDictionaryKeyIntegerArray(currentRow);
   }
 

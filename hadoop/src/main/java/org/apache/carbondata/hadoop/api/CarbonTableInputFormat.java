@@ -107,9 +107,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
     this.readCommittedScope = getReadCommitted(job, identifier);
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
-
-    SegmentUpdateStatusManager updateStatusManager =
-        new SegmentUpdateStatusManager(carbonTable, loadMetadataDetails);
+    String updateDeltaVersion = job.getConfiguration().get("updateDeltaVersion");
+    SegmentUpdateStatusManager updateStatusManager;
+    if (updateDeltaVersion != null) {
+      updateStatusManager =
+          new SegmentUpdateStatusManager(carbonTable, loadMetadataDetails, updateDeltaVersion);
+    } else {
+      updateStatusManager =
+          new SegmentUpdateStatusManager(carbonTable, loadMetadataDetails);
+    }
     List<String> invalidSegmentIds = new ArrayList<>();
     List<Segment> streamSegments = null;
     // get all valid segments and set them into the configuration

@@ -688,11 +688,16 @@ m filterExpression
     if (dataMapFilter != null) {
       checkAndAddImplicitExpression(dataMapFilter.getExpression(), inputSplit);
     }
-    return new QueryModelBuilder(carbonTable)
+    QueryModel queryModel = new QueryModelBuilder(carbonTable)
         .projectColumns(projectColumns)
         .filterExpression(dataMapFilter)
         .dataConverter(getDataTypeConverter(configuration))
         .build();
+    String readDeltaOnly = configuration.get("readDeltaOnly");
+    if (readDeltaOnly != null && Boolean.parseBoolean(readDeltaOnly)) {
+      queryModel.setReadOnlyDelta(true);
+    }
+    return queryModel;
   }
 
   /**

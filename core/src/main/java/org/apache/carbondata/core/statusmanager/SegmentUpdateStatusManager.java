@@ -17,20 +17,8 @@
 
 package org.apache.carbondata.core.statusmanager;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -80,15 +68,25 @@ public class SegmentUpdateStatusManager {
 
   public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails) {
+    this(table, segmentDetails, null);
+  }
+
+  public SegmentUpdateStatusManager(CarbonTable table,
+      LoadMetadataDetails[] segmentDetails, String updateVersion) {
     this.identifier = table.getAbsoluteTableIdentifier();
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     this.segmentDetails = segmentDetails;
     updateDetails = readLoadMetadata();
+    updateUpdateDetails(updateVersion);
     populateMap();
   }
 
   public SegmentUpdateStatusManager(CarbonTable table) {
+    this(table, (String) null);
+  }
+
+  public SegmentUpdateStatusManager(CarbonTable table, String updateVersion) {
     this.identifier = table.getAbsoluteTableIdentifier();
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
@@ -104,7 +102,27 @@ public class SegmentUpdateStatusManager {
     } else {
       updateDetails = new SegmentUpdateDetails[0];
     }
+    updateUpdateDetails(updateVersion);
     populateMap();
+  }
+
+  private void updateUpdateDetails(String updateVersion) {
+    if (updateVersion != null) {
+      List<SegmentUpdateDetails> newupdateDetails = new ArrayList<>();
+      for (SegmentUpdateDetails updateDetail : updateDetails) {
+        if (updateDetail.getDeltaFileStamps() != null) {
+          if (updateDetail.getDeltaFileStamps().contains(updateVersion)) {
+            HashSet<String> set = new HashSet<>();
+            set.add(updateVersion);
+            updateDetail.setDeltaFileStamps(set);
+            newupdateDetails.add(updateDetail);
+          }
+        } else if (updateDetail.getDeleteDeltaStartTimestamp().equalsIgnoreCase(updateVersion)) {
+          newupdateDetails.add(updateDetail);
+        }
+      }
+      updateDetails = newupdateDetails.toArray(new SegmentUpdateDetails[0]);
+    }
   }
 
   /**
@@ -640,21 +658,30 @@ public class SegmentUpdateStatusManager {
    * @return
    */
   public SegmentUpdateDetails[] readLoadMetadata() {
+    // get the updated status file identifier from the table status.
+    String tableUpdateStatusIdentifier = getUpdatedStatusIdentifier();
+    return readLoadMetadata(tableUpdateStatusIdentifier, identifier.getTablePath());
+  }
+
+  /**
+   * This method loads segment update details
+   *
+   * @return
+   */
+  public static SegmentUpdateDetails[] readLoadMetadata(String tableUpdateStatusIdentifier,
+      String tablePath) {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
     SegmentUpdateDetails[] listOfSegmentUpdateDetailsArray;
 
-    // get the updated status file identifier from the table status.
-    String tableUpdateStatusIdentifier = getUpdatedStatusIdentifier();
-
     if (StringUtils.isEmpty(tableUpdateStatusIdentifier)) {
       return new SegmentUpdateDetails[0];
     }
 
     String tableUpdateStatusPath =
-        CarbonTablePath.getMetadataPath(identifier.getTablePath()) +
+        CarbonTablePath.getMetadataPath(tablePath) +
             CarbonCommonConstants.FILE_SEPARATOR + tableUpdateStatusIdentifier;
     AtomicFileOperations fileOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(tableUpdateStatusPath);
@@ -735,7 +762,7 @@ public class SegmentUpdateStatusManager {
    *
    * @param streams - streams to close.
    */
-  private void closeStreams(Closeable... streams) {
+  private static void closeStreams(Closeable... streams) {
     // Added if to avoid NullPointerException in case one stream is being passed as null
     if (null != streams) {
       for (Closeable stream : streams) {
