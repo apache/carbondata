@@ -305,9 +305,7 @@ public class SegmentIndexFileStore {
     try {
       dataInputStream.readFully(bytes);
       carbonIndexMap.put(indexFile.getName(), bytes);
-      carbonIndexMapWithFullPath.put(
-          indexFile.getParentFile().getAbsolutePath() + CarbonCommonConstants.FILE_SEPARATOR
-              + indexFile.getName(), bytes);
+      carbonIndexMapWithFullPath.put(indexFile.getAbsolutePath(), bytes);
     } finally {
       dataInputStream.close();
     }

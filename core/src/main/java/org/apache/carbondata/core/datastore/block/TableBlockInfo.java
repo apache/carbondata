@@ -306,7 +306,7 @@ public class TableBlockInfo implements Distributable, Serializable {
       return  false;
     }
 
-    if (!filePath.equals(other.filePath)) {
+    if (!new Path(filePath).equals(new Path(other.filePath))) {
       return false;
     }
 

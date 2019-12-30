@@ -189,7 +189,7 @@ public class BlockletDataMapUtil {
         CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile);
         return new BlockMetaInfo(new String[] { "localhost" }, carbonFile.getSize());
       default:
-        return fileNameToMetaInfoMapping.get(carbonDataFile);
+        return fileNameToMetaInfoMapping.get(FileFactory.getCarbonFile(carbonDataFile).getPath());
     }
   }
 
@@ -198,9 +198,10 @@ public class BlockletDataMapUtil {
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = new HashSet<>();
     Map<String, String> indexFiles = segment.getCommittedIndexFile();
     for (Map.Entry<String, String> indexFileEntry : indexFiles.entrySet()) {
-      Path indexFile = new Path(indexFileEntry.getKey());
+      String indexFile = indexFileEntry.getKey();
       tableBlockIndexUniqueIdentifiers.add(
-          new TableBlockIndexUniqueIdentifier(indexFile.getParent().toString(), indexFile.getName(),
+          new TableBlockIndexUniqueIdentifier(indexFile.substring(0, indexFile.lastIndexOf("/")),
+              indexFile.substring(indexFile.lastIndexOf("/") + 1, indexFile.length()),
               indexFileEntry.getValue(), segment.getSegmentNo()));
     }
     return tableBlockIndexUniqueIdentifiers;

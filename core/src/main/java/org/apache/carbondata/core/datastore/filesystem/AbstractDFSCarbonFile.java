@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -552,6 +553,29 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   @Override
   public short getDefaultReplication() {
     return fileSystem.getDefaultReplication(path);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    AbstractDFSCarbonFile that = (AbstractDFSCarbonFile) o;
+    if (path == null || that.path == null) {
+      return false;
+    }
+    return path.equals(that.path);
+  }
+
+  @Override
+  public int hashCode() {
+    if (path == null) {
+      return 0;
+    }
+    return Objects.hash(path);
   }
 
   @Override

@@ -36,7 +36,6 @@ import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus}
 
-
 object DistributedRDDUtils {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 

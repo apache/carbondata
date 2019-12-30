@@ -180,7 +180,8 @@ public class CarbonTablePath {
         return file.getName().startsWith(SCHEMA_FILE);
       }
     });
-    if (schemaFile != null && schemaFile.length > 0) {
+    if (schemaFile != null && schemaFile.length > 0 &&
+        FileFactory.getFileType(tablePath) != FileFactory.FileType.ALLUXIO) {
       return schemaFile[0].getAbsolutePath();
     } else {
       return metaPath + CarbonCommonConstants.FILE_SEPARATOR + SCHEMA_FILE;
