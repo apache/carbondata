@@ -61,8 +61,6 @@ import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
-import org.apache.hadoop.fs.Path;
-
 /**
  * Table map for blocklet
  */
@@ -393,21 +391,20 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   private List<TableBlockIndexUniqueIdentifierWrapper> getTableBlockIndexUniqueIdentifier(
       String indexFilePath, String segmentId) throws IOException {
-    Path indexPath = new Path(indexFilePath);
     List<TableBlockIndexUniqueIdentifierWrapper> identifiersWrapper = new ArrayList<>();
-    if (indexPath.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-      String parent = indexPath.getParent().toString();
+    String parent = indexFilePath.substring(0, indexFilePath.lastIndexOf("/"));
+    String name =
+        indexFilePath.substring(indexFilePath.lastIndexOf("/") + 1, indexFilePath.length());
+    if (indexFilePath.endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
       identifiersWrapper.add(new TableBlockIndexUniqueIdentifierWrapper(
-          new TableBlockIndexUniqueIdentifier(parent, indexPath.getName(), null, segmentId),
+          new TableBlockIndexUniqueIdentifier(parent, name, null, segmentId),
           this.getCarbonTable()));
-    } else if (indexPath.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+    } else if (indexFilePath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
       SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
-      CarbonFile carbonFile = FileFactory.getCarbonFile(indexPath.toString());
-      String parentPath = carbonFile.getParentFile().getAbsolutePath();
-      List<String> indexFiles = fileStore.getIndexFilesFromMergeFile(carbonFile.getAbsolutePath());
+      List<String> indexFiles = fileStore.getIndexFilesFromMergeFile(indexFilePath);
       for (String indexFile : indexFiles) {
         identifiersWrapper.add(new TableBlockIndexUniqueIdentifierWrapper(
-            new TableBlockIndexUniqueIdentifier(parentPath, indexFile, carbonFile.getName(),
+            new TableBlockIndexUniqueIdentifier(parent, indexFile, name,
                 segmentId), this.getCarbonTable()));
       }
     }

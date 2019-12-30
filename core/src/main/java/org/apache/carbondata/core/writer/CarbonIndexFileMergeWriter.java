@@ -239,7 +239,7 @@ public class CarbonIndexFileMergeWriter {
           location =
               segmentFileStore.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + location;
         }
-        if (new Path(entry.getKey()).equals(new Path(location))) {
+        if (FileFactory.getCarbonFile(entry.getKey()).equals(FileFactory.getCarbonFile(location))) {
           segentry.getValue().setMergeFileName(mergeIndexFile);
           segentry.getValue().setFiles(new HashSet<String>());
           break;

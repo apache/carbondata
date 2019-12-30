@@ -32,6 +32,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -465,5 +466,22 @@ public class LocalCarbonFile implements CarbonFile {
   @Override
   public long getLength() {
     return file.length();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    LocalCarbonFile that = (LocalCarbonFile) o;
+    return Objects.equals(file, that.file);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(file);
   }
 }

@@ -68,6 +68,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -127,7 +128,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       // when index info is already read and converted to data file footer object
       indexInfo = blockletDataMapInfo.getIndexInfos();
     }
-    Path path = new Path(blockletDataMapInfo.getFilePath());
+    String path = blockletDataMapInfo.getFilePath();
     // store file path only in case of partition table, non transactional table and flat folder
     // structure
     byte[] filePath;
@@ -137,12 +138,14 @@ public class BlockDataMap extends CoarseGrainDataMap
         // if the segment data is written in tablepath then no need to store whole path of file.
         !blockletDataMapInfo.getFilePath().startsWith(
             blockletDataMapInfo.getCarbonTable().getTablePath())) {
-      filePath = path.getParent().toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
+      filePath = FilenameUtils.getFullPathNoEndSeparator(path)
+              .getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
       isFilePathStored = true;
     } else {
       filePath = new byte[0];
     }
-    byte[] fileName = path.getName().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
+    byte[] fileName = path.substring(path.lastIndexOf("/") + 1, path.length())
+        .getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     byte[] segmentId =
         blockletDataMapInfo.getSegmentId().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     if (!indexInfo.isEmpty()) {

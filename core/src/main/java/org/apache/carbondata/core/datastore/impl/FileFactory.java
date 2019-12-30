@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.filesystem.AlluxioCarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
@@ -162,6 +163,17 @@ public final class FileFactory {
 
   public static CarbonFile getCarbonFile(String path) {
     return fileFileTypeInterface.getCarbonFile(path, getConfiguration());
+  }
+
+  /**
+   * Need carbonfile object path because depends on file format implementation
+   * path will be formatted.
+   */
+  public static String getFormattedPath(String path) {
+    if (getFileType(path) == FileType.ALLUXIO) {
+      return AlluxioCarbonFile.getFormattedPath(path);
+    }
+    return path;
   }
 
   public static CarbonFile getCarbonFile(String path,
