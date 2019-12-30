@@ -302,7 +302,8 @@ object DeleteExecution {
   }
 
   // all or none : update status file, only if complete delete opeartion is successfull.
-  def checkAndUpdateStatusFiles(executorErrors: ExecutionErrors,
+  def checkAndUpdateStatusFiles(
+      executorErrors: ExecutionErrors,
       res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]],
       carbonTable: CarbonTable,
       timestamp: String,

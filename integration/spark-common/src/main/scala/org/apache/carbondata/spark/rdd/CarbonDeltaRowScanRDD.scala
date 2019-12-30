@@ -42,30 +42,32 @@ import org.apache.carbondata.spark.InitInputMetrics
  */
 class CarbonDeltaRowScanRDD[T: ClassTag](
     @transient private val spark: SparkSession,
+    @transient private val serializedTableInfo: Array[Byte],
+    @transient private val tableInfo: TableInfo,
+    @transient override val partitionNames: Seq[PartitionSpec],
     override val columnProjection: CarbonProjection,
     var filter: DataMapFilter,
     identifier: AbsoluteTableIdentifier,
-    @transient private val serializedTableInfo: Array[Byte],
-    @transient private val tableInfo: TableInfo,
     inputMetricsStats: InitInputMetrics,
-    @transient override val partitionNames: Seq[PartitionSpec],
     override val dataTypeConverterClz: Class[_ <: DataTypeConverter] =
     classOf[SparkDataTypeConverterImpl],
-    override val readSupportClz: Class[_ <: CarbonReadSupport[_]] = SparkReadSupport
-      .readSupportClass,
-    updateVersionToRead: String) extends CarbonScanRDD[T](spark,
-  columnProjection,
-  filter,
-  identifier,
-  serializedTableInfo,
-  tableInfo,
-  inputMetricsStats,
-  partitionNames,
-  dataTypeConverterClz,
-  readSupportClz) {
+    override val readSupportClz: Class[_ <: CarbonReadSupport[_]] =
+    SparkReadSupport.readSupportClass,
+    deltaVersionToRead: String) extends
+  CarbonScanRDD[T](
+    spark,
+    columnProjection,
+    filter,
+    identifier,
+    serializedTableInfo,
+    tableInfo,
+    inputMetricsStats,
+    partitionNames,
+    dataTypeConverterClz,
+    readSupportClz) {
   override def internalGetPartitions: Array[Partition] = {
     val table = CarbonTable.buildFromTableInfo(getTableInfo)
-    val updateStatusManager = new SegmentUpdateStatusManager(table, updateVersionToRead)
+    val updateStatusManager = new SegmentUpdateStatusManager(table, deltaVersionToRead)
 
     val parts = super.internalGetPartitions
     parts.map { p =>
@@ -81,7 +83,7 @@ class CarbonDeltaRowScanRDD[T: ClassTag](
 
   override def createInputFormat(conf: Configuration): CarbonTableInputFormat[Object] = {
     val format = super.createInputFormat(conf)
-    conf.set("updateDeltaVersion", updateVersionToRead)
+    conf.set("updateDeltaVersion", deltaVersionToRead)
     conf.set("readDeltaOnly", "true")
     format
   }

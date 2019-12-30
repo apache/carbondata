@@ -71,6 +71,11 @@ public class SegmentUpdateStatusManager {
     this(table, segmentDetails, null);
   }
 
+  /**
+   * It takes the updateVersion as one of the parameter. Basically user can give on which
+   * updateVersion user can retrieve the data.It is useful to get the history changed data
+   * of a particular version.
+   */
   public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails, String updateVersion) {
     this.identifier = table.getAbsoluteTableIdentifier();
@@ -106,6 +111,10 @@ public class SegmentUpdateStatusManager {
     populateMap();
   }
 
+  /**
+   * It adds only the SegmentUpdateDetails of given updateVersion, it is used to get the history
+   * data of updated/deleted data.
+   */
   private void updateUpdateDetails(String updateVersion) {
     if (updateVersion != null) {
       List<SegmentUpdateDetails> newupdateDetails = new ArrayList<>();

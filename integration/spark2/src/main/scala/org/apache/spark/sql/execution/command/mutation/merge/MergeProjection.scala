@@ -28,7 +28,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 /**
  * Creates the projection for each action like update,delete or insert.
  */
-case class MergeProjection(@transient tableCols: Seq[String],
+case class MergeProjection(
+    @transient tableCols: Seq[String],
     @transient ds: Dataset[Row],
     @transient rltn: CarbonDatasourceHadoopRelation,
     @transient sparkSession: SparkSession,

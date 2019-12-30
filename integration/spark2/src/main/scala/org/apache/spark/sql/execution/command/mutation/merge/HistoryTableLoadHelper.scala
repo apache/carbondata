@@ -108,14 +108,14 @@ object HistoryTableLoadHelper {
       histDataFrame: Dataset[Row],
       factTimestamp: Long) = {
     val rdd1 = new CarbonDeltaRowScanRDD[Row](sparkSession,
+      carbonTable.getTableInfo.serialize(),
+      carbonTable.getTableInfo,
+      null,
       new CarbonProjection(
         carbonTable.getCreateOrderColumn().asScala.map(_.getColName).toArray),
       null,
       carbonTable.getAbsoluteTableIdentifier,
-      carbonTable.getTableInfo.serialize(),
-      carbonTable.getTableInfo,
       new CarbonInputMetrics,
-      null,
       classOf[DataTypeConverterImpl],
       classOf[SparkGenericRowReadSupportImpl],
       factTimestamp.toString)

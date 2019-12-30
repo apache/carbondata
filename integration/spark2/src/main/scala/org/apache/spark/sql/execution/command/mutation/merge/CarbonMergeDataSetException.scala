@@ -27,7 +27,7 @@ class CarbonMergeDataSetException(msg: String, exception: Throwable)
   }
 
   def this(msg: String) {
-    this("", null)
+    this(msg, null)
   }
 
 }

@@ -120,6 +120,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String FGDATAMAP_PRUNING = "mapreduce.input.carboninputformat.fgdatamap";
   private static final String READ_COMMITTED_SCOPE =
       "mapreduce.input.carboninputformat.read.committed.scope";
+  private static final String READ_ONLY_DELTA = "readDeltaOnly";
 
   // record segment number and hit blocks
   protected int numSegments = 0;
@@ -693,7 +694,7 @@ m filterExpression
         .filterExpression(dataMapFilter)
         .dataConverter(getDataTypeConverter(configuration))
         .build();
-    String readDeltaOnly = configuration.get("readDeltaOnly");
+    String readDeltaOnly = configuration.get(READ_ONLY_DELTA);
     if (readDeltaOnly != null && Boolean.parseBoolean(readDeltaOnly)) {
       queryModel.setReadOnlyDelta(true);
     }

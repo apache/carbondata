@@ -227,6 +227,10 @@ public class BlockExecutionInfo {
 
   private ReusableDataBuffer[] measureResusableDataBuffer;
 
+  /**
+   * It is used to read only the deleted data of a particular version. It will be used to get the
+   * old updated/deleted data before update.
+   */
   private boolean readOnlyDelta;
 
   /**

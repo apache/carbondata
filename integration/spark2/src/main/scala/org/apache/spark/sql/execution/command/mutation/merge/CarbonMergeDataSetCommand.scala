@@ -55,13 +55,21 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil
  * @param srcDS  Source dataset, it can be any data.
  * @param mergeMatches It contains the join condition and list match conditions to apply.
  */
-case class CarbonMergeDataSetCommand(targetDsOri: Dataset[Row],
+case class CarbonMergeDataSetCommand(
+    targetDsOri: Dataset[Row],
     srcDS: Dataset[Row],
     var mergeMatches: MergeDataSetMatches)
   extends DataCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
+  /**
+   * It merge the data of source dataset to target dataset backed by carbon table. Basically it
+   * makes the full outer join with both source and target and apply the given conditions as "case
+   * when" to get the status to process the row. The status could be insert/update/delete.
+   * It also can insert the history(update/delete) data to history table.
+   *
+   */
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val rltn = collectCarbonRelation(targetDsOri.logicalPlan)
     // Target dataset must be backed by carbondata table.
@@ -194,6 +202,9 @@ case class CarbonMergeDataSetCommand(targetDsOri: Dataset[Row],
     Seq.empty
   }
 
+  /**
+   * As per the status of the row either it inserts the data or update/delete the data.
+   */
   private def processIUD(sparkSession: SparkSession,
       frame: DataFrame,
       carbonTable: CarbonTable,

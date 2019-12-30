@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hdfs.DFSClient.Conf
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.spark.Partition
 import org.apache.spark.sql.SparkSession
@@ -33,10 +32,9 @@ import org.apache.carbondata.core.datamap.{DataMapDistributable, Segment}
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.readcommitter.{LatestFilesReadCommittedScope, TableStatusReadCommittedScope}
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus}
-import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 
 object DistributedRDDUtils {
