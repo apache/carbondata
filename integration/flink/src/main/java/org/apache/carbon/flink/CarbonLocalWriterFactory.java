@@ -18,20 +18,10 @@
 package org.apache.carbon.flink;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
-import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.sdk.file.CarbonWriter;
-import org.apache.carbondata.sdk.file.Schema;
 
 public final class CarbonLocalWriterFactory extends CarbonWriterFactory {
 
@@ -51,58 +41,16 @@ public final class CarbonLocalWriterFactory extends CarbonWriterFactory {
               "Writer property [" + CarbonLocalProperty.DATA_TEMP_PATH + "] is not set."
       );
     }
-    final String writePartition = UUID.randomUUID().toString().replace("-", "");
-    final String writePath = writeTempPath + "_" + writePartition + "/";
+    final String writerIdentifier = UUID.randomUUID().toString();
+    final String writePath = writeTempPath + writerIdentifier.replace("-", "") + "/";
     final CarbonTable table = this.getTable();
-    final CarbonTable clonedTable =
-        CarbonTable.buildFromTableInfo(TableInfo.deserialize(table.getTableInfo().serialize()));
-    clonedTable.getTableInfo().setTablePath(writePath);
-    final org.apache.carbondata.sdk.file.CarbonWriter writer;
-    try {
-      writer = CarbonWriter.builder()
-          .outputPath("")
-          .writtenBy("flink")
-          .withTable(clonedTable)
-          .withTableProperties(this.getTableProperties())
-          .withJsonInput(this.getTableSchema(clonedTable))
-          .build();
-    } catch (InvalidLoadOptionException exception) {
-      // TODO
-      throw new UnsupportedOperationException(exception);
-    }
-    return new CarbonLocalWriter(this, table, writer, writePath, writePartition);
+    return new CarbonLocalWriter(this, writerIdentifier, table, writePath);
   }
 
   @Override
-  protected CarbonLocalWriter create0(final String partition) throws IOException {
-    final Properties writerProperties = this.getConfiguration().getWriterProperties();
-    final String writeTempPath = writerProperties.getProperty(CarbonLocalProperty.DATA_TEMP_PATH);
-    if (writeTempPath == null) {
-      throw new IllegalArgumentException(
-              "Writer property [" + CarbonLocalProperty.DATA_TEMP_PATH + "] is not set."
-      );
-    }
-    final String writePath = writeTempPath + "_" + partition + "/";
-    final CarbonTable table = this.getTable();
-    return new CarbonLocalWriter(this, table, null, writePath, partition);
-  }
-
-  private Schema getTableSchema(final CarbonTable table) {
-    final List<CarbonColumn> columnList = table.getCreateOrderColumn();
-    final List<ColumnSchema> columnSchemaList = new ArrayList<>(columnList.size());
-    for (CarbonColumn column : columnList) {
-      columnSchemaList.add(column.getColumnSchema());
-    }
-    return new Schema(columnSchemaList);
-  }
-
-  private Map<String, String> getTableProperties() {
-    final Properties tableProperties = this.getConfiguration().getTableProperties();
-    final Map<String, String> tablePropertyMap = new HashMap<>(tableProperties.size());
-    for (String propertyName : tableProperties.stringPropertyNames()) {
-      tablePropertyMap.put(propertyName, tableProperties.getProperty(propertyName));
-    }
-    return tablePropertyMap;
+  protected CarbonLocalWriter create0(final String identifier, final String path)
+      throws IOException {
+    return new CarbonLocalWriter(this, identifier, this.getTable(), path);
   }
 
 }

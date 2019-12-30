@@ -23,6 +23,8 @@ public final class CarbonLocalProperty {
 
   public static final String DATA_PATH = "carbon.writer.local.data.path";
 
+  static final String COMMIT_THRESHOLD = "carbon.writer.local.commit.threshold";
+
   private CarbonLocalProperty() {
     // private constructor.
   }
