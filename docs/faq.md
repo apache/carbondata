@@ -231,7 +231,7 @@ To observe the LRU cache from heap dump, check the heap used by CarbonLRUCache c
 
 ## How to deal with the trailing task in query?
 
-During the tuning process, it may be found that a few tasks slow down the overall query progress.  If the amount of data processed is the same, people will naturally think about the impact of IO, CPU and network bandwidth. Usually these tests can't able to have a quick result. So we need a way to solve and deal with these problems more quickly. spark.locality.wait and spark.speculation configuration it's an attempt, which can make the task that executes overtime retry in other nodes as soon as possible, and finally the task that ends first will be used. This may lose some of the data locality, but the actual verification helps to reduce the time-consuming of the trailing task.
+When tuning query performance, user may found that a few tasks slow down the overall query progress.  To improve performance in such case, user can set spark.locality.wait and spark.speculation=true to enable speculation in spark, which will launch multiple task and get the result the one of the task which is finished first. Besides, user can also consider following configurations to further improve performance in this case.
 
 **Example:**
 
