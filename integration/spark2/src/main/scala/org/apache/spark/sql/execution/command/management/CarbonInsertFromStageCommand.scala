@@ -26,10 +26,15 @@ import scala.collection.JavaConverters._
 
 import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.CarbonInputMetrics
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
-import org.apache.spark.sql.util.SparkSQLUtil
+import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -37,14 +42,17 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.SegmentFileStore
+import org.apache.carbondata.core.metadata.{ColumnarFormatVersion, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
+import org.apache.carbondata.spark.rdd.CarbonScanRDD
+import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
 /**
  * Collect stage input files and trigger a loading into carbon table.
@@ -137,7 +145,11 @@ case class CarbonInsertFromStageCommand(
       FileFactory.writeFile(content, snapshotFilePath)
 
       // 5) perform data loading
-      startLoading(spark, table, loadModel, stageInputs)
+      if (table.isHivePartitionTable) {
+        startLoadingWithPartition(spark, table, loadModel, stageInputs)
+      } else {
+        startLoading(spark, table, loadModel, stageInputs)
+      }
 
       // 6) write segment file and update the segment entry to SUCCESS
       val segmentFileName = SegmentFileStore.writeSegmentFile(
@@ -269,9 +281,92 @@ case class CarbonInsertFromStageCommand(
       SparkSQLUtil.sessionState(spark).newHadoopConf()
     ).map { row =>
         (row._1, FailureCauses.NONE == row._2._2.failureCauses)
-      }
+    }
 
     LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
+  }
+
+  /**
+   * Start global sort loading of partition table
+   */
+  private def startLoadingWithPartition(
+      spark: SparkSession,
+      table: CarbonTable,
+      loadModel: CarbonLoadModel,
+      stageInput: Seq[StageInput]
+    ): Unit = {
+    val partitionDataList = listPartitionFiles(stageInput)
+    val start = System.currentTimeMillis()
+    var index = 0
+    partitionDataList.map {
+      case (partition, splits) =>
+        index = index + 1
+        LOGGER.info(s"start to load ${splits.size} files into " +
+          s"${table.getDatabaseName}.${table.getTableName}. " +
+          s"Partition information: ${partition.mkString(",")}")
+        val dataFrame = createInputDataFrameOfInternalRow(spark, table, splits)
+        val columns = dataFrame.columns
+        val header = columns.mkString(",")
+        val selectColumns = columns.filter(!partition.contains(_))
+        val selectedDataFrame = dataFrame.select(selectColumns.head, selectColumns.tail: _*)
+
+        val loadCommand = CarbonLoadDataCommand(
+          databaseNameOp = Option(table.getDatabaseName),
+          tableName = table.getTableName,
+          factPathFromUser = null,
+          dimFilesPath = Seq(),
+          options = scala.collection.immutable.Map("fileheader" -> header),
+          isOverwriteTable = false,
+          inputSqlString = null,
+          dataFrame = Some(selectedDataFrame),
+          updateModel = None,
+          tableInfoOp = None,
+          internalOptions = Map.empty,
+          partition = partition
+        )
+        loadCommand.run(spark)
+    }
+    LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
+  }
+
+  /**
+   * @return return a (partitionMap, InputSplits) pair list.
+   *         the partitionMap contains all partition column name and value.
+   *         the InputSplits is all data file information of current partition.
+   */
+  private def listPartitionFiles(
+      stageInputs : Seq[StageInput]
+    ): Seq[(Map[String, Option[String]], Seq[InputSplit])] = {
+    val partitionMap = new util.HashMap[Map[String, Option[String]], util.List[InputSplit]]()
+    stageInputs.foreach (
+      stageInput => {
+        val locations = stageInput.getLocations.asScala
+        locations.foreach (
+          location => {
+            val partition = location.getPartitions.asScala.map(t => (t._1, Option(t._2))).toMap
+            var splits = partitionMap.get(partition)
+            if (splits == null) {
+              partitionMap.put(partition, new util.ArrayList[InputSplit]())
+              splits = partitionMap.get(partition)
+            }
+            splits.addAll (
+              location.getFiles.asScala
+              .filter(_._1.endsWith(CarbonCommonConstants.FACT_FILE_EXT))
+              .map(
+                file => {
+                  CarbonInputSplit.from(
+                    "-1", "0",
+                    stageInput.getBase + CarbonCommonConstants.FILE_SEPARATOR + file._1, 0,
+                    file._2, ColumnarFormatVersion.V3, null
+                  )
+                }
+              ).toList.asJava
+            )
+          }
+        )
+      }
+    )
+    partitionMap.asScala.map(entry => (entry._1, entry._2.asScala)).toSeq
   }
 
   /**
@@ -373,6 +468,38 @@ case class CarbonInsertFromStageCommand(
       throw new IOException(
         s"Not able to acquire the lock for table status file for $tableIdentifier")
     }
+  }
+
+  /**
+   * create DataFrame basing on specified splits
+   */
+  private def createInputDataFrameOfInternalRow(
+      sparkSession: SparkSession,
+      carbonTable: CarbonTable,
+      splits: Seq[InputSplit]
+    ): DataFrame = {
+    val columns = carbonTable
+      .getCreateOrderColumn
+      .asScala
+      .map(_.getColName)
+      .toArray
+    val schema = SparkTypeConverter.createSparkSchema(carbonTable, columns)
+    val rdd: RDD[Row] = new CarbonScanRDD[InternalRow](
+        sparkSession,
+        columnProjection = new CarbonProjection(columns),
+        null,
+        carbonTable.getAbsoluteTableIdentifier,
+        carbonTable.getTableInfo.serialize,
+        carbonTable.getTableInfo,
+        new CarbonInputMetrics,
+        null,
+        null,
+        classOf[SparkRowReadSupportImpl],
+        splits.asJava
+      ).map { row =>
+        new GenericRow(row.toSeq(schema).toArray)
+      }
+    sparkSession.createDataFrame(rdd, schema)
   }
 
   override protected def opName: String = "INSERT STAGE"

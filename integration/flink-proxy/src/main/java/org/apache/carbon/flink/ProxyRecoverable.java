@@ -25,18 +25,22 @@ public final class ProxyRecoverable
   public ProxyRecoverable(
       final String writerType,
       final ProxyFileWriterFactory.Configuration writerConfiguration,
-      final String partition
+      final String writerIdentifier,
+      final String writePath
   ) {
     this.writerType = writerType;
     this.writerConfiguration = writerConfiguration;
-    this.partition = partition;
+    this.writerIdentifier = writerIdentifier;
+    this.writePath = writePath;
   }
 
   private final String writerType;
 
   private final ProxyFileWriterFactory.Configuration writerConfiguration;
 
-  private final String partition;
+  private final String writerIdentifier;
+
+  private final String writePath;
 
   public String getWriterType() {
     return this.writerType;
@@ -46,8 +50,12 @@ public final class ProxyRecoverable
     return this.writerConfiguration;
   }
 
-  public String getPartition() {
-    return this.partition;
+  public String getWriterIdentifier() {
+    return this.writerIdentifier;
+  }
+
+  public String getWritePath() {
+    return this.writePath;
   }
 
 }
