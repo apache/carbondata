@@ -41,7 +41,6 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
         |TBLPROPERTIES(
         |  'SORT_COLUMNS'='b',
         |  'SORT_SCOPE'='GLOBAL_SORT',
-        |  'DICTIONARY_INCLUDE'='b',
         |  'LOCAL_DICTIONARY_ENABLE'='false',
         |  'carbon.column.compress'='zstd',
         |  'CACHE_LEVEL'='blocklet',

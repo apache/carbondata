@@ -27,7 +27,7 @@ class SubQueryJoinTestSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists t1")
     sql("drop table if exists t2")
 
-    sql("create table t1 (s1 string) stored by 'carbondata' tblproperties('dictionary_include'='s1')")
+    sql("create table t1 (s1 string) stored by 'carbondata' ")
     sql("insert into t1 select 'abcd' ")
     sql("insert into t1 select 'efgh' ")
     sql("insert into t1 select 'ijkl' ")
@@ -63,11 +63,8 @@ class SubQueryJoinTestSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql(
       "create table t1 (m_month smallint, hs_code string, country smallint, dollar_value double, " +
       "quantity double, unit smallint, b_country smallint, imex int, y_year smallint) stored by " +
-      "'carbondata' tblproperties('dictionary_include'='m_month,hs_code,b_country,unit,y_year," +
-      "imex', 'sort_columns'='y_year,m_month,country,b_country,imex')")
-    sql(
-      "create table t2(id bigint, hs string, hs_cn string, hs_en string) stored by 'carbondata' " +
-      "tblproperties ('dictionary_include'='id,hs,hs_cn,hs_en')")
+      "'carbondata' tblproperties('sort_columns'='y_year,m_month,country,b_country,imex')")
+    sql("create table t2(id bigint, hs string, hs_cn string, hs_en string) stored by 'carbondata' ")
     checkAnswer(sql(
       "select a.hs,count(*) tb from (select substring(hs_code,1,2) as hs,count(*) v2000 from t1 " +
       "group by substring(hs_code,1,2),y_year) a left join t2 h on (a.hs=h.hs) group by a.hs"),

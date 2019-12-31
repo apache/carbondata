@@ -595,14 +595,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
   private def hasMoreDictionaryColumnsOnProjection(projectColumns: AttributeSet,
       relation: CarbonDatasourceHadoopRelation): Boolean = {
-    val map = relation.carbonRelation.metaData.dictionaryMap
-    var count = 0
-    projectColumns.foreach{c =>
-      if (map.get(c.name).getOrElse(false)) {
-        count += 1
-      }
-    }
-    count > CarbonCommonConstants.CARBON_ALLOW_DIRECT_FILL_DICT_COLS_LIMIT
+//    val map = relation.carbonRelation.metaData.dictionaryMap
+//    var count = 0
+//    projectColumns.foreach{c =>
+//      if (map.get(c.name).getOrElse(false)) {
+//        count += 1
+//      }
+//    }
+//    count > CarbonCommonConstants.CARBON_ALLOW_DIRECT_FILL_DICT_COLS_LIMIT
+    false
   }
 
   private def getPartitioning(carbonTable: CarbonTable,
@@ -610,8 +611,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val info: BucketingInfo = carbonTable.getBucketingInfo()
     if (info != null) {
       val cols = info.getListOfColumns.asScala
-      val sortColumn = carbonTable.
-              getVisibleDimensions().get(0).getColName
       val numBuckets = info.getNumOfRanges
       val bucketColumns = cols.flatMap { n =>
         val attrRef = output.find(_.name.equalsIgnoreCase(n.getColumnName))

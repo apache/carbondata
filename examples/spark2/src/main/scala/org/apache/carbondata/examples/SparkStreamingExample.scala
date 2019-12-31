@@ -69,8 +69,7 @@ object SparkStreamingExample {
            | STORED BY 'carbondata'
            | TBLPROPERTIES(
            | 'streaming'='true',
-           | 'sort_columns'='name',
-           | 'dictionary_include'='city')
+           | 'sort_columns'='name')
            | """.stripMargin)
       val carbonTable = CarbonEnv.getCarbonTable(Some("default"), streamTableName)(spark)
       // batch load

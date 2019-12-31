@@ -78,25 +78,6 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     }
   }
 
-  test("test alter table add column where same column is in dictionary include and local dictionary include") {
-    sql("drop table if exists local1")
-    sql(
-      """
-        | CREATE TABLE local1(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='true',
-        | 'local_dictionary_threshold'='20000','local_dictionary_include'='city','no_inverted_index'='name')
-      """.stripMargin)
-    val exception = intercept[MalformedCarbonCommandException] {
-      sql(
-        "alter table local1 add columns (alt string) tblproperties('local_dictionary_include'='alt','dictionary_include'='alt')")
-    }
-    assert(exception.getMessage
-      .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: alt specified in Dictionary " +
-        "include. Local Dictionary will not be generated for Dictionary include columns. " +
-        "Please check the DDL."))
-  }
-
   test("test alter table add column where duplicate columns present in local dictionary include") {
     sql("drop table if exists local1")
     sql(
@@ -586,25 +567,6 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     assert(exception1.getMessage.contains("LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE should be no dictionary string/complex/varchar datatype column."))
   }
 
-  test("test alter set for local dictionary _010") {
-    sql("drop table if exists local1")
-    sql(
-      """
-        | CREATE TABLE local1(id int, name string, city string, age int)
-        | STORED BY 'carbondata' tblproperties('local_dictionary_enable'='true','dictionary_include'='name')
-      """.stripMargin)
-
-    val descLoc1 = sql("describe formatted local1").collect
-    descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("true"))
-      case None => assert(false)
-    }
-    val exception1 = intercept[Exception] {
-      sql("alter table local1 set tblproperties('local_dictionary_include'='name')")
-    }
-    assert(exception1.getMessage.contains("LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: name specified in Dictionary include. Local Dictionary will not be generated for Dictionary include columns. Please check the DDL."))
-  }
-
   test("test alter set for local dictionary _011") {
     sql("drop table if exists local1")
     sql(
@@ -651,25 +613,6 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
       sql("alter table local1 set tblproperties('local_dictionary_exclude'='city, ')")
     }
     assert(exception1.getMessage.contains("LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. Please check the DDL."))
-  }
-
-  test("test alter set for local dictionary _013") {
-    sql("drop table if exists local1")
-    sql(
-      """
-        | CREATE TABLE local1(id int, name string, city string, age int)
-        | STORED BY 'carbondata' tblproperties('local_dictionary_enable'='true','dictionary_include'='name')
-      """.stripMargin)
-
-    val descLoc1 = sql("describe formatted local1").collect
-    descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("true"))
-      case None => assert(false)
-    }
-    val exception1 = intercept[Exception] {
-      sql("alter table local1 set tblproperties('local_dictionary_exclude'='name')")
-    }
-    assert(exception1.getMessage.contains("LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: name specified in Dictionary include. Local Dictionary will not be generated for Dictionary include columns. Please check the DDL."))
   }
 
   test("test alter set for local dictionary _014") {

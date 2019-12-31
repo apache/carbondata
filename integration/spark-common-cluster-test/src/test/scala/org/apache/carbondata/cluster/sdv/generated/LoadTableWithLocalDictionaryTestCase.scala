@@ -79,9 +79,7 @@ class LoadTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAfter
 
   test("test local dictionary generation for local dictioanry include") {
     sql("drop table if exists local2")
-    sql(
-      "CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties" +
-      "('dictionary_include'='name')")
+    sql("CREATE TABLE local2(name string) STORED BY 'carbondata' ")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(!checkForLocalDictionary(getDimRawChunk(0)))
   }
@@ -90,7 +88,7 @@ class LoadTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAfter
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties" +
-      "('local_dictionary_enable'='true','dictionary_exclude'='name')")
+      "('local_dictionary_enable'='true')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
@@ -299,8 +297,7 @@ class LoadTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAfter
       val decoder = encodingFactory.createDecoder(encodings, encoderMetas, compressorName)
       val dictionaryPage = decoder
         .decode(local_dictionary.getDictionary_data, 0, local_dictionary.getDictionary_data.length)
-      val dictionaryMap = new
-          util.HashMap[DictionaryByteArrayWrapper, Integer]
+      val dictionaryMap = new util.HashMap[DictionaryByteArrayWrapper, Integer]
       val usedDictionaryValues = util.BitSet
         .valueOf(CompressorFactory.getInstance.getCompressor(compressorName)
           .unCompressByte(local_dictionary.getDictionary_values))

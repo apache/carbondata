@@ -82,34 +82,6 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     sql(s"drop table if exists $longStringTable")
   }
 
-  test("long string columns cannot be dictionary include") {
-    val exceptionCaught = intercept[MalformedCarbonCommandException] {
-      sql(
-        s"""
-           | CREATE TABLE if not exists $longStringTable(
-           | id INT, name STRING, description STRING, address STRING, note STRING
-           | ) STORED BY 'carbondata'
-           | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note', 'dictionary_include'='address')
-           |""".
-          stripMargin)
-    }
-    assert(exceptionCaught.getMessage.contains("DICTIONARY_INCLUDE is unsupported for long string datatype column: address"))
-  }
-
-  test("long string columns cannot be dictionay exclude") {
-    val exceptionCaught = intercept[MalformedCarbonCommandException] {
-      sql(
-        s"""
-           | CREATE TABLE if not exists $longStringTable(
-           | id INT, name STRING, description STRING, address STRING, note STRING
-           | ) STORED BY 'carbondata'
-           | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note', 'dictionary_exclude'='address')
-           |""".
-          stripMargin)
-    }
-    assert(exceptionCaught.getMessage.contains("DICTIONARY_EXCLUDE is unsupported for long string datatype column: address"))
-  }
-
   test("long string columns cannot be sort_columns") {
     val exceptionCaught = intercept[MalformedCarbonCommandException] {
       sql(
@@ -460,7 +432,6 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     longStringDF.write
       .format("carbondata")
       .option("tableName", longStringTable)
-      .option("single_pass", "false")
       .option("sort_columns", "name")
       .option("long_string_columns", "description, note")
       .mode(SaveMode.Overwrite)
@@ -475,7 +446,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
          | CREATE TABLE if not exists $longStringTable(
          | id INT, name STRING, description STRING, address STRING, note STRING
          | ) STORED BY 'carbondata'
-         | TBLPROPERTIES('LONG_STRING_COLUMNS'='description, note', 'dictionary_include'='name', 'sort_columns'='id')
+         | TBLPROPERTIES('LONG_STRING_COLUMNS'='description, note', 'sort_columns'='id')
          |""".
         stripMargin)
 
@@ -497,7 +468,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
          | CREATE TABLE if not exists $longStringTable(
          | id INT, name STRING, description STRING, address STRING, note STRING
          | ) STORED BY 'carbondata'
-         | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note', 'dictionary_include'='name', 'sort_columns'='id')
+         | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note', 'sort_columns'='id')
          |""".
         stripMargin)
     checkExistence(sql(s"desc formatted $longStringTable"), true, "long_string_columns".toUpperCase, "address", "note")

@@ -25,7 +25,9 @@ public abstract class ProxyFileWriter<OUT> implements BulkWriter<OUT> {
 
   public abstract ProxyFileWriterFactory getFactory();
 
-  public abstract String getPartition();
+  public abstract String getIdentifier();
+
+  public abstract String getPath();
 
   public abstract void commit() throws IOException;
 

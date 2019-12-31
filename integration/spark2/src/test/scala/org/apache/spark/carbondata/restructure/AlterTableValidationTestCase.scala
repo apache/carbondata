@@ -32,7 +32,8 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
     sql("drop table if exists restructure")
     sql("drop table if exists table1")
     sql("drop table if exists restructure_test")
@@ -82,21 +83,21 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
 
   test("test add dictionary column") {
     sql(
-      "alter table restructure add columns(dict int) TBLPROPERTIES ('DICTIONARY_INCLUDE'='dict', " +
+      "alter table restructure add columns(dict int) TBLPROPERTIES ( " +
       "'DEFAULT.VALUE.dict'= '9999')")
     checkAnswer(sql("select distinct(dict) from restructure"), Row(9999))
   }
   test("test add no dictionary column") {
     sql(
       "alter table restructure add columns(nodict string) TBLPROPERTIES " +
-      "('DICTIONARY_EXCLUDE'='nodict', 'DEFAULT.VALUE.NoDict'= 'abcd')")
+      "('DEFAULT.VALUE.NoDict'= 'abcd')")
     checkAnswer(sql("select distinct(nodict) from restructure"), Row("abcd"))
   }
 
   ignore ("test add timestamp no dictionary column") {
     sql(
       "alter table restructure add columns(tmpstmp timestamp) TBLPROPERTIES ('DEFAULT.VALUE" +
-      ".tmpstmp'= '17-01-2007')")
+      ".tmpstmp'= '2007-01-17')")
     sql("select tmpstmp from restructure").show(200,false)
     sql("select distinct(tmpstmp) from restructure").show(200,false)
     checkAnswer(sql("select distinct(tmpstmp) from restructure"),
@@ -107,7 +108,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   test ("test add timestamp direct dictionary column") {
     sql(
       "alter table restructure add columns(tmpstmp1 timestamp) TBLPROPERTIES ('DEFAULT.VALUE" +
-      ".tmpstmp1'= '17-01-3007','DICTIONARY_INCLUDE'='tmpstmp1')")
+      ".tmpstmp1'= '3007-01-17')")
     checkAnswer(sql("select distinct(tmpstmp1) from restructure"),
       Row(null))
     checkExistence(sql("desc restructure"), true, "tmpstmp", "timestamp")
@@ -117,7 +118,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("create table table1(name string) stored by 'carbondata'")
     sql("insert into table1 select 'abc'")
     sql("alter table table1 add columns(tmpstmp timestamp) TBLPROPERTIES " +
-        "('DEFAULT.VALUE.tmpstmp'='17-01-3007','DICTIONARY_INCLUDE'= 'tmpstmp')")
+        "('DEFAULT.VALUE.tmpstmp'='17-01-3007')")
     sql("insert into table1 select 'name','17-01-2007'")
     checkAnswer(sql("select * from table1"),
       Seq(Row("abc",null),
@@ -163,8 +164,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       "alter table restructure add columns(strfld string, datefld date, tptfld timestamp, " +
       "shortFld smallInt, " +
       "intFld int, longFld bigint, dblFld double,dcml decimal(5,4))TBLPROPERTIES" +
-      "('DICTIONARY_INCLUDE'='datefld,shortFld,intFld,longFld,dblFld,dcml', 'DEFAULT.VALUE" +
-      ".dblFld'= '12345')")
+      "('DEFAULT.VALUE.dblFld'= '12345')")
     checkAnswer(sql("select distinct(dblFld) from restructure"),
       Row(java.lang.Double.parseDouble("12345")))
     checkExistence(sql("desc restructure"), true, "strfld", "string")
@@ -224,8 +224,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("alter table restructure add columns(dimfld1 string, msrCol double)")
     try {
       sql(
-        "alter table restructure add columns(dimfld1 int)TBLPROPERTIES" +
-        "('DICTIONARY_INCLUDE'='dimfld1')")
+        "alter table restructure add columns(dimfld1 int)")
       sys.error("Exception should be thrown as dimfld1 is already exist")
     } catch {
       case e: Exception =>
@@ -242,9 +241,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
 
   test("test adding no dictionary column with numeric type") {
     try {
-      sql(
-        "alter table restructure add columns(dimfld2 double) TBLPROPERTIES" +
-        "('DICTIONARY_EXCLUDE'='dimfld2')")
+      sql("alter table restructure add columns(dimfld2 double)")
       sys.error("Exception should be thrown as msrCol is already exist")
     } catch {
       case e: Exception =>
@@ -266,7 +263,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("alter table restructure drop columns(empname)")
     sql(
       "alter table restructure add columns(empname int) TBLPROPERTIES" +
-      "('DICTIONARY_INCLUDE'='empname', 'DEFAULT.VALUE.empname'='12345')")
+      "('DEFAULT.VALUE.empname'='12345')")
     checkAnswer(sql("select distinct(empname) from restructure"), Row(12345))
     checkAnswer(sql("select count(empname) from restructure"), Row(10))
   }
@@ -282,7 +279,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     }
     sql(
       "alter table restructure add columns(empname string) TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='empname', 'DEFAULT.VALUE.empname'='testuser')")
+      "('DEFAULT.VALUE.empname'='testuser')")
     checkAnswer(sql("select distinct(empname) from restructure"), Row("testuser"))
     checkAnswer(sql("select count(empname) from restructure"), Row(10))
   }
@@ -336,13 +333,13 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("alter table restructure drop columns(designation)")
     sql(
       "alter table default.restructure add columns(designation int) TBLPROPERTIES" +
-      "('DICTIONARY_INCLUDE'='designation', 'DEFAULT.VALUE.designation'='12345')")
+      "('DEFAULT.VALUE.designation'='12345')")
     checkAnswer(sql("select distinct(designation) from restructure"), Row(12345))
     // drop and add nodict column
     sql("alter table restructure drop columns(designation)")
     sql(
       "alter table restructure add columns(designation string) TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='designation', 'DEFAULT.VALUE.designation'='abcd')")
+      "('DEFAULT.VALUE.designation'='abcd')")
     checkAnswer(sql("select distinct(designation) from restructure"), Row("abcd"))
     // drop and add directdict column
     sql("alter table restructure drop columns(designation)")
@@ -525,15 +522,14 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
 
   // after changing default sort_scope to no_sort, all dimensions are not selected for sorting.
   ignore("describe formatted for default sort_columns pre and post alter") {
-    sql("CREATE TABLE defaultSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
-        "tblproperties('DICTIONARY_INCLUDE'='empno','DICTIONARY_EXCLUDE'='role')")
+    sql("CREATE TABLE defaultSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' ")
     sql("alter table defaultSortColumnsWithAlter drop columns (designation)")
     sql("alter table defaultSortColumnsWithAlter add columns (designation12 String)")
     checkExistence(sql("describe formatted defaultSortColumnsWithAlter"),true,"Sort Columns empno, empname, role, doj")
   }
   test("describe formatted for specified sort_columns pre and post alter") {
     sql("CREATE TABLE specifiedSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
-        "tblproperties('sort_columns'='empno,empname,designation,role,doj','DICTIONARY_INCLUDE'='empno','DICTIONARY_EXCLUDE'='role')")
+        "tblproperties('sort_columns'='empno,empname,designation,role,doj')")
     sql("alter table specifiedSortColumnsWithAlter drop columns (designation)")
     sql("alter table specifiedSortColumnsWithAlter add columns (designation12 String)")
     checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"Sort Columns empno, empname, role, doj")
@@ -554,7 +550,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("ALTER TABLE restructure1 ADD COLUMNS (projId int)")
     sql("ALTER TABLE restructure1 DROP COLUMNS (projId)")
     sql("ALTER TABLE restructure1 CHANGE empno empno BIGINT")
-    sql("ALTER TABLE restructure1 ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DICTIONARY_EXCLUDE'='b1')")
+    sql("ALTER TABLE restructure1 ADD COLUMNS (a1 INT, b1 STRING)")
     checkAnswer(sql("select a1,b1,empname from restructure1 where a1 is null and b1 is null and empname='arvind'"),Row(null,null,"arvind"))
     sql("drop table if exists restructure1")
     sql("drop table if exists restructure")
@@ -608,7 +604,7 @@ test("test alter command for boolean data type with correct default measure valu
         if (flag) {
           sql(
             "alter table test add columns (c3 timestamp) TBLPROPERTIES('DEFAULT.VALUE.c3' = " +
-            "'1996/01/01 11:11:11', 'DICTIONARY_INCLUDE' = 'c3')")
+            "'1996/01/01 11:11:11')")
         } else {
           sql(
             "alter table test add columns (c3 timestamp) TBLPROPERTIES('DEFAULT.VALUE.c3' = " +
@@ -652,8 +648,7 @@ test("test alter command for boolean data type with correct default measure valu
         "string,longdate date) stored by 'carbondata'")
       sql("insert into test select 1,'String1',12345,'area',5000,'country','2017/02/12'")
       if (flag) {
-        sql(s"alter table test add columns (c3 int) TBLPROPERTIES('DEFAULT.VALUE.c3' = '23', " +
-            s"'DICTIONARY_INCLUDE'='c3')")
+        sql(s"alter table test add columns (c3 int) TBLPROPERTIES('DEFAULT.VALUE.c3' = '23')")
       } else {
         sql(s"alter table test add columns (c3 int) TBLPROPERTIES('DEFAULT.VALUE.c3' = '23')")
       }
@@ -683,9 +678,9 @@ test("test alter command for boolean data type with correct default measure valu
     val testData = s"$resourcesPath/sample.csv"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table retructure_iud")
     sql("ALTER TABLE retructure_iud ADD COLUMNS (newField STRING) " +
-        "TBLPROPERTIES ('DEFAULT.VALUE.newField'='def', 'DICTIONARY_INCLUDE'='newField')").show()
+        "TBLPROPERTIES ('DEFAULT.VALUE.newField'='def')").show()
     sql("ALTER TABLE retructure_iud ADD COLUMNS (newField1 STRING) " +
-        "TBLPROPERTIES ('DEFAULT.VALUE.newField1'='def', 'DICTIONARY_EXCLUDE'='newField1')").show()
+        "TBLPROPERTIES ('DEFAULT.VALUE.newField1'='def')").show()
     // update operation
     sql("""update retructure_iud d  set (d.id) = (d.id + 1) where d.id > 2""").show()
     checkAnswer(

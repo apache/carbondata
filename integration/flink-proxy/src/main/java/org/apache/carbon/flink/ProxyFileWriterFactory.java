@@ -74,7 +74,7 @@ public abstract class ProxyFileWriterFactory<OUT> implements BulkWriter.Factory<
     this.configuration = configuration;
   }
 
-  public abstract ProxyFileWriter<OUT> create(String partition) throws IOException;
+  public abstract ProxyFileWriter<OUT> create(String identifier, String path) throws IOException;
 
   public static class Configuration implements Serializable {
 

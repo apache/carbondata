@@ -73,7 +73,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
   }
 
@@ -171,7 +171,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
@@ -209,7 +209,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanWithFileHeader.csv"
@@ -227,7 +227,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     )
   }
 
-  test("Loading table: create with DICTIONARY_EXCLUDE, TABLE_BLOCKSIZE, NO_INVERTED_INDEX, SORT_SCOPE") {
+  test("Loading table: create with TABLE_BLOCKSIZE, NO_INVERTED_INDEX, SORT_SCOPE") {
     sql("drop table if exists boolean_table")
     sql(
       s"""
@@ -247,7 +247,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('DICTIONARY_EXCLUDE'='charField','TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | TBLPROPERTIES('TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBoolean.csv"
@@ -318,7 +318,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     }
   }
 
-  test("Loading table: load with DELIMITER, QUOTECHAR, COMMENTCHAR, MULTILINE, ESCAPECHAR, COMPLEX_DELIMITER_LEVEL_1, SINGLE_PASS") {
+  test("Loading table: load with DELIMITER, QUOTECHAR, COMMENTCHAR, MULTILINE, ESCAPECHAR, COMPLEX_DELIMITER_LEVEL_1") {
     sql("drop table if exists boolean_table")
     sql(
       s"""
@@ -337,7 +337,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('DICTIONARY_EXCLUDE'='charField','TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | TBLPROPERTIES('TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanWithFileHeader.csv"
@@ -345,7 +345,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
       s"""
          | LOAD DATA LOCAL INPATH '${storeLocation}'
          | INTO TABLE boolean_table
-         | options('DELIMITER'=',','QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='#','COMPLEX_DELIMITER_LEVEL_2'=':','SINGLE_PASS'='TRUE')
+         | options('DELIMITER'=',','QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='#','COMPLEX_DELIMITER_LEVEL_2'=':')
            """.stripMargin)
 
     checkAnswer(
@@ -505,7 +505,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     sql(
@@ -655,7 +655,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanTwoBooleanColumns.csv"
@@ -715,7 +715,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | booleanField2 BOOLEAN
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBoolean.csv"

@@ -105,13 +105,6 @@ public class CarbonLoadModelBuilder {
     }
     model.setDateFormat(dateFormat);
     model.setTimestampformat(timestampFormat);
-    model.setUseOnePass(Boolean.parseBoolean(Maps.getOrDefault(options, "onepass", "false")));
-    model.setDictionaryServerHost(Maps.getOrDefault(options, "dicthost", null));
-    try {
-      model.setDictionaryServerPort(Integer.parseInt(Maps.getOrDefault(options, "dictport", "-1")));
-    } catch (NumberFormatException e) {
-      throw new InvalidLoadOptionException(e.getMessage());
-    }
     validateAndSetColumnCompressor(model);
     validateAndSetBinaryDecoder(model);
     return model;
@@ -159,7 +152,6 @@ public class CarbonLoadModelBuilder {
     // Need to fill dimension relation
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema);
     String sort_scope = optionsFinal.get("sort_scope");
-    String single_pass = optionsFinal.get("single_pass");
     String bad_records_logger_enable = optionsFinal.get("bad_records_logger_enable");
     String bad_records_action = optionsFinal.get("bad_records_action");
     String bad_record_path = optionsFinal.get("bad_record_path");
@@ -171,8 +163,6 @@ public class CarbonLoadModelBuilder {
     String complex_delimiter_level2 = optionsFinal.get("complex_delimiter_level_2");
     String complex_delimiter_level3 = optionsFinal.get("complex_delimiter_level_3");
     String complex_delimiter_level4 = optionsFinal.get("complex_delimiter_level_4");
-    String all_dictionary_path = optionsFinal.get("all_dictionary_path");
-    String column_dict = optionsFinal.get("columndict");
     validateDateTimeFormat(timestampformat, "TimestampFormat");
     validateDateTimeFormat(dateFormat, "DateFormat");
 
@@ -255,7 +245,6 @@ public class CarbonLoadModelBuilder {
 
     carbonLoadModel.setSortScope(sort_scope);
     carbonLoadModel.setGlobalSortPartitions(global_sort_partitions);
-    carbonLoadModel.setUseOnePass(Boolean.parseBoolean(single_pass));
 
     if (delimiter.equalsIgnoreCase(complex_delimiter_level1) ||
         complex_delimiter_level1.equalsIgnoreCase(complex_delimiter_level2) ||
@@ -268,11 +257,8 @@ public class CarbonLoadModelBuilder {
       carbonLoadModel.setComplexDelimiter(complex_delimiter_level3);
       carbonLoadModel.setComplexDelimiter(complex_delimiter_level4);
     }
-    // set local dictionary path, and dictionary file extension
-    carbonLoadModel.setAllDictPath(all_dictionary_path);
     carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter));
     carbonLoadModel.setCsvHeader(fileHeader);
-    carbonLoadModel.setColDictFilePath(column_dict);
 
     List<String> ignoreColumns = new ArrayList<>();
     if (!isDataFrame) {

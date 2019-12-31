@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.carbondata.core.cache.dictionary.AbstractDictionaryCacheTest;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -40,18 +39,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class FilterExpressionProcessorTest extends AbstractDictionaryCacheTest {
+public class FilterExpressionProcessorTest {
 
   private ColumnSchema columnSchema;
 
   @Before public void setUp() throws Exception {
-    init();
-    this.databaseName = props.getProperty("database", "testSchema");
-    this.tableName = props.getProperty("tableName", "carbon");
-    this.carbonStorePath = props.getProperty("storePath", "carbonStore");
-    carbonTableIdentifier =
-        new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
-    this.carbonStorePath = props.getProperty("storePath", "carbonStore");
     columnSchema = new ColumnSchema();
     columnSchema.setColumnName("IMEI");
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString());

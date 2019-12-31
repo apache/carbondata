@@ -110,7 +110,7 @@ class PrestoAllDataTypeLocalDictTest extends FunSuiteLike with BeforeAndAfterAll
       Map("NAME" -> "sahil"),
       Map("NAME" -> null)
     )
-    assert(actualResult.equals(expectedResult))
+    assertResult(expectedResult)(actualResult)
   }
 
   test("test and filter clause with greater than expression") {

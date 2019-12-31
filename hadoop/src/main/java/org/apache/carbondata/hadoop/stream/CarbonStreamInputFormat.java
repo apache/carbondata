@@ -23,7 +23,6 @@ import java.lang.reflect.Constructor;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -138,11 +137,9 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
             CarbonUtil.hasEncoding(child.getEncoder(), Encoding.DICTIONARY);
         Dictionary dictionary = null;
         if (isDictionary) {
-          String dictionaryPath = carbontable.getTableInfo().getFactTable().getTableProperties()
-              .get(CarbonCommonConstants.DICTIONARY_PATH);
           DictionaryColumnUniqueIdentifier dictionarIdentifier =
               new DictionaryColumnUniqueIdentifier(carbontable.getAbsoluteTableIdentifier(),
-                  child.getColumnIdentifier(), child.getDataType(), dictionaryPath);
+                  child.getColumnIdentifier(), child.getDataType());
           dictionary = cache.get(dictionarIdentifier);
         }
         queryType =

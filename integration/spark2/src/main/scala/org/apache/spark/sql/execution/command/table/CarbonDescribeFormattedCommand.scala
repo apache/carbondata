@@ -145,8 +145,6 @@ private[sql] case class CarbonDescribeFormattedCommand(
       ("", "", ""),
       ("## Encoding Information", "", ""))
     results ++= getLocalDictDesc(carbonTable, tblProps.toMap)
-    results ++= Seq(("Global Dictionary",
-      tblProps.getOrElse(CarbonCommonConstants.DICTIONARY_INCLUDE, ""), ""))
     if (tblProps.contains(CarbonCommonConstants.LONG_STRING_COLUMNS)) {
       results ++= Seq((CarbonCommonConstants.LONG_STRING_COLUMNS.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.LONG_STRING_COLUMNS, ""), ""))

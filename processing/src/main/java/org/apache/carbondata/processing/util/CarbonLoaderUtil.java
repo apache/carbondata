@@ -45,10 +45,9 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
+import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -258,6 +257,8 @@ public final class CarbonLoaderUtil {
     int maxTimeout = CarbonLockUtil
         .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
             CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
+    // TODO only for overwrite scene
+    final List<LoadMetadataDetails> staleLoadMetadataDetails = new ArrayList<>();
     try {
       if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
         LOGGER.info(
@@ -330,6 +331,7 @@ public final class CarbonLoaderUtil {
                 // For insert overwrite, we will delete the old segment folder immediately
                 // So collect the old segments here
                 addToStaleFolders(identifier, staleFolders, entry);
+                staleLoadMetadataDetails.add(entry);
               }
             }
           }
@@ -369,6 +371,33 @@ public final class CarbonLoaderUtil {
             CarbonUtil.deleteFoldersAndFiles(staleFolder);
           } catch (IOException | InterruptedException e) {
             LOGGER.error("Failed to delete stale folder: " + e.getMessage(), e);
+          }
+        }
+        if (!staleLoadMetadataDetails.isEmpty()) {
+          final String segmentFileLocation =
+              CarbonTablePath.getSegmentFilesLocation(identifier.getTablePath())
+                  + CarbonCommonConstants.FILE_SEPARATOR;
+          final String segmentLockFileLocation =
+              CarbonTablePath.getLockFilesDirPath(identifier.getTablePath())
+                  + CarbonCommonConstants.FILE_SEPARATOR;
+          for (LoadMetadataDetails staleLoadMetadataDetail : staleLoadMetadataDetails) {
+            try {
+              CarbonUtil.deleteFoldersAndFiles(
+                  FileFactory.getCarbonFile(segmentFileLocation
+                      + staleLoadMetadataDetail.getSegmentFile())
+              );
+            } catch (IOException | InterruptedException e) {
+              LOGGER.error("Failed to delete segment file: " + e.getMessage(), e);
+            }
+            try {
+              CarbonUtil.deleteFoldersAndFiles(
+                  FileFactory.getCarbonFile(segmentLockFileLocation
+                      + CarbonTablePath.addSegmentPrefix(staleLoadMetadataDetail.getLoadName())
+                      + LockUsage.LOCK)
+              );
+            } catch (IOException | InterruptedException e) {
+              LOGGER.error("Failed to delete segment lock file: " + e.getMessage(), e);
+            }
           }
         }
         status = true;
@@ -512,13 +541,6 @@ public final class CarbonLoaderUtil {
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
         CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY);
     return dictCache.get(columnIdentifier);
-  }
-
-  public static Dictionary getDictionary(AbsoluteTableIdentifier absoluteTableIdentifier,
-      ColumnIdentifier columnIdentifier, DataType dataType)
-      throws IOException {
-    return getDictionary(
-        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier, dataType));
   }
 
   /**
@@ -1201,6 +1223,15 @@ public final class CarbonLoaderUtil {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
         .mergeCarbonIndexFilesOfSegment(segmentId, uuid, tablePath, partitionPath);
+  }
+
+  public static SegmentFileStore.FolderDetails mergeIndexFilesInPartitionedTempSegment(
+      CarbonTable table, String segmentId, String partitionPath, List<String> partitionInfo,
+      String uuid, String tempFolderPath, String currPartitionSpec) throws IOException {
+    String tablePath = table.getTablePath();
+    return new CarbonIndexFileMergeWriter(table)
+        .mergeCarbonIndexFilesOfSegment(segmentId, tablePath, partitionPath, partitionInfo, uuid,
+            tempFolderPath, currPartitionSpec);
   }
 
   private static void deleteFiles(List<String> filesToBeDeleted) throws IOException {

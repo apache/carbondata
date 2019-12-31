@@ -53,7 +53,8 @@ public final class ProxyRecoverableSerializer
     final ByteBuffer byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
     serializeString(byteBuffer, proxyRecoverable.getWriterType());
     serializeConfiguration(byteBuffer, proxyRecoverable.getWriterConfiguration());
-    serializeString(byteBuffer, proxyRecoverable.getPartition());
+    serializeString(byteBuffer, proxyRecoverable.getWriterIdentifier());
+    serializeString(byteBuffer, proxyRecoverable.getWritePath());
     final byte[] bytes = new byte[byteBuffer.position()];
     byteBuffer.position(0);
     byteBuffer.get(bytes);
@@ -113,8 +114,9 @@ public final class ProxyRecoverableSerializer
     final String writerType = deserializeString(byteBuffer);
     final ProxyFileWriterFactory.Configuration writerConfiguration =
         deserializeConfiguration(byteBuffer);
-    final String partition = deserializeString(byteBuffer);
-    return new ProxyRecoverable(writerType, writerConfiguration, partition);
+    final String writerIdentifier = deserializeString(byteBuffer);
+    final String writePath = deserializeString(byteBuffer);
+    return new ProxyRecoverable(writerType, writerConfiguration, writerIdentifier, writePath);
   }
 
   private static ProxyFileWriterFactory.Configuration deserializeConfiguration(

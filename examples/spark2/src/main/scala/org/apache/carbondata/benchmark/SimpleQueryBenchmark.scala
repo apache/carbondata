@@ -220,7 +220,6 @@ object SimpleQueryBenchmark {
       input.write
           .format("carbondata")
           .option("tableName", tableName)
-          .option("single_pass", "true")
           .option("table_blocksize", "32")
           .mode(SaveMode.Overwrite)
           .save()

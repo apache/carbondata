@@ -19,12 +19,14 @@ package org.apache.carbon.flink;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.statusmanager.StageInput;
@@ -32,6 +34,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.carbon.core.metadata.StageManager;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
@@ -42,48 +45,63 @@ final class CarbonLocalWriter extends CarbonWriter {
 
   CarbonLocalWriter(
       final CarbonLocalWriterFactory factory,
+      final String identifier,
       final CarbonTable table,
-      final org.apache.carbondata.sdk.file.CarbonWriter writer,
-      final String writePath,
-      final String writePartition
+      final String writePath
   ) {
-    ProxyFileWriterFactory.register(factory.getType(), factory.getClass());
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Open writer. " + this.toString());
-    }
-    this.factory = factory;
-    this.table = table;
-    this.writer = writer;
+    super(factory, identifier, table);
+    final Properties writerProperties = factory.getConfiguration().getWriterProperties();
+    final String commitThreshold =
+        writerProperties.getProperty(CarbonLocalProperty.COMMIT_THRESHOLD);
+    this.writerFactory = new WriterFactory(table, writePath) {
+      @Override
+      protected org.apache.carbondata.sdk.file.CarbonWriter newWriter(
+          final Object[] row) {
+        try {
+          return org.apache.carbondata.sdk.file.CarbonWriter.builder()
+              .outputPath(super.getWritePath(row))
+              .writtenBy("flink")
+              .withSchemaFile(CarbonTablePath.getSchemaFilePath(table.getTablePath()))
+              .withCsvInput()
+              .build();
+        } catch (IOException | InvalidLoadOptionException exception) {
+          // TODO
+          throw new UnsupportedOperationException(exception);
+        }
+      }
+    };
     this.writePath = writePath;
-    this.writePartition = writePartition;
+    this.writeCommitThreshold =
+        commitThreshold == null ? Long.MAX_VALUE : Long.parseLong(commitThreshold);
+    this.writeCount = new AtomicLong(0);
     this.flushed = true;
   }
 
-  private final CarbonLocalWriterFactory factory;
-
-  private final CarbonTable table;
-
-  private final org.apache.carbondata.sdk.file.CarbonWriter writer;
+  private final WriterFactory writerFactory;
 
   private final String writePath;
 
-  private final String writePartition;
+  private final long writeCommitThreshold;
+
+  private final AtomicLong writeCount;
 
   private volatile boolean flushed;
 
   @Override
-  public CarbonLocalWriterFactory getFactory() {
-    return this.factory;
+  public String getPath() {
+    return this.writePath;
   }
 
   @Override
-  public String getPartition() {
-    return this.writePartition;
-  }
-
-  @Override
-  public void addElement(final String element) throws IOException {
-    this.writer.write(element);
+  public void addElement(final Object[] element) throws IOException {
+    this.writerFactory.getWriter(element).write(element);
+    this.writeCount.incrementAndGet();
+    if (this.writeCount.get() >= this.writeCommitThreshold) {
+      this.closeWriters();
+      this.commit();
+      this.writerFactory.reset();
+      this.writeCount.set(0);
+    }
     this.flushed = false;
   }
 
@@ -94,7 +112,7 @@ final class CarbonLocalWriter extends CarbonWriter {
     }
     synchronized (this) {
       if (!this.flushed) {
-        this.writer.close();
+        this.closeWriters();
         this.flushed = true;
       }
     }
@@ -116,23 +134,27 @@ final class CarbonLocalWriter extends CarbonWriter {
       LOGGER.debug("Commit write. " + this.toString());
     }
     try {
-      final Properties writerProperties = this.factory.getConfiguration().getWriterProperties();
+      final Properties writerProperties =
+          this.getFactory().getConfiguration().getWriterProperties();
       String dataPath = writerProperties.getProperty(CarbonLocalProperty.DATA_PATH);
       if (dataPath == null) {
         throw new IllegalArgumentException(
                 "Writer property [" + CarbonLocalProperty.DATA_PATH + "] is not set."
         );
       }
-      dataPath = dataPath + this.table.getDatabaseName() + "/"
-          + this.table.getTableName() + "/" + this.writePartition + "/";
-      Map<String, Long> fileList =
-              this.uploadSegmentDataFiles(this.writePath + "Fact/Part0/Segment_null/", dataPath);
+      dataPath = dataPath + this.table.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR
+          + this.table.getTableName() + CarbonCommonConstants.FILE_SEPARATOR;
+      tryCreateLocalDirectory(new File(dataPath));
+      StageInput stageInput = this.uploadSegmentDataFiles(this.writePath, dataPath);
+      if (stageInput == null) {
+        return;
+      }
       try {
-        String stageDir = CarbonTablePath.getStageDir(
-            table.getAbsoluteTableIdentifier().getTablePath());
-        tryCreateLocalDirectory(new File(stageDir));
-        String stageInputPath = stageDir + "/" + this.writePartition;
-        StageManager.writeStageInput(stageInputPath, new StageInput(dataPath, fileList));
+        String stageInputPath = CarbonTablePath.getStageDir(
+            table.getAbsoluteTableIdentifier().getTablePath()) +
+            CarbonCommonConstants.FILE_SEPARATOR + UUID.randomUUID();
+        tryCreateLocalDirectory(new File(stageInputPath));
+        StageManager.writeStageInput(stageInputPath, stageInput);
       } catch (Throwable exception) {
         this.deleteSegmentDataFilesQuietly(dataPath);
         throw exception;
@@ -148,13 +170,13 @@ final class CarbonLocalWriter extends CarbonWriter {
 
   @Override
   public void close() {
-    if (this.writer == null) {
+    if (this.writerFactory == null) {
       return;
     }
     try {
       synchronized (this) {
         if (!this.flushed) {
-          this.writer.close();
+          this.closeWriters();
           this.flushed = true;
         }
       }
@@ -169,33 +191,15 @@ final class CarbonLocalWriter extends CarbonWriter {
     }
   }
 
-  private Map<String, Long> uploadSegmentDataFiles(final String localPath, final String remotePath)
-          throws IOException {
-    final File[] files = new File(localPath).listFiles();
-    if (files == null) {
-      return new HashMap<>(0);
+  private void closeWriters() throws IOException {
+    if (this.writerFactory == null) {
+      return;
     }
-    Map<String, Long> fileNameMapLength = new HashMap<>(files.length);
-    for (File file : files) {
-      fileNameMapLength.put(file.getName(), file.length());
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Upload file[" + file.getAbsolutePath() + "] to [" + remotePath + "] start.");
-      }
-      try {
-        final File remoteFile = new File(remotePath + file.getName());
-        if (!remoteFile.exists()) {
-          tryCreateLocalFile(remoteFile);
-        }
-        CarbonUtil.copyCarbonDataFileToCarbonStorePath(file.getAbsolutePath(), remotePath, 1024);
-      } catch (CarbonDataWriterException exception) {
-        LOGGER.error(exception.getMessage(), exception);
-        throw exception;
-      }
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Upload file[" + file.getAbsolutePath() + "] to [" + remotePath + "] end.");
-      }
+    final List<org.apache.carbondata.sdk.file.CarbonWriter> writers =
+        this.writerFactory.getWriters();
+    for (org.apache.carbondata.sdk.file.CarbonWriter writer : writers) {
+      writer.close();
     }
-    return fileNameMapLength;
   }
 
   private void deleteSegmentDataFilesQuietly(final String segmentDataPath) {
@@ -203,18 +207,6 @@ final class CarbonLocalWriter extends CarbonWriter {
       CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(segmentDataPath));
     } catch (Throwable exception) {
       LOGGER.error("Fail to delete segment data path [" + segmentDataPath + "].", exception);
-    }
-  }
-
-  private static void tryCreateLocalFile(final File file) throws IOException {
-    if (file.exists()) {
-      return;
-    }
-    if (file.getParentFile() != null) {
-      tryCreateLocalDirectory(file.getParentFile());
-    }
-    if (!file.createNewFile()) {
-      throw new IOException("File [" + file.getCanonicalPath() + "] is exist.");
     }
   }
 

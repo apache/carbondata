@@ -79,8 +79,7 @@ object SparkSessionExample {
          | charField CHAR(5)
          | )
          | USING carbondata
-         | OPTIONS('DICTIONARY_INCLUDE'='dateField, charField',
-         | 'dbName'='default', 'tableName'='sparksession_table')
+         | OPTIONS('tableName'='sparksession_table')
        """.stripMargin)
 
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"

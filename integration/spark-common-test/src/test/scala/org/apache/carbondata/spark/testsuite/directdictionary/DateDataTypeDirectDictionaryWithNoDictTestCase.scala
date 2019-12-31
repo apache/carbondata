@@ -43,7 +43,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
         """
          CREATE TABLE IF NOT EXISTS directDictionaryTable
         (empno String, doj Date, salary Int)
-         STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_EXCLUDE'='empno')"""
+         STORED BY 'org.apache.carbondata.format' """
       )
 
       CarbonProperties.getInstance()

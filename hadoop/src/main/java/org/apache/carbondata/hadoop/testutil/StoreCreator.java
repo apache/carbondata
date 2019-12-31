@@ -17,30 +17,20 @@
 
 package org.apache.carbondata.hadoop.testutil;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.CacheProvider;
-import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -51,7 +41,6 @@ import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -61,7 +50,6 @@ import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
@@ -69,13 +57,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
-import org.apache.carbondata.core.writer.CarbonDictionaryWriterImpl;
 import org.apache.carbondata.core.writer.ThriftWriter;
-import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
-import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
-import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfo;
-import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPreparator;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.csvinput.BlockDetails;
@@ -107,14 +89,9 @@ public class StoreCreator {
   private AbsoluteTableIdentifier absoluteTableIdentifier;
   private String storePath = null;
   private String csvPath;
-  private boolean dictionary;
   private List<String> sortColumns = new ArrayList<>();
 
   public StoreCreator(String storePath, String csvPath) {
-    this(storePath, csvPath, false);
-  }
-
-  public StoreCreator(String storePath, String csvPath, boolean dictionary) {
     this.storePath = storePath;
     this.csvPath = csvPath;
     String dbName = "testdb";
@@ -126,7 +103,6 @@ public class StoreCreator {
     sortColumns.add("serialname");
     absoluteTableIdentifier = AbsoluteTableIdentifier.from(storePath + "/testdb/testtable",
         new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
-    this.dictionary = dictionary;
   }
 
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
@@ -209,7 +185,6 @@ public class StoreCreator {
     }
 
     CarbonTable table = createTable(absoluteTableIdentifier);
-    writeDictionary(csvPath, table);
     return buildCarbonLoadModel(table, csvPath, absoluteTableIdentifier);
   }
 
@@ -225,9 +200,6 @@ public class StoreCreator {
     tableSchema.setTableName(identifier.getCarbonTableIdentifier().getTableName());
     List<ColumnSchema> columnSchemas = new ArrayList<ColumnSchema>();
     ArrayList<Encoding> encodings = new ArrayList<>();
-    if (dictionary) {
-      encodings.add(Encoding.DICTIONARY);
-    }
     int schemaOrdinal = 0;
     ColumnSchema id = new ColumnSchema();
     id.setColumnName("id");
@@ -377,58 +349,6 @@ public class StoreCreator {
       }
     }
     return newColumnSchema;
-  }
-
-  private void writeDictionary(String factFilePath, CarbonTable table) throws Exception {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(
-        new FileInputStream(factFilePath), "UTF-8"));
-    List<CarbonDimension> dims = table.getVisibleDimensions();
-    Set<String>[] set = new HashSet[dims.size()];
-    for (int i = 0; i < set.length; i++) {
-      set[i] = new HashSet<String>();
-    }
-    String line = reader.readLine();
-    while (line != null) {
-      String[] data = line.split(",");
-      for (int i = 0; i < set.length; i++) {
-        set[i].add(data[i]);
-      }
-      line = reader.readLine();
-    }
-
-    Cache dictCache = CacheProvider.getInstance()
-        .createCache(CacheType.REVERSE_DICTIONARY);
-    for (int i = 0; i < set.length; i++) {
-      ColumnIdentifier columnIdentifier =
-          new ColumnIdentifier(dims.get(i).getColumnId(), null, null);
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-          new DictionaryColumnUniqueIdentifier(
-              table.getAbsoluteTableIdentifier(), columnIdentifier, columnIdentifier.getDataType());
-      CarbonDictionaryWriter writer =
-          new CarbonDictionaryWriterImpl(dictionaryColumnUniqueIdentifier);
-      for (String value : set[i]) {
-        writer.write(value);
-      }
-      writer.close();
-      writer.commit();
-      Dictionary dict = (Dictionary) dictCache.get(
-          new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
-              columnIdentifier, dims.get(i).getDataType()));
-      CarbonDictionarySortInfoPreparator preparator =
-          new CarbonDictionarySortInfoPreparator();
-      List<String> newDistinctValues = new ArrayList<String>();
-      CarbonDictionarySortInfo dictionarySortInfo =
-          preparator.getDictionarySortInfo(newDistinctValues, dict, dims.get(i).getDataType());
-      CarbonDictionarySortIndexWriter carbonDictionaryWriter =
-          new CarbonDictionarySortIndexWriterImpl(dictionaryColumnUniqueIdentifier);
-      try {
-        carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex());
-        carbonDictionaryWriter.writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted());
-      } finally {
-        carbonDictionaryWriter.close();
-      }
-    }
-    reader.close();
   }
 
   public void setSortColumns(List<String> sortColumns) {

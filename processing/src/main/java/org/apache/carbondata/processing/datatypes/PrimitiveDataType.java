@@ -25,26 +25,16 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.CacheProvider;
-import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
-import org.apache.carbondata.core.dictionary.client.DictionaryClient;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -54,9 +44,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
-import org.apache.carbondata.processing.loading.dictionary.DictionaryServerClientDictionary;
 import org.apache.carbondata.processing.loading.dictionary.DirectDictionary;
-import org.apache.carbondata.processing.loading.dictionary.PreCreatedDictionary;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -146,16 +134,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param parentName
    * @param columnId
    * @param carbonDimension
-   * @param absoluteTableIdentifier
-   * @param client
-   * @param useOnePass
-   * @param localCache
    * @param nullFormat
    */
   public PrimitiveDataType(CarbonColumn carbonColumn, String parentName, String columnId,
-      CarbonDimension carbonDimension, AbsoluteTableIdentifier absoluteTableIdentifier,
-      DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
-      String nullFormat) {
+      CarbonDimension carbonDimension, String nullFormat) {
     this.name = carbonColumn.getColName();
     this.parentName = parentName;
     this.columnId = columnId;
@@ -164,42 +146,12 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     this.nullFormat = nullFormat;
     this.dataType = carbonColumn.getDataType();
 
-    DictionaryColumnUniqueIdentifier identifier =
-        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
-            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
-    try {
-      if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
-          || carbonColumn.getDataType() == DataTypes.DATE) {
-        dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
-            .getDirectDictionaryGenerator(carbonDimension.getDataType(),
-                getDateFormat(carbonDimension)));
-        isDirectDictionary = true;
-      } else if (carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
-        CacheProvider cacheProvider = CacheProvider.getInstance();
-        Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache =
-            cacheProvider.createCache(CacheType.REVERSE_DICTIONARY);
-        Dictionary dictionary = null;
-        if (useOnePass) {
-          if (CarbonUtil.isFileExistsForGivenColumn(identifier)) {
-            dictionary = cache.get(identifier);
-          }
-          DictionaryMessage dictionaryMessage = new DictionaryMessage();
-          dictionaryMessage.setColumnName(carbonDimension.getColName());
-          // for table initialization
-          dictionaryMessage
-              .setTableUniqueId(absoluteTableIdentifier.getCarbonTableIdentifier().getTableId());
-          dictionaryMessage.setData("0");
-          // for generate dictionary
-          dictionaryMessage.setType(DictionaryMessageType.DICT_GENERATION);
-          dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
-              dictionaryMessage, localCache);
-        } else {
-          dictionary = cache.get(identifier);
-          dictionaryGenerator = new PreCreatedDictionary(dictionary);
-        }
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
+        || carbonColumn.getDataType() == DataTypes.DATE) {
+      dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
+          .getDirectDictionaryGenerator(carbonDimension.getDataType(),
+              getDateFormat(carbonDimension)));
+      isDirectDictionary = true;
     }
   }
 

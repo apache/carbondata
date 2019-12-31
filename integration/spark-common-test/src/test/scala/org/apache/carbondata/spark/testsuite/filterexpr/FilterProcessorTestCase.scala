@@ -395,7 +395,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test if query is giving empty results for table with no segments") {
     sql("drop table if exists q1")
-    sql("create table q1(a string) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='a')")
+    sql("create table q1(a string) stored by 'carbondata' ")
     assert(sql("select * from q1 where a > 10").count() == 0)
     sql("drop table if exists q1")
   }

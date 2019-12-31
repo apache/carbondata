@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -40,7 +39,6 @@ import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -114,32 +112,23 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       this.name2Col.put(col.getColName(), col);
     }
 
-    try {
-      this.name2Converters = new HashMap<>(indexedColumn.size());
-      AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier
-          .from(carbonTable.getTablePath(), carbonTable.getCarbonTableIdentifier());
-      String nullFormat = "\\N";
-      Map<Object, Integer>[] localCaches = new Map[indexedColumn.size()];
+    this.name2Converters = new HashMap<>(indexedColumn.size());
+    String nullFormat = "\\N";
 
-      for (int i = 0; i < indexedColumn.size(); i++) {
-        localCaches[i] = new ConcurrentHashMap<>();
-        DataField dataField = new DataField(indexedColumn.get(i));
-        String dateFormat = CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
-        dataField.setDateFormat(dateFormat);
-        String tsFormat = CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-        dataField.setTimestampFormat(tsFormat);
-        FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
-            .createFieldEncoder(dataField, absoluteTableIdentifier, i, nullFormat, null, false,
-                localCaches[i], false, carbonTable.getTablePath(), false);
-        this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
-      }
-    } catch (IOException e) {
-      LOGGER.error("Exception occurs while init index columns", e);
-      throw new RuntimeException(e);
+    for (int i = 0; i < indexedColumn.size(); i++) {
+      DataField dataField = new DataField(indexedColumn.get(i));
+      String dateFormat = CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+      dataField.setDateFormat(dateFormat);
+      String tsFormat = CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+      dataField.setTimestampFormat(tsFormat);
+      FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
+          .createFieldEncoder(dataField, i, nullFormat, false,
+              false, carbonTable.getTablePath());
+      this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
     }
     this.badRecordLogHolder = new BadRecordLogHolder();
     this.badRecordLogHolder.setLogged(false);

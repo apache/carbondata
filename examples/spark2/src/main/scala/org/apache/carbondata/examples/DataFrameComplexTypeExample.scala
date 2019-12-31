@@ -46,31 +46,14 @@ object DataFrameComplexTypeExample {
   }
 
   def exampleBody(spark: SparkSession): Unit = {
-    val complexTypeDictionaryTableName = s"complex_type_dictionary_table"
     val complexTypeNoDictionaryTableName = s"complex_type_noDictionary_table"
     val complexTypeNoDictionaryTableNameArray = s"complex_type_noDictionary_array_table"
 
     import spark.implicits._
 
     // drop table if exists previously
-    spark.sql(s"DROP TABLE IF EXISTS ${ complexTypeDictionaryTableName }")
     spark.sql(s"DROP TABLE IF EXISTS ${ complexTypeNoDictionaryTableName }")
     spark.sql(s"DROP TABLE IF EXISTS ${ complexTypeNoDictionaryTableNameArray }")
-
-    spark.sql(
-      s"""
-         | CREATE TABLE ${ complexTypeDictionaryTableName }(
-         | id INT,
-         | name STRING,
-         | city STRING,
-         | salary FLOAT,
-         | file struct<school:array<string>, age:int>
-         | )
-         | STORED BY 'carbondata'
-         | TBLPROPERTIES(
-         | 'sort_columns'='name',
-         | 'dictionary_include'='city')
-         | """.stripMargin)
 
     spark.sql(
       s"""
@@ -83,8 +66,7 @@ object DataFrameComplexTypeExample {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(
-         | 'sort_columns'='name',
-         | 'dictionary_include'='city')
+         | 'sort_columns'='name')
          | """.stripMargin)
 
 
@@ -104,15 +86,6 @@ object DataFrameComplexTypeExample {
 
 
     val sc = spark.sparkContext
-    // generate data
-    val df = sc.parallelize(Seq(
-      ComplexTypeData(1, "index_1", "city_1", 10000.0f,
-        StructElement(Array("struct_11", "struct_12"), 10)),
-      ComplexTypeData(2, "index_2", "city_2", 20000.0f,
-        StructElement(Array("struct_21", "struct_22"), 20)),
-      ComplexTypeData(3, "index_3", "city_3", 30000.0f,
-        StructElement(Array("struct_31", "struct_32"), 30))
-    )).toDF
 
     // generate data
     val df2 = sc.parallelize(Seq(
@@ -131,14 +104,6 @@ object DataFrameComplexTypeExample {
         StructElement1(Array("struct_31", "struct_32"), Array("struct_11", "struct_12"), 30))
     )).toDF
 
-
-    df.printSchema()
-    df.write
-      .format("carbondata")
-      .option("tableName", complexTypeDictionaryTableName)
-      .mode(SaveMode.Append)
-      .save()
-
     df1.printSchema()
     df1.write
       .format("carbondata")
@@ -146,35 +111,12 @@ object DataFrameComplexTypeExample {
       .mode(SaveMode.Append)
       .save()
 
-
     df2.printSchema()
     df2.write
       .format("carbondata")
       .option("tableName", complexTypeNoDictionaryTableNameArray)
       .mode(SaveMode.Append)
       .save()
-
-
-    spark.sql(s"select count(*) from ${ complexTypeDictionaryTableName }")
-      .show(100, truncate = false)
-
-    spark.sql(s"select * from ${ complexTypeDictionaryTableName } order by id desc")
-      .show(300, truncate = false)
-
-    spark.sql(s"select * " +
-              s"from ${ complexTypeDictionaryTableName } " +
-              s"where id = 100000001 or id = 1 limit 100").show(100, truncate = false)
-
-    spark.sql(s"select * " +
-              s"from ${ complexTypeDictionaryTableName } " +
-              s"where id > 10 limit 100").show(100, truncate = false)
-
-    // show segments
-    spark.sql(s"SHOW SEGMENTS FOR TABLE ${ complexTypeDictionaryTableName }").show(false)
-
-    // drop table
-    spark.sql(s"DROP TABLE IF EXISTS ${ complexTypeDictionaryTableName }")
-
 
     spark.sql(s"select count(*) from ${ complexTypeNoDictionaryTableName }")
       .show(100, truncate = false)

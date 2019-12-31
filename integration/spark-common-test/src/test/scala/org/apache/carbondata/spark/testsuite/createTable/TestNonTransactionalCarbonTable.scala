@@ -2693,8 +2693,7 @@ object testUtil{
       val decoder = encodingFactory.createDecoder(encodings, encoderMetas, compressorName)
       val dictionaryPage = decoder
         .decode(local_dictionary.getDictionary_data, 0, local_dictionary.getDictionary_data.length)
-      val dictionaryMap = new
-          util.HashMap[DictionaryByteArrayWrapper, Integer]
+      val dictionaryMap = new util.HashMap[DictionaryByteArrayWrapper, Integer]
       val usedDictionaryValues = util.BitSet
         .valueOf(CompressorFactory.getInstance.getCompressor(compressorName)
           .unCompressByte(local_dictionary.getDictionary_values))

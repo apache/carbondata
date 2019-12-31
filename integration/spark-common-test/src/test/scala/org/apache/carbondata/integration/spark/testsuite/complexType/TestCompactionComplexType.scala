@@ -1024,8 +1024,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
         "ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>," +
         "proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId " +
         "double,contractNumber double) " +
-        "STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId')"
+        "STORED BY 'org.apache.carbondata.format' "
     )
     sql(
       s"LOAD DATA local inpath '$resourcesPath/complexdata.csv' INTO table " +
@@ -1085,8 +1084,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
       "STRUCT_OF_ARRAY struct<ID:int,CHECK_DATE:string,SNo:array<int>,sal1:array<double>," +
       "state:array<string>," +
       "date1:array<string>>,CARD_COUNT int,DEBIT_COUNT int,CREDIT_COUNT int, DEPOSIT double, " +
-      "HQ_DEPOSIT double) STORED BY 'carbondata'" +
-      "TBLPROPERTIES('DICTIONARY_INCLUDE'='STRUCT_OF_ARRAY,DEPOSIT,HQ_DEPOSIT')")
+      "HQ_DEPOSIT double) STORED BY 'carbondata'")
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/structofarray.csv' INTO TABLE compactComplex OPTIONS" +
       s"('DELIMITER'=',','QUOTECHAR'='\'," +
@@ -1122,10 +1120,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
         | number string,
         | structfield struct<a:array<int> ,b:int>
         | )
-        | stored by 'carbondata'
-        | TBLPROPERTIES(
-        | 'DICTIONARY_INCLUDE'='name,age,number,structfield'
-        | )
+        | stored as carbondata
       """.stripMargin)
     sql("INSERT into compactComplex values('man',25,'222',named_struct('a', array(1000,2000), 'b', 1))")
     sql("INSERT into compactComplex values('can',24,'333',named_struct('a', array(1000,2000), 'b', 2))")

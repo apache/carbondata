@@ -24,6 +24,8 @@ import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.types._
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.util.CarbonProperties
 
 class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
@@ -120,8 +122,6 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
       .format("carbondata")
       .option("tableName", "testBigData")
       .option("tempCSV", "false")
-      .option("single_pass", "true")
-      .option("dictionary_exclude", "id") // id is high cardinality column
       .mode(SaveMode.Overwrite)
       .save()
     sql(s"select city, sum(m1) from testBigData " +
@@ -182,18 +182,15 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test carbon source table with string type in dictionary_exclude") {
-    try {
+    val ex = intercept[DeprecatedFeatureException] {
       sql("create table car( \nL_SHIPDATE string,\nL_SHIPMODE string,\nL_SHIPINSTRUCT string," +
           "\nL_RETURNFLAG string,\nL_RECEIPTDATE string,\nL_ORDERKEY string,\nL_PARTKEY string," +
           "\nL_SUPPKEY string,\nL_LINENUMBER int,\nL_QUANTITY decimal,\nL_EXTENDEDPRICE decimal," +
           "\nL_DISCOUNT decimal,\nL_TAX decimal,\nL_LINESTATUS string,\nL_COMMITDATE string," +
           "\nL_COMMENT string \n) \nUSING org.apache.spark.sql.CarbonSource\nOPTIONS (tableName " +
           "\"car\", DICTIONARY_EXCLUDE \"L_ORDERKEY, L_PARTKEY, L_SUPPKEY, L_COMMENT\")")
-      assert(true)
     }
-    catch {
-      case exception: Exception => assert(false)
-    }
+    assert(ex.getMessage.contains("dictionary_exclude is deprecated in CarbonData 2.0"))
   }
 
   test("test create table with complex datatype") {
@@ -264,7 +261,6 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
          |    stringField string,
          |    intField int)
          | USING org.apache.spark.sql.CarbonSource
-         | OPTIONS('DICTIONARY_EXCLUDE'='stringField')
       """.
         stripMargin
     )

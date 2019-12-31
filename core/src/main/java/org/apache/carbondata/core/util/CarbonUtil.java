@@ -48,7 +48,6 @@ import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.FileReader;
@@ -338,9 +337,11 @@ public final class CarbonUtil {
       @Override
       public Void run() throws Exception {
         for (int i = 0; i < file.length; i++) {
-          boolean delete = file[i].delete();
-          if (!delete) {
-            throw new IOException("Error while deleting file: " + file[i].getAbsolutePath());
+          if (file[i].exists()) {
+            boolean delete = file[i].delete();
+            if (!delete) {
+              throw new IOException("Error while deleting file: " + file[i].getAbsolutePath());
+            }
           }
         }
         return null;
@@ -355,9 +356,11 @@ public final class CarbonUtil {
       @Override
       public Void run() throws Exception {
         for (int i = 0; i < file.length; i++) {
-          boolean delete = file[i].delete();
-          if (!delete) {
-            LOGGER.warn("Unable to delete file: " + file[i].getCanonicalPath());
+          if (file[i].exists()) {
+            boolean delete = file[i].delete();
+            if (!delete) {
+              LOGGER.warn("Unable to delete file: " + file[i].getCanonicalPath());
+            }
           }
         }
         return null;
@@ -1685,22 +1688,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * This method will check if dictionary and its metadata file exists for a given column
-   *
-   * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
-   *                                         tableName and columnIdentifier
-   * @return
-   */
-  public static boolean isFileExistsForGivenColumn(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    String dictionaryFilePath = dictionaryColumnUniqueIdentifier.getDictionaryFilePath();
-    String dictionaryMetadataFilePath =
-        dictionaryColumnUniqueIdentifier.getDictionaryMetaFilePath();
-    // check if both dictionary and its metadata file exists for a given column
-    return isFileExists(dictionaryFilePath) && isFileExists(dictionaryMetadataFilePath);
-  }
-
-  /**
    * @param invalidBlockVOForSegmentId
    * @param updateStatusMngr
    * @return
@@ -2732,22 +2719,50 @@ public final class CarbonUtil {
     return Base64.decodeBase64(objectString.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
   }
 
+  public static void copyCarbonDataFileToCarbonStorePath(
+      String localFilePath,
+      String targetPath, long fileSizeInBytes,
+      OutputFilesInfoHolder outputFilesInfoHolder) throws CarbonDataWriterException {
+    if (targetPath.endsWith(".tmp") && localFilePath
+        .endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
+      // for partition case, write carbondata file directly to final path, keep index in temp path.
+      // This can improve the commit job performance on s3a.
+      targetPath =
+          targetPath.substring(0, targetPath.lastIndexOf("/"));
+      if (outputFilesInfoHolder != null) {
+        outputFilesInfoHolder.addToPartitionPath(targetPath);
+      }
+    }
+    long targetSize = copyCarbonDataFileToCarbonStorePath(localFilePath, targetPath,
+        fileSizeInBytes);
+    if (outputFilesInfoHolder != null) {
+      // Storing the number of files written by each task.
+      outputFilesInfoHolder.incrementCount();
+      // Storing the files written by each task.
+      outputFilesInfoHolder.addToOutputFiles(targetPath + localFilePath
+          .substring(localFilePath.lastIndexOf(File.separator)) + ":" + targetSize);
+    }
+  }
+
   /**
    * This method will copy the given file to carbon store location
    *
    * @param localFilePath local file name with full path
    * @throws CarbonDataWriterException
+   * @return the file size
    */
-  public static void copyCarbonDataFileToCarbonStorePath(String localFilePath,
+  public static long copyCarbonDataFileToCarbonStorePath(String localFilePath,
       String carbonDataDirectoryPath, long fileSizeInBytes)
       throws CarbonDataWriterException {
     long copyStartTime = System.currentTimeMillis();
     LOGGER.info(String.format("Copying %s to %s, operation id %d", localFilePath,
         carbonDataDirectoryPath, copyStartTime));
+    long targetSize = 0;
     try {
       CarbonFile localCarbonFile = FileFactory.getCarbonFile(localFilePath);
+      long localFileSize = localCarbonFile.getSize();
       // the size of local carbon file must be greater than 0
-      if (localCarbonFile.getSize() == 0L) {
+      if (localFileSize == 0L) {
         LOGGER.error("The size of local carbon file: " + localFilePath + " is 0.");
         throw new CarbonDataWriterException("The size of local carbon file is 0.");
       }
@@ -2755,16 +2770,16 @@ public final class CarbonUtil {
           .substring(localFilePath.lastIndexOf(File.separator));
       copyLocalFileToCarbonStore(carbonFilePath, localFilePath,
           CarbonCommonConstants.BYTEBUFFER_SIZE,
-          getMaxOfBlockAndFileSize(fileSizeInBytes, localCarbonFile.getSize()));
+          getMaxOfBlockAndFileSize(fileSizeInBytes, localFileSize));
       CarbonFile targetCarbonFile = FileFactory.getCarbonFile(carbonFilePath);
       // the size of carbon file must be greater than 0
       // and the same as the size of local carbon file
-      if (targetCarbonFile.getSize() == 0L ||
-          (targetCarbonFile.getSize() != localCarbonFile.getSize())) {
+      targetSize = targetCarbonFile.getSize();
+      if (targetSize == 0L || targetSize != localFileSize) {
         LOGGER.error("The size of carbon file: " + carbonFilePath + " is 0 "
             + "or is not the same as the size of local carbon file: ("
-            + "carbon file size=" + targetCarbonFile.getSize()
-            + ", local carbon file size=" + localCarbonFile.getSize() + ")");
+            + "carbon file size=" + targetSize
+            + ", local carbon file size=" + localFileSize + ")");
         throw new CarbonDataWriterException("The size of carbon file is 0 "
             + "or is not the same as the size of local carbon file.");
       }
@@ -2774,6 +2789,7 @@ public final class CarbonUtil {
     }
     LOGGER.info(String.format("Total copy time is %d ms, operation id %d",
         System.currentTimeMillis() - copyStartTime, copyStartTime));
+    return targetSize;
   }
 
   /**

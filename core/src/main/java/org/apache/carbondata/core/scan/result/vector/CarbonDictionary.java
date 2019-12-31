@@ -31,5 +31,4 @@ public interface CarbonDictionary  {
 
   byte[][] getAllDictionaryValues();
 
-  byte[] getAllDictionaryValuesInSingleArray();
 }

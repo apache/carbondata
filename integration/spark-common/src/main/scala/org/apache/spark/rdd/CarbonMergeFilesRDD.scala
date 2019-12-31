@@ -18,18 +18,21 @@
 package org.apache.spark.rdd
 
 import java.util
+import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -70,7 +73,12 @@ object CarbonMergeFilesRDD {
       tablePath: String,
       carbonTable: CarbonTable,
       mergeIndexProperty: Boolean,
-      readFileFooterFromCarbonDataFile: Boolean = false): Unit = {
+      partitionInfo: java.util.List[String] = new java.util.ArrayList[String](),
+      tempFolderPath: String = null,
+      readFileFooterFromCarbonDataFile: Boolean = false,
+      currPartitionSpec: Option[String] = None
+  ): Long = {
+    var mergeIndexSize = 0L
     if (mergeIndexProperty) {
       new CarbonMergeFilesRDD(
         sparkSession,
@@ -78,18 +86,63 @@ object CarbonMergeFilesRDD {
         segmentIds,
         segmentFileNameToSegmentIdMap,
         carbonTable.isHivePartitionTable,
-        readFileFooterFromCarbonDataFile).collect()
+        readFileFooterFromCarbonDataFile,
+        partitionInfo,
+        tempFolderPath).collect()
     } else {
       try {
         if (isPropertySet(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
           CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)) {
-          new CarbonMergeFilesRDD(
+          val mergeFilesRDD = new CarbonMergeFilesRDD(
             sparkSession,
             carbonTable,
             segmentIds,
             segmentFileNameToSegmentIdMap,
             carbonTable.isHivePartitionTable,
-            readFileFooterFromCarbonDataFile).collect()
+            readFileFooterFromCarbonDataFile,
+            partitionInfo,
+            tempFolderPath,
+            currPartitionSpec
+          )
+          if (carbonTable.isHivePartitionTable &&
+              !partitionInfo.isEmpty &&
+              !StringUtils.isEmpty(tempFolderPath)) {
+            // Async, distribute.
+            val rows = mergeFilesRDD.collect()
+            mergeIndexSize = rows.map(r => java.lang.Long.parseLong(r._1)).sum
+            val segmentFiles = rows.map(_._2)
+            if (segmentFiles.length > 0) {
+              val finalSegmentFile = if (segmentFiles.length == 1) {
+                segmentFiles(0)
+              } else {
+                val temp = segmentFiles(0)
+                (1 until segmentFiles.length).foreach { index =>
+                  temp.merge(segmentFiles(index))
+                }
+                temp
+              }
+
+              val segmentFilesLocation =
+                CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath)
+              val locationFile = FileFactory.getCarbonFile(segmentFilesLocation)
+              if (!locationFile.exists()) {
+                locationFile.mkdirs()
+              }
+              val segmentFilePath =
+                CarbonTablePath
+                  .getSegmentFilePath(carbonTable.getTablePath,
+                    tempFolderPath.replace(".tmp", CarbonTablePath.SEGMENT_EXT))
+              SegmentFileStore.writeSegmentFile(finalSegmentFile, segmentFilePath)
+            }
+          } else if (carbonTable.isHivePartitionTable && segmentIds.size > 1) {
+            // Async, distribute.
+            mergeFilesRDD.collect()
+          } else {
+            // Sync
+            mergeFilesRDD.internalGetPartitions.foreach(
+              partition => mergeFilesRDD.internalCompute(partition, null)
+            )
+          }
         }
       } catch {
         case ex: Exception =>
@@ -102,7 +155,27 @@ object CarbonMergeFilesRDD {
           }
       }
     }
-    if (carbonTable.isHivePartitionTable) {
+    if (carbonTable.isHivePartitionTable && !StringUtils.isEmpty(tempFolderPath)) {
+      // remove all tmp folder of index files
+      val startDelete = System.currentTimeMillis()
+      val numThreads = Math.min(Math.max(partitionInfo.size(), 1), 10)
+      val executorService = Executors.newFixedThreadPool(numThreads)
+      val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+      partitionInfo
+        .asScala
+        .map { partitionPath =>
+          executorService.submit(new Runnable {
+            override def run(): Unit = {
+              ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+              FileFactory.deleteAllCarbonFilesOfDir(
+                FileFactory.getCarbonFile(partitionPath + "/" + tempFolderPath))
+            }
+          })
+        }
+        .map(_.get())
+      LOGGER.info("Time taken to remove partition files for all partitions: " +
+                  (System.currentTimeMillis() - startDelete))
+    } else if (carbonTable.isHivePartitionTable) {
       segmentIds.foreach(segmentId => {
         val readPath: String = CarbonTablePath.getSegmentFilesLocation(tablePath) +
                                CarbonCommonConstants.FILE_SEPARATOR + segmentId + "_" +
@@ -116,6 +189,7 @@ object CarbonMergeFilesRDD {
             CarbonTablePath.getSegmentFilesLocation(tablePath))
       })
     }
+    mergeIndexSize
   }
 
   /**
@@ -148,8 +222,11 @@ class CarbonMergeFilesRDD(
   segments: Seq[String],
   segmentFileNameToSegmentIdMap: java.util.Map[String, String],
   isHivePartitionedTable: Boolean,
-  readFileFooterFromCarbonDataFile: Boolean)
-  extends CarbonRDD[String](ss, Nil) {
+  readFileFooterFromCarbonDataFile: Boolean,
+  partitionInfo: java.util.List[String],
+  tempFolderPath: String,
+  currPartitionSpec: Option[String] = None
+) extends CarbonRDD[(String, SegmentFileStore.SegmentFile)](ss, Nil) {
 
   override def internalGetPartitions: Array[Partition] = {
     if (isHivePartitionedTable) {
@@ -157,12 +234,18 @@ class CarbonMergeFilesRDD(
         .readLoadMetadata(CarbonTablePath.getMetadataPath(carbonTable.getTablePath))
       // in case of partition table make rdd partitions per partition of the carbon table
       val partitionPaths: java.util.Map[String, java.util.List[String]] = new java.util.HashMap()
-      segments.foreach(segment => {
-        val partitionSpecs = SegmentFileStore
-          .getPartitionSpecs(segment, carbonTable.getTablePath, metadataDetails)
-          .asScala.map(_.getLocation.toString)
-        partitionPaths.put(segment, partitionSpecs.asJava)
-      })
+      if (partitionInfo == null || partitionInfo.isEmpty) {
+        segments.foreach(segment => {
+          val partitionSpecs = SegmentFileStore
+            .getPartitionSpecs(segment, carbonTable.getTablePath, metadataDetails)
+            .asScala.map(_.getLocation.toString)
+          partitionPaths.put(segment, partitionSpecs.asJava)
+        })
+      } else {
+        segments.foreach(segment => {
+          partitionPaths.put(segment, partitionInfo)
+        })
+      }
       var index: Int = -1
       val rddPartitions: java.util.List[Partition] = new java.util.ArrayList()
       partitionPaths.asScala.foreach(partitionPath => {
@@ -181,17 +264,41 @@ class CarbonMergeFilesRDD(
     }
   }
 
-  override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[String] = {
+  override def internalCompute(theSplit: Partition,
+      context: TaskContext): Iterator[(String, SegmentFileStore.SegmentFile)] = {
     val tablePath = carbonTable.getTablePath
-    val iter = new Iterator[String] {
+    val iter = new Iterator[(String, SegmentFileStore.SegmentFile)] {
       val split = theSplit.asInstanceOf[CarbonMergeFilePartition]
       logInfo("Merging carbon index files of segment : " +
               CarbonTablePath.getSegmentPath(tablePath, split.segmentId))
 
-      if (isHivePartitionedTable) {
-        CarbonLoaderUtil
-          .mergeIndexFilesInPartitionedSegment(carbonTable, split.segmentId,
-            segmentFileNameToSegmentIdMap.get(split.segmentId), split.partitionPath)
+      var segmentFile: SegmentFileStore.SegmentFile = null
+      var indexSize: String = ""
+      if (isHivePartitionedTable && partitionInfo.isEmpty) {
+        CarbonLoaderUtil.mergeIndexFilesInPartitionedSegment(
+          carbonTable,
+          split.segmentId,
+          segmentFileNameToSegmentIdMap.get(split.segmentId),
+          split.partitionPath)
+      } else if (isHivePartitionedTable && !partitionInfo.isEmpty) {
+        val folderDetails = CarbonLoaderUtil
+          .mergeIndexFilesInPartitionedTempSegment(carbonTable,
+            split.segmentId,
+            split.partitionPath,
+            partitionInfo,
+            segmentFileNameToSegmentIdMap.get(split.segmentId),
+            tempFolderPath,
+            if (currPartitionSpec.isDefined) currPartitionSpec.get else null
+          )
+
+        val mergeIndexFilePath = split.partitionPath + "/" + folderDetails.getMergeFileName
+        indexSize = "" + FileFactory.getCarbonFile(mergeIndexFilePath).getSize
+        val locationKey = if (split.partitionPath.startsWith(carbonTable.getTablePath)) {
+          split.partitionPath.substring(carbonTable.getTablePath.length)
+        } else {
+          split.partitionPath
+        }
+        segmentFile = SegmentFileStore.createSegmentFile(locationKey, folderDetails)
       } else {
         new CarbonIndexFileMergeWriter(carbonTable)
           .mergeCarbonIndexFilesOfSegment(split.segmentId,
@@ -200,27 +307,24 @@ class CarbonMergeFilesRDD(
             segmentFileNameToSegmentIdMap.get(split.segmentId))
       }
 
-      var havePair = false
       var finished = false
 
       override def hasNext: Boolean = {
-        if (!finished && !havePair) {
-          finished = true
-          havePair = !finished
-        }
         !finished
       }
 
-      override def next(): String = {
-        if (!hasNext) {
-          throw new java.util.NoSuchElementException("End of stream")
-        }
-        havePair = false
-        ""
+      override def next(): (String, SegmentFileStore.SegmentFile) = {
+        finished = true
+        (indexSize, segmentFile)
       }
 
     }
     iter
+  }
+
+  override def getPartitions: Array[Partition] = {
+    super
+      .getPartitions
   }
 
 }

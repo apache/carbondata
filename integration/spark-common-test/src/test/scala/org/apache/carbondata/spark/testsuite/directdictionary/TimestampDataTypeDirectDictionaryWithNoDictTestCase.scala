@@ -46,7 +46,7 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
         """
          CREATE TABLE IF NOT EXISTS directDictionaryTable
         (empno String, doj Timestamp, salary Int)
-         STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_EXCLUDE'='empno')"""
+         STORED BY 'org.apache.carbondata.format'"""
       )
 
       CarbonProperties.getInstance()

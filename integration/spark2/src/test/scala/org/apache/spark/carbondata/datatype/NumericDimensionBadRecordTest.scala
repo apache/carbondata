@@ -47,39 +47,39 @@ class NumericDimensionBadRecordTest extends Spark2QueryTest with BeforeAndAfterA
 
       // 1. bad record int DataType dimension
       sql("create table intDataType(name String, dob timestamp, weight int)" +
-          " STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='weight')")
+          " STORED BY 'org.apache.carbondata.format' ")
       csvFilePath = s"$resourcesPath/badrecords/dummy.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO table intDataType options " +
           "('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORDS_ACTION'='IGNORE')");
       // 2. bad record long DataType dimension
       sql("create table longDataType(name String, dob timestamp, weight long)" +
-          " STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='weight')")
+          " STORED BY 'org.apache.carbondata.format' ")
       csvFilePath = s"$resourcesPath/badrecords/dummy.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO table longDataType options " +
           "('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORDS_ACTION'='IGNORE')");
       // 3. bad record double DataType dimension
       sql("create table doubleDataType(name String, dob timestamp, weight double)" +
-          " STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='weight')")
+          " STORED BY 'org.apache.carbondata.format' ")
       csvFilePath = s"$resourcesPath/badrecords/dummy.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO table doubleDataType options " +
           "('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORDS_ACTION'='IGNORE')");
 
       // 4. bad record float DataType dimension
       sql("create table floatDataType(name String, dob timestamp, weight float)" +
-          " STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='weight')")
+          " STORED BY 'org.apache.carbondata.format' ")
       csvFilePath = s"$resourcesPath/badrecords/dummy.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO table floatDataType options " +
           "('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORDS_ACTION'='IGNORE')");
       // 5. bad record decimal DataType dimension
       sql("create table bigDecimalDataType(name String, dob timestamp, weight decimal(3,1))" +
-          " STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='weight')")
+          " STORED BY 'org.apache.carbondata.format' ")
       csvFilePath = s"$resourcesPath/badrecords/dummy.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO table bigDecimalDataType options " +
           "('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORDS_ACTION'='IGNORE')");
 
       // 6. bad record string DataType dimension
       sql("create table stringDataType(name String, dob timestamp, weight String)" +
-          " STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='weight')")
+          " STORED BY 'org.apache.carbondata.format' ")
       csvFilePath = s"$resourcesPath/badrecords/dummy.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO table stringDataType options " +
           "('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORDS_ACTION'='IGNORE')");
@@ -100,8 +100,7 @@ class NumericDimensionBadRecordTest extends Spark2QueryTest with BeforeAndAfterA
         "row format delimited fields terminated by ','")
     sql("""insert into num_dic select 'sam','\N'""")
     sql("select * from num_dic").show()
-    sql("create table num_dicc(cust_name string, cust_id int) stored by 'carbondata'" +
-              " TBLPROPERTIES('DICTIONARY_INCLUDE'='cust_id')")
+    sql("create table num_dicc(cust_name string, cust_id int) stored by 'carbondata'")
     try {
       sql("insert into table num_dicc select * from num_dic")
     } catch {

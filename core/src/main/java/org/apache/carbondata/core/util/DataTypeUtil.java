@@ -75,7 +75,7 @@ public final class DataTypeUtil {
   /**
    * DataType converter for different computing engines
    */
-  private static DataTypeConverter converter;
+  private static final ThreadLocal<DataTypeConverter> converter = new ThreadLocal<>();
 
   /**
    * This method will convert a given value to its specific type
@@ -105,7 +105,7 @@ public final class DataTypeUtil {
           new BigDecimal(msrValue).setScale(scale, RoundingMode.HALF_UP);
       BigDecimal decimal = normalizeDecimalValue(bigDecimal, precision);
       if (useConverter) {
-        return converter.convertFromBigDecimalToDecimal(decimal);
+        return getDataTypeConverter().convertFromBigDecimalToDecimal(decimal);
       } else {
         return decimal;
       }
@@ -144,7 +144,7 @@ public final class DataTypeUtil {
           new BigDecimal(dimValue).setScale(scale, RoundingMode.HALF_UP);
       BigDecimal decimal = normalizeDecimalValue(bigDecimal, precision);
       if (useConverter) {
-        return converter.convertFromBigDecimalToDecimal(decimal);
+        return getDataTypeConverter().convertFromBigDecimalToDecimal(decimal);
       } else {
         return decimal;
       }
@@ -457,7 +457,7 @@ public final class DataTypeUtil {
       }
     } else {
       // Default action for String/Varchar
-      return converter.convertFromStringToUTF8String(dimensionValue);
+      return getDataTypeConverter().convertFromStringToUTF8String(dimensionValue);
     }
   }
 
@@ -974,7 +974,7 @@ public final class DataTypeUtil {
    */
   public static void setDataTypeConverter(DataTypeConverter converterLocal) {
     if (converterLocal != null) {
-      converter = converterLocal;
+      converter.set(converterLocal);
       timeStampformatter.remove();
       dateformatter.remove();
     }
@@ -989,10 +989,17 @@ public final class DataTypeUtil {
   }
 
   public static DataTypeConverter getDataTypeConverter() {
-    if (converter == null) {
-      converter = new DataTypeConverterImpl();
+    DataTypeConverter dataTypeConverter = converter.get();
+    if (dataTypeConverter == null) {
+      synchronized (converter) {
+        dataTypeConverter = converter.get();
+        if (dataTypeConverter == null) {
+          dataTypeConverter = new DataTypeConverterImpl();
+          converter.set(dataTypeConverter);
+        }
+      }
     }
-    return converter;
+    return dataTypeConverter;
   }
 
   public static DataType valueOf(String name) {

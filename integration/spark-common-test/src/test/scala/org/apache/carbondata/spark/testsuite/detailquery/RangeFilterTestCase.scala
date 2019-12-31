@@ -65,8 +65,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
       "string, DOB " +
       "timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 " +
       "decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 " +
-      "double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES " +
-      "('DICTIONARY_EXCLUDE'='CUST_NAME')")
+      "double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' ")
 
     sql(
       "create table NO_DICTIONARY_HIVE_6(empno string,empname string,designation string,doj " +
@@ -100,8 +99,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
         "projectenddate Timestamp, designation String,attendance Int,utilization " +
-        "Int,salary Int) STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_INCLUDE'='workgroupcategory','DICTIONARY_EXCLUDE'='empno, empname,designation')"
+        "Int,salary Int) STORED BY 'org.apache.carbondata.format' "
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE NO_DICTIONARY_CARBON_6 " +
@@ -113,8 +111,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
         "projectenddate Timestamp, designation String,attendance Int,utilization " +
-        "Int,salary Int) STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_INCLUDE'='workgroupcategory','DICTIONARY_EXCLUDE'='empname,designation')"
+        "Int,salary Int) STORED BY 'org.apache.carbondata.format' "
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE DICTIONARY_CARBON_6 " +
@@ -126,8 +123,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
         "projectenddate Timestamp, designation String,attendance Int,utilization " +
-        "Int,salary Int) STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')"
+        "Int,salary Int) STORED BY 'org.apache.carbondata.format' "
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/rangenodictionarycompare.csv' INTO TABLE NO_DICTIONARY_CARBON_7 " +
@@ -151,7 +147,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql("CREATE TABLE filtertestTable (ID string,date Timestamp, country String, " +
         "name String, phonetype String, serialname String, salary Int) " +
-        "STORED BY 'org.apache.carbondata.format' " +  "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ID')"
+        "STORED BY 'org.apache.carbondata.format' "
     )
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")

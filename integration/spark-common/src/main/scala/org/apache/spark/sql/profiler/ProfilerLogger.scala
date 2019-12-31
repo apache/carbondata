@@ -133,8 +133,7 @@ private[profiler] class StatementSummary(
    * | charField CHAR(5),                                        |
    * | floatField FLOAT                                          |
    * | )                                                         |
-   * | STORED BY 'carbondata'                                    |
-   * | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')|
+   * | STORED AS carbondata                                      |
    * +-----------------------------------------------------------+
    * [start time]: 2018-03-22 17:12:18.310
    * [driver side total taken]: 1255 ms

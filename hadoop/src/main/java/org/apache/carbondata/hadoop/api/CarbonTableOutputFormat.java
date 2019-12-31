@@ -18,6 +18,7 @@
 package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -38,6 +39,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
+import org.apache.carbondata.core.util.OutputFilesInfoHolder;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.processing.loading.ComplexDelimitersEnum;
@@ -91,11 +93,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   public static final String BAD_RECORD_PATH = "mapreduce.carbontable.bad.record.path";
   public static final String DATE_FORMAT = "mapreduce.carbontable.date.format";
   public static final String TIMESTAMP_FORMAT = "mapreduce.carbontable.timestamp.format";
-  public static final String IS_ONE_PASS_LOAD = "mapreduce.carbontable.one.pass.load";
-  public static final String DICTIONARY_SERVER_HOST =
-      "mapreduce.carbontable.dict.server.host";
-  public static final String DICTIONARY_SERVER_PORT =
-      "mapreduce.carbontable.dict.server.port";
   /**
    * Set the update timestamp if user sets in case of update query. It needs to be updated
    * in load status update time
@@ -244,6 +241,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   public RecordWriter<NullWritable, ObjectArrayWritable> getRecordWriter(
       final TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
+    loadModel.setOutputFilesInfoHolder(new OutputFilesInfoHolder());
     String appName =
         taskAttemptContext.getConfiguration().get(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME);
     if (null != appName) {
@@ -318,6 +316,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     model.setDatabaseName(CarbonTableOutputFormat.getDatabaseName(conf));
     model.setTableName(CarbonTableOutputFormat.getTableName(conf));
     model.setCarbonTransactionalTable(true);
+    model.setOutputFilesInfoHolder(new OutputFilesInfoHolder());
     CarbonTable carbonTable = getCarbonTable(conf);
     String columnCompressor = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
         CarbonCommonConstants.COMPRESSOR);
@@ -401,12 +400,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       }
     }
     model.setBadRecordsLocation(badRecordsPath);
-    model.setUseOnePass(
-        conf.getBoolean(IS_ONE_PASS_LOAD,
-            Boolean.parseBoolean(
-                carbonProperty.getProperty(
-                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
-                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT))));
     return model;
   }
 
@@ -481,7 +474,38 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
           // clean up the folders and files created locally for data load operation
           TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
         }
+        OutputFilesInfoHolder outputFilesInfoHolder = loadModel.getOutputFilesInfoHolder();
+        if (null != outputFilesInfoHolder) {
+          taskAttemptContext.getConfiguration()
+              .set("carbon.number.of.output.files", outputFilesInfoHolder.getFileCount() + "");
+          if (outputFilesInfoHolder.getOutputFiles() != null) {
+            appendConfiguration(taskAttemptContext.getConfiguration(), "carbon.output.files.name",
+                outputFilesInfoHolder.getOutputFiles());
+          }
+          if (outputFilesInfoHolder.getPartitionPath() != null) {
+            appendConfiguration(taskAttemptContext.getConfiguration(),
+                "carbon.output.partitions.name", outputFilesInfoHolder.getPartitionPath());
+          }
+        }
         LOG.info("Closed writer task " + taskAttemptContext.getTaskAttemptID());
+      }
+    }
+
+    private void appendConfiguration(
+        Configuration conf, String key, List<String> value) throws InterruptedException {
+      String currentValue = conf.get(key);
+      try {
+        if (StringUtils.isEmpty(currentValue)) {
+          conf.set(key, ObjectSerializationUtil.convertObjectToString(value), "");
+        } else {
+          ArrayList<String> currentValueList =
+              (ArrayList<String>) ObjectSerializationUtil.convertStringToObject(currentValue);
+          currentValueList.addAll(value);
+          conf.set(key, ObjectSerializationUtil.convertObjectToString(currentValueList), "");
+        }
+      } catch (IOException e) {
+        LOG.error(e);
+        throw new InterruptedException(e.getMessage());
       }
     }
 

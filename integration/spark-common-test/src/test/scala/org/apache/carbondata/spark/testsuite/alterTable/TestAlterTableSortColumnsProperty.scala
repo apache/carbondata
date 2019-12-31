@@ -63,16 +63,16 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     )
     createTable(
       "alter_sc_validate",
-      Map("dictionary_include"->"charField"),
+      Map.empty,
       true
     )
     createTable(
       "alter_sc_iud",
-      Map("dictionary_include"->"charField")
+      Map.empty
     )
     createTable(
       "alter_sc_iud_complex",
-      Map("dictionary_include"->"charField"),
+      Map.empty,
       true
     )
     createTable(
@@ -138,7 +138,7 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
 
     createTable(
       "alter_sc_cli",
-      Map("dictionary_include"->"charField")
+      Map.empty
     )
   }
 

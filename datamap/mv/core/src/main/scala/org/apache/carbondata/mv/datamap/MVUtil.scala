@@ -295,7 +295,7 @@ class MVUtil {
   }
 
   def validateDMProperty(tableProperty: mutable.Map[String, String]): Unit = {
-    val tableProperties = Array("dictionary_include", "dictionary_exclude", "sort_columns",
+    val tableProperties = Array("sort_columns",
       "local_dictionary_include", "local_dictionary_exclude", "long_string_columns",
       "no_inverted_index", "inverted_index", "column_meta_cache", "range_column")
     val unsupportedProps = tableProperty

@@ -61,7 +61,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   private def createAndLoadTable(cacheLevel: String): Unit = {
-    sql(s"CREATE table column_min_max_cache_test (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp, attendance int, utilization int,salary int) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='empno','column_meta_cache'='workgroupcategoryname,designation,salary,attendance', 'CACHE_LEVEL'= '$cacheLevel')")
+    sql(s"CREATE table column_min_max_cache_test (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp, attendance int, utilization int,salary int) STORED BY 'carbondata' TBLPROPERTIES('column_meta_cache'='workgroupcategoryname,designation,salary,attendance', 'CACHE_LEVEL'= '$cacheLevel')")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO " +
         "TABLE column_min_max_cache_test OPTIONS('DELIMITER'=',', " +
         "'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")

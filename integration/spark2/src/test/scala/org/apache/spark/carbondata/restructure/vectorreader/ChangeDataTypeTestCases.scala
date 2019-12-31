@@ -153,7 +153,7 @@ class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     def test_change_data_type() = {
       beforeAll
     sql("drop table if exists table_sort")
-    sql("CREATE TABLE table_sort (imei int,age int,mac string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='imei,age','SORT_COLUMNS'='imei,age')")
+    sql("CREATE TABLE table_sort (imei int,age int,mac string) STORED BY 'carbondata' TBLPROPERTIES('SORT_COLUMNS'='imei,age')")
     sql("insert into table_sort select 32674,32794,'MAC1'")
     sql("alter table table_sort change age age bigint")
     sql("insert into table_sort select 32675,9223372036854775807,'MAC2'")

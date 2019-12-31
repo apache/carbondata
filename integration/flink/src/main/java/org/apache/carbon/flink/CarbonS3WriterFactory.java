@@ -18,21 +18,11 @@
 package org.apache.carbon.flink;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
-import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
-import org.apache.carbondata.sdk.file.CarbonWriter;
-import org.apache.carbondata.sdk.file.Schema;
 
 public final class CarbonS3WriterFactory extends CarbonWriterFactory {
 
@@ -49,70 +39,27 @@ public final class CarbonS3WriterFactory extends CarbonWriterFactory {
     final String writeTempPath = writerProperties.getProperty(CarbonS3Property.DATA_TEMP_PATH);
     if (writeTempPath == null) {
       throw new IllegalArgumentException(
-              "Writer property [" + CarbonS3Property.DATA_TEMP_PATH + "] is not set."
+          "Writer property [" + CarbonS3Property.DATA_TEMP_PATH + "] is not set."
       );
     }
-    final String writePartition = UUID.randomUUID().toString().replace("-", "");
-    final String writePath = writeTempPath + "_" + writePartition + "/";
+    final String writerIdentifier = UUID.randomUUID().toString();
+    final String writePath = writeTempPath + writerIdentifier.replace("-", "") + "/";
     final CarbonTable table = this.getTable();
-    final CarbonTable clonedTable =
-        CarbonTable.buildFromTableInfo(TableInfo.deserialize(table.getTableInfo().serialize()));
-    clonedTable.getTableInfo().setTablePath(writePath);
-    final org.apache.hadoop.conf.Configuration configuration = this.getS3Configuration();
-    final CarbonWriter writer;
-    try {
-      writer = CarbonWriter.builder()
-          .outputPath("")
-          .writtenBy("flink")
-          .withTable(clonedTable)
-          .withTableProperties(this.getTableProperties())
-          .withJsonInput(this.getTableSchema(clonedTable))
-          .withHadoopConf(configuration)
-          .build();
-    } catch (InvalidLoadOptionException exception) {
-      // TODO
-      throw new UnsupportedOperationException(exception);
-    }
-    return new CarbonS3Writer(this, table, writer, writePath, writePartition, configuration);
+    return new CarbonS3Writer(this, writerIdentifier, table,
+        writePath, this.getS3Configuration());
   }
 
   @Override
-  protected CarbonS3Writer create0(final String partition) throws IOException {
-    final Properties writerProperties = this.getConfiguration().getWriterProperties();
-    final String writeTempPath = writerProperties.getProperty(CarbonS3Property.DATA_TEMP_PATH);
-    if (writeTempPath == null) {
-      throw new IllegalArgumentException(
-              "Writer property [" + CarbonS3Property.DATA_TEMP_PATH + "] is not set."
-      );
-    }
-    final String writePath = writeTempPath + "_" + partition + "/";
-    final CarbonTable table = this.getTable();
-    final org.apache.hadoop.conf.Configuration configuration = this.getS3Configuration();
-    return new CarbonS3Writer(this, table, null, writePath, partition, configuration);
+  protected CarbonS3Writer create0(final String identifier, final String path)
+      throws IOException {
+    return new CarbonS3Writer(this, identifier, this.getTable(),
+        path, this.getS3Configuration());
   }
 
   @Override
   protected CarbonTable getTable() throws IOException {
     this.setS3Configuration(this.getS3Configuration());
     return super.getTable();
-  }
-
-  private Schema getTableSchema(final CarbonTable table) {
-    final List<CarbonColumn> columnList = table.getCreateOrderColumn();
-    final List<ColumnSchema> columnSchemaList = new ArrayList<>(columnList.size());
-    for (CarbonColumn column : columnList) {
-      columnSchemaList.add(column.getColumnSchema());
-    }
-    return new Schema(columnSchemaList);
-  }
-
-  private Map<String, String> getTableProperties() {
-    final Properties tableProperties = this.getConfiguration().getTableProperties();
-    final Map<String, String> tablePropertyMap = new HashMap<>(tableProperties.size());
-    for (String propertyName : tableProperties.stringPropertyNames()) {
-      tablePropertyMap.put(propertyName, tableProperties.getProperty(propertyName));
-    }
-    return tablePropertyMap;
   }
 
   private org.apache.hadoop.conf.Configuration getS3Configuration() {

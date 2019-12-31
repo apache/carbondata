@@ -24,30 +24,6 @@ package org.apache.carbondata.core.cache.dictionary;
 public interface Dictionary {
 
   /**
-   * This method will find and return the surrogate key for a given dictionary value
-   * Applicable scenario:
-   * 1. Incremental data load : Dictionary will not be generated for existing values. For
-   * that values have to be looked up in the existing dictionary cache.
-   * 2. Filter scenarios where from value surrogate key has to be found.
-   *
-   * @param value dictionary value
-   * @return if found returns key else 0
-   */
-  int getSurrogateKey(String value);
-
-  /**
-   * This method will find and return the surrogate key for a given dictionary value
-   * Applicable scenario:
-   * 1. Incremental data load : Dictionary will not be generated for existing values. For
-   * that values have to be looked up in the existing dictionary cache.
-   * 2. Filter scenarios where from value surrogate key has to be found.
-   *
-   * @param value dictionary value as byte array
-   * @return if found returns key else -1
-   */
-  int getSurrogateKey(byte[] value);
-
-  /**
    * This method will find and return the dictionary value for a given surrogate key.
    * Applicable scenarios:
    * 1. Query final result preparation : While convert the final result which will
@@ -72,28 +48,6 @@ public interface Dictionary {
   byte[] getDictionaryValueForKeyInBytes(int surrogateKey);
 
   /**
-   * This method will find and return the sort index for a given dictionary id.
-   * Applicable scenarios:
-   * 1. Used in case of order by queries when data sorting is required
-   *
-   * @param surrogateKey a unique ID for a dictionary value
-   * @return if found returns key else 0
-   */
-  int getSortedIndex(int surrogateKey);
-
-  /**
-   * This method will find and return the dictionary value from sorted index.
-   * Applicable scenarios:
-   * 1. Query final result preparation in case of order by queries:
-   * While convert the final result which will
-   * be surrogate key back to original dictionary values this method will be used
-   *
-   * @param sortedIndex sort index of dictionary value
-   * @return value if found else null
-   */
-  String getDictionaryValueFromSortedIndex(int sortedIndex);
-
-  /**
    * The method return the dictionary chunks wrapper of a column
    * The wrapper wraps the list<list<bye[]>> and provide the iterator to retrieve the chunks
    * members.
@@ -109,9 +63,4 @@ public interface Dictionary {
    */
   void clear();
 
-  /**
-   * This method return the access count associated with the dictionary.
-   * @return
-   */
-  int getAccessCount();
 }

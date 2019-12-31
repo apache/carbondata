@@ -196,6 +196,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
                   case None =>
                 }
               }
+            case None =>
           }
         } else {
           noEmptyHostSet.remove(hostEntry._1)

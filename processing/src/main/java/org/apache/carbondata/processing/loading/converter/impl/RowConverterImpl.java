@@ -20,20 +20,10 @@ package org.apache.carbondata.processing.loading.converter.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.dictionary.client.DictionaryClient;
-import org.apache.carbondata.core.dictionary.service.DictionaryOnePassService;
-import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
@@ -66,12 +56,6 @@ public class RowConverterImpl implements RowConverter {
 
   private BadRecordLogHolder logHolder;
 
-  private List<DictionaryClient> dictClients = new ArrayList<>();
-
-  private ExecutorService executorService;
-
-  private Map<Object, Integer>[] localCaches;
-
   private boolean isConvertToBinary;
 
   public RowConverterImpl(DataField[] fields, CarbonDataLoadConfiguration configuration,
@@ -98,68 +82,19 @@ public class RowConverterImpl implements RowConverter {
         configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
             .toString());
     List<FieldConverter> fieldConverterList = new ArrayList<>();
-    localCaches = new Map[fields.length];
     long lruCacheStartTime = System.currentTimeMillis();
-    DictionaryClient client = createDictionaryClient();
-    dictClients.add(client);
 
     for (int i = 0; i < fields.length; i++) {
-      localCaches[i] = new ConcurrentHashMap<>();
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
-          .createFieldEncoder(fields[i], configuration.getTableIdentifier(), i, nullFormat, client,
-              configuration.getUseOnePass(), localCaches[i], isEmptyBadRecord,
-              configuration.getParentTablePath(), isConvertToBinary,
+          .createFieldEncoder(fields[i], i, nullFormat, isEmptyBadRecord, isConvertToBinary,
               (String) configuration.getDataLoadProperty(
                   CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER));
       fieldConverterList.add(fieldConverter);
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordLruCacheLoadTime((System.currentTimeMillis() - lruCacheStartTime) / 1000.0);
-    fieldConverters = fieldConverterList.toArray(new FieldConverter[fieldConverterList.size()]);
+    fieldConverters = fieldConverterList.toArray(new FieldConverter[0]);
     logHolder = new BadRecordLogHolder();
-  }
-
-  private DictionaryClient createDictionaryClient() {
-    // for one pass load, start the dictionary client
-    if (configuration.getUseOnePass()) {
-      if (executorService == null) {
-        executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
-            "DictionaryClientPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
-                .getTableName(), true));
-      }
-      DictionaryOnePassService
-          .setDictionaryServiceProvider(configuration.getDictionaryServiceProvider());
-
-      Future<DictionaryClient> result =
-          executorService.submit(new Callable<DictionaryClient>() {
-            @Override
-            public DictionaryClient call() throws Exception {
-              Thread.currentThread().setName("Dictionary client");
-              DictionaryClient client =
-                  DictionaryOnePassService.getDictionaryProvider().getDictionaryClient();
-              client.startClient(configuration.getDictionaryServerSecretKey(),
-                  configuration.getDictionaryServerHost(), configuration.getDictionaryServerPort(),
-                  configuration.getDictionaryEncryptServerSecure());
-              return client;
-            }
-          });
-
-
-      try {
-        // wait for client initialization finished, or will raise null pointer exception
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        LOGGER.error(e.getMessage(), e);
-        throw new RuntimeException(e);
-      }
-
-      try {
-        return result.get();
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    return null;
   }
 
   @Override
@@ -191,24 +126,8 @@ public class RowConverterImpl implements RowConverter {
 
   @Override
   public void finish() {
-    // Clear up dictionary cache access count.
     for (int i = 0; i < fieldConverters.length; i++) {
       fieldConverters[i].clear();
-    }
-    // close dictionary client when finish write
-    if (configuration.getUseOnePass()) {
-      for (DictionaryClient client : dictClients) {
-        if (client != null) {
-          client.shutDown();
-        }
-      }
-      if (null != logHolder) {
-        logHolder.finish();
-      }
-      if (executorService != null) {
-        executorService.shutdownNow();
-        executorService = null;
-      }
     }
   }
 
@@ -218,8 +137,6 @@ public class RowConverterImpl implements RowConverter {
         new RowConverterImpl(this.fields, this.configuration, this.badRecordLogger,
             this.isConvertToBinary);
     List<FieldConverter> fieldConverterList = new ArrayList<>();
-    DictionaryClient client = createDictionaryClient();
-    dictClients.add(client);
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
@@ -227,21 +144,13 @@ public class RowConverterImpl implements RowConverter {
         configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
             .toString());
     for (int i = 0; i < fields.length; i++) {
-      FieldConverter fieldConverter = null;
-      try {
-        fieldConverter = FieldEncoderFactory.getInstance()
-            .createFieldEncoder(fields[i], configuration.getTableIdentifier(), i, nullFormat,
-                client, configuration.getUseOnePass(), localCaches[i], isEmptyBadRecord,
-                configuration.getParentTablePath(), isConvertToBinary,
-                (String) configuration.getDataLoadProperty(
-                    CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER));
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+      FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
+          .createFieldEncoder(fields[i], i, nullFormat, isEmptyBadRecord, isConvertToBinary,
+              (String) configuration.getDataLoadProperty(
+                  CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER));
       fieldConverterList.add(fieldConverter);
     }
-    converter.fieldConverters =
-        fieldConverterList.toArray(new FieldConverter[fieldConverterList.size()]);
+    converter.fieldConverters = fieldConverterList.toArray(new FieldConverter[0]);
     converter.logHolder = new BadRecordLogHolder();
     return converter;
   }

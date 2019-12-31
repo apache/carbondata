@@ -21,7 +21,8 @@ import java.io._
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util
-import java.util.{ArrayList, Date, List, UUID}
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.{ArrayList, Date, UUID}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -35,24 +36,20 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.hadoop.mapreduce.{RecordReader, TaskType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier, ReverseDictionary}
-import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.fileoperations.{AtomicFileOperationFactory, AtomicFileOperations, FileWriteOperation}
 import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
-import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, CarbonMeasure, ColumnSchema}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, CarbonTableBuilder, TableSchemaBuilder}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
-import org.apache.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl, ThriftWriter}
+import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.processing.loading.DataLoadExecutor
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator, StringArrayWritable}
@@ -78,9 +75,7 @@ object CarbonDataStoreCreator {
         new CarbonTableIdentifier(dbName,
           tableName,
           UUID.randomUUID().toString))
-      val storeDir: File = new File(absoluteTableIdentifier.getTablePath)
       val table: CarbonTable = createTable(absoluteTableIdentifier, useLocalDict)
-      writeDictionary(dataFilePath, table, absoluteTableIdentifier)
       val schema: CarbonDataLoadSchema = new CarbonDataLoadSchema(table)
       val loadModel: CarbonLoadModel = new CarbonLoadModel()
       import scala.collection.JavaConverters._
@@ -135,172 +130,40 @@ object CarbonDataStoreCreator {
       loadModel.setMaxColumns("15")
       executeGraph(loadModel, storePath)
     } catch {
-      case e: Exception => e.printStackTrace()
-
+      case e: Exception =>
+        throw e
     }
   }
 
   private def createTable(absoluteTableIdentifier: AbsoluteTableIdentifier,
       useLocalDict: Boolean): CarbonTable = {
-    val tableInfo: TableInfo = new TableInfo()
-    tableInfo.setTablePath(absoluteTableIdentifier.getTablePath)
-    tableInfo.setDatabaseName(
-      absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName)
-    val tableSchema: TableSchema = new TableSchema()
-    tableSchema.setTableName(
-      absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
-    val columnSchemas = new ArrayList[ColumnSchema]()
-    val dictionaryEncoding: ArrayList[Encoding] = new ArrayList[Encoding]()
-    if (!useLocalDict) {
-      dictionaryEncoding.add(Encoding.DICTIONARY)
-    }
 
-    val invertedIndexEncoding: ArrayList[Encoding] = new ArrayList[Encoding]()
-    invertedIndexEncoding.add(Encoding.INVERTED_INDEX)
+    val integer = new AtomicInteger(0)
+    val schemaBuilder = new TableSchemaBuilder
+    schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("country", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("phonetype", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("serialname", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("salary", DataTypes.DOUBLE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(10, 4)), integer, false, true)
+    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(18, 4)), integer, false, true)
+    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
+    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN), integer, false, true)
+    schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
+    val schema = schemaBuilder.build()
 
-    val id: ColumnSchema = new ColumnSchema()
-    id.setColumnName("ID")
-    id.setDataType(DataTypes.INT)
-    id.setEncodingList(dictionaryEncoding)
-    id.setColumnUniqueId(UUID.randomUUID().toString)
-    id.setColumnReferenceId(id.getColumnUniqueId)
-    id.setDimensionColumn(true)
-    id.setSchemaOrdinal(0)
-    columnSchemas.add(id)
+    val builder = new CarbonTableBuilder
+    builder.databaseName(absoluteTableIdentifier.getDatabaseName)
+      .tableName(absoluteTableIdentifier.getTableName)
+      .tablePath(absoluteTableIdentifier.getTablePath)
+      .isTransactionalTable(true)
+      .tableSchema(schema)
+    val carbonTable = builder.build()
 
-    val directDictionaryEncoding: util.ArrayList[Encoding] = new util.ArrayList[Encoding]()
-    directDictionaryEncoding.add(Encoding.DIRECT_DICTIONARY)
-    directDictionaryEncoding.add(Encoding.DICTIONARY)
-    directDictionaryEncoding.add(Encoding.INVERTED_INDEX)
-
-    val date: ColumnSchema = new ColumnSchema()
-    date.setColumnName("date")
-    date.setDataType(DataTypes.DATE)
-    date.setEncodingList(directDictionaryEncoding)
-    date.setColumnUniqueId(UUID.randomUUID().toString)
-    date.setDimensionColumn(true)
-    date.setColumnReferenceId(date.getColumnUniqueId)
-    date.setSchemaOrdinal(1)
-    columnSchemas.add(date)
-
-    val country: ColumnSchema = new ColumnSchema()
-    country.setColumnName("country")
-    country.setDataType(DataTypes.STRING)
-    country.setEncodingList(dictionaryEncoding)
-    country.setColumnUniqueId(UUID.randomUUID().toString)
-    country.setColumnReferenceId(country.getColumnUniqueId)
-    country.setDimensionColumn(true)
-    country.setSchemaOrdinal(2)
-    country.setColumnReferenceId(country.getColumnUniqueId)
-    columnSchemas.add(country)
-
-    val name: ColumnSchema = new ColumnSchema()
-    name.setColumnName("name")
-    name.setDataType(DataTypes.STRING)
-    name.setEncodingList(dictionaryEncoding)
-    name.setColumnUniqueId(UUID.randomUUID().toString)
-    name.setDimensionColumn(true)
-    name.setSchemaOrdinal(3)
-    name.setColumnReferenceId(name.getColumnUniqueId)
-    columnSchemas.add(name)
-
-    val phonetype: ColumnSchema = new ColumnSchema()
-    phonetype.setColumnName("phonetype")
-    phonetype.setDataType(DataTypes.STRING)
-    phonetype.setEncodingList(dictionaryEncoding)
-    phonetype.setColumnUniqueId(UUID.randomUUID().toString)
-    phonetype.setDimensionColumn(true)
-    phonetype.setSchemaOrdinal(4)
-    phonetype.setColumnReferenceId(phonetype.getColumnUniqueId)
-    columnSchemas.add(phonetype)
-
-    val serialname: ColumnSchema = new ColumnSchema()
-    serialname.setColumnName("serialname")
-    serialname.setDataType(DataTypes.STRING)
-    serialname.setEncodingList(dictionaryEncoding)
-    serialname.setColumnUniqueId(UUID.randomUUID().toString)
-    serialname.setDimensionColumn(true)
-    serialname.setSchemaOrdinal(5)
-    serialname.setColumnReferenceId(serialname.getColumnUniqueId)
-    columnSchemas.add(serialname)
-
-    val salary: ColumnSchema = new ColumnSchema()
-    salary.setColumnName("salary")
-    salary.setDataType(DataTypes.DOUBLE)
-    salary.setEncodingList(new util.ArrayList[Encoding]())
-    salary.setColumnUniqueId(UUID.randomUUID().toString)
-    salary.setDimensionColumn(false)
-    salary.setSchemaOrdinal(6)
-    salary.setColumnReferenceId(salary.getColumnUniqueId)
-    columnSchemas.add(salary)
-
-    val bonus: ColumnSchema = new ColumnSchema()
-    bonus.setColumnName("bonus")
-    bonus.setDataType(DataTypes.createDecimalType(10, 4))
-    bonus.setPrecision(10)
-    bonus.setScale(4)
-    bonus.setEncodingList(dictionaryEncoding)
-    bonus.setEncodingList(invertedIndexEncoding)
-    bonus.setColumnUniqueId(UUID.randomUUID().toString)
-    bonus.setDimensionColumn(false)
-    bonus.setSchemaOrdinal(7)
-    bonus.setColumnReferenceId(bonus.getColumnUniqueId)
-    columnSchemas.add(bonus)
-
-    val monthlyBonus: ColumnSchema = new ColumnSchema()
-    monthlyBonus.setColumnName("monthlyBonus")
-    monthlyBonus.setDataType(DataTypes.createDecimalType(18, 4))
-    monthlyBonus.setPrecision(18)
-    monthlyBonus.setScale(4)
-    monthlyBonus.setSchemaOrdinal(8)
-    monthlyBonus.setEncodingList(invertedIndexEncoding)
-    monthlyBonus.setColumnUniqueId(UUID.randomUUID().toString)
-    monthlyBonus.setDimensionColumn(false)
-    monthlyBonus.setColumnReferenceId(monthlyBonus.getColumnUniqueId)
-    columnSchemas.add(monthlyBonus)
-
-    val dob: ColumnSchema = new ColumnSchema()
-    dob.setColumnName("dob")
-    dob.setDataType(DataTypes.TIMESTAMP)
-    dob.setEncodingList(directDictionaryEncoding)
-    dob.setColumnUniqueId(UUID.randomUUID().toString)
-    dob.setDimensionColumn(true)
-    dob.setSchemaOrdinal(9)
-    dob.setColumnReferenceId(dob.getColumnUniqueId)
-    columnSchemas.add(dob)
-
-    val shortField: ColumnSchema = new ColumnSchema()
-    shortField.setColumnName("shortField")
-    shortField.setDataType(DataTypes.SHORT)
-    shortField.setEncodingList(dictionaryEncoding)
-    shortField.setColumnUniqueId(UUID.randomUUID().toString)
-    shortField.setDimensionColumn(true)
-    shortField.setSchemaOrdinal(10)
-    shortField.setColumnReferenceId(shortField.getColumnUniqueId)
-    columnSchemas.add(shortField)
-
-    val isCurrentEmployee: ColumnSchema = new ColumnSchema()
-    isCurrentEmployee.setColumnName("isCurrentEmployee")
-    isCurrentEmployee.setDataType(DataTypes.BOOLEAN)
-    isCurrentEmployee.setEncodingList(invertedIndexEncoding)
-    isCurrentEmployee.setColumnUniqueId(UUID.randomUUID().toString)
-    isCurrentEmployee.setDimensionColumn(false)
-    isCurrentEmployee.setColumnReferenceId(isCurrentEmployee.getColumnUniqueId)
-    columnSchemas.add(isCurrentEmployee)
-
-    tableSchema.setListOfColumns(columnSchemas)
-    val schemaEvol: SchemaEvolution = new SchemaEvolution()
-    schemaEvol.setSchemaEvolutionEntryList(
-      new util.ArrayList[SchemaEvolutionEntry]())
-    tableSchema.setSchemaEvolution(schemaEvol)
-    tableSchema.setTableId(UUID.randomUUID().toString)
-    tableSchema.getTableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
-      String.valueOf(useLocalDict))
-    tableInfo.setTableUniqueName(
-      absoluteTableIdentifier.getCarbonTableIdentifier.getTableUniqueName
-    )
-    tableInfo.setLastUpdatedTime(System.currentTimeMillis())
-    tableInfo.setFactTable(tableSchema)
+    val tableInfo = carbonTable.getTableInfo
     val schemaFilePath: String = CarbonTablePath.getSchemaFilePath(
       absoluteTableIdentifier.getTablePath)
     val schemaMetadataPath: String =
@@ -327,85 +190,6 @@ object CarbonDataStoreCreator {
     thriftWriter.close()
     CarbonMetadata.getInstance.getCarbonTable(tableInfo.getTableUniqueName)
   }
-
-  private def writeDictionary(factFilePath: String,
-      table: CarbonTable,
-      absoluteTableIdentifier: AbsoluteTableIdentifier): Unit = {
-    val reader: BufferedReader = new BufferedReader(
-      new FileReader(factFilePath))
-    val header: String = reader.readLine()
-    val allCols: util.List[CarbonColumn] = new util.ArrayList[CarbonColumn]()
-    val dimensions: util.List[CarbonDimension] = table.getVisibleDimensions
-    allCols.addAll(dimensions)
-    val msrs: List[CarbonMeasure] = table.getVisibleMeasures
-    allCols.addAll(msrs)
-    val dimensionsIndex = dimensions.map(dim => dim.getColumnSchema.getSchemaOrdinal)
-    val dimensionSet: Array[util.List[String]] = Array.ofDim[util.List[String]](dimensions.size)
-
-    for (i <- dimensionSet.indices) {
-      dimensionSet(i) = new util.ArrayList[String]()
-    }
-    var line: String = reader.readLine()
-    while (line != null) {
-      val data: Array[String] = line.split(",")
-      for (index <- dimensionSet.indices) {
-        addDictionaryValuesToDimensionSet(dimensions, dimensionsIndex, dimensionSet, data, index)
-      }
-      line = reader.readLine()
-    }
-    val dictCache: Cache[DictionaryColumnUniqueIdentifier, ReverseDictionary] = CacheProvider
-      .getInstance.createCache(CacheType.REVERSE_DICTIONARY)
-
-    for (index <- dimensionSet.indices) {
-      val columnIdentifier: ColumnIdentifier =
-        new ColumnIdentifier(dimensions.get(index).getColumnId, null, null)
-
-      val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(
-          table.getAbsoluteTableIdentifier,
-          columnIdentifier,
-          columnIdentifier.getDataType)
-      val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(
-        dictionaryColumnUniqueIdentifier)
-      for (value <- dimensionSet(index).distinct) {
-        writer.write(value)
-      }
-      writer.close()
-      writer.commit()
-      val dict: Dictionary = dictCache
-        .get(
-          new DictionaryColumnUniqueIdentifier(
-            absoluteTableIdentifier,
-            columnIdentifier,
-            dimensions.get(index).getDataType)
-        )
-        .asInstanceOf[Dictionary]
-      val preparator: CarbonDictionarySortInfoPreparator =
-        new CarbonDictionarySortInfoPreparator()
-      val newDistinctValues: List[String] = new ArrayList[String]()
-      val dictionarySortInfo: CarbonDictionarySortInfo =
-        preparator.getDictionarySortInfo(newDistinctValues,
-          dict,
-          dimensions.get(index).getDataType)
-      val carbonDictionaryWriter: CarbonDictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(dictionaryColumnUniqueIdentifier)
-      try {
-        carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
-        carbonDictionaryWriter.writeInvertedSortIndex(
-          dictionarySortInfo.getSortIndexInverted)
-      }
-      catch {
-        case exception: Exception =>
-
-
-          logger.error(s"exception occurs $exception")
-          throw new CarbonDataLoadingException("Data Loading Failed")
-      }
-      finally carbonDictionaryWriter.close()
-    }
-    reader.close()
-  }
-
 
   private def addDictionaryValuesToDimensionSet(dims: util.List[CarbonDimension],
       dimensionIndex: mutable.Buffer[Int],

@@ -46,15 +46,9 @@ class CarbonOption(options: Map[String, String]) {
     }
   }
 
-  lazy val singlePass: Boolean = options.getOrElse("single_pass", "false").toBoolean
-
   lazy val sortColumns: Option[String] = options.get("sort_columns")
 
   lazy val sortScope: Option[String] = options.get("sort_scope")
-
-  lazy val dictionaryInclude: Option[String] = options.get("dictionary_include")
-
-  lazy val dictionaryExclude: Option[String] = options.get("dictionary_exclude")
 
   lazy val longStringColumns: Option[String] = options.get("long_string_columns")
 

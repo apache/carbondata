@@ -30,23 +30,7 @@ class TestLoadDataUseAllDictionary extends QueryTest with BeforeAndAfterAll{
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'carbondata'
-           TBLPROPERTIES('dictionary_include'='country,name,phonetype,serialname')
            """)
-  }
-
-  test("test load data use all dictionary, and given wrong format dictionary values") {
-    try {
-      sql(s"""
-           LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' into table t3
-           options('FILEHEADER'='id,date,country,name,phonetype,serialname,salary',
-           'All_DICTIONARY_PATH'='$resourcesPath/dict.txt','single_pass'='true')
-           """)
-      assert(false)
-    } catch {
-      case e: DataLoadingException =>
-        assert(e.getMessage.equals("Data Loading failure, dictionary values are " +
-          "not in correct format!"))
-    }
   }
 
   override def afterAll {

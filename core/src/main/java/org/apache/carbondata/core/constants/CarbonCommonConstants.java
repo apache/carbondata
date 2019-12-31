@@ -299,12 +299,6 @@ public final class CarbonCommonConstants {
 
   public static final int CARBON_LEASE_RECOVERY_RETRY_INTERVAL_MAX = 10000;
 
-  @CarbonProperty
-  public static final String CARBON_SECURE_DICTIONARY_SERVER =
-      "carbon.secure.dictionary.server";
-
-  public static final String CARBON_SECURE_DICTIONARY_SERVER_DEFAULT = "true";
-
   /**
    * ENABLE_CALCULATE_DATA_INDEX_SIZE
    */
@@ -324,8 +318,13 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_SKIP_EMPTY_LINE_DEFAULT = "false";
 
-
-  public static final String EMPTY_DATA_RETURN = "!EMPTY_DATA_RETURN!";
+  /**
+   *In the write processing, data needs to be converted to string, where the string forms of
+   * array("") and array() are EMPTY_STRING, causing confusion about the write results.
+   * In order to distinguish between array and array(), or map("") and map (), we need to
+   * identity array("") as the EMPTY_STRING, while array() is the SIZE_ZERO_DATA_RETURN
+   */
+  public static final String SIZE_ZERO_DATA_RETURN = "!LENGTH_ZERO_DATA_RETURN!";
 
   /**
    * Currently the segment lock files are not deleted immediately when unlock,
@@ -460,14 +459,9 @@ public final class CarbonCommonConstants {
    */
   public static final String INDEX_COLUMNS = "INDEX_COLUMNS";
 
-  /**
-   * key for dictionary path
-   */
-  public static final String DICTIONARY_PATH = "dictionary_path";
   public static final String SORT_COLUMNS = "sort_columns";
   public static final String SORT_SCOPE = "sort_scope";
   public static final String RANGE_COLUMN = "range_column";
-  public static final String PARTITION_TYPE = "partition_type";
   public static final String COLUMN_PROPERTIES = "columnproperties";
   // table block size in MB
   public static final String TABLE_BLOCKSIZE = "table_blocksize";
@@ -724,17 +718,6 @@ public final class CarbonCommonConstants {
    * dictionary chunk default size
    */
   public static final String DICTIONARY_ONE_CHUNK_SIZE_DEFAULT = "10000";
-
-  /**
-   *  Dictionary Server Worker Threads
-   */
-  @CarbonProperty
-  public static final String DICTIONARY_WORKER_THREADS = "dictionary.worker.threads";
-
-  /**
-   *  Dictionary Server Worker Threads
-   */
-  public static final String DICTIONARY_WORKER_THREADS_DEFAULT = "1";
 
   /**
    * Size of Major Compaction in MBs
@@ -1030,16 +1013,6 @@ public final class CarbonCommonConstants {
 
   public static final String LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT = "0";
 
-  /*
-   * carbon dictionary server port
-   */
-  @CarbonProperty
-  public static final String DICTIONARY_SERVER_PORT = "carbon.dictionary.server.port";
-
-  /**
-   * Default carbon dictionary server port
-   */
-  public static final String DICTIONARY_SERVER_PORT_DEFAULT = "2030";
   /**
    * whether to prefetch data while loading.
    */
@@ -2097,12 +2070,6 @@ public final class CarbonCommonConstants {
    * property to set the appName of who is going to write the CarbonData
    */
   public static final String CARBON_WRITTEN_BY_APPNAME = "carbon.writtenby.app.name";
-
-  /**
-   * When more global dictionary columns are there then there is issue in generating codegen to them
-   * and it slows down the query.So we limit to 100 for now
-   */
-  public static final int CARBON_ALLOW_DIRECT_FILL_DICT_COLS_LIMIT = 100;
 
   /**
    * page size in mb. If page size exceeds this value before 32000 rows count, page will be cut.

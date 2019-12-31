@@ -67,9 +67,13 @@ class TestCarbonWriter extends QueryTest {
       val dataCount = 10000
       val source = new TestSource(dataCount) {
         @throws[InterruptedException]
-        override def get(index: Int): String = {
+        override def get(index: Int): Array[AnyRef] = {
           Thread.sleep(1L)
-          "{\"stringField\": \"test" + index + "\", \"intField\": " + index + ", \"shortField\": 12345}"
+          val data = new Array[AnyRef](3)
+          data(0) = "test" + index
+          data(1) = index.asInstanceOf[AnyRef]
+          data(2) = 12345.asInstanceOf[AnyRef]
+          data
         }
 
         @throws[InterruptedException]
@@ -118,8 +122,6 @@ class TestCarbonWriter extends QueryTest {
     val properties = new Properties
     properties.setProperty(CarbonLocalProperty.DATA_TEMP_PATH, dataTempPath)
     properties.setProperty(CarbonLocalProperty.DATA_PATH, dataPath)
-    properties.setProperty(CarbonCommonConstants.STORE_LOCATION, storeLocation)
-    properties.setProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, "1024")
     properties
   }
 
