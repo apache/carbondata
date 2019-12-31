@@ -59,6 +59,14 @@ public class StructParserImpl implements ComplexParser<StructObject> {
           }
           return new StructObject(array);
         }
+      } else if (value.isEmpty()) {
+        // When the data is empty,like struct<''>/struct<array()>/struct<map()>
+        // A struct with an array with empty content should be returned.
+        // Then the arrayparserimpl and mapparserimpl will handle the empty value.
+        Object[] array = new Object[1];
+        array[0] = children.size() > 0 ? children.get(0).parse(value)
+            : new Object();
+        return new StructObject(array);
       }
     }
     return null;
