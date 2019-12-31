@@ -988,8 +988,15 @@ public final class CarbonProperties {
     for (String levelSize : levels) {
       try {
         int size = Integer.parseInt(levelSize.trim());
-        if (validate(size, 100, 0, -1) < 0) {
+        if (validate(size,
+            CarbonCommonConstants.NUMBER_OF_SEGMENT_COMPACTED_PERTIME_UPPER_LIMIT,
+            CarbonCommonConstants.NUMBER_OF_SEGMENT_COMPACTED_PERTIME_LOWER_LIMIT,
+            -1) < 0) {
           // if given size is out of boundary then take default value for all levels.
+          LOGGER.warn(
+              "Given value for property" + size
+                  + " is not proper. Taking the default value "
+                  + CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
           return new int[0];
         }
         compactionSize[i++] = size;

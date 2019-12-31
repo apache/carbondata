@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.util.path;
 
+import java.io.File;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
@@ -81,7 +83,7 @@ public class CarbonTablePath {
     int lastIndex = carbonFilePath.lastIndexOf('/');
     // below code for handling windows environment
     if (-1 == lastIndex) {
-      lastIndex = carbonFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
+      lastIndex = carbonFilePath.lastIndexOf(File.separator);
     }
     return carbonFilePath.substring(0, lastIndex);
   }
