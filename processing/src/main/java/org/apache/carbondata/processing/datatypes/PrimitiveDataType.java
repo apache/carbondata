@@ -405,8 +405,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       message = CarbonDataProcessorUtil
           .prepareFailureReason(carbonDimension.getColName(), carbonDimension.getDataType());
       logHolder.getColumnMessageMap().put(carbonDimension.getColName(), message);
-      logHolder.setReason(message);
     }
+    logHolder.setReason(message);
   }
 
   @Override
