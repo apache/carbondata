@@ -107,15 +107,27 @@ public class LoadOption {
 
     optionsFinal.put("complex_delimiter_level_1",
         Maps.getOrDefault(options, "complex_delimiter_level_1",
-            ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_1.value()));
+            CarbonProperties.getInstance().getProperty(
+                CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_1,
+                ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_1.value())));
 
     optionsFinal.put("complex_delimiter_level_2",
         Maps.getOrDefault(options, "complex_delimiter_level_2",
-            ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_2.value()));
+            CarbonProperties.getInstance().getProperty(
+                CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_2,
+                ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_2.value())));
 
     optionsFinal.put("complex_delimiter_level_3",
         Maps.getOrDefault(options, "complex_delimiter_level_3",
-            ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_3.value()));
+            CarbonProperties.getInstance().getProperty(
+                CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_3,
+                ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_3.value())));
+
+    optionsFinal.put("complex_delimiter_level_4",
+        Maps.getOrDefault(options, "complex_delimiter_level_4",
+            CarbonProperties.getInstance().getProperty(
+                CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_4,
+                ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_4.value())));
 
     optionsFinal.put(
         "dateformat",

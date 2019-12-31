@@ -42,6 +42,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS table1")
     sql("DROP TABLE IF EXISTS test")
+    sql("DROP TABLE IF EXISTS datatype_struct_carbondata")
+    sql("DROP TABLE IF EXISTS datatype_struct_parquet")
   }
 
   override def afterAll(): Unit = {
@@ -54,6 +56,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction)
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_1)
   }
 
   test("test Projection PushDown for Struct - Integer type") {
@@ -1062,6 +1066,23 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       sql("SELECT binaryField3[1] FROM hive_table where id=1"))
     sql("drop table if exists carbon_table")
     sql("drop table if exists hive_table")
+  }
+
+  test("test when insert select from a parquet table with an struct with binary and custom complex delimiter") {
+    var carbonProperties = CarbonProperties.getInstance()
+    carbonProperties.addProperty(CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_1, "#")
+
+    sql("create table datatype_struct_parquet(price struct<a:binary>) stored as parquet")
+    sql("insert into table datatype_struct_parquet values(named_struct('a', 'col1\001col2'))")
+    sql("create table datatype_struct_carbondata(price struct<a:binary>) stored as carbondata")
+    sql("insert into datatype_struct_carbondata select * from datatype_struct_parquet")
+    checkAnswer(
+      sql("SELECT * FROM datatype_struct_carbondata"),
+      sql("SELECT * FROM datatype_struct_parquet"))
+    sql("DROP TABLE IF EXISTS datatype_struct_carbondata")
+    sql("DROP TABLE IF EXISTS datatype_struct_parquet")
+
+    carbonProperties.removeProperty(CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_1)
   }
 
   test("[CARBONDATA-3527] Fix 'String length cannot exceed 32000 characters' issue when load data with 'GLOBAL_SORT' from csv files which include big complex type data") {
