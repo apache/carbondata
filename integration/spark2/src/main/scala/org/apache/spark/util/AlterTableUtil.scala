@@ -45,7 +45,7 @@ import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWra
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.format.{DataType, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
@@ -451,6 +451,13 @@ object AlterTableUtil {
 
       // validate the Sort Scope and Sort Columns
       validateSortScopeAndSortColumnsProperties(carbonTable, lowerCasePropertiesMap)
+
+      // validate the Sort Scope and Sort Columns
+      validateSortScopeAndSortColumnsProperties(carbonTable, lowerCasePropertiesMap)
+
+      // validate the Compaction Level Threshold
+      validateCompactionLevelThresholdProperties(carbonTable, lowerCasePropertiesMap)
+
       // if SORT_COLUMN is changed, it will move them to the head of column list
       updateSchemaForSortColumns(thriftTable, lowerCasePropertiesMap, schemaConverter)
       // validate long string columns
@@ -542,6 +549,7 @@ object AlterTableUtil {
       "COMMENT",
       "COLUMN_META_CACHE",
       "CACHE_LEVEL",
+      "COMPACTION_LEVEL_THRESHOLD",
       "LOCAL_DICTIONARY_ENABLE",
       "LOCAL_DICTIONARY_THRESHOLD",
       "LOCAL_DICTIONARY_INCLUDE",
@@ -692,6 +700,19 @@ object AlterTableUtil {
           throw new InvalidConfigurationException(
             s"Cannot set SORT_COLUMNS as empty when SORT_SCOPE is ${carbonTable.getSortScope} ")
         }
+      }
+    }
+  }
+
+  def validateCompactionLevelThresholdProperties(carbonTable: CarbonTable,
+      propertiesMap: mutable.Map[String, String]): Unit = {
+    val newCompactionLevelThreshold =
+      propertiesMap.get(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD)
+    if (newCompactionLevelThreshold.isDefined) {
+      // check compactionlevelthreshold is in the specified range and in the format of number
+      if (CarbonProperties.getInstance().getIntArray(newCompactionLevelThreshold.get).length == 0) {
+        throw new InvalidConfigurationException(
+          s"Cannot set COMPACTION_LEVEL_THRESHOLD as ${newCompactionLevelThreshold.get}")
       }
     }
   }

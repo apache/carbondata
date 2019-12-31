@@ -842,6 +842,17 @@ public final class CarbonCommonConstants {
    */
   public static final String DEFAULT_SEGMENT_LEVEL_THRESHOLD = "4,3";
 
+
+  /**
+   * Lower limit for the number of segment compacted per time
+   */
+  public static final int NUMBER_OF_SEGMENT_COMPACTED_PERTIME_LOWER_LIMIT = 0;
+
+  /**
+   * Upper limit for the number of segment compacted per time
+   */
+  public static final int NUMBER_OF_SEGMENT_COMPACTED_PERTIME_UPPER_LIMIT = 10000;
+
   /**
    * Number of Update Delta files which is the Threshold for IUD compaction.
    * Only accepted Range is 0 - 10000. Outside this range system will pick default value.
