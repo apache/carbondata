@@ -146,6 +146,30 @@ public final class CarbonCommonConstants {
   public static final String DEFAULT_COMPRESSOR = "snappy";
 
   /**
+   * the level 1 complex delimiter
+   */
+  @CarbonProperty
+  public static final String COMPLEX_DELIMITERS_LEVEL_1 = "carbon.complex.delimiter.level.1";
+
+  /**
+   * the level 2 complex delimiter
+   */
+  @CarbonProperty
+  public static final String COMPLEX_DELIMITERS_LEVEL_2 = "carbon.complex.delimiter.level.2";
+
+  /**
+   * the level 3 complex delimiter
+   */
+  @CarbonProperty
+  public static final String COMPLEX_DELIMITERS_LEVEL_3 = "carbon.complex.delimiter.level.3";
+
+  /**
+   * the level 4 complex delimiter
+   */
+  @CarbonProperty
+  public static final String COMPLEX_DELIMITERS_LEVEL_4 = "carbon.complex.delimiter.level.4";
+
+  /**
    * ZOOKEEPER_ENABLE_LOCK if this is set to true then zookeeper
    * will be used to handle locking
    * mechanism of carbon
@@ -299,6 +323,9 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SKIP_EMPTY_LINE = "carbon.skip.empty.line";
 
   public static final String CARBON_SKIP_EMPTY_LINE_DEFAULT = "false";
+
+
+  public static final String EMPTY_DATA_RETURN = "!EMPTY_DATA_RETURN!";
 
   /**
    * Currently the segment lock files are not deleted immediately when unlock,
