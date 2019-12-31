@@ -24,6 +24,7 @@ import java.util
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 object FieldConverter {
+  val stringLengthExceedErrorMsg = "Dataload failed, String length cannot exceed "
 
   /**
    * Return a String representation of the input value
@@ -50,8 +51,8 @@ object FieldConverter {
       value match {
         case s: String => if (!isVarcharType && !isComplexType &&
                               s.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-          throw new Exception("Dataload failed, String length cannot exceed " +
-                              CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
+          throw new IllegalArgumentException(stringLengthExceedErrorMsg +
+            CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
         } else {
           s
         }
