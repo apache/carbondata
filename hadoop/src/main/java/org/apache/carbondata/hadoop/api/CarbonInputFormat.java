@@ -74,12 +74,16 @@ import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
+import org.apache.carbondata.hadoop.util.Hive2CarbonExpression;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.exec.Utilities;
+import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
+import org.apache.hadoop.hive.ql.plan.TableScanDesc;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -455,7 +459,26 @@ m filterExpression
     try {
       String filterExprString = configuration.get(FILTER_PREDICATE);
       if (filterExprString == null) {
-        return null;
+        String expr = configuration.get(TableScanDesc.FILTER_EXPR_CONF_STR);
+        if (expr == null) {
+          return null;
+        }
+        ExprNodeGenericFuncDesc exprNodeGenericFuncDesc =
+            Utilities.deserializeObject(expr, ExprNodeGenericFuncDesc.class);
+        LOG.debug("hive expression:" + exprNodeGenericFuncDesc.getGenericUDF());
+        LOG.debug("hive expression string:" + exprNodeGenericFuncDesc.getExprString());
+        Expression expression =
+            Hive2CarbonExpression.convertExprHive2Carbon(exprNodeGenericFuncDesc);
+        if (expression == null) {
+          return null;
+        }
+        LOG.debug("carbon expression:" + expression.getString());
+        CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
+        DataMapFilter filter = new DataMapFilter(carbonTable, expression);
+        filter.setTable(carbonTable);
+        configuration
+            .set(FILTER_PREDICATE, ObjectSerializationUtil.convertObjectToString(filter));
+        return filter;
       }
       DataMapFilter filter =
           (DataMapFilter) ObjectSerializationUtil.convertStringToObject(filterExprString);
