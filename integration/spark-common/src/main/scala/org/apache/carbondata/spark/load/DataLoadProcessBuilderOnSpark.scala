@@ -26,15 +26,17 @@ import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.spark.{Accumulator, CarbonInputMetrics, DataSkewRangePartitioner, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.GenericRow
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.converter.SparkDataTypeConverterImpl
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, StructField, StructType}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -99,7 +101,7 @@ object DataLoadProcessBuilderOnSpark {
       ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
       DataLoadProcessorStepOnSpark.convertFunc(rows, index, modelBroadcast, partialSuccessAccum,
         convertStepRowCounter)
-    }.filter(_ != null)// Filter the bad record
+    }.filter(_ != null) // Filter the bad record
 
     // 3. Sort
     val configuration = DataLoadProcessBuilder.createConfiguration(model)
@@ -269,7 +271,7 @@ object DataLoadProcessBuilderOnSpark {
     val configuration = DataLoadProcessBuilder.createConfiguration(model)
     val header = configuration.getHeader
     val rangeColumn = model.getRangePartitionColumn
-    val rangeColumnIndex = (0 until header.length).find{
+    val rangeColumnIndex = (0 until header.length).find {
       index =>
         header(index).equalsIgnoreCase(rangeColumn.getColName)
     }.get
@@ -427,7 +429,7 @@ object DataLoadProcessBuilderOnSpark {
       .map(_.getColName)
       .toArray
     val schema = SparkTypeConverter.createSparkSchema(carbonTable, columns)
-    val rdd: RDD[Row] = new CarbonScanRDD[CarbonRow](
+    val rdd: RDD[InternalRow] = new CarbonScanRDD[CarbonRow](
       sparkSession,
       columnProjection = new CarbonProjection(columns),
       null,
@@ -436,13 +438,13 @@ object DataLoadProcessBuilderOnSpark {
       carbonTable.getTableInfo,
       new CarbonInputMetrics,
       null,
-      null,
+      classOf[SparkDataTypeConverterImpl],
       classOf[CarbonRowReadSupport],
       splits.asJava)
       .map { row =>
-        new GenericRow(row.getData.asInstanceOf[Array[Any]])
+        new GenericInternalRow(row.getData.asInstanceOf[Array[Any]])
       }
-    sparkSession.createDataFrame(rdd, schema)
+    SparkSQLUtil.execute(rdd, schema, sparkSession)
   }
 }
 

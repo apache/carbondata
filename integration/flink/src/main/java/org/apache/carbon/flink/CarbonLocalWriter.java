@@ -113,6 +113,9 @@ final class CarbonLocalWriter extends CarbonWriter {
     synchronized (this) {
       if (!this.flushed) {
         this.closeWriters();
+        this.commit();
+        this.writerFactory.reset();
+        this.writeCount.set(0);
         this.flushed = true;
       }
     }

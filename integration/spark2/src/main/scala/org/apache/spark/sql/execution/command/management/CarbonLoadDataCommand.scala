@@ -52,7 +52,6 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -662,34 +661,14 @@ case class CarbonLoadDataCommand(
       curAttributes: Seq[AttributeReference],
       sortScope: SortScopeOptions.SortScope,
       isDataFrame: Boolean): (LogicalPlan, Int, Option[RDD[InternalRow]]) = {
+    val catalogAttributes = catalogTable.schema.toAttributes
     // Converts the data as per the loading steps before give it to writer or sorter
-    val convertedRdd = convertData(
+    val updatedRdd = convertData(
       rdd,
       sparkSession,
       loadModel,
       isDataFrame,
       partitionValues)
-    val updatedRdd = if (isDataFrame) {
-      val columnCount = loadModel.getCsvHeaderColumns.length
-      convertedRdd.map { row =>
-        val array = new Array[AnyRef](columnCount)
-        val data = row.getData
-        var i = 0
-        while (i < columnCount) {
-          data(i) match {
-            case string: String =>
-              array(i) = UTF8String.fromString(string)
-            case _ =>
-              array(i) = data(i)
-          }
-          i = i + 1
-        }
-        array
-      }.map(row => InternalRow.fromSeq(row))
-    } else {
-      convertedRdd.map(row => InternalRow.fromSeq(row.getData))
-    }
-    val catalogAttributes = catalogTable.schema.toAttributes
     var attributes = curAttributes.map(a => {
       catalogAttributes.find(_.name.equalsIgnoreCase(a.name)).get
     })
@@ -783,7 +762,7 @@ case class CarbonLoadDataCommand(
       sparkSession: SparkSession,
       model: CarbonLoadModel,
       isDataFrame: Boolean,
-      partitionValues: Array[String]): RDD[CarbonRow] = {
+      partitionValues: Array[String]): RDD[InternalRow] = {
     val sc = sparkSession.sparkContext
     val info =
       model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo.getFactTable.getPartitionInfo
@@ -827,7 +806,7 @@ case class CarbonLoadDataCommand(
           partialSuccessAccum,
           inputStepRowCounter,
           keepActualData = true)
-      }.filter(_ != null)
+      }.filter(_ != null).map(row => InternalRow.fromSeq(row.getData))
 
     finalRDD
   }
