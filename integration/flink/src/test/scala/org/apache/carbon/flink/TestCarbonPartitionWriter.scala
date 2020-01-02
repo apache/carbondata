@@ -71,11 +71,11 @@ class TestCarbonPartitionWriter extends QueryTest {
       environment.enableCheckpointing(2000L)
       environment.setRestartStrategy(RestartStrategies.noRestart)
 
-      val dataCount = 10000
+      val dataCount = 1000
       val source = new TestSource(dataCount) {
         @throws[InterruptedException]
         override def get(index: Int): Array[AnyRef] = {
-          val data = new Array[AnyRef](5)
+          val data = new Array[AnyRef](7)
           data(0) = "test" + index
           data(1) = index.asInstanceOf[AnyRef]
           data(2) = 12345.asInstanceOf[AnyRef]
@@ -86,7 +86,7 @@ class TestCarbonPartitionWriter extends QueryTest {
 
         @throws[InterruptedException]
         override def onFinish(): Unit = {
-          Thread.sleep(30000L)
+          Thread.sleep(5000L)
         }
       }
       val stream = environment.addSource(source)
@@ -118,18 +118,99 @@ class TestCarbonPartitionWriter extends QueryTest {
       assertResult(false)(FileFactory
         .getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
 
-      // ensure the carbon data file count in data directory
-      // is same of the data file count which stage files recorded.
-      assertResult(true)(FileFactory.getCarbonFile(dataLocation).listFiles().length ==
-        collectStageInputs(CarbonTablePath.getStageDir(tablePath)).map(
-          stageInput =>
-            stageInput.getLocations.asScala.map(location => location.getFiles.size()).sum
-        ).sum
+      sql(s"INSERT INTO $tableName STAGE")
+
+      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(1000)))
+
+    } finally {
+      sql(s"drop table if exists $tableName").collect()
+      delDir(new File(dataPath))
+    }
+  }
+
+  @Test
+  def testComplexType(): Unit = {
+    sql(s"drop table if exists $tableName").collect()
+    sql(
+      s"""
+         | CREATE TABLE $tableName (stringField string, intField int, shortField short,
+         | structField struct<value1:string,value2:int,value3:int>, binaryField struct<value1:binary>)
+         | STORED AS carbondata
+         | PARTITIONED BY (hour_ string, date_ string)
+         | TBLPROPERTIES ('SORT_COLUMNS'='hour_,date_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin
+    ).collect()
+
+    val rootPath = System.getProperty("user.dir") + "/target/test-classes"
+
+    val dataTempPath = rootPath + "/data/temp/"
+    val dataPath = rootPath + "/data/"
+    delDir(new File(dataPath))
+    new File(dataPath).mkdir()
+
+    try {
+      val tablePath = storeLocation + "/" + tableName + "/"
+
+      val writerProperties = newWriterProperties(dataTempPath, dataPath, storeLocation)
+      val carbonProperties = newCarbonProperties(storeLocation)
+
+      val environment = StreamExecutionEnvironment.getExecutionEnvironment
+      environment.setParallelism(6)
+      environment.enableCheckpointing(2000L)
+      environment.setRestartStrategy(RestartStrategies.noRestart)
+
+      val dataCount = 1000
+      val source = new TestSource(dataCount) {
+        @throws[InterruptedException]
+        override def get(index: Int): Array[AnyRef] = {
+          val data = new Array[AnyRef](7)
+          data(0) = "test" + index
+          data(1) = index.asInstanceOf[AnyRef]
+          data(2) = 12345.asInstanceOf[AnyRef]
+          data(3) = "test\0011\0012"
+          data(4) = "test"
+          data(5) = Integer.toString(TestSource.randomCache.get().nextInt(24))
+          data(6) = "20191218"
+          data
+        }
+
+        @throws[InterruptedException]
+        override def onFinish(): Unit = {
+          Thread.sleep(5000L)
+        }
+      }
+      val stream = environment.addSource(source)
+      val factory = CarbonWriterFactory.builder("Local").build(
+        "default",
+        tableName,
+        tablePath,
+        new Properties,
+        writerProperties,
+        carbonProperties
       )
+      val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
+
+      stream.keyBy(new KeySelector[Array[AnyRef], AnyRef] {
+        override def getKey(value: Array[AnyRef]): AnyRef = value(3) // return hour_
+      }).addSink(streamSink)
+
+      try environment.execute
+      catch {
+        case exception: Exception =>
+          // TODO
+          throw new UnsupportedOperationException(exception)
+      }
+
+      val dataLocation = dataPath + "default" + CarbonCommonConstants.FILE_SEPARATOR +
+                         tableName + CarbonCommonConstants.FILE_SEPARATOR
+
+      assertResult(true)(FileFactory.isFileExist(dataLocation))
+      assertResult(false)(FileFactory
+        .getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
 
       sql(s"INSERT INTO $tableName STAGE")
 
-      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(10000)))
+      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(1000)))
 
     } finally {
       sql(s"drop table if exists $tableName").collect()

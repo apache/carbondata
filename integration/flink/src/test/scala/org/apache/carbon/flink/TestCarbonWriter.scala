@@ -64,7 +64,7 @@ class TestCarbonWriter extends QueryTest {
       environment.enableCheckpointing(2000L)
       environment.setRestartStrategy(RestartStrategies.noRestart)
 
-      val dataCount = 10000
+      val dataCount = 1000
       val source = new TestSource(dataCount) {
         @throws[InterruptedException]
         override def get(index: Int): Array[AnyRef] = {
@@ -103,7 +103,7 @@ class TestCarbonWriter extends QueryTest {
 
       sql(s"INSERT INTO $tableName STAGE")
 
-      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(10000)))
+      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(1000)))
 
       // ensure the stage snapshot file and all stage files are deleted
       assertResult(false)(FileFactory.isFileExist(CarbonTablePath.getStageSnapshotFile(tablePath)))
@@ -116,9 +116,9 @@ class TestCarbonWriter extends QueryTest {
   }
 
   private def newWriterProperties(
-                                   dataTempPath: String,
-                                   dataPath: String,
-                                   storeLocation: String) = {
+    dataTempPath: String,
+    dataPath: String,
+    storeLocation: String) = {
     val properties = new Properties
     properties.setProperty(CarbonLocalProperty.DATA_TEMP_PATH, dataTempPath)
     properties.setProperty(CarbonLocalProperty.DATA_PATH, dataPath)

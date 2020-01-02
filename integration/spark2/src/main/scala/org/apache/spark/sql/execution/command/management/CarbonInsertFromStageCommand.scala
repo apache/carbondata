@@ -32,12 +32,12 @@ import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -85,7 +85,6 @@ case class CarbonInsertFromStageCommand(
     val tablePath = table.getTablePath
     val stagePath = CarbonTablePath.getStageDir(tablePath)
     val snapshotFilePath = CarbonTablePath.getStageSnapshotFile(tablePath)
-    var loadModel: CarbonLoadModel = null
     val lock = acquireIngestLock(table)
 
     try {
@@ -133,44 +132,21 @@ case class CarbonInsertFromStageCommand(
       val executorService = Executors.newFixedThreadPool(numThreads)
       val stageInputs = collectStageInputs(executorService, stageFiles)
 
-      // 3) add new segment with INSERT_IN_PROGRESS into table status
-      loadModel = DataLoadProcessBuilderOnSpark.createLoadModelForGlobalSort(spark, table)
-      CarbonLoaderUtil.recordNewLoadMetadata(loadModel)
-
-      // 4) write all existing stage file names and segmentId into a new snapshot file
-      // The content of snapshot file is: first line is segmentId, followed by each line is
-      // one stage file name
-      val content =
-        (Seq(loadModel.getSegmentId) ++ stageFiles.map(_._1.getAbsolutePath)).mkString("\n")
-      FileFactory.writeFile(content, snapshotFilePath)
-
-      // 5) perform data loading
+      // 3) perform data loading
       if (table.isHivePartitionTable) {
-        startLoadingWithPartition(spark, table, loadModel, stageInputs)
+        startLoadingWithPartition(spark, table, stageInputs, stageFiles, snapshotFilePath)
       } else {
-        startLoading(spark, table, loadModel, stageInputs)
+        startLoading(spark, table, stageInputs, stageFiles, snapshotFilePath)
       }
 
-      // 6) write segment file and update the segment entry to SUCCESS
-      val segmentFileName = SegmentFileStore.writeSegmentFile(
-        table, loadModel.getSegmentId, loadModel.getFactTimeStamp.toString)
-      SegmentFileStore.updateTableStatusFile(
-        table, loadModel.getSegmentId, segmentFileName,
-        table.getCarbonTableIdentifier.getTableId,
-        new SegmentFileStore(table.getTablePath, segmentFileName),
-        SegmentStatus.SUCCESS)
-
-      // 7) delete stage files
+      // 4) delete stage files
       deleteStageFiles(executorService, stageFiles)
 
-      // 8) delete the snapshot file
+      // 5) delete the snapshot file
       FileFactory.getCarbonFile(snapshotFilePath).delete()
     } catch {
       case ex: Throwable =>
         LOGGER.error(s"failed to insert ${table.getDatabaseName}.${table.getTableName}", ex)
-        if (loadModel != null) {
-          CarbonLoaderUtil.updateTableStatusForFailure(loadModel)
-        }
         throw ex
     } finally {
       lock.unlock()
@@ -266,24 +242,55 @@ case class CarbonInsertFromStageCommand(
   private def startLoading(
       spark: SparkSession,
       table: CarbonTable,
-      loadModel: CarbonLoadModel,
-      stageInput: Seq[StageInput]
+      stageInput: Seq[StageInput],
+      stageFiles: Array[(CarbonFile, CarbonFile)],
+      snapshotFilePath: String
   ): Unit = {
-    val splits = stageInput.flatMap(_.createSplits().asScala)
-    LOGGER.info(s"start to load ${splits.size} files into " +
-                s"${table.getDatabaseName}.${table.getTableName}")
-    val start = System.currentTimeMillis()
-    val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(spark, table, splits)
-    DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
-      spark,
-      Option(dataFrame),
-      loadModel,
-      SparkSQLUtil.sessionState(spark).newHadoopConf()
-    ).map { row =>
-        (row._1, FailureCauses.NONE == row._2._2.failureCauses)
-    }
+    var loadModel: CarbonLoadModel = null
+    try {
+      // 1) add new segment with INSERT_IN_PROGRESS into table status
+      loadModel = DataLoadProcessBuilderOnSpark.createLoadModelForGlobalSort(spark, table)
+      CarbonLoaderUtil.recordNewLoadMetadata(loadModel)
 
-    LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
+      // 2) write all existing stage file names and segmentId into a new snapshot file
+      // The content of snapshot file is: first line is segmentId, followed by each line is
+      // one stage file name
+      val content =
+      (Seq(loadModel.getSegmentId) ++ stageFiles.map(_._1.getAbsolutePath)).mkString("\n")
+      FileFactory.writeFile(content, snapshotFilePath)
+
+      // 3) do loading.
+      val splits = stageInput.flatMap(_.createSplits().asScala)
+      LOGGER.info(s"start to load ${splits.size} files into " +
+                  s"${table.getDatabaseName}.${table.getTableName}")
+      val start = System.currentTimeMillis()
+      val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(spark, table, splits)
+      DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
+        spark,
+        Option(dataFrame),
+        loadModel,
+        SparkSQLUtil.sessionState(spark).newHadoopConf()
+      ).map { row =>
+          (row._1, FailureCauses.NONE == row._2._2.failureCauses)
+      }
+      LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
+
+      // 4) write segment file and update the segment entry to SUCCESS
+      val segmentFileName = SegmentFileStore.writeSegmentFile(
+        table, loadModel.getSegmentId, loadModel.getFactTimeStamp.toString)
+      SegmentFileStore.updateTableStatusFile(
+        table, loadModel.getSegmentId, segmentFileName,
+        table.getCarbonTableIdentifier.getTableId,
+        new SegmentFileStore(table.getTablePath, segmentFileName),
+        SegmentStatus.SUCCESS)
+    } catch {
+      case ex: Throwable =>
+        LOGGER.error(s"failed to insert ${table.getDatabaseName}.${table.getTableName}", ex)
+        if (loadModel != null) {
+          CarbonLoaderUtil.updateTableStatusForFailure(loadModel)
+        }
+        throw ex
+    }
   }
 
   /**
@@ -292,15 +299,18 @@ case class CarbonInsertFromStageCommand(
   private def startLoadingWithPartition(
       spark: SparkSession,
       table: CarbonTable,
-      loadModel: CarbonLoadModel,
-      stageInput: Seq[StageInput]
+      stageInput: Seq[StageInput],
+      stageFiles: Array[(CarbonFile, CarbonFile)],
+      snapshotFilePath: String
     ): Unit = {
     val partitionDataList = listPartitionFiles(stageInput)
+
+    val content = stageFiles.map(_._1.getAbsolutePath).mkString("\n")
+    FileFactory.writeFile(content, snapshotFilePath)
+
     val start = System.currentTimeMillis()
-    var index = 0
     partitionDataList.map {
       case (partition, splits) =>
-        index = index + 1
         LOGGER.info(s"start to load ${splits.size} files into " +
           s"${table.getDatabaseName}.${table.getTableName}. " +
           s"Partition information: ${partition.mkString(",")}")
@@ -484,22 +494,20 @@ case class CarbonInsertFromStageCommand(
       .map(_.getColName)
       .toArray
     val schema = SparkTypeConverter.createSparkSchema(carbonTable, columns)
-    val rdd: RDD[Row] = new CarbonScanRDD[InternalRow](
-        sparkSession,
-        columnProjection = new CarbonProjection(columns),
-        null,
-        carbonTable.getAbsoluteTableIdentifier,
-        carbonTable.getTableInfo.serialize,
-        carbonTable.getTableInfo,
-        new CarbonInputMetrics,
-        null,
-        null,
-        classOf[SparkRowReadSupportImpl],
-        splits.asJava
-      ).map { row =>
-        new GenericRow(row.toSeq(schema).toArray)
-      }
-    sparkSession.createDataFrame(rdd, schema)
+    val rdd: RDD[InternalRow] = new CarbonScanRDD[InternalRow](
+      sparkSession,
+      columnProjection = new CarbonProjection(columns),
+      null,
+      carbonTable.getAbsoluteTableIdentifier,
+      carbonTable.getTableInfo.serialize,
+      carbonTable.getTableInfo,
+      new CarbonInputMetrics,
+      null,
+      classOf[SparkDataTypeConverterImpl],
+      classOf[SparkRowReadSupportImpl],
+      splits.asJava
+    )
+    SparkSQLUtil.execute(rdd, schema, sparkSession)
   }
 
   override protected def opName: String = "INSERT STAGE"
