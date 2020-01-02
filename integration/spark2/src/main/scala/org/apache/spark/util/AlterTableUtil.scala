@@ -595,7 +595,9 @@ object AlterTableUtil {
     // validate column meta cache property
     if (propertiesMap.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
       val schemaList: util.List[ColumnSchema] = CarbonUtil
-        .getColumnSchemaList(carbonTable.getVisibleDimensions, carbonTable.getVisibleMeasures)
+        .getColumnSchemaList(carbonTable.getVisibleDimensions.asScala
+          .filter(dim => dim.getColumnSchema.getSchemaOrdinal != -1).asJava,
+          carbonTable.getVisibleMeasures)
       val tableColumns: Seq[String] = schemaList.asScala
         .map(columnSchema => columnSchema.getColumnName)
       CommonUtil
