@@ -872,13 +872,19 @@ case class CarbonLoadDataCommand(
     val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
     val metastoreSchema = StructType(catalogTable.schema.fields.map{f =>
       val column = table.getColumnByName(f.name)
-      if (column.hasEncoding(Encoding.DICTIONARY)) {
-        f.copy(dataType = IntegerType)
-      } else if (f.dataType == TimestampType || f.dataType == DateType) {
-        f.copy(dataType = LongType)
+      val updatedDataType = if (column.hasEncoding(Encoding.DICTIONARY)) {
+        IntegerType
       } else {
-        f
+        f.dataType match {
+          case TimestampType | DateType =>
+            LongType
+          case _: StructType | _: ArrayType | _: MapType =>
+            BinaryType
+          case _ =>
+            f.dataType
+        }
       }
+      f.copy(dataType = updatedDataType)
     })
     val lazyPruningEnabled = sparkSession.sqlContext.conf.manageFilesourcePartitions
     val catalog = new CatalogFileIndex(
