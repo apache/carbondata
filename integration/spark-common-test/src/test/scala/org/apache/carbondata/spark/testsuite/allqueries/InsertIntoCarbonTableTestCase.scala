@@ -381,6 +381,18 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     assert(sql("show segments for table show_insert").collect().length == 1)
   }
 
+  test("insert and select table column number not equal") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql("DROP TABLE IF EXISTS table2")
+    sql("create table table1 (col1 string, col2 string) partitioned by(pt string) stored by 'carbondata'")
+    sql("create table table2 (t2_c1 string, t2_c2 string, t2_c3 string) partitioned by(pt string)")
+    sql("insert overwrite table table2 partition(pt=20200101) values('v11', 'v12', 'v13')")
+    val e = intercept[Exception] {
+      sql("insert into table1 select * from table2")
+    }
+    assert(e.getMessage.contains("number of columns are different"))
+  }
+
   override def afterAll {
     sql("drop table if exists load")
     sql("drop table if exists inser")
@@ -402,6 +414,8 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS show_insert")
     sql("drop table if exists OverwriteTable_t1")
     sql("drop table if exists OverwriteTable_t2")
+    sql("drop table if exists table1")
+    sql("drop table if exists table2")
 
     if (timeStampPropOrig != null) {
       CarbonProperties.getInstance()
