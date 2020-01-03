@@ -114,6 +114,7 @@
     <module>examples/spark2</module>
     <module>integration/hive</module>
     <module>integration/flink</module>
+    <module>integration/flink-build</module>
     <module>integration/flink-proxy</module>
     <module>integration/presto</module>
     <module>examples/flink</module>
