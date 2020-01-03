@@ -879,16 +879,17 @@ object CommonLoadUtils {
     try {
       val query: LogicalPlan = if ((loadParams.dataFrame.isDefined) ||
                                    loadParams.scanResultRDD.isDefined) {
-        val (rdd, dfAttributes) = if (loadParams.updateModel.isDefined) {
-          // Get the updated query plan in case of update scenario
-          val updatedFrame = Dataset.ofRows(
-            loadParams.sparkSession,
-            getLogicalQueryForUpdate(
+        val (rdd, dfAttributes) =
+          if (loadParams.updateModel.isDefined && !loadParams.updateModel.get.loadAsNewSegment) {
+            // Get the updated query plan in case of update scenario
+            val updatedFrame = Dataset.ofRows(
               loadParams.sparkSession,
-              catalogTable,
-              loadParams.dataFrame.get,
-              loadParams.carbonLoadModel))
-          (updatedFrame.rdd, updatedFrame.schema)
+              getLogicalQueryForUpdate(
+                loadParams.sparkSession,
+                catalogTable,
+                loadParams.dataFrame.get,
+                loadParams.carbonLoadModel))
+            (updatedFrame.rdd, updatedFrame.schema)
         } else {
           if (loadParams.finalPartition.nonEmpty) {
             val headers = loadParams.carbonLoadModel

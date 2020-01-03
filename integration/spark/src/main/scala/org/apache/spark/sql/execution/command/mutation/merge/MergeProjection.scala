@@ -19,17 +19,16 @@ package org.apache.spark.sql.execution.command.mutation.merge
 import java.sql.{Date, Timestamp}
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Dataset, Row, SparkSession}
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, GenericInternalRow, GenericRowWithSchema, InterpretedMutableProjection, Projection}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.types.{DateType, TimestampType}
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
  * Creates the projection for each action like update,delete or insert.
  */
 case class MergeProjection(
     @transient tableCols: Seq[String],
+    @transient statusCol : String,
     @transient ds: Dataset[Row],
     @transient rltn: CarbonDatasourceHadoopRelation,
     @transient sparkSession: SparkSession,
@@ -40,9 +39,9 @@ case class MergeProjection(
   val isUpdate = mergeAction.isInstanceOf[UpdateAction]
   val isDelete = mergeAction.isInstanceOf[DeleteAction]
 
-  def apply(row: GenericRowWithSchema): Array[Object] = {
+  def apply(row: GenericRowWithSchema): InternalRow = {
     // TODO we can avoid these multiple conversions if this is added as a SparkPlan node.
-    val values = row.toSeq.map {
+    val values = row.values.map {
       case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
       case d: java.math.BigDecimal => org.apache.spark.sql.types.Decimal.apply(d)
       case b: Array[Byte] => org.apache.spark.unsafe.types.UTF8String.fromBytes(b)
@@ -51,31 +50,7 @@ case class MergeProjection(
       case value => value
     }
 
-    val outputRow = projection(new GenericInternalRow(values.toArray))
-      .asInstanceOf[GenericInternalRow]
-
-    val array = outputRow.values.clone()
-    var i = 0
-    while (i < array.length) {
-      output(i).dataType match {
-        case d: DateType =>
-          if (array(i) == null) {
-            array(i) = CarbonCommonConstants.DIRECT_DICT_VALUE_NULL
-          } else {
-            array(i) = (array(i).asInstanceOf[Int] + cutOffDate)
-          }
-        case d: TimestampType =>
-          if (array(i) == null) {
-            array(i) = CarbonCommonConstants.DIRECT_DICT_VALUE_NULL
-          } else {
-            array(i) = (array(i).asInstanceOf[Long] / 1000)
-          }
-
-        case _ =>
-      }
-      i += 1
-    }
-    array.asInstanceOf[Array[Object]]
+    projection(new GenericInternalRow(values)).asInstanceOf[GenericInternalRow]
   }
 
   val (projection, output) = generateProjection
@@ -106,7 +81,10 @@ case class MergeProjection(
       if (output.contains(null)) {
         throw new CarbonMergeDataSetException(s"Not all columns are mapped")
       }
-      (new InterpretedMutableProjection(output, ds.queryExecution.analyzed.output), expecOutput)
+      (new InterpretedMutableProjection(output++Seq(
+        ds.queryExecution.analyzed.resolveQuoted(statusCol,
+        sparkSession.sessionState.analyzer.resolver).get),
+        ds.queryExecution.analyzed.output), expecOutput)
     } else {
       (null, null)
     }

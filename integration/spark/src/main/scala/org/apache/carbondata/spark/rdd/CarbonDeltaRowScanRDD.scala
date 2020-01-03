@@ -80,7 +80,9 @@ class CarbonDeltaRowScanRDD[T: ClassTag](
       }.asJava
       new CarbonSparkPartition(partition.rddId, partition.index,
         new CarbonMultiBlockSplit(splits, partition.multiBlockSplit.getLocations))
-    }.filter(p => p.multiBlockSplit.getAllSplits.size() > 0).asInstanceOf[Array[Partition]]
+    }.filter(p => p.multiBlockSplit.getAllSplits.size() > 0).zipWithIndex.map{ case (p, index) =>
+      new CarbonSparkPartition(p.rddId, index, p.multiBlockSplit)
+    }.asInstanceOf[Array[Partition]]
   }
 
   override def createInputFormat(conf: Configuration): CarbonTableInputFormat[Object] = {

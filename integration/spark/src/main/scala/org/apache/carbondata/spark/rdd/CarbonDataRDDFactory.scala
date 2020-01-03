@@ -325,7 +325,8 @@ object CarbonDataRDDFactory {
       .sparkContext
       .collectionAccumulator[Map[String, SegmentMetaDataInfo]]
     // create new segment folder  in carbon store
-    if (updateModel.isEmpty && carbonLoadModel.isCarbonTransactionalTable) {
+    if (updateModel.isEmpty && carbonLoadModel.isCarbonTransactionalTable ||
+        updateModel.isDefined && updateModel.get.loadAsNewSegment) {
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(carbonLoadModel.getSegmentId, carbonTable)
     }
     var loadStatus = SegmentStatus.SUCCESS
@@ -339,7 +340,7 @@ object CarbonDataRDDFactory {
 
     try {
       if (!carbonLoadModel.isCarbonTransactionalTable || segmentLock.lockWithRetries()) {
-        if (updateModel.isDefined) {
+        if (updateModel.isDefined && !updateModel.get.loadAsNewSegment) {
           res = loadDataFrameForUpdate(
             sqlContext,
             dataFrame,
@@ -484,7 +485,7 @@ object CarbonDataRDDFactory {
       segmentLock.unlock()
     }
     // handle the status file updation for the update cmd.
-    if (updateModel.isDefined) {
+    if (updateModel.isDefined && !updateModel.get.loadAsNewSegment) {
       if (loadStatus == SegmentStatus.LOAD_FAILURE) {
         CarbonScalaUtil.updateErrorInUpdateModel(updateModel.get, executorMessage)
         return null
@@ -615,6 +616,7 @@ object CarbonDataRDDFactory {
           newEntryLoadStatus,
           overwriteTable,
           segmentFileName,
+          updateModel,
           uniqueTableStatusId)
       val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =
         new LoadTablePostStatusUpdateEvent(carbonLoadModel)
@@ -990,6 +992,7 @@ object CarbonDataRDDFactory {
       newEntryLoadStatus: SegmentStatus,
       overwriteTable: Boolean,
       segmentFileName: String,
+      updateModel: Option[UpdateTableModel],
       uuid: String = ""): (Boolean, LoadMetadataDetails) = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val metadataDetails = if (status != null && status.size > 0 && status(0) != null) {
@@ -1009,7 +1012,19 @@ object CarbonDataRDDFactory {
     if (!carbonLoadModel.isCarbonTransactionalTable && overwriteTable) {
       CarbonLoaderUtil.deleteNonTransactionalTableForInsertOverwrite(carbonLoadModel)
     }
-    val done = CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false,
+    var done = true
+    // If the updated data should be added as new segment then update the segment information
+    if (updateModel.isDefined && updateModel.get.loadAsNewSegment) {
+      done = done && CarbonUpdateUtil.updateTableMetadataStatus(
+        carbonLoadModel.getLoadMetadataDetails.asScala.map(l =>
+          new Segment(l.getMergedLoadName,
+            l.getSegmentFile)).toSet.asJava,
+        carbonTable,
+        carbonLoadModel.getFactTimeStamp.toString,
+        true,
+        updateModel.get.deletedSegments.asJava)
+    }
+    done = done && CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false,
       overwriteTable, uuid)
     if (!done) {
       val errorMessage = s"Dataload failed due to failure in table status updation for" +
