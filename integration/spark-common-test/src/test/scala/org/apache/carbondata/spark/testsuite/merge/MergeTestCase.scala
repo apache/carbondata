@@ -83,6 +83,22 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     (dwSelframe, odsframe)
   }
 
+  private def initializePartition = {
+    val initframe = generateData(10)
+    initframe.write
+      .format("carbondata")
+      .option("tableName", "order")
+      .option("partitionColumns", "c_name")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    val dwframe = sqlContext.read.format("carbondata").option("tableName", "order").load()
+    val dwSelframe = dwframe.as("A")
+
+    val odsframe = generateFullCDC(10, 2, 2, 1, 2).as("B")
+    (dwSelframe, odsframe)
+  }
+
   test("test basic merge update with all mappings") {
     sql("drop table if exists order")
     val (dwSelframe, odsframe) = initialize
@@ -205,6 +221,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     CarbonMergeDataSetCommand(dwSelframe,
       odsframe,
       MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+    sql("select * from order").show()
     checkAnswer(sql("select count(*) from order where id like 'newid%'"), Seq(Row(2)))
     checkAnswer(sql("select count(*) from order"), Seq(Row(12)))
     checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
@@ -392,6 +409,52 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from order_hist where c_name = 'insert'"), Seq(Row(2)))
   }
 
+  test("test merge update with insert, insert with condition and expression and delete with insert history action with partition") {
+    sql("drop table if exists order")
+    sql("drop table if exists order_hist")
+    sql("create table order_hist(id string, name string, quantity int, price int, state int) PARTITIONED BY (c_name String) stored by 'carbondata'")
+    val (dwSelframe, odsframe) = initializePartition
+
+    var matches = Seq.empty[MergeMatch]
+    val updateMap = Map(col("id") -> col("A.id"),
+      col("price") -> expr("B.price + 1"),
+      col("state") -> col("B.state"))
+
+    val insertMap = Map(col("id") -> col("B.id"),
+      col("name") -> col("B.name"),
+      col("c_name") -> col("B.c_name"),
+      col("quantity") -> col("B.quantity"),
+      col("price") -> expr("B.price * 100"),
+      col("state") -> col("B.state"))
+
+    val insertMap_u = Map(col("id") -> col("id"),
+      col("name") -> col("name"),
+      col("c_name") -> lit("insert"),
+      col("quantity") -> col("quantity"),
+      col("price") -> expr("price"),
+      col("state") -> col("state"))
+
+    val insertMap_d = Map(col("id") -> col("id"),
+      col("name") -> col("name"),
+      col("c_name") -> lit("delete"),
+      col("quantity") -> col("quantity"),
+      col("price") -> expr("price"),
+      col("state") -> col("state"))
+
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)).addAction(InsertInHistoryTableAction(insertMap_u, TableIdentifier("order_hist"))))
+    matches ++= Seq(WhenNotMatched().addAction(InsertAction(insertMap)))
+    matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget().addAction(DeleteAction()).addAction(InsertInHistoryTableAction(insertMap_d, TableIdentifier("order_hist"))))
+
+    CarbonMergeDataSetCommand(dwSelframe,
+      odsframe,
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+    checkAnswer(sql("select count(*) from order"), Seq(Row(10)))
+    checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
+    checkAnswer(sql("select price from order where id = 'newid1'"), Seq(Row(7500)))
+    checkAnswer(sql("select count(*) from order_hist where c_name = 'delete'"), Seq(Row(2)))
+    checkAnswer(sql("select count(*) from order_hist where c_name = 'insert'"), Seq(Row(2)))
+  }
+
   test("check the scd ") {
     sql("drop table if exists customers")
 
@@ -445,6 +508,55 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from customers where current='true'"), Seq(Row(4)))
     checkAnswer(sql("select count(*) from customers where effectivedate is not null and enddate is not null"), Seq(Row(1)))
 
+  }
+
+  test("check the ccd with partition") {
+    sql("drop table if exists target")
+
+    val initframe = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("a", "0"),
+      Row("b", "1"),
+      Row("c", "2"),
+      Row("d", "3")
+    ).asJava, StructType(Seq(StructField("key", StringType), StructField("value", StringType))))
+
+    initframe.write
+      .format("carbondata")
+      .option("tableName", "target")
+      .option("partitionColumns", "value")
+      .mode(SaveMode.Overwrite)
+      .save()
+    val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
+    var ccd =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", "10", false,  0),
+        Row("a", null, true, 1),   // a was updated and then deleted
+        Row("b", null, true, 2),   // b was just deleted once
+        Row("c", null, true, 3),   // c was deleted and then updated twice
+        Row("c", "20", false, 4),
+        Row("c", "200", false, 5),
+        Row("e", "100", false, 6)  // new key
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("newValue", StringType),
+          StructField("deleted", BooleanType), StructField("time", IntegerType))))
+    ccd.createOrReplaceTempView("changes")
+
+    ccd = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
+
+    val updateMap = Map("key" -> "B.key", "value" -> "B.newValue").asInstanceOf[Map[Any, Any]]
+
+    val insertMap = Map("key" -> "B.key", "value" -> "B.newValue").asInstanceOf[Map[Any, Any]]
+
+    target.as("A").merge(ccd.as("B"), "A.key=B.key").
+      whenMatched("B.deleted=false").
+      updateExpr(updateMap).
+      whenNotMatched("B.deleted=false").
+      insertExpr(insertMap).
+      whenMatched("B.deleted=true").
+      delete().execute()
+    checkAnswer(sql("select count(*) from target"), Seq(Row(3)))
+    checkAnswer(sql("select * from target order by key"), Seq(Row("c", "200"), Row("d", "3"), Row("e", "100")))
   }
 
   test("check the ccd ") {

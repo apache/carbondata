@@ -20,13 +20,16 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Dataset, Row, SparkSession}
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
+import org.apache.spark.sql.execution.LogicalRDD
+import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.DataTypeConverterImpl
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.spark.rdd.CarbonDeltaRowScanRDD
-import org.apache.carbondata.spark.readsupport.SparkGenericRowReadSupportImpl
+import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
 object HistoryTableLoadHelper {
 
@@ -107,20 +110,23 @@ object HistoryTableLoadHelper {
       insertHist: InsertInHistoryTableAction,
       histDataFrame: Dataset[Row],
       factTimestamp: Long) = {
-    val rdd1 = new CarbonDeltaRowScanRDD[Row](sparkSession,
+    val rdd1 = new CarbonDeltaRowScanRDD[InternalRow](sparkSession,
       carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo,
-      null,
+      CarbonFilters.getPartitions(
+        Seq.empty,
+        sparkSession,
+        TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName))).orNull,
       new CarbonProjection(
         carbonTable.getCreateOrderColumn().asScala.map(_.getColName).toArray),
       null,
       carbonTable.getAbsoluteTableIdentifier,
       new CarbonInputMetrics,
-      classOf[DataTypeConverterImpl],
-      classOf[SparkGenericRowReadSupportImpl],
+      classOf[SparkDataTypeConverterImpl],
+      classOf[SparkRowReadSupportImpl],
       factTimestamp.toString)
-
-    val frame1 = sparkSession.createDataFrame(rdd1, rltn.carbonRelation.schema)
+    val frame1 = Dataset.ofRows(sparkSession,
+      LogicalRDD(rltn.carbonRelation.output, rdd1)(sparkSession))
     val histOutput = histDataFrame.queryExecution.analyzed.output
     val cols = histOutput.map { a =>
       insertHist.insertMap.find(p => p._1.toString().equalsIgnoreCase(a.name)) match {

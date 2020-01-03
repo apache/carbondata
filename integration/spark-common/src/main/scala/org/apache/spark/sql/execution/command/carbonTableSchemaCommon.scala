@@ -132,7 +132,8 @@ case class UpdateTableModel(
     isUpdate: Boolean,
     updatedTimeStamp: Long,
     var executorErrors: ExecutionErrors,
-    deletedSegments: Seq[Segment])
+    deletedSegments: Seq[Segment],
+    loadAsNewSegment: Boolean = false)
 
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,

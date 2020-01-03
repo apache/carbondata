@@ -124,9 +124,11 @@ public class SegmentUpdateStatusManager {
             HashSet<String> set = new HashSet<>();
             set.add(updateVersion);
             updateDetail.setDeltaFileStamps(set);
+            updateDetail.setSegmentStatus(SegmentStatus.SUCCESS);
             newupdateDetails.add(updateDetail);
           }
         } else if (updateDetail.getDeleteDeltaStartTimestamp().equalsIgnoreCase(updateVersion)) {
+          updateDetail.setSegmentStatus(SegmentStatus.SUCCESS);
           newupdateDetails.add(updateDetail);
         }
       }

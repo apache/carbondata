@@ -279,7 +279,11 @@ case class CarbonLoadDataCommand(
       // Clean up the old invalid segment data before creating a new entry for new load.
       SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, currPartitions)
       // add the start entry for the new load in the table status file
-      if (updateModel.isEmpty && !table.isHivePartitionTable) {
+      if ((updateModel.isEmpty || updateModel.isDefined && updateModel.get.loadAsNewSegment)
+          && !table.isHivePartitionTable) {
+        if (updateModel.isDefined ) {
+          carbonLoadModel.setFactTimeStamp(updateModel.get.updatedTimeStamp)
+        }
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(
           carbonLoadModel,
           isOverwriteTable)
@@ -299,12 +303,10 @@ case class CarbonLoadDataCommand(
         carbonLoadModel.setSegmentId(System.currentTimeMillis().toString)
       }
       val partitionStatus = SegmentStatus.SUCCESS
-      val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
       LOGGER.info("Sort Scope : " + carbonLoadModel.getSortScope)
       loadData(
         sparkSession,
         carbonLoadModel,
-        columnar,
         partitionStatus,
         hadoopConf,
         operationContext,
@@ -358,13 +360,13 @@ case class CarbonLoadDataCommand(
   private def loadData(
       sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
-      columnar: Boolean,
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration,
       operationContext: OperationContext,
       LOGGER: Logger): Seq[Row] = {
     var rows = Seq.empty[Row]
-    val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
+    val (dictionaryDataFrame, loadDataFrame) =
+      if (updateModel.isDefined && !updateModel.get.loadAsNewSegment) {
       val dataFrameWithTupleId: DataFrame = getDataFrameWithTupleID()
       // getting all fields except tupleId field as it is not required in the value
       val otherFields = CarbonScalaUtil.getAllFieldsWithoutTupleIdField(dataFrame.get.schema.fields)
@@ -386,7 +388,6 @@ case class CarbonLoadDataCommand(
       val loadResult = CarbonDataRDDFactory.loadCarbonData(
         sparkSession.sqlContext,
         carbonLoadModel,
-        columnar,
         partitionStatus,
         isOverwriteTable,
         hadoopConf,
@@ -460,7 +461,7 @@ case class CarbonLoadDataCommand(
     var persistedRDD: Option[RDD[InternalRow]] = None
     try {
       val query: LogicalPlan = if (dataFrame.isDefined) {
-        val (rdd, dfAttributes) = if (updateModel.isDefined) {
+        val (rdd, dfAttributes) = if (updateModel.isDefined && !updateModel.get.loadAsNewSegment) {
           // Get the updated query plan in case of update scenario
           val updatedFrame = Dataset.ofRows(
             sparkSession,
