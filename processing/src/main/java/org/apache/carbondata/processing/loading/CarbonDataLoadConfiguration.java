@@ -30,7 +30,6 @@ import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.SortColumnRangeInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.OutputFilesInfoHolder;
-import org.apache.carbondata.processing.loading.converter.DictionaryCardinalityFinder;
 
 public class CarbonDataLoadConfiguration {
 
@@ -67,8 +66,6 @@ public class CarbonDataLoadConfiguration {
    */
   private long schemaUpdatedTimeStamp;
 
-  private DictionaryCardinalityFinder cardinalityFinder;
-
   private int numberOfSortColumns;
 
   private int numberOfNoDictSortColumns;
@@ -90,8 +87,6 @@ public class CarbonDataLoadConfiguration {
    */
   private String dataWritePath;
 
-  private String parentTablePath;
-
   /**
    * name of compressor to be used to compress column page
    */
@@ -102,14 +97,6 @@ public class CarbonDataLoadConfiguration {
   private OutputFilesInfoHolder outputFilesInfoHolder;
 
   public CarbonDataLoadConfiguration() {
-  }
-
-  public String getParentTablePath() {
-    return parentTablePath;
-  }
-
-  public void setParentTablePath(String parentTablePath) {
-    this.parentTablePath = parentTablePath;
   }
 
   public void setDataFields(DataField[] dataFields) {
@@ -241,14 +228,6 @@ public class CarbonDataLoadConfiguration {
     this.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
   }
 
-  public DictionaryCardinalityFinder getCardinalityFinder() {
-    return cardinalityFinder;
-  }
-
-  public void setCardinalityFinder(DictionaryCardinalityFinder cardinalityFinder) {
-    this.cardinalityFinder = cardinalityFinder;
-  }
-
   public DataType[] getMeasureDataType() {
     List<Integer> measureIndexes = new ArrayList<>(dataFields.length);
     int measureCount = 0;
@@ -303,10 +282,6 @@ public class CarbonDataLoadConfiguration {
       }
     }
     return sortColumnMapping;
-  }
-
-  public int[] getCardinalityForComplexDimension() {
-    return getCardinalityFinder().getCardinality();
   }
 
   public TableSpec getTableSpec() {

@@ -35,16 +35,6 @@ public class CarbonLoadStatisticsDummy implements LoadStatistics {
   }
 
   @Override
-  public void recordDicShuffleAndWriteTime() {
-
-  }
-
-  @Override
-  public void recordLoadCsvfilesToDfTime() {
-
-  }
-
-  @Override
   public void recordDictionaryValuesTotalTime(String partitionID,
       Long dictionaryValuesTotalTimeTimePoint) {
 
@@ -57,12 +47,6 @@ public class CarbonLoadStatisticsDummy implements LoadStatistics {
 
   @Override
   public void recordLruCacheLoadTime(double lruCacheLoadTime) {
-
-  }
-
-  @Override
-  public void recordGeneratingDictionaryValuesTime(String partitionID,
-      Long generatingDictionaryValuesTimePoint) {
 
   }
 
@@ -89,11 +73,6 @@ public class CarbonLoadStatisticsDummy implements LoadStatistics {
 
   @Override
   public void recordHostBlockMap(String host, Integer numBlocks) {
-
-  }
-
-  @Override
-  public void recordPartitionBlockMap(String partitionID, Integer numBlocks) {
 
   }
 

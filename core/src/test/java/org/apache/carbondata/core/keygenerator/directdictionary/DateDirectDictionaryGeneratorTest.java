@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.keygenerator.directdictionary;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import org.junit.After;
@@ -33,7 +32,6 @@ public class DateDirectDictionaryGeneratorTest {
   private DirectDictionaryGenerator dictionaryGenerator = null;
 
   @Before public void setUp() throws Exception {
-    TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator();
     dictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(DataTypes.DATE,
             CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);

@@ -71,11 +71,6 @@ public class Segment implements Serializable, Writable {
   private long indexSize = 0;
 
   /**
-   * Whether to cache the segment data maps in executors or not.
-   */
-  private boolean isCacheable = true;
-
-  /**
    * Path of segment where it exists
    */
   private transient String segmentPath;
@@ -306,14 +301,6 @@ public class Segment implements Serializable, Writable {
 
   public void setIndexSize(long indexSize) {
     this.indexSize = indexSize;
-  }
-
-  public boolean isCacheable() {
-    return isCacheable;
-  }
-
-  public void setCacheable(boolean cacheable) {
-    isCacheable = cacheable;
   }
 
   public String getSegmentPath() {

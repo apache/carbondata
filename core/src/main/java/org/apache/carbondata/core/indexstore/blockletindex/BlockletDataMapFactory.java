@@ -111,13 +111,13 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   @Override
   public DataMapWriter createWriter(Segment segment, String shardName,
-      SegmentProperties segmentProperties) throws IOException {
+      SegmentProperties segmentProperties) {
     throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
   public DataMapBuilder createBuilder(Segment segment, String shardName,
-      SegmentProperties segmentProperties) throws IOException {
+      SegmentProperties segmentProperties) {
     throw new UnsupportedOperationException("not implemented");
   }
 
@@ -485,8 +485,6 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
               (BlockletDataMapDistributable) distributable);
       if (null == cache.getIfPresent(
           new TableBlockIndexUniqueIdentifierWrapper(validIdentifier, this.getCarbonTable()))) {
-        ((BlockletDataMapDistributable) distributable)
-            .setTableBlockIndexUniqueIdentifier(validIdentifier);
         distributablesToBeLoaded.add(distributable);
       }
     }

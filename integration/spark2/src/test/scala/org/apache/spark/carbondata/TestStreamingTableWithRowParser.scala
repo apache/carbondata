@@ -836,7 +836,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
   ): Unit = {
     val identifier = new TableIdentifier(tableName, Option("streaming1"))
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetaStore.lookupRelation(identifier)(spark)
-      .asInstanceOf[CarbonRelation].metaData.carbonTable
+      .asInstanceOf[CarbonRelation].carbonTable
     var server: ServerSocket = null
     try {
       server = getServerSocket()

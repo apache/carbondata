@@ -45,6 +45,7 @@ import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ReUsableByteArrayDataOutputStream;
 
@@ -67,10 +68,6 @@ public abstract class BlockletScannedResult {
    * matched rowId for each page
    */
   protected int[][] pageFilteredRowId;
-  /**
-   * key size of the fixed length column
-   */
-  protected int fixedLengthKeySize;
   /**
    * total number of filtered rows for each page
    */
@@ -159,7 +156,6 @@ public abstract class BlockletScannedResult {
       QueryStatisticsModel queryStatisticsModel) {
     this.dimensionReusableBuffer = blockExecutionInfo.getDimensionResusableDataBuffer();
     this.measureReusableBuffer = blockExecutionInfo.getMeasureResusableDataBuffer();
-    this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
     this.noDictionaryColumnChunkIndexes = blockExecutionInfo.getNoDictionaryColumnChunkIndexes();
     this.dictionaryColumnChunkIndexes = blockExecutionInfo.getDictionaryColumnChunkIndex();
     this.complexParentIndexToQueryMap = blockExecutionInfo.getComlexDimensionInfoMap();
@@ -213,24 +209,6 @@ public abstract class BlockletScannedResult {
    */
   public ColumnPage getMeasureChunk(int ordinal) {
     return measureColumnPages[ordinal][pageCounter];
-  }
-
-  /**
-   * Below method will be used to get the key for all the dictionary dimensions
-   * which is present in the query
-   *
-   * @param rowId row id selected after scanning
-   * @return return the dictionary key
-   */
-  protected byte[] getDictionaryKeyArray(int rowId) {
-    byte[] completeKey = new byte[fixedLengthKeySize];
-    int offset = 0;
-    for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
-      offset += dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter].fillRawData(
-          rowId, offset, completeKey);
-    }
-    rowCounter++;
-    return completeKey;
   }
 
   /**
@@ -747,12 +725,6 @@ public abstract class BlockletScannedResult {
   public abstract int getCurrentRowId();
 
   /**
-   * @return dictionary key array for all the dictionary dimension
-   * selected in query
-   */
-  public abstract byte[] getDictionaryKeyArray();
-
-  /**
    * @return dictionary key array for all the dictionary dimension in integer array forat
    * selected in query
    */
@@ -773,7 +745,7 @@ public abstract class BlockletScannedResult {
     byte[] completeKey = null;
     // everyTime it is initialized new as in case of prefetch it can modify the data
     for (int i = 0; i < validRowIds.size(); i++) {
-      completeKey = new byte[fixedLengthKeySize];
+      completeKey = new byte[dictionaryColumnChunkIndexes.length * ByteUtil.dateBytesSize()];
       dictionaryKeyArrayList.add(completeKey);
     }
     // initialize offset array onli if data is present

@@ -70,14 +70,11 @@ public class CarbonMetadataUtil {
    *
    * @param infoList
    * @param blockletIndexs
-   * @param cardinalities
-   * @param numberOfColumns
    * @return FileFooter
    */
   public static FileFooter3 convertFileFooterVersion3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns)
-      throws IOException {
-    FileFooter3 footer = getFileFooter3(infoList, blockletIndexs, cardinalities, numberOfColumns);
+      List<BlockletIndex> blockletIndexs) {
+    FileFooter3 footer = getFileFooter3(infoList, blockletIndexs);
     for (BlockletInfo3 info : infoList) {
       footer.addToBlocklet_info_list3(info);
     }
@@ -89,15 +86,13 @@ public class CarbonMetadataUtil {
    *
    * @param infoList         blocklet info
    * @param blockletIndexs
-   * @param cardinalities    cardinlaity of dimension columns
-   * @param numberOfColumns
    * @return file footer
    */
   private static FileFooter3 getFileFooter3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns) {
+      List<BlockletIndex> blockletIndexs) {
     SegmentInfo segmentInfo = new SegmentInfo();
-    segmentInfo.setNum_cols(numberOfColumns);
-    segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(cardinalities));
+    segmentInfo.setNum_cols(0);
+    segmentInfo.setColumn_cardinalities(new ArrayList<>(0));
     FileFooter3 footer = new FileFooter3();
     footer.setNum_rows(getNumberOfRowForFooter(infoList));
     footer.setSegment_info(segmentInfo);
@@ -346,20 +341,19 @@ public class CarbonMetadataUtil {
   /**
    * Below method will be used to get the index header
    *
-   * @param columnCardinality cardinality of each column
    * @param columnSchemaList  list of column present in the table
    * @param bucketNumber
    * @param schemaTimeStamp current timestamp of schema
    * @return Index header object
    */
-  public static IndexHeader getIndexHeader(int[] columnCardinality,
+  public static IndexHeader getIndexHeader(
       List<ColumnSchema> columnSchemaList, int bucketNumber, long schemaTimeStamp) {
     // create segment info object
     SegmentInfo segmentInfo = new SegmentInfo();
     // set the number of columns
     segmentInfo.setNum_cols(columnSchemaList.size());
     // setting the column cardinality
-    segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(columnCardinality));
+    segmentInfo.setColumn_cardinalities(new ArrayList<>(0));
     // create index header object
     IndexHeader indexHeader = new IndexHeader();
     ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
@@ -478,8 +472,6 @@ public class CarbonMetadataUtil {
   }
 
   private static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
-    ByteBuffer firstBuffer = null;
-    ByteBuffer secondBuffer = null;
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       if (first[0] > second[0]) {
         return 1;

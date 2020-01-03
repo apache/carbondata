@@ -180,42 +180,42 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
   def prepareKeyGenForDictIndexColumns(carbonTable: CarbonTable,
                                        dictIndexColumns: ListBuffer[CarbonColumn]): Unit = {
 
-    val columnCardinality = new util.ArrayList[Integer](dictIndexColumns.length)
-    val columnPartitioner = new util.ArrayList[Integer](dictIndexColumns.length)
-
-    dictIndexColumns.foreach { col =>
-      val dim = carbonTable.getDimensionByName(col.getColName)
-      val currentBlockDimension = segmentProperties.getDimensionFromCurrentBlock(dim)
-      if (null != currentBlockDimension) {
-        columnCardinality.add(segmentProperties.getDimColumnsCardinality.apply(
-          currentBlockDimension.getKeyOrdinal))
-        columnPartitioner.add(segmentProperties.getDimensionPartitions.apply(
-          currentBlockDimension.getKeyOrdinal
-        ))
-      } else {
-        columnPartitioner.add(1)
-        if (col.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          columnCardinality.add(Integer.MAX_VALUE)
-        } else {
-          val defaultValue = col.getDefaultValue
-          if (null != col.getDefaultValue) {
-            columnCardinality.add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY + 1)
-          } else {
-            columnCardinality.add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY)
-          }
-        }
-      }
-    }
-
-    if (!columnCardinality.isEmpty) {
-      val latestColumnCardinality = ArrayUtils.toPrimitive(columnCardinality.toArray(
-        new Array[Integer](columnCardinality.size)))
-      val latestColumnPartitioner = ArrayUtils.toPrimitive(columnPartitioner.toArray(
-        new Array[Integer](columnPartitioner.size)))
-      val dimensionBitLength = CarbonUtil.getDimensionBitLength(
-        latestColumnCardinality, latestColumnPartitioner)
-      this.dimensionKeyGenerator = new MultiDimKeyVarLengthGenerator(dimensionBitLength)
-    }
+//    val columnCardinality = new util.ArrayList[Integer](dictIndexColumns.length)
+//    val columnPartitioner = new util.ArrayList[Integer](dictIndexColumns.length)
+//
+//    dictIndexColumns.foreach { col =>
+//      val dim = carbonTable.getDimensionByName(col.getColName)
+//      val currentBlockDimension = segmentProperties.getDimensionFromCurrentBlock(dim)
+//      if (null != currentBlockDimension) {
+//        columnCardinality.add(segmentProperties.getDimColumnsCardinality.apply(
+//          currentBlockDimension.getKeyOrdinal))
+//        columnPartitioner.add(segmentProperties.getDimensionPartitions.apply(
+//          currentBlockDimension.getKeyOrdinal
+//        ))
+//      } else {
+//        columnPartitioner.add(1)
+//        if (col.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+//          columnCardinality.add(Integer.MAX_VALUE)
+//        } else {
+//          val defaultValue = col.getDefaultValue
+//          if (null != col.getDefaultValue) {
+//            columnCardinality.add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY + 1)
+//          } else {
+//            columnCardinality.add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY)
+//          }
+//        }
+//      }
+//    }
+//
+//    if (!columnCardinality.isEmpty) {
+//      val latestColumnCardinality = ArrayUtils.toPrimitive(columnCardinality.toArray(
+//        new Array[Integer](columnCardinality.size)))
+//      val latestColumnPartitioner = ArrayUtils.toPrimitive(columnPartitioner.toArray(
+//        new Array[Integer](columnPartitioner.size)))
+//      val dimensionBitLength = CarbonUtil.getDimensionBitLength(
+//        latestColumnCardinality, latestColumnPartitioner)
+//      this.dimensionKeyGenerator = new MultiDimKeyVarLengthGenerator(dimensionBitLength)
+//    }
   }
 
   override def initialize(carbonColumns: Array[CarbonColumn],

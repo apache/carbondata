@@ -326,24 +326,29 @@ public class CarbonCompactionUtil {
   }
 
   /**
-   * This method will add the prepare the max column cardinality map
+   * This method is to get the chile dimensions of the complex dimension and
+   * update the cardinality for all complex dimensions
    *
+   * @param carbonDimensionsList
+   * @param updatedColumnSchemaList
+   * @param updatedCardinalityList
    * @param columnCardinalityMap
-   * @param currentBlockSchema
-   * @param currentBlockCardinality
    */
-  public static void addColumnCardinalityToMap(Map<String, Integer> columnCardinalityMap,
-      List<ColumnSchema> currentBlockSchema, int[] currentBlockCardinality) {
-    for (int i = 0; i < currentBlockCardinality.length; i++) {
-      // add value to map only if does not exist or new cardinality is > existing value
-      String columnUniqueId = currentBlockSchema.get(i).getColumnUniqueId();
-      Integer value = columnCardinalityMap.get(columnUniqueId);
+  private static void fillColumnSchemaListForComplexDims(List<CarbonDimension> carbonDimensionsList,
+      List<ColumnSchema> updatedColumnSchemaList, List<Integer> updatedCardinalityList,
+      Map<String, Integer> columnCardinalityMap) {
+    for (CarbonDimension carbonDimension : carbonDimensionsList) {
+      Integer value = columnCardinalityMap.get(carbonDimension.getColumnId());
       if (null == value) {
-        columnCardinalityMap.put(columnUniqueId, currentBlockCardinality[i]);
+        updatedCardinalityList.add(getDimensionDefaultCardinality(carbonDimension));
       } else {
-        if (currentBlockCardinality[i] > value) {
-          columnCardinalityMap.put(columnUniqueId, currentBlockCardinality[i]);
-        }
+        updatedCardinalityList.add(value);
+      }
+      updatedColumnSchemaList.add(carbonDimension.getColumnSchema());
+      List<CarbonDimension> childDims = carbonDimension.getListOfChildDimensions();
+      if (null != childDims && childDims.size() > 0) {
+        fillColumnSchemaListForComplexDims(childDims, updatedColumnSchemaList,
+            updatedCardinalityList, columnCardinalityMap);
       }
     }
   }
@@ -379,36 +384,7 @@ public class CarbonCompactionUtil {
     for (CarbonMeasure measure : masterSchemaMeasures) {
       updatedColumnSchemaList.add(measure.getColumnSchema());
     }
-    return ArrayUtils
-        .toPrimitive(updatedCardinalityList.toArray(new Integer[updatedCardinalityList.size()]));
-  }
-
-  /**
-   * This method is to get the chile dimensions of the complex dimension and
-   * update the cardinality for all complex dimensions
-   *
-   * @param carbonDimensionsList
-   * @param updatedColumnSchemaList
-   * @param updatedCardinalityList
-   * @param columnCardinalityMap
-   */
-  private static void fillColumnSchemaListForComplexDims(List<CarbonDimension> carbonDimensionsList,
-      List<ColumnSchema> updatedColumnSchemaList, List<Integer> updatedCardinalityList,
-      Map<String, Integer> columnCardinalityMap) {
-    for (CarbonDimension carbonDimension : carbonDimensionsList) {
-      Integer value = columnCardinalityMap.get(carbonDimension.getColumnId());
-      if (null == value) {
-        updatedCardinalityList.add(getDimensionDefaultCardinality(carbonDimension));
-      } else {
-        updatedCardinalityList.add(value);
-      }
-      updatedColumnSchemaList.add(carbonDimension.getColumnSchema());
-      List<CarbonDimension> childDims = carbonDimension.getListOfChildDimensions();
-      if (null != childDims && childDims.size() > 0) {
-        fillColumnSchemaListForComplexDims(childDims, updatedColumnSchemaList,
-            updatedCardinalityList, columnCardinalityMap);
-      }
-    }
+    return ArrayUtils.toPrimitive(updatedCardinalityList.toArray(new Integer[0]));
   }
 
   /**

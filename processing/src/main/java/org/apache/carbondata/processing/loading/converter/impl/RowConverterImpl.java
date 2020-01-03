@@ -156,24 +156,6 @@ public class RowConverterImpl implements RowConverter {
   }
 
   @Override
-  public int[] getCardinality() {
-    List<Integer> dimCardinality = new ArrayList<>();
-    if (fieldConverters != null) {
-      for (int i = 0; i < fieldConverters.length; i++) {
-        if (fieldConverters[i] instanceof AbstractDictionaryFieldConverterImpl) {
-          ((AbstractDictionaryFieldConverterImpl) fieldConverters[i])
-              .fillColumnCardinality(dimCardinality);
-        }
-      }
-    }
-    int[] cardinality = new int[dimCardinality.size()];
-    for (int i = 0; i < dimCardinality.size(); i++) {
-      cardinality[i] = dimCardinality.get(i);
-    }
-    return cardinality;
-  }
-
-  @Override
   public FieldConverter[] getFieldConverters() {
     return fieldConverters;
   }

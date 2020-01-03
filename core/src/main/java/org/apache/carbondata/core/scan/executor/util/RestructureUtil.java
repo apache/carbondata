@@ -506,14 +506,14 @@ public class RestructureUtil {
         }
       }
       blockExecutionInfo.setActualQueryDimensions(updatedProjectionDimensions
-          .toArray(new ProjectionDimension[updatedProjectionDimensions.size()]));
+          .toArray(new ProjectionDimension[0]));
       blockExecutionInfo.setActualQueryMeasures(updatedProjectionMeasures
-          .toArray(new ProjectionMeasure[updatedProjectionMeasures.size()]));
+          .toArray(new ProjectionMeasure[0]));
     } else {
       blockExecutionInfo.setActualQueryDimensions(
-          projectionDimensions.toArray(new ProjectionDimension[projectionDimensions.size()]));
+          projectionDimensions.toArray(new ProjectionDimension[0]));
       blockExecutionInfo.setActualQueryMeasures(
-          projectionMeasures.toArray(new ProjectionMeasure[projectionMeasures.size()]));
+          projectionMeasures.toArray(new ProjectionMeasure[0]));
     }
   }
 

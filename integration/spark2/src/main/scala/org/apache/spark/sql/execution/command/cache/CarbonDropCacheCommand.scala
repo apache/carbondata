@@ -55,10 +55,6 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
         carbonTable.getTableName)) {
         DataMapUtil.executeClearDataMapJob(carbonTable, DataMapUtil.DISTRIBUTED_JOB_NAME)
       } else {
-        // Extract dictionary keys for the table and create cache keys from those
-        val dictKeys: List[String] = CacheUtil.getAllDictCacheKeys(carbonTable)
-        // Remove elements from cache
-        cache.removeAll(dictKeys.asJava)
         DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getAbsoluteTableIdentifier)
       }
     }

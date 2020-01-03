@@ -19,15 +19,11 @@ package org.apache.carbondata.presto.readers;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Objects;
 
 import static java.math.RoundingMode.HALF_UP;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -53,17 +49,14 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
   protected int batchSize;
   protected Type type;
   protected BlockBuilder builder;
-  private Dictionary dictionary;
 
   public DecimalSliceStreamReader(int batchSize, DataType dataType,
-      org.apache.carbondata.core.metadata.datatype.DecimalType decimalDataType,
-      Dictionary dictionary) {
+      org.apache.carbondata.core.metadata.datatype.DecimalType decimalDataType) {
     super(batchSize, dataType);
     this.type =
         DecimalType.createDecimalType(decimalDataType.getPrecision(), decimalDataType.getScale());
     this.batchSize = batchSize;
     this.builder = type.createBlockBuilder(null, batchSize);
-    this.dictionary = dictionary;
   }
 
   @Override
@@ -74,18 +67,6 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
   @Override
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
-  }
-
-  @Override
-  public void putInt(int rowId, int value) {
-    DecimalType decimalType = (DecimalType) type;
-    Object data = DataTypeUtil.getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value),
-        DataTypes.createDecimalType(decimalType.getPrecision(), decimalType.getScale()));
-    if (Objects.isNull(data)) {
-      builder.appendNull();
-    } else {
-      decimalBlockWriter((BigDecimal) data);
-    }
   }
 
   @Override
@@ -178,11 +159,7 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
     if (value == null) {
       putNull(rowId);
     } else {
-      if (dictionary == null) {
-        decimalBlockWriter((BigDecimal) value);
-      } else {
-        putInt(rowId, (int) value);
-      }
+      decimalBlockWriter((BigDecimal) value);
     }
   }
 }

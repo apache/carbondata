@@ -26,17 +26,20 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.NonDictionaryUtil;
+
+import static org.apache.carbondata.core.datastore.row.WriteStepRowUtil.DICTIONARY_DIMENSION;
 
 public class TablePageKey {
   private int pageSize;
 
   // MDK start key
-  private byte[] startKey;
+  private int[] startKey;
 
   // MDK end key
-  private byte[] endKey;
+  private int[] endKey;
 
   // startkey for no dictionary columns
   private Object[] noDictStartKey;
@@ -61,15 +64,15 @@ public class TablePageKey {
   }
 
   /** update all keys based on the input row */
-  public void update(int rowId, CarbonRow row, byte[] mdk) {
+  public void update(int rowId, CarbonRow row) {
     if (rowId == 0) {
-      startKey = mdk;
+      startKey = ((int[])row.getData()[DICTIONARY_DIMENSION]);
       if (hasNoDictionary) {
         noDictStartKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       }
     }
     if (rowId == pageSize - 1) {
-      endKey = mdk;
+      endKey = ((int[])row.getData()[DICTIONARY_DIMENSION]);
       if (hasNoDictionary) {
         noDictEndKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       }
@@ -85,23 +88,22 @@ public class TablePageKey {
     int numberOfDictSortColumns = segmentProperties.getNumberOfDictSortColumns();
     if (numberOfDictSortColumns > 0) {
       // if SORT_COLUMNS contain dictionary columns
-      int[] keySize = segmentProperties.getFixedLengthKeySplitter().getBlockKeySize();
-      if (keySize.length > numberOfDictSortColumns) {
+      if (segmentProperties.getNumberOfDictionaryDimension() > numberOfDictSortColumns) {
         // if there are some dictionary columns that are not in SORT_COLUMNS, it will come to here
         int newMdkLength = 0;
         for (int i = 0; i < numberOfDictSortColumns; i++) {
-          newMdkLength += keySize[i];
+          newMdkLength += ByteUtil.dateBytesSize();
         }
-        byte[] newStartKeyOfSortKey = new byte[newMdkLength];
-        byte[] newEndKeyOfSortKey = new byte[newMdkLength];
+        int[] newStartKeyOfSortKey = new int[newMdkLength];
+        int[] newEndKeyOfSortKey = new int[newMdkLength];
         System.arraycopy(startKey, 0, newStartKeyOfSortKey, 0, newMdkLength);
         System.arraycopy(endKey, 0, newEndKeyOfSortKey, 0, newMdkLength);
         startKey = newStartKeyOfSortKey;
         endKey = newEndKeyOfSortKey;
       }
     } else {
-      startKey = new byte[0];
-      endKey = new byte[0];
+      startKey = new int[0];
+      endKey = new int[0];
     }
 
     // Do the same update for noDictionary start/end Key
@@ -157,10 +159,12 @@ public class TablePageKey {
     byte[] updatedNoDictionaryStartKey = updateNoDictionaryStartAndEndKey(getNoDictStartKey());
     ByteBuffer buffer = ByteBuffer.allocate(
         CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
-            + startKey.length + updatedNoDictionaryStartKey.length);
-    buffer.putInt(startKey.length);
+            + startKey.length * 4 + updatedNoDictionaryStartKey.length);
+    buffer.putInt(startKey.length * 4);
     buffer.putInt(updatedNoDictionaryStartKey.length);
-    buffer.put(startKey);
+    for (int key : startKey) {
+      buffer.put(ByteUtil.toBytes(key));
+    }
     buffer.put(updatedNoDictionaryStartKey);
     buffer.rewind();
     return buffer.array();
@@ -170,10 +174,12 @@ public class TablePageKey {
     byte[] updatedNoDictionaryEndKey = updateNoDictionaryStartAndEndKey(getNoDictEndKey());
     ByteBuffer buffer = ByteBuffer.allocate(
         CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
-            + endKey.length + updatedNoDictionaryEndKey.length);
-    buffer.putInt(endKey.length);
+            + endKey.length * 4 + updatedNoDictionaryEndKey.length);
+    buffer.putInt(endKey.length * 4);
     buffer.putInt(updatedNoDictionaryEndKey.length);
-    buffer.put(endKey);
+    for (int key : endKey) {
+      buffer.put(ByteUtil.toBytes(key));
+    }
     buffer.put(updatedNoDictionaryEndKey);
     buffer.rewind();
     return buffer.array();

@@ -647,7 +647,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
       byte[] defaultValue = null;
       if (dimColEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         defaultValue =
-            FilterUtil.getDefaultNullValue(dimColEvaluatorInfo.getDimension(), segmentProperties);
+            FilterUtil.getDefaultNullValue();
       } else {
         if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.STRING) {
           defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;

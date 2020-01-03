@@ -181,7 +181,7 @@ class StreamHandoffRDD[K, V](
     val dictionaryColumnCardinality =
       CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchemaList)
     val segmentProperties =
-      new SegmentProperties(wrapperColumnSchemaList, dictionaryColumnCardinality)
+      new SegmentProperties(wrapperColumnSchemaList)
 
     new CompactionResultSortProcessor(
       carbonLoadModel,

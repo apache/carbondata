@@ -58,31 +58,7 @@ public class SegmentPropertiesTest extends TestCase {
       cardinality[i] = x;
       x++;
     }
-    blockMetadataInfos = new SegmentProperties(columnSchema, cardinality);
-  }
-
-  @Test public void testBlockMetadataHasProperDimensionCardinality() {
-    int[] cardinality = { 100, 102, 103, 105, 106, 107 };
-    boolean isProper = true;
-    for (int i = 0; i < cardinality.length; i++) {
-      isProper = cardinality[i] == blockMetadataInfos.getDimColumnsCardinality()[i];
-      if (!isProper) {
-        assertTrue(false);
-      }
-    }
-    assertTrue(true);
-  }
-
-  @Test public void testBlockMetadataHasProperComplesDimensionCardinality() {
-    int[] cardinality = { 108, 109 };
-    boolean isProper = true;
-    for (int i = 0; i < cardinality.length; i++) {
-      isProper = cardinality[i] == blockMetadataInfos.getComplexDimColumnCardinality()[i];
-      if (!isProper) {
-        assertTrue(false);
-      }
-    }
-    assertTrue(true);
+    blockMetadataInfos = new SegmentProperties(columnSchema);
   }
 
   @Test public void testBlockMetadataHasProperDimensionChunkMapping() {
@@ -141,32 +117,6 @@ public class SegmentPropertiesTest extends TestCase {
 
   @Test public void testNumberOfComplexDimensionIsCorrect() {
     assertEquals(1, blockMetadataInfos.getComplexDimensions().size());
-  }
-
-  @Test public void testEachColumnValueSizeHasProperValue() {
-    int[] size = { 1, -1, 1, 1, -1, 1, 1, 1 };
-    int[] eachDimColumnValueSize = blockMetadataInfos.getEachDimColumnValueSize();
-    boolean isEqual = false;
-    for (int i = 0; i < size.length; i++) {
-      isEqual = size[i] == eachDimColumnValueSize[i];
-      if (!isEqual) {
-        assertTrue(false);
-      }
-    }
-    assertTrue(true);
-  }
-
-  @Test public void testEachComplexColumnValueSizeHasProperValue() {
-    int[] size = { 1, 1 };
-    int[] eachDimColumnValueSize = blockMetadataInfos.getEachComplexDimColumnValueSize();
-    boolean isEqual = false;
-    for (int i = 0; i < size.length; i++) {
-      isEqual = size[i] == eachDimColumnValueSize[i];
-      if (!isEqual) {
-        assertTrue(false);
-      }
-    }
-    assertTrue(true);
   }
 
   private ColumnSchema getDimensionColumn1() {

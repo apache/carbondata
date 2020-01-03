@@ -17,33 +17,41 @@
 
 package org.apache.carbondata.hadoop.readsupport.impl;
 
+import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 /**
  * A read support implementation to return CarbonRow after handling
- * global dictionary and direct dictionary (date/timestamp) conversion
+ * date/timestamp conversion
  */
-public class CarbonRowReadSupport extends DictionaryDecodeReadSupport<CarbonRow> {
+public class CarbonRowReadSupport implements CarbonReadSupport<CarbonRow> {
+
+  private CarbonColumn[] carbonColumns;
+
+  @Override
+  public void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable)
+      throws IOException {
+    this.carbonColumns = carbonColumns;
+  }
 
   @Override
   public CarbonRow readRow(Object[] data) {
-    assert (data.length == dictionaries.length);
-    for (int i = 0; i < dictionaries.length; i++) {
-      if (dictionaries[i] != null) {
-        data[i] = dictionaries[i].getDictionaryValueForKey((int) data[i]);
-      }
-      if (dataTypes[i] == DataTypes.DATE) {
+    for (int i = 0; i < carbonColumns.length; i++) {
+      if (carbonColumns[i].getDataType() == DataTypes.DATE) {
         Calendar c = Calendar.getInstance();
         c.setTime(new Date(0));
         c.add(Calendar.DAY_OF_YEAR, (Integer) data[i]);
         c.add(Calendar.DATE, 1);
         data[i] = new Date(c.getTime().getTime());
-      } else if (dataTypes[i] == DataTypes.TIMESTAMP) {
+      } else if (carbonColumns[i].getDataType() == DataTypes.TIMESTAMP) {
         data[i] = new Timestamp((long) data[i] / 1000);
       }
     }

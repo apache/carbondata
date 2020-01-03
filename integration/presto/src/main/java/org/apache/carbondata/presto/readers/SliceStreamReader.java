@@ -17,18 +17,12 @@
 
 package org.apache.carbondata.presto.readers;
 
-import java.nio.charset.Charset;
-import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -55,12 +49,8 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   private boolean isLocalDict;
 
-  private Dictionary globalDictionary;
-
-  public SliceStreamReader(int batchSize, DataType dataType,
-      Dictionary dictionary) {
+  public SliceStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
-    this.globalDictionary = dictionary;
     this.batchSize = batchSize;
     this.builder = type.createBlockBuilder(null, batchSize);
   }
@@ -153,18 +143,6 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
   @Override
   public void reset() {
     builder = type.createBlockBuilder(null, batchSize);
-  }
-
-  @Override
-  public void putInt(int rowId, int value) {
-    Object data = DataTypeUtil
-        .getDataBasedOnDataType(globalDictionary.getDictionaryValueForKey(value), DataTypes.STRING);
-    if (Objects.isNull(data)) {
-      builder.appendNull();
-    } else {
-      type.writeSlice(builder, wrappedBuffer(
-          ((String) data).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))));
-    }
   }
 
   @Override

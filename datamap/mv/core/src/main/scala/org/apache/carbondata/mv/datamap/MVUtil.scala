@@ -238,8 +238,7 @@ class MVUtil {
                            attrRef.exprId.equals(attr.exprId)))
     if (relations.nonEmpty) {
       relations
-        .head.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation
-        .metaData.carbonTable
+        .head.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.carbonTable
     } else {
       null
     }

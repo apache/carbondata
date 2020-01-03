@@ -17,10 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.resolver;
 
-import java.util.List;
-import java.util.SortedMap;
-
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.BinaryExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -90,18 +86,6 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
   @Override
   public MeasureColumnResolvedFilterInfo getMsrColResolvedFilterInfo() {
     return null;
-  }
-
-  @Override
-  public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
-      SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList) {
-
-  }
-
-  @Override
-  public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
-      SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList) {
-
   }
 
   @Override

@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
@@ -84,13 +83,7 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     queryModel.setTableBlockInfos(tableBlockInfoList);
     readSupport
         .initialize(queryModel.getProjectionColumns(), queryModel.getTable());
-    try {
-      carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
-    } catch (QueryExecutionException e) {
-      throw new IOException(e.getMessage(), e.getCause());
-    }
-    final TypeInfo rowTypeInfo;
-    final List<String> columnNames;
+    carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     List<TypeInfo> columnTypes;
     // Get column names and sort order
     final String colIds = conf.get("hive.io.file.readcolumn.ids");

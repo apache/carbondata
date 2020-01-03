@@ -30,11 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.CacheProvider;
-import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -534,13 +529,6 @@ public final class CarbonLoaderUtil {
   public static void updateTableStatusForFailure(CarbonLoadModel model)
       throws IOException {
     updateTableStatusForFailure(model, "");
-  }
-
-  public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier)
-      throws IOException {
-    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
-        CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY);
-    return dictCache.get(columnIdentifier);
   }
 
   /**

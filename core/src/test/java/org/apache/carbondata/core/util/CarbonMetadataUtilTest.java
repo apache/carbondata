@@ -157,7 +157,7 @@ public class CarbonMetadataUtilTest {
     indexHeader.setTable_columns(columnSchemaList);
     indexHeader.setBucket_id(0);
     indexHeader.setSchema_time_stamp(0L);
-    IndexHeader indexheaderResult = getIndexHeader(columnCardinality, columnSchemaList, 0, 0L);
+    IndexHeader indexheaderResult = getIndexHeader(columnSchemaList, 0, 0L);
     assertEquals(indexHeader, indexheaderResult);
   }
 

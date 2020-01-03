@@ -26,7 +26,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
@@ -50,8 +49,8 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   protected List<CarbonBloomFilter> indexBloomFilters;
 
   AbstractBloomDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, SegmentProperties segmentProperties,
-      int bloomFilterSize, double bloomFilterFpp, boolean compressBloom)
+      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
+      boolean compressBloom)
       throws IOException {
     super(tablePath, dataMapName, indexColumns, segment, shardName);
     this.bloomFilterSize = bloomFilterSize;

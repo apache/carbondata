@@ -55,13 +55,13 @@ public interface DataMap<T extends Blocklet> {
    * blocklets where these filters can exist.
    */
   List<T> prune(Expression filter, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable) throws IOException;
+      List<PartitionSpec> partitions, CarbonTable carbonTable);
 
   /**
    * Prune the data maps for finding the row count. It returns a Map of
    * blockletpath and the row count
    */
-  long getRowCount(Segment segment, List<PartitionSpec> partitions) throws IOException;
+  long getRowCount(Segment segment, List<PartitionSpec> partitions);
 
   /**
    * Prune the data maps for finding the row count for each block. It returns a Map of

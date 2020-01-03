@@ -25,7 +25,7 @@ import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingExcep
 /**
  * convert the row
  */
-public interface RowConverter extends DictionaryCardinalityFinder {
+public interface RowConverter {
 
   void initialize() throws IOException;
 

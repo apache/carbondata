@@ -49,6 +49,7 @@ import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGener
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 
@@ -96,7 +97,7 @@ public class TablePage {
   TablePage(CarbonFactDataHandlerModel model, int pageSize) throws MemoryException {
     this.model = model;
     this.pageSize = pageSize;
-    int numDictDimension = model.getMDKeyGenerator().getDimCount();
+    int numDictDimension = model.getSegmentProperties().getNumberOfDictionaryDimension();
     TableSpec tableSpec = model.getTableSpec();
     this.columnCompressor = model.getColumnCompressor();
 
@@ -164,11 +165,9 @@ public class TablePage {
       }
     }
     complexDimensionPages = new ComplexColumnPage[model.getComplexColumnCount()];
-    for (int i = 0; i < complexDimensionPages.length; i++) {
-      // here we still do not the depth of the complex column, it will be initialized when
-      // we get the first row.
-      complexDimensionPages[i] = null;
-    }
+    // here we still do not the depth of the complex column, it will be initialized when
+    // we get the first row.
+    Arrays.fill(complexDimensionPages, null);
     measurePages = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
     for (int i = 0; i < measurePages.length; i++) {
@@ -201,20 +200,17 @@ public class TablePage {
    * @param rowId Id of the input row
    * @param row   row object
    */
-  public void addRow(int rowId, CarbonRow row) throws KeyGenException {
-    // convert each column category, update key and stats
-    byte[] mdk = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
-    convertToColumnarAndAddToPages(rowId, row, mdk);
-    key.update(rowId, row, mdk);
+  public void addRow(int rowId, CarbonRow row) {
+    convertToColumnarAndAddToPages(rowId, row);
+    key.update(rowId, row);
   }
 
   // convert the input row object to columnar data and add to column pages
-  private void convertToColumnarAndAddToPages(int rowId, CarbonRow row, byte[] mdk)
-      throws KeyGenException {
+  private void convertToColumnarAndAddToPages(int rowId, CarbonRow row) {
     // 1. convert dictionary columns
-    byte[][] keys = model.getSegmentProperties().getFixedLengthKeySplitter().splitKey(mdk);
+    int[] dict = (int[])row.getData()[WriteStepRowUtil.DICTIONARY_DIMENSION];
     for (int i = 0; i < dictDimensionPages.length; i++) {
-      dictDimensionPages[i].putData(rowId, keys[i]);
+      dictDimensionPages[i].putData(rowId, ByteUtil.toBytes(dict[i]));
     }
 
     // 2. convert noDictionary columns and complex columns and varchar, binary columns.
@@ -283,7 +279,7 @@ public class TablePage {
   private void addComplexColumn(int index, int rowId,
       List<ArrayList<byte[]>> encodedComplexColumnar) {
     GenericDataType complexDataType = complexIndexMap.get(
-        index + model.getPrimitiveDimLens().length);
+        index + model.getNumberOfSimpleDimensions());
     // initialize the page if first row
     if (rowId == 0) {
       List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();

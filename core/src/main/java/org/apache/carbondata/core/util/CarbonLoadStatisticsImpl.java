@@ -92,24 +92,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     parDictionaryValue2MdkAdd2FileTime.put(PartitionId, new Long[2]);
   }
 
-  //Record the time
-  public void recordDicShuffleAndWriteTime() {
-    long dicShuffleAndWriteTimePoint = System.currentTimeMillis();
-    if (0 == dicShuffleAndWriteFileTotalStartTime) {
-      dicShuffleAndWriteFileTotalStartTime = dicShuffleAndWriteTimePoint;
-    }
-  }
-
-  public void recordLoadCsvfilesToDfTime() {
-    long loadCsvfilesToDfTimePoint = System.currentTimeMillis();
-    if (0 == loadCsvfilesToDfStartTime) {
-      loadCsvfilesToDfStartTime = loadCsvfilesToDfTimePoint;
-    }
-    if (loadCsvfilesToDfTimePoint - loadCsvfilesToDfStartTime > loadCsvfilesToDfCostTime) {
-      loadCsvfilesToDfCostTime = loadCsvfilesToDfTimePoint - loadCsvfilesToDfStartTime;
-    }
-  }
-
   public double getLruCacheLoadTime() {
     return lruCacheLoadTime;
   }
@@ -146,24 +128,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
 
   public void recordLruCacheLoadTime(double lruCacheLoadTime) {
     this.lruCacheLoadTime = lruCacheLoadTime;
-  }
-
-  public void recordGeneratingDictionaryValuesTime(String partitionID,
-      Long generatingDictionaryValuesTimePoint) {
-    if (null != parGeneratingDictionaryValuesTimeMap.get(partitionID)) {
-      if (null == parGeneratingDictionaryValuesTimeMap.get(partitionID)[0]) {
-        parGeneratingDictionaryValuesTimeMap.get(partitionID)[0] =
-                generatingDictionaryValuesTimePoint;
-      }
-      if (null == parGeneratingDictionaryValuesTimeMap.get(partitionID)[1] ||
-              generatingDictionaryValuesTimePoint - parGeneratingDictionaryValuesTimeMap
-                      .get(partitionID)[0] > parGeneratingDictionaryValuesTimeMap
-                      .get(partitionID)[1]) {
-        parGeneratingDictionaryValuesTimeMap.get(partitionID)[1] =
-                generatingDictionaryValuesTimePoint - parGeneratingDictionaryValuesTimeMap
-                        .get(partitionID)[0];
-      }
-    }
   }
 
   public void recordSortRowsStepTotalTime(String partitionID,
@@ -217,11 +181,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   //Record the node blocks information map
   public void recordHostBlockMap(String host, Integer numBlocks) {
     hostBlockMap.put(host, numBlocks);
-  }
-
-  //Record the partition blocks information map
-  public void recordPartitionBlockMap(String partitionID, Integer numBlocks) {
-    partitionBlockMap.put(partitionID, numBlocks);
   }
 
   public void recordTotalRecords(long totalRecords) {

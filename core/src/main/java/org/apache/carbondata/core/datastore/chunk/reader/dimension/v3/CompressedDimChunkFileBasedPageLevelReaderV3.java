@@ -55,9 +55,8 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
    */
   private long lastDimensionOffsets;
 
-  public CompressedDimChunkFileBasedPageLevelReaderV3(BlockletInfo blockletInfo,
-      int[] eachColumnValueSize, String filePath) {
-    super(blockletInfo, eachColumnValueSize, filePath);
+  public CompressedDimChunkFileBasedPageLevelReaderV3(BlockletInfo blockletInfo, String filePath) {
+    super(blockletInfo, filePath);
     lastDimensionOffsets = blockletInfo.getDimensionOffset();
   }
 

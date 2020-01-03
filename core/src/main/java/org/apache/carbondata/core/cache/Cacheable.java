@@ -24,14 +24,6 @@ package org.apache.carbondata.core.cache;
 public interface Cacheable {
 
   /**
-   * This method will return the timestamp of file based on which decision
-   * the decision will be taken whether to read that file or not
-   *
-   * @return
-   */
-  long getFileTimeStamp();
-
-  /**
    * This method will return the access count for a column based on which decision will be taken
    * whether to keep the object in memory
    *

@@ -180,7 +180,6 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       validSegments.asScala.toArray,
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
       compactionType,
-      maxSegmentColCardinality = null,
       maxSegmentColumnSchemaList = null,
       currentPartitions = partitions)
     carbonLoadModel.setTablePath(carbonMergerMapping.hdfsStoreLocation)

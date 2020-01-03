@@ -19,97 +19,7 @@ package org.apache.carbondata.spark.rdd
 
 import java.util.regex.Pattern
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-
-import org.apache.commons.lang3.{ArrayUtils, StringUtils}
-import org.apache.spark._
 import org.apache.spark.sql.Row
-
-import org.apache.carbondata.core.constants.CarbonLoadOptionConstants
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnIdentifier}
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.processing.loading.exception.NoRetryException
-
-/**
- * A partitioner partition by column.
- *
- * @constructor create a partitioner
- * @param numParts the number of partitions
- */
-class ColumnPartitioner(numParts: Int) extends Partitioner {
-  override def numPartitions: Int = numParts
-
-  override def getPartition(key: Any): Int = key.asInstanceOf[Int]
-}
-
-trait GenericParser {
-  val dimension: CarbonDimension
-
-  def addChild(child: GenericParser): Unit
-
-  def parseString(input: String): Unit
-}
-
-case class PrimitiveParser(dimension: CarbonDimension,
-    setOpt: Option[mutable.HashSet[String]]) extends GenericParser {
-  val (hasDictEncoding, set: mutable.HashSet[String]) = setOpt match {
-    case None => (false, new mutable.HashSet[String])
-    case Some(x) => (true, x)
-  }
-
-  def addChild(child: GenericParser): Unit = {
-  }
-
-  def parseString(input: String): Unit = {
-    if (hasDictEncoding && input != null) {
-      if (set.size < CarbonLoadOptionConstants.MAX_EXTERNAL_DICTIONARY_SIZE) {
-        set.add(input)
-      } else {
-        throw new NoRetryException(s"Cannot provide more than ${
-          CarbonLoadOptionConstants.MAX_EXTERNAL_DICTIONARY_SIZE } dictionary values")
-      }
-    }
-  }
-}
-
-case class ArrayParser(dimension: CarbonDimension, format: DataFormat) extends GenericParser {
-  var children: GenericParser = _
-
-  def addChild(child: GenericParser): Unit = {
-    children = child
-  }
-
-  def parseString(input: String): Unit = {
-    if (StringUtils.isNotEmpty(input)) {
-      val splits = format.getSplits(input)
-      if (ArrayUtils.isNotEmpty(splits)) {
-        splits.foreach { s =>
-          children.parseString(s)
-        }
-      }
-    }
-  }
-}
-
-case class StructParser(dimension: CarbonDimension,
-    format: DataFormat) extends GenericParser {
-  val children = new ArrayBuffer[GenericParser]
-
-  def addChild(child: GenericParser): Unit = {
-    children += child
-  }
-
-  def parseString(input: String): Unit = {
-    if (StringUtils.isNotEmpty(input)) {
-      val splits = format.getSplits(input)
-      val len = Math.min(children.length, splits.length)
-      for (i <- 0 until len) {
-        children(i).parseString(splits(i))
-      }
-    }
-  }
-}
 
 case class DataFormat(delimiters: Array[String],
     var delimiterIndex: Int,
@@ -125,30 +35,6 @@ case class DataFormat(delimiters: Array[String],
     DataFormat(delimiters, Math.min(delimiterIndex + 1, delimiters.length - 1), patterns)
   }
 }
-
-/**
- * a case class to package some attributes
- */
-case class DictionaryLoadModel(
-    table: AbsoluteTableIdentifier,
-    dimensions: Array[CarbonDimension],
-    hdfsLocation: String,
-    dictfolderPath: String,
-    dictFilePaths: Array[String],
-    dictFileExists: Array[Boolean],
-    isComplexes: Array[Boolean],
-    primDimensions: Array[CarbonDimension],
-    delimiters: Array[String],
-    columnIdentifier: Array[ColumnIdentifier],
-    isFirstLoad: Boolean,
-    hdfsTempLocation: String,
-    lockType: String,
-    zooKeeperUrl: String,
-    serializationNullFormat: String,
-    defaultTimestampFormat: String,
-    defaultDateFormat: String) extends Serializable
-
-case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
 
 class StringArrayRow(var values: Array[String]) extends Row {
 

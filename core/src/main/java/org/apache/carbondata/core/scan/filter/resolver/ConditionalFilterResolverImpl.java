@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.filter.resolver;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.SortedMap;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -151,23 +150,13 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       metadata.setColumnExpression(columnList.get(0));
       metadata.setExpression(exp);
       metadata.setIncludeFilter(isIncludeFilter);
-      if ((null != columnList.get(0).getDimension()) && (
-          !columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) || columnList.get(0)
-              .getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY))
+      if ((null != columnList.get(0).getDimension()) &&
+          (!columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) ||
+              columnList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY))
           || (exp instanceof RangeExpression)) {
         dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
             FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0), exp),
             metadata);
-
-      } else if ((null != columnList.get(0).getDimension()) && (
-          columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) &&
-              !columnList.get(0).getDimension().getDataType().isComplexType())) {
-        dimColResolvedFilterInfo.setFilterValues(FilterUtil
-            .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
-                isIncludeFilter, isExpressionResolve));
-
-        dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
-        dimColResolvedFilterInfo.setDimension(columnList.get(0).getDimension());
       } else if (columnList.get(0).isMeasure()) {
         msrColResolvedFilterInfo.setMeasure(columnList.get(0).getMeasure());
         msrColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
@@ -222,33 +211,6 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    */
   public MeasureColumnResolvedFilterInfo getMsrColResolvedFilterInfo() {
     return msrColResolvedFilterInfo;
-  }
-
-  /**
-   * method will calculates the start key based on the filter surrogates
-   */
-  public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
-      SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList) {
-    if (null != dimColResolvedFilterInfo) {
-      FilterUtil.getStartKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
-          segmentProperties, startKey, startKeyList);
-      FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
-          setOfStartKeyByteArray);
-    }
-  }
-
-  /**
-   * get the start key based on the filter surrogates
-   */
-  @Override
-  public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
-      SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList) {
-    if (null != dimColResolvedFilterInfo) {
-      FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(), endKeys,
-          segmentProperties, endKeyList);
-      FilterUtil.getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
-          setOfEndKeyByteArray);
-    }
   }
 
   /**

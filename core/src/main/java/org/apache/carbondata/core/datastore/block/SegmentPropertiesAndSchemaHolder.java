@@ -18,9 +18,6 @@
 package org.apache.carbondata.core.datastore.block;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -96,14 +93,13 @@ public class SegmentPropertiesAndSchemaHolder {
    *
    * @param carbonTable
    * @param columnsInTable
-   * @param columnCardinality
    * @param segmentId
    */
   public SegmentPropertiesWrapper addSegmentProperties(CarbonTable carbonTable,
-      List<ColumnSchema> columnsInTable, int[] columnCardinality, String segmentId) {
+      List<ColumnSchema> columnsInTable, String segmentId) {
     SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper segmentPropertiesWrapper =
         new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(carbonTable,
-            columnsInTable, columnCardinality);
+            columnsInTable);
     SegmentIdAndSegmentPropertiesIndexWrapper segmentIdSetAndIndexWrapper =
         this.segmentPropWrapperToSegmentSetMap.get(segmentPropertiesWrapper);
     if (null == segmentIdSetAndIndexWrapper) {
@@ -163,21 +159,6 @@ public class SegmentPropertiesAndSchemaHolder {
       }
     }
     return tableLock;
-  }
-
-  /**
-   * Method to get the segment properties from given index
-   *
-   * @param segmentPropertiesIndex
-   * @return
-   */
-  public SegmentProperties getSegmentProperties(int segmentPropertiesIndex) {
-    SegmentPropertiesWrapper segmentPropertiesWrapper =
-        getSegmentPropertiesWrapper(segmentPropertiesIndex);
-    if (null != segmentPropertiesWrapper) {
-      return segmentPropertiesWrapper.getSegmentProperties();
-    }
-    return null;
   }
 
   /**
@@ -254,25 +235,6 @@ public class SegmentPropertiesAndSchemaHolder {
   }
 
   /**
-   * add segmentId at given segmentPropertyIndex
-   * Note: This method is getting used in extension with other features. Please do not remove
-   *
-   * @param segmentPropertiesIndex
-   * @param segmentId
-   */
-  public void addSegmentId(int segmentPropertiesIndex, String segmentId) {
-    SegmentPropertiesWrapper segmentPropertiesWrapper =
-        indexToSegmentPropertiesWrapperMapping.get(segmentPropertiesIndex);
-    if (null != segmentPropertiesWrapper) {
-      SegmentIdAndSegmentPropertiesIndexWrapper segmentIdAndSegmentPropertiesIndexWrapper =
-          segmentPropWrapperToSegmentSetMap.get(segmentPropertiesWrapper);
-      synchronized (getOrCreateTableLock(segmentPropertiesWrapper.getTableIdentifier())) {
-        segmentIdAndSegmentPropertiesIndexWrapper.addSegmentId(segmentId);
-      }
-    }
-  }
-
-  /**
    * This class wraps tableIdentifier, columnsInTable and columnCardinality as a key to determine
    * whether the SegmentProperties object can be reused.
    */
@@ -283,7 +245,6 @@ public class SegmentPropertiesAndSchemaHolder {
     private static final Object minMaxLock = new Object();
 
     private List<ColumnSchema> columnsInTable;
-    private int[] columnCardinality;
     private SegmentProperties segmentProperties;
     private List<CarbonColumn> minMaxCacheColumns;
     private CarbonTable carbonTable;
@@ -301,15 +262,13 @@ public class SegmentPropertiesAndSchemaHolder {
     private CarbonRowSchema[] fileFooterEntrySchemaForBlock;
     private CarbonRowSchema[] fileFooterEntrySchemaForBlocklet;
 
-    public SegmentPropertiesWrapper(CarbonTable carbonTable,
-        List<ColumnSchema> columnsInTable, int[] columnCardinality) {
+    public SegmentPropertiesWrapper(CarbonTable carbonTable, List<ColumnSchema> columnsInTable) {
       this.carbonTable = carbonTable;
       this.columnsInTable = columnsInTable;
-      this.columnCardinality = columnCardinality;
     }
 
     public void initSegmentProperties() {
-      segmentProperties = new SegmentProperties(columnsInTable, columnCardinality);
+      segmentProperties = new SegmentProperties(columnsInTable);
     }
 
     public void addMinMaxColumns(CarbonTable carbonTable) {
@@ -343,8 +302,7 @@ public class SegmentPropertiesAndSchemaHolder {
           (SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper) obj;
       return carbonTable.getAbsoluteTableIdentifier()
           .equals(other.carbonTable.getAbsoluteTableIdentifier()) && checkColumnSchemaEquality(
-          columnsInTable, other.columnsInTable) && Arrays
-          .equals(columnCardinality, other.columnCardinality);
+          columnsInTable, other.columnsInTable);
     }
 
     private boolean checkColumnSchemaEquality(List<ColumnSchema> obj1, List<ColumnSchema> obj2) {
@@ -361,15 +319,6 @@ public class SegmentPropertiesAndSchemaHolder {
       return exists;
     }
 
-    private void sortList(List<ColumnSchema> columnSchemas) {
-      Collections.sort(columnSchemas, new Comparator<ColumnSchema>() {
-        @Override
-        public int compare(ColumnSchema o1, ColumnSchema o2) {
-          return o1.getColumnUniqueId().compareTo(o2.getColumnUniqueId());
-        }
-      });
-    }
-
     @Override
     public int hashCode() {
       int allColumnsHashCode = 0;
@@ -379,8 +328,8 @@ public class SegmentPropertiesAndSchemaHolder {
         allColumnsHashCode = allColumnsHashCode + columnSchema.strictHashCode();
         builder.append(columnSchema.getColumnUniqueId()).append(",");
       }
-      return carbonTable.getAbsoluteTableIdentifier().hashCode() + allColumnsHashCode + Arrays
-          .hashCode(columnCardinality) + builder.toString().hashCode();
+      return carbonTable.getAbsoluteTableIdentifier().hashCode() + allColumnsHashCode +
+          builder.toString().hashCode();
     }
 
     public AbsoluteTableIdentifier getTableIdentifier() {
@@ -393,10 +342,6 @@ public class SegmentPropertiesAndSchemaHolder {
 
     public List<ColumnSchema> getColumnsInTable() {
       return columnsInTable;
-    }
-
-    public int[] getColumnCardinality() {
-      return columnCardinality;
     }
 
     public CarbonRowSchema[] getTaskSummarySchemaForBlock(boolean storeBlockletCount,

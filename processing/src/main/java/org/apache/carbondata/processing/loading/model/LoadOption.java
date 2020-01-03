@@ -216,7 +216,7 @@ public class LoadOption {
     // In SDK flow, hadoopConf will always be null,
     // hence FileHeader check is not required for nontransactional table
     if (hadoopConf != null && !CarbonDataProcessorUtil
-        .isHeaderValid(carbonLoadModel.getTableName(), csvColumns,
+        .isHeaderValid(csvColumns,
             carbonLoadModel.getCarbonDataLoadSchema(), staticPartitionCols)) {
       if (csvFile == null) {
         LOG.error("CSV header in DDL is not proper."

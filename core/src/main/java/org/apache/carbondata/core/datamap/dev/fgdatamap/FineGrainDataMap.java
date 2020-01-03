@@ -39,12 +39,12 @@ public abstract class FineGrainDataMap implements DataMap<FineGrainBlocklet> {
 
   @Override
   public List<FineGrainBlocklet> prune(Expression filter, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable) throws IOException {
+      List<PartitionSpec> partitions, CarbonTable carbonTable) {
     throw new UnsupportedOperationException("Filter expression not supported");
   }
 
   @Override
-  public long getRowCount(Segment segment, List<PartitionSpec> partitions) throws IOException {
+  public long getRowCount(Segment segment, List<PartitionSpec> partitions) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 

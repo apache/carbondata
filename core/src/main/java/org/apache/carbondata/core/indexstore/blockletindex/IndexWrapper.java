@@ -37,8 +37,7 @@ public class IndexWrapper extends AbstractIndex {
   public IndexWrapper(List<TableBlockInfo> blockInfos, SegmentProperties segmentProperties) {
     this.blockInfos = blockInfos;
     this.segmentProperties = segmentProperties;
-    dataRefNode = new BlockletDataRefNode(blockInfos, 0,
-        this.segmentProperties.getDimensionColumnsValueSize());
+    dataRefNode = new BlockletDataRefNode(blockInfos, 0);
   }
 
   @Override

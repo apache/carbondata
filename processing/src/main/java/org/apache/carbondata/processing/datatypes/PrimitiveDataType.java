@@ -31,9 +31,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.devapi.BiDictionary;
-import org.apache.carbondata.core.devapi.DictionaryGenerationException;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -223,14 +220,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   }
 
   /*
-   * get surrogate index
-   */
-  @Override
-  public int getSurrogateIndex() {
-    return index;
-  }
-
-  /*
    * set surrogate index
    */
   @Override
@@ -251,7 +240,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   @Override
   public void writeByteArray(Object input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
+      BadRecordLogHolder logHolder) throws IOException {
     String parsedValue =
         input == null ? null : DataTypeUtil.parseValue(input.toString(), carbonDimension);
     String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
@@ -418,9 +407,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   }
 
   @Override
-  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-      KeyGenerator[] generator)
-      throws IOException, KeyGenException {
+  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream)
+      throws IOException {
     if (!this.isDictionary) {
       int sizeOfData = byteArrayInput.getShort();
       dataOutputStream.writeShort(sizeOfData);
@@ -429,7 +417,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       dataOutputStream.write(bb);
     } else {
       int data = byteArrayInput.getInt();
-      byte[] v = generator[index].generateKey(new int[] { data });
+      byte[] v = ByteUtil.convertDateToBytes(data);
       dataOutputStream.write(v);
     }
   }

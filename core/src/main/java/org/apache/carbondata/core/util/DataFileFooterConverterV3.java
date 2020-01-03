@@ -74,7 +74,6 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     DataFileFooter dataFileFooter = new DataFileFooter();
     dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) fileHeader.getVersion()));
     dataFileFooter.setNumberOfRows(footer.getNum_rows());
-    dataFileFooter.setSegmentInfo(getSegmentInfo(footer.getSegment_info()));
     dataFileFooter.setSchemaUpdatedTimeStamp(fileHeader.getTime_stamp());
     if (footer.isSetIs_sort()) {
       dataFileFooter.setSorted(footer.isIs_sort());

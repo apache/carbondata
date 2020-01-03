@@ -40,8 +40,8 @@ public abstract class AbstractChunkReaderV2V3Format extends AbstractChunkReader 
   protected List<Integer> dimensionChunksLength;
 
   public AbstractChunkReaderV2V3Format(final BlockletInfo blockletInfo,
-      final int[] eachColumnValueSize, final String filePath) {
-    super(eachColumnValueSize, filePath, blockletInfo.getNumberOfRows());
+      final String filePath) {
+    super(filePath, blockletInfo.getNumberOfRows());
     dimensionChunksOffset = blockletInfo.getDimensionChunkOffsets();
     dimensionChunksLength = blockletInfo.getDimensionChunksLength();
   }

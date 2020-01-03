@@ -21,7 +21,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
@@ -49,7 +48,6 @@ import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.DataLoadProcessBuilder;
 import org.apache.carbondata.processing.loading.converter.RowConverter;
-import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.parser.RowParser;
 import org.apache.carbondata.processing.loading.parser.impl.RowParserImpl;
@@ -163,9 +161,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     // initialize parser and converter
     rowParser = new RowParserImpl(dataFields, configuration);
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
-    converter =
-        new RowConverterImpl(configuration.getDataFields(), configuration, badRecordLogger, true);
-    configuration.setCardinalityFinder(converter);
     converter.initialize();
 
     // initialize data writer and compressor
@@ -311,16 +306,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private void writeFileHeader() throws IOException {
     List<ColumnSchema> wrapperColumnSchemaList = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
-    int[] dimLensWithComplex = new int[wrapperColumnSchemaList.size()];
-    for (int i = 0; i < dimLensWithComplex.length; i++) {
-      dimLensWithComplex[i] = Integer.MAX_VALUE;
-    }
-    int[] dictionaryColumnCardinality =
-        CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchemaList);
-    List<Integer> cardinality = new ArrayList<>();
     List<org.apache.carbondata.format.ColumnSchema> columnSchemaList = AbstractFactDataWriter
-        .getColumnSchemaListAndCardinality(cardinality, dictionaryColumnCardinality,
-            wrapperColumnSchemaList);
+        .getColumnSchemaListAndCardinality(wrapperColumnSchemaList);
     FileHeader fileHeader =
         CarbonMetadataUtil.getFileHeader(true, columnSchemaList, System.currentTimeMillis());
     fileHeader.setIs_footer_present(false);

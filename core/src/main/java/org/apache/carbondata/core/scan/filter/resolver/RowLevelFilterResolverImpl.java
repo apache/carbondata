@@ -45,6 +45,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
     msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(
         CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     this.tableIdentifier = tableIdentifier;
+    throw new RuntimeException("I think it is not supported");
   }
 
   /**

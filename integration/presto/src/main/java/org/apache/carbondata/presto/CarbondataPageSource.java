@@ -25,7 +25,6 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -95,7 +94,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   private int batchId;
   private long nanoStart;
   private long nanoEnd;
-  private CarbonDictionaryDecodeReadSupport readSupport;
+  private CarbonPrestoDecodeReadSupport readSupport;
 
   // columnar format split
   private PrestoCarbonVectorizedRecordReader vectorReader;
@@ -105,7 +104,6 @@ class CarbondataPageSource implements ConnectorPageSource {
   private StreamRecordReader rowReader;
   private StructField[] fields;
   private int batchSize = 100;
-  private Dictionary[] dictionaries;
   private DataType[] dataTypes;
   private boolean isFrstPage = true;
 
@@ -132,7 +130,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   }
 
   private void initializeForColumnar() {
-    readSupport = new CarbonDictionaryDecodeReadSupport();
+    readSupport = new CarbonPrestoDecodeReadSupport();
     vectorReader = createReaderForColumnar(split, columnHandles, readSupport, hadoopConf);
   }
 
@@ -174,11 +172,9 @@ class CarbondataPageSource implements ConnectorPageSource {
     }
 
     this.columnCount = columnHandles.size();
-    readSupport = new CarbonDictionaryDecodeReadSupport();
+    readSupport = new CarbonPrestoDecodeReadSupport();
     readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
-    this.dictionaries = readSupport.getDictionaries();
     this.dataTypes = readSupport.getDataTypes();
-
   }
 
   @Override
@@ -261,7 +257,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       CarbonColumnVectorImpl[] columns = new CarbonColumnVectorImpl[columnCount];
       for (int i = 0; i < columnCount; ++i) {
         columns[i] = CarbonVectorBatch
-            .createDirectStreamReader(batchSize, dataTypes[i], fields[i], dictionaries[i]);
+            .createDirectStreamReader(batchSize, dataTypes[i], fields[i]);
       }
 
       while (rowReader.nextKeyValue()) {
@@ -351,7 +347,7 @@ class CarbondataPageSource implements ConnectorPageSource {
    * Create vector reader using the split.
    */
   private PrestoCarbonVectorizedRecordReader createReaderForColumnar(HiveSplit carbonSplit,
-      List<? extends ColumnHandle> columns, CarbonDictionaryDecodeReadSupport readSupport,
+      List<? extends ColumnHandle> columns, CarbonPrestoDecodeReadSupport readSupport,
       Configuration conf) {
     QueryModel queryModel = createQueryModel(carbonSplit, columns, conf);
     if (isDirectVectorFill) {

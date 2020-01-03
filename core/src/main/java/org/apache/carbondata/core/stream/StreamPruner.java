@@ -70,7 +70,7 @@ public class StreamPruner {
       }
       // initial filter executor
       SegmentProperties segmentProperties =
-          new SegmentProperties(listOfColumns, columnCardinality);
+          new SegmentProperties(listOfColumns);
       filterExecuter = FilterUtil.getFilterExecuterTree(
           filterExp, segmentProperties, null, minMaxCacheColumns, false);
     }

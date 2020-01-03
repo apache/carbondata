@@ -48,7 +48,7 @@ public class SegmentPropertiesTestUtil {
       cardinality[i] = x;
       x++;
     }
-    return new SegmentProperties(columnSchema, cardinality);
+    return new SegmentProperties(columnSchema);
   }
 
   public static ColumnSchema getDimensionColumn1() {

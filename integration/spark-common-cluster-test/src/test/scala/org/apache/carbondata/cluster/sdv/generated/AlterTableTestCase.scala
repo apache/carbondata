@@ -754,12 +754,12 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
     sql(s"""drop table if exists test3""").collect
-   sql(s"""create table test1(name string, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx',1""").collect
+   sql(s"""create table test1(name string, id int, day date) stored by 'carbondata'""").collect
+   sql(s"""insert into test1 select 'xx',1, to_date('2010-12-12')""").collect
    sql(s"""alter table test1 rename to test2""").collect
-   sql(s"""insert into test2 select 'xe',2""").collect
+   sql(s"""insert into test2 select 'xe',2, to_date('2010-12-12')""").collect
    sql(s"""alter table test2 rename to test3""").collect
-   sql(s"""insert into test3 select 'xr',3""").collect
+   sql(s"""insert into test3 select 'xr',3, to_date('2010-12-12')""").collect
    sql(s"""alter table test3 compact 'minor'""").collect
     checkAnswer(s"""select name from test3 where id =2""",
       Seq(Row("xe")), "AlterTableTestCase_Compaction_001_04")

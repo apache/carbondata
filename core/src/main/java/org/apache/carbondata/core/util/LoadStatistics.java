@@ -21,11 +21,6 @@ public interface LoadStatistics {
   //Init PartitionInfo
   void initPartitionInfo(String PartitionId);
 
-  //Record the time
-  void recordDicShuffleAndWriteTime();
-
-  void recordLoadCsvfilesToDfTime();
-
   void recordDictionaryValuesTotalTime(String partitionID,
       Long dictionaryValuesTotalTimeTimePoint);
 
@@ -33,9 +28,6 @@ public interface LoadStatistics {
       Long csvInputStepTimePoint);
 
   void recordLruCacheLoadTime(double lruCacheLoadTime);
-
-  void recordGeneratingDictionaryValuesTime(String partitionID,
-      Long generatingDictionaryValuesTimePoint);
 
   void recordSortRowsStepTotalTime(String partitionID,
       Long sortRowsStepTotalTimePoint);
@@ -48,9 +40,6 @@ public interface LoadStatistics {
 
   //Record the node blocks information map
   void recordHostBlockMap(String host, Integer numBlocks);
-
-  //Record the partition blocks information map
-  void recordPartitionBlockMap(String partitionID, Integer numBlocks);
 
   //Record total num of records processed
   void recordTotalRecords(long totalRecords);

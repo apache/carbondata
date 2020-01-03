@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
@@ -51,12 +52,11 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
    * Constructor to get minimum parameter to create instance of this class
    *
    * @param blockletInfo        blocklet info
-   * @param eachColumnValueSize size of the each column value
    * @param filePath            file from which data will be read
    */
   public CompressedDimensionChunkFileBasedReaderV1(final BlockletInfo blockletInfo,
-      final int[] eachColumnValueSize, final String filePath) {
-    super(eachColumnValueSize, filePath, blockletInfo.getNumberOfRows());
+      final String filePath) {
+    super(filePath, blockletInfo.getNumberOfRows());
     this.dimensionColumnChunk = blockletInfo.getDimensionColumnChunk();
     // for v1 store, the compressor is snappy
     this.compressor = CompressorFactory.NativeSupportedCompressor.SNAPPY.getCompressor();
@@ -156,7 +156,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
           .unCompress(key, 0, dataChunk.getRlePageLength());
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer
-          .uncompressData(dataPage, rlePage, eachColumnValueSize[blockIndex], uncompressedSize);
+          .uncompressData(dataPage, rlePage, ByteUtil.dateBytesSize(), uncompressedSize);
       uncompressedSize = dataPage.length;
       rlePage = null;
     }
@@ -174,7 +174,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
       // to store fixed length column chunk values
       columnDataChunk =
           new FixedLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
-              numberOfRows, eachColumnValueSize[blockIndex], uncompressedSize);
+              numberOfRows, ByteUtil.dateBytesSize(), uncompressedSize);
     }
     return columnDataChunk;
   }

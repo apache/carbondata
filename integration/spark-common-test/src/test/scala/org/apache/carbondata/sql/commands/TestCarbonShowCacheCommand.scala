@@ -176,7 +176,7 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("use cache_empty_db").collect()
     val result1 = sql("show metacache").collect()
     assertResult(2)(result1.length)
-    assertResult(Row("cache_empty_db", "ALL", "0 B", "0 B", "0 B", "DRIVER"))(result1(1))
+    assertResult(Row("cache_empty_db", "ALL", "0 B", "0 B", "DRIVER"))(result1(1))
 
     // Database with 3 tables but only 2 are in cache
     sql("use cache_db").collect()
@@ -195,28 +195,26 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
   test("show metacache on table") {
     sql("use cache_db").collect()
 
-    // Table with Index, Dictionary & Bloom filter
+    // Table with Index & Bloom filter
     val result1 = sql("show metacache on table cache_1").collect()
-    assertResult(3)(result1.length)
+    assertResult(2)(result1.length)
     assertResult("1/1 index files cached")(result1(0).getString(2))
-    assertResult("bloomfilter")(result1(2).getString(2))
+    assertResult("bloomfilter")(result1(1).getString(2))
 
-    // Table with Index and Dictionary
+    // Table with Index
     val result2 = sql("show metacache on table cache_db.cache_2").collect()
-    assertResult(2)(result2.length)
+    assertResult(1)(result2.length)
     assertResult("2/2 index files cached")(result2(0).getString(2))
-    assertResult("0 B")(result2(1).getString(1))
 
     // Table not in cache
     checkAnswer(sql("show metacache on table cache_db.cache_3"),
-      Seq(Row("Index", "0 B", "0/1 index files cached", "DRIVER"),
-        Row("Dictionary", "0 B", "", "DRIVER")))
+      Seq(Row("Index", "0 B", "0/1 index files cached", "DRIVER")))
 
     sql("use default").collect()
 
     // Table with 5 index files
     val result5 = sql("show metacache on table cache_5").collect()
-    assertResult(2)(result5.length)
+    assertResult(1)(result5.length)
     assertResult("5/5 index files cached")(result5(0).getString(2))
   }
 }

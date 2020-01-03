@@ -25,9 +25,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
-import org.apache.carbondata.core.devapi.DictionaryGenerationException;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
@@ -159,14 +157,6 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   }
 
   /*
-   * return surrogate index
-   */
-  @Override
-  public int getSurrogateIndex() {
-    return 0;
-  }
-
-  /*
    * set surrogate index
    */
   @Override
@@ -181,7 +171,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   @Override
   public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
+      BadRecordLogHolder logHolder) throws IOException {
     if (input == null) {
       dataOutputStream.writeInt(1);
       children.writeByteArray(null, dataOutputStream, logHolder);
@@ -203,19 +193,18 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   }
 
   @Override
-  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-      KeyGenerator[] generator)
-      throws IOException, KeyGenException {
+  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream)
+      throws IOException {
     int dataLength = byteArrayInput.getInt();
 
     dataOutputStream.writeInt(dataLength);
     if (children instanceof PrimitiveDataType) {
       if (children.getIsColumnDictionary()) {
-        dataOutputStream.writeInt(generator[children.getSurrogateIndex()].getKeySizeInBytes());
+        dataOutputStream.writeInt(ByteUtil.dateBytesSize());
       }
     }
     for (int i = 0; i < dataLength; i++) {
-      children.parseComplexValue(byteArrayInput, dataOutputStream, generator);
+      children.parseComplexValue(byteArrayInput, dataOutputStream);
     }
   }
 

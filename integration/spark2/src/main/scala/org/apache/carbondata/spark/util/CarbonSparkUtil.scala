@@ -21,43 +21,22 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
-import org.apache.spark.sql.hive.{CarbonMetaData, CarbonRelation, DictionaryMap}
+import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
-import org.apache.carbondata.core.util.CarbonUtil
-
-case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
 /**
  * carbon spark common methods
  */
 object CarbonSparkUtil {
 
-  def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
-    val dimensionsAttr = carbonTable.getVisibleDimensions.asScala.map(x => x.getColName)
-    val measureAttr = carbonTable.getVisibleMeasures.asScala.map(x => x.getColName)
-    val dictionary =
-      carbonTable.getVisibleDimensions.asScala.map { f =>
-        (f.getColName.toLowerCase,
-          f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
-            !f.getDataType.isComplexType)
-      }
-    CarbonMetaData(
-      dimensionsAttr,
-      measureAttr,
-      carbonTable,
-      DictionaryMap(dictionary.toMap))
-  }
-
   def createCarbonRelation(tableInfo: TableInfo, tablePath: String): CarbonRelation = {
     val table = CarbonTable.buildFromTableInfo(tableInfo)
     CarbonRelation(
       tableInfo.getDatabaseName,
       tableInfo.getFactTable.getTableName,
-      CarbonSparkUtil.createSparkMeta(table),
       table)
   }
 

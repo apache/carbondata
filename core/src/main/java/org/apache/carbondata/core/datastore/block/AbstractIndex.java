@@ -72,11 +72,6 @@ public abstract class AbstractIndex implements Cacheable {
     return dataRefNode;
   }
 
-  @Override
-  public long getFileTimeStamp() {
-    return 0;
-  }
-
   /**
    * Below method will be used to load the data block
    *

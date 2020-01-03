@@ -43,6 +43,7 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
@@ -73,8 +74,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
   private long lastDimensionOffsets;
 
   public CompressedDimensionChunkFileBasedReaderV3(BlockletInfo blockletInfo,
-      int[] eachColumnValueSize, String filePath) {
-    super(blockletInfo, eachColumnValueSize, filePath);
+      String filePath) {
+    super(blockletInfo, filePath);
     lastDimensionOffsets = blockletInfo.getDimensionOffset();
   }
 
@@ -359,7 +360,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage,
           null == rawColumnPage.getLocalDictionary() ?
-              eachColumnValueSize[rawColumnPage.getColumnIndex()] :
+              ByteUtil.dateBytesSize() :
               CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE, uncompressedSize);
       uncompressedSize = dataPage.length;
     }
@@ -383,7 +384,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       columnDataChunk =
           new FixedLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
               pageMetadata.getNumberOfRowsInpage(),
-              eachColumnValueSize[rawColumnPage.getColumnIndex()], vectorInfo, uncompressedSize);
+              ByteUtil.dateBytesSize(), vectorInfo, uncompressedSize);
     }
     return columnDataChunk;
   }

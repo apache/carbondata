@@ -94,17 +94,6 @@ public class NonDictionaryUtil {
   }
 
   /**
-   * Method to get the required non-dictionary & complex from 3-parted row
-   * @param index
-   * @param row
-   * @return
-   */
-  public static byte[] getNoDictOrComplex(int index, Object[] row) {
-    byte[][] nonDictArray = (byte[][]) row[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX];
-    return nonDictArray[index];
-  }
-
-  /**
    * Method to get the required measure from obj []
    *
    * @param index

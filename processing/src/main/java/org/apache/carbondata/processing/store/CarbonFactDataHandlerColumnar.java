@@ -309,7 +309,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         } else if (columnType.isComplexType()) {
           // this is for depth of each complex column, model is having only total depth.
           GenericDataType genericDataType = complexIndexMapCopy
-              .get(i - model.getNoDictionaryCount() + model.getPrimitiveDimLens().length);
+              .get(i - model.getNoDictionaryCount() + model.getNumberOfSimpleDimensions());
           int depth = genericDataType.getDepth();
           List<ArrayList<byte[]>> flatComplexColumnList = (List<ArrayList<byte[]>>) nonDictArray[i];
           for (int k = 0; k < depth; k++) {
@@ -346,7 +346,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           .get(i).getSchemaDataType().isComplexType())) {
         // this is for depth of each complex column, model is having only total depth.
         GenericDataType genericDataType = complexIndexMapCopy
-            .get(i - model.getNoDictionaryCount() + model.getPrimitiveDimLens().length);
+            .get(i - model.getNoDictionaryCount() + model.getNumberOfSimpleDimensions());
         int depth = genericDataType.getDepth();
         // initialize flatComplexColumnList
         List<ArrayList<byte[]>> flatComplexColumnList = new ArrayList<>(depth);
@@ -358,12 +358,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           ByteBuffer byteArrayInput = ByteBuffer.wrap((byte[])noDictAndComplexDimension[i]);
           ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
           DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
-          genericDataType.parseComplexValue(byteArrayInput, dataOutputStream,
-              model.getComplexDimensionKeyGenerator());
+          genericDataType.parseComplexValue(byteArrayInput, dataOutputStream);
           genericDataType.getColumnarDataForComplexType(flatComplexColumnList,
               ByteBuffer.wrap(byteArrayOutput.toByteArray()));
           byteArrayOutput.close();
-        } catch (IOException | KeyGenException e) {
+        } catch (IOException e) {
           throw new CarbonDataWriterException("Problem in splitting and writing complex data", e);
         }
         noDictTotalComplexChildDepth += flatComplexColumnList.size();
@@ -477,11 +476,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
   }
 
-  // return the number of complex column after complex columns are expanded
-  private int getExpandedComplexColsCount() {
-    return model.getExpandedComplexColsCount();
-  }
-
   /**
    * below method will be used to close the handler
    */
@@ -533,34 +527,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.dataWriter = getFactDataWriter();
     // initialize the channel;
     this.dataWriter.initializeWriter();
-  }
-
-  /**
-   * This method combines primitive dimensions with complex metadata columns
-   *
-   * @param primitiveBlockKeySize
-   * @return all dimensions cardinality including complex dimension metadata column
-   */
-  private int[] getBlockKeySizeWithComplexTypes(int[] primitiveBlockKeySize) {
-    int allColsCount = getExpandedComplexColsCount();
-    int[] blockKeySizeWithComplexTypes = new int[allColsCount];
-
-    List<Integer> blockKeySizeWithComplex =
-        new ArrayList<Integer>(blockKeySizeWithComplexTypes.length);
-    int dictDimensionCount = model.getDimensionCount();
-    for (int i = 0; i < dictDimensionCount; i++) {
-      GenericDataType complexDataType = model.getComplexIndexMap().get(i);
-      if (complexDataType != null) {
-        complexDataType.fillBlockKeySize(blockKeySizeWithComplex, primitiveBlockKeySize);
-      } else {
-        blockKeySizeWithComplex.add(primitiveBlockKeySize[i]);
-      }
-    }
-    for (int i = 0; i < blockKeySizeWithComplexTypes.length; i++) {
-      blockKeySizeWithComplexTypes[i] = blockKeySizeWithComplex.get(i);
-    }
-
-    return blockKeySizeWithComplexTypes;
   }
 
   /**

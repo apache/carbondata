@@ -20,16 +20,12 @@ package org.apache.carbondata.hadoop.stream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.CacheProvider;
-import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -97,8 +93,6 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
   private BitSet allNonNull;
   private boolean[] isNoDictColumn;
   private DirectDictionaryGenerator[] directDictionaryGenerators;
-  private CacheProvider cacheProvider;
-  private Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache;
   private GenericQueryType[] queryTypes;
   private String compressorName;
 
@@ -149,14 +143,12 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
       model = format.createQueryModel(split, context);
     }
     carbonTable = model.getTable();
-    List<CarbonDimension> dimensions =
-        carbonTable.getVisibleDimensions();
+    List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     dimensionCount = dimensions.size();
     List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
     measureCount = measures.size();
-    List<CarbonColumn> carbonColumnList =
-        carbonTable.getStreamStorageOrderColumn();
-    storageColumns = carbonColumnList.toArray(new CarbonColumn[carbonColumnList.size()]);
+    List<CarbonColumn> carbonColumnList = carbonTable.getStreamStorageOrderColumn();
+    storageColumns = carbonColumnList.toArray(new CarbonColumn[0]);
     isNoDictColumn = CarbonDataProcessorUtil.getNoDictionaryMapping(storageColumns);
     directDictionaryGenerators = new DirectDictionaryGenerator[storageColumns.length];
     for (int i = 0; i < storageColumns.length; i++) {
@@ -224,24 +216,15 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
   private void initializeFilter() {
     List<ColumnSchema> wrapperColumnSchemaList = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
-    int[] dimLensWithComplex = new int[wrapperColumnSchemaList.size()];
-    for (int i = 0; i < dimLensWithComplex.length; i++) {
-      dimLensWithComplex[i] = Integer.MAX_VALUE;
-    }
-
-    int[] dictionaryColumnCardinality =
-        CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchemaList);
     SegmentProperties segmentProperties =
-        new SegmentProperties(wrapperColumnSchemaList, dictionaryColumnCardinality);
+        new SegmentProperties(wrapperColumnSchemaList);
     Map<Integer, GenericQueryType> complexDimensionInfoMap = new HashMap<>();
-
     FilterResolverIntf resolverIntf = model.getDataMapFilter().getResolver();
     filter = FilterUtil.getFilterExecuterTree(
         resolverIntf, segmentProperties, complexDimensionInfoMap, true);
     // for row filter, we need update column index
     FilterUtil.updateIndexOfColumnExpression(resolverIntf.getFilterExpression(),
         carbonTable.getDimensionOrdinalMax());
-
   }
 
   private byte[] getSyncMarker(String filePath) throws IOException {
@@ -277,9 +260,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     input = new StreamBlockletReader(syncMarker, fileIn, fileSplit.getLength(),
         fileSplit.getStart() == 0, compressorName);
 
-    cacheProvider = CacheProvider.getInstance();
-    cache = cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
-    queryTypes = CarbonStreamInputFormat.getComplexDimensions(carbonTable, storageColumns, cache);
+    queryTypes = CarbonStreamInputFormat.getComplexDimensions(storageColumns);
   }
 
   /**

@@ -194,7 +194,7 @@ class ScanBenchmark implements Command {
     if (dimension) {
       dimensionColumnChunkReader = CarbonDataReaderFactory.getInstance()
           .getDimensionColumnChunkReader(ColumnarFormatVersion.V3, blockletInfo,
-              footer.getSegmentInfo().getColumnCardinality(), file.getFilePath(), false);
+              file.getFilePath(), false);
       return dimensionColumnChunkReader.readRawDimensionChunk(file.getFileReader(), columnIndex);
     } else {
       columnIndex = columnIndex - file.numDimensions();

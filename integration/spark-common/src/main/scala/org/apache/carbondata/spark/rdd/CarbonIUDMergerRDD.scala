@@ -98,8 +98,6 @@ class CarbonIUDMergerRDD[K, V](
       }
     }.filter( _ != null)
 
-    // max segment cardinality is calculated in executor for each segment
-    carbonMergerMapping.maxSegmentColCardinality = null
     carbonMergerMapping.maxSegmentColumnSchemaList = null
 
     // Log the distribution

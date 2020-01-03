@@ -688,11 +688,6 @@ public class CarbonTable implements Serializable, Writable {
     return partition;
   }
 
-  public boolean isPartitionTable() {
-    return null != partition
-        && partition.getPartitionType() != PartitionType.NATIVE_HIVE;
-  }
-
   public boolean isHivePartitionTable() {
     PartitionInfo partitionInfo = partition;
     return null != partitionInfo && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE;

@@ -42,7 +42,6 @@ import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.impl.FieldEncoderFactory;
-import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
@@ -82,10 +81,6 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
   public void initialize() throws IOException {
     super.initialize();
     // if logger is enabled then raw data will be required.
-    RowConverterImpl rowConverter =
-        new RowConverterImpl(configuration.getDataFields(), configuration, null);
-    rowConverter.initialize();
-    configuration.setCardinalityFinder(rowConverter);
     noDictionaryMapping =
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
 

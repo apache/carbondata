@@ -22,13 +22,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.IndexKey;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -39,7 +34,6 @@ import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
-import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 import mockit.Mock;
@@ -173,18 +167,6 @@ public class FilterUtilTest {
     assertEquals(expectedValue, actualValue);
   }
 
-  @Test public void testCreateIndexKeyFromResolvedFilterVal() throws Exception {
-    long[] startOrEndKey = new long[] { 0, 10 };
-    byte[] startOrEndKeyForNoDictDimension = { 1, 2 };
-    int[] keys = new int[] { 1, 2 };
-    MultiDimKeyVarLengthGenerator multiDimKeyVarLengthGenerator =
-        new MultiDimKeyVarLengthGenerator(keys);
-    assertTrue(FilterUtil
-        .createIndexKeyFromResolvedFilterVal(startOrEndKey, multiDimKeyVarLengthGenerator,
-            startOrEndKeyForNoDictDimension) != null);
-
-  }
-
   @Test public void testCheckIfExpressionContainsColumn() {
     String columnName = "IMEI";
     Expression expression = new ColumnExpression(columnName, DataTypes.STRING);
@@ -237,106 +219,10 @@ public class FilterUtilTest {
     assertArrayEquals(expectedResult, actualResult);
   }
 
-  @Test public void testGetFilterListForAllMembersRS() throws Exception {
-    Expression expression = new ColumnExpression("IMEI", DataTypes.STRING);
-    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataTypes.STRING);
-    String defaultValues = "test";
-    int defaultSurrogate = 1;
-    boolean isIncludeFilter = true;
-    int ordinal = 1;
-    ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnName("IMEI");
-    dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataTypes.STRING);
-    dimColumn.setDimensionColumn(true);
-    final CarbonColumn carbonColumn = new CarbonColumn(dimColumn, ordinal, -1);
-    new MockUp<ColumnExpression>() {
-      @Mock public CarbonColumn getCarbonColumn() {
-        return carbonColumn;
-      }
-    };
-
-    new MockUp<RowImpl>() {
-      @Mock public Object getVal(int index) {
-        return "test";
-      }
-    };
-    assertTrue(FilterUtil
-        .getFilterListForAllMembersRS(expression, columnExpression, defaultValues, defaultSurrogate,
-            isIncludeFilter) instanceof ColumnFilterInfo);
-  }
-
-  @Test public void testGetFilterListForAllMembersRSWithDefaultValuesEqualsToNull()
-      throws Exception {
-    Expression expression = new ColumnExpression("IMEI", DataTypes.STRING);
-    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataTypes.STRING);
-    String defaultValues = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
-    int defaultSurrogate = 1;
-    boolean isIncludeFilter = true;
-    int ordinal = 1;
-    ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnName("IMEI");
-    dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataTypes.STRING);
-    dimColumn.setDimensionColumn(true);
-    final CarbonColumn carbonColumn = new CarbonColumn(dimColumn, ordinal, -1);
-    new MockUp<ColumnExpression>() {
-      @Mock public CarbonColumn getCarbonColumn() {
-        return carbonColumn;
-      }
-    };
-
-    new MockUp<RowImpl>() {
-      @Mock public Object getVal(int index) {
-        return "test";
-      }
-    };
-    assertTrue(FilterUtil
-        .getFilterListForAllMembersRS(expression, columnExpression, defaultValues, defaultSurrogate,
-            isIncludeFilter) instanceof ColumnFilterInfo);
-  }
-
-  @Test public void testgetFilterListForRS() throws Exception {
-    Expression expression = new ColumnExpression("IMEI", DataTypes.STRING);
-    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataTypes.STRING);
-    String defaultValues = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
-    int defaultSurrogate = 1;
-    int ordinal = 1;
-    final CarbonColumn carbonColumn = new CarbonColumn(columnSchema, ordinal, -1);
-    new MockUp<ColumnExpression>() {
-      @Mock public CarbonColumn getCarbonColumn() {
-        return carbonColumn;
-      }
-    };
-
-    new MockUp<RowImpl>() {
-      @Mock public Object getVal(int index) {
-        return "test";
-      }
-    };
-    assertTrue(FilterUtil.getFilterListForRS(expression, defaultValues,
-        defaultSurrogate) instanceof ColumnFilterInfo);
-  }
-
   @Test public void testCheckIfDataTypeNotTimeStamp() {
     Expression expression = new ColumnExpression("test", DataTypes.STRING);
     boolean result = FilterUtil.checkIfDataTypeNotTimeStamp(expression);
     assertFalse(result);
-  }
-
-  @Test public void testPrepareDefaultEndIndexKey() throws Exception {
-    List<ColumnSchema> columnsInTable = new ArrayList<>();
-    columnsInTable.add(columnSchema);
-    int[] columnCardinality = new int[] { 1, 2 };
-    new MockUp<ColumnSchema>() {
-      @Mock public List<Encoding> getEncodingList() {
-        List<Encoding> encodingList = new ArrayList<>();
-        encodingList.add(Encoding.DICTIONARY);
-        return encodingList;
-      }
-    };
-    SegmentProperties segmentProperties = new SegmentProperties(columnsInTable, columnCardinality);
-    assertTrue(FilterUtil.prepareDefaultEndIndexKey(segmentProperties) instanceof IndexKey);
   }
 
   @Test public void testCheckIfRightExpressionRequireEvaluation() {
@@ -361,21 +247,6 @@ public class FilterUtilTest {
     assertTrue(FilterUtil
         .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, isIncludeFilter,
             DataTypes.STRING) instanceof ColumnFilterInfo);
-  }
-
-  @Test public void testPrepareDefaultStartIndexKey() throws KeyGenException {
-    List<ColumnSchema> columnsInTable = new ArrayList<>();
-    columnsInTable.add(columnSchema);
-    int[] columnCardinality = new int[] { 1, 2 };
-    new MockUp<ColumnSchema>() {
-      @Mock public List<Encoding> getEncodingList() {
-        List<Encoding> encodingList = new ArrayList<>();
-        encodingList.add(Encoding.DICTIONARY);
-        return encodingList;
-      }
-    };
-    SegmentProperties segmentProperties = new SegmentProperties(columnsInTable, columnCardinality);
-    assertTrue(FilterUtil.prepareDefaultStartIndexKey(segmentProperties) instanceof IndexKey);
   }
 
   @Test public void testCreateBitSetGroupWithDefaultValue() {

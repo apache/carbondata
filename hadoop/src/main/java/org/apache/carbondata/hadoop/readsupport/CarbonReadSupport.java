@@ -33,17 +33,22 @@ public interface CarbonReadSupport<T> {
    * @param carbonColumns column list
    * @param carbonTable table identifier
    */
-  void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable) throws IOException;
+  default void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable)
+      throws IOException {
+  }
 
   /**
    * convert column data back to row representation
    * @param data column data
    */
-  T readRow(Object[] data);
+  default T readRow(Object[] data) {
+    return (T) data;
+  }
 
   /**
    * cleanup step if necessary
    */
-  void close();
+  default void close() {
+  }
 
 }

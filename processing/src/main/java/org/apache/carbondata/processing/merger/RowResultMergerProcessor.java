@@ -31,7 +31,6 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
@@ -224,31 +223,18 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * Comparator class for comparing 2 raw row result.
    */
   private class CarbonMdkeyComparator implements Comparator<RawResultIterator> {
-    int[] columnValueSizes = segprop.getEachDimColumnValueSize();
-    public CarbonMdkeyComparator() {
-      initSortColumns();
-    }
 
-    private void initSortColumns() {
-      int numberOfSortColumns = segprop.getNumberOfSortColumns();
-      if (numberOfSortColumns != columnValueSizes.length) {
-        int[] sortColumnValueSizes = new int[numberOfSortColumns];
-        System.arraycopy(columnValueSizes, 0, sortColumnValueSizes, 0, numberOfSortColumns);
-        this.columnValueSizes = sortColumnValueSizes;
-      }
+    int[] columnValueSizes;
+
+    public CarbonMdkeyComparator() {
+      columnValueSizes = segprop.createColumnValueLength();
     }
 
     @Override
     public int compare(RawResultIterator o1, RawResultIterator o2) {
 
-      Object[] row1 = new Object[0];
-      Object[] row2 = new Object[0];
-      try {
-        row1 = o1.fetchConverted();
-        row2 = o2.fetchConverted();
-      } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage(), e);
-      }
+      Object[] row1 = o1.fetchConverted();
+      Object[] row2 = o2.fetchConverted();
       if (null == row1 || null == row2) {
         return 0;
       }
@@ -259,6 +245,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       byte[] dimCols1 = key1.getDictionaryKey();
       byte[] dimCols2 = key2.getDictionaryKey();
       int noDicIndex = 0;
+
       for (int eachColumnValueSize : columnValueSizes) {
         // case of dictionary cols
         if (eachColumnValueSize > 0) {

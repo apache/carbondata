@@ -220,8 +220,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   public DataMapBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException {
     return new BloomDataMapBuilder(getCarbonTable().getTablePath(), this.dataMapName,
-        this.dataMapMeta.getIndexedColumns(), segment, shardName, segmentProperties,
-        this.bloomFilterSize, this.bloomFilterFpp, bloomCompress);
+        this.dataMapMeta.getIndexedColumns(), segment, shardName, this.bloomFilterSize,
+        this.bloomFilterFpp, bloomCompress);
   }
 
   /**

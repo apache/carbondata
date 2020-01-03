@@ -111,11 +111,6 @@ public class TableBlockInfo implements Distributable, Serializable {
   private transient DataFileFooter dataFileFooter;
 
   /**
-   * true when index file does't have blocklet information
-   */
-  private boolean isLegacyStore;
-
-  /**
    * comparator to sort by block size in descending order.
    * Since each line is not exactly the same, the size of a InputSplit may differs,
    * so we allow some deviation for these splits.
@@ -184,27 +179,6 @@ public class TableBlockInfo implements Distributable, Serializable {
   }
 
   /**
-   * constructor to initialize the TableBlockInfo with blockStorageIdMap
-   *
-   * @param filePath
-   * @param blockOffset
-   * @param segmentId
-   * @param locations
-   * @param blockLength
-   * @param blockletInfos
-   * @param version
-   * @param blockStorageIdMap
-   */
-  public TableBlockInfo(String filePath, String blockletId, long blockOffset, String segmentId,
-      String[] locations, long blockLength, BlockletInfos blockletInfos,
-      ColumnarFormatVersion version, Map<String, String> blockStorageIdMap,
-      String[] deletedDeltaFilePath) {
-    this(filePath, blockletId, blockOffset, segmentId, locations, blockLength, blockletInfos,
-        version, deletedDeltaFilePath);
-    this.blockStorageIdMap = blockStorageIdMap;
-  }
-
-  /**
    * Create copy of TableBlockInfo object
    */
   public TableBlockInfo copy() {
@@ -222,7 +196,6 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.deletedDeltaFilePath = deletedDeltaFilePath;
     info.detailInfo = detailInfo.copy();
     info.dataMapWriterPath = dataMapWriterPath;
-    info.isLegacyStore = isLegacyStore;
     return info;
   }
 
@@ -407,39 +380,12 @@ public class TableBlockInfo implements Distributable, Serializable {
     return blockletInfos;
   }
 
-  /**
-   * set the blocklestinfos
-   *
-   * @param blockletInfos
-   */
-  public void setBlockletInfos(BlockletInfos blockletInfos) {
-    this.blockletInfos = blockletInfos;
-  }
-
   public ColumnarFormatVersion getVersion() {
     return version;
   }
 
   public void setVersion(ColumnarFormatVersion version) {
     this.version = version;
-  }
-
-  /**
-   * returns the storage location vs storage id map
-   *
-   * @return
-   */
-  public Map<String, String> getBlockStorageIdMap() {
-    return this.blockStorageIdMap;
-  }
-
-  /**
-   * method to storage location vs storage id map
-   *
-   * @param blockStorageIdMap
-   */
-  public void setBlockStorageIdMap(Map<String, String> blockStorageIdMap) {
-    this.blockStorageIdMap = blockStorageIdMap;
   }
 
   public String[] getDeletedDeltaFilePath() {
@@ -466,20 +412,8 @@ public class TableBlockInfo implements Distributable, Serializable {
     this.detailInfo = detailInfo;
   }
 
-  public String getBlockletId() {
-    return blockletId;
-  }
-
-  public void setBlockletId(String blockletId) {
-    this.blockletId = blockletId;
-  }
-
   public boolean isDataBlockFromOldStore() {
     return isDataBlockFromOldStore;
-  }
-
-  public void setDataBlockFromOldStore(boolean dataBlockFromOldStore) {
-    isDataBlockFromOldStore = dataBlockFromOldStore;
   }
 
   public String getDataMapWriterPath() {
@@ -496,14 +430,6 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setDataFileFooter(DataFileFooter dataFileFooter) {
     this.dataFileFooter = dataFileFooter;
-  }
-
-  public boolean isLegacyStore() {
-    return isLegacyStore;
-  }
-
-  public void setLegacyStore(boolean legacyStore) {
-    isLegacyStore = legacyStore;
   }
 
   @Override
