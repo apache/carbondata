@@ -135,7 +135,8 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       scannedResult.incrementCounter();
       if (readOnlyDelta) {
-        if (!scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
+        if (!scannedResult.containsDeletedRow(scannedResult.getCurrentRowId()) &&
+                scannedResult.getCurrentDeleteDeltaVo() != null) {
           continue;
         }
       } else {
