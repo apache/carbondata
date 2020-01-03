@@ -586,7 +586,7 @@ public class CarbonUtilTest {
   public void testToReadMetadataFileWithException()
       throws Exception {
     TableBlockInfo info =
-        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V3, null);
     CarbonUtil.readMetadataFile(info);
   }
 
