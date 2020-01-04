@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
@@ -88,11 +90,15 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override
-  public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
+  public byte[] getComplexChildrenLVFlattenedBytePage(DataType dataType) throws IOException {
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
     for (byte[] byteArrayDatum : byteArrayData) {
-      out.writeShort((short)byteArrayDatum.length);
+      if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
+        out.writeInt(byteArrayDatum.length);
+      } else {
+        out.writeShort((short) byteArrayDatum.length);
+      }
       out.write(byteArrayDatum);
     }
     return stream.toByteArray();

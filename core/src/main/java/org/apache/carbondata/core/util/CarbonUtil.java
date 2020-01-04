@@ -3225,6 +3225,7 @@ public final class CarbonUtil {
         case ADAPTIVE_DELTA_INTEGRAL:
         case ADAPTIVE_FLOATING:
         case ADAPTIVE_DELTA_FLOATING:
+        case INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY:
           return true;
       }
     }

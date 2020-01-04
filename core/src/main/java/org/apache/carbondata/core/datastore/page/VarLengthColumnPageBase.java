@@ -243,9 +243,15 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int counter = 0;
     // extract Length field in input and calculate total length
     for (offset = 0; lvEncodedOffset < lvEncodedBytes.length; offset += length) {
-      length = ByteUtil.toShort(lvEncodedBytes, lvEncodedOffset);
-      rowOffset.putInt(counter, offset);
-      lvEncodedOffset += lvLength + length;
+      if (lvLength == CarbonCommonConstants.INT_SIZE_IN_BYTE) {
+        length = ByteUtil.toInt(lvEncodedBytes, lvEncodedOffset);
+        rowOffset.putInt(counter, offset);
+        lvEncodedOffset += lvLength + length;
+      } else {
+        length = ByteUtil.toShort(lvEncodedBytes, lvEncodedOffset);
+        rowOffset.putInt(counter, offset);
+        lvEncodedOffset += lvLength + length;
+      }
       rowId++;
       counter++;
     }
@@ -465,15 +471,30 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   }
 
   @Override
-  public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
+  public byte[] getComplexChildrenLVFlattenedBytePage(DataType dataType) throws IOException {
     // output LV encoded byte array
     int offset = 0;
-    byte[] data = new byte[totalLength + ((rowOffset.getActualRowCount() - 1) * 2)];
+    int outputLength;
+    if (dataType == DataTypes.BYTE_ARRAY) {
+      outputLength = totalLength + ((rowOffset.getActualRowCount() - 1)
+          * CarbonCommonConstants.INT_SIZE_IN_BYTE);
+    } else {
+      outputLength = totalLength + ((rowOffset.getActualRowCount() - 1)
+          * CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
+    }
+    byte[] data = new byte[outputLength];
     for (int rowId = 0; rowId < rowOffset.getActualRowCount() - 1; rowId++) {
-      short length = (short) (rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId));
-      ByteUtil.setShort(data, offset, length);
-      copyBytes(rowId, data, offset + 2, length);
-      offset += 2 + length;
+      if (dataType == DataTypes.BYTE_ARRAY) {
+        int length = rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId);
+        ByteUtil.setInt(data, offset, length);
+        copyBytes(rowId, data, offset + CarbonCommonConstants.INT_SIZE_IN_BYTE, length);
+        offset += CarbonCommonConstants.INT_SIZE_IN_BYTE + length;
+      } else {
+        short length = (short) (rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId));
+        ByteUtil.setShort(data, offset, length);
+        copyBytes(rowId, data, offset + CarbonCommonConstants.SHORT_SIZE_IN_BYTE, length);
+        offset += CarbonCommonConstants.SHORT_SIZE_IN_BYTE + length;
+      }
     }
     return data;
   }

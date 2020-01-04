@@ -139,7 +139,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
         } else {
-          page = ColumnPage.decompress(meta, input, offset, length, false);
+          page = ColumnPage.decompress(meta, input, offset, length, false, false);
         }
         return LazyColumnPage.newPage(page, converter);
       }

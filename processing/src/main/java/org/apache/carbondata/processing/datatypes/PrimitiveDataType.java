@@ -387,17 +387,29 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private void updateValueToByteStream(DataOutputStream dataOutputStream, byte[] value)
       throws IOException {
-    dataOutputStream.writeShort(value.length);
+    if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
+      dataOutputStream.writeInt(value.length);
+    } else {
+      dataOutputStream.writeShort(value.length);
+    }
     dataOutputStream.write(value);
   }
 
   private void updateNullValue(DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
       throws IOException {
     if (this.carbonDimension.getDataType() == DataTypes.STRING) {
-      dataOutputStream.writeShort(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+      if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
+        dataOutputStream.writeInt(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+      } else {
+        dataOutputStream.writeShort(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+      }
       dataOutputStream.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
     } else {
-      dataOutputStream.writeShort(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
+      if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
+        dataOutputStream.writeInt(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
+      } else {
+        dataOutputStream.writeShort(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
+      }
       dataOutputStream.write(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
     }
     String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
@@ -422,8 +434,14 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       KeyGenerator[] generator)
       throws IOException, KeyGenException {
     if (!this.isDictionary) {
-      int sizeOfData = byteArrayInput.getShort();
-      dataOutputStream.writeShort(sizeOfData);
+      int sizeOfData;
+      if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
+        sizeOfData = byteArrayInput.getInt();
+        dataOutputStream.writeInt(sizeOfData);
+      } else {
+        sizeOfData = byteArrayInput.getShort();
+        dataOutputStream.writeShort(sizeOfData);
+      }
       byte[] bb = new byte[sizeOfData];
       byteArrayInput.get(bb, 0, sizeOfData);
       dataOutputStream.write(bb);
@@ -465,7 +483,13 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
       ByteBuffer inputArray) {
     if (!isDictionary) {
-      byte[] key = new byte[inputArray.getShort()];
+      int length;
+      if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
+        length = inputArray.getInt();
+      } else {
+        length = inputArray.getShort();
+      }
+      byte[] key = new byte[length];
       inputArray.get(key);
       columnsArray.get(outputArrayIndex).add(key);
     } else {
