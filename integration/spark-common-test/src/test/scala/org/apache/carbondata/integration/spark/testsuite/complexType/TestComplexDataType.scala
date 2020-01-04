@@ -21,6 +21,7 @@ import java.sql.Timestamp
 
 import scala.collection.mutable
 
+import org.apache.commons.lang3.RandomStringUtils
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -38,6 +39,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
 
   val badRecordAction = CarbonProperties.getInstance()
     .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
+
+  val hugeBinary = RandomStringUtils.randomAlphabetic(33000)
 
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS table1")
@@ -969,6 +972,16 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hive_table")
   }
 
+  test("test array of huge binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField array<binary>, autoLabel boolean) stored by 'carbondata'")
+    sql(s"insert into carbon_table values(1,true,'abc',array('$hugeBinary'),false)")
+    val result = sql("SELECT binaryField[0] FROM carbon_table").collect()
+    assert(hugeBinary.equals(new String(result(0).get(0).asInstanceOf[Array[Byte]])))
+    sql("drop table if exists carbon_table")
+  }
+
   test("test struct of binary data type") {
     sql("drop table if exists carbon_table")
     sql("drop table if exists parquet_table")
@@ -982,7 +995,17 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT binaryField.b FROM carbon_table"),
       sql("SELECT binaryField.b FROM parquet_table"))
     sql("drop table if exists carbon_table")
-    sql("drop table if exists hive_table")
+    sql("drop table if exists parquet_table")
+  }
+
+  test("test struct of huge binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField struct<b:binary>, autoLabel boolean) stored as carbondata ")
+    sql(s"insert into carbon_table values(1,true,'abc',named_struct('b','$hugeBinary'),false)")
+    val result = sql("SELECT binaryField.b FROM carbon_table").collect()
+    assert(hugeBinary.equals(new String(result(0).get(0).asInstanceOf[Array[Byte]])))
+    sql("drop table if exists carbon_table")
   }
 
   test("test map of binary data type") {
@@ -998,6 +1021,16 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       sql("SELECT binaryField[1] FROM hive_table"))
     sql("drop table if exists carbon_table")
     sql("drop table if exists hive_table")
+  }
+
+  test("test map of huge binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField map<int, binary>, autoLabel boolean) stored by 'carbondata'")
+    sql(s"insert into carbon_table values(1,true,'abc',map(1,'$hugeBinary'),false)")
+    val result = sql("SELECT binaryField[1] FROM carbon_table").collect()
+    assert(hugeBinary.equals(new String(result(0).get(0).asInstanceOf[Array[Byte]])))
+    sql("drop table if exists carbon_table")
   }
 
   test("test map of array and struct binary data type") {
@@ -1017,7 +1050,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       sql("SELECT binaryField1[1][1] FROM parquet_table"))
     checkAnswer(sql("SELECT binaryField2[1].b FROM carbon_table"),
       sql("SELECT binaryField2[1].b FROM parquet_table"))
-    sql("drop table if exists hive_table")
+    sql("drop table if exists parquet_table")
     sql("drop table if exists carbon_table")
   }
 

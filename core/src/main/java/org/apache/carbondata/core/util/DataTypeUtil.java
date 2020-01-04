@@ -1125,4 +1125,18 @@ public final class DataTypeUtil {
     return false;
   }
 
+  /**
+   * utility function to check complex column child columns that can exceed 32000 length
+   *
+   * @param dataType
+   * @return
+   */
+  public static boolean isByteArrayComplexChildColumn(DataType dataType) {
+    return ((dataType == DataTypes.STRING) ||
+        (dataType == DataTypes.VARCHAR) ||
+        (dataType == DataTypes.BINARY) ||
+        (dataType == DataTypes.DATE) ||
+        DataTypes.isDecimal(dataType) ||
+        (dataType == DataTypes.BYTE_ARRAY));
+  }
 }

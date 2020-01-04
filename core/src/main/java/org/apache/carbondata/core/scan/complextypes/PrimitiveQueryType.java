@@ -107,7 +107,11 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     byte[] currentVal =
         copyBlockDataChunk(rawColumnChunks, dimensionColumnPages, rowNumber, pageNumber);
     if (!this.isDictionary && !this.isDirectDictionary) {
-      dataOutputStream.writeShort(currentVal.length);
+      if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
+        dataOutputStream.writeInt(currentVal.length);
+      } else {
+        dataOutputStream.writeShort(currentVal.length);
+      }
     }
     dataOutputStream.write(currentVal);
   }
@@ -158,7 +162,12 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       actualData = directDictionaryGenerator.getValueFromSurrogate(surrgateValue);
     } else if (!isDictionary) {
       if (size == -1) {
-        size = dataBuffer.getShort();
+        if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
+          size = dataBuffer.getInt();
+        } else {
+          size = dataBuffer.getShort();
+        }
+
       }
       byte[] value = new byte[size];
       dataBuffer.get(value, 0, size);

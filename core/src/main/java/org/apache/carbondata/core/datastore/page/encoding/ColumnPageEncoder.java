@@ -194,6 +194,11 @@ public abstract class ColumnPageEncoder {
     while (index < input.getComplexColumnIndex()) {
       ColumnPage subColumnPage = input.getColumnPage(index);
       encodedPages[index] = encodedColumn(subColumnPage);
+      // by default add this encoding,
+      // it is used for checking length of
+      // complex child byte array columns (short and int)
+      encodedPages[index].getPageMetadata().getEncoders()
+          .add(Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY);
       index++;
     }
     return encodedPages;
