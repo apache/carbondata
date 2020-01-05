@@ -159,17 +159,9 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into t2 select 2, 'Andy'")
     sql("insert into t2 select 1, 'aa'")
     sql("insert into t2 select 3, 'aa'")
-    val exception = intercept[RuntimeException] {
+    intercept[AnalysisException] {
       sql("update t1 set (age) = (select t2.age from t2 where t2.name = 'Andy') where t1.age = 1 ").show(false)
-    }
-    assertResult(
-      "Update operation failed.  update cannot be supported for 1 to N mapping, as more than one " +
-      "value present for the update key")(exception.getMessage)
-    // Test carbon property
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE, "false")
-    // update  should not throw exception
-    sql("update t1 set (age) = (select t2.age from t2 where t2.name = 'Andy') where t1.age = 1 ").show(false)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE, "true")
+    }.getMessage.contains("update cannot be supported for 1 to N mapping, as more than one value present for the update key")
     // test join scenario
     val exception1 = intercept[RuntimeException] {
       sql("update t1 set (age) = (select t2.age from t2 where t2.name = t1.name) ").show(false)
@@ -177,6 +169,11 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     assertResult(
       "Update operation failed.  update cannot be supported for 1 to N mapping, as more than one " +
       "value present for the update key")(exception1.getMessage)
+    // Test carbon property
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE, "false")
+    // update  should not throw exception
+    sql("update t1 set (age) = (select t2.age from t2 where t2.name = t1.name) ").show(false)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE, "true")
     sql("drop table if exists t1")
     sql("drop table if exists t2")
   }
