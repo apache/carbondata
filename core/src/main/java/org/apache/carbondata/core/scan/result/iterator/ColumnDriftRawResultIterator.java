@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -102,7 +101,7 @@ public class ColumnDriftRawResultIterator extends RawResultIterator {
   }
 
   @Override
-  protected Object[] convertRow(Object[] rawRow) throws KeyGenException {
+  protected Object[] convertRow(Object[] rawRow) {
     super.convertRow(rawRow);
     ByteArrayWrapper dimObject = (ByteArrayWrapper) rawRow[0];
     // need move measure to dimension and return new row by current schema

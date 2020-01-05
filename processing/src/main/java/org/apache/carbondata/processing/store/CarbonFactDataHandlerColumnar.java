@@ -42,7 +42,6 @@ import org.apache.carbondata.core.datastore.compression.SnappyCompressor;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -384,7 +383,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * generate the EncodedTablePage from the input rows (one page in case of V3 format)
    */
   private TablePage processDataRows(List<CarbonRow> dataRows)
-      throws CarbonDataWriterException, KeyGenException, MemoryException, IOException {
+      throws CarbonDataWriterException, MemoryException, IOException {
     if (dataRows.size() == 0) {
       return new TablePage(model, 0);
     }

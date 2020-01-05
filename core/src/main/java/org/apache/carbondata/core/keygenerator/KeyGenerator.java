@@ -26,23 +26,14 @@ import java.util.Comparator;
  * key(dimensional key) out of combined key.
  */
 public interface KeyGenerator extends Serializable, Comparator<byte[]> {
-  /**
-   * It generates the single key aka byte array from multiple keys.
-   *
-   * @param keys
-   * @return byte array
-   * @throws KeyGenException
-   */
-  byte[] generateKey(long[] keys) throws KeyGenException;
 
   /**
    * It generates the single key aka byte array from multiple keys.
    *
    * @param keys
    * @return
-   * @throws KeyGenException
    */
-  byte[] generateKey(int[] keys) throws KeyGenException;
+  byte[] generateKey(int[] keys);
 
   /**
    * It gets array of keys out of single key aka byte array

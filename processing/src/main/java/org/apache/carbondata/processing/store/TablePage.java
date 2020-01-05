@@ -44,7 +44,6 @@ import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCo
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -337,7 +336,7 @@ public class TablePage {
     return output;
   }
 
-  void encode() throws KeyGenException, MemoryException, IOException {
+  void encode() throws MemoryException, IOException {
     // encode dimensions and measure
     EncodedColumnPage[] dimensions = encodeAndCompressDimensions();
     EncodedColumnPage[] measures = encodeAndCompressMeasures();
@@ -362,7 +361,7 @@ public class TablePage {
 
   // apply and compress each dimension, set encoded data in `encodedData`
   private EncodedColumnPage[] encodeAndCompressDimensions()
-      throws KeyGenException, IOException, MemoryException {
+      throws IOException, MemoryException {
     List<EncodedColumnPage> encodedDimensions = new ArrayList<>();
     List<EncodedColumnPage> encodedComplexDimensions = new ArrayList<>();
     TableSpec tableSpec = model.getTableSpec();

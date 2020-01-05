@@ -22,7 +22,6 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
@@ -134,10 +133,6 @@ public class LocalDictColumnPage extends ColumnPage {
         pageLevelDictionary = null;
         encodedDataColumnPage.freeMemory();
         encodedDataColumnPage = null;
-      } catch (KeyGenException e) {
-        LOGGER.error("Unable to generate key for: " + actualDataColumnPage
-            .getColumnSpec().getFieldName(), e);
-        throw new RuntimeException(e);
       }
     } else {
       actualDataColumnPage.putBytes(rowId, bytes);

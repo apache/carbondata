@@ -18,17 +18,13 @@
 package org.apache.carbondata.core.scan.executor.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesTestUtil;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 
 import junit.framework.TestCase;
-import mockit.Mock;
-import mockit.MockUp;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;

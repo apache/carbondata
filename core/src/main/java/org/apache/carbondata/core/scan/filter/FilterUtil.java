@@ -37,7 +37,6 @@ import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
@@ -801,12 +800,8 @@ public final class FilterUtil {
     Arrays.fill(keys, 0);
     int[] rangesForMaskedByte =
         getRangesForMaskedByte((carbonDimension.getKeyOrdinal()), blockLevelKeyGenerator);
-    try {
-      keys[carbonDimension.getKeyOrdinal()] = surrogate;
-      maskedKey = getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
-    } catch (KeyGenException e) {
-      LOGGER.error(e.getMessage(), e);
-    }
+    keys[carbonDimension.getKeyOrdinal()] = surrogate;
+    maskedKey = getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
     return maskedKey;
   }
 
@@ -1171,12 +1166,8 @@ public final class FilterUtil {
         }
         if (ByteUtil.UnsafeComparer.INSTANCE
             .compareTo(actualFilter, dictionary.getDictionaryValue(i)) == 0) {
-          try {
-            dummy[0] = i;
-            encodedFilters.add(keyGenerator.generateKey(dummy));
-          } catch (KeyGenException e) {
-            LOGGER.error(e.getMessage(), e);
-          }
+          dummy[0] = i;
+          encodedFilters.add(keyGenerator.generateKey(dummy));
           break;
         }
       }
@@ -1260,26 +1251,18 @@ public final class FilterUtil {
     List<byte[]> encodedFilterValues = new ArrayList<>();
     int[] dummy = new int[1];
     if (!useExclude) {
-      try {
-        for (int i = includeDictValues.nextSetBit(0);
-             i >= 0; i = includeDictValues.nextSetBit(i + 1)) {
-          dummy[0] = i;
-          encodedFilterValues.add(keyGenerator.generateKey(dummy));
-        }
-      } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage(), e);
+      for (int i = includeDictValues.nextSetBit(0);
+           i >= 0; i = includeDictValues.nextSetBit(i + 1)) {
+        dummy[0] = i;
+        encodedFilterValues.add(keyGenerator.generateKey(dummy));
       }
       return encodedFilterValues.toArray(new byte[encodedFilterValues.size()][]);
     } else {
-      try {
-        for (int i = 1; i < carbonDictionary.getDictionarySize(); i++) {
-          if (!includeDictValues.get(i) && null != carbonDictionary.getDictionaryValue(i)) {
-            dummy[0] = i;
-            encodedFilterValues.add(keyGenerator.generateKey(dummy));
-          }
+      for (int i = 1; i < carbonDictionary.getDictionarySize(); i++) {
+        if (!includeDictValues.get(i) && null != carbonDictionary.getDictionaryValue(i)) {
+          dummy[0] = i;
+          encodedFilterValues.add(keyGenerator.generateKey(dummy));
         }
-      } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage(), e);
       }
     }
     return getSortedEncodedFilters(encodedFilterValues);

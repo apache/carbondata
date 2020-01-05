@@ -30,7 +30,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
@@ -270,7 +269,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
    * @param row
    * @return
    */
-  private CarbonRow convertRow(CarbonRow row) throws KeyGenException {
+  private CarbonRow convertRow(CarbonRow row) {
     int dictIndex = 0;
     int nonDicIndex = 0;
     int[] dim = new int[this.dimensionCount];

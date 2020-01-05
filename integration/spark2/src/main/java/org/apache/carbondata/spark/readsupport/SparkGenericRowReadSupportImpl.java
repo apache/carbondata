@@ -17,40 +17,38 @@
 
 package org.apache.carbondata.spark.readsupport;
 
-import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
 
-public class SparkGenericRowReadSupportImpl extends DictionaryDecodeReadSupport<Row> {
+public class SparkGenericRowReadSupportImpl implements CarbonReadSupport<Row> {
+
+  private CarbonColumn[] carbonColumns;
 
   @Override
-  public void initialize(CarbonColumn[] carbonColumns,
-      CarbonTable carbonTable) throws IOException {
-    super.initialize(carbonColumns, carbonTable);
+  public void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable) {
+    this.carbonColumns = carbonColumns;
   }
 
   @Override
   public Row readRow(Object[] data) {
-    assert (data.length == dictionaries.length);
-    for (int i = 0; i < dictionaries.length; i++) {
-      if (dictionaries[i] != null) {
-        data[i] = dictionaries[i].getDictionaryValueForKey((int) data[i]);
-      }
-      if (dataTypes[i] == DataTypes.DATE) {
+    for (int i = 0; i < data.length; i++) {
+      DataType dataType = carbonColumns[i].getDataType();
+      if (dataType == DataTypes.DATE) {
         Calendar c = Calendar.getInstance();
         c.setTime(new Date(0));
         c.add(Calendar.DAY_OF_YEAR, (Integer) data[i]);
         data[i] = new Date(c.getTime().getTime());
-      } else if (dataTypes[i] == DataTypes.TIMESTAMP) {
+      } else if (dataType == DataTypes.TIMESTAMP) {
         data[i] = new Timestamp((long) data[i] / 1000);
       }
     }
