@@ -27,11 +27,10 @@ import static junit.framework.Assert.assertEquals;
 public class DirectDictionaryKeyGeneratorFactoryUnitTest {
 
   @Test public void testGetDirectDictionaryGenerator() throws Exception {
-
     int expectedResult = 1;
     DirectDictionaryGenerator result =
-        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.TIMESTAMP);
-    assertEquals (expectedResult,result.generateDirectSurrogateKey("TimeStamp"));
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
+    assertEquals(expectedResult,result.generateDirectSurrogateKey("Date"));
   }
 
   @Test public void testGetDirectDictionaryGeneratorReturnNull() throws Exception {

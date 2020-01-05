@@ -147,10 +147,9 @@ public class CarbonMetadataUtilTest {
   }
 
   @Test public void testGetIndexHeader() {
-    int[] columnCardinality = { 1, 2, 3, 4 };
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(0);
-    segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(columnCardinality));
+    segmentInfo.setColumn_cardinalities(new ArrayList<>(0));
     IndexHeader indexHeader = new IndexHeader();
     indexHeader.setVersion(3);
     indexHeader.setSegment_info(segmentInfo);

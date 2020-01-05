@@ -41,10 +41,11 @@ public final class DirectDictionaryKeyGeneratorFactory {
    */
   public static DirectDictionaryGenerator getDirectDictionaryGenerator(DataType dataType,
       String dateFormat) {
+    // Only DATE is direct dictionary, others are all no dictionary
     if (dataType == DataTypes.DATE) {
       return new DateDirectDictionaryGenerator(dateFormat);
     } else {
-      throw new UnsupportedOperationException(dataType + " is not direct dictionary");
+      return null;
     }
   }
 
