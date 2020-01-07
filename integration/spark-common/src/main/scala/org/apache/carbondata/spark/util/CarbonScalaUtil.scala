@@ -44,7 +44,6 @@ import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
-import org.apache.carbondata.core.metadata.ColumnIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -74,7 +73,8 @@ object CarbonScalaUtil {
       level: Int = 0): String = {
     try {
       FieldConverter.objectToString(row.get(idx), serializationNullFormat, complexDelimiters,
-        timeStampFormat, dateFormat, isVarcharType, isComplexType, level)
+        timeStampFormat, dateFormat, isVarcharType, isComplexType, level,
+        carbonLoadModel.getBinaryDecoder)
     } catch {
       case e: Exception =>
         if (e.getMessage.startsWith(FieldConverter.stringLengthExceedErrorMsg)) {

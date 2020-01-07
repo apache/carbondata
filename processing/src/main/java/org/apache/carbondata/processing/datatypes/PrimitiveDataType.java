@@ -44,6 +44,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
+import org.apache.carbondata.processing.loading.converter.impl.binary.BinaryDecoder;
 import org.apache.carbondata.processing.loading.dictionary.DirectDictionary;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -105,6 +106,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private DataType dataType;
 
+  private BinaryDecoder binaryDecoder;
+
   private PrimitiveDataType(int outputArrayIndex, int dataCounter) {
     this.outputArrayIndex = outputArrayIndex;
     this.dataCounter = dataCounter;
@@ -137,13 +140,14 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param nullFormat
    */
   public PrimitiveDataType(CarbonColumn carbonColumn, String parentName, String columnId,
-      CarbonDimension carbonDimension, String nullFormat) {
+      CarbonDimension carbonDimension, String nullFormat, BinaryDecoder binaryDecoder) {
     this.name = carbonColumn.getColName();
     this.parentName = parentName;
     this.columnId = columnId;
     this.carbonDimension = carbonDimension;
     this.isDictionary = isDictionaryDimension(carbonDimension);
     this.nullFormat = nullFormat;
+    this.binaryDecoder = binaryDecoder;
     this.dataType = carbonColumn.getDataType();
 
     if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
@@ -334,8 +338,12 @@ public class PrimitiveDataType implements GenericDataType<Object> {
                   value = ByteUtil.toXorBytes(Long.parseLong(parsedValue));
                 }
               } else if (this.carbonDimension.getDataType().equals(DataTypes.BINARY)) {
-                value = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(input,
-                    this.carbonDimension.getDataType());
+                if (binaryDecoder == null) {
+                  value = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(input,
+                      this.carbonDimension.getDataType());
+                } else {
+                  value = binaryDecoder.decode(parsedValue);
+                }
               } else {
                 value = DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(parsedValue,
                     this.carbonDimension.getDataType(), dateFormat);

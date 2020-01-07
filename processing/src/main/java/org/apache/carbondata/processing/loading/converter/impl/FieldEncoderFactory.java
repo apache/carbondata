@@ -76,22 +76,10 @@ public class FieldEncoderFactory {
         return new DirectDictionaryFieldConverterImpl(dataField, nullFormat, index,
             isEmptyBadRecord);
       } else if (dataField.getColumn().isComplex()) {
-        return new ComplexFieldConverterImpl(createComplexDataType(dataField, nullFormat), index);
+        return new ComplexFieldConverterImpl(
+            createComplexDataType(dataField, nullFormat, getBinaryDecoder(binaryDecoder)), index);
       } else if (dataField.getColumn().getDataType() == DataTypes.BINARY) {
-        BinaryDecoder binaryDecoderObject = null;
-        if (binaryDecoder.equalsIgnoreCase(
-            CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_BASE64)) {
-          binaryDecoderObject = new Base64BinaryDecoder();
-        } else if (binaryDecoder.equalsIgnoreCase(
-            CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_HEX)) {
-          binaryDecoderObject = new HexBinaryDecoder();
-        } else if (!StringUtils.isBlank(binaryDecoder)) {
-          throw new CarbonDataLoadingException("Binary decoder only support Base64, " +
-              "Hex or no decode for string, don't support " + binaryDecoder);
-        } else {
-          binaryDecoderObject = new DefaultBinaryDecoder();
-        }
-
+        BinaryDecoder binaryDecoderObject = getBinaryDecoder(binaryDecoder);
         return new BinaryFieldConverterImpl(dataField, nullFormat,
             index, isEmptyBadRecord, binaryDecoderObject);
       } else {
@@ -109,11 +97,33 @@ public class FieldEncoderFactory {
     }
   }
 
+  private BinaryDecoder getBinaryDecoder(String binaryDecoder) {
+    BinaryDecoder binaryDecoderObject;
+    if (binaryDecoder == null) {
+      return null;
+    }
+    if (binaryDecoder.equalsIgnoreCase(
+        CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_BASE64)) {
+      binaryDecoderObject = new Base64BinaryDecoder();
+    } else if (binaryDecoder.equalsIgnoreCase(
+        CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_HEX)) {
+      binaryDecoderObject = new HexBinaryDecoder();
+    } else if (!StringUtils.isBlank(binaryDecoder)) {
+      throw new CarbonDataLoadingException("Binary decoder only support Base64, " +
+          "Hex or no decode for string, don't support " + binaryDecoder);
+    } else {
+      binaryDecoderObject = new DefaultBinaryDecoder();
+    }
+    return binaryDecoderObject;
+  }
+
   /**
    * Create parser for the carbon column.
    */
-  public static GenericDataType createComplexDataType(DataField dataField, String nullFormat) {
-    return createComplexType(dataField.getColumn(), dataField.getColumn().getColName(), nullFormat);
+  public static GenericDataType createComplexDataType(
+      DataField dataField, String nullFormat, BinaryDecoder binaryDecoder) {
+    return createComplexType(
+        dataField.getColumn(), dataField.getColumn().getColName(), nullFormat, binaryDecoder);
   }
 
   /**
@@ -123,7 +133,7 @@ public class FieldEncoderFactory {
    */
 
   private static GenericDataType createComplexType(CarbonColumn carbonColumn, String parentName,
-      String nullFormat) {
+      String nullFormat, BinaryDecoder binaryDecoder) {
     DataType dataType = carbonColumn.getDataType();
     if (DataTypes.isArrayType(dataType) || DataTypes.isMapType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
@@ -134,7 +144,7 @@ public class FieldEncoderFactory {
               carbonColumn.hasEncoding(Encoding.DICTIONARY));
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayDataType.addChildren(
-            createComplexType(dimension, carbonColumn.getColName(), nullFormat));
+            createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder));
       }
       return arrayDataType;
     } else if (DataTypes.isStructType(dataType)) {
@@ -146,12 +156,12 @@ public class FieldEncoderFactory {
               carbonColumn.hasEncoding(Encoding.DICTIONARY));
       for (CarbonDimension dimension : dimensions) {
         structDataType.addChildren(
-            createComplexType(dimension, carbonColumn.getColName(), nullFormat));
+            createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder));
       }
       return structDataType;
     } else {
       return new PrimitiveDataType(carbonColumn, parentName, carbonColumn.getColumnId(),
-          (CarbonDimension) carbonColumn, nullFormat);
+          (CarbonDimension) carbonColumn, nullFormat, binaryDecoder);
     }
   }
 

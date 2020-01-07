@@ -20,6 +20,7 @@ package org.apache.carbondata.streaming.parser
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util
+import java.util.Base64
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
@@ -44,7 +45,9 @@ object FieldConverter {
       dateFormat: SimpleDateFormat,
       isVarcharType: Boolean = false,
       isComplexType: Boolean = false,
-      level: Int = 0): String = {
+      level: Int = 0,
+      binaryCodec: String
+  ): String = {
     if (value == null) {
       serializationNullFormat
     } else {
@@ -64,8 +67,13 @@ object FieldConverter {
         case b: java.lang.Boolean => b.toString
         case s: java.lang.Short => s.toString
         case f: java.lang.Float => f.toString
-        case bs: Array[Byte] => new String(bs,
-          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))
+        case bs: Array[Byte] =>
+          if ("base64".equalsIgnoreCase(binaryCodec)) {
+            // Insert flow is inner flow, the inner binary codec fixed with base64 unify.
+            Base64.getEncoder.encodeToString(bs)
+          } else {
+            new String(bs, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))
+          }
         case s: scala.collection.Seq[Any] =>
           if (s.nonEmpty) {
             val delimiter = complexDelimiters.get(level)
@@ -73,7 +81,8 @@ object FieldConverter {
             s.foreach { x =>
               val nextLevel = level + 1
               builder.append(objectToString(x, serializationNullFormat, complexDelimiters,
-                timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
+                timeStampFormat, dateFormat, isVarcharType, level = nextLevel,
+                binaryCodec = binaryCodec))
                 .append(delimiter)
             }
             builder.substring(0, builder.length - delimiter.length())
@@ -90,10 +99,12 @@ object FieldConverter {
             val builder = new StringBuilder()
             m.foreach { x =>
               builder.append(objectToString(x._1, serializationNullFormat, complexDelimiters,
-                timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
+                timeStampFormat, dateFormat, isVarcharType, level = nextLevel,
+                binaryCodec = binaryCodec))
                 .append(keyValueDelimiter)
               builder.append(objectToString(x._2, serializationNullFormat, complexDelimiters,
-                timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
+                timeStampFormat, dateFormat, isVarcharType, level = nextLevel,
+                binaryCodec = binaryCodec))
                 .append(delimiter)
             }
             builder.substring(0, builder.length - delimiter.length())
@@ -108,7 +119,8 @@ object FieldConverter {
           while (i < len) {
             val nextLevel = level + 1
             builder.append(objectToString(r(i), serializationNullFormat, complexDelimiters,
-              timeStampFormat, dateFormat, isVarcharType, level = nextLevel))
+              timeStampFormat, dateFormat, isVarcharType, level = nextLevel,
+              binaryCodec = binaryCodec))
               .append(delimiter)
             i += 1
           }

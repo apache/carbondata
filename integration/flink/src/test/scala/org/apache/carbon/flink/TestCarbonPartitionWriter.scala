@@ -19,9 +19,10 @@ package org.apache.carbon.flink
 
 import java.io.{File, InputStreamReader}
 import java.util
-import java.util.{Collections, Properties}
+import java.util.{Base64, Collections, Properties}
 
 import com.google.gson.Gson
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.StageInput
@@ -34,8 +35,9 @@ import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSin
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Test
-
 import scala.collection.JavaConverters._
+
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 class TestCarbonPartitionWriter extends QueryTest {
 
@@ -168,7 +170,7 @@ class TestCarbonPartitionWriter extends QueryTest {
           data(1) = index.asInstanceOf[AnyRef]
           data(2) = 12345.asInstanceOf[AnyRef]
           data(3) = "test\0011\0012"
-          data(4) = "test"
+          data(4) = Base64.getEncoder.encodeToString(Array[Byte](2, 3, 4))
           data(5) = Integer.toString(TestSource.randomCache.get().nextInt(24))
           data(6) = "20191218"
           data
@@ -212,6 +214,10 @@ class TestCarbonPartitionWriter extends QueryTest {
 
       checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(1000)))
 
+      val rows = sql(s"select * from $tableName limit 1").collect()
+      assertResult(1)(rows.length)
+      assertResult(Array[Byte](2, 3, 4))(rows(0).get(rows(0).fieldIndex("binaryfield")).asInstanceOf[GenericRowWithSchema](0))
+
     } finally {
       sql(s"drop table if exists $tableName").collect()
       delDir(new File(dataPath))
@@ -237,6 +243,7 @@ class TestCarbonPartitionWriter extends QueryTest {
       CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
     properties.setProperty(CarbonCommonConstants.STORE_LOCATION, storeLocation)
     properties.setProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, "1024")
+    properties.setProperty("binary_decoder", "base64")
     properties
   }
 
