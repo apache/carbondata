@@ -28,9 +28,9 @@ import org.apache.spark.sql.common.util.DataSourceTestUtil._
 import org.apache.spark.util.SparkUtil
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
+import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
@@ -254,10 +254,8 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
 
   private def clearDataMapCache(): Unit = {
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
-      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
       DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(writerPath))
-      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+        .clearIndex(AbsoluteTableIdentifier.from(writerPath))
     }
   }
 

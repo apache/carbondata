@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.binary
 
+import java.io.{ByteArrayOutputStream, DataOutputStream}
 import java.util.Arrays
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -1663,6 +1664,39 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
           .contains(
               "cannot resolve 'CAST(`1` AS BINARY)' due to data type mismatch: "))
         sql("DROP TABLE binaryTable")
+    }
+
+    test("test complex binary insert into table") {
+        CarbonProperties.getInstance()
+            .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
+        import sqlContext.implicits._
+        sql("DROP TABLE IF EXISTS binaryTable")
+        sql("DROP TABLE IF EXISTS binaryTable_carbondata")
+        sql("DROP TABLE IF EXISTS binaryTable_carbon")
+        sql(s"""CREATE TABLE IF NOT EXISTS binaryTable( binaryField binary ) STORED AS carbondata""")
+        sql(s"""CREATE TABLE IF NOT EXISTS binaryTable_carbondata( binaryField binary ) USING CARBONDATA""")
+        sql(s"""CREATE TABLE IF NOT EXISTS binaryTable_carbon( binaryField binary ) USING CARBON""")
+        // create binary data
+        val baos = new ByteArrayOutputStream()
+        val dos = new DataOutputStream(baos)
+        dos.writeInt(123)
+        dos.writeChars("abc")
+        dos.writeDouble(0.998123D)
+        dos.writeChars("def")
+        val bytes = baos.toByteArray
+
+        Seq(bytes).toDF("binaryField").write.insertInto("binaryTable")
+        Seq(bytes).toDF("binaryField").write.insertInto("binaryTable_carbondata")
+        Seq(bytes).toDF("binaryField").write.insertInto("binaryTable_carbon")
+        checkAnswer(sql("SELECT * FROM binaryTable"), Seq(Row(bytes)))
+        checkAnswer(sql("SELECT * FROM binaryTable_carbondata"), Seq(Row(bytes)))
+        checkAnswer(sql("SELECT * FROM binaryTable_carbon"), Seq(Row(bytes)))
+        sql("DROP TABLE binaryTable")
+        sql("DROP TABLE binaryTable_carbondata")
+        sql("DROP TABLE binaryTable_carbon")
+        CarbonProperties.getInstance()
+            .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT,
+                CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
     }
 
     override def afterAll: Unit = {

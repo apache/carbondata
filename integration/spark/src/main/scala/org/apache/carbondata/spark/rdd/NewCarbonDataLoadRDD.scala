@@ -36,7 +36,7 @@ import org.apache.spark.util.{CollectionAccumulator, SparkUtil}
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
@@ -351,7 +351,7 @@ class NewDataFrameLoaderRDD[K, V](
 
 /**
  * This class wrap Scala's Iterator to Java's Iterator.
- * It also convert all columns to string data to use csv data loading flow.
+ * It also convert all columns to string data (exclude binary type) to use csv data loading flow.
  *
  * @param rddIter
  * @param carbonLoadModel
@@ -378,6 +378,9 @@ class NewRddIterator(rddIter: Iterator[Row],
   private val isComplexTypeMapping =
     carbonLoadModel.getCarbonDataLoadSchema
       .getCarbonTable.getCreateOrderColumn.asScala.map(_.isComplex())
+  private val isDefaultBinaryDecoder = carbonLoadModel.getBinaryDecoder == null ||
+    CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_DEFAULT.equals(
+      carbonLoadModel.getBinaryDecoder)
   def hasNext: Boolean = rddIter.hasNext
 
   def next: Array[AnyRef] = {
@@ -386,10 +389,15 @@ class NewRddIterator(rddIter: Iterator[Row],
     val len = columns.length
     var i = 0
     while (i < len) {
-      columns(i) = CarbonScalaUtil.getString(row, i, carbonLoadModel, serializationNullFormat,
-        complexDelimiters, timeStampFormat, dateFormat,
-        isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i),
-        isComplexType = i < isComplexTypeMapping.size && isComplexTypeMapping(i))
+      columns(i) = row.get(i) match {
+        case bs if bs.isInstanceOf[Array[Byte]] && isDefaultBinaryDecoder =>
+          bs.asInstanceOf[Array[Byte]]
+        case _ =>
+          CarbonScalaUtil.getString(row, i, carbonLoadModel, serializationNullFormat,
+            complexDelimiters, timeStampFormat, dateFormat,
+            isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i),
+            isComplexType = i < isComplexTypeMapping.size && isComplexTypeMapping(i))
+      }
       i += 1
     }
     columns
@@ -438,6 +446,9 @@ class LazyRddIterator(serializer: SerializerInstance,
       r.isDefined && r.get
     })
   }
+  private val isDefaultBinaryDecoder = carbonLoadModel.getBinaryDecoder == null ||
+    CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_DEFAULT.equals(
+      carbonLoadModel.getBinaryDecoder)
 
   private var rddIter: Iterator[Row] = null
   private var uninitialized = true
@@ -460,9 +471,14 @@ class LazyRddIterator(serializer: SerializerInstance,
     val row = rddIter.next()
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
-      columns(i) = CarbonScalaUtil.getString(row, i, carbonLoadModel, serializationNullFormat,
-        complexDelimiters, timeStampFormat, dateFormat,
-        isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i))
+      columns(i) = row.get(i) match {
+        case bs if bs.isInstanceOf[Array[Byte]] && isDefaultBinaryDecoder =>
+          bs.asInstanceOf[Array[Byte]]
+        case _ =>
+          CarbonScalaUtil.getString(row, i, carbonLoadModel, serializationNullFormat,
+            complexDelimiters, timeStampFormat, dateFormat,
+            isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i))
+      }
     }
     columns
   }
