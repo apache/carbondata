@@ -30,7 +30,6 @@
   <name>Apache CarbonData :: Hadoop</name>
 
   <properties>
-    <hive.version>1.2.1</hive.version>
     <dev.path>${basedir}/../dev</dev.path>
     <jacoco.append>true</jacoco.append>
   </properties>
@@ -45,17 +44,6 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hive</groupId>
-      <artifactId>hive-exec</artifactId>
-      <version>${hive.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.avro</groupId>
-          <artifactId>avro</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 

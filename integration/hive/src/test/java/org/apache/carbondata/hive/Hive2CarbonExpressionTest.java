@@ -15,16 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.hadoop.ft;
+package org.apache.carbondata.hive;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
+import org.apache.carbondata.hadoop.api.CarbonInputFormat;
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.testutil.StoreCreator;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
@@ -54,6 +57,8 @@ import org.apache.hadoop.mapreduce.Job;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static parquet.hadoop.ParquetInputFormat.FILTER_PREDICATE;
+
 /**
  * @program carbondata
  * @description: test hive expression to carbondata expression filter
@@ -74,7 +79,7 @@ public class Hive2CarbonExpressionTest {
         .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "Hive2CarbonExpressionTest");
     try {
       creator = new StoreCreator(new File("target/store").getAbsolutePath(),
-          new File("../hadoop/src/test/resources/data.csv").getCanonicalPath());
+          new File("../../hadoop/src/test/resources/data.csv").getCanonicalPath());
       loadModel = creator.createCarbonStore();
       table=loadModel.getCarbonDataLoadSchema().getCarbonTable();
       table.setTransactionalTable(false);
@@ -92,9 +97,11 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node = new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPEqual(), children);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node));
+    configuration.set("mapreduce.input.carboninputformat.filter.predicate", Utilities.serializeExpression(node));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node)));
+
     final Job job = new Job(new JobConf(configuration));
-    final CarbonFileInputFormat format = new CarbonFileInputFormat();
+    final CarbonTableInputFormat format = new CarbonTableInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
     format.setTablePath(job.getConfiguration(), table.getTablePath());
     format.setTableName(job.getConfiguration(), table.getTableName());
@@ -114,7 +121,8 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node = new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPNotEqual(), children);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node)));
+
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
@@ -148,7 +156,7 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node3=new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPOr(),children3);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node3));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node3)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
@@ -182,7 +190,7 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node3=new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPAnd(),children3);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node3));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node3)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
@@ -202,7 +210,7 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node1 = new ExprNodeGenericFuncDesc(TypeInfoFactory.booleanTypeInfo,
         new GenericUDFOPNull(), children1);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node1));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node1)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
@@ -222,7 +230,7 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node1 = new ExprNodeGenericFuncDesc(TypeInfoFactory.booleanTypeInfo,
         new GenericUDFOPNotNull(), children1);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node1));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node1)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
@@ -248,7 +256,7 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node1 = new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFIn(), children1);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node1));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node1)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
@@ -270,7 +278,7 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node1 = new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPEqualOrGreaterThan(), children1);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node1));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node1)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
@@ -293,7 +301,7 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node1 = new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPEqualOrLessThan(), children1);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node1));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node1)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
@@ -316,7 +324,7 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node1 = new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPLessThan(), children1);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node1));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node1)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
@@ -339,7 +347,7 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node1 = new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPGreaterThan(), children1);
     Configuration configuration=new Configuration();
-    configuration.set(TableScanDesc.FILTER_EXPR_CONF_STR, Utilities.serializeExpression(node1));
+    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node1)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());

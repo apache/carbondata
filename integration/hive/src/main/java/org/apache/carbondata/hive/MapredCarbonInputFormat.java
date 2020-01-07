@@ -23,24 +23,30 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.InvalidPathException;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.exec.Utilities;
 import org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;
+import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
+import org.apache.hadoop.hive.ql.plan.TableScanDesc;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -108,6 +114,11 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     jobConf.set(DATABASE_NAME, "_dummyDb_" + UUID.randomUUID().toString());
     jobConf.set(TABLE_NAME, "_dummyTable_" + UUID.randomUUID().toString());
     org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
+    try {
+      setFilterPredicates(jobContext.getConfiguration());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     CarbonTableInputFormat carbonTableInputFormat = new CarbonTableInputFormat();
     List<org.apache.hadoop.mapreduce.InputSplit> splitList =
         carbonTableInputFormat.getSplits(jobContext);
@@ -124,12 +135,40 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     return splits;
   }
 
+  protected void setFilterPredicates(Configuration configuration) {
+    try {
+      String expr = configuration.get(TableScanDesc.FILTER_EXPR_CONF_STR);
+      if (expr == null) {
+        return;
+      }
+      ExprNodeGenericFuncDesc exprNodeGenericFuncDesc =
+          Utilities.deserializeObject(expr, ExprNodeGenericFuncDesc.class);
+      LOGGER.debug("hive expression:" + exprNodeGenericFuncDesc.getGenericUDF());
+      LOGGER.debug("hive expression string:" + exprNodeGenericFuncDesc.getExprString());
+      Expression expression = Hive2CarbonExpression.convertExprHive2Carbon(exprNodeGenericFuncDesc);
+      if (expression == null) {
+        return;
+      }
+      LOGGER.debug("carbon expression:" + expression.getString());
+      CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
+      DataMapFilter filter = new DataMapFilter(carbonTable, expression);
+      CarbonInputFormat.setFilterPredicates(configuration, filter);
+    } catch (IOException e) {
+      throw new RuntimeException("Error while reading filter expression", e);
+    }
+  }
+
   @Override
   public RecordReader<Void, ArrayWritable> getRecordReader(InputSplit inputSplit, JobConf jobConf,
       Reporter reporter) throws IOException {
     String path = null;
     if (inputSplit instanceof CarbonHiveInputSplit) {
       path = ((CarbonHiveInputSplit) inputSplit).getPath().toString();
+    }
+    try {
+      setFilterPredicates(jobConf);
+    } catch (Exception e) {
+      e.printStackTrace();
     }
     QueryModel queryModel = null;
     try {

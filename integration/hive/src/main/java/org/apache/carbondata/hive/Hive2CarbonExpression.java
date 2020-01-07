@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.hadoop.util;
+package org.apache.carbondata.hive;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
@@ -36,9 +35,11 @@ import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
+import org.apache.hadoop.hive.ql.plan.ExprNodeFieldDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFIn;
@@ -67,14 +68,14 @@ public class Hive2CarbonExpression {
     if (exprNodeDesc instanceof ExprNodeGenericFuncDesc) {
       ExprNodeGenericFuncDesc exprNodeGenericFuncDesc = (ExprNodeGenericFuncDesc) exprNodeDesc;
       GenericUDF udf = exprNodeGenericFuncDesc.getGenericUDF();
-      List<ExprNodeDesc> ll = exprNodeGenericFuncDesc.getChildren();
+      List<ExprNodeDesc> l1 = exprNodeGenericFuncDesc.getChildren();
       if (udf instanceof GenericUDFIn) {
-        ColumnExpression columnExpression = new ColumnExpression(ll.get(left).getCols().get(left),
-            getDateType(ll.get(left).getTypeString()));
+        ColumnExpression columnExpression = new ColumnExpression(l1.get(left).getCols().get(left),
+            getDateType(l1.get(left).getTypeString()));
         List<Expression> listExpr = new ArrayList<>();
-        for (int i = right; i < ll.size(); i++) {
-          LiteralExpression literalExpression = new LiteralExpression(ll.get(i).getExprString(),
-              getDateType(ll.get(left).getTypeString()));
+        for (int i = right; i < l1.size(); i++) {
+          LiteralExpression literalExpression = new LiteralExpression(l1.get(i).getExprString(),
+              getDateType(l1.get(left).getTypeString()));
           listExpr.add(literalExpression);
         }
         ListExpression listExpression = new ListExpression(listExpr);
@@ -93,50 +94,55 @@ public class Hive2CarbonExpression {
         return new AndExpression(leftExpression, rightExpression);
 
       } else if (udf instanceof GenericUDFOPEqual) {
-        ColumnExpression columnExpression = new ColumnExpression(ll.get(left).getCols().get(left),
-            getDateType(ll.get(left).getTypeString()));
+        ColumnExpression columnExpression = null;
+        if (l1.get(left) instanceof ExprNodeFieldDesc) {
+          throw new UnsupportedOperationException("Complex types are not supported for PPD");
+        } else {
+          columnExpression = new ColumnExpression(l1.get(left).getCols().get(left),
+              getDateType(l1.get(left).getTypeString()));
+        }
         LiteralExpression literalExpression =
-            new LiteralExpression(ll.get(right).getExprString().replace("'", ""),
-                getDateType(ll.get(right).getTypeString()));
+            new LiteralExpression(l1.get(right).getExprString().replace("'", ""),
+                getDateType(l1.get(right).getTypeString()));
         return new EqualToExpression(columnExpression, literalExpression);
       } else if (udf instanceof GenericUDFOPEqualOrGreaterThan) {
-        ColumnExpression columnExpression = new ColumnExpression(ll.get(left).getCols().get(left),
-            getDateType(ll.get(left).getTypeString()));
-        LiteralExpression literalExpression = new LiteralExpression(ll.get(right).getExprString(),
-            getDateType(ll.get(left).getTypeString()));
+        ColumnExpression columnExpression = new ColumnExpression(l1.get(left).getCols().get(left),
+            getDateType(l1.get(left).getTypeString()));
+        LiteralExpression literalExpression = new LiteralExpression(l1.get(right).getExprString(),
+            getDateType(l1.get(left).getTypeString()));
         return new GreaterThanEqualToExpression(columnExpression, literalExpression);
       } else if (udf instanceof GenericUDFOPGreaterThan) {
-        ColumnExpression columnExpression = new ColumnExpression(ll.get(left).getCols().get(left),
-            getDateType(ll.get(left).getTypeString()));
-        LiteralExpression literalExpression = new LiteralExpression(ll.get(right).getExprString(),
-            getDateType(ll.get(left).getTypeString()));
+        ColumnExpression columnExpression = new ColumnExpression(l1.get(left).getCols().get(left),
+            getDateType(l1.get(left).getTypeString()));
+        LiteralExpression literalExpression = new LiteralExpression(l1.get(right).getExprString(),
+            getDateType(l1.get(left).getTypeString()));
         return new GreaterThanExpression(columnExpression, literalExpression);
       } else if (udf instanceof GenericUDFOPNotEqual) {
-        ColumnExpression columnExpression = new ColumnExpression(ll.get(left).getCols().get(left),
-            getDateType(ll.get(left).getTypeString()));
-        LiteralExpression literalExpression = new LiteralExpression(ll.get(right).getExprString(),
-            getDateType(ll.get(left).getTypeString()));
+        ColumnExpression columnExpression = new ColumnExpression(l1.get(left).getCols().get(left),
+            getDateType(l1.get(left).getTypeString()));
+        LiteralExpression literalExpression = new LiteralExpression(l1.get(right).getExprString(),
+            getDateType(l1.get(left).getTypeString()));
         return new NotEqualsExpression(columnExpression, literalExpression);
       } else if (udf instanceof GenericUDFOPEqualOrLessThan) {
-        ColumnExpression columnExpression = new ColumnExpression(ll.get(left).getCols().get(left),
-            getDateType(ll.get(left).getTypeString()));
-        LiteralExpression literalExpression = new LiteralExpression(ll.get(right).getExprString(),
-            getDateType(ll.get(left).getTypeString()));
+        ColumnExpression columnExpression = new ColumnExpression(l1.get(left).getCols().get(left),
+            getDateType(l1.get(left).getTypeString()));
+        LiteralExpression literalExpression = new LiteralExpression(l1.get(right).getExprString(),
+            getDateType(l1.get(left).getTypeString()));
         return new LessThanEqualToExpression(columnExpression, literalExpression);
       } else if (udf instanceof GenericUDFOPLessThan) {
-        ColumnExpression columnExpression = new ColumnExpression(ll.get(left).getCols().get(left),
-            getDateType(ll.get(left).getTypeString()));
-        LiteralExpression literalExpression = new LiteralExpression(ll.get(right).getExprString(),
-            getDateType(ll.get(left).getTypeString()));
+        ColumnExpression columnExpression = new ColumnExpression(l1.get(left).getCols().get(left),
+            getDateType(l1.get(left).getTypeString()));
+        LiteralExpression literalExpression = new LiteralExpression(l1.get(right).getExprString(),
+            getDateType(l1.get(left).getTypeString()));
         return new LessThanExpression(columnExpression, literalExpression);
       } else if (udf instanceof GenericUDFOPNull) {
-        ColumnExpression columnExpression = new ColumnExpression(ll.get(left).getCols().get(left),
-            getDateType(ll.get(left).getTypeString()));
+        ColumnExpression columnExpression = new ColumnExpression(l1.get(left).getCols().get(left),
+            getDateType(l1.get(left).getTypeString()));
         LiteralExpression literalExpression = new LiteralExpression(null, null);
         return new EqualToExpression(columnExpression, literalExpression, true);
       } else if (udf instanceof GenericUDFOPNotNull) {
-        ColumnExpression columnExpression = new ColumnExpression(ll.get(left).getCols().get(left),
-            getDateType(ll.get(left).getTypeString()));
+        ColumnExpression columnExpression = new ColumnExpression(l1.get(left).getCols().get(left),
+            getDateType(l1.get(left).getTypeString()));
         LiteralExpression literalExpression = new LiteralExpression(null, null);
         return new NotEqualsExpression(columnExpression, literalExpression, true);
       } else {
@@ -147,31 +153,7 @@ public class Hive2CarbonExpression {
   }
 
   public static DataType getDateType(String type) {
-    if (type.toUpperCase().endsWith("INT")) {
-      return DataTypes.INT;
-    } else if (type.toUpperCase().endsWith("STRING")) {
-      return DataTypes.STRING;
-    } else if (type.toUpperCase().endsWith("LONG")) {
-      return DataTypes.LONG;
-    } else if (type.toUpperCase().endsWith("FLOAT")) {
-      return DataTypes.FLOAT;
-    } else if (type.toUpperCase().endsWith("DATE")) {
-      return DataTypes.DATE;
-    } else if (type.toUpperCase().endsWith("TIMESTAMP")) {
-      return DataTypes.TIMESTAMP;
-    } else if (type.toUpperCase().endsWith("DOUBLE")) {
-      return DataTypes.DOUBLE;
-    } else if (type.toUpperCase().endsWith("NULL")) {
-      return DataTypes.NULL;
-    } else if (type.toUpperCase().endsWith("BYTE")) {
-      return DataTypes.BYTE;
-    } else if (type.toUpperCase().endsWith("SHORT_INT")) {
-      return DataTypes.SHORT_INT;
-    } else if (type.toUpperCase().endsWith("VARCHAR")) {
-      return DataTypes.VARCHAR;
-    }
-    return null;
+    return DataTypeUtil.valueOf(type);
   }
-
 }
 
