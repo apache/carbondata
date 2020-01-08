@@ -17,12 +17,13 @@
 
 package org.apache.carbondata.spark.util
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.execution.command.Field
 import org.apache.spark.sql.util.CarbonException
+
 import org.apache.carbondata.core.metadata.datatype.{ArrayType, DataType, DataTypes, DecimalType, MapType, StructField, StructType}
 import org.apache.carbondata.format.{DataType => ThriftDataType}
-
-import scala.collection.JavaConverters._
 
 object DataTypeConverterUtil {
   val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
@@ -128,7 +129,8 @@ object DataTypeConverterUtil {
     }
   }
 
-  private def convertSubFields(name: String, dataType: DataType, children: List[Field]): StructField = {
+  private def convertSubFields(name: String, dataType: DataType,
+      children: List[Field]): StructField = {
     val actualName = name.split("\\.").last
     children match {
       case null | Nil =>
