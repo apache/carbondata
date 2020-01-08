@@ -27,11 +27,11 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
@@ -42,11 +42,14 @@ import com.google.gson.Gson;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.log4j.Logger;
 
 /**
  * Stores datamap schema in disk as json format
  */
 public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStorageProvider {
+
+  private Logger LOG = LogServiceFactory.getLogService(this.getClass().getCanonicalName());
 
   private String storePath;
 
@@ -171,17 +174,15 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     if (!FileFactory.isFileExist(schemaPath)) {
       throw new IOException("DataMap with name " + dataMapName + " does not exists in storage");
     }
-    Iterator<DataMapSchema> iterator = dataMapSchemas.iterator();
-    while (iterator.hasNext()) {
-      DataMapSchema schema = iterator.next();
-      if (schema.getDataMapName().equalsIgnoreCase(dataMapName)) {
-        iterator.remove();
-      }
-    }
+
+    LOG.info(String.format("Trying to delete DataMap %s schema", dataMapName));
+
+    dataMapSchemas.removeIf(schema -> schema.getDataMapName().equalsIgnoreCase(dataMapName));
     touchMDTFile();
     if (!FileFactory.deleteFile(schemaPath)) {
       throw new IOException("DataMap with name " + dataMapName + " cannot be deleted");
     }
+    LOG.info(String.format("DataMap %s schema is deleted", dataMapName));
   }
 
   private void checkAndReloadDataMapSchemas(boolean touchFile) throws IOException {

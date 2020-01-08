@@ -17,10 +17,10 @@
 
 package org.apache.spark.sql.execution.command.table
 
-import org.apache.spark.sql.{AnalysisException, CarbonSource, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSource, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
-import org.apache.spark.sql.execution.command.{CreateDataSourceTableCommand, MetadataCommand}
+import org.apache.spark.sql.execution.command.{CreateDataSourceTableCommand, DropTableCommand, MetadataCommand}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
@@ -56,9 +56,29 @@ case class CarbonCreateDataSourceTableCommand(
         throw new AnalysisException(s"Table ${ table.identifier.unquotedString } already exists.")
       }
     }
-    try {
-      new CreateDataSourceTableCommand(
-        CarbonSource.updateCatalogTableWithCarbonSchema(table, sparkSession, ignoreIfExists),
+
+    // Step1:
+    // Create the table metadata required by carbondata table, including TableInfo object which
+    // will be persist in step3 and a new CatalogTable with updated information need by
+    // CarbonSource. (Because spark does not pass the information carbon needs when calling create
+    // relation API, so we need to update the CatalogTable to add those information, like table
+    // name, database name, table path, etc)
+    //
+    // Step2:
+    // Create a new CatalogTable containing an updated table properties.
+    // We need to update the table properties since carbon needs to use extra information
+    // when creating Relation in CarbonSource, but spark is not passing them, like table name,
+    // database name, table path, etc.
+    //
+    // Step3:
+    // Persist the TableInfo object in table path as schema file.
+
+    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+    val (tableInfo, catalogTable) = CarbonSource.createTableMeta(sparkSession, table, metaStore)
+
+    val rows = try {
+      CreateDataSourceTableCommand(
+        catalogTable,
         ignoreIfExists
       ).run(sparkSession)
     } catch {
@@ -68,5 +88,23 @@ case class CarbonCreateDataSourceTableCommand(
       case ex =>
         throw ex
     }
+
+    try {
+      CarbonSource.saveCarbonSchemaFile(metaStore, ignoreIfExists, tableInfo)
+    } catch {
+      case ex: Throwable =>
+        // drop the table if anything goes wrong
+        LOGGER.error(s"save carbon table schema file failed for table " +
+                     s"${table.database}.${table.identifier.table}, dropping the table")
+        DropTableCommand(
+          table.identifier,
+          ifExists = true,
+          isView = false,
+          purge = false
+        ).run(sparkSession)
+        throw ex
+    }
+    rows
   }
+
 }

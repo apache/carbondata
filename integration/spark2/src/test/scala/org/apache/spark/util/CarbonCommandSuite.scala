@@ -75,8 +75,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
          |    dateField date,
          |    charField char(5)
          | )
-         | USING org.apache.spark.sql.CarbonSource
-         | OPTIONS ('tableName' '$tableName')
+         | USING carbondata
        """.stripMargin)
     sql(
       s"""

@@ -17,23 +17,22 @@
 
 package org.apache.spark.sql.util
 
-import java.lang.reflect.Method
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.analysis.EmptyRule
+import org.apache.spark.sql.catalyst.analysis.EliminateView
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSeq, NamedExpression}
-import org.apache.spark.sql.catalyst.plans.logical
+import org.apache.spark.sql.catalyst.optimizer.{CheckCartesianProducts, EliminateOuterJoin, NullPropagation, PullupCorrelatedPredicates, RemoveRedundantAliases, ReorderJoin}
+import org.apache.spark.sql.catalyst.plans.{logical, QueryPlan}
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, LogicalPlan, Statistics}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.internal.{SessionState, SQLConf}
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.util.{CarbonReflectionUtils, SerializableConfiguration, SparkUtil, Utils}
+import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
@@ -53,166 +52,60 @@ object SparkSQLUtil {
   }
 
   def invokeStatsMethod(logicalPlanObj: LogicalPlan, conf: SQLConf): Statistics = {
-    if (SparkUtil.isSparkVersionEqualTo("2.2")) {
-      val method: Method = logicalPlanObj.getClass.getMethod("stats", classOf[SQLConf])
-      method.invoke(logicalPlanObj, conf).asInstanceOf[Statistics]
-    } else if (SparkUtil.isSparkVersionXandAbove("2.3")) {
-      val method: Method = logicalPlanObj.getClass.getMethod("stats")
-      method.invoke(logicalPlanObj).asInstanceOf[Statistics]
-    } else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    logicalPlanObj.stats
   }
 
   def invokeQueryPlannormalizeExprId(r: NamedExpression, input: AttributeSeq)
       : NamedExpression = {
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      val clazz = Utils.classForName("org.apache.spark.sql.catalyst.plans.QueryPlan")
-      clazz.getDeclaredMethod("normalizeExprId", classOf[Any], classOf[AttributeSeq]).
-        invoke(null, r, input).asInstanceOf[NamedExpression]
-    } else {
-      r
-    }
+    QueryPlan.normalizeExprId(r, input)
   }
 
   def getStatisticsObj(outputList: Seq[NamedExpression],
                        plan: LogicalPlan, stats: Statistics,
                        aliasMap: Option[AttributeMap[Attribute]] = None)
   : Statistics = {
-    val className = "org.apache.spark.sql.catalyst.plans.logical.Statistics"
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      val output = outputList.map(_.toAttribute)
-      val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
-        table => AttributeMap(table.output.zip(output))
-      }
-      val rewrites = mapSeq.head
-      val attributes : AttributeMap[ColumnStat] = CarbonReflectionUtils.
-        getField("attributeStats", stats).asInstanceOf[AttributeMap[ColumnStat]]
-      var attributeStats = AttributeMap(attributes.iterator
-        .map { pair => (rewrites(pair._1), pair._2) }.toSeq)
-      if (aliasMap.isDefined) {
-        attributeStats = AttributeMap(
-          attributeStats.map(pair => (aliasMap.get(pair._1), pair._2)).toSeq)
-      }
-      val hints = CarbonReflectionUtils.getField("hints", stats).asInstanceOf[Object]
-      CarbonReflectionUtils.createObject(className, stats.sizeInBytes,
-        stats.rowCount, attributeStats, hints).asInstanceOf[Statistics]
-    } else {
-      val output = outputList.map(_.name)
-      val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
-        table => table.output.map(_.name).zip(output).toMap
-      }
-      val rewrites = mapSeq.head
-      val colStats = CarbonReflectionUtils.getField("colStats", stats)
-        .asInstanceOf[Map[String, ColumnStat]]
-      var attributeStats = colStats.iterator
-        .map { pair => (rewrites(pair._1), pair._2) }.toMap
-      if (aliasMap.isDefined) {
-        val aliasMapName = aliasMap.get.map(x => (x._1.name, x._2.name))
-        attributeStats =
-          attributeStats.map(pair => (aliasMapName.getOrElse(pair._1, pair._1)
-            , pair._2))
-      }
-      CarbonReflectionUtils.createObject(className, stats.sizeInBytes,
-        stats.rowCount, attributeStats).asInstanceOf[Statistics]
+    val output = outputList.map(_.toAttribute)
+    val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
+      table => AttributeMap(table.output.zip(output))
     }
+    val rewrites = mapSeq.head
+    val attributes : AttributeMap[ColumnStat] = stats.attributeStats
+    var attributeStats = AttributeMap(attributes.iterator
+      .map { pair => (rewrites(pair._1), pair._2) }.toSeq)
+    if (aliasMap.isDefined) {
+      attributeStats = AttributeMap(
+        attributeStats.map(pair => (aliasMap.get(pair._1), pair._2)).toSeq)
+    }
+    val hints = stats.hints
+    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats, hints)
   }
 
   def getEliminateViewObj(): Rule[LogicalPlan] = {
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      val className = "org.apache.spark.sql.catalyst.analysis.EliminateView"
-      CarbonReflectionUtils.createSingleObject(className).asInstanceOf[Rule[LogicalPlan]]
-    } else {
-      EmptyRule
-    }
+    EliminateView
   }
 
   def getPullupCorrelatedPredicatesObj(): Rule[LogicalPlan] = {
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.PullupCorrelatedPredicates"
-      CarbonReflectionUtils.createSingleObject(className).asInstanceOf[Rule[LogicalPlan]]
-    } else {
-      EmptyRule
-    }
+    PullupCorrelatedPredicates
   }
 
   def getRemoveRedundantAliasesObj(): Rule[LogicalPlan] = {
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.RemoveRedundantAliases"
-      CarbonReflectionUtils.createSingleObject(className).asInstanceOf[Rule[LogicalPlan]]
-    } else {
-      EmptyRule
-    }
+    RemoveRedundantAliases
   }
 
   def getReorderJoinObj(conf: SQLConf): Rule[LogicalPlan] = {
-    if (SparkUtil.isSparkVersionEqualTo("2.2")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.ReorderJoin";
-      CarbonReflectionUtils.createObject(className, conf)._1.asInstanceOf[Rule[LogicalPlan]]
-    } else if (SparkUtil.isSparkVersionXandAbove("2.3")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.ReorderJoin$";
-      CarbonReflectionUtils.createObjectOfPrivateConstructor(className)._1
-        .asInstanceOf[Rule[LogicalPlan]]
-    } else if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.ReorderJoin$";
-      CarbonReflectionUtils.createObjectOfPrivateConstructor(className)._1
-        .asInstanceOf[Rule[LogicalPlan]]
-    }
-    else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    ReorderJoin
   }
 
   def getEliminateOuterJoinObj(conf: SQLConf): Rule[LogicalPlan] = {
-    if (SparkUtil.isSparkVersionEqualTo("2.2")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.EliminateOuterJoin";
-      CarbonReflectionUtils.createObject(className, conf)._1.asInstanceOf[Rule[LogicalPlan]]
-    } else if (SparkUtil.isSparkVersionXandAbove("2.3")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.EliminateOuterJoin$";
-      CarbonReflectionUtils.createObjectOfPrivateConstructor(className)._1
-        .asInstanceOf[Rule[LogicalPlan]]
-    } else if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.EliminateOuterJoin$";
-      CarbonReflectionUtils.createObjectOfPrivateConstructor(className)._1
-        .asInstanceOf[Rule[LogicalPlan]]
-    }
-    else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    EliminateOuterJoin
   }
 
   def getNullPropagationObj(conf: SQLConf): Rule[LogicalPlan] = {
-    if (SparkUtil.isSparkVersionEqualTo("2.2")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.NullPropagation";
-      CarbonReflectionUtils.createObject(className, conf)._1.asInstanceOf[Rule[LogicalPlan]]
-    } else if (SparkUtil.isSparkVersionXandAbove("2.3")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.NullPropagation$";
-      CarbonReflectionUtils.createObjectOfPrivateConstructor(className)._1
-        .asInstanceOf[Rule[LogicalPlan]]
-    } else if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.NullPropagation$";
-      CarbonReflectionUtils.createObjectOfPrivateConstructor(className)._1
-        .asInstanceOf[Rule[LogicalPlan]]
-    } else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    NullPropagation
   }
 
   def getCheckCartesianProductsObj(conf: SQLConf): Rule[LogicalPlan] = {
-    if (SparkUtil.isSparkVersionEqualTo("2.2")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.CheckCartesianProducts";
-      CarbonReflectionUtils.createObject(className, conf)._1.asInstanceOf[Rule[LogicalPlan]]
-    } else if (SparkUtil.isSparkVersionXandAbove("2.3")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.CheckCartesianProducts$";
-      CarbonReflectionUtils.createObjectOfPrivateConstructor(className)._1
-        .asInstanceOf[Rule[LogicalPlan]]
-    } else if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      val className = "org.apache.spark.sql.catalyst.optimizer.CheckCartesianProducts";
-      CarbonReflectionUtils.createObject(className, conf)._1.asInstanceOf[Rule[LogicalPlan]]
-    }
-    else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    CheckCartesianProducts
   }
 
   /**

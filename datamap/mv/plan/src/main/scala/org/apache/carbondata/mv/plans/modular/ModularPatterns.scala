@@ -52,9 +52,11 @@ object SimpleModularizer extends ModularPatterns {
       plan transform {
         case g@GroupBy(_, _, _, _, s@Select(_, _, _, aliasmap, _, children, _, _, _, _), _, _, _) =>
           val aq = AttributeSet(g.outputList).filter(_.qualifier.nonEmpty)
-          val makeupmap = children.zipWithIndex.flatMap {
+          val makeupmap: Map[Int, String] = children.zipWithIndex.flatMap {
             case (child, i) =>
-              aq.find(child.outputSet.contains(_)).map(_.qualifier).flatten.map((i, _))
+              aq.find(child.outputSet.contains(_))
+                .flatMap(_.qualifier.headOption)
+                .map((i, _))
           }.toMap
           g.copy(child = s.copy(aliasMap = makeupmap ++ aliasmap))
       }

@@ -834,12 +834,4 @@ object CommonUtil {
     displaySize
   }
 
-  def isCarbonDataSource(catalogTable: CatalogTable): Boolean = {
-    catalogTable.provider match {
-      case Some(x) => x.equalsIgnoreCase("org.apache.spark.sql.CarbonSource") ||
-                      x.equalsIgnoreCase("carbondata")
-      case None => false
-    }
-  }
-
 }

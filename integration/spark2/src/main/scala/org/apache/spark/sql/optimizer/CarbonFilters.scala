@@ -310,15 +310,13 @@ object CarbonFilters {
    * @return
    */
   def isStringTrimCompatibleWithCarbon(stringTrim: StringTrim): Boolean = {
-    var isCompatible = true
-    if (SparkUtil.isSparkVersionXandAbove("2.3")) {
-      val trimStr = CarbonReflectionUtils.getField("trimStr", stringTrim)
-        .asInstanceOf[Option[Expression]]
-      if (trimStr.isDefined) {
-        isCompatible = false
-      }
+    val trimStr = CarbonReflectionUtils.getField("trimStr", stringTrim)
+      .asInstanceOf[Option[Expression]]
+    if (trimStr.isDefined) {
+      false
+    } else {
+      true
     }
-    isCompatible
   }
 
   def transformExpression(expr: Expression): CarbonExpression = {

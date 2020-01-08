@@ -79,33 +79,3 @@ case class OptimizerRule(session: SparkSession) extends Rule[LogicalPlan] {
   }
 }
 
-class OptimizerProxy(
-    session: SparkSession,
-    catalog: SessionCatalog,
-    optimizer: Optimizer) extends Optimizer(catalog) {
-
-  private lazy val firstBatchRules = Seq(Batch("First Batch Optimizers", Once,
-      Seq(CarbonMVRules(session), new CarbonPreOptimizerRule()): _*))
-
-  private lazy val LastBatchRules = Batch("Last Batch Optimizers", fixedPoint,
-    Seq(new CarbonIUDRule(), new CarbonUDFTransformRule(), new CarbonLateDecodeRule()): _*)
-
-  override def batches: Seq[Batch] = {
-    firstBatchRules ++ convertedBatch() :+ LastBatchRules
-  }
-
-  def convertedBatch(): Seq[Batch] = {
-    optimizer.batches.map { batch =>
-      Batch(
-        batch.name,
-        batch.strategy match {
-          case optimizer.Once =>
-            Once
-          case _: optimizer.FixedPoint =>
-            fixedPoint
-        },
-        batch.rules: _*
-      )
-    }
-  }
-}

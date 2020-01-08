@@ -25,16 +25,10 @@ import scala.collection.mutable
 import scala.language.implicitConversions
 
 import org.apache.commons.lang.StringUtils
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.CarbonParserUtil
-import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
-import org.apache.spark.sql.execution.strategy.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.streaming.Sink
 import org.apache.spark.sql.hive.CarbonMetaStore
-import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
-import org.apache.spark.sql.parser.{CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
+import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types.StructType
@@ -44,12 +38,10 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil}
 import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamingQueryListener, StreamSinkFactory}
@@ -149,13 +141,6 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       Option(dataSchema))
   }
 
-  private def addLateDecodeOptimization(ss: SparkSession): Unit = {
-    if (ss.sessionState.experimentalMethods.extraStrategies.isEmpty) {
-      ss.sessionState.experimentalMethods.extraStrategies = Seq(new CarbonLateDecodeStrategy)
-      ss.sessionState.experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
-    }
-  }
-
   /**
    * Returns the path of the table
    *
@@ -243,127 +228,110 @@ object CarbonSource {
 
   lazy val listenerAdded = new mutable.HashMap[Int, Boolean]()
 
-  def createTableInfoFromParams(
-      parameters: Map[String, String],
-      dataSchema: StructType,
-      identifier: AbsoluteTableIdentifier,
-      query: Option[LogicalPlan],
-      sparkSession: SparkSession): TableModel = {
-    val sqlParser = new CarbonSpark2SqlParser
-    val map = scala.collection.mutable.Map[String, String]()
-    parameters.foreach { case (key, value) => map.put(key, value.toLowerCase()) }
-    val options = new CarbonOption(parameters)
-    val fields = query match {
-      case Some(q) =>
-        // if query is provided then it is a CTAS flow
-        if (sqlParser.getFields(dataSchema).nonEmpty) {
-          throw new AnalysisException(
-            "Schema cannot be specified in a Create Table As Select (CTAS) statement")
-        }
-        sqlParser
-          .getFields(CarbonEnv.getInstance(sparkSession).carbonMetaStore
-            .getSchemaFromUnresolvedRelation(sparkSession, q))
-      case None =>
-        sqlParser.getFields(dataSchema)
-    }
-    val bucketFields = sqlParser.getBucketFields(map, fields, options)
-    CarbonParserUtil.prepareTableModel(
-      ifNotExistPresent = false,
-      Option(identifier.getDatabaseName),
-      identifier.getTableName,
-      fields,
-      Nil,
-      map,
-      bucketFields)
-  }
-
   /**
-   * Update spark catalog table with schema information in case of schema storage is hive metastore
-   * @param tableDesc
-   * @param sparkSession
-   * @return
+   * Create TableInfo object from the CatalogTable
    */
-  def updateCatalogTableWithCarbonSchema(
-      tableDesc: CatalogTable,
-      sparkSession: SparkSession,
-      ignoreIfExists: Boolean,
-      query: Option[LogicalPlan] = None): CatalogTable = {
-    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-    val storageFormat = tableDesc.storage
-    val properties = CarbonSparkSqlParserUtil.getProperties(tableDesc)
-    if (!properties.contains("carbonSchemaPartsNo")) {
-      val (map, tablePath) = updateAndCreateTable(
-        sparkSession,
-        metaStore,
-        properties,
-        query,
-        tableDesc,
-        ignoreIfExists)
-      // updating params
-      val updatedFormat = CarbonToSparkAdapter
-        .getUpdatedStorageFormat(storageFormat, map, tablePath)
-      val updatedSchema = if (tableDesc.tableType == CatalogTableType.EXTERNAL) {
-        tableDesc.schema
-      } else {
-        CarbonSparkUtil.updateStruct(tableDesc.schema)
-      }
-      tableDesc.copy(
-        storage = updatedFormat,
-        schema = updatedSchema,
-        partitionColumnNames = tableDesc.partitionColumnNames.map(_.toLowerCase)
-      )
-    } else {
-      val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
-      val isTransactionalTable = properties.getOrElse("isTransactional", "true").contains("true")
-      tableInfo.setTransactionalTable(isTransactionalTable)
-      val isExternal = properties.getOrElse("isExternal", "true").contains("true")
-      val updatedTableType = if (isExternal) {
-        tableDesc.tableType
-      } else {
-        CatalogTableType.MANAGED
-      }
-      if (isTransactionalTable && !metaStore.isReadFromHiveMetaStore) {
-        // save to disk
-        metaStore.saveToDisk(tableInfo, properties("tablePath"))
-        // remove schema string from map as we don't store carbon schema to hive metastore
-        val map = CarbonUtil.removeSchemaFromMap(properties.asJava)
-        val updatedFormat = storageFormat.copy(properties = map.asScala.toMap)
-        tableDesc.copy(storage = updatedFormat, tableType = updatedTableType)
-      } else {
-        tableDesc.copy(tableType = updatedTableType)
-      }
-    }
-  }
-
-  def updateAndCreateTable(
-      sparkSession: SparkSession,
-      metaStore: CarbonMetaStore,
-      properties: Map[String, String],
-      query: Option[LogicalPlan],
-      tableDesc: CatalogTable,
-      ignoreIfExists: Boolean): (Map[String, String], String) = {
+  private def createTableInfo(sparkSession: SparkSession, table: CatalogTable): TableInfo = {
     val tableInfo = CarbonSparkSqlParserUtil.buildTableInfoFromCatalogTable(
-      tableDesc, true, sparkSession, query)
-    val tableLocation = if (tableDesc.storage.locationUri.isDefined) {
-      Some(tableDesc.storage.locationUri.get.toString)
+      table,
+      ifNotExists = true,
+      sparkSession)
+    val tableLocation = if (table.storage.locationUri.isDefined) {
+      Some(table.storage.locationUri.get.toString)
     } else {
       None
     }
-    val isExternal = tableDesc.tableType == CatalogTableType.EXTERNAL
     val tablePath = CarbonEnv.createTablePath(
       Some(tableInfo.getDatabaseName),
       tableInfo.getFactTable.getTableName,
       tableInfo.getFactTable.getTableId,
       tableLocation,
-      tableDesc.tableType == CatalogTableType.EXTERNAL,
+      table.tableType == CatalogTableType.EXTERNAL,
       tableInfo.isTransactionalTable)(sparkSession)
     tableInfo.setTablePath(tablePath)
     CarbonSparkSqlParserUtil.validateTableProperties(tableInfo)
     val schemaEvolutionEntry = new SchemaEvolutionEntry
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
-    tableInfo.getFactTable.getSchemaEvolution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
+    tableInfo.getFactTable
+      .getSchemaEvolution
+      .getSchemaEvolutionEntryList
+      .add(schemaEvolutionEntry)
+    tableInfo
+  }
+
+  /**
+   * This function updates catalog table with new table properties and table path
+   *
+   * Carbon table needs to add more information in table properties including table name, database
+   * name, table path, etc. Because spark does not pass these information when calling data source
+   * interface (see [[CarbonSource]]). So we need to add them in table properties and use it in
+   * [[CarbonSource]].
+   */
+  private def createCatalogTableForCarbonExtension(
+      table: CatalogTable,
+      tableInfo: TableInfo,
+      properties: Map[String, String],
+      metaStore: CarbonMetaStore): CatalogTable = {
+    val storageFormat = table.storage
+    val isExternal = table.tableType == CatalogTableType.EXTERNAL
+    val updatedTableProperties = updateTableProperties(
+      tableInfo,
+      metaStore,
+      properties,
+      isExternal)
+    val updatedFormat = CarbonToSparkAdapter
+      .getUpdatedStorageFormat(storageFormat, updatedTableProperties, tableInfo.getTablePath)
+    val updatedSchema = if (isExternal) {
+      table.schema
+    } else {
+      CarbonSparkUtil.updateStruct(table.schema)
+    }
+    table.copy(
+      storage = updatedFormat,
+      schema = updatedSchema,
+      partitionColumnNames = table.partitionColumnNames.map(_.toLowerCase)
+    )
+  }
+
+  private def createCatalogTableForCarbonSession(
+      table: CatalogTable,
+      tableInfo: TableInfo,
+      properties: Map[String, String],
+      metaStore: CarbonMetaStore): CatalogTable = {
+    val storageFormat = table.storage
+    val isTransactionalTable = tableInfo.isTransactionalTable
+    val isExternal = properties.getOrElse("isExternal", "true").contains("true")
+    val updatedTableType = if (isExternal) {
+      table.tableType
+    } else {
+      CatalogTableType.MANAGED
+    }
+    if (isTransactionalTable && !metaStore.isReadFromHiveMetaStore) {
+      // remove schema string from map as we don't store carbon schema to hive metastore
+      val map = CarbonUtil.removeSchemaFromMap(properties.asJava)
+      val updatedFormat = storageFormat.copy(properties = map.asScala.toMap)
+      table.copy(storage = updatedFormat, tableType = updatedTableType)
+    } else {
+      table.copy(tableType = updatedTableType)
+    }
+  }
+
+  private def isCreatedByCarbonExtension(properties: Map[String, String]): Boolean = {
+    // if table is created by CarbonSession, there is a special property storing the TableInfo,
+    // otherwise it is created by CarbonExtension
+    !properties.contains("carbonSchemaPartsNo")
+  }
+
+  /**
+   * Update and return a new table properties by adding parameters required for
+   * relation creation in [[CarbonSource]]
+   */
+  private def updateTableProperties(
+      tableInfo: TableInfo,
+      metaStore: CarbonMetaStore,
+      properties: Map[String, String],
+      isExternalTable: Boolean): Map[String, String] = {
     val map = if (!metaStore.isReadFromHiveMetaStore && tableInfo.isTransactionalTable) {
-      saveToDisk(metaStore, ignoreIfExists, tableInfo)
       new java.util.HashMap[String, String]()
     } else {
       CarbonUtil.convertToMultiStringMap(tableInfo)
@@ -380,26 +348,71 @@ object CarbonSource {
     }
     map.put("tableName", tableInfo.getFactTable.getTableName)
     map.put("isTransactional", tableInfo.isTransactionalTable.toString)
-    map.put("isExternal", isExternal.toString)
-    (map.asScala.toMap, tableInfo.getTablePath)
+    map.put("isExternal", isExternalTable.toString)
+    map.asScala.toMap
   }
 
-  private def saveToDisk(
-      metaStore: CarbonMetaStore, ignoreIfExists: Boolean, tableInfo: TableInfo): Unit = {
-    try {
-      metaStore.saveToDisk(tableInfo, tableInfo.getTablePath)
-    } catch {
-      case ex: IOException if ignoreIfExists =>
-        val schemaFile = CarbonTablePath.getMetadataPath(tableInfo.getTablePath) +
-                         CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath.SCHEMA_FILE
-        if (FileFactory.isFileExist(schemaFile)) {
-          LOGGER.error(ex)
-        } else {
-          throw ex
-        }
-      case ex => throw ex
+  /**
+   * create meta data for carbon table, including TableInfo object which
+   * will be persist in step3 and a new CatalogTable with updated information need by
+   * [[CarbonSource]]. (Because spark does not pass the information carbon needs when calling create
+   * relation API, so we need to update the [[CatalogTable]] to add those information, like table
+   * name, database name, table path, etc)
+   */
+  def createTableMeta(
+      sparkSession: SparkSession,
+      table: CatalogTable,
+      metaStore: CarbonMetaStore
+  ): (TableInfo, CatalogTable) = {
+    val properties = CarbonSparkSqlParserUtil.getProperties(table)
+    if (isCreatedByCarbonExtension(properties)) {
+      // Table is created by SparkSession with CarbonExtension,
+      // There is no TableInfo yet, so create it from CatalogTable
+      val tableInfo = createTableInfo(sparkSession, table)
+      val catalogTable = createCatalogTableForCarbonExtension(
+        table, tableInfo, properties, metaStore)
+      (tableInfo, catalogTable)
+    } else {
+      // Legacy code path (table is created by CarbonSession)
+      // Get the table info from the property
+      val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
+      val isTransactionalTable = properties.getOrElse("isTransactional", "true").contains("true")
+      tableInfo.setTransactionalTable(isTransactionalTable)
+      val catalogTable = createCatalogTableForCarbonSession(table, tableInfo, properties, metaStore)
+      (tableInfo, catalogTable)
     }
   }
+
+  /**
+   * Save carbon schema file in metastore, it will be saved only in case of CarbonFileMetaStore
+   * is used
+   */
+  def saveCarbonSchemaFile(
+      metaStore: CarbonMetaStore, ignoreIfExists: Boolean, tableInfo: TableInfo): Unit = {
+    if (!metaStore.isReadFromHiveMetaStore && tableInfo.isTransactionalTable) {
+      try {
+        metaStore.saveToDisk(tableInfo, tableInfo.getTablePath)
+      } catch {
+        case ex: IOException if ignoreIfExists =>
+          val schemaFile = CarbonTablePath.getMetadataPath(tableInfo.getTablePath) +
+                           CarbonCommonConstants.FILE_SEPARATOR + CarbonTablePath.SCHEMA_FILE
+          if (FileFactory.isFileExist(schemaFile)) {
+            LOGGER.error(ex)
+          } else {
+            throw ex
+          }
+        case ex => throw ex
+      }
+    }
+  }
+
+  def isCarbonDataSource(catalogTable: CatalogTable): Boolean = {
+    catalogTable.provider match {
+      case Some(x) => x.equalsIgnoreCase("carbondata")
+      case None => false
+    }
+  }
+
 }
 
 /**

@@ -500,6 +500,9 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
         "from hive_table where carbon_table.intField=hive_table.intField)"),
       Seq(Row(true, 10, true), Row(true, 10, true), Row(true, 10, true), Row(false, 10, false), Row(false, 10, false), Row(false, 10, false))
     )
+
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists hive_table")
   }
 
   test("Inserting into carbon table from Hive table: support boolean data type and other format") {

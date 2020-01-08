@@ -306,7 +306,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           }
         }
         val (selectStmt, relation) =
-          if (!selectPattern.findFirstIn(sel.toLowerCase).isDefined ||
+          if (selectPattern.findFirstIn(sel.toLowerCase).isEmpty ||
               !StringUtils.isEmpty(subQueryResults)) {
             // if subQueryResults are not empty means, it is not join with main table.
             // so use subQueryResults in update with value flow.
@@ -349,8 +349,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         rel
     }
 
-
-
   private def updateRelation(
       r: UnresolvedRelation,
       tableIdent: Seq[String],
@@ -363,8 +361,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           case Seq(dbName, tableName) => Some(tableName)
           case Seq(tableName) => Some(tableName)
         }
-        // Use Reflection to choose between Spark2.1 and Spark2.2
-        // Move UnresolvedRelation(tableIdentifier, tableAlias) to reflection.
         CarbonReflectionUtils.getUnresolvedRelation(tableIdentifier, tableAlias)
     }
   }
@@ -387,8 +383,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
         val tableIdentifier: TableIdentifier = toTableIdentifier(tableIdent)
 
-        // Use Reflection to choose between Spark2.1 and Spark2.2
-        // Move (UnresolvedRelation(tableIdent, alias), tableIdent, alias) to reflection.
         val unresolvedRelation = CarbonReflectionUtils.getUnresolvedRelation(tableIdentifier, alias)
 
         (unresolvedRelation, tableIdent, alias, tableIdentifier)

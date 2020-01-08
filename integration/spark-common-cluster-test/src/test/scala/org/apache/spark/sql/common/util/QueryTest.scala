@@ -24,19 +24,19 @@ import java.util.{Locale, Properties}
 import scala.collection.JavaConversions._
 import scala.util.{Failure, Success, Try}
 
-import com.facebook.presto.jdbc.{PrestoConnection, PrestoStatement}
+import com.facebook.presto.jdbc.PrestoStatement
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.execution.command.LoadDataCommand
-import org.apache.spark.sql.hive.CarbonSessionCatalog
 import org.apache.spark.sql.test.{ResourceRegisterAndCopier, TestQueryExecutor}
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{CarbonToSparkAdapter, DataFrame, Row, SQLContext}
 import org.scalatest.Suite
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.commons.lang.StringUtils
+
 
 class QueryTest extends PlanTest with Suite {
 
@@ -141,8 +141,7 @@ class QueryTest extends PlanTest with Suite {
 
   val resourcesPath = TestQueryExecutor.resourcesPath
 
-  val hiveClient = sqlContext.sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
-    .getClient();
+  val hiveClient = CarbonToSparkAdapter.getHiveExternalCatalog(sqlContext.sparkSession).client
 }
 
 object QueryTest {

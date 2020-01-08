@@ -21,8 +21,11 @@ import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.immutable
 
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Cast, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.rules.{Rule, RuleExecutor}
+import org.apache.spark.sql.types.Metadata
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.mv.expressions.modular._
 import org.apache.carbondata.mv.plans._
@@ -116,18 +119,19 @@ class SQLBuilder private(
                 if (i > -1) {
                   // this is a walk around for mystery of spark qualifier
                   if (aliasMap.nonEmpty && aliasMap(i).nonEmpty) {
-                    AttributeReference(
-                      ref.name,
-                      ref.dataType)(exprId = ref.exprId, qualifier = Option(aliasMap(i)))
+                    CarbonToSparkAdapter.createAttributeReference(
+                      ref.name, ref.dataType, nullable = true, metadata = Metadata.empty,
+                      exprId = ref.exprId, qualifier = Some(aliasMap(i)))
                   } else {
                     ref
                   }
                 } else {
                   attrMap.get(ref) match {
                     case Some(alias) =>
-                      AttributeReference(
+                      CarbonToSparkAdapter.createAttributeReference(
                         alias.child.asInstanceOf[AttributeReference].name,
-                        ref.dataType)(exprId = ref.exprId,
+                        ref.dataType, nullable = true, metadata = Metadata.empty,
+                        exprId = ref.exprId,
                         alias.child.asInstanceOf[AttributeReference].qualifier)
                     case None => ref
                   }
@@ -178,13 +182,12 @@ class SQLBuilder private(
                 list = list :+ ((index, subqueryName))
                 newS = newS.transformExpressions {
                   case ref: Attribute if (subqueryAttributeSet.contains(ref)) =>
-                    AttributeReference(ref.name, ref.dataType)(
-                      exprId = ref.exprId,
-                      qualifier = Some(subqueryName))
+                    CarbonToSparkAdapter.createAttributeReference(
+                      ref.name, ref.dataType, nullable = true, Metadata.empty,
+                      ref.exprId, Some(subqueryName))
                   case alias: Alias if (subqueryAttributeSet.contains(alias.toAttribute)) =>
-                    Alias(alias.child, alias.name)(
-                      exprId = alias.exprId,
-                      qualifier = Some(subqueryName))
+                    CarbonToSparkAdapter.createAliasRef(
+                      alias.child, alias.name, alias.exprId, Some(subqueryName))
                 }
 
               case _ =>
@@ -212,13 +215,12 @@ class SQLBuilder private(
             }
             newG.transformExpressions {
               case ref: AttributeReference if (subqueryAttributeSet.contains(ref)) =>
-                AttributeReference(ref.name, ref.dataType)(
-                  exprId = ref.exprId,
-                  qualifier = Some(subqueryName))
+                CarbonToSparkAdapter.createAttributeReference(
+                  ref.name, ref.dataType, nullable = true, Metadata.empty,
+                  ref.exprId, Some(subqueryName))
               case alias: Alias if (subqueryAttributeSet.contains(alias.toAttribute)) =>
-                Alias(alias.child, alias.name)(
-                  exprId = alias.exprId,
-                  qualifier = Some(subqueryName))
+                CarbonToSparkAdapter.createAliasRef(
+                  alias.child, alias.name, alias.exprId, Some(subqueryName))
             }.copy(alias = Some(subqueryName))
         }
       }
