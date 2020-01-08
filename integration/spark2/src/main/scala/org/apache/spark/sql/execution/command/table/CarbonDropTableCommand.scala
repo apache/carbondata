@@ -134,6 +134,7 @@ case class CarbonDropTableCommand(
       }
       val indexDatamapSchemas =
         DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+      LOGGER.info(s"Dropping DataMaps in table $tableName, size: " + indexDatamapSchemas.size())
       if (!indexDatamapSchemas.isEmpty) {
         childDropDataMapCommands = indexDatamapSchemas.asScala.map { schema =>
           val command = CarbonDropDataMapCommand(schema.getDataMapName,

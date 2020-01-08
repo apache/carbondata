@@ -21,15 +21,13 @@
 * Unix-like environment (Linux, Mac OS X)
 * Git
 * [Apache Maven (Recommend version 3.3 or later)](https://maven.apache.org/download.cgi)
-* [Oracle Java 7 or 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
+* [Oracle Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * [Apache Thrift 0.9.3](http://archive.apache.org/dist/thrift/0.9.3/)
 
 ## Build command
-Build with different supported versions of Spark, by default using Spark 2.2.1 to build
+Build with different supported versions of Spark, by default using Spark 2.4.4
 ```
-mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 clean package
-mvn -DskipTests -Pspark-2.2 -Dspark.version=2.2.1 clean package
-mvn -DskipTests -Pspark-2.3 -Dspark.version=2.3.2 clean package
+mvn -DskipTests -Pspark-2.4 clean package
 ```
 
 Note:
@@ -39,5 +37,5 @@ Note:
 ## For contributors : To build the format code after any changes, please follow the below command.
 Note:Need install Apache Thrift 0.9.3
 ```
-mvn clean -DskipTests -Pbuild-with-format -Pspark-2.2 package
+mvn clean -DskipTests -Pbuild-with-format -Pspark-2.4 package
 ```

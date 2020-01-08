@@ -42,14 +42,10 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil}
 import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamingQueryListener, StreamSinkFactory}
@@ -244,9 +240,10 @@ object CarbonSource {
   lazy val listenerAdded = new mutable.HashMap[Int, Boolean]()
 
   def createTableInfoFromParams(
+      databaseName: String,
+      tableName: String,
       parameters: Map[String, String],
       dataSchema: StructType,
-      identifier: AbsoluteTableIdentifier,
       query: Option[LogicalPlan],
       sparkSession: SparkSession): TableModel = {
     val sqlParser = new CarbonSpark2SqlParser
@@ -269,8 +266,8 @@ object CarbonSource {
     val bucketFields = sqlParser.getBucketFields(map, fields, options)
     CarbonParserUtil.prepareTableModel(
       ifNotExistPresent = false,
-      Option(identifier.getDatabaseName),
-      identifier.getTableName,
+      Option(databaseName),
+      tableName,
       fields,
       Nil,
       map,
