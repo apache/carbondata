@@ -153,6 +153,14 @@ class CGDataMapFactory(
       shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
     ???
   }
+
+  /**
+   * Get the datamap for segmentId and partitionSpecs
+   */
+  override def getDataMaps(segment: Segment,
+      partitions: java.util.List[PartitionSpec]): java.util.List[CoarseGrainDataMap] = {
+    getDataMaps(segment);
+  }
 }
 
 class CGDataMap extends CoarseGrainDataMap {

@@ -17,11 +17,15 @@
 
 package org.apache.carbondata.sql.commands
 
+import scala.collection.JavaConverters._
+
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 
@@ -218,5 +222,73 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     val result5 = sql("show metacache on table cache_5").collect()
     assertResult(2)(result5.length)
     assertResult("5/5 index files cached")(result5(0).getString(2))
+  }
+
+  test("test index files cached for table with single partition") {
+    sql("drop table if exists partitionTable")
+    sql("create table partitionTable(col1 int, col2 string) partitioned by (col3 string) stored as carbondata")
+    sql("insert into partitionTable values(1,'aa','bb'),(1,'aa1','bb1')")
+    sql("insert into partitionTable values(1,'cc','dd')")
+    sql("insert into partitionTable values(2,'aa','bb')")
+    sql("insert into partitionTable values(1,'aa','ee')")
+    checkAnswer(sql("select * from partitionTable where col3='bb'"), Seq(Row(1,"aa","bb"),Row(2,"aa","bb")))
+    var showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    val tableIdentifier = new TableIdentifier("partitionTable", Some("default"))
+    val carbonTablePath = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession).getTablePath
+    var result = CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet().asScala.filter(index => index.startsWith(carbonTablePath))
+    assert(result.exists(index => index.startsWith(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb")) && result.size == 2)
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/5 index files cached"))
+    checkAnswer(sql("select * from partitionTable where col3='ee'"), Seq(Row(1,"aa","ee")))
+    showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    result = CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet().asScala.filter(index => index.startsWith(carbonTablePath))
+    assert(result.exists(index =>
+      index.startsWith(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb") ||
+      index.startsWith(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=ee") &&
+      result.size == 3))
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("3/5 index files cached"))
+    sql("drop table if exists partitionTable")
+  }
+
+  test("test index files cached for table with multiple partition") {
+    sql("drop table if exists partitionTable")
+    sql("create table partitionTable(col1 int, col2 string) partitioned by (col3 string, col4 string, col5 int) stored as carbondata")
+    sql("insert into partitionTable values(1,'aa','bb','cc',1),(1,'aa1','bb1','ff',3)")
+    sql("insert into partitionTable values(1,'cc','dd','ff',3)")
+    sql("insert into partitionTable values(2,'aa','bb','gg',2)")
+    sql("insert into partitionTable values(1,'aa','ee','kk',4)")
+    checkAnswer(sql("select * from partitionTable where col3='bb' and col4='cc'"), Seq(Row(1,"aa","bb","cc",1)))
+    var showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    val tableIdentifier = new TableIdentifier("partitionTable", Some("default"))
+    val carbonTablePath = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession).getTablePath
+    var result = CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet().asScala.filter(index => index.startsWith(carbonTablePath))
+    assert(result.exists(index => index.startsWith(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb/col4=cc")) && result.size == 1)
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("1/5 index files cached"))
+    checkAnswer(sql("select * from partitionTable where col3='bb'"), Seq(Row(1,"aa","bb","cc",1),Row(2,"aa","bb","gg",2)))
+    showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    result = CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet().asScala.filter(index => index.startsWith(carbonTablePath))
+    assert(result.exists(index => index.startsWith(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb/col4=cc")||
+                                  index.startsWith(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb/col4=gg")) && result.size == 2)
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/5 index files cached"))
+    sql("drop table if exists partitionTable")
+  }
+
+  test("test index files cached for table with partition without filter") {
+    sql("drop table if exists partitionTable")
+    sql("create table partitionTable(col1 int, col2 string) partitioned by (col3 string) stored as carbondata")
+    sql("insert into partitionTable values(1,'aa','bb'),(1,'aa1','bb1')")
+    sql("insert into partitionTable values(1,'cc','dd')")
+    sql("insert into partitionTable values(2,'aa','bb')")
+    sql("insert into partitionTable values(1,'aa','ee')")
+    checkAnswer(sql("select * from partitionTable where col3='bb'"), Seq(Row(1,"aa","bb"),Row(2,"aa","bb")))
+    var showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    val tableIdentifier = new TableIdentifier("partitionTable", Some("default"))
+    val carbonTablePath = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession).getTablePath
+    var result = CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet().asScala.filter(index => index.startsWith(carbonTablePath))
+    assert(result.exists(index => index.startsWith(carbonTablePath + CarbonCommonConstants.FILE_SEPARATOR + "col3=bb")) && result.size == 2)
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/5 index files cached"))
+    sql("select * from partitionTable").collect()
+    showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("5/5 index files cached"))
+    sql("drop table if exists partitionTable")
   }
 }

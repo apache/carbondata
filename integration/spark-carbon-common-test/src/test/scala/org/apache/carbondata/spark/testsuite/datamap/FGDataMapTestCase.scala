@@ -151,6 +151,14 @@ class FGDataMapFactory(carbonTable: CarbonTable,
       shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
     ???
   }
+
+  /**
+   * Get the datamap for segmentId
+   */
+  override def getDataMaps(segment: Segment,
+      partitions: java.util.List[PartitionSpec]): java.util.List[FineGrainDataMap] = {
+    getDataMaps(segment)
+  }
 }
 
 class FGDataMap extends FineGrainDataMap {

@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Se
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
@@ -310,4 +311,12 @@ class TestDataMapFactory(
   }
 
   override def supportRebuild(): Boolean = true
+
+  /**
+   * Get the datamap for segmentId and partitionSpecs
+   */
+  override def getDataMaps(segment: Segment,
+      partitions: util.List[PartitionSpec]): util.List[CoarseGrainDataMap] = {
+    ???
+  }
 }

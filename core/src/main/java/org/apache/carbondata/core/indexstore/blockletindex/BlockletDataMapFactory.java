@@ -124,6 +124,14 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
    */
   public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments)
       throws IOException {
+    return getDataMaps(segments, null);
+  }
+
+  /**
+   * Get the datamap for all segments
+   */
+  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments,
+      List<PartitionSpec> partitionsToPrune) throws IOException {
     List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
         new ArrayList<>();
     Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
@@ -132,12 +140,9 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       segmentMap.put(segment.getSegmentNo(), segment);
       Set<TableBlockIndexUniqueIdentifier> identifiers =
           getTableBlockIndexUniqueIdentifiers(segment);
-
-      for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
-        tableBlockIndexUniqueIdentifierWrappers.add(
-            new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
-                this.getCarbonTable()));
-      }
+      // get tableBlockIndexUniqueIdentifierWrappers from segment file info
+      getTableBlockUniqueIdentifierWrappers(partitionsToPrune,
+          tableBlockIndexUniqueIdentifierWrappers, identifiers);
     }
     List<BlockletDataMapIndexWrapper> blockletDataMapIndexWrappers =
         cache.getAll(tableBlockIndexUniqueIdentifierWrappers);
@@ -153,18 +158,49 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     return dataMaps;
   }
 
+  /**
+   * get tableBlockUniqueIdentifierWrappers from segment info. If partitionsToPrune is defined,
+   * then get tableBlockUniqueIdentifierWrappers for the matched partitions.
+   */
+  private void getTableBlockUniqueIdentifierWrappers(List<PartitionSpec> partitionsToPrune,
+      List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers,
+      Set<TableBlockIndexUniqueIdentifier> identifiers) {
+    for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
+      if (null != partitionsToPrune && !partitionsToPrune.isEmpty()) {
+        // add only tableBlockUniqueIdentifier that matches the partition
+        // get the indexFile Parent path and compare with the PartitionPath, if matches, then add
+        // the corresponding tableBlockIndexUniqueIdentifier for pruning
+        for (PartitionSpec partitionSpec : partitionsToPrune) {
+          if (partitionSpec.getLocation().toString()
+              .equalsIgnoreCase(tableBlockIndexUniqueIdentifier.getIndexFilePath())) {
+            tableBlockIndexUniqueIdentifierWrappers.add(
+                new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
+                    this.getCarbonTable()));
+          }
+        }
+      } else {
+        tableBlockIndexUniqueIdentifierWrappers.add(
+            new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
+                this.getCarbonTable()));
+      }
+    }
+  }
+
   @Override
   public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
+    return getDataMaps(segment, null);
+  }
+
+  @Override
+  public List<CoarseGrainDataMap> getDataMaps(Segment segment,
+      List<PartitionSpec> partitionsToPrune) throws IOException {
     List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
     Set<TableBlockIndexUniqueIdentifier> identifiers =
         getTableBlockIndexUniqueIdentifiers(segment);
     List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
         new ArrayList<>(identifiers.size());
-    for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
-      tableBlockIndexUniqueIdentifierWrappers.add(
-          new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
-              this.getCarbonTable()));
-    }
+    getTableBlockUniqueIdentifierWrappers(partitionsToPrune,
+        tableBlockIndexUniqueIdentifierWrappers, identifiers);
     List<BlockletDataMapIndexWrapper> blockletDataMapIndexWrappers =
         cache.getAll(tableBlockIndexUniqueIdentifierWrappers);
     for (BlockletDataMapIndexWrapper wrapper : blockletDataMapIndexWrappers) {
@@ -429,7 +465,13 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   @Override
   public SegmentProperties getSegmentProperties(Segment segment) throws IOException {
-    List<CoarseGrainDataMap> dataMaps = getDataMaps(segment);
+    return getSegmentProperties(segment, null);
+  }
+
+  @Override
+  public SegmentProperties getSegmentProperties(Segment segment, List<PartitionSpec> partitions)
+      throws IOException {
+    List<CoarseGrainDataMap> dataMaps = getDataMaps(segment, partitions);
     assert (dataMaps.size() > 0);
     CoarseGrainDataMap coarseGrainDataMap = dataMaps.get(0);
     assert (coarseGrainDataMap instanceof BlockDataMap);
@@ -449,10 +491,10 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions)
       throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
-    List<CoarseGrainDataMap> dataMaps = getDataMaps(segment);
+    List<CoarseGrainDataMap> dataMaps = getDataMaps(segment, partitions);
     for (CoarseGrainDataMap dataMap : dataMaps) {
-      blocklets.addAll(
-          dataMap.prune((FilterResolverIntf) null, getSegmentProperties(segment), partitions));
+      blocklets.addAll(dataMap
+          .prune((FilterResolverIntf) null, getSegmentProperties(segment, partitions), partitions));
     }
     return blocklets;
   }

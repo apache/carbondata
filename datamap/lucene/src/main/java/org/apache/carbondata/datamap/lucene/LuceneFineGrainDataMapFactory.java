@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -63,6 +64,12 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
     }
     lstDataMap.add(dataMap);
     return lstDataMap;
+  }
+
+  @Override
+  public List<FineGrainDataMap> getDataMaps(Segment segment, List<PartitionSpec> partitions)
+      throws IOException {
+    return getDataMaps(segment);
   }
 
   /**

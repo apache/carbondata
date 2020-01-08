@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, Coa
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -90,6 +91,14 @@ class C2DataMapFactory(
 
   override def createBuilder(segment: Segment,
       shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
+    ???
+  }
+
+  /**
+   * Get the datamap for segmentId and partitionSpecs
+   */
+  override def getDataMaps(segment: Segment,
+      partitions: util.List[PartitionSpec]): util.List[CoarseGrainDataMap] = {
     ???
   }
 }

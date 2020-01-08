@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -91,9 +92,28 @@ public abstract class DataMapFactory<T extends DataMap> {
   }
 
   /**
+   * Get the datamap for all segments with matched partitions. Load datamaps to cache, only if it
+   * matches the partition.
+   */
+  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments,
+      List<PartitionSpec> partitionSpecs) throws IOException {
+    Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
+    for (Segment segment : segments) {
+      dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment, partitionSpecs));
+    }
+    return dataMaps;
+  }
+
+  /**
    * Get the datamap for segmentId
    */
   public abstract List<T> getDataMaps(Segment segment) throws IOException;
+
+  /**
+   * Get the datamap for segmentId with matched partitions
+   */
+  public abstract List<T> getDataMaps(Segment segment, List<PartitionSpec> partitions)
+      throws IOException;
 
   /**
    * Get datamaps for distributable object.

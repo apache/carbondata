@@ -46,6 +46,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -280,6 +281,12 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       throw new IOException("Error occurs while init Bloom DataMap", e);
     }
     return dataMaps;
+  }
+
+  @Override
+  public List<CoarseGrainDataMap> getDataMaps(Segment segment, List<PartitionSpec> partitionSpecs)
+      throws IOException {
+    return getDataMaps(segment);
   }
 
   @Override
