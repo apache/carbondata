@@ -23,11 +23,11 @@ import java.net.URI
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.codegen.ExprCode
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, ScalaUDF, SubqueryExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.ExplainCommand
-import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{DataType, Metadata}
 
 object CarbonToSparkAdapter {
@@ -41,8 +41,8 @@ object CarbonToSparkAdapter {
   }
 
   def createAttributeReference(name: String, dataType: DataType, nullable: Boolean,
-                               metadata: Metadata, exprId: ExprId, qualifier: Option[String],
-                               attrRef : NamedExpression): AttributeReference = {
+      metadata: Metadata, exprId: ExprId, qualifier: Option[String],
+      attrRef : NamedExpression = null): AttributeReference = {
     AttributeReference(
       name,
       dataType,
@@ -50,14 +50,23 @@ object CarbonToSparkAdapter {
       metadata)(exprId, qualifier)
   }
 
-  def createAliasRef(child: Expression,
-                     name: String,
-                     exprId: ExprId = NamedExpression.newExprId,
-                     qualifier: Option[String] = None,
-                     explicitMetadata: Option[Metadata] = None,
-                     namedExpr : Option[NamedExpression] = None ) : Alias = {
+  def createScalaUDF(s: ScalaUDF, reference: AttributeReference): ScalaUDF = {
+    ScalaUDF(s.function, s.dataType, Seq(reference), s.inputTypes)
+  }
 
-      Alias(child, name)(exprId, qualifier, explicitMetadata)
+  def createExprCode(code: String, isNull: String, value: String, dataType: DataType = null
+  ): ExprCode = {
+    ExprCode(code, isNull, value)
+  }
+
+  def createAliasRef(child: Expression,
+      name: String,
+      exprId: ExprId = NamedExpression.newExprId,
+      qualifier: Option[String] = None,
+      explicitMetadata: Option[Metadata] = None,
+      namedExpr : Option[NamedExpression] = None ) : Alias = {
+
+    Alias(child, name)(exprId, qualifier, explicitMetadata)
   }
 
   def getExplainCommandObj() : ExplainCommand = {

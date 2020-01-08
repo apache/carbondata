@@ -110,10 +110,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         RewriteCorrelatedScalarSubquery,
         EliminateSerialization,
         SparkSQLUtil.getRemoveRedundantAliasesObj(),
-        RemoveRedundantProject,
-        SimplifyCreateStructOps,
-        SimplifyCreateArrayOps,
-        SimplifyCreateMapOps) ++
+        RemoveRedundantProject) ++
                                             extendedOperatorOptimizationRules: _*) ::
     Batch(
       "Check Cartesian Products", Once,

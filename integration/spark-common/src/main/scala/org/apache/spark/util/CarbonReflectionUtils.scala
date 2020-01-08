@@ -17,24 +17,22 @@
 
 package org.apache.spark.util
 
-import java.lang.reflect.Method
-
 import scala.reflect.runtime._
 import scala.reflect.runtime.universe._
 
-import org.apache.spark.{SPARK_VERSION, SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.Analyzer
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.parser.AstBuilder
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.plans.physical.Partitioning
 import org.apache.spark.sql.execution.{RowDataSourceScanExec, SparkPlan}
-import org.apache.spark.sql.execution.command.RunnableCommand
+import org.apache.spark.sql.execution.command.{AlterTableAddColumnsCommand}
 import org.apache.spark.sql.execution.datasources.{DataSource, LogicalRelation}
 import org.apache.spark.sql.internal.HiveSerDe
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
@@ -60,45 +58,19 @@ object CarbonReflectionUtils {
   def getField[T: TypeTag : reflect.ClassTag](name: String, obj: T): Any = {
     val im = rm.reflect(obj)
     im.symbol.typeSignature.members.find(_.name.toString.equals(name))
-      .map(l => im.reflectField(l.asTerm).get).getOrElse(null)
+      .map(l => im.reflectField(l.asTerm).get).orNull
   }
 
   def getUnresolvedRelation(
       tableIdentifier: TableIdentifier,
       tableAlias: Option[String] = None): UnresolvedRelation = {
-    val className = "org.apache.spark.sql.catalyst.analysis.UnresolvedRelation"
-    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      createObject(
-        className,
-        tableIdentifier,
-        tableAlias)._1.asInstanceOf[UnresolvedRelation]
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      createObject(
-        className,
-        tableIdentifier)._1.asInstanceOf[UnresolvedRelation]
-    } else {
-      throw new UnsupportedOperationException(s"Unsupported Spark version $SPARK_VERSION")
-    }
+    UnresolvedRelation(tableIdentifier)
   }
 
   def getSubqueryAlias(sparkSession: SparkSession, alias: Option[String],
       relation: LogicalPlan,
       view: Option[TableIdentifier]): SubqueryAlias = {
-    val className = "org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias"
-    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      createObject(
-        className,
-        alias.getOrElse(""),
-        relation,
-        Option(view))._1.asInstanceOf[SubqueryAlias]
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      createObject(
-        className,
-        alias.getOrElse(""),
-        relation)._1.asInstanceOf[SubqueryAlias]
-    } else {
-      throw new UnsupportedOperationException("Unsupported Spark version")
-    }
+    SubqueryAlias(alias.getOrElse(""), relation)
   }
 
   def getInsertIntoCommand(table: LogicalPlan,
@@ -106,58 +78,23 @@ object CarbonReflectionUtils {
       query: LogicalPlan,
       overwrite: Boolean,
       ifPartitionNotExists: Boolean): InsertIntoTable = {
-    val className = "org.apache.spark.sql.catalyst.plans.logical.InsertIntoTable"
-    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      val overwriteOptions = createObject(
-        "org.apache.spark.sql.catalyst.plans.logical.OverwriteOptions",
-        overwrite.asInstanceOf[Object], Map.empty.asInstanceOf[Object])._1.asInstanceOf[Object]
-      createObject(
-        className,
-        table,
-        partition,
-        query,
-        overwriteOptions,
-        ifPartitionNotExists.asInstanceOf[Object])._1.asInstanceOf[InsertIntoTable]
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2") ) {
-      createObject(
-        className,
-        table,
-        partition,
-        query,
-        overwrite.asInstanceOf[Object],
-        ifPartitionNotExists.asInstanceOf[Object])._1.asInstanceOf[InsertIntoTable]
-    } else {
-      throw new UnsupportedOperationException("Unsupported Spark version")
-    }
+    InsertIntoTable(
+      table,
+      partition,
+      query,
+      overwrite,
+      ifPartitionNotExists)
   }
 
   def getLogicalRelation(relation: BaseRelation,
       expectedOutputAttributes: Seq[Attribute],
       catalogTable: Option[CatalogTable],
       isStreaming: Boolean): LogicalRelation = {
-    val className = "org.apache.spark.sql.execution.datasources.LogicalRelation"
-    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      createObject(
-        className,
-        relation,
-        Some(expectedOutputAttributes),
-        catalogTable)._1.asInstanceOf[LogicalRelation]
-    } else if (SparkUtil.isSparkVersionEqualTo("2.2")) {
-      createObject(
-        className,
-        relation,
-        expectedOutputAttributes,
-        catalogTable)._1.asInstanceOf[LogicalRelation]
-    } else if (SparkUtil.isSparkVersionEqualTo("2.3")) {
-      createObject(
-        className,
-        relation,
-        expectedOutputAttributes,
-        catalogTable,
-        isStreaming.asInstanceOf[Object])._1.asInstanceOf[LogicalRelation]
-    } else {
-      throw new UnsupportedOperationException("Unsupported Spark version")
-    }
+    new LogicalRelation(
+      relation,
+      expectedOutputAttributes.asInstanceOf[Seq[AttributeReference]],
+      catalogTable,
+      isStreaming)
   }
 
 
@@ -208,46 +145,28 @@ object CarbonReflectionUtils {
   def getSessionState(sparkContext: SparkContext,
       carbonSession: Object,
       useHiveMetaStore: Boolean): Any = {
-    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+    if (useHiveMetaStore) {
       val className = sparkContext.conf.get(
         CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
-        "org.apache.spark.sql.hive.CarbonSessionState")
-      createObject(className, carbonSession)._1
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      if (useHiveMetaStore) {
-        val className = sparkContext.conf.get(
-          CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
-          "org.apache.spark.sql.hive.CarbonSessionStateBuilder")
-        val tuple = createObject(className, carbonSession, None)
-        val method = tuple._2.getMethod("build")
-        method.invoke(tuple._1)
-      } else {
-        val className = sparkContext.conf.get(
-          CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
-          "org.apache.spark.sql.hive.CarbonInMemorySessionStateBuilder")
-        val tuple = createObject(className, carbonSession, None)
-        val method = tuple._2.getMethod("build")
-        method.invoke(tuple._1)
-      }
+        "org.apache.spark.sql.hive.CarbonSessionStateBuilder")
+      val tuple = createObject(className, carbonSession, None)
+      val method = tuple._2.getMethod("build")
+      method.invoke(tuple._1)
     } else {
-      throw new UnsupportedOperationException("Spark version not supported")
+      val className = sparkContext.conf.get(
+        CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
+        "org.apache.spark.sql.hive.CarbonInMemorySessionStateBuilder")
+      val tuple = createObject(className, carbonSession, None)
+      val method = tuple._2.getMethod("build")
+      method.invoke(tuple._1)
     }
   }
 
   def hasPredicateSubquery(filterExp: Expression) : Boolean = {
-    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
-      val tuple = Class.forName("org.apache.spark.sql.catalyst.expressions.PredicateSubquery")
-      val method = tuple.getMethod("hasPredicateSubquery", classOf[Expression])
-      val hasSubquery : Boolean = method.invoke(tuple, filterExp).asInstanceOf[Boolean]
-      hasSubquery
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-      val tuple = Class.forName("org.apache.spark.sql.catalyst.expressions.SubqueryExpression")
-      val method = tuple.getMethod("hasInOrExistsSubquery", classOf[Expression])
-      val hasSubquery : Boolean = method.invoke(tuple, filterExp).asInstanceOf[Boolean]
-      hasSubquery
-    } else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    val tuple = Class.forName("org.apache.spark.sql.catalyst.expressions.SubqueryExpression")
+    val method = tuple.getMethod("hasInOrExistsSubquery", classOf[Expression])
+    val hasSubquery : Boolean = method.invoke(tuple, filterExp).asInstanceOf[Boolean]
+    hasSubquery
   }
 
   def getDescribeTableFormattedField[T: TypeTag : reflect.ClassTag](obj: T): Boolean = {
@@ -265,19 +184,10 @@ object CarbonReflectionUtils {
       rdd: RDD[InternalRow],
       partition: Partitioning,
       metadata: Map[String, String]): RowDataSourceScanExec = {
-    val className = "org.apache.spark.sql.execution.RowDataSourceScanExec"
-    if (SparkUtil.isSparkVersionEqualTo("2.1") || SparkUtil.isSparkVersionEqualTo("2.2")) {
-      createObject(className, output, rdd, relation.relation,
-        partition, metadata,
-        relation.catalogTable.map(_.identifier))._1.asInstanceOf[RowDataSourceScanExec]
-    } else if (SparkUtil.isSparkVersionXandAbove("2.3")) {
-      createObject(className, output, output.map(output.indexOf),
-        pushedFilters.toSet, handledFilters.toSet, rdd,
-        relation.relation,
-        relation.catalogTable.map(_.identifier))._1.asInstanceOf[RowDataSourceScanExec]
-    } else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    RowDataSourceScanExec(output, output.map(output.indexOf),
+      pushedFilters.toSet, handledFilters.toSet, rdd,
+      relation.relation,
+      relation.catalogTable.map(_.identifier))
   }
 
   def invokewriteAndReadMethod(dataSourceObj: DataSource,
@@ -287,25 +197,7 @@ object CarbonReflectionUtils {
       mode: SaveMode,
       query: LogicalPlan,
       physicalPlan: SparkPlan): BaseRelation = {
-    if (SparkUtil.isSparkVersionEqualTo("2.2")) {
-      val method: Method = dataSourceObj.getClass
-        .getMethod("writeAndRead", classOf[SaveMode], classOf[DataFrame])
-      method.invoke(dataSourceObj, mode, dataFrame)
-        .asInstanceOf[BaseRelation]
-    } else if (SparkUtil.isSparkVersionEqualTo("2.3")) {
-      val method: Method = dataSourceObj.getClass
-        .getMethod("writeAndRead",
-          classOf[SaveMode],
-          classOf[LogicalPlan],
-          classOf[Seq[String]],
-          classOf[SparkPlan])
-      // since spark 2.3.2 version (SPARK-PR#22346),
-      // change 'query.output' to 'query.output.map(_.name)'
-      method.invoke(dataSourceObj, mode, query, query.output.map(_.name), physicalPlan)
-        .asInstanceOf[BaseRelation]
-    } else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    dataSourceObj.writeAndRead(mode, query, query.output.map(_.name), physicalPlan)
   }
 
   /**
@@ -316,9 +208,7 @@ object CarbonReflectionUtils {
    */
   def invokeAlterTableAddColumn(table: TableIdentifier,
       colsToAdd: Seq[StructField]): Object = {
-    val caseClassName = "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand"
-    CarbonReflectionUtils.createObject(caseClassName, table, colsToAdd)
-      ._1.asInstanceOf[RunnableCommand]
+    AlterTableAddColumnsCommand(table, colsToAdd)
   }
 
   def createSingleObject(className: String): Any = {
@@ -385,16 +275,6 @@ object CarbonReflectionUtils {
 
   def invokeAnalyzerExecute(analyzer: Analyzer,
       plan: LogicalPlan): LogicalPlan = {
-    if (SparkUtil.isSparkVersionEqualTo("2.1") || SparkUtil.isSparkVersionEqualTo("2.2")) {
-      val method: Method = analyzer.getClass
-        .getMethod("execute", classOf[LogicalPlan])
-      method.invoke(analyzer, plan).asInstanceOf[LogicalPlan]
-    } else if (SparkUtil.isSparkVersionEqualTo("2.3")) {
-      val method: Method = analyzer.getClass
-        .getMethod("executeAndCheck", classOf[LogicalPlan])
-      method.invoke(analyzer, plan).asInstanceOf[LogicalPlan]
-    } else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    analyzer.executeAndCheck(plan)
   }
 }

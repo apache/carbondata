@@ -38,5 +38,5 @@ case class CustomDeterministicExpression(nonDt: Expression ) extends Expression 
 
   override def genCode(ctx: CodegenContext): ExprCode = nonDt.genCode(ctx)
 
-  override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = ev.copy("")
+  override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = ev.copy()
 }
