@@ -179,13 +179,12 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     // Empty database
     sql("use cache_empty_db").collect()
     val result1 = sql("show metacache").collect()
-    assertResult(2)(result1.length)
-    assertResult(Row("cache_empty_db", "ALL", "0 B", "0 B", "0 B", "DRIVER"))(result1(1))
+    assertResult(0)(result1.length)
 
     // Database with 3 tables but only 2 are in cache
     sql("use cache_db").collect()
     val result2 = sql("show metacache").collect()
-    assertResult(4)(result2.length)
+    assertResult(3)(result2.length)
 
     // Make sure PreAgg tables are not in SHOW METADATA
     sql("use default").collect()

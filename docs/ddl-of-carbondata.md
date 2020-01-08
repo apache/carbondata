@@ -1027,6 +1027,14 @@ Users can specify which columns to include and exclude for local dictionary gene
   datamaps. This also shows the cache usage by all the tables and children tables in the current 
   database.
   
+   ```sql
+    SHOW EXECUTOR METACACHE
+   ``` 
+    
+   This shows the overall memory consumed by the cache in each executor of the Index
+   Server. This command is only allowed when the carbon property `carbon.enable.index.server` 
+   is set to true.
+  
   ```sql
   SHOW METACACHE ON TABLE tableName
   ```
