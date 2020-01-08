@@ -40,11 +40,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
@@ -108,11 +110,13 @@ import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.IndexHeader;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.codec.binary.Base64;
@@ -929,10 +933,15 @@ public final class CarbonUtil {
       boolean forceReadDataFileFooter) throws IOException {
     BlockletDetailInfo detailInfo = tableBlockInfo.getDetailInfo();
     if (detailInfo == null || forceReadDataFileFooter) {
-      AbstractDataFileFooterConverter fileFooterConverter =
-          DataFileFooterConverterFactory.getInstance()
-              .getDataFileFooterConverter(tableBlockInfo.getVersion());
-      return fileFooterConverter.readDataFileFooter(tableBlockInfo);
+      if (tableBlockInfo.getBlockOffset() == 0) {
+        // caller does not set the footer offset, so read index file and convert to footer
+        return getDataFileFooterFromIndexFile(tableBlockInfo);
+      } else {
+        AbstractDataFileFooterConverter fileFooterConverter =
+            DataFileFooterConverterFactory.getInstance()
+                .getDataFileFooterConverter(tableBlockInfo.getVersion());
+        return fileFooterConverter.readDataFileFooter(tableBlockInfo);
+      }
     } else {
       DataFileFooter fileFooter = new DataFileFooter();
       fileFooter.setSchemaUpdatedTimeStamp(detailInfo.getSchemaUpdatedTimeStamp());
@@ -946,6 +955,32 @@ public final class CarbonUtil {
       fileFooter.setSegmentInfo(segmentInfo);
       return fileFooter;
     }
+  }
+
+  /**
+   * Read index file and convert to footer.
+   * Currently, this is used only in INSERT STAGE command to load data files written by SDK
+   */
+  private static DataFileFooter getDataFileFooterFromIndexFile(TableBlockInfo tableBlockInfo)
+      throws IOException {
+    String filePath = tableBlockInfo.getFilePath();
+    String dataFilePath = tableBlockInfo.getFilePath();
+    String shardName = CarbonTablePath.getShardName(filePath);
+    String indexFilePath = String
+        .format("%s/%s%s", CarbonTablePath.getParentPath(filePath), shardName,
+            CarbonCommonConstants.UPDATE_INDEX_FILE_EXT);
+    ColumnarFormatVersion version = ColumnarFormatVersion.valueOf((short)3);
+    AbstractDataFileFooterConverter footerConverter =
+        DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
+    List<DataFileFooter> footers = footerConverter.getIndexInfo(indexFilePath, null, true);
+
+    // find the footer of the input data file (tableBlockInfo)
+    for (DataFileFooter footer : footers) {
+      if (footer.getBlockInfo().getTableBlockInfo().getFilePath().equals(dataFilePath)) {
+        return footer;
+      }
+    }
+    throw new RuntimeException("Footer not found in index file");
   }
 
   /**

@@ -2575,8 +2575,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         .getFileHolder(FileFactory.getFileType(dataFile.getPath))
       val buffer = fileReader
         .readByteBuffer(FileFactory.getUpdatedFilePath(dataFile.getPath), dataFile.getSize - 8, 8)
-      val footerReader = new CarbonFooterReaderV3(
-        dataFile.getAbsolutePath, dataFile.getSize, buffer.getLong)
+      val footerReader = new CarbonFooterReaderV3(dataFile.getAbsolutePath, buffer.getLong)
       val footer = footerReader.readFooterVersion3
       // without page_size configuration there will be only 1 page, now it will be more.
       assert(footer.getBlocklet_info_list3.get(0).number_number_of_pages != 1)

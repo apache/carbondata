@@ -170,7 +170,7 @@ class DataFile {
     this.footerOffset = buffer.getLong();
     this.footerSizeInBytes = this.fileSizeInBytes - footerOffset;
     CarbonFooterReaderV3 footerReader =
-        new CarbonFooterReaderV3(dataFile.getAbsolutePath(), dataFile.getSize(), footerOffset);
+        new CarbonFooterReaderV3(dataFile.getAbsolutePath(), footerOffset);
     return footerReader.readFooterVersion3();
   }
 

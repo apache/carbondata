@@ -112,4 +112,34 @@ public class CarbonIndexFileReader {
   public boolean hasNext() throws IOException {
     return thriftReader.hasNext();
   }
+
+  /**
+   * Return the footer offset of the given dataFileName in the index file
+   *
+   * @param indexFilePath path of the index file
+   * @param dataFileName file name of the data file to match in the index file
+   * @param conf hadoop configuration
+   * @return footer offset of the data file
+   * @throws IOException
+   */
+  public static long readFooterOffsetFromIndexFile(String indexFilePath, String dataFileName,
+      Configuration conf) throws IOException {
+    CarbonIndexFileReader indexReader = new CarbonIndexFileReader(conf);
+    try {
+      // open the reader
+      indexReader.openThriftReader(indexFilePath);
+      // read the index header and ignore it
+      indexReader.readIndexHeader();
+      // read the block info from file and find the footer offset
+      while (indexReader.hasNext()) {
+        BlockIndex blockIndex = indexReader.readBlockIndexInfo();
+        if (blockIndex.getFile_name().equals(dataFileName)) {
+          return blockIndex.getOffset();
+        }
+      }
+    } finally {
+      indexReader.closeThriftReader();
+    }
+    return -1;
+  }
 }

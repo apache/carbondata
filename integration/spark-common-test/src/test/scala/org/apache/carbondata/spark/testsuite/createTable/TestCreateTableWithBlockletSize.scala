@@ -61,8 +61,7 @@ class TestCreateTableWithBlockletSize extends QueryTest with BeforeAndAfterAll {
         .getFileHolder(FileFactory.getFileType(dataFile.getPath))
       val buffer = fileReader
         .readByteBuffer(FileFactory.getUpdatedFilePath(dataFile.getPath), dataFile.getSize - 8, 8)
-      val footerReader = new CarbonFooterReaderV3(
-        dataFile.getAbsolutePath, dataFile.getSize, buffer.getLong)
+      val footerReader = new CarbonFooterReaderV3(dataFile.getAbsolutePath, buffer.getLong)
       val footer = footerReader.readFooterVersion3
       assertResult(2)(footer.blocklet_index_list.size)
       assertResult(2)(footer.blocklet_info_list3.size)

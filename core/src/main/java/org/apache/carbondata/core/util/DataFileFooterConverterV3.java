@@ -64,8 +64,7 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(tableBlockInfo.getFilePath());
     FileHeader fileHeader = carbonHeaderReader.readHeader();
     CarbonFooterReaderV3 reader =
-        new CarbonFooterReaderV3(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockLength(),
-            tableBlockInfo.getBlockOffset());
+        new CarbonFooterReaderV3(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
     FileFooter3 footer = reader.readFooterVersion3();
     return convertDataFileFooter(fileHeader, footer);
   }
