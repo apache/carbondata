@@ -237,9 +237,9 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
   $ mvn -DskipTests -P{spark-version} -Dspark.version={spark-version-number} -Dhadoop.version={hadoop-version-number} clean package
   ```
   Replace the spark and hadoop version with the version used in your cluster.
-  For example, if you are using Spark 2.2.1 and Hadoop 2.7.2, you would like to compile using:
+  For example, if you are using Spark 2.4.4, you would like to compile using:
   ```
-  mvn -DskipTests -Pspark-2.2 -Dspark.version=2.2.1 -Dhadoop.version=2.7.2 clean package
+  mvn -DskipTests -Pspark-2.4 -Dspark.version=2.4.4 -Dhadoop.version=2.7.2 clean package
   ```
 
   Secondly: Create a folder named 'carbondata' under $PRESTO_HOME$/plugin and

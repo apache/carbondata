@@ -24,6 +24,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
   val dataMapName = "bloom_dm"
 
   override protected def beforeAll(): Unit = {
+    sqlContext.sparkContext.setLogLevel("info")
     deleteFile(bigFile)
     new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     createFile(bigFile, line = 2000)

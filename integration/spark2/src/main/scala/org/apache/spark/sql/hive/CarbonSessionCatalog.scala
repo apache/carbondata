@@ -26,11 +26,9 @@ import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceSta
 import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema => ColumnSchema}
 
 /**
- * This interface defines those common api used by carbon for spark-2.1 and spark-2.2 integration,
+ * This interface defines those common api used by carbon for spark integration,
  * but are not defined in SessionCatalog or HiveSessionCatalog to give contract to the
  * Concrete implementation classes.
- * For example CarbonSessionCatalog defined in 2.1 and 2.2.
- *
  */
 @InterfaceAudience.Internal
 @InterfaceStability.Stable

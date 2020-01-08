@@ -37,11 +37,11 @@
     - [CLOSE STREAM](#close-stream)
 
 ## Quick example
-Download and unzip spark-2.2.0-bin-hadoop2.7.tgz, and export $SPARK_HOME
+Download and unzip spark-2.4.4-bin-hadoop2.7.tgz, and export $SPARK_HOME
 
-Package carbon jar, and copy assembly/target/scala-2.11/carbondata_2.11-1.3.0-SNAPSHOT-shade-hadoop2.7.2.jar to $SPARK_HOME/jars
+Package carbon jar, and copy assembly/target/scala-2.11/carbondata_2.11-1.6.0-SNAPSHOT-shade-hadoop2.7.2.jar to $SPARK_HOME/jars
 ```shell
-mvn clean package -DskipTests -Pspark-2.2
+mvn clean package -DskipTests -Pspark-2.4
 ```
 
 Start a socket data server in a terminal

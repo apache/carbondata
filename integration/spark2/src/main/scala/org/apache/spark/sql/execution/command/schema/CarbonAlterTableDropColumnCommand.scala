@@ -151,13 +151,12 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       val cols = carbonTable.getCreateOrderColumn().asScala
         .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema }
         .filterNot(column => delCols.contains(column))
-      // In case of spark2.2 and above and , when we call
+      // When we call
       // alterExternalCatalogForTableWithUpdatedSchema to update the new schema to external catalog
       // in case of drop column, spark gets the catalog table and then it itself adds the partition
       // columns if the table is partition table for all the new data schema sent by carbon,
       // so there will be duplicate partition columns, so send the columns without partition columns
-      val columns = if (SparkUtil.isSparkVersionXandAbove("2.2") &&
-                        carbonTable.isHivePartitionTable) {
+      val columns = if (carbonTable.isHivePartitionTable) {
         val partitionColumns = partitionInfo.getColumnSchemaList.asScala
         val carbonColumnsWithoutPartition = cols.filterNot(col => partitionColumns.contains(col))
         Some(carbonColumnsWithoutPartition)
