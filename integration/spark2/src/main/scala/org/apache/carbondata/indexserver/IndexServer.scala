@@ -57,7 +57,7 @@ trait ServerInterface {
   /**
    * Get the cache size for the specified tables.
    */
-  def showCache(tableIds: String) : Array[String]
+  def showCache(tableIds: String, executorCache: Boolean) : Array[String]
 
   /**
    * Invalidate the cache for the specified segments only. Used in case of compaction/Update/Delete.
@@ -202,15 +202,22 @@ object IndexServer extends ServerInterface {
     }
   }
 
-  override def showCache(tableId: String = ""): Array[String] = doAs {
-    val jobgroup: String = "Show Cache " + (tableId match {
-      case "" => "for all tables"
-      case table => s"for $table"
-    })
-    val sparkSession = SparkSQLUtil.getSparkSession
-    sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", UUID.randomUUID().toString)
-    sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
-    new DistributedShowCacheRDD(sparkSession, tableId).collect()
+  override def showCache(tableId: String = "", executorCache: Boolean): Array[String] = {
+    doAs {
+      val jobgroup: String = "Show Cache " + (tableId match {
+        case "" =>
+          if (executorCache) {
+            "for all the Executors."
+          } else {
+            "for all tables."
+          }
+        case table => s"for $table"
+      })
+      val sparkSession = SparkSQLUtil.getSparkSession
+      sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", UUID.randomUUID().toString)
+      sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
+      new DistributedShowCacheRDD(sparkSession, tableId, executorCache).collect()
+    }
   }
 
   def main(args: Array[String]): Unit = {

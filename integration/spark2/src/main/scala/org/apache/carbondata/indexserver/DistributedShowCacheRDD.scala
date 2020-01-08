@@ -18,7 +18,7 @@ package org.apache.carbondata.indexserver
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.{Partition, SparkEnv, TaskContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.DistributionUtil
 
@@ -27,7 +27,9 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactor
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
-class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableUniqueId: String)
+class DistributedShowCacheRDD(@transient private val ss: SparkSession,
+    tableUniqueId: String,
+    executorCache: Boolean)
   extends CarbonRDD[String](ss, Nil) {
 
   val executorsList: Array[String] = DistributionUtil
@@ -71,10 +73,20 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession, tableUniq
                 .getTableUniqueName
             } else {
               dataMap.getDataMapSchema.getRelationIdentifier.getDatabaseName + "_" + dataMap
-              .getDataMapSchema.getDataMapName
+                .getDataMapSchema.getDataMapName
             }
-            s"${ dataMapName }:${ dataMap.getDataMapFactory.getCacheSize }:${
-              dataMap.getDataMapSchema.getProviderName}"
+            if (executorCache) {
+              val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
+                SparkEnv.get.blockManager.blockManagerId.executorId
+              }"
+              s"${ executorIP }:${ dataMap.getDataMapFactory.getCacheSize }:${
+                dataMap.getDataMapSchema.getProviderName
+              }"
+            } else {
+              s"${dataMapName}:${dataMap.getDataMapFactory.getCacheSize}:${
+                dataMap.getDataMapSchema.getProviderName
+              }"
+            }
           }
         sizeAndIndexLengths
     }.flatten.toIterator

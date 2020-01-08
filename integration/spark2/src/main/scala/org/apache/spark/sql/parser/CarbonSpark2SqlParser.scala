@@ -549,9 +549,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val showCache: Parser[LogicalPlan] =
-    SHOW ~> METACACHE ~> opt(ontable) <~ opt(";") ^^ {
-      case table =>
-        CarbonShowCacheCommand(table)
+    (SHOW ~> opt(EXECUTOR) <~ METACACHE) ~ opt(ontable) <~ opt(";") ^^ {
+      case (executor ~ table) =>
+        CarbonShowCacheCommand(executor.isDefined, table)
     }
 
   protected lazy val dropCache: Parser[LogicalPlan] =
