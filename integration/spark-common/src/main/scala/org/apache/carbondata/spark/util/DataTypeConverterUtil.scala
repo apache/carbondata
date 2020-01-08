@@ -17,9 +17,12 @@
 
 package org.apache.carbondata.spark.util
 
+import scala.collection.JavaConverters._
+
+import org.apache.spark.sql.execution.command.Field
 import org.apache.spark.sql.util.CarbonException
 
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.datatype.{ArrayType, DataType, DataTypes, DecimalType, MapType, StructField, StructType}
 import org.apache.carbondata.format.{DataType => ThriftDataType}
 
 object DataTypeConverterUtil {
@@ -84,6 +87,59 @@ object DataTypeConverterUtil {
         } else {
           CarbonException.analysisException(s"Unsupported data type: $dataType")
         }
+    }
+  }
+
+  def convertToCarbonType(field: Field): DataType = {
+    this.convertToCarbonType(field.dataType.get) match {
+      case _: DecimalType =>
+        if (field.scale == 0) {
+          DataTypes.createDefaultDecimalType()
+        } else {
+          DataTypes.createDecimalType(field.precision, field.scale)
+        }
+      case _: MapType =>
+        field.children match {
+          case Some(List(kv)) =>
+            kv.children match {
+              case Some(List(k, v)) =>
+                DataTypes.createMapType(this.convertToCarbonType(k), this.convertToCarbonType(v))
+            }
+          case _ =>
+            CarbonException.analysisException(s"Unsupported map data type: ${field.column}")
+        }
+      case _: ArrayType =>
+        field.children match {
+          case Some(List(v)) =>
+            DataTypes.createArrayType(this.convertToCarbonType(v))
+          case None =>
+            CarbonException.analysisException(s"Unsupported array data type: ${field.column}")
+        }
+      case _: StructType =>
+        field.children match {
+          case Some(fs) =>
+            val subFields = fs.map(f =>
+              this.convertSubFields(f.column, this.convertToCarbonType(f), f.children.orNull)
+            )
+            DataTypes.createStructType(subFields.asJava)
+          case None =>
+            CarbonException.analysisException(s"Unsupported struct data type: ${field.column}")
+        }
+      case other: DataType => other
+    }
+  }
+
+  private def convertSubFields(name: String, dataType: DataType,
+      children: List[Field]): StructField = {
+    val actualName = name.split("\\.").last
+    children match {
+      case null | Nil =>
+        new StructField(actualName, dataType)
+      case other =>
+        val subFields = other.map(f =>
+          this.convertSubFields(f.column, this.convertToCarbonType(f), f.children.orNull)
+        )
+        new StructField(actualName, dataType, subFields.asJava)
     }
   }
 

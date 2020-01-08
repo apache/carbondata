@@ -16,6 +16,7 @@
  */
 package org.apache.spark.sql.execution.strategy
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql._
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -38,7 +39,8 @@ import org.apache.spark.util.{CarbonReflectionUtils, DataMapUtil, FileUtils, Spa
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
   /**
    * Carbon strategies for ddl commands
@@ -173,10 +175,16 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           // TODO: remove this else if check once the 2.1 version is unsupported by carbon
         } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
           val structField = (alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols)
-            .map {
-              a =>
-                StructField(a.column, CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(
-                  DataTypeUtil.valueOf(a.dataType.get)))
+            .map { f =>
+              val structField =
+                StructField(f.column, CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(
+                  DataTypeConverterUtil.convertToCarbonType(f))
+                )
+              if (StringUtils.isNotEmpty(f.columnComment)) {
+                structField.withComment(f.columnComment)
+              } else {
+                structField
+              }
             }
           val identifier = TableIdentifier(
             alterTableAddColumnsModel.tableName,

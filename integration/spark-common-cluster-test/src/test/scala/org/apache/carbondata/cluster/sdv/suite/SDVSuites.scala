@@ -168,8 +168,7 @@ class SDVSuites4 extends Suites with BeforeAndAfterAll {
 class SDVSuites5 extends Suites with BeforeAndAfterAll {
 
   val suites = new CreateTableUsingSparkCarbonFileFormatTestCase ::
-               new SparkCarbonDataSourceTestCase ::
-               new CarbonV1toV3CompatabilityTestCase :: Nil
+               new SparkCarbonDataSourceTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
