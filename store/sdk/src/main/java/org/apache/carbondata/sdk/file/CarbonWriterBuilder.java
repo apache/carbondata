@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -628,6 +629,9 @@ public class CarbonWriterBuilder {
     }
     if (this.schema == null) {
       throw new RuntimeException("schema should be set");
+    }
+    if (taskNo == null) {
+      taskNo = UUID.randomUUID().toString().replace("-", "");
     }
     CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setSdkWriterCores(numOfThreads);
