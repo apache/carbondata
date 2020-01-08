@@ -116,8 +116,19 @@ meaning that no matter how small the splits are they would be written to the fil
 102400KB which will mean if the size of the splits for a executor cross this value then they would
 be written to file.
 
-The user can set the location for these file by using 'carbon.indexserver.temp.path'. By default
+The user can set the location for these files by using 'carbon.indexserver.temp.path'. By default
 table path would be used to write the files.
+
+## Prepriming
+As each query is responsible for caching the pruned datamaps, thus a lot of execution time is wasted in reading the 
+files and caching the datmaps for the first query.
+To avoid this problem we have introduced Pre-Priming which allows each data manipulation command like load, insert etc 
+to fire a request to the index server to load the corresponding segments into the index server.
+When index server receives a request it checks whether the request is for pre-priming, if it is then the request is 
+processed in a new thread, and a dummy response is immediately returned to the client.
+Since pre-priming acts as an async call, it does not have any negative performance impacts. 
+
+The user can enable prepriming by using 'carbon.indexserver.enable.prepriming' = 'true/false'. By default this is set as false.
 
 ## Configurations
 
@@ -130,6 +141,8 @@ table path would be used to write the files.
 | carbon.index.server.port | NA | The port on which the index server is started. |
 | carbon.disable.index.server.fallback | false | Whether to enable/disable fallback for index server. Should be used for testing purposes only. Refer: [Fallback](#fallback)|
 |carbon.index.server.max.jobname.length|NA|The max length of the job to show in the index server service UI. For bigger queries this may impact performance as the whole string would be sent from JDBCServer to IndexServer.|
+|carbon.indexserver.enable.prepriming|false|Enable the use of prepriming in the Index Server to improve the performance of first time query.|
+
 
 
 ##### carbon.properties(IndexServer) 
