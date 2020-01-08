@@ -1044,47 +1044,10 @@ public final class DataTypeUtil {
    * @return returns the datatype based on the input string from json to deserialize the tableInfo
    */
   public static DataType valueOf(DataType dataType, int precision, int scale) {
-    if (DataTypes.STRING.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.STRING;
-    } else if (DataTypes.DATE.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.DATE;
-    } else if (DataTypes.TIMESTAMP.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.TIMESTAMP;
-    } else if (DataTypes.BOOLEAN.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.BOOLEAN;
-    } else if (DataTypes.BYTE.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.BYTE;
-    } else if (DataTypes.SHORT.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.SHORT;
-    } else if (DataTypes.SHORT_INT.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.SHORT_INT;
-    } else if (DataTypes.INT.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.INT;
-    } else if (DataTypes.LONG.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.LONG;
-    } else if (DataTypes.FLOAT.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.FLOAT;
-    } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.DOUBLE;
-    } else if (DataTypes.VARCHAR.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.VARCHAR;
-    } else if (DataTypes.NULL.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.NULL;
-    } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.BYTE_ARRAY;
-    } else if (DataTypes.BINARY.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.BINARY;
-    } else if (dataType.getName().equalsIgnoreCase("decimal")) {
+    if (DataTypes.isDecimal(dataType)) {
       return DataTypes.createDecimalType(precision, scale);
-    } else if (dataType.getName().equalsIgnoreCase("array")) {
-      return DataTypes.createDefaultArrayType();
-    } else if (dataType.getName().equalsIgnoreCase("struct")) {
-      return DataTypes.createDefaultStructType();
-    } else if (dataType.getName().equalsIgnoreCase("map")) {
-      return DataTypes.createDefaultMapType();
     } else {
-      throw new RuntimeException(
-          "create DataType with invalid dataType.getName(): " + dataType.getName());
+      return valueOf(dataType.getName());
     }
   }
 

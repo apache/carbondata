@@ -1038,14 +1038,52 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
       sql("alter table alter_hive add columns(add string)")
       sql("alter table alter_hive add columns (var map<string, string>)")
       sql("alter table alter_hive add columns (loves array<string>)")
+      sql("alter table alter_hive add columns (props struct<name:string, age:int>)")
       sql(
         s"""
            |insert into alter_hive partition(dt='par')
-           |select 'abc', 'banglore', map('age', '10', 'birth', '2020'), array('a', 'b', 'c')
+           |select 'abc', 'banglore', map('age', '10', 'birth', '2020'), array('a', 'b', 'c'), named_struct('name', 'abc', 'age', 10)
          """.stripMargin)
       checkAnswer(
-        sql("select * from alter_hive where dt='par'"),
-        Seq(Row("abc", "banglore", Map("age" -> "10", "birth" -> "2020"), Seq("a", "b", "c"), "par"))
+        sql("select name,add,var,loves,props.name,props.age,dt from alter_hive where dt='par'"),
+        Seq(Row("abc", "banglore", Map("age" -> "10", "birth" -> "2020"), Seq("a", "b", "c"), "abc", 10, "par"))
+      )
+    }
+  }
+
+  test("Alter table add complex column for hive table for spark version above 2.1") {
+    sql("drop table if exists alter_hive")
+    sql("create table alter_hive(name string) stored as rcfile")
+    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      sql("alter table alter_hive add columns (add1 string comment 'comment1')")
+      sql("alter table alter_hive add columns (add2 decimal)")
+      sql("alter table alter_hive add columns (add3 decimal(20,2))")
+      sql("alter table alter_hive add columns (arr1 array<string>)")
+      sql("alter table alter_hive add columns (arr2 array<array<string>>)")
+      sql("alter table alter_hive add columns (map1 map<string, string>)")
+      sql("alter table alter_hive add columns (map2 map<string, bigint>)")
+      sql("alter table alter_hive add columns (map3 map<string, map<string, int>>)")
+      sql("alter table alter_hive add columns (map4 map<string, array<string>>)")
+      sql("alter table alter_hive add columns (struct1 struct<name:string, age:int>)")
+      sql("alter table alter_hive add columns (struct2 struct<name:array<string>, age:int, props: map<string, string>>)")
+      sql("alter table alter_hive add columns (struct3 struct<s:struct<a:string, b:bigint>>)")
+      checkAnswer(
+        sql("desc alter_hive"),
+        Seq(
+          Row("name", "string", null),
+          Row("add1", "string", "comment1"),
+          Row("add2", "decimal(10,2)", null),
+          Row("add3", "decimal(20,2)", null),
+          Row("arr1", "array<string>", null),
+          Row("arr2", "array<array<string>>", null),
+          Row("map1", "map<string,string>", null),
+          Row("map2", "map<string,bigint>", null),
+          Row("map3", "map<string,map<string,int>>", null),
+          Row("map4", "map<string,array<string>>", null),
+          Row("struct1", "struct<name:string,age:int>", null),
+          Row("struct2", "struct<name:array<string>,age:int,props:map<string,string>>", null),
+          Row("struct3", "struct<s:struct<a:string,b:bigint>>", null)
+        )
       )
     }
   }
