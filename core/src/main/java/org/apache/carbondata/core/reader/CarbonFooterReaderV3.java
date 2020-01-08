@@ -19,12 +19,8 @@ package org.apache.carbondata.core.reader;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.FileFooter3;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
