@@ -356,7 +356,7 @@ class IndexDataMapRebuildRDD[K, V](
         val segmentPropertiesFetcher = DataMapStoreManager.getInstance().getDataMap(carbonTable,
           BlockletDataMapFactory.DATA_MAP_SCHEMA).getDataMapFactory
           .asInstanceOf[SegmentPropertiesFetcher]
-        val segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment.get)
+        val segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment.get, null)
 
         // we use task name as shard name to create the folder for this datamap
         val shardName = CarbonTablePath.getShardName(inputSplit.getAllSplits.get(0).getBlockPath)

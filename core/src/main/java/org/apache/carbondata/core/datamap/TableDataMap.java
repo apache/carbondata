@@ -115,11 +115,20 @@ public final class TableDataMap extends OperationEventListener {
       final List<PartitionSpec> partitions) throws IOException {
     final List<ExtendedBlocklet> blocklets = new ArrayList<>();
     List<Segment> segments = getCarbonSegments(allsegments);
-    final Map<Segment, List<DataMap>> dataMaps = dataMapFactory.getDataMaps(segments);
+    final Map<Segment, List<DataMap>> dataMaps;
+    if (filter == null || filter.isEmpty()) {
+      dataMaps = dataMapFactory.getDataMaps(segments, null);
+    } else {
+      dataMaps = dataMapFactory.getDataMaps(segments, partitions);
+    }
     // for non-filter queries
     // for filter queries
     int totalFiles = 0;
     int datamapsCount = 0;
+    // In case if filter has matched partitions, update the segment list
+    if (null != partitions) {
+      segments = new ArrayList<>(dataMaps.keySet());
+    }
     for (Segment segment : segments) {
       for (DataMap dataMap: dataMaps.get(segment)) {
         totalFiles += dataMap.getNumberOfEntries();
@@ -171,7 +180,8 @@ public final class TableDataMap extends OperationEventListener {
       Map<Segment, List<DataMap>> dataMaps) throws IOException {
     for (Segment segment : segments) {
       List<Blocklet> pruneBlocklets = new ArrayList<>();
-      SegmentProperties segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment);
+      SegmentProperties segmentProperties =
+          segmentPropertiesFetcher.getSegmentProperties(segment, partitions);
       if (filter.isResolvedOnSegment(segmentProperties)) {
         for (DataMap dataMap : dataMaps.get(segment)) {
           pruneBlocklets.addAll(
@@ -391,7 +401,7 @@ public final class TableDataMap extends OperationEventListener {
     List<Blocklet> blocklets = new ArrayList<>();
     for (DataMap dataMap : dataMaps) {
       blocklets.addAll(dataMap.prune(filterExp,
-          segmentPropertiesFetcher.getSegmentProperties(distributable.getSegment()),
+          segmentPropertiesFetcher.getSegmentProperties(distributable.getSegment(), partitions),
           partitions));
     }
     BlockletSerializer serializer = new BlockletSerializer();
@@ -486,7 +496,8 @@ public final class TableDataMap extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     Map<String, Long> blockletToRowCountMap = new HashMap<>();
     for (Segment segment : segments) {
-      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getDataMapFactory().getDataMaps(segment);
+      List<CoarseGrainDataMap> dataMaps =
+          defaultDataMap.getDataMapFactory().getDataMaps(segment, partitions);
       for (CoarseGrainDataMap dataMap : dataMaps) {
         dataMap.getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
       }
@@ -507,7 +518,8 @@ public final class TableDataMap extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     long totalRowCount = 0L;
     for (Segment segment : segments) {
-      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getDataMapFactory().getDataMaps(segment);
+      List<CoarseGrainDataMap> dataMaps =
+          defaultDataMap.getDataMapFactory().getDataMaps(segment, partitions);
       for (CoarseGrainDataMap dataMap : dataMaps) {
         totalRowCount += dataMap.getRowCount(segment, partitions);
       }

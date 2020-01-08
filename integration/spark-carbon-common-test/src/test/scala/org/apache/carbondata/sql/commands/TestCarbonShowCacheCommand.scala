@@ -219,4 +219,52 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     assertResult(2)(result5.length)
     assertResult("5/5 index files cached")(result5(0).getString(2))
   }
+
+  test("test index files cached for table with single partition") {
+    sql("drop table if exists partitionTable")
+    sql("create table partitionTable(col1 int, col2 string) partitioned by (col3 string) stored as carbondata")
+    sql("insert into partitionTable values(1,'aa','bb'),(1,'aa1','bb1')")
+    sql("insert into partitionTable values(1,'cc','dd')")
+    sql("insert into partitionTable values(2,'aa','bb')")
+    sql("insert into partitionTable values(1,'aa','ee')")
+    checkAnswer(sql("select * from partitionTable where col3='bb'"), Seq(Row(1,"aa","bb"),Row(2,"aa","bb")))
+    var showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/5 index files cached"))
+    checkAnswer(sql("select * from partitionTable where col3='ee'"), Seq(Row(1,"aa","ee")))
+    showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("3/5 index files cached"))
+    sql("drop table if exists partitionTable")
+  }
+
+  test("test index files cached for table with multiple partition") {
+    sql("drop table if exists partitionTable")
+    sql("create table partitionTable(col1 int, col2 string) partitioned by (col3 string, col4 string, col5 int) stored as carbondata")
+    sql("insert into partitionTable values(1,'aa','bb','cc',1),(1,'aa1','bb1','ff',3)")
+    sql("insert into partitionTable values(1,'cc','dd','ff',3)")
+    sql("insert into partitionTable values(2,'aa','bb','gg',2)")
+    sql("insert into partitionTable values(1,'aa','ee','kk',4)")
+    checkAnswer(sql("select * from partitionTable where col3='bb' and col4='cc'"), Seq(Row(1,"aa","bb","cc",1)))
+    var showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("1/5 index files cached"))
+    checkAnswer(sql("select * from partitionTable where col3='bb'"), Seq(Row(1,"aa","bb","cc",1),Row(2,"aa","bb","gg",2)))
+    showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/5 index files cached"))
+    sql("drop table if exists partitionTable")
+  }
+
+  test("test index files cached for table with partition without filter") {
+    sql("drop table if exists partitionTable")
+    sql("create table partitionTable(col1 int, col2 string) partitioned by (col3 string) stored as carbondata")
+    sql("insert into partitionTable values(1,'aa','bb'),(1,'aa1','bb1')")
+    sql("insert into partitionTable values(1,'cc','dd')")
+    sql("insert into partitionTable values(2,'aa','bb')")
+    sql("insert into partitionTable values(1,'aa','ee')")
+    checkAnswer(sql("select * from partitionTable where col3='bb'"), Seq(Row(1,"aa","bb"),Row(2,"aa","bb")))
+    var showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/5 index files cached"))
+    sql("select * from partitionTable").collect()
+    showCache = sql("SHOW METACACHE on table partitionTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("5/5 index files cached"))
+    sql("drop table if exists partitionTable")
+  }
 }

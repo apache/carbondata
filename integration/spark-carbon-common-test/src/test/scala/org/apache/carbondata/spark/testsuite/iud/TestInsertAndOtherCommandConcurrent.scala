@@ -36,6 +36,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
@@ -310,7 +311,7 @@ class WaitingDataMapFactory(
 
   override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = ???
 
-  override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = ???
+  override def getDataMaps(segment: Segment, partitions: java.util.List[PartitionSpec]): util.List[CoarseGrainDataMap] = ???
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter = {
     new DataMapWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,

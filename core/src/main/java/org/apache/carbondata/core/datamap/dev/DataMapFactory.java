@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -81,11 +82,11 @@ public abstract class DataMapFactory<T extends DataMap> {
   /**
    * Get the datamap for all segments
    */
-  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments)
-      throws IOException {
+  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments,
+      List<PartitionSpec> partitions) throws IOException {
     Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
     for (Segment segment : segments) {
-      dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment));
+      dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment, partitions));
     }
     return dataMaps;
   }
@@ -93,7 +94,8 @@ public abstract class DataMapFactory<T extends DataMap> {
   /**
    * Get the datamap for segmentId
    */
-  public abstract List<T> getDataMaps(Segment segment) throws IOException;
+  public abstract List<T> getDataMaps(Segment segment, List<PartitionSpec> partitions)
+      throws IOException;
 
   /**
    * Get datamaps for distributable object.

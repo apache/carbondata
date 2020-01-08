@@ -80,7 +80,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     val defaultDataMap: TableDataMap = DataMapStoreManager.getInstance()
       .getDefaultDataMap(carbonTable)
     val dataMaps: List[DataMap[_ <: Blocklet]] = defaultDataMap.getDataMapFactory
-      .getDataMaps(segment).asScala.toList
+      .getDataMaps(segment, null).asScala.toList
     dataMaps
   }
 

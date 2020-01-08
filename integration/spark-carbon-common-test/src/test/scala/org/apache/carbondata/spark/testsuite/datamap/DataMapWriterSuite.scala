@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, Coa
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -51,7 +52,7 @@ class C2DataMapFactory(
 
   override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = ???
 
-  override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = ???
+  override def getDataMaps(segment: Segment, partitions: java.util.List[PartitionSpec]): util.List[CoarseGrainDataMap] = ???
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter =
     DataMapWriterSuite.dataMapWriterC2Mock(identifier, "testdm", segment, shardName)
