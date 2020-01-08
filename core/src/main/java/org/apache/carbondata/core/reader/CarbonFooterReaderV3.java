@@ -17,14 +17,10 @@
 
 package org.apache.carbondata.core.reader;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.format.FileFooter3;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -36,15 +32,11 @@ public class CarbonFooterReaderV3 {
   //Fact file path
   private String filePath;
 
-  // size of the file
-  private long fileSize;
-
   //start offset of the file footer
   private long footerOffset;
 
-  public CarbonFooterReaderV3(String filePath, long fileSize, long offset) {
+  public CarbonFooterReaderV3(String filePath, long offset) {
     this.filePath = filePath;
-    this.fileSize = fileSize;
     this.footerOffset = offset;
   }
 
@@ -57,21 +49,6 @@ public class CarbonFooterReaderV3 {
   public FileFooter3 readFooterVersion3() throws IOException {
     ThriftReader thriftReader = openThriftReader(filePath);
     thriftReader.open();
-
-    // If footer offset is 0, means caller does not set it,
-    // so we read it from the end of the file
-    if (footerOffset == 0) {
-      Configuration conf = FileFactory.getConfiguration();
-      try (DataInputStream reader = FileFactory.getDataInputStream(filePath, conf)) {
-        long skipBytes = fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
-        long skipped = reader.skip(skipBytes);
-        if (skipped != skipBytes) {
-          throw new IOException(String.format(
-              "expect skip %d bytes, but actually skipped %d bytes", skipBytes, skipped));
-        }
-        footerOffset = reader.readLong();
-      }
-    }
 
     // Set the offset from where it should read
     thriftReader.setReadOffset(footerOffset);

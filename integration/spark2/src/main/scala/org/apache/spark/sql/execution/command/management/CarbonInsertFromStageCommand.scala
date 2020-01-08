@@ -220,16 +220,14 @@ case class CarbonInsertFromStageCommand(
           }.map { future =>
             future.get()
           }
-        case SegmentStatus.INSERT_IN_PROGRESS =>
+        case other =>
           // delete entry in table status and load again
-          LOGGER.info(s"Segment $segmentId is in INSERT_IN_PROGRESS state, about to delete the " +
+          LOGGER.warn(s"Segment $segmentId is in $other state, about to delete the " +
                       s"segment entry and load again")
           val segmentToWrite = segments.filterNot(_.getLoadName.equals(segmentId))
           SegmentStatusManager.writeLoadDetailsIntoFile(
             CarbonTablePath.getTableStatusFilePath(table.getTablePath),
             segmentToWrite)
-        case other =>
-          throw new RuntimeException(s"Segment $segmentId is in unexpected state: $other")
       }
     } finally {
       if (lock != null) {

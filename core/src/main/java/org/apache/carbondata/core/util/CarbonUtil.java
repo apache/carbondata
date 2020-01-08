@@ -914,10 +914,15 @@ public final class CarbonUtil {
       boolean forceReadDataFileFooter) throws IOException {
     BlockletDetailInfo detailInfo = tableBlockInfo.getDetailInfo();
     if (detailInfo == null || forceReadDataFileFooter) {
-      AbstractDataFileFooterConverter fileFooterConverter =
-          DataFileFooterConverterFactory.getInstance()
-              .getDataFileFooterConverter(tableBlockInfo.getVersion());
-      return fileFooterConverter.readDataFileFooter(tableBlockInfo);
+      if (tableBlockInfo.getBlockOffset() == 0) {
+        // caller does not set the footer offset, so read index file and convert to footer
+        return getDataFileFooterFromIndexFile(tableBlockInfo);
+      } else {
+        AbstractDataFileFooterConverter fileFooterConverter =
+            DataFileFooterConverterFactory.getInstance()
+                .getDataFileFooterConverter(tableBlockInfo.getVersion());
+        return fileFooterConverter.readDataFileFooter(tableBlockInfo);
+      }
     } else {
       DataFileFooter fileFooter = new DataFileFooter();
       fileFooter.setSchemaUpdatedTimeStamp(detailInfo.getSchemaUpdatedTimeStamp());
@@ -931,6 +936,32 @@ public final class CarbonUtil {
       fileFooter.setSegmentInfo(segmentInfo);
       return fileFooter;
     }
+  }
+
+  /**
+   * Read index file and convert to footer.
+   * Currently, this is used only in INSERT STAGE command to load data files written by SDK
+   */
+  private static DataFileFooter getDataFileFooterFromIndexFile(TableBlockInfo tableBlockInfo)
+      throws IOException {
+    String filePath = tableBlockInfo.getFilePath();
+    String dataFilePath = tableBlockInfo.getFilePath();
+    String shardName = CarbonTablePath.getShardName(filePath);
+    String indexFilePath = String
+        .format("%s/%s%s", CarbonTablePath.getParentPath(filePath), shardName,
+            CarbonCommonConstants.UPDATE_INDEX_FILE_EXT);
+    ColumnarFormatVersion version = ColumnarFormatVersion.valueOf((short)3);
+    AbstractDataFileFooterConverter footerConverter =
+        DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
+    List<DataFileFooter> footers = footerConverter.getIndexInfo(indexFilePath, null, true);
+
+    // find the footer of the input data file (tableBlockInfo)
+    for (DataFileFooter footer : footers) {
+      if (footer.getBlockInfo().getTableBlockInfo().getFilePath().equals(dataFilePath)) {
+        return footer;
+      }
+    }
+    throw new RuntimeException("Footer not found in index file");
   }
 
   /**
