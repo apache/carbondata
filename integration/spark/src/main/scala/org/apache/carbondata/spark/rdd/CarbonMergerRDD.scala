@@ -37,6 +37,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, NodeInfo}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.util.CollectionAccumulator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
@@ -55,13 +56,13 @@ import org.apache.carbondata.core.mutate.UpdateVO
 import org.apache.carbondata.core.scan.expression
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatusManager, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonInputSplitWrapper, CarbonMultiBlockSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
-import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
@@ -73,7 +74,8 @@ class CarbonMergerRDD[K, V](
     @transient private val ss: SparkSession,
     result: MergeResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    carbonMergerMapping: CarbonMergerMapping)
+    carbonMergerMapping: CarbonMergerMapping,
+    segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
   extends CarbonRDD[(K, V)](ss, Nil) {
 
   ss.sparkContext.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -121,7 +123,8 @@ class CarbonMergerRDD[K, V](
       var mergeNumber = ""
       var exec: CarbonCompactionExecutor = null
       var processor: AbstractResultProcessor = null
-      var rawResultIteratorMap: util.Map[String, util.List[RawResultIterator]] = _
+      var rawResultIteratorMap: util.Map[String, util.List[RawResultIterator]] = new util
+      .HashMap[String, util.List[RawResultIterator]]()
       try {
         // sorting the table block info List.
         val splitList = if (null == rangeColumn || singleRange) {
@@ -202,8 +205,14 @@ class CarbonMergerRDD[K, V](
           new SparkDataTypeConverterImpl)
 
         // add task completion listener to clean up the resources
-        context.addTaskCompletionListener { _ =>
-          close()
+        context.addTaskCompletionListener {
+          new CompactionTaskCompletionListener(carbonLoadModel,
+            exec,
+            processor,
+            rawResultIteratorMap,
+            segmentMetaDataAccumulator,
+            queryStartTime
+          )
         }
         try {
           // fire a query and get the results.
@@ -263,33 +272,6 @@ class CarbonMergerRDD[K, V](
         case e: Exception =>
           LOGGER.error("Compaction Failed ", e)
           throw e
-      }
-
-      private def close(): Unit = {
-        deleteLocalDataFolders()
-        // close all the query executor service and clean up memory acquired during query processing
-        if (null != exec) {
-          LOGGER.info("Cleaning up query resources acquired during compaction")
-          exec.close(rawResultIteratorMap.get(CarbonCompactionUtil.UNSORTED_IDX), queryStartTime)
-          exec.close(rawResultIteratorMap.get(CarbonCompactionUtil.SORTED_IDX), queryStartTime)
-        }
-        // clean up the resources for processor
-        if (null != processor) {
-          LOGGER.info("Closing compaction processor instance to clean up loading resources")
-          processor.close()
-        }
-      }
-
-      private def deleteLocalDataFolders(): Unit = {
-        try {
-          LOGGER.info("Deleting local folder store location")
-          val isCompactionFlow = true
-          TableProcessingOperations
-            .deleteLocalDataLoadFolderLocation(carbonLoadModel, isCompactionFlow, false)
-        } catch {
-          case e: Exception =>
-            LOGGER.error(e)
-        }
       }
 
       var finished = false

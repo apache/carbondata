@@ -41,6 +41,7 @@ import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.{CarbonException, SparkSQLUtil}
+import org.apache.spark.util.CollectionAccumulator
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -56,6 +57,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsa
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.segmentmeta.{SegmentMetaDataInfo, SegmentMetaDataInfoStats}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -316,7 +318,10 @@ object CarbonDataRDDFactory {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
     var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
-
+    // accumulator to collect segment metadata
+    val segmentMetaDataAccumulator = sqlContext
+      .sparkContext
+      .collectionAccumulator[Map[String, SegmentMetaDataInfo]]
     // create new segment folder  in carbon store
     if (updateModel.isEmpty && carbonLoadModel.isCarbonTransactionalTable) {
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(carbonLoadModel.getSegmentId, carbonTable)
@@ -339,7 +344,8 @@ object CarbonDataRDDFactory {
             carbonLoadModel,
             updateModel,
             carbonTable,
-            hadoopConf)
+            hadoopConf,
+            segmentMetaDataAccumulator)
           res.foreach { resultOfSeg =>
             resultOfSeg.foreach { resultOfBlock =>
               if (resultOfBlock._2._1.getSegmentStatus == SegmentStatus.LOAD_FAILURE) {
@@ -373,9 +379,14 @@ object CarbonDataRDDFactory {
                 .sparkSession,
                 convertedRdd,
                 carbonLoadModel,
-                hadoopConf)
+                hadoopConf,
+                segmentMetaDataAccumulator)
             } else {
-              loadDataFrame(sqlContext, None, Some(convertedRdd), carbonLoadModel)
+              loadDataFrame(sqlContext,
+                None,
+                Some(convertedRdd),
+                carbonLoadModel,
+                segmentMetaDataAccumulator)
             }
           } else {
             if (dataFrame.isEmpty && isSortTable &&
@@ -383,16 +394,24 @@ object CarbonDataRDDFactory {
                 (sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) ||
                  sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT))) {
               DataLoadProcessBuilderOnSpark
-                .loadDataUsingRangeSort(sqlContext.sparkSession, carbonLoadModel, hadoopConf)
+                .loadDataUsingRangeSort(sqlContext.sparkSession,
+                  carbonLoadModel,
+                  hadoopConf,
+                  segmentMetaDataAccumulator)
             } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
               DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
                 dataFrame,
                 carbonLoadModel,
-                hadoopConf)
+                hadoopConf,
+                segmentMetaDataAccumulator)
             } else if (dataFrame.isDefined) {
-              loadDataFrame(sqlContext, dataFrame, None, carbonLoadModel)
+              loadDataFrame(sqlContext,
+                dataFrame,
+                None,
+                carbonLoadModel,
+                segmentMetaDataAccumulator)
             } else {
-              loadDataFile(sqlContext, carbonLoadModel, hadoopConf)
+              loadDataFile(sqlContext, carbonLoadModel, hadoopConf, segmentMetaDataAccumulator)
             }
           }
           val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
@@ -479,7 +498,17 @@ object CarbonDataRDDFactory {
             segmentDetails.add(new Segment(resultOfBlock._2._1.getLoadName))
           }
         }
-        val segmentFiles = updateSegmentFiles(carbonTable, segmentDetails, updateModel.get)
+        var segmentMetaDataInfoMap = scala.collection.mutable.Map.empty[String, SegmentMetaDataInfo]
+        if (!segmentMetaDataAccumulator.isZero) {
+          segmentMetaDataAccumulator.value.asScala.foreach(map => if (map.nonEmpty) {
+            segmentMetaDataInfoMap = segmentMetaDataInfoMap ++ map
+          })
+        }
+        val segmentFiles = updateSegmentFiles(carbonTable,
+          segmentDetails,
+          updateModel.get,
+          segmentMetaDataInfoMap.asJava)
+
         // this means that the update doesnt have any records to update so no need to do table
         // status file updation.
         if (resultSize == 0) {
@@ -550,9 +579,14 @@ object CarbonDataRDDFactory {
           loadStatus
         }
 
+      val segmentMetaDataInfo = CommonLoadUtils.getSegmentMetaDataInfoFromAccumulator(
+        carbonLoadModel.getSegmentId,
+        segmentMetaDataAccumulator)
       val segmentFileName =
         SegmentFileStore.writeSegmentFile(carbonTable, carbonLoadModel.getSegmentId,
-          String.valueOf(carbonLoadModel.getFactTimeStamp))
+          String.valueOf(carbonLoadModel.getFactTimeStamp), segmentMetaDataInfo)
+      // clear segmentMetaDataAccumulator
+      segmentMetaDataAccumulator.reset()
 
       SegmentFileStore.updateTableStatusFile(
         carbonTable,
@@ -667,7 +701,8 @@ object CarbonDataRDDFactory {
   private def updateSegmentFiles(
       carbonTable: CarbonTable,
       segmentDetails: util.HashSet[Segment],
-      updateModel: UpdateTableModel) = {
+      updateModel: UpdateTableModel,
+      segmentMetaDataInfoMap: util.Map[String, SegmentMetaDataInfo]) = {
     val metadataDetails =
       SegmentStatusManager.readTableStatusFile(
         CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath))
@@ -677,11 +712,13 @@ object CarbonDataRDDFactory {
       val segmentFile = load.getSegmentFile
       var segmentFiles: Seq[CarbonFile] = Seq.empty[CarbonFile]
 
+      val segmentMetaDataInfo = segmentMetaDataInfoMap.get(seg.getSegmentNo)
       val file = SegmentFileStore.writeSegmentFile(
         carbonTable,
         seg.getSegmentNo,
         String.valueOf(System.currentTimeMillis()),
-        load.getPath)
+        load.getPath,
+        segmentMetaDataInfo)
 
       if (segmentFile != null) {
         segmentFiles ++= FileFactory.getCarbonFile(
@@ -720,7 +757,9 @@ object CarbonDataRDDFactory {
       carbonLoadModel: CarbonLoadModel,
       updateModel: Option[UpdateTableModel],
       carbonTable: CarbonTable,
-      hadoopConf: Configuration): Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = {
+      hadoopConf: Configuration,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]
+  ): Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = {
     val segmentUpdateParallelism = CarbonProperties.getInstance().getParallelismForSegmentUpdate
 
     val updateRdd = dataFrame.get.rdd
@@ -773,7 +812,8 @@ object CarbonDataRDDFactory {
           updateModel,
           segId.getSegmentNo,
           newTaskNo,
-          partition).toList).toIterator
+          partition,
+          segmentMetaDataAccumulator).toList).toIterator
       }.collect()
     }
   }
@@ -786,7 +826,9 @@ object CarbonDataRDDFactory {
       updateModel: Option[UpdateTableModel],
       key: String,
       taskNo: Long,
-      iter: Iterator[Row]): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      iter: Iterator[Row],
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]
+  ): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     val rddResult = new updateResultImpl()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val resultIter = new Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] {
@@ -811,7 +853,8 @@ object CarbonDataRDDFactory {
           index,
           iter,
           carbonLoadModel,
-          loadMetadataDetails)
+          loadMetadataDetails,
+          segmentMetaDataAccumulator)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails
@@ -994,7 +1037,8 @@ object CarbonDataRDDFactory {
       sqlContext: SQLContext,
       dataFrame: Option[DataFrame],
       scanResultRDD: Option[RDD[InternalRow]],
-      carbonLoadModel: CarbonLoadModel
+      carbonLoadModel: CarbonLoadModel,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]
   ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     try {
       val rdd = if (dataFrame.isDefined) {
@@ -1024,7 +1068,8 @@ object CarbonDataRDDFactory {
         sqlContext.sparkSession,
         new DataLoadResultImpl(),
         carbonLoadModel,
-        newRdd
+        newRdd,
+        segmentMetaDataAccumulator
       ).collect()
     } catch {
       case ex: Exception =>
@@ -1039,7 +1084,8 @@ object CarbonDataRDDFactory {
   private def loadDataFile(
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      hadoopConf: Configuration
+      hadoopConf: Configuration,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]
   ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     /*
      * when data load handle by node partition
@@ -1134,7 +1180,9 @@ object CarbonDataRDDFactory {
       sqlContext.sparkSession,
       new DataLoadResultImpl(),
       carbonLoadModel,
-      blocksGroupBy
+      blocksGroupBy,
+      segmentMetaDataAccumulator
     ).collect()
   }
+
 }

@@ -31,6 +31,7 @@ import java.util.Set;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -84,6 +85,11 @@ public class Segment implements Serializable, Writable {
    * Properties of the segment.
    */
   private transient Map<String, String> options;
+
+  /**
+   * Segment metadata info
+   */
+  private SegmentMetaDataInfo segmentMetaDataInfo;
 
   public Segment() {
 
@@ -375,5 +381,13 @@ public class Segment implements Serializable, Writable {
       this.segmentString = in.readUTF();
     }
     this.indexSize = in.readLong();
+  }
+
+  public SegmentMetaDataInfo getSegmentMetaDataInfo() {
+    return segmentMetaDataInfo;
+  }
+
+  public void setSegmentMetaDataInfo(SegmentMetaDataInfo segmentMetaDataInfo) {
+    this.segmentMetaDataInfo = segmentMetaDataInfo;
   }
 }

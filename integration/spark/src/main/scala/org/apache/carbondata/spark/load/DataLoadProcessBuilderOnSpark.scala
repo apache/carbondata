@@ -35,7 +35,7 @@ import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.util.LongAccumulator
+import org.apache.spark.util.{CollectionAccumulator, LongAccumulator}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
@@ -44,6 +44,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, StructField, StructType}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer
@@ -56,7 +57,7 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.sort.sortdata.{NewRowComparator, NewRowComparatorForNormalDims, SortParameters}
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, TableOptionConstant}
-import org.apache.carbondata.spark.rdd.{CarbonScanRDD, StringArrayRow}
+import org.apache.carbondata.spark.rdd.{CarbonScanRDD, InsertTaskCompletionListener, StringArrayRow}
 import org.apache.carbondata.spark.util.{CommonUtil, Util}
 import org.apache.carbondata.store.CarbonRowReadSupport
 
@@ -70,7 +71,9 @@ object DataLoadProcessBuilderOnSpark {
       sparkSession: SparkSession,
       dataFrame: Option[DataFrame],
       model: CarbonLoadModel,
-      hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      hadoopConf: Configuration,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
+  : Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     var isLoadFromCSV = false
     val originRDD = if (dataFrame.isDefined) {
       dataFrame.get.rdd
@@ -160,10 +163,10 @@ object DataLoadProcessBuilderOnSpark {
 
     // 4. Write
     sc.runJob(sortRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
-      setTaskListener()
-      val model = modelBroadcast.value.getCopyWithTaskNo(context.partitionId.toString)
+      setTaskListener(model.getTableName, model.getSegmentId, segmentMetaDataAccumulator)
+      val loadModel = modelBroadcast.value.getCopyWithTaskNo(context.partitionId.toString)
       DataLoadProcessorStepOnSpark.writeFunc(
-        rows, context.partitionId, model, writeStepRowCounter, conf.value.value)
+        rows, context.partitionId, loadModel, writeStepRowCounter, conf.value.value)
     })
 
     // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will
@@ -186,7 +189,9 @@ object DataLoadProcessBuilderOnSpark {
       sparkSession: SparkSession,
       scanResultRDD : RDD[InternalRow],
       model: CarbonLoadModel,
-      hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      hadoopConf: Configuration,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
+  : Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     val originRDD = scanResultRDD
 
     val sc = sparkSession.sparkContext
@@ -245,9 +250,9 @@ object DataLoadProcessBuilderOnSpark {
 
     // 3. Write
     sc.runJob(newRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
-      setTaskListener()
-      val model = modelBroadcast.value.getCopyWithTaskNo(context.partitionId.toString)
-      DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, model,
+      setTaskListener(model.getTableName, model.getSegmentId, segmentMetaDataAccumulator)
+      val loadModel = modelBroadcast.value.getCopyWithTaskNo(context.partitionId.toString)
+      DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, loadModel,
         writeStepRowCounter, conf.value.value)
     })
     // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will
@@ -298,7 +303,9 @@ object DataLoadProcessBuilderOnSpark {
   def loadDataUsingRangeSort(
       sparkSession: SparkSession,
       model: CarbonLoadModel,
-      hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      hadoopConf: Configuration,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
+  : Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     // initialize and prepare row counter
     val sc = sparkSession.sparkContext
     val modelBroadcast = sc.broadcast(model)
@@ -349,7 +356,7 @@ object DataLoadProcessBuilderOnSpark {
 
     // 4. Sort and Write data
     sc.runJob(rangeRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
-      setTaskListener()
+      setTaskListener(model.getTableName, model.getSegmentId, segmentMetaDataAccumulator)
       DataLoadProcessorStepOnSpark.sortAndWriteFunc(rows, context.partitionId, modelBroadcast,
         writeStepRowCounter, conf.value.value)
     })
@@ -479,9 +486,11 @@ object DataLoadProcessBuilderOnSpark {
     }
   }
 
-  def setTaskListener(): Unit = {
-    TaskContext.get.addTaskCompletionListener { _ =>
-      CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+  def setTaskListener(tableName: String,
+      segmentId: String,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]): Unit = {
+    TaskContext.get.addTaskCompletionListener {
+      new InsertTaskCompletionListener(null, null, segmentMetaDataAccumulator, tableName, segmentId)
     }
     TaskMetricsMap.initializeThreadLocal()
     val carbonTaskInfo = new CarbonTaskInfo

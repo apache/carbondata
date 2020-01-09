@@ -24,9 +24,11 @@ import org.apache.spark.Partition
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.CarbonMergerMapping
+import org.apache.spark.util.CollectionAccumulator
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.CarbonInputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
@@ -41,11 +43,13 @@ class CarbonIUDMergerRDD[K, V](
     @transient private val ss: SparkSession,
     result: MergeResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    carbonMergerMapping: CarbonMergerMapping)
+    carbonMergerMapping: CarbonMergerMapping,
+    segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
   extends CarbonMergerRDD[K, V](ss,
     result,
     carbonLoadModel,
-    carbonMergerMapping) {
+    carbonMergerMapping,
+    segmentMetaDataAccumulator) {
 
   override def internalGetPartitions: Array[Partition] = {
     val startTime = System.currentTimeMillis()

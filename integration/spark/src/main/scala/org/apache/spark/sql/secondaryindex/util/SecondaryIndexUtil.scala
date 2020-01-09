@@ -203,6 +203,7 @@ object SecondaryIndexUtil {
               seg.getLoadName,
               segmentIdToLoadStartTimeMapping(seg.getLoadName).toString,
               carbonLoadModel.getFactTimeStamp.toString,
+              null,
               null)
             val segment = new Segment(seg.getLoadName, file)
             SegmentFileStore.updateTableStatusFile(indexCarbonTable,

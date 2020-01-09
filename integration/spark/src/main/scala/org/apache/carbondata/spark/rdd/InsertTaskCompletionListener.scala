@@ -20,21 +20,34 @@ package org.apache.carbondata.spark.rdd
 import org.apache.spark.TaskContext
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
 import org.apache.spark.sql.execution.command.ExecutionErrors
+import org.apache.spark.sql.execution.command.management.CommonLoadUtils
+import org.apache.spark.util.CollectionAccumulator
 
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.util.{DataTypeUtil, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
 import org.apache.carbondata.spark.util.CommonUtil
 
 class InsertTaskCompletionListener(dataLoadExecutor: DataLoadExecutor,
-    executorErrors: ExecutionErrors)
+    executorErrors: ExecutionErrors,
+    segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]],
+    tableName: String,
+    segmentId: String)
   extends CarbonLoadTaskCompletionListener {
   override def onTaskCompletion(context: TaskContext): Unit = {
     try {
-      dataLoadExecutor.close()
+      // fill segment metadata to accumulator
+      CommonLoadUtils.fillSegmentMetaDataInfoToAccumulator(
+        tableName,
+        segmentId,
+        segmentMetaDataAccumulator)
+      if (null != dataLoadExecutor) {
+        dataLoadExecutor.close()
+      }
     }
     catch {
       case e: Exception =>
-        if (executorErrors.failureCauses == FailureCauses.NONE) {
+        if (null != executorErrors && executorErrors.failureCauses == FailureCauses.NONE) {
           // If already error happened before task completion,
           // that error need to be thrown. Not the new error. Hence skip this.
           throw e

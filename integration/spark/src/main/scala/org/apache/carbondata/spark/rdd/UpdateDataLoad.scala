@@ -21,9 +21,12 @@ import scala.collection.mutable
 
 import org.apache.spark.TaskContext
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.execution.command.management.CommonLoadUtils
+import org.apache.spark.util.CollectionAccumulator
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, TableProcessingOperations}
@@ -40,7 +43,8 @@ object UpdateDataLoad {
       index: Long,
       iter: Iterator[Row],
       carbonLoadModel: CarbonLoadModel,
-      loadMetadataDetails: LoadMetadataDetails): Unit = {
+      loadMetadataDetails: LoadMetadataDetails,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]): Unit = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     try {
       val recordReaders = mutable.Buffer[CarbonIterator[Array[AnyRef]]]()
@@ -58,6 +62,11 @@ object UpdateDataLoad {
       loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
       val executor = new DataLoadExecutor
       TaskContext.get().addTaskCompletionListener { context =>
+        // fill segment metadata to accumulator
+        CommonLoadUtils.fillSegmentMetaDataInfoToAccumulator(
+          carbonLoadModel.getTableName,
+          segId,
+          segmentMetaDataAccumulator)
         executor.close()
         CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
       }

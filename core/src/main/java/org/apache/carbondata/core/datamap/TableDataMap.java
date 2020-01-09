@@ -120,10 +120,11 @@ public final class TableDataMap extends OperationEventListener {
     final List<ExtendedBlocklet> blocklets = new ArrayList<>();
     List<Segment> segments = getCarbonSegments(allsegments);
     final Map<Segment, List<DataMap>> dataMaps;
-    if (table.isHivePartitionTable() && filter != null && !filter.isEmpty() && partitions != null) {
-      dataMaps = dataMapFactory.getDataMaps(segments, partitions);
+    boolean isFilterPresent = filter != null && !filter.isEmpty();
+    if (table.isHivePartitionTable() && isFilterPresent && partitions != null) {
+      dataMaps = dataMapFactory.getDataMaps(segments, partitions, filter);
     } else {
-      dataMaps = dataMapFactory.getDataMaps(segments);
+      dataMaps = dataMapFactory.getDataMaps(segments, filter);
     }
 
     if (dataMaps.isEmpty()) {
@@ -133,9 +134,9 @@ public final class TableDataMap extends OperationEventListener {
     // for filter queries
     int totalFiles = 0;
     int datamapsCount = 0;
-    // In case if filter has matched partitions, then update the segments with datamap's
-    // segment list, as getDataMaps will return segments that matches the partition.
-    if (null != partitions && !partitions.isEmpty()) {
+    // In case if filter is present, then update the segments with datamap's segment list
+    // based on segment or partition pruning
+    if (isFilterPresent) {
       segments = new ArrayList<>(dataMaps.keySet());
     }
     for (Segment segment : segments) {

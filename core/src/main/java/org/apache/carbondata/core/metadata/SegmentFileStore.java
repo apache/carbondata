@@ -54,12 +54,16 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.segmentmeta.SegmentColumnMetaDataInfo;
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo;
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfoStats;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
@@ -180,11 +184,17 @@ public class SegmentFileStore {
    * @param carbonTable CarbonTable
    * @param segmentId segment id
    * @param UUID      a UUID string used to construct the segment file name
+   * @param segmentMetaDataInfo list of block level min and max values for segment
    * @return segment file name
    */
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+      SegmentMetaDataInfo segmentMetaDataInfo) throws IOException {
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segmentMetaDataInfo);
+  }
+
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID)
       throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null);
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, null);
   }
 
   /**
@@ -193,12 +203,18 @@ public class SegmentFileStore {
    * @param carbonTable CarbonTable
    * @param segmentId segment id
    * @param UUID      a UUID string used to construct the segment file name
+   * @param segPath segment path
+   * @param segmentMetaDataInfo segment metadata info
    * @return segment file name
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      String segPath)
-      throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath);
+      String segPath, SegmentMetaDataInfo segmentMetaDataInfo) throws IOException {
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, segmentMetaDataInfo);
+  }
+
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+      String segPath) throws IOException {
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, null);
   }
 
   /**
@@ -315,7 +331,8 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      final String currentLoadTimeStamp, String absSegPath) throws IOException {
+      final String currentLoadTimeStamp, String absSegPath, SegmentMetaDataInfo segmentMetaDataInfo)
+      throws IOException {
     String tablePath = carbonTable.getTablePath();
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
     String segmentPath = absSegPath;
@@ -356,6 +373,10 @@ public class SegmentFileStore {
         }
       }
       segmentFile.addPath(segmentRelativePath, folderDetails);
+      // set segmentMinMax to segmentFile
+      if (null != segmentMetaDataInfo) {
+        segmentFile.setSegmentMetaDataInfo(segmentMetaDataInfo);
+      }
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
       if (!carbonFile.exists()) {
@@ -582,7 +603,7 @@ public class SegmentFileStore {
    * @param partitionSpecs
    */
   public static SegmentFile getSegmentFileForPhysicalDataPartitions(String tablePath,
-      List<PartitionSpec> partitionSpecs) {
+      List<PartitionSpec> partitionSpecs) throws IOException {
     SegmentFile segmentFile = null;
     for (PartitionSpec spec : partitionSpecs) {
       String location = spec.getLocation().toString();
@@ -1223,11 +1244,16 @@ public class SegmentFileStore {
      */
     private Map<String, String> options;
 
+    /**
+     * Segment metadata information such as column_id, min-max, alter properties
+     */
+    private String segmentMetaDataInfo;
+
     SegmentFile() {
       locationMap = new HashMap<>();
     }
 
-    public SegmentFile merge(SegmentFile segmentFile) {
+    public SegmentFile merge(SegmentFile segmentFile) throws IOException {
       if (this == segmentFile) {
         return this;
       }
@@ -1239,6 +1265,37 @@ public class SegmentFileStore {
           } else {
             locationMap.put(entry.getKey(), entry.getValue());
           }
+        }
+        if (segmentMetaDataInfo != null) {
+          SegmentMetaDataInfo currentSegmentMetaDataInfo =
+              (SegmentMetaDataInfo) ObjectSerializationUtil
+                  .convertStringToObject(segmentMetaDataInfo);
+          if (null != segmentFile.getSegmentMetaDataInfo()) {
+            // get updated segmentColumnMetaDataInfo based on comparing block min-max values
+            Map<String, SegmentColumnMetaDataInfo> previousBlockColumnMetaDataInfo =
+                segmentFile.getSegmentMetaDataInfo().getSegmentColumnMetaDataInfoMap();
+            for (Map.Entry<String, SegmentColumnMetaDataInfo> entry :
+                previousBlockColumnMetaDataInfo.entrySet()) {
+              if (currentSegmentMetaDataInfo.getSegmentColumnMetaDataInfoMap()
+                  .containsKey(entry.getKey())) {
+                SegmentColumnMetaDataInfo currentBlockMinMaxInfo =
+                    currentSegmentMetaDataInfo.getSegmentColumnMetaDataInfoMap()
+                        .get(entry.getKey());
+                byte[] blockMaxValue = SegmentMetaDataInfoStats.getInstance()
+                    .compareAndUpdateMinMax(currentBlockMinMaxInfo.getColumnMaxValue(),
+                        entry.getValue().getColumnMaxValue(), false);
+                byte[] blockMinValue = SegmentMetaDataInfoStats.getInstance()
+                    .compareAndUpdateMinMax(currentBlockMinMaxInfo.getColumnMinValue(),
+                        entry.getValue().getColumnMinValue(), true);
+                currentSegmentMetaDataInfo.getSegmentColumnMetaDataInfoMap().get(entry.getKey())
+                    .setColumnMaxValue(blockMaxValue);
+                currentSegmentMetaDataInfo.getSegmentColumnMetaDataInfoMap().get(entry.getKey())
+                    .setColumnMinValue(blockMinValue);
+              }
+            }
+          }
+          segmentMetaDataInfo =
+              ObjectSerializationUtil.convertObjectToString(currentSegmentMetaDataInfo);
         }
       }
       if (locationMap == null) {
@@ -1264,6 +1321,22 @@ public class SegmentFileStore {
 
     public void setOptions(Map<String, String> options) {
       this.options = options;
+    }
+
+    public SegmentMetaDataInfo getSegmentMetaDataInfo() {
+      SegmentMetaDataInfo newSegmentMetaDataInfo = null;
+      try {
+        newSegmentMetaDataInfo = (SegmentMetaDataInfo) ObjectSerializationUtil
+            .convertStringToObject(segmentMetaDataInfo);
+      } catch (IOException e) {
+        LOGGER.error("Error while getting segment metadata info");
+      }
+      return newSegmentMetaDataInfo;
+    }
+
+    public void setSegmentMetaDataInfo(SegmentMetaDataInfo segmentMetaDataInfo) throws IOException {
+      this.segmentMetaDataInfo = ObjectSerializationUtil.convertObjectToString(
+          segmentMetaDataInfo);
     }
   }
 

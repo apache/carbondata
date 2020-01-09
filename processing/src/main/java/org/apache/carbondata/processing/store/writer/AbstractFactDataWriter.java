@@ -40,7 +40,10 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.segmentmeta.BlockColumnMetaDataInfo;
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfoStats;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
@@ -389,6 +392,20 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     indexHeader.setIs_sort(model.getSortScope() != null && model.getSortScope() != NO_SORT);
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
+    // get all block minmax and add to segmentMinMaxMap
+    CarbonTable carbonTable = model.getTableSpec().getCarbonTable();
+    if (null != model.getSegmentId() && !carbonTable.isHivePartitionTable() && !carbonTable
+        .isIndexTable()) {
+      for (BlockIndexInfo blockIndex : blockIndexInfoList) {
+        byte[][] min = blockIndex.getBlockletIndex().getMinMaxIndex().getMinValues();
+        byte[][] max = blockIndex.getBlockletIndex().getMinMaxIndex().getMaxValues();
+        BlockColumnMetaDataInfo blockColumnMetaDataInfo =
+            new BlockColumnMetaDataInfo(thriftColumnSchemaList, min, max);
+        SegmentMetaDataInfoStats.getInstance()
+            .setBlockMetaDataInfo(model.getTableName(), model.getSegmentId(),
+                blockColumnMetaDataInfo);
+      }
+    }
     String indexFileName;
     if (enableDirectlyWriteDataToStorePath) {
       String rawFileName = model.getCarbonDataDirectoryPath() + CarbonCommonConstants.FILE_SEPARATOR

@@ -41,7 +41,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
+import org.apache.spark.util.{CarbonReflectionUtils, CollectionAccumulator, SparkUtil}
 
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -56,6 +56,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
+import org.apache.carbondata.core.segmentmeta.{SegmentMetaDataInfo, SegmentMetaDataInfoStats}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -1089,4 +1090,80 @@ object CommonLoadUtils {
     }
   }
 
+  /**
+   * Fill segment level metadata to accumulator based on tableName and segmentId
+   */
+  def fillSegmentMetaDataInfoToAccumulator(
+      tableName: String,
+      segmentId: String,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
+  : CollectionAccumulator[Map[String, SegmentMetaDataInfo]] = {
+    synchronized {
+      val segmentMetaDataInfo = SegmentMetaDataInfoStats.getInstance()
+        .getTableSegmentMetaDataInfo(tableName, segmentId)
+      if (null != segmentMetaDataInfo) {
+        segmentMetaDataAccumulator.add(scala.Predef
+          .Map(segmentId -> segmentMetaDataInfo))
+        SegmentMetaDataInfoStats.getInstance().clear(tableName, segmentId)
+      }
+      segmentMetaDataAccumulator
+    }
+  }
+
+  /**
+   * Collect segmentMetaDataInfo from all tasks and compare min-max values and prepare final
+   * segmentMetaDataInfo
+   *
+   * @param segmentId           collect the segmentMetaDataInfo for the corresponding segmentId
+   * @param metaDataAccumulator segmentMetaDataAccumulator
+   * @return segmentMetaDataInfo
+   */
+  def getSegmentMetaDataInfoFromAccumulator(
+      segmentId: String,
+      metaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
+  : SegmentMetaDataInfo = {
+    var segmentMetaDataInfo: SegmentMetaDataInfo = null
+    if (!metaDataAccumulator.isZero) {
+      val segmentMetaData = metaDataAccumulator.value.asScala
+      segmentMetaData.foreach { segmentColumnMetaDataInfo =>
+        val currentValue = segmentColumnMetaDataInfo.get(segmentId)
+        if (currentValue.isDefined) {
+          if (null == segmentMetaDataInfo) {
+            segmentMetaDataInfo = currentValue.get
+          } else if (segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap.isEmpty) {
+            segmentMetaDataInfo = currentValue.get
+          } else {
+            val iterator = currentValue.get.getSegmentColumnMetaDataInfoMap
+              .entrySet()
+              .iterator()
+            while (iterator.hasNext) {
+              val currentSegmentColumnMetaDataMap = iterator.next()
+              if (segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
+                .containsKey(currentSegmentColumnMetaDataMap.getKey)) {
+                val currentMax = SegmentMetaDataInfoStats.getInstance()
+                  .compareAndUpdateMinMax(segmentMetaDataInfo
+                    .getSegmentColumnMetaDataInfoMap
+                    .get(currentSegmentColumnMetaDataMap.getKey)
+                    .getColumnMaxValue,
+                    currentSegmentColumnMetaDataMap.getValue.getColumnMaxValue,
+                    false)
+                val currentMin = SegmentMetaDataInfoStats.getInstance()
+                  .compareAndUpdateMinMax(segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
+                    .get(currentSegmentColumnMetaDataMap.getKey).getColumnMinValue,
+                    currentSegmentColumnMetaDataMap.getValue.getColumnMinValue,
+                    true)
+                segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
+                  .get(currentSegmentColumnMetaDataMap.getKey)
+                  .setColumnMaxValue(currentMax)
+                segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
+                  .get(currentSegmentColumnMetaDataMap.getKey)
+                  .setColumnMinValue(currentMin)
+              }
+            }
+          }
+        }
+      }
+    }
+    segmentMetaDataInfo
+  }
 }

@@ -39,6 +39,11 @@ trait CarbonQueryTaskCompletionListener extends TaskCompletionListener
  */
 trait CarbonLoadTaskCompletionListener extends TaskCompletionListener
 
+/**
+ * Load completion listener
+ */
+trait CarbonCompactionTaskCompletionListener extends TaskCompletionListener
+
 case class CarbonQueryTaskCompletionListenerImpl(iter: RecordReaderIterator[InternalRow],
     freeMemory: Boolean = false) extends CarbonQueryTaskCompletionListener {
   override def onTaskCompletion(context: TaskContext): Unit = {

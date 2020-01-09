@@ -32,13 +32,14 @@ import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.ExecutionErrors
-import org.apache.spark.util.SparkUtil
+import org.apache.spark.util.{CollectionAccumulator, SparkUtil}
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -100,7 +101,8 @@ class NewCarbonDataLoadRDD[K, V](
     @transient private val ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    blocksGroupBy: Array[(String, Array[BlockDetails])])
+    blocksGroupBy: Array[(String, Array[BlockDetails])],
+    segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
   extends CarbonRDD[(K, V)](ss, Nil) {
 
   ss.sparkContext.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -146,7 +148,13 @@ class NewCarbonDataLoadRDD[K, V](
         val executor = new DataLoadExecutor()
         // in case of success, failure or cancelation clear memory and stop execution
         context
-          .addTaskCompletionListener { new InsertTaskCompletionListener(executor, executionErrors) }
+          .addTaskCompletionListener {
+            new InsertTaskCompletionListener(executor,
+              executionErrors,
+              segmentMetaDataAccumulator,
+              carbonLoadModel.getTableName,
+              carbonLoadModel.getSegment.getSegmentNo)
+          }
         executor.execute(model,
           loader.storeLocation,
           recordReaders)
@@ -247,7 +255,9 @@ class NewDataFrameLoaderRDD[K, V](
     @transient private val ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    prev: DataLoadCoalescedRDD[_]) extends CarbonRDD[(K, V)](ss, prev) {
+    prev: DataLoadCoalescedRDD[_],
+    segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]
+    ) extends CarbonRDD[(K, V)](ss, prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -298,7 +308,11 @@ class NewDataFrameLoaderRDD[K, V](
         val executor = new DataLoadExecutor
         // in case of success, failure or cancelation clear memory and stop execution
         context
-          .addTaskCompletionListener(new InsertTaskCompletionListener(executor, executionErrors))
+          .addTaskCompletionListener(new InsertTaskCompletionListener(executor,
+            executionErrors,
+            segmentMetaDataAccumulator,
+            carbonLoadModel.getTableName,
+            carbonLoadModel.getSegment.getSegmentNo))
         executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
         case e: NoRetryException =>
