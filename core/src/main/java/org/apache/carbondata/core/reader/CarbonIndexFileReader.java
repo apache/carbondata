@@ -112,5 +112,4 @@ public class CarbonIndexFileReader {
   public boolean hasNext() throws IOException {
     return thriftReader.hasNext();
   }
-
 }
