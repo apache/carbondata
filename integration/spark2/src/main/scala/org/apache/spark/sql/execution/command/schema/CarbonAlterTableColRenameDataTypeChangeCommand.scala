@@ -163,7 +163,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       if (isDataTypeChange) {
         // if column datatype change operation is on partition column, then fail the datatype change
         // operation
-        if (null != carbonTable.getPartitionInfo) {
+        if (SparkUtil.isSparkVersionXandAbove("2.2") && null != carbonTable.getPartitionInfo) {
           val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList
           partitionColumns.asScala.foreach {
             col =>
@@ -286,13 +286,14 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
     // update the schema changed column at the specific index in carbonColumns based on schema order
     carbonColumns
       .update(schemaOrdinal, schemaConverter.fromExternalToWrapperColumnSchema(addColumnSchema))
-    // When we call
+    // In case of spark2.2 and above and , when we call
     // alterExternalCatalogForTableWithUpdatedSchema to update the new schema to external catalog
     // in case of rename column or change datatype, spark gets the catalog table and then it itself
     // adds the partition columns if the table is partition table for all the new data schema sent
     // by carbon, so there will be duplicate partition columns, so send the columns without
     // partition columns
-    val columns = if (carbonTable.isHivePartitionTable) {
+    val columns = if (SparkUtil.isSparkVersionXandAbove("2.2") &&
+                      carbonTable.isHivePartitionTable) {
       val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList.asScala
       val carbonColumnsWithoutPartition = carbonColumns.filterNot(col => partitionColumns.contains(
         col))

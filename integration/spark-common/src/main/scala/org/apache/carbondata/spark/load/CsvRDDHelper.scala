@@ -37,12 +37,11 @@ import org.apache.spark.sql.execution.datasources.{FilePartition, FileScanRDD, P
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 
-import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.spark.adapter.CarbonToSparkAdapter
 import org.apache.carbondata.spark.util.CommonUtil
 
 object CsvRDDHelper {
@@ -94,9 +93,9 @@ object CsvRDDHelper {
     def closePartition(): Unit = {
       if (currentFiles.nonEmpty) {
         val newPartition =
-          CarbonToSparkAdapter.createFilePartition(
+          FilePartition(
             partitions.size,
-            currentFiles)
+            currentFiles.toArray.toSeq)
         partitions += newPartition
       }
       currentFiles.clear()

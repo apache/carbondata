@@ -316,7 +316,7 @@ java.io.FileNotFoundException: hdfs:/localhost:9000/carbon/store/default/hdfstab
   2. Use the following command :
 
   ```
-  mvn -Pspark-2.4 -Dspark.version {yourSparkVersion} clean package
+  mvn -Pspark-2.1 -Dspark.version {yourSparkVersion} clean package
   ```
   
 Note : Refrain from using "mvn clean package" without specifying the profile.

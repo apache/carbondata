@@ -27,7 +27,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand, CarbonLoadDataCommand, RefreshCarbonTableCommand}
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableAddHivePartitionCommand, CarbonAlterTableDropHivePartitionCommand}
 import org.apache.spark.sql.execution.command.schema._
-import org.apache.spark.sql.execution.command.table.{CarbonCreateDataSourceTableCommand, CarbonCreateTableLikeCommand, CarbonDescribeFormattedCommand, CarbonDropTableCommand}
+import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDescribeFormattedCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
 import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable}
@@ -171,7 +171,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             ExecutedCommandExec(addColumn) :: Nil
           }
           // TODO: remove this else if check once the 2.1 version is unsupported by carbon
-        } else {
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
           val structField = (alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols)
             .map {
               a =>
@@ -185,6 +185,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             .invokeAlterTableAddColumn(identifier, structField).asInstanceOf[RunnableCommand]) ::
           Nil
           // TODO: remove this else check once the 2.1 version is unsupported by carbon
+        } else {
+          throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
       case dropColumn@CarbonAlterTableDropColumnCommand(alterTableDropColumnModel) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
@@ -273,12 +275,9 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if table.provider.get != DDLUtils.HIVE_PROVIDER
           && (table.provider.get.equals("org.apache.spark.sql.CarbonSource")
           || table.provider.get.equalsIgnoreCase("carbondata")) =>
-        val cmd = if (SparkUtil.isSparkVersionEqualTo("2.4")) {
-          CarbonCreateDataSourceTableCommand(table, ignoreIfExists, sparkSession)
-        } else {
-          val updatedCatalog = CarbonSource.updateCatalogTableWithCarbonSchema(table, sparkSession)
-          CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists)
-        }
+        val updatedCatalog = CarbonSource
+          .updateCatalogTableWithCarbonSchema(table, sparkSession)
+        val cmd = CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists)
         ExecutedCommandExec(cmd) :: Nil
       case AlterTableSetPropertiesCommand(tableName, properties, isView)
         if CarbonEnv.getInstance(sparkSession).carbonMetaStore

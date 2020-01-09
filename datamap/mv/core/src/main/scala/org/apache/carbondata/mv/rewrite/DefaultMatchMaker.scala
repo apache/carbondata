@@ -18,12 +18,11 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Expression, PredicateHelper, _}
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftOuter}
-import org.apache.spark.sql.types.{DataType, Metadata}
+import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.mv.datamap.MVHelper
 import org.apache.carbondata.mv.plans.modular.{JoinEdge, Matchable, ModularPlan, _}
@@ -96,12 +95,9 @@ abstract class DefaultMatchPattern extends MatchPattern[ModularPlan] {
       // Replace all compensation1 attributes with refrences of subsumer attributeset
       val compensationFinal = compensation1.transformExpressions {
         case ref: Attribute if subqueryAttributeSet.contains(ref) =>
-          CarbonToSparkAdapter.createAttributeReference(
-            ref.name, ref.dataType, nullable = true, metadata = Metadata.empty,
-            exprId = ref.exprId, qualifier = subsumerName)
+          AttributeReference(ref.name, ref.dataType)(exprId = ref.exprId, qualifier = subsumerName)
         case alias: Alias if subqueryAttributeSet.contains(alias.toAttribute) =>
-          CarbonToSparkAdapter.createAliasRef(
-            alias.child, alias.name, alias.exprId, subsumerName)
+          Alias(alias.child, alias.name)(exprId = alias.exprId, qualifier = subsumerName)
       }
       compensationFinal
     } else {

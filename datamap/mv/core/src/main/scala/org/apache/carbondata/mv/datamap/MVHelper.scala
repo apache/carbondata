@@ -373,8 +373,7 @@ object MVHelper {
 
   def updateColumnName(attr: Attribute, counter: Int): String = {
     val name = getUpdatedName(attr.name, counter)
-    val value = attr.qualifier.map(qualifier => qualifier + "_" + name)
-    if (value.nonEmpty) value.head else name
+    attr.qualifier.map(qualifier => qualifier + "_" + name).getOrElse(name)
   }
 
   def getTables(logicalPlan: LogicalPlan): Seq[CatalogTable] = {
@@ -474,7 +473,7 @@ object MVHelper {
   }
 
   def createAttrReference(ref: NamedExpression, name: String): Alias = {
-    CarbonToSparkAdapter.createAliasRef(ref, name, exprId = ref.exprId)
+    Alias(ref, name)(exprId = ref.exprId, qualifier = None)
   }
 
   case class AttributeKey(exp: Expression) {
@@ -538,13 +537,13 @@ object MVHelper {
         case attr: AttributeReference =>
           val uattr = attrMap.get(AttributeKey(attr)).map{a =>
             if (keepAlias) {
-              CarbonToSparkAdapter.createAttributeReference(
-                name = a.name,
-                dataType = a.dataType,
-                nullable = a.nullable,
-                metadata = a.metadata,
-                exprId = a.exprId,
-                qualifier = attr.qualifier)
+              CarbonToSparkAdapter.createAttributeReference(a.name,
+                a.dataType,
+                a.nullable,
+                a.metadata,
+                a.exprId,
+                attr.qualifier,
+                a)
             } else {
               a
             }
@@ -576,9 +575,9 @@ object MVHelper {
     outputSel.zip(subsumerOutputList).map{ case (l, r) =>
       l match {
         case attr: AttributeReference =>
-          CarbonToSparkAdapter.createAliasRef(attr, r.name, r.exprId)
+          Alias(attr, r.name)(r.exprId, None)
         case a@Alias(attr: AttributeReference, name) =>
-          CarbonToSparkAdapter.createAliasRef(attr, r.name, r.exprId)
+          Alias(attr, r.name)(r.exprId, None)
         case other => other
       }
     }
@@ -595,13 +594,13 @@ object MVHelper {
           val uattr = attrMap.get(AttributeKey(attr)).map{a =>
             if (keepAlias) {
               CarbonToSparkAdapter
-                .createAttributeReference(
-                  a.name,
+                .createAttributeReference(a.name,
                   a.dataType,
                   a.nullable,
                   a.metadata,
                   a.exprId,
-                  attr.qualifier)
+                  attr.qualifier,
+                  a)
             } else {
               a
             }

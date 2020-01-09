@@ -97,12 +97,12 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
           carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
           thriftTable)(sparkSession)
-      // when we call
+      // In case of spark2.2 and above and , when we call
       // alterExternalCatalogForTableWithUpdatedSchema to update the new schema to external catalog
       // in case of add column, spark gets the catalog table and then it itself adds the partition
       // columns if the table is partition table for all the new data schema sent by carbon,
       // so there will be duplicate partition columns, so send the columns without partition columns
-      val cols = if (carbonTable.isHivePartitionTable) {
+      val cols = if (SparkUtil.isSparkVersionXandAbove("2.2") && carbonTable.isHivePartitionTable) {
         val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList.asScala
         val carbonColumnsWithoutPartition = carbonColumns.filterNot(col => partitionColumns.contains
         (col))

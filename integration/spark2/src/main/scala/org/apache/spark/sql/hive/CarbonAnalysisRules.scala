@@ -78,7 +78,9 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
             "Update operation is not supported for mv datamap table")
         }
       }
-      val tableRelation =
+      val tableRelation = if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+        relation
+      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
         alias match {
           case Some(_) =>
             CarbonReflectionUtils.getSubqueryAlias(
@@ -88,6 +90,9 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
               Some(table.tableIdentifier))
           case _ => relation
         }
+      } else {
+        throw new UnsupportedOperationException("Unsupported Spark version.")
+      }
 
       CarbonReflectionUtils.getSubqueryAlias(
         sparkSession,
@@ -216,15 +221,21 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
           }
         }
         // include tuple id in subquery
-        alias match {
-          case Some(_) =>
-            val subqueryAlias = CarbonReflectionUtils.getSubqueryAlias(
-              sparkSession,
-              alias,
-              relation,
-              Some(table.tableIdentifier))
-            Project(projList, subqueryAlias)
-          case _ => Project(projList, relation)
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          Project(projList, relation)
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          alias match {
+            case Some(_) =>
+              val subqueryAlias = CarbonReflectionUtils.getSubqueryAlias(
+                sparkSession,
+                alias,
+                relation,
+                Some(table.tableIdentifier))
+              Project(projList, subqueryAlias)
+            case _ => Project(projList, relation)
+          }
+        } else {
+          throw new UnsupportedOperationException("Unsupported Spark version.")
         }
     }
     CarbonProjectForDeleteCommand(
@@ -303,7 +314,13 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
         }
       }
       val newChild: LogicalPlan = if (newChildOutput == child.output) {
-        throw new UnsupportedOperationException(s"Spark version $SPARK_VERSION is not supported")
+        if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+          CarbonReflectionUtils.getField("child", p).asInstanceOf[LogicalPlan]
+        } else if (SparkUtil.isSparkVersionEqualTo("2.2")) {
+          CarbonReflectionUtils.getField("query", p).asInstanceOf[LogicalPlan]
+        } else {
+          throw new UnsupportedOperationException(s"Spark version $SPARK_VERSION is not supported")
+        }
       } else {
         Project(newChildOutput, child)
       }

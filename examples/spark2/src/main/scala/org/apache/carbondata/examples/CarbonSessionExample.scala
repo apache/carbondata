@@ -37,9 +37,9 @@ object CarbonSessionExample {
       s"$rootPath/examples/spark2/src/main/resources/log4j.properties")
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     val spark = ExampleUtils.createCarbonSession("CarbonSessionExample")
-    spark.sparkContext.setLogLevel("error")
+    spark.sparkContext.setLogLevel("INFO")
     exampleBody(spark)
     spark.close()
   }

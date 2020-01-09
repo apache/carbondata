@@ -258,67 +258,41 @@ case class CarbonDictionaryDecoder(
             s"""
                |org.apache.spark.sql.DictTuple $value = $decodeDecimal($dictRef, ${ev.value});
                  """.stripMargin
-            CarbonToSparkAdapter.createExprCode(
-              code,
-              s"$value.getIsNull()",
-              s"((org.apache.spark.sql.types.Decimal)$value.getValue())",
-              expr.dataType)
+            ExprCode(code, s"$value.getIsNull()",
+              s"((org.apache.spark.sql.types.Decimal)$value.getValue())")
           } else {
             getDictionaryColumnIds(index)._3.getDataType match {
               case CarbonDataTypes.INT => code +=
                 s"""
                    |org.apache.spark.sql.DictTuple $value = $decodeInt($dictRef, ${ ev.value });
                  """.stripMargin
-                CarbonToSparkAdapter.createExprCode(
-                  code,
-                  s"$value.getIsNull()",
-                  s"((Integer)$value.getValue())",
-                  expr.dataType)
+                ExprCode(code, s"$value.getIsNull()", s"((Integer)$value.getValue())")
               case CarbonDataTypes.SHORT => code +=
                 s"""
                    |org.apache.spark.sql.DictTuple $value = $decodeShort($dictRef, ${ ev.value });
                  """.stripMargin
-                CarbonToSparkAdapter.createExprCode(
-                  code,
-                  s"$value.getIsNull()",
-                  s"((Short)$value.getValue())",
-                  expr.dataType)
+                ExprCode(code, s"$value.getIsNull()", s"((Short)$value.getValue())")
               case CarbonDataTypes.DOUBLE => code +=
                  s"""
                     |org.apache.spark.sql.DictTuple $value = $decodeDouble($dictRef, ${ ev.value });
                  """.stripMargin
-                CarbonToSparkAdapter.createExprCode(
-                  code,
-                  s"$value.getIsNull()",
-                  s"((Double)$value.getValue())",
-                  expr.dataType)
+                ExprCode(code, s"$value.getIsNull()", s"((Double)$value.getValue())")
               case CarbonDataTypes.LONG => code +=
                  s"""
                     |org.apache.spark.sql.DictTuple $value = $decodeLong($dictRef, ${ ev.value });
                  """.stripMargin
-                CarbonToSparkAdapter.createExprCode(
-                  code,
-                  s"$value.getIsNull()",
-                  s"((Long)$value.getValue())",
-                  expr.dataType)
+                ExprCode(code, s"$value.getIsNull()", s"((Long)$value.getValue())")
               case CarbonDataTypes.BOOLEAN => code +=
                 s"""
                    |org.apache.spark.sql.DictTuple $value = $decodeBool($dictRef, ${ ev.value });
                  """.stripMargin
-                CarbonToSparkAdapter.createExprCode(
-                  code,
-                  s"$value.getIsNull()",
-                  s"((Boolean)$value.getValue())",
-                  expr.dataType)
+                ExprCode(code, s"$value.getIsNull()", s"((Boolean)$value.getValue())")
               case _ => code +=
                 s"""
                    |org.apache.spark.sql.DictTuple $value = $decodeStr($dictRef, ${ev.value});
                  """.stripMargin
-                CarbonToSparkAdapter.createExprCode(
-                  code,
-                  s"$value.getIsNull()",
-                  s"((UTF8String)$value.getValue())",
-                  expr.dataType)
+                ExprCode(code, s"$value.getIsNull()", s"((UTF8String)$value.getValue())")
+
             }
           }
 

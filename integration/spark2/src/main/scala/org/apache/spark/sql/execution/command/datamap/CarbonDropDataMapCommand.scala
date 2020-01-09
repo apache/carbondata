@@ -164,7 +164,6 @@ case class CarbonDropDataMapCommand(
   }
 
   private def dropDataMapFromSystemFolder(sparkSession: SparkSession): Unit = {
-    LOGGER.info("Trying to drop DataMap from system folder")
     try {
       if (dataMapSchema == null) {
         dataMapSchema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
