@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -46,6 +48,8 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.OutputFilesInfoHolder;
+import org.apache.carbondata.core.util.SegmentBlockMinMaxInfo;
+import org.apache.carbondata.core.util.SegmentMinMaxStats;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
@@ -389,6 +393,32 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     indexHeader.setIs_sort(model.getSortScope() != null && model.getSortScope() != NO_SORT);
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
+    // get all block minmax and add to segmentMinMaxMap
+    if (null != model.getSegmentId()) {
+      for (BlockIndexInfo blockIndex : blockIndexInfoList) {
+        Map<String, SegmentBlockMinMaxInfo> segmentBlockMinMaxInfo = new LinkedHashMap<>();
+        byte[][] min = blockIndex.getBlockletIndex().getMinMaxIndex().getMinValues();
+        byte[][] max = blockIndex.getBlockletIndex().getMinMaxIndex().getMaxValues();
+        for (int i = 0; i < thriftColumnSchemaList.size(); i++) {
+          org.apache.carbondata.format.ColumnSchema columnSchema = thriftColumnSchemaList.get(i);
+          boolean isSortColumn = false;
+          boolean isColumnDrift = false;
+          if (null != columnSchema.columnProperties && !columnSchema.columnProperties.isEmpty()) {
+            if (null != columnSchema.columnProperties.get(CarbonCommonConstants.SORT_COLUMNS)) {
+              isSortColumn = true;
+            }
+            if (null != columnSchema.columnProperties.get(CarbonCommonConstants.COLUMN_DRIFT)) {
+              isColumnDrift = true;
+            }
+          }
+          segmentBlockMinMaxInfo.put(columnSchema.column_id,
+              new SegmentBlockMinMaxInfo(isSortColumn, min[i], max[i], isColumnDrift));
+        }
+        SegmentMinMaxStats.getInstance()
+            .setSegmentMinMaxList(model.getTableName(), model.getSegmentId(),
+                segmentBlockMinMaxInfo);
+      }
+    }
     String indexFileName;
     if (enableDirectlyWriteDataToStorePath) {
       String rawFileName = model.getCarbonDataDirectoryPath() + CarbonCommonConstants.FILE_SEPARATOR

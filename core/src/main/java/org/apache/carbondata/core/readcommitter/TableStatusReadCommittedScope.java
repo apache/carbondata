@@ -86,6 +86,7 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
       SegmentFileStore fileStore =
           new SegmentFileStore(identifier.getTablePath(), segment.getSegmentFileName());
       indexFiles = fileStore.getIndexOrMergeFiles();
+      segment.setSegmentMinMax(fileStore.getSegmentFile().getSegmentMinMax());
     }
     return indexFiles;
   }

@@ -121,9 +121,9 @@ public final class TableDataMap extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     final Map<Segment, List<DataMap>> dataMaps;
     if (table.isHivePartitionTable() && filter != null && !filter.isEmpty() && partitions != null) {
-      dataMaps = dataMapFactory.getDataMaps(segments, partitions);
+      dataMaps = dataMapFactory.getDataMaps(segments, partitions, filter);
     } else {
-      dataMaps = dataMapFactory.getDataMaps(segments);
+      dataMaps = dataMapFactory.getDataMaps(segments, filter);
     }
 
     if (dataMaps.isEmpty()) {
@@ -135,7 +135,7 @@ public final class TableDataMap extends OperationEventListener {
     int datamapsCount = 0;
     // In case if filter has matched partitions, then update the segments with datamap's
     // segment list, as getDataMaps will return segments that matches the partition.
-    if (null != partitions && !partitions.isEmpty()) {
+    if (null != partitions && !partitions.isEmpty() || (null != filter && !filter.isEmpty())) {
       segments = new ArrayList<>(dataMaps.keySet());
     }
     for (Segment segment : segments) {

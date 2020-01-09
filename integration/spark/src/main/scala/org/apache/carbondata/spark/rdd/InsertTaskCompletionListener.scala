@@ -17,19 +17,29 @@
 
 package org.apache.carbondata.spark.rdd
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.TaskContext
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
 import org.apache.spark.sql.execution.command.ExecutionErrors
+import org.apache.spark.util.CollectionAccumulator
 
-import org.apache.carbondata.core.util.{DataTypeUtil, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util.{DataTypeUtil, SegmentMinMax, SegmentMinMaxStats, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
 import org.apache.carbondata.spark.util.CommonUtil
 
 class InsertTaskCompletionListener(dataLoadExecutor: DataLoadExecutor,
-    executorErrors: ExecutionErrors)
+    executorErrors: ExecutionErrors,
+    segmentMinMaxAccumulator: CollectionAccumulator[Map[String, List[SegmentMinMax]]],
+    tableName: String,
+    segmentId: String)
   extends CarbonLoadTaskCompletionListener {
   override def onTaskCompletion(context: TaskContext): Unit = {
     try {
+      // fill segment level minMax to accumulator
+      CarbonDataRDDFactory.fillSegmentMinMaxToAccumulator(tableName,
+        segmentId,
+        segmentMinMaxAccumulator)
       dataLoadExecutor.close()
     }
     catch {

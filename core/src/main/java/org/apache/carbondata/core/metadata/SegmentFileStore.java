@@ -60,6 +60,8 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
+import org.apache.carbondata.core.util.SegmentMinMax;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
@@ -180,11 +182,17 @@ public class SegmentFileStore {
    * @param carbonTable CarbonTable
    * @param segmentId segment id
    * @param UUID      a UUID string used to construct the segment file name
+   * @param segmentMinMaxList list of block level min and max values for segment
    * @return segment file name
    */
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+      List<SegmentMinMax> segmentMinMaxList) throws IOException {
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segmentMinMaxList);
+  }
+
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID)
       throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null);
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, null);
   }
 
   /**
@@ -196,9 +204,13 @@ public class SegmentFileStore {
    * @return segment file name
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      String segPath)
-      throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath);
+      String segPath, List<SegmentMinMax> segmentMinMaxList) throws IOException {
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, segmentMinMaxList);
+  }
+
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+      String segPath) throws IOException {
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, null);
   }
 
   /**
@@ -315,7 +327,8 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      final String currentLoadTimeStamp, String absSegPath) throws IOException {
+      final String currentLoadTimeStamp, String absSegPath, List<SegmentMinMax> segmentMinMaxList)
+      throws IOException {
     String tablePath = carbonTable.getTablePath();
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
     String segmentPath = absSegPath;
@@ -356,6 +369,10 @@ public class SegmentFileStore {
         }
       }
       segmentFile.addPath(segmentRelativePath, folderDetails);
+      // set segmentMinMax to segmentFile
+      if (null != segmentMinMaxList && !segmentMinMaxList.isEmpty()) {
+        segmentFile.setSegmentMinMax(segmentMinMaxList);
+      }
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
       if (!carbonFile.exists()) {
@@ -582,7 +599,7 @@ public class SegmentFileStore {
    * @param partitionSpecs
    */
   public static SegmentFile getSegmentFileForPhysicalDataPartitions(String tablePath,
-      List<PartitionSpec> partitionSpecs) {
+      List<PartitionSpec> partitionSpecs) throws IOException {
     SegmentFile segmentFile = null;
     for (PartitionSpec spec : partitionSpecs) {
       String location = spec.getLocation().toString();
@@ -1223,11 +1240,16 @@ public class SegmentFileStore {
      */
     private Map<String, String> options;
 
+    /**
+     * Segment minMax List
+     */
+    private String segmentMinMax;
+
     SegmentFile() {
       locationMap = new HashMap<>();
     }
 
-    public SegmentFile merge(SegmentFile segmentFile) {
+    public SegmentFile merge(SegmentFile segmentFile) throws IOException {
       if (this == segmentFile) {
         return this;
       }
@@ -1239,6 +1261,12 @@ public class SegmentFileStore {
           } else {
             locationMap.put(entry.getKey(), entry.getValue());
           }
+        }
+        if (segmentMinMax != null && !segmentFile.getSegmentMinMax().isEmpty()) {
+          List<SegmentMinMax> segmentMinMaxList = new ArrayList<>(
+              (List<SegmentMinMax>) ObjectSerializationUtil.convertStringToObject(segmentMinMax));
+          segmentMinMaxList.addAll(segmentFile.getSegmentMinMax());
+          segmentMinMax = ObjectSerializationUtil.convertObjectToString(segmentMinMaxList);
         }
       }
       if (locationMap == null) {
@@ -1264,6 +1292,24 @@ public class SegmentFileStore {
 
     public void setOptions(Map<String, String> options) {
       this.options = options;
+    }
+
+    public List<SegmentMinMax> getSegmentMinMax() {
+      List<SegmentMinMax> segmentMinMaxList = null;
+      try {
+        segmentMinMaxList =
+            (List<SegmentMinMax>) ObjectSerializationUtil.convertStringToObject(segmentMinMax);
+      } catch (IOException e) {
+        LOGGER.error("Error while getting segment minmax");
+      }
+      if (null == segmentMinMaxList) {
+        return new ArrayList<>();
+      }
+      return segmentMinMaxList;
+    }
+
+    public void setSegmentMinMax(List<SegmentMinMax> segmentMinMax) throws IOException {
+      this.segmentMinMax = ObjectSerializationUtil.convertObjectToString(segmentMinMax);
     }
   }
 

@@ -2421,5 +2421,14 @@ public final class CarbonCommonConstants {
    */
   public static final int INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS_DEFAULT = Integer.MAX_VALUE;
 
+  /**
+   * Load all indexes to carbon LRU cache
+   */
+  public static final String CARBON_LOAD_ALL_INDEX_TO_CACHE = "carbon.load.all.indexes.to.cache";
 
+  /**
+   * Default value for loading cache is true
+   * Make this false, to load index for the matched segments from filter expression
+   */
+  public static final String CARBON_LOAD_ALL_INDEX_TO_CACHE_DEFAULT = "true";
 }

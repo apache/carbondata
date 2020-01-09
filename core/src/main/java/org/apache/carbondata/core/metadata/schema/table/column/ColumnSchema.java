@@ -17,8 +17,12 @@
 
 package org.apache.carbondata.core.metadata.schema.table.column;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -37,7 +41,7 @@ import org.apache.carbondata.core.preagg.TimeSeriesUDF;
 /**
  * Store the information about the column meta data present the table
  */
-public class ColumnSchema implements Serializable, Writable {
+public class ColumnSchema implements Serializable, Writable, Cloneable {
 
   /**
    * serialization version
@@ -599,5 +603,21 @@ public class ColumnSchema implements Serializable, Writable {
 
   public void setIndexColumn(boolean indexColumn) {
     this.indexColumn = indexColumn;
+  }
+
+  public ColumnSchema clone() {
+    try {
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      DataOutputStream dos = new DataOutputStream(bos);
+      this.write(dos);
+      dos.close();
+      bos.close();
+      DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bos.toByteArray()));
+      ColumnSchema columnSchema = (ColumnSchema) super.clone();
+      columnSchema.readFields(dis);
+      return columnSchema;
+    } catch (IOException | CloneNotSupportedException e) {
+      throw new RuntimeException("Error occur while cloning ColumnSchema", e);
+    }
   }
 }

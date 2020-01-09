@@ -41,6 +41,7 @@ import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.{CarbonException, SparkSQLUtil}
+import org.apache.spark.util.CollectionAccumulator
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -57,7 +58,7 @@ import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarForma
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, SegmentMinMax, SegmentMinMaxStats, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.indexserver.{DistributedRDDUtils, IndexServer}
@@ -316,7 +317,10 @@ object CarbonDataRDDFactory {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
     var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
-
+    // accumulator to collect segment minmax
+    val segmentMinMaxAccumulator = sqlContext
+      .sparkContext
+      .collectionAccumulator[Map[String, List[SegmentMinMax]]]
     // create new segment folder  in carbon store
     if (updateModel.isEmpty && carbonLoadModel.isCarbonTransactionalTable) {
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(carbonLoadModel.getSegmentId, carbonTable)
@@ -339,7 +343,8 @@ object CarbonDataRDDFactory {
             carbonLoadModel,
             updateModel,
             carbonTable,
-            hadoopConf)
+            hadoopConf,
+            segmentMinMaxAccumulator)
           res.foreach { resultOfSeg =>
             resultOfSeg.foreach { resultOfBlock =>
               if (resultOfBlock._2._1.getSegmentStatus == SegmentStatus.LOAD_FAILURE) {
@@ -375,7 +380,11 @@ object CarbonDataRDDFactory {
                 carbonLoadModel,
                 hadoopConf)
             } else {
-              loadDataFrame(sqlContext, None, Some(convertedRdd), carbonLoadModel)
+              loadDataFrame(sqlContext,
+                None,
+                Some(convertedRdd),
+                carbonLoadModel,
+                segmentMinMaxAccumulator)
             }
           } else {
             if (dataFrame.isEmpty && isSortTable &&
@@ -390,9 +399,9 @@ object CarbonDataRDDFactory {
                 carbonLoadModel,
                 hadoopConf)
             } else if (dataFrame.isDefined) {
-              loadDataFrame(sqlContext, dataFrame, None, carbonLoadModel)
+              loadDataFrame(sqlContext, dataFrame, None, carbonLoadModel, segmentMinMaxAccumulator)
             } else {
-              loadDataFile(sqlContext, carbonLoadModel, hadoopConf)
+              loadDataFile(sqlContext, carbonLoadModel, hadoopConf, segmentMinMaxAccumulator)
             }
           }
           val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
@@ -479,7 +488,17 @@ object CarbonDataRDDFactory {
             segmentDetails.add(new Segment(resultOfBlock._2._1.getLoadName))
           }
         }
-        val segmentFiles = updateSegmentFiles(carbonTable, segmentDetails, updateModel.get)
+        var segmentMinMaxMap: Map[String, List[SegmentMinMax]] = Map()
+        if (!segmentMinMaxAccumulator.isZero) {
+          segmentMinMaxAccumulator.value.asScala.foreach(map => if (map.nonEmpty) {
+            segmentMinMaxMap = segmentMinMaxMap ++ map
+          })
+        }
+        val segmentFiles = updateSegmentFiles(carbonTable,
+          segmentDetails,
+          updateModel.get,
+          segmentMinMaxMap.mapValues(_.asJava).asJava)
+
         // this means that the update doesnt have any records to update so no need to do table
         // status file updation.
         if (resultSize == 0) {
@@ -550,9 +569,16 @@ object CarbonDataRDDFactory {
           loadStatus
         }
 
+      val segmentMinMax =
+        if (!segmentMinMaxAccumulator.isZero &&
+            segmentMinMaxAccumulator.value.get(0).contains(carbonLoadModel.getSegmentId)) {
+          segmentMinMaxAccumulator.value.get(0)(carbonLoadModel.getSegmentId).asJava
+        } else {
+          null
+        }
       val segmentFileName =
         SegmentFileStore.writeSegmentFile(carbonTable, carbonLoadModel.getSegmentId,
-          String.valueOf(carbonLoadModel.getFactTimeStamp))
+          String.valueOf(carbonLoadModel.getFactTimeStamp), segmentMinMax)
 
       SegmentFileStore.updateTableStatusFile(
         carbonTable,
@@ -667,7 +693,8 @@ object CarbonDataRDDFactory {
   private def updateSegmentFiles(
       carbonTable: CarbonTable,
       segmentDetails: util.HashSet[Segment],
-      updateModel: UpdateTableModel) = {
+      updateModel: UpdateTableModel,
+      segmentMinMaxMap: util.Map[String, util.List[SegmentMinMax]]) = {
     val metadataDetails =
       SegmentStatusManager.readTableStatusFile(
         CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath))
@@ -677,11 +704,13 @@ object CarbonDataRDDFactory {
       val segmentFile = load.getSegmentFile
       var segmentFiles: Seq[CarbonFile] = Seq.empty[CarbonFile]
 
+      val value = segmentMinMaxMap.get(seg.getSegmentNo)
       val file = SegmentFileStore.writeSegmentFile(
         carbonTable,
         seg.getSegmentNo,
         String.valueOf(System.currentTimeMillis()),
-        load.getPath)
+        load.getPath,
+        value)
 
       if (segmentFile != null) {
         segmentFiles ++= FileFactory.getCarbonFile(
@@ -720,7 +749,9 @@ object CarbonDataRDDFactory {
       carbonLoadModel: CarbonLoadModel,
       updateModel: Option[UpdateTableModel],
       carbonTable: CarbonTable,
-      hadoopConf: Configuration): Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = {
+      hadoopConf: Configuration,
+      segmentMinMaxAccumulator: CollectionAccumulator[Map[String, List[SegmentMinMax]]]
+  ): Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = {
     val segmentUpdateParallelism = CarbonProperties.getInstance().getParallelismForSegmentUpdate
 
     val updateRdd = dataFrame.get.rdd
@@ -773,7 +804,8 @@ object CarbonDataRDDFactory {
           updateModel,
           segId.getSegmentNo,
           newTaskNo,
-          partition).toList).toIterator
+          partition,
+          segmentMinMaxAccumulator).toList).toIterator
       }.collect()
     }
   }
@@ -786,7 +818,9 @@ object CarbonDataRDDFactory {
       updateModel: Option[UpdateTableModel],
       key: String,
       taskNo: Long,
-      iter: Iterator[Row]): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      iter: Iterator[Row],
+      segmentMinMaxAccumulator: CollectionAccumulator[Map[String, List[SegmentMinMax]]]
+  ): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     val rddResult = new updateResultImpl()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val resultIter = new Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] {
@@ -811,7 +845,8 @@ object CarbonDataRDDFactory {
           index,
           iter,
           carbonLoadModel,
-          loadMetadataDetails)
+          loadMetadataDetails,
+          segmentMinMaxAccumulator)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails
@@ -994,7 +1029,8 @@ object CarbonDataRDDFactory {
       sqlContext: SQLContext,
       dataFrame: Option[DataFrame],
       scanResultRDD: Option[RDD[InternalRow]],
-      carbonLoadModel: CarbonLoadModel
+      carbonLoadModel: CarbonLoadModel,
+      segmentMinMaxAccumulator: CollectionAccumulator[Map[String, List[SegmentMinMax]]]
   ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     try {
       val rdd = if (dataFrame.isDefined) {
@@ -1024,7 +1060,8 @@ object CarbonDataRDDFactory {
         sqlContext.sparkSession,
         new DataLoadResultImpl(),
         carbonLoadModel,
-        newRdd
+        newRdd,
+        segmentMinMaxAccumulator
       ).collect()
     } catch {
       case ex: Exception =>
@@ -1039,7 +1076,8 @@ object CarbonDataRDDFactory {
   private def loadDataFile(
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      hadoopConf: Configuration
+      hadoopConf: Configuration,
+      segmentMinMaxAccumulator: CollectionAccumulator[Map[String, List[SegmentMinMax]]]
   ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     /*
      * when data load handle by node partition
@@ -1134,7 +1172,24 @@ object CarbonDataRDDFactory {
       sqlContext.sparkSession,
       new DataLoadResultImpl(),
       carbonLoadModel,
-      blocksGroupBy
+      blocksGroupBy,
+      segmentMinMaxAccumulator
     ).collect()
+  }
+
+  /**
+   * Fill segment level min max to accumulator based on tableName and segmentId
+   */
+  def fillSegmentMinMaxToAccumulator(
+      tableName: String,
+      segmentId: String,
+      segmentMinMaxAccumulator: CollectionAccumulator[Map[String, List[SegmentMinMax]]]): Unit = {
+    val tableSegmentMinMax = SegmentMinMaxStats.getInstance().getTableSegmentMinMaxMap
+      .get(tableName)
+    if (null != tableSegmentMinMax && null != tableSegmentMinMax.get(segmentId)) {
+      val segmentMinMaxList = tableSegmentMinMax.get(segmentId).asScala.toList
+      segmentMinMaxAccumulator.add(scala.Predef.Map(segmentId -> segmentMinMaxList))
+      SegmentMinMaxStats.getInstance().clear(tableName, segmentId)
+    }
   }
 }

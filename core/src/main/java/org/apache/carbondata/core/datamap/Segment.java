@@ -34,6 +34,7 @@ import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.SegmentMinMax;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.conf.Configuration;
@@ -84,6 +85,11 @@ public class Segment implements Serializable, Writable {
    * Properties of the segment.
    */
   private transient Map<String, String> options;
+
+  /**
+   * Segment level min and max values
+   */
+  private List<SegmentMinMax> segmentMinMax;
 
   public Segment() {
 
@@ -375,5 +381,13 @@ public class Segment implements Serializable, Writable {
       this.segmentString = in.readUTF();
     }
     this.indexSize = in.readLong();
+  }
+
+  public List<SegmentMinMax> getSegmentMinMax() {
+    return segmentMinMax;
+  }
+
+  public void setSegmentMinMax(List<SegmentMinMax> segmentMinMax) {
+    this.segmentMinMax = segmentMinMax;
   }
 }

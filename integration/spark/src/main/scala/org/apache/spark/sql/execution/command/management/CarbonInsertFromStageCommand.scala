@@ -40,6 +40,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICar
 import org.apache.carbondata.core.metadata.{ColumnarFormatVersion, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput}
+import org.apache.carbondata.core.util.SegmentMinMax
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -292,7 +293,12 @@ case class CarbonInsertFromStageCommand(
           (row._1, FailureCauses.NONE == row._2._2.failureCauses)
         }
       } else {
-        CarbonDataRDDFactory.loadDataFrame(spark.sqlContext, Option(dataFrame), None, loadModel)
+        CarbonDataRDDFactory.loadDataFrame(
+          spark.sqlContext,
+          Option(dataFrame),
+          None,
+          loadModel,
+          spark.sqlContext.sparkContext.collectionAccumulator[Map[String, List[SegmentMinMax]]])
       }
       LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
 

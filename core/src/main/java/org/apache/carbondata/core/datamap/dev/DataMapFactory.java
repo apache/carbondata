@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
@@ -89,8 +90,8 @@ public abstract class DataMapFactory<T extends DataMap> {
   /**
    * Get the datamap for all segments
    */
-  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments)
-      throws IOException {
+  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments,
+      DataMapFilter filter) throws IOException {
     Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
     for (Segment segment : segments) {
       dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment));
@@ -103,7 +104,7 @@ public abstract class DataMapFactory<T extends DataMap> {
    * matches the partition.
    */
   public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments,
-      List<PartitionSpec> partitionSpecs) throws IOException {
+      List<PartitionSpec> partitionSpecs, DataMapFilter dataMapFilter) throws IOException {
     Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
     for (Segment segment : segments) {
       dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment, partitionSpecs));
