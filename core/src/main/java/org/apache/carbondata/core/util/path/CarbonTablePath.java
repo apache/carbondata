@@ -716,7 +716,9 @@ public class CarbonTablePath {
   }
 
   /**
-   * Return the parent path of the input file
+   * Return the parent path of the input file.
+   * For example, if input file path is /user/warehouse/t1/file.carbondata
+   * then return will be /user/warehouse/t1
    */
   public static String getParentPath(String dataFilePath) {
     int endIndex = dataFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
