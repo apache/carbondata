@@ -621,7 +621,7 @@ public class CarbonWriterBuilder {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, writtenByApp);
     if (hadoopConf == null) {
-      hadoopConf = FileFactory.getConfiguration();
+      hadoopConf = new Configuration(FileFactory.getConfiguration());
     }
     if (this.writerType == WRITER_TYPE.AVRO) {
       // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
