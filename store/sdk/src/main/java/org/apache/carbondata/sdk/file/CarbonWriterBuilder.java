@@ -152,6 +152,19 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * sets the taskNo for the writer. SDKs concurrently running
+   * will set taskNo in order to avoid conflicts in file's name during write.
+   *
+   * @param taskNo is the TaskNo user wants to specify.
+   *               by default it is system time in nano seconds.
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder taskNo(String taskNo) {
+    this.taskNo = taskNo;
+    return this;
+  }
+
+  /**
    * to set the timestamp in the carbondata and carbonindex index files
    *
    * @param timestamp is a timestamp to be used in the carbondata and carbonindex index files.

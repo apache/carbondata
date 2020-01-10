@@ -59,6 +59,7 @@ final class CarbonLocalWriter extends CarbonWriter {
           final Object[] row) {
         try {
           return org.apache.carbondata.sdk.file.CarbonWriter.builder()
+              .taskNo(UUID.randomUUID().toString().replace("-", ""))
               .outputPath(super.getWritePath(row))
               .writtenBy("flink")
               .withSchemaFile(CarbonTablePath.getSchemaFilePath(table.getTablePath()))
