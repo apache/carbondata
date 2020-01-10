@@ -83,6 +83,8 @@ public abstract class EncodingFactory {
       String compressor, boolean fullVectorFill) throws IOException {
     assert (encodings.size() >= 1);
     assert (encoderMetas.size() == 1);
+    boolean isComplexPrimitiveIntLengthEncoding =
+        encodings.contains(Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY);
     Encoding encoding = encodings.get(0);
     byte[] encoderMeta = encoderMetas.get(0).array();
     ByteArrayInputStream stream = new ByteArrayInputStream(encoderMeta);
@@ -91,7 +93,10 @@ public abstract class EncodingFactory {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.setFillCompleteVector(fullVectorFill);
       metadata.readFields(in);
-      return new DirectCompressCodec(metadata.getStoreDataType()).createDecoder(metadata);
+      DirectCompressCodec directCompressCodec =
+          new DirectCompressCodec(metadata.getStoreDataType());
+      directCompressCodec.setComplexPrimitiveIntLengthEncoding(isComplexPrimitiveIntLengthEncoding);
+      return directCompressCodec.createDecoder(metadata);
     } else if (encoding == ADAPTIVE_INTEGRAL) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.setFillCompleteVector(fullVectorFill);
@@ -216,14 +221,6 @@ public abstract class EncodingFactory {
           new ColumnPageEncoderMeta(spec, stats.getDataType(), stats, compressor);
       meta.setFillCompleteVector(fullVectorFill);
       return new DirectCompressCodec(stats.getDataType()).createDecoder(meta);
-    } else if (dataType == DataTypes.LEGACY_LONG) {
-      // In case of older versions like in V1 format it has special datatype to handle
-      AdaptiveIntegralCodec adaptiveCodec =
-          new AdaptiveIntegralCodec(DataTypes.LONG, DataTypes.LONG, stats, false);
-      ColumnPageEncoderMeta meta =
-          new ColumnPageEncoderMeta(spec, adaptiveCodec.getTargetDataType(), stats, compressor);
-      meta.setFillCompleteVector(fullVectorFill);
-      return adaptiveCodec.createDecoder(meta);
     } else {
       throw new RuntimeException("unsupported data type: " + stats.getDataType());
     }

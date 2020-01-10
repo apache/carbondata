@@ -698,7 +698,8 @@ public abstract class ColumnPage {
    * @return
    * @throws IOException
    */
-  public abstract byte[] getComplexChildrenLVFlattenedBytePage() throws IOException;
+  public abstract byte[] getComplexChildrenLVFlattenedBytePage(DataType dataType)
+      throws IOException;
 
   /**
    * For complex type columns
@@ -746,7 +747,8 @@ public abstract class ColumnPage {
       return getDecimalPage().length;
     } else if (dataType == BYTE_ARRAY
         && columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
-      return getComplexChildrenLVFlattenedBytePage().length;
+      return getComplexChildrenLVFlattenedBytePage(
+          columnPageEncoderMeta.getColumnSpec().getSchemaDataType()).length;
     } else if (dataType == BYTE_ARRAY
         && (columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_STRUCT
         || columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_ARRAY
@@ -785,7 +787,8 @@ public abstract class ColumnPage {
       return compressor.compressByte(getDecimalPage());
     } else if (dataType == BYTE_ARRAY
         && columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
-      return compressor.compressByte(getComplexChildrenLVFlattenedBytePage());
+      return compressor.compressByte(getComplexChildrenLVFlattenedBytePage(
+          columnPageEncoderMeta.getColumnSpec().getSchemaDataType()));
     } else if (dataType == BYTE_ARRAY
         && (columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_STRUCT
         || columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_ARRAY
@@ -805,8 +808,8 @@ public abstract class ColumnPage {
    * Decompress data and create a column page using the decompressed data,
    * except for decimal page
    */
-  public static ColumnPage decompress(ColumnPageEncoderMeta meta, byte[] compressedData,
-      int offset, int length, boolean isLVEncoded)
+  public static ColumnPage decompress(ColumnPageEncoderMeta meta, byte[] compressedData, int offset,
+      int length, boolean isLVEncoded, boolean isComplexPrimitiveIntLengthEncoding)
       throws MemoryException {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
@@ -836,8 +839,14 @@ public abstract class ColumnPage {
         columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE
             || columnSpec.getColumnType() == ColumnType.PLAIN_VALUE)) {
       byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
-      return newComplexLVBytesPage(columnSpec, lvVarBytes,
-          CarbonCommonConstants.SHORT_SIZE_IN_BYTE, meta.getCompressorName());
+      if (isComplexPrimitiveIntLengthEncoding) {
+        // decode as int length
+        return newComplexLVBytesPage(columnSpec, lvVarBytes,
+            CarbonCommonConstants.INT_SIZE_IN_BYTE, meta.getCompressorName());
+      } else {
+        return newComplexLVBytesPage(columnSpec, lvVarBytes,
+            CarbonCommonConstants.SHORT_SIZE_IN_BYTE, meta.getCompressorName());
+      }
     } else if (isLVEncoded && storeDataType == BYTE_ARRAY &&
         columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
       byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);

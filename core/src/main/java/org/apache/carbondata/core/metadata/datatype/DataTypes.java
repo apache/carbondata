@@ -45,9 +45,6 @@ public class DataTypes {
   // internal use only, for value compression from integer/long to 3 bytes value
   public static final DataType SHORT_INT = ShortIntType.SHORT_INT;
 
-  // Only for internal use for backward compatability. It is only used for V1 version
-  public static final DataType LEGACY_LONG = LegacyLongType.LEGACY_LONG;
-
   public static final DataType VARCHAR = VarcharType.VARCHAR;
 
   // these IDs are used within this package only
@@ -94,8 +91,6 @@ public class DataTypes {
       return INT;
     } else if (id == LONG.getId()) {
       return LONG;
-    } else if (id == LEGACY_LONG.getId()) {
-      return LEGACY_LONG;
     } else if (id == FLOAT.getId()) {
       return FLOAT;
     } else if (id == DOUBLE.getId()) {

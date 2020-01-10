@@ -28,6 +28,7 @@ import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 import org.apache.log4j.Logger;
 
@@ -364,11 +365,11 @@ public class LocalDictColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
+  public byte[] getComplexChildrenLVFlattenedBytePage(DataType dataType) throws IOException {
     if (null != encodedDataColumnPage) {
-      return encodedDataColumnPage.getComplexChildrenLVFlattenedBytePage();
+      return encodedDataColumnPage.getComplexChildrenLVFlattenedBytePage(dataType);
     } else {
-      return actualDataColumnPage.getComplexChildrenLVFlattenedBytePage();
+      return actualDataColumnPage.getComplexChildrenLVFlattenedBytePage(dataType);
     }
   }
 

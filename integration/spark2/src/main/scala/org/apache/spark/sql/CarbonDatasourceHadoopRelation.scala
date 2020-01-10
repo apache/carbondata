@@ -54,7 +54,7 @@ case class CarbonDatasourceHadoopRelation(
     paths.head,
     CarbonEnv.getDatabaseName(caseInsensitiveMap.get("dbname"))(sparkSession),
     caseInsensitiveMap("tablename"))
-  CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
+  CarbonUtils.updateSessionInfoToCurrentThread(sparkSession)
 
   @transient lazy val carbonRelation: CarbonRelation =
     CarbonEnv.getInstance(sparkSession).carbonMetaStore.
@@ -168,7 +168,7 @@ case class CarbonDatasourceHadoopRelation(
       requiredColumns.foreach(projection.addColumn)
     }
 
-    CarbonSession.threadUnset(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP)
+    CarbonUtils.threadUnset(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP)
     val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     new CarbonScanRDD(
       sparkSession,

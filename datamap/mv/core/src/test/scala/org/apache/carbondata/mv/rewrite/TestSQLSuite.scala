@@ -18,7 +18,7 @@
 package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.catalyst.util._
-import org.apache.spark.sql.hive.CarbonSessionCatalog
+import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.scalatest.BeforeAndAfter
 import org.apache.carbondata.mv.testutil.ModularPlanTest
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -28,7 +28,7 @@ class TestSQLSuite extends ModularPlanTest with BeforeAndAfter {
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
-  val hiveClient = SparkSQLUtil.sessionState(spark.sparkSession).catalog.asInstanceOf[CarbonSessionCatalog].getClient()
+  val hiveClient = CarbonSessionCatalogUtil.getClient(spark.sparkSession)
   
   ignore("protypical mqo rewrite test") {
     

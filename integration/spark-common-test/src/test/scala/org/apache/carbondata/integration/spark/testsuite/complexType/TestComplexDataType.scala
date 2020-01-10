@@ -21,6 +21,7 @@ import java.sql.Timestamp
 
 import scala.collection.mutable
 
+import org.apache.commons.lang3.RandomStringUtils
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -39,9 +40,13 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
   val badRecordAction = CarbonProperties.getInstance()
     .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
 
+  val hugeBinary = RandomStringUtils.randomAlphabetic(33000)
+
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS table1")
     sql("DROP TABLE IF EXISTS test")
+    sql("DROP TABLE IF EXISTS datatype_struct_carbondata")
+    sql("DROP TABLE IF EXISTS datatype_struct_parquet")
   }
 
   override def afterAll(): Unit = {
@@ -54,6 +59,8 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction)
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_1)
   }
 
   test("test Projection PushDown for Struct - Integer type") {
@@ -965,6 +972,16 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hive_table")
   }
 
+  test("test array of huge binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField array<binary>, autoLabel boolean) stored by 'carbondata'")
+    sql(s"insert into carbon_table values(1,true,'abc',array('$hugeBinary'),false)")
+    val result = sql("SELECT binaryField[0] FROM carbon_table").collect()
+    assert(hugeBinary.equals(new String(result(0).get(0).asInstanceOf[Array[Byte]])))
+    sql("drop table if exists carbon_table")
+  }
+
   test("test struct of binary data type") {
     sql("drop table if exists carbon_table")
     sql("drop table if exists parquet_table")
@@ -978,7 +995,17 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT binaryField.b FROM carbon_table"),
       sql("SELECT binaryField.b FROM parquet_table"))
     sql("drop table if exists carbon_table")
-    sql("drop table if exists hive_table")
+    sql("drop table if exists parquet_table")
+  }
+
+  test("test struct of huge binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField struct<b:binary>, autoLabel boolean) stored as carbondata ")
+    sql(s"insert into carbon_table values(1,true,'abc',named_struct('b','$hugeBinary'),false)")
+    val result = sql("SELECT binaryField.b FROM carbon_table").collect()
+    assert(hugeBinary.equals(new String(result(0).get(0).asInstanceOf[Array[Byte]])))
+    sql("drop table if exists carbon_table")
   }
 
   test("test map of binary data type") {
@@ -994,6 +1021,16 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       sql("SELECT binaryField[1] FROM hive_table"))
     sql("drop table if exists carbon_table")
     sql("drop table if exists hive_table")
+  }
+
+  test("test map of huge binary data type") {
+    sql("drop table if exists carbon_table")
+    sql("create table if not exists carbon_table(id int, label boolean, name string," +
+        "binaryField map<int, binary>, autoLabel boolean) stored by 'carbondata'")
+    sql(s"insert into carbon_table values(1,true,'abc',map(1,'$hugeBinary'),false)")
+    val result = sql("SELECT binaryField[1] FROM carbon_table").collect()
+    assert(hugeBinary.equals(new String(result(0).get(0).asInstanceOf[Array[Byte]])))
+    sql("drop table if exists carbon_table")
   }
 
   test("test map of array and struct binary data type") {
@@ -1013,7 +1050,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       sql("SELECT binaryField1[1][1] FROM parquet_table"))
     checkAnswer(sql("SELECT binaryField2[1].b FROM carbon_table"),
       sql("SELECT binaryField2[1].b FROM parquet_table"))
-    sql("drop table if exists hive_table")
+    sql("drop table if exists parquet_table")
     sql("drop table if exists carbon_table")
   }
 
@@ -1062,6 +1099,23 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       sql("SELECT binaryField3[1] FROM hive_table where id=1"))
     sql("drop table if exists carbon_table")
     sql("drop table if exists hive_table")
+  }
+
+  test("test when insert select from a parquet table with an struct with binary and custom complex delimiter") {
+    var carbonProperties = CarbonProperties.getInstance()
+    carbonProperties.addProperty(CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_1, "#")
+
+    sql("create table datatype_struct_parquet(price struct<a:binary>) stored as parquet")
+    sql("insert into table datatype_struct_parquet values(named_struct('a', 'col1\001col2'))")
+    sql("create table datatype_struct_carbondata(price struct<a:binary>) stored as carbondata")
+    sql("insert into datatype_struct_carbondata select * from datatype_struct_parquet")
+    checkAnswer(
+      sql("SELECT * FROM datatype_struct_carbondata"),
+      sql("SELECT * FROM datatype_struct_parquet"))
+    sql("DROP TABLE IF EXISTS datatype_struct_carbondata")
+    sql("DROP TABLE IF EXISTS datatype_struct_parquet")
+
+    carbonProperties.removeProperty(CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_1)
   }
 
   test("[CARBONDATA-3527] Fix 'String length cannot exceed 32000 characters' issue when load data with 'GLOBAL_SORT' from csv files which include big complex type data") {

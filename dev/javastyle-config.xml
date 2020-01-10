@@ -175,9 +175,6 @@
             <message key="import.redundancy" value="Redundant import {0}."/>
         </module>
 
-        <!-- Checks for star import. -->
-        <module name="AvoidStarImport"/>
-
         <!-- Checks for placement of the left curly brace ('{'). -->
         <module name="LeftCurly"/>
 

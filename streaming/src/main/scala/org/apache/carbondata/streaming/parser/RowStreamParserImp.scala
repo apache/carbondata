@@ -69,7 +69,8 @@ class RowStreamParserImp extends CarbonStreamParser {
       FieldConverter.objectToString(
         x, serializationNullFormat, complexDelimiters,
         timeStampFormat, dateFormat,
-        isVarcharType = i < this.isVarcharTypeMapping.length && this.isVarcharTypeMapping(i))
+        isVarcharType = i < this.isVarcharTypeMapping.length && this.isVarcharTypeMapping(i),
+        binaryCodec = null)
     } }.toArray
 
   override def close(): Unit = {

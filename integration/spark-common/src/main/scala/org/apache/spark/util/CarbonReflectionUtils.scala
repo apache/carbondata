@@ -206,8 +206,8 @@ object CarbonReflectionUtils {
   }
 
   def getSessionState(sparkContext: SparkContext,
-      carbonSession: Object,
-      useHiveMetaStore: Boolean): Any = {
+                      carbonSession: Object,
+                      useHiveMetaStore: Boolean): Any = {
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       val className = sparkContext.conf.get(
         CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
@@ -379,6 +379,16 @@ object CarbonReflectionUtils {
    */
   def setFieldToCaseClass(caseObj: Object, fieldName: String, objToSet: Object): Unit = {
     val nameField = caseObj.getClass.getDeclaredField(fieldName)
+    nameField.setAccessible(true)
+    nameField.set(caseObj, objToSet)
+  }
+
+
+  /**
+   * This method updates the field of case class through reflection.
+   */
+  def setSuperFieldToClass(caseObj: Object, fieldName: String, objToSet: Object): Unit = {
+    val nameField = caseObj.getClass.getSuperclass.getDeclaredField(fieldName)
     nameField.setAccessible(true)
     nameField.set(caseObj, objToSet)
   }

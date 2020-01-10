@@ -277,6 +277,14 @@ public final class DataMapStoreManager {
   }
 
   /**
+   * This method removes the datamapCatalog for the corresponding provider if the session gets
+   * refreshed or updated
+   */
+  public void clearDataMapCatalog() {
+    dataMapCatalogs = null;
+  }
+
+  /**
    * Initialize by reading all datamaps from store and re register it
    * @param dataMapProvider
    */

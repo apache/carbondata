@@ -18,8 +18,8 @@
 package org.apache.carbondata.core.metadata;
 
 public enum ColumnarFormatVersion {
-  V1((short)1),
-  V2((short)2),
+  V1((short)1),  // deprecated
+  V2((short)2),  // deprecated
   V3((short)3);
 
   private short version;

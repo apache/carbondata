@@ -196,7 +196,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     val e = intercept[Exception] {
       sql(s""" insert into testlongstring select 1, 'abc', '$longChar'""")
     }
-    assert(e.getMessage.contains("Dataload failed, String length cannot exceed 32000 characters"))
+    assert(e.getMessage.contains("DataLoad failure: Column description is too long"))
     sql("ALTER TABLE testlongstring SET TBLPROPERTIES('long_String_columns'='description')")
     sql(s""" insert into testlongstring select 1, 'ab1', '$longChar'""")
     sql("drop table if exists testlongstring")

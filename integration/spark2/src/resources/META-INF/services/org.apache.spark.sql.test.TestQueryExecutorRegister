@@ -15,3 +15,4 @@
 ## limitations under the License.
 ## ------------------------------------------------------------------------
 org.apache.spark.sql.test.Spark2TestQueryExecutor
+org.apache.spark.sql.test.CarbonSpark2TestQueryExecutor

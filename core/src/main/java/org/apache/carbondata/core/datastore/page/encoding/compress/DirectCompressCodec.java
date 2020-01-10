@@ -58,6 +58,12 @@ public class DirectCompressCodec implements ColumnPageCodec {
     this.dataType = dataType;
   }
 
+  boolean isComplexPrimitiveIntLengthEncoding = false;
+
+  public void setComplexPrimitiveIntLengthEncoding(boolean complexPrimitiveIntLengthEncoding) {
+    isComplexPrimitiveIntLengthEncoding = complexPrimitiveIntLengthEncoding;
+  }
+
   @Override
   public String getName() {
     return "DirectCompressCodec";
@@ -102,7 +108,8 @@ public class DirectCompressCodec implements ColumnPageCodec {
         if (DataTypes.isDecimal(dataType)) {
           decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
         } else {
-          decodedPage = ColumnPage.decompress(meta, input, offset, length, false);
+          decodedPage = ColumnPage
+              .decompress(meta, input, offset, length, false, isComplexPrimitiveIntLengthEncoding);
         }
         return LazyColumnPage.newPage(decodedPage, converter);
       }
@@ -150,8 +157,9 @@ public class DirectCompressCodec implements ColumnPageCodec {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
           throws MemoryException, IOException {
-        return LazyColumnPage
-            .newPage(ColumnPage.decompress(meta, input, offset, length, isLVEncoded), converter);
+        return LazyColumnPage.newPage(ColumnPage
+            .decompress(meta, input, offset, length, isLVEncoded,
+                isComplexPrimitiveIntLengthEncoding), converter);
       }
     };
   }

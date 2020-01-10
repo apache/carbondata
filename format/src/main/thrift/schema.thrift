@@ -62,6 +62,7 @@ enum Encoding{
 	BOOL_BYTE = 12;   // Identifies that a column is encoded using BooleanPageCodec
 	ADAPTIVE_DELTA_FLOATING = 13; // Identifies that a column is encoded using AdaptiveDeltaFloatingCodec
 	DIRECT_COMPRESS_VARCHAR = 14;  // Identifies that a columm is encoded using DirectCompressCodec, it is used for long string columns
+	INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY = 15;  // Identifies that a complex column child stored as INT length or SHORT length
 }
 
 // Only NATIVE_HIVE is supported, others are deprecated since CarbonData 2.0

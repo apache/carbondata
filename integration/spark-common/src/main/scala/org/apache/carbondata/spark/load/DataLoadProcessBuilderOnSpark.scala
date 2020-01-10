@@ -26,15 +26,17 @@ import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.spark.{Accumulator, CarbonInputMetrics, DataSkewRangePartitioner, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.GenericRow
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.converter.SparkDataTypeConverterImpl
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, StructField, StructType}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -50,7 +52,7 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.sort.sortdata.{NewRowComparator, NewRowComparatorForNormalDims, SortParameters}
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, TableOptionConstant}
-import org.apache.carbondata.spark.rdd.CarbonScanRDD
+import org.apache.carbondata.spark.rdd.{CarbonScanRDD, StringArrayRow}
 import org.apache.carbondata.spark.util.CommonUtil
 import org.apache.carbondata.store.CarbonRowReadSupport
 
@@ -65,10 +67,12 @@ object DataLoadProcessBuilderOnSpark {
       dataFrame: Option[DataFrame],
       model: CarbonLoadModel,
       hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+    var isLoadFromCSV = false
     val originRDD = if (dataFrame.isDefined) {
       dataFrame.get.rdd
     } else {
       // input data from files
+      isLoadFromCSV = true
       val columnCount = model.getCsvHeaderColumns.length
       CsvRDDHelper.csvFileScanRDD(sparkSession, model, hadoopConf)
         .map(DataLoadProcessorStepOnSpark.toStringArrayRow(_, columnCount))
@@ -88,18 +92,31 @@ object DataLoadProcessBuilderOnSpark {
 
     val conf = SparkSQLUtil.broadCastHadoopConf(sc, hadoopConf)
     // 1. Input
-    val inputRDD = originRDD
-      .mapPartitions(rows => DataLoadProcessorStepOnSpark.toRDDIterator(rows, modelBroadcast))
-      .mapPartitionsWithIndex { case (index, rows) =>
-        DataLoadProcessorStepOnSpark.inputFunc(rows, index, modelBroadcast, inputStepRowCounter)
+    val inputRDD = if (isLoadFromCSV) {
+      // No need of wrap with NewRDDIterator, which converts object to string,
+      // as it is already a string.
+      // So, this will avoid new object creation in case of CSV global sort load for each row
+      originRDD.mapPartitionsWithIndex { case (index, rows) =>
+        DataLoadProcessorStepOnSpark.inputFuncForCsvRows(
+          rows.asInstanceOf[Iterator[StringArrayRow]],
+          index,
+          modelBroadcast,
+          inputStepRowCounter)
       }
+    } else {
+      originRDD
+        .mapPartitions(rows => DataLoadProcessorStepOnSpark.toRDDIterator(rows, modelBroadcast))
+        .mapPartitionsWithIndex { case (index, rows) =>
+          DataLoadProcessorStepOnSpark.inputFunc(rows, index, modelBroadcast, inputStepRowCounter)
+        }
+    }
 
     // 2. Convert
     val convertRDD = inputRDD.mapPartitionsWithIndex { case (index, rows) =>
       ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
       DataLoadProcessorStepOnSpark.convertFunc(rows, index, modelBroadcast, partialSuccessAccum,
         convertStepRowCounter)
-    }.filter(_ != null)// Filter the bad record
+    }.filter(_ != null) // Filter the bad record
 
     // 3. Sort
     val configuration = DataLoadProcessBuilder.createConfiguration(model)
@@ -269,7 +286,7 @@ object DataLoadProcessBuilderOnSpark {
     val configuration = DataLoadProcessBuilder.createConfiguration(model)
     val header = configuration.getHeader
     val rangeColumn = model.getRangePartitionColumn
-    val rangeColumnIndex = (0 until header.length).find{
+    val rangeColumnIndex = (0 until header.length).find {
       index =>
         header(index).equalsIgnoreCase(rangeColumn.getColName)
     }.get
@@ -427,7 +444,7 @@ object DataLoadProcessBuilderOnSpark {
       .map(_.getColName)
       .toArray
     val schema = SparkTypeConverter.createSparkSchema(carbonTable, columns)
-    val rdd: RDD[Row] = new CarbonScanRDD[CarbonRow](
+    val rdd: RDD[InternalRow] = new CarbonScanRDD[CarbonRow](
       sparkSession,
       columnProjection = new CarbonProjection(columns),
       null,
@@ -436,13 +453,13 @@ object DataLoadProcessBuilderOnSpark {
       carbonTable.getTableInfo,
       new CarbonInputMetrics,
       null,
-      null,
+      classOf[SparkDataTypeConverterImpl],
       classOf[CarbonRowReadSupport],
       splits.asJava)
       .map { row =>
-        new GenericRow(row.getData.asInstanceOf[Array[Any]])
+        new GenericInternalRow(row.getData.asInstanceOf[Array[Any]])
       }
-    sparkSession.createDataFrame(rdd, schema)
+    SparkSQLUtil.execute(rdd, schema, sparkSession)
   }
 }
 

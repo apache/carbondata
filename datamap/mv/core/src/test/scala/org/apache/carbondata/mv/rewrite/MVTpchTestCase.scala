@@ -21,13 +21,13 @@ import java.io.File
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.test.util.CarbonQueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
+class MVTpchTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     drop()

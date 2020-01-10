@@ -315,7 +315,7 @@ test("Creation of partition table should fail if the colname in table schema and
     checkAnswer(sql("select email from partitionTable"), Seq(Row("def"), Row("abc")))
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location))
   }
-
+  
   test("sdk write and add partition based on location on partition table"){
     sql("drop table if exists partitionTable")
     sql("create table partitionTable (id int,name String) partitioned by(email string) stored as carbondata")

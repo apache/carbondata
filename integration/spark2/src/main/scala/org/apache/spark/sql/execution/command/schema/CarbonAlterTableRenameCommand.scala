@@ -23,7 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
 import org.apache.spark.util.{AlterTableUtil, DataMapUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -135,10 +135,10 @@ private[sql] case class CarbonAlterTableRenameCommand(
           sparkSession.sessionState.catalog.listPartitions(oldTableIdentifier)
       }
       sparkSession.catalog.refreshTable(oldTableIdentifier.quotedString)
-      sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].alterTableRename(
+      CarbonSessionCatalogUtil.alterTableRename(
           oldTableIdentifier,
           newTableIdentifier,
-        oldAbsoluteTableIdentifier.getTablePath)
+        oldAbsoluteTableIdentifier.getTablePath, sparkSession)
       hiveRenameSuccess = true
 
       metastore.updateTableSchemaForAlter(
@@ -167,10 +167,10 @@ private[sql] case class CarbonAlterTableRenameCommand(
         throw e
       case e: Exception =>
         if (hiveRenameSuccess) {
-          sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].alterTableRename(
+          CarbonSessionCatalogUtil.alterTableRename(
             newTableIdentifier,
             oldTableIdentifier,
-            carbonTable.getAbsoluteTableIdentifier.getTablePath)
+            carbonTable.getAbsoluteTableIdentifier.getTablePath, sparkSession)
         }
         if (carbonTable != null) {
           AlterTableUtil.revertRenameTableChanges(

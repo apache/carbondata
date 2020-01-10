@@ -45,6 +45,10 @@ public class RowIdBasedResultCollector extends DictionaryBasedResultCollector {
     byte[][] complexTypeKeyArray;
     int columnCount = queryDimensions.length + queryMeasures.length;
     while (scannedResult.hasNext() && rowCounter < batchSize) {
+      scannedResult.incrementCounter();
+      if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
+        continue;
+      }
       Object[] row = new Object[columnCount + 3];
       row[columnCount] = scannedResult.getBlockletNumber();
       row[columnCount + 1] = scannedResult.getCurrentPageCounter();
@@ -59,13 +63,8 @@ public class RowIdBasedResultCollector extends DictionaryBasedResultCollector {
           fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
               comlexDimensionInfoMap, row, i, queryDimensions[i].getDimension().getOrdinal());
         }
-      } else {
-        scannedResult.incrementCounter();
       }
       row[columnCount + 2] = scannedResult.getCurrentRowId();
-      if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
-        continue;
-      }
       fillMeasureData(scannedResult, row);
       listBasedResult.add(row);
       rowCounter++;

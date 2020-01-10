@@ -20,7 +20,8 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.{CarbonToSparkAdapter, DeleteRecords, UpdateTable}
+import org.apache.commons.lang3.StringUtils
+import org.apache.spark.sql.{CarbonToSparkAdapter, Dataset, DeleteRecords, ProjectForUpdate, SparkSession, UpdateTable}
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -31,7 +32,7 @@ import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnC
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
-import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation}
 import org.apache.spark.sql.execution.command.cache.{CarbonDropCacheCommand, CarbonShowCacheCommand}
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.util.CarbonException
@@ -247,8 +248,67 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       case tab ~ columns ~ rest =>
         val (sel, where) = splitQuery(rest)
         val selectPattern = """^\s*select\s+""".r
+        // In case of "update = (subquery) where something"
+        // If subquery has join with main table, then only it should go to "update by join" flow.
+        // Else it should go to "update by value" flow.
+        // In update by value flow, we need values to update.
+        // so need to execute plan and collect values from subquery if is not join with main table.
+        var subQueryResults : String = ""
+        if (selectPattern.findFirstIn(sel.toLowerCase).isDefined) {
+          // subQuery starts with select
+          val mainTableName = tab._4.table
+          val mainTableAlias = if (tab._3.isDefined) {
+            tab._3.get
+          } else {
+            ""
+          }
+          val session = SparkSession.getActiveSession.get
+          val subQueryUnresolvedLogicalPlan = session.sessionState.sqlParser.parsePlan(sel)
+          var isJoinWithMainTable : Boolean = false
+          var isLimitPresent : Boolean = false
+          subQueryUnresolvedLogicalPlan collect {
+            case f: Filter =>
+              f.condition.collect {
+                case attr: UnresolvedAttribute =>
+                  if ((!StringUtils.isEmpty(mainTableAlias) &&
+                       attr.nameParts.head.equalsIgnoreCase(mainTableAlias)) ||
+                      attr.nameParts.head.equalsIgnoreCase(mainTableName)) {
+                    isJoinWithMainTable = true
+                  }
+              }
+            case _: GlobalLimit =>
+              isLimitPresent = true
+          }
+          if (isJoinWithMainTable && isLimitPresent) {
+            throw new UnsupportedOperationException(
+              "Update subquery has join with maintable and limit leads to multiple join for each " +
+              "limit for each row")
+          }
+          if (!isJoinWithMainTable) {
+            // Should go as value update, not as join update. So execute the sub query.
+            val analyzedPlan = CarbonReflectionUtils.invokeAnalyzerExecute(session
+              .sessionState
+              .analyzer, subQueryUnresolvedLogicalPlan)
+            val subQueryLogicalPlan = session.sessionState.optimizer.execute(analyzedPlan)
+            val df = Dataset.ofRows(session, subQueryLogicalPlan)
+            val rowsCount = df.count()
+            if (rowsCount == 0L) {
+              // if length = 0, update to null
+              subQueryResults = "null"
+            } else if (rowsCount != 1) {
+              throw new UnsupportedOperationException(
+                " update cannot be supported for 1 to N mapping, as more than one value present " +
+                "for the update key")
+            } else {
+              subQueryResults = "'" + df.collect()(0).toSeq.mkString("','") + "'"
+            }
+          }
+        }
         val (selectStmt, relation) =
-          if (!selectPattern.findFirstIn(sel.toLowerCase).isDefined) {
+          if (!selectPattern.findFirstIn(sel.toLowerCase).isDefined ||
+              !StringUtils.isEmpty(subQueryResults)) {
+            // if subQueryResults are not empty means, it is not join with main table.
+            // so use subQueryResults in update with value flow.
             if (sel.trim.isEmpty) {
               sys.error("At least one source column has to be specified ")
             }
@@ -262,12 +322,16 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
                 }
               case _ => tab._1
             }
-
+            val newSel = if (!StringUtils.isEmpty(subQueryResults)) {
+              subQueryResults
+            } else {
+              sel
+            }
             tab._3 match {
               case Some(a) =>
-                ("select " + sel + " from " + getTableName(tab._2) + " " + tab._3.get, relation)
+                ("select " + newSel + " from " + getTableName(tab._2) + " " + tab._3.get, relation)
               case None =>
-                ("select " + sel + " from " + getTableName(tab._2), relation)
+                ("select " + newSel + " from " + getTableName(tab._2), relation)
             }
 
           } else {

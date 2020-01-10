@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
-import org.apache.carbondata.core.constants.CarbonVersionConstants;
 import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
 import org.apache.carbondata.core.datastore.DataRefNode;
@@ -59,27 +58,15 @@ public class BlockletDataRefNode implements DataRefNode {
       detailInfo.getBlockletInfo().setNumberOfPages(detailInfo.getPagesCount());
       detailInfo.setBlockletId(blockInfo.getDetailInfo().getBlockletId());
       int[] pageRowCount = new int[detailInfo.getPagesCount()];
-      int numberOfPagesCompletelyFilled = detailInfo.getRowCount();
+      int numberOfPagesCompletelyFilled = detailInfo.getRowCount() /
+          CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+
       // no. of rows to a page is 120000 in V2 and 32000 in V3, same is handled to get the number
       // of pages filled
-      int lastPageRowCount;
-      int fullyFilledRowsCount;
-      if (blockInfo.getVersion() == ColumnarFormatVersion.V2
-          || blockInfo.getVersion() == ColumnarFormatVersion.V1) {
-        numberOfPagesCompletelyFilled /=
-            CarbonVersionConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT_V2;
-        lastPageRowCount = detailInfo.getRowCount()
-            % CarbonVersionConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT_V2;
-        fullyFilledRowsCount =
-            CarbonVersionConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT_V2;
-      } else {
-        numberOfPagesCompletelyFilled /=
-            CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
-        lastPageRowCount = detailInfo.getRowCount()
-            % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
-        fullyFilledRowsCount =
-            CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
-      }
+      int lastPageRowCount = detailInfo.getRowCount()
+          % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+      int fullyFilledRowsCount =
+          CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
       for (int i = 0; i < numberOfPagesCompletelyFilled; i++) {
         pageRowCount[i] = fullyFilledRowsCount;
       }

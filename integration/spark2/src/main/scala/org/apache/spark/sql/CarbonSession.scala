@@ -19,8 +19,6 @@ package org.apache.spark.sql
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
-import scala.collection.JavaConverters._
-
 import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
@@ -28,14 +26,14 @@ import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.QueryExecution
-import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
-import org.apache.spark.sql.internal.{SessionState, SharedState}
+import org.apache.spark.sql.execution.command.mutation.merge.MergeDataSetBuilder
+import org.apache.spark.sql.internal.{SessionState, SharedState, StaticSQLConf}
 import org.apache.spark.sql.profiler.{Profiler, SQLStart}
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.streaming.CarbonStreamingQueryListener
 
 /**
@@ -238,6 +236,7 @@ object CarbonSession {
           if (!sparkConf.contains("spark.app.name")) {
             sparkConf.setAppName(randomAppName)
           }
+          sparkConf.set("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
           val sc = SparkContext.getOrCreate(sparkConf)
           // maybe this is an existing SparkContext, update its SparkConf which maybe used
           // by SparkSession
@@ -248,7 +247,30 @@ object CarbonSession {
           sc
         }
 
+        // Initialize extensions if the user has defined a configurator class.
+        val extensionConfOption = sparkContext.conf.get(StaticSQLConf.SPARK_SESSION_EXTENSIONS)
+        val extensionInstance : SparkSessionExtensions = new SparkSessionExtensions
+        if (extensionConfOption.isDefined) {
+          val extensionConfClassName = extensionConfOption.get
+          try {
+            val extensionConfClass = Utils.classForName(extensionConfClassName)
+            val ex = extensionConfClass.newInstance()
+              .asInstanceOf[(SparkSessionExtensions) => Unit]
+            ex(extensionInstance)
+
+          } catch {
+            // Ignore the error if we cannot find the class or when the class has the wrong type.
+            case e @ (_: ClassCastException |
+                      _: ClassNotFoundException |
+                      _: NoClassDefFoundError) =>
+              // Ignore extensions
+          }
+        }
+
         session = new CarbonSession(sparkContext, None, !enableInMemCatlog)
+
+        CarbonReflectionUtils.setSuperFieldToClass(session, "extensions", extensionInstance)
+
         val carbonProperties = CarbonProperties.getInstance()
         if (StringUtils.isNotBlank(storePath)) {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
@@ -283,57 +305,13 @@ object CarbonSession {
     }
   }
 
-  def threadSet(key: String, value: String): Unit = {
-    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (currentThreadSessionInfo == null) {
-      currentThreadSessionInfo = new CarbonSessionInfo()
+  implicit class DataSetMerge(val ds: Dataset[Row]) {
+    def merge(srcDS: Dataset[Row], expr: String): MergeDataSetBuilder = {
+      new MergeDataSetBuilder(ds, srcDS, expr, ds.sparkSession)
     }
-    else {
-      currentThreadSessionInfo = currentThreadSessionInfo.clone()
-    }
-    val threadParams = currentThreadSessionInfo.getThreadParams
-    CarbonSetCommand.validateAndSetValue(threadParams, key, value)
-    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
-  }
 
-
-  def threadSet(key: String, value: Object): Unit = {
-    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (currentThreadSessionInfo == null) {
-      currentThreadSessionInfo = new CarbonSessionInfo()
-    }
-    else {
-      currentThreadSessionInfo = currentThreadSessionInfo.clone()
-    }
-    currentThreadSessionInfo.getThreadParams.setExtraInfo(key, value)
-    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
-  }
-
-  def threadUnset(key: String): Unit = {
-    val currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (currentThreadSessionInfo != null) {
-      val currentThreadSessionInfoClone = currentThreadSessionInfo.clone()
-      val threadParams = currentThreadSessionInfoClone.getThreadParams
-      CarbonSetCommand.unsetValue(threadParams, key)
-      threadParams.removeExtraInfo(key)
-      ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfoClone)
+    def merge(srcDS: Dataset[Row], expr: Column): MergeDataSetBuilder = {
+      new MergeDataSetBuilder(ds, srcDS, expr, ds.sparkSession)
     }
   }
-
-  def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
-    val carbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.clone()
-    val currentThreadSessionInfoOrig = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (currentThreadSessionInfoOrig != null) {
-      val currentThreadSessionInfo = currentThreadSessionInfoOrig.clone()
-      // copy all the thread parameters to apply to session parameters
-      currentThreadSessionInfo.getThreadParams.getAll.asScala
-        .foreach(entry => carbonSessionInfo.getSessionParams.addProperty(entry._1, entry._2))
-      carbonSessionInfo.setThreadParams(currentThreadSessionInfo.getThreadParams)
-    }
-    // preserve thread parameters across call
-    ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
-    ThreadLocalSessionInfo
-      .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
-  }
-
 }

@@ -206,7 +206,7 @@ object DistributionUtil {
    * @param sparkContext
    * @return
    */
-  private def getConfiguredExecutors(sparkContext: SparkContext): Int = {
+  def getConfiguredExecutors(sparkContext: SparkContext): Int = {
     var confExecutors: Int = 0
     if (sparkContext.getConf.getBoolean("spark.dynamicAllocation.enabled", false)) {
       // default value for spark.dynamicAllocation.maxExecutors is infinity
@@ -238,7 +238,8 @@ object DistributionUtil {
     val maxRetryCount = calculateMaxRetry
     var maxTimes = maxRetryCount
     breakable {
-      while (nodes.length < requiredExecutors && maxTimes > 0) {
+      val len = nodes.length
+      while (requiredExecutors > len && maxTimes > 0) {
         Thread.sleep(threadSleepTime);
         nodes = DistributionUtil.getNodeList(sparkContext)
         maxTimes = maxTimes - 1;

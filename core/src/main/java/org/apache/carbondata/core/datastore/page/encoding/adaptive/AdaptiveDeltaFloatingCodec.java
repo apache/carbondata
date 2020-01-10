@@ -128,7 +128,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
-        ColumnPage page = ColumnPage.decompress(meta, input, offset, length, false);
+        ColumnPage page = ColumnPage.decompress(meta, input, offset, length, false, false);
         return LazyColumnPage.newPage(page, converter);
       }
 

@@ -58,13 +58,10 @@ class CarbonDataWriterFactory {
   public CarbonFactDataWriter getFactDataWriter(final ColumnarFormatVersion version,
       final CarbonFactDataHandlerModel model) {
     switch (version) {
-      case V1:
-      case V2:
-        throw new UnsupportedOperationException("V1 and V2 CarbonData Writer is not supported");
       case V3:
         return new CarbonFactDataWriterImplV3(model);
       default:
-        return new CarbonFactDataWriterImplV3(model);
+        throw new UnsupportedOperationException("V1 and V2 CarbonData Writer is not supported");
     }
   }
 

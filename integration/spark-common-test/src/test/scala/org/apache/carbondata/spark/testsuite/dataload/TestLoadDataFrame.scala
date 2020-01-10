@@ -69,6 +69,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
   }
 
   def dropTable() = {
+    sql("DROP TABLE IF EXISTS carbon0")
     sql("DROP TABLE IF EXISTS carbon1")
     sql("DROP TABLE IF EXISTS carbon2")
     sql("DROP TABLE IF EXISTS carbon3")
@@ -325,7 +326,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     try {
       sql("DROP TABLE IF EXISTS carbon_table")
       val rdd = spark.sparkContext.parallelize(1 to 3)
-              .map(x => Row("a" + x % 10, "b", x, "YWJj".getBytes()))
+              .map(x => Row("a" + x % 10, "b", x, "abc".getBytes()))
       val customSchema = StructType(Array(
         StructField("c1", StringType),
         StructField("c2", StringType),

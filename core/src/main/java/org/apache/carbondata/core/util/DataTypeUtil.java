@@ -75,7 +75,7 @@ public final class DataTypeUtil {
   /**
    * DataType converter for different computing engines
    */
-  private static final ThreadLocal<DataTypeConverter> converter = new ThreadLocal<>();
+  private static DataTypeConverter converter;
 
   /**
    * This method will convert a given value to its specific type
@@ -84,8 +84,8 @@ public final class DataTypeUtil {
    * @param dataType
    * @return
    */
-  public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
-      int scale, int precision) {
+  public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType, int scale,
+      int precision) {
     return getMeasureValueBasedOnDataType(msrValue, dataType, scale, precision, false);
   }
 
@@ -105,7 +105,7 @@ public final class DataTypeUtil {
           new BigDecimal(msrValue).setScale(scale, RoundingMode.HALF_UP);
       BigDecimal decimal = normalizeDecimalValue(bigDecimal, precision);
       if (useConverter) {
-        return getDataTypeConverter().convertFromBigDecimalToDecimal(decimal);
+        return converter.convertFromBigDecimalToDecimal(decimal);
       } else {
         return decimal;
       }
@@ -140,11 +140,10 @@ public final class DataTypeUtil {
     if (dataType == DataTypes.BOOLEAN) {
       return BooleanConvert.parseBoolean(dimValue);
     } else if (DataTypes.isDecimal(dataType)) {
-      BigDecimal bigDecimal =
-          new BigDecimal(dimValue).setScale(scale, RoundingMode.HALF_UP);
+      BigDecimal bigDecimal = new BigDecimal(dimValue).setScale(scale, RoundingMode.HALF_UP);
       BigDecimal decimal = normalizeDecimalValue(bigDecimal, precision);
       if (useConverter) {
-        return getDataTypeConverter().convertFromBigDecimalToDecimal(decimal);
+        return converter.convertFromBigDecimalToDecimal(decimal);
       } else {
         return decimal;
       }
@@ -457,7 +456,7 @@ public final class DataTypeUtil {
       }
     } else {
       // Default action for String/Varchar
-      return getDataTypeConverter().convertFromStringToUTF8String(dimensionValue);
+      return converter.convertFromStringToUTF8String(dimensionValue);
     }
   }
 
@@ -518,7 +517,7 @@ public final class DataTypeUtil {
     } else if (actualDataType == DataTypes.LONG) {
       return ByteUtil.toXorBytes((Long) dimensionValue);
     } else if (actualDataType == DataTypes.TIMESTAMP) {
-      return ByteUtil.toXorBytes((Long)dimensionValue);
+      return ByteUtil.toXorBytes((Long) dimensionValue);
     } else {
       // Default action for String/Varchar
       return ByteUtil.toBytes(dimensionValue.toString());
@@ -970,11 +969,12 @@ public final class DataTypeUtil {
 
   /**
    * set the data type converter as per computing engine
+   *
    * @param converterLocal
    */
   public static void setDataTypeConverter(DataTypeConverter converterLocal) {
     if (converterLocal != null) {
-      converter.set(converterLocal);
+      converter = converterLocal;
       timeStampformatter.remove();
       dateformatter.remove();
     }
@@ -989,17 +989,10 @@ public final class DataTypeUtil {
   }
 
   public static DataTypeConverter getDataTypeConverter() {
-    DataTypeConverter dataTypeConverter = converter.get();
-    if (dataTypeConverter == null) {
-      synchronized (converter) {
-        dataTypeConverter = converter.get();
-        if (dataTypeConverter == null) {
-          dataTypeConverter = new DataTypeConverterImpl();
-          converter.set(dataTypeConverter);
-        }
-      }
+    if (converter == null) {
+      converter = new DataTypeConverterImpl();
     }
-    return dataTypeConverter;
+    return converter;
   }
 
   public static DataType valueOf(String name) {
@@ -1021,8 +1014,6 @@ public final class DataTypeUtil {
       return DataTypes.INT;
     } else if (DataTypes.LONG.getName().equalsIgnoreCase(name)) {
       return DataTypes.LONG;
-    } else if (DataTypes.LEGACY_LONG.getName().equalsIgnoreCase(name)) {
-      return DataTypes.LEGACY_LONG;
     } else if (DataTypes.FLOAT.getName().equalsIgnoreCase(name)) {
       return DataTypes.FLOAT;
     } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(name)) {
@@ -1071,8 +1062,6 @@ public final class DataTypeUtil {
       return DataTypes.INT;
     } else if (DataTypes.LONG.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.LONG;
-    } else if (DataTypes.LEGACY_LONG.getName().equalsIgnoreCase(dataType.getName())) {
-      return DataTypes.LEGACY_LONG;
     } else if (DataTypes.FLOAT.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.FLOAT;
     } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(dataType.getName())) {
@@ -1136,4 +1125,18 @@ public final class DataTypeUtil {
     return false;
   }
 
+  /**
+   * utility function to check complex column child columns that can exceed 32000 length
+   *
+   * @param dataType
+   * @return
+   */
+  public static boolean isByteArrayComplexChildColumn(DataType dataType) {
+    return ((dataType == DataTypes.STRING) ||
+        (dataType == DataTypes.VARCHAR) ||
+        (dataType == DataTypes.BINARY) ||
+        (dataType == DataTypes.DATE) ||
+        DataTypes.isDecimal(dataType) ||
+        (dataType == DataTypes.BYTE_ARRAY));
+  }
 }

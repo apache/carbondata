@@ -44,7 +44,6 @@ import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
-import org.apache.carbondata.core.metadata.ColumnIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -53,6 +52,7 @@ import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.streaming.parser.FieldConverter
 
@@ -60,7 +60,10 @@ object CarbonScalaUtil {
 
   private val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def getString(value: Any,
+  def getString(
+      row: Row,
+      idx: Int,
+      carbonLoadModel: CarbonLoadModel,
       serializationNullFormat: String,
       complexDelimiters: util.ArrayList[String],
       timeStampFormat: SimpleDateFormat,
@@ -68,9 +71,22 @@ object CarbonScalaUtil {
       isVarcharType: Boolean = false,
       isComplexType: Boolean = false,
       level: Int = 0): String = {
-    FieldConverter.objectToString(value, serializationNullFormat, complexDelimiters,
-      timeStampFormat, dateFormat, isVarcharType = isVarcharType, isComplexType = isComplexType,
-      level)
+    try {
+      FieldConverter.objectToString(row.get(idx), serializationNullFormat, complexDelimiters,
+        timeStampFormat, dateFormat, isVarcharType, isComplexType, level,
+        carbonLoadModel.getBinaryDecoder)
+    } catch {
+      case e: Exception =>
+        if (e.getMessage.startsWith(FieldConverter.stringLengthExceedErrorMsg)) {
+          val msg = s"Column ${carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+            .getCreateOrderColumn.get(idx).getColName} is too long," +
+            s" consider to use 'long_string_columns' table property."
+          LOGGER.error(msg, e)
+          throw new Exception(msg, e)
+        } else {
+          throw e
+        }
+    }
   }
 
   /**

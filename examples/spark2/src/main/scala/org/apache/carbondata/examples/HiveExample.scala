@@ -107,7 +107,6 @@ object HiveExample {
     // delete the already existing lock on metastore so that new derby instance
     // for HiveServer can run on the same metastore
     checkAndDeleteDBLock
-
   }
 
   def checkAndDeleteDBLock: Unit = {

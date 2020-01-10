@@ -112,8 +112,6 @@ public class DataType implements Serializable {
         return DataTypes.DOUBLE;
       case BIG_DECIMAL_MEASURE_CHAR:
         return DataTypes.createDefaultDecimalType();
-      case 'l':
-        return DataTypes.LEGACY_LONG;
       default:
         throw new RuntimeException("Unexpected type: " + type);
     }

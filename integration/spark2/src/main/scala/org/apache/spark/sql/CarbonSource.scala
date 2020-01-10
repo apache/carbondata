@@ -126,7 +126,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       parameters: Map[String, String],
       dataSchema: StructType): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
-    addLateDecodeOptimization(sqlContext.sparkSession)
+    // addLateDecodeOptimization(sqlContext.sparkSession)
     val newParameters =
       CaseInsensitiveMap[String](CarbonScalaUtil.getDeserializedParameters(parameters))
     val dbName: String =
@@ -215,10 +215,12 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     try {
       if (parameters.contains("tablePath")) {
         (parameters("tablePath"), parameters)
-      } else if (!sparkSession.isInstanceOf[CarbonSession]) {
-        (CarbonProperties.getStorePath + "/" + dbName + "/" + tableName, parameters)
       } else {
-        (CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession), parameters)
+        if ("default".equalsIgnoreCase(dbName)) {
+          (CarbonProperties.getStorePath + "/" + tableName, parameters)
+        } else {
+          (CarbonProperties.getStorePath + "/" + dbName + "/" + tableName, parameters)
+        }
       }
     } catch {
       case ex: Exception =>

@@ -105,8 +105,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     } else if (dataType == DataTypes.INT) {
       instance.minInt = (int) meta.getMinValue();
       instance.maxInt = (int) meta.getMaxValue();
-    } else if (dataType == DataTypes.LEGACY_LONG || dataType == DataTypes.LONG
-        || dataType == DataTypes.TIMESTAMP) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       instance.minLong = (long) meta.getMinValue();
       instance.maxLong = (long) meta.getMaxValue();
     } else if (dataType == DataTypes.DOUBLE) {
@@ -142,8 +141,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     } else if (dataType == DataTypes.INT) {
       minInt = Integer.MAX_VALUE;
       maxInt = Integer.MIN_VALUE;
-    } else if (dataType == DataTypes.LEGACY_LONG || dataType == DataTypes.LONG
-        || dataType == DataTypes.TIMESTAMP) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       minLong = Long.MAX_VALUE;
       maxLong = Long.MIN_VALUE;
     } else if (dataType == DataTypes.DOUBLE) {

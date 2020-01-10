@@ -638,7 +638,7 @@ class CarbonScanRDD[T: ClassTag](
   }
 
 
-  private def createInputFormat(conf: Configuration): CarbonTableInputFormat[Object] = {
+  def createInputFormat(conf: Configuration): CarbonTableInputFormat[Object] = {
     val format = new CarbonTableInputFormat[Object]
     CarbonInputFormat.setTablePath(conf,
       identifier.appendWithLocalPrefix(identifier.getTablePath))

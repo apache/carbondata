@@ -247,7 +247,6 @@ public abstract class BlockletScannedResult {
       column = dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter]
           .fillSurrogateKey(rowId, column, completeKey);
     }
-    rowCounter++;
     return completeKey;
   }
 

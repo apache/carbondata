@@ -52,7 +52,6 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -169,9 +168,6 @@ case class CarbonLoadDataCommand(
     val carbonLoadModel = new CarbonLoadModel()
     val tableProperties = table.getTableInfo.getFactTable.getTableProperties
     val optionsFinal = LoadOption.fillOptionWithDefaultValue(options.asJava)
-    optionsFinal
-      .put("complex_delimiter_level_4",
-        ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_4.value())
 
     /**
     * Priority of sort_scope assignment :
@@ -429,7 +425,7 @@ case class CarbonLoadDataCommand(
     val dateFormat = new SimpleDateFormat(dateFormatString)
     // Clean up the alreday dropped partitioned data
     SegmentFileStore.cleanSegments(table, null, false)
-    CarbonSession.threadSet("partition.operationcontext", operationContext)
+    CarbonUtils.threadSet("partition.operationcontext", operationContext)
     // input data from csv files. Convert to logical plan
     val allCols = new ArrayBuffer[String]()
     // get only the visible dimensions from table
@@ -517,12 +513,14 @@ case class CarbonLoadDataCommand(
         val transRdd = rdd.map { f =>
           val data = new Array[Any](len)
           var i = 0
-          while (i < f.length) {
+          val length = f.length
+          while (i < length) {
             data(nonPartitionBounds(i)) = f.get(i)
             i = i + 1
           }
           var j = 0
-          while (j < partitionBounds.length) {
+          val boundLength = partitionBounds.length
+          while (j < boundLength) {
             data(partitionBounds(j)) = UTF8String.fromString(partitionValues(j))
             j = j + 1
           }
@@ -595,7 +593,7 @@ case class CarbonLoadDataCommand(
         LOGGER.error(ex)
         throw ex
     } finally {
-      CarbonSession.threadUnset("partition.operationcontext")
+      CarbonUtils.threadUnset("partition.operationcontext")
       if (isOverwriteTable) {
         DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
         // Clean the overwriting segments if any.
@@ -665,34 +663,14 @@ case class CarbonLoadDataCommand(
       curAttributes: Seq[AttributeReference],
       sortScope: SortScopeOptions.SortScope,
       isDataFrame: Boolean): (LogicalPlan, Int, Option[RDD[InternalRow]]) = {
+    val catalogAttributes = catalogTable.schema.toAttributes
     // Converts the data as per the loading steps before give it to writer or sorter
-    val convertedRdd = convertData(
+    val updatedRdd = convertData(
       rdd,
       sparkSession,
       loadModel,
       isDataFrame,
       partitionValues)
-    val updatedRdd = if (isDataFrame) {
-      val columnCount = loadModel.getCsvHeaderColumns.length
-      convertedRdd.map { row =>
-        val array = new Array[AnyRef](columnCount)
-        val data = row.getData
-        var i = 0
-        while (i < columnCount) {
-          data(i) match {
-            case string: String =>
-              array(i) = UTF8String.fromString(string)
-            case _ =>
-              array(i) = data(i)
-          }
-          i = i + 1
-        }
-        array
-      }.map(row => InternalRow.fromSeq(row))
-    } else {
-      convertedRdd.map(row => InternalRow.fromSeq(row.getData))
-    }
-    val catalogAttributes = catalogTable.schema.toAttributes
     var attributes = curAttributes.map(a => {
       catalogAttributes.find(_.name.equalsIgnoreCase(a.name)).get
     })
@@ -786,7 +764,7 @@ case class CarbonLoadDataCommand(
       sparkSession: SparkSession,
       model: CarbonLoadModel,
       isDataFrame: Boolean,
-      partitionValues: Array[String]): RDD[CarbonRow] = {
+      partitionValues: Array[String]): RDD[InternalRow] = {
     val sc = sparkSession.sparkContext
     val info =
       model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo.getFactTable.getPartitionInfo
@@ -830,7 +808,7 @@ case class CarbonLoadDataCommand(
           partialSuccessAccum,
           inputStepRowCounter,
           keepActualData = true)
-      }.filter(_ != null)
+      }.filter(_ != null).map(row => InternalRow.fromSeq(row.getData))
 
     finalRDD
   }
@@ -872,13 +850,19 @@ case class CarbonLoadDataCommand(
     val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
     val metastoreSchema = StructType(catalogTable.schema.fields.map{f =>
       val column = table.getColumnByName(f.name)
-      if (column.hasEncoding(Encoding.DICTIONARY)) {
-        f.copy(dataType = IntegerType)
-      } else if (f.dataType == TimestampType || f.dataType == DateType) {
-        f.copy(dataType = LongType)
+      val updatedDataType = if (column.hasEncoding(Encoding.DICTIONARY)) {
+        IntegerType
       } else {
-        f
+        f.dataType match {
+          case TimestampType | DateType =>
+            LongType
+          case _: StructType | _: ArrayType | _: MapType =>
+            BinaryType
+          case _ =>
+            f.dataType
+        }
       }
+      f.copy(dataType = updatedDataType)
     })
     val lazyPruningEnabled = sparkSession.sqlContext.conf.manageFilesourcePartitions
     val catalog = new CatalogFileIndex(

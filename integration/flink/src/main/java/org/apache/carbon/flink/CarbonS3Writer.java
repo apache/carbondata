@@ -33,6 +33,7 @@ import org.apache.carbondata.core.statusmanager.StageInput;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
 
 import org.apache.carbon.core.metadata.StageManager;
 
@@ -54,6 +55,7 @@ final class CarbonS3Writer extends CarbonWriter {
   ) {
     super(factory, identifier, table);
     final Properties writerProperties = factory.getConfiguration().getWriterProperties();
+    final Properties carbonProperties = factory.getConfiguration().getCarbonProperties();
     final String commitThreshold =
         writerProperties.getProperty(CarbonS3Property.COMMIT_THRESHOLD);
     this.writerFactory = new WriterFactory(table, writePath) {
@@ -61,13 +63,23 @@ final class CarbonS3Writer extends CarbonWriter {
       protected org.apache.carbondata.sdk.file.CarbonWriter newWriter(
           final Object[] row) {
         try {
-          return org.apache.carbondata.sdk.file.CarbonWriter.builder()
+          final CarbonWriterBuilder writerBuilder =
+              org.apache.carbondata.sdk.file.CarbonWriter.builder()
               .outputPath(super.getWritePath(row))
               .writtenBy("flink")
               .withSchemaFile(CarbonTablePath.getSchemaFilePath(table.getTablePath()))
               .withCsvInput()
-              .withHadoopConf(configuration)
-              .build();
+              .withHadoopConf(configuration);
+          for (String propertyName : carbonProperties.stringPropertyNames()) {
+            try {
+              writerBuilder.withLoadOption(propertyName,
+                  carbonProperties.getProperty(propertyName));
+            } catch (IllegalArgumentException exception) {
+              LOGGER.warn("Fail to set load option [" + propertyName + "], may be unsupported.",
+                  exception);
+            }
+          }
+          return writerBuilder.build();
         } catch (IOException | InvalidLoadOptionException exception) {
           // TODO
           throw new UnsupportedOperationException(exception);
@@ -120,6 +132,9 @@ final class CarbonS3Writer extends CarbonWriter {
     synchronized (this) {
       if (!this.flushed) {
         this.closeWriters();
+        this.commit();
+        this.writerFactory.reset();
+        this.writeCount.set(0);
         this.flushed = true;
       }
     }

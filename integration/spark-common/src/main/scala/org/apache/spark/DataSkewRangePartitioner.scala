@@ -252,7 +252,8 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
     var partition = 0
     if (rangeBounds.length <= 128) {
       // If we have less than 128 partitions naive search
-      while (partition < rangeBounds.length && ordering.gt(k, rangeBounds(partition))) {
+      val len = rangeBounds.length
+      while (partition < len && ordering.gt(k, rangeBounds(partition))) {
         partition += 1
       }
     } else {
@@ -306,7 +307,8 @@ class DataSkewRangePartitioner[K: Ordering : ClassTag, V](
     val prime = 31
     var result = 1
     var i = 0
-    while (i < rangeBounds.length) {
+    val len = rangeBounds.length
+    while (i < len) {
       result = prime * result + rangeBounds(i).hashCode
       i += 1
     }

@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.testsuite.iud
 import java.io.File
 
 import org.apache.spark.sql.test.Spark2TestQueryExecutor
-import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
@@ -80,6 +80,58 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table iud.dest11""").show
   }
 
+  test("update with subquery having limit 1") {
+    sql("drop table if exists t1")
+    sql("drop table if exists t2")
+    sql("create table t1 (age int, name string) stored by 'carbondata'")
+    sql("insert into t1 select 1, 'aa'")
+    sql("insert into t1 select 3, 'bb'")
+    sql("create table t2 (age int, name string) stored by 'carbondata'")
+    sql("insert into t2 select 3, 'Andy'")
+    sql("insert into t2 select 2, 'Andy'")
+    sql("insert into t2 select 1, 'aa'")
+    sql("insert into t2 select 3, 'aa'")
+    sql("update t1 set (age) = " +
+        "(select t2.age from t2 where t2.name = 'Andy' order by  age limit 1) " +
+        "where t1.age = 1 ").show(false)
+    checkAnswer(sql("select * from t1"), Seq(Row(2,"aa"), Row(3,"bb")))
+    sql("drop table if exists t1")
+    sql("drop table if exists t2")
+  }
+
+  test("update with subquery giving 0 rows") {
+    sql("drop table if exists t1")
+    sql("drop table if exists t2")
+    sql("create table t1 (age int, name string) stored by 'carbondata'")
+    sql("insert into t1 select 1, 'aa'")
+    sql("create table t2 (age int, name string) stored by 'carbondata'")
+    sql("insert into t2 select 3, 'Andy'")
+    sql("update t1 set (age) = " +
+        "(select t2.age from t2 where t2.age != 3) " +
+        "where t1.age = 1 ").show(false)
+    // should update to null
+    checkAnswer(sql("select * from t1"), Seq(Row(null,"aa")))
+    sql("drop table if exists t1")
+    sql("drop table if exists t2")
+  }
+
+  test("update with subquery joing with main table and limit") {
+    sql("drop table if exists t1")
+    sql("drop table if exists t2")
+    sql("create table t1 (age int, name string) stored by 'carbondata'")
+    sql("insert into t1 select 1, 'Andy'")
+    sql("create table t2 (age int, name string) stored by 'carbondata'")
+    sql("insert into t2 select 3, 'Andy'")
+    intercept[AnalysisException] {
+      sql("update t1 set (age) = " +
+          "(select t2.age from t2 where t2.name = t1.name limit 1) " +
+          "where t1.age = 1 ").show(false)
+    }.getMessage.contains("Update subquery has join with maintable " +
+                          "and limit leads to multiple join for each limit for each row")
+    sql("drop table if exists t1")
+    sql("drop table if exists t2")
+  }
+
   test("update carbon table[using destination table columns with where and exist]") {
     sql("""drop table if exists iud.dest22""")
     sql("""create table iud.dest22 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -107,17 +159,9 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into t2 select 2, 'Andy'")
     sql("insert into t2 select 1, 'aa'")
     sql("insert into t2 select 3, 'aa'")
-    val exception = intercept[RuntimeException] {
+    intercept[AnalysisException] {
       sql("update t1 set (age) = (select t2.age from t2 where t2.name = 'Andy') where t1.age = 1 ").show(false)
-    }
-    assertResult(
-      "Update operation failed.  update cannot be supported for 1 to N mapping, as more than one " +
-      "value present for the update key")(exception.getMessage)
-    // Test carbon property
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE, "false")
-    // update  should not throw exception
-    sql("update t1 set (age) = (select t2.age from t2 where t2.name = 'Andy') where t1.age = 1 ").show(false)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE, "true")
+    }.getMessage.contains("update cannot be supported for 1 to N mapping, as more than one value present for the update key")
     // test join scenario
     val exception1 = intercept[RuntimeException] {
       sql("update t1 set (age) = (select t2.age from t2 where t2.name = t1.name) ").show(false)
@@ -125,6 +169,11 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     assertResult(
       "Update operation failed.  update cannot be supported for 1 to N mapping, as more than one " +
       "value present for the update key")(exception1.getMessage)
+    // Test carbon property
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE, "false")
+    // update  should not throw exception
+    sql("update t1 set (age) = (select t2.age from t2 where t2.name = t1.name) ").show(false)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE, "true")
     sql("drop table if exists t1")
     sql("drop table if exists t2")
   }

@@ -231,5 +231,4 @@ class TestHybridCompaction extends QueryTest with BeforeAndAfterEach with Before
     out.map(_.get(0).toString) should equal(
       Array("20", "23", "37", "39", "42", "44", "54", "54", "60", "61"))
   }
-
 }

@@ -354,11 +354,14 @@ class NewRddIterator(rddIter: Iterator[Row],
   def next: Array[AnyRef] = {
     val row = rddIter.next()
     val columns = new Array[AnyRef](row.length)
-    for (i <- 0 until columns.length) {
-      columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
+    val len = columns.length
+    var i = 0
+    while (i < len) {
+      columns(i) = CarbonScalaUtil.getString(row, i, carbonLoadModel, serializationNullFormat,
         complexDelimiters, timeStampFormat, dateFormat,
         isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i),
         isComplexType = i < isComplexTypeMapping.size && isComplexTypeMapping(i))
+      i += 1
     }
     columns
   }
@@ -428,7 +431,7 @@ class LazyRddIterator(serializer: SerializerInstance,
     val row = rddIter.next()
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
-      columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
+      columns(i) = CarbonScalaUtil.getString(row, i, carbonLoadModel, serializationNullFormat,
         complexDelimiters, timeStampFormat, dateFormat,
         isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i))
     }

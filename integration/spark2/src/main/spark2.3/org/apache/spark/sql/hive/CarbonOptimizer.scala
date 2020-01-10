@@ -34,4 +34,4 @@ class CarbonOptimizer(
     val transFormedPlan: LogicalPlan = CarbonOptimizerUtil.transformForScalarSubQuery(plan)
     super.execute(transFormedPlan)
   }
-}
+} 
