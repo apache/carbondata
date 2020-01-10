@@ -65,6 +65,7 @@ final class CarbonS3Writer extends CarbonWriter {
         try {
           final CarbonWriterBuilder writerBuilder =
               org.apache.carbondata.sdk.file.CarbonWriter.builder()
+              .taskNo(UUID.randomUUID().toString().replace("-", ""))
               .outputPath(super.getWritePath(row))
               .writtenBy("flink")
               .withSchemaFile(CarbonTablePath.getSchemaFilePath(table.getTablePath()))
