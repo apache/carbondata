@@ -141,7 +141,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
   // ----------------------------------- Compaction -----------------------------------
   test("compaction major: timestamp and long data type confliction")
-  {sptc
+  {
     sql("drop table if exists compactionTable")
     sql("create table compactionTable (DOJ timestamp, DOB date) STORED BY 'org.apache.carbondata.format'")
     sql("alter table compactionTable set tblproperties('sort_columns'='doj, dob', 'sort_scope'='global_sort')")
@@ -159,7 +159,6 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
       case Some(row) => assert(row.get(1).toString.equalsIgnoreCase("Compacted"))
     }
   }
-
   test("Compaction GLOBAL_SORT * 2") {
     sql("DROP TABLE IF EXISTS carbon_localsort_twice")
     sql(

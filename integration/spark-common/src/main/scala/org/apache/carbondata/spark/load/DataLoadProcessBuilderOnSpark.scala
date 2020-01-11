@@ -27,7 +27,7 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.execution.command.ExecutionErrors
-import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -422,23 +422,6 @@ object DataLoadProcessBuilderOnSpark {
       loadModel.setGlobalSortPartitions(globalSortPartitions)
     }
     loadModel
-  }
-
-  /**
-   * create DataFrame basing on specified splits
-   */
-  def createInputDataFrame(
-      sparkSession: SparkSession,
-      carbonTable: CarbonTable
-  ): DataFrame = {
-    /**
-     * [[org.apache.spark.sql.catalyst.expressions.objects.ValidateExternalType]] validates the
-     * datatype of column data and corresponding datatype in schema provided to create dataframe.
-     * Since carbonScanRDD gives Long data for timestamp column and corresponding column datatype in
-     * schema is Timestamp, this validation fails if we use createDataFrame API which takes rdd as
-     * input. Hence, using below API which creates dataframe from tablename.
-     */
-    sparkSession.sqlContext.table(carbonTable.getTableName)
   }
 }
 

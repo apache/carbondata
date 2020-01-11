@@ -67,8 +67,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       loadsToMerge: java.util.List[LoadMetadataDetails]): Boolean = {
     // support to resort old segment with old sort_columns
     if (CompactionType.CUSTOM == compactionModel.compactionType &&
-      loadsToMerge.size() == 1 &&
-      SortScope.NO_SORT != compactionModel.carbonTable.getSortScope) {
+        loadsToMerge.size() == 1 &&
+        SortScope.NO_SORT != compactionModel.carbonTable.getSortScope) {
       !CarbonCompactionUtil.isSortedByCurrentSortColumns(
         carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
         loadsToMerge.get(0),
@@ -87,8 +87,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     var loadsToMerge = identifySegmentsToBeMerged()
 
     while (loadsToMerge.size() > 1 || needSortSingleSegment(loadsToMerge) ||
-      (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType &&
-        loadsToMerge.size() > 0)) {
+           (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType &&
+            loadsToMerge.size() > 0)) {
       val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
       deletePartialLoadsInCompaction()
 
@@ -207,9 +207,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           carbonMergerMapping
         ).collect
       } else if (SortScope.GLOBAL_SORT == carbonTable.getSortScope &&
-        !carbonTable.getSortColumns.isEmpty &&
-        carbonTable.getRangeColumn == null &&
-        CarbonUtil.isStandardCarbonTable(carbonTable)) {
+                 !carbonTable.getSortColumns.isEmpty &&
+                 carbonTable.getRangeColumn == null &&
+                 CarbonUtil.isStandardCarbonTable(carbonTable)) {
         compactSegmentsByGlobalSort(sc.sparkSession, carbonLoadModel, carbonMergerMapping)
       } else {
         new CarbonMergerRDD(
@@ -233,7 +233,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       if (carbonTable.isHivePartitionTable) {
         val readPath =
           CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
-            CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
+          CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
         // Merge all partition files into a single file.
         segmentFileName =
           mergedLoadNumber + "_" + carbonLoadModel.getFactTimeStamp
@@ -270,11 +270,11 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       operationContext.setProperty("isCompaction", "true")
       // trigger event for compaction
       val alterTableCompactionPreStatusUpdateEvent =
-        AlterTableCompactionPreStatusUpdateEvent(sc.sparkSession,
-          carbonTable,
-          carbonMergerMapping,
-          carbonLoadModel,
-          mergedLoadName)
+      AlterTableCompactionPreStatusUpdateEvent(sc.sparkSession,
+        carbonTable,
+        carbonMergerMapping,
+        carbonLoadModel,
+        mergedLoadName)
       OperationListenerBus.getInstance
         .fireEvent(alterTableCompactionPreStatusUpdateEvent, operationContext)
 
@@ -282,21 +282,21 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       LOGGER.info(s"time taken to merge $mergedLoadName is ${ endTime - startTime }")
       val statusFileUpdation =
         ((compactionType == CompactionType.IUD_UPDDEL_DELTA) &&
-          CarbonDataMergerUtil
-            .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
-              carbonTable.getMetadataPath,
-              carbonLoadModel,
-              segmentFilesForIUDCompact)) ||
-          CarbonDataMergerUtil.updateLoadMetadataWithMergeStatus(
-            loadsToMerge,
-            carbonTable.getMetadataPath,
-            mergedLoadNumber,
-            carbonLoadModel,
-            compactionType,
-            segmentFileName)
+         CarbonDataMergerUtil
+           .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
+             carbonTable.getMetadataPath,
+             carbonLoadModel,
+             segmentFilesForIUDCompact)) ||
+        CarbonDataMergerUtil.updateLoadMetadataWithMergeStatus(
+          loadsToMerge,
+          carbonTable.getMetadataPath,
+          mergedLoadNumber,
+          carbonLoadModel,
+          compactionType,
+          segmentFileName)
 
       if (compactionType != CompactionType.IUD_DELETE_DELTA &&
-        compactionType != CompactionType.IUD_UPDDEL_DELTA) {
+          compactionType != CompactionType.IUD_UPDDEL_DELTA) {
         MergeIndexUtil.mergeIndexFilesOnCompaction(compactionCallableModel)
       }
 
@@ -326,22 +326,22 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       // possible (level 1, 2 etc). so we need to check for either condition
       if (!statusFileUpdation || !commitComplete) {
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
-          s"${ carbonLoadModel.getTableName }")
+                     s"${ carbonLoadModel.getTableName }")
         throw new Exception(s"Compaction failed to update metadata for table" +
-          s" ${ carbonLoadModel.getDatabaseName }." +
-          s"${ carbonLoadModel.getTableName }")
+                            s" ${ carbonLoadModel.getDatabaseName }." +
+                            s"${ carbonLoadModel.getTableName }")
       } else {
         LOGGER.info(s"Compaction request completed for table " +
-          s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
 
         // Prepriming index for compaction
         val segmentsForPriming = if (compactionType.equals(CompactionType.IUD_DELETE_DELTA) ||
-          compactionType.equals(CompactionType.IUD_UPDDEL_DELTA)) {
-          validSegments.asScala.map(_.getSegmentNo).toList
+            compactionType.equals(CompactionType.IUD_UPDDEL_DELTA)) {
+            validSegments.asScala.map(_.getSegmentNo).toList
         } else if (compactionType.equals(CompactionType.MAJOR) ||
-          compactionType.equals(CompactionType.MINOR) ||
-          compactionType.equals(CompactionType.CUSTOM)) {
-          scala.List(mergedLoadNumber)
+                   compactionType.equals(CompactionType.MINOR) ||
+                   compactionType.equals(CompactionType.CUSTOM)) {
+            scala.List(mergedLoadNumber)
         } else {
           scala.List()
         }
@@ -354,7 +354,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       }
     } else {
       LOGGER.error(s"Compaction request failed for table " +
-        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       throw new Exception("Compaction Failure in Merger Rdd.")
     }
   }
@@ -363,9 +363,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
    * compact segments by global sort
    */
   def compactSegmentsByGlobalSort(
-   sparkSession: SparkSession,
-   carbonLoadModel: CarbonLoadModel,
-   carbonMergerMapping: CarbonMergerMapping): Array[(String, Boolean)] = {
+      sparkSession: SparkSession,
+      carbonLoadModel: CarbonLoadModel,
+      carbonMergerMapping: CarbonMergerMapping): Array[(String, Boolean)] = {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val splits = splitsOfSegments(
       sparkSession,
@@ -377,7 +377,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
           table.getDatabaseName + CarbonCommonConstants.POINT + table.getTableName,
           splits.asScala.map(s => s.asInstanceOf[CarbonInputSplit].getSegmentId).mkString(","))
-      val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(
+      val dataFrame = SparkSQLUtil.createInputDataFrame(
         sparkSession,
         table)
 

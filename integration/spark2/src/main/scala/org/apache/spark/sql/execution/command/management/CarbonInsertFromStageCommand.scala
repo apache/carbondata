@@ -28,7 +28,7 @@ import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonEnv, CarbonUtils, DataFrame, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonUtils, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.util.SparkSQLUtil
 
@@ -179,7 +179,7 @@ case class CarbonInsertFromStageCommand(
       table.getAbsoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
     if (!lock.lockWithRetries()) {
       throw new RuntimeException(s"Failed to lock table status for " +
-        s"${table.getDatabaseName}.${table.getTableName}")
+                                 s"${table.getDatabaseName}.${table.getTableName}")
     }
     try {
       val segments = SegmentStatusManager.readTableStatusFile(
@@ -195,7 +195,7 @@ case class CarbonInsertFromStageCommand(
           lock.unlock()
           lock = null
           LOGGER.info(s"Segment $segmentId is in SUCCESS state, about to delete " +
-            s"${stageFileNames.length} stage files")
+                      s"${stageFileNames.length} stage files")
           val numThreads = Math.min(Math.max(stageFileNames.length, 1), 10)
           val executorService = Executors.newFixedThreadPool(numThreads)
           stageFileNames.map { fileName =>
@@ -213,7 +213,7 @@ case class CarbonInsertFromStageCommand(
         case SegmentStatus.INSERT_IN_PROGRESS =>
           // delete entry in table status and load again
           LOGGER.info(s"Segment $segmentId is in INSERT_IN_PROGRESS state, about to delete the " +
-            s"segment entry and load again")
+                      s"segment entry and load again")
           val segmentToWrite = segments.filterNot(_.getLoadName.equals(segmentId))
           SegmentStatusManager.writeLoadDetailsIntoFile(
             CarbonTablePath.getTableStatusFilePath(table.getTablePath),
@@ -256,14 +256,14 @@ case class CarbonInsertFromStageCommand(
       // 3) do loading.
       val splits = stageInput.flatMap(_.createSplits().asScala)
       LOGGER.info(s"start to load ${splits.size} files into " +
-        s"${table.getDatabaseName}.${table.getTableName}")
+                  s"${table.getDatabaseName}.${table.getTableName}")
       val start = System.currentTimeMillis()
       try {
         CarbonUtils
           .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
             table.getDatabaseName + CarbonCommonConstants.POINT + table.getTableName,
             splits.map(s => s.asInstanceOf[CarbonInputSplit].getSegmentId).mkString(","))
-        val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(spark, table)
+        val dataFrame = SparkSQLUtil.createInputDataFrame(spark, table)
         DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
           spark,
           Option(dataFrame),
@@ -329,7 +329,7 @@ case class CarbonInsertFromStageCommand(
               table.getDatabaseName + CarbonCommonConstants.POINT +
               table.getTableName,
               splits.map(split => split.asInstanceOf[CarbonInputSplit].getSegmentId).mkString(","))
-          createInputDataFrameOfInternalRow(spark, table, splits)
+          SparkSQLUtil.createInputDataFrame(spark, table)
         } finally {
           CarbonUtils.threadUnset(
             CarbonCommonConstants.CARBON_INPUT_SEGMENTS + table.getDatabaseName +
@@ -448,7 +448,7 @@ case class CarbonInsertFromStageCommand(
       future.get()
     }
     LOGGER.info(s"finished to delete stage files, time taken: " +
-      s"${System.currentTimeMillis() - startTime}ms")
+                s"${System.currentTimeMillis() - startTime}ms")
   }
 
   /*
@@ -499,22 +499,6 @@ case class CarbonInsertFromStageCommand(
       throw new IOException(
         s"Not able to acquire the lock for table status file for $tableIdentifier")
     }
-  }
-
-  /**
-   * create DataFrame basing on specified splits
-   */
-  private def createInputDataFrameOfInternalRow(
-      sparkSession: SparkSession,
-      carbonTable: CarbonTable,
-      splits: Seq[InputSplit]
-    ): DataFrame = {
-    val columns = carbonTable
-      .getCreateOrderColumn
-      .asScala
-      .map(_.getColName)
-      .toArray
-    sparkSession.sqlContext.table(carbonTable.getTableName)
   }
 
   override protected def opName: String = "INSERT STAGE"

@@ -35,6 +35,8 @@ import org.apache.spark.sql.internal.{SessionState, SQLConf}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{CarbonReflectionUtils, SerializableConfiguration, SparkUtil, Utils}
 
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+
 object SparkSQLUtil {
   def sessionState(sparkSession: SparkSession): SessionState = sparkSession.sessionState
 
@@ -257,4 +259,19 @@ object SparkSQLUtil {
     taskGroupDesc
   }
 
+  /**
+   * create DataFrame based on carbonTable
+   */
+  def createInputDataFrame(
+      sparkSession: SparkSession,
+      carbonTable: CarbonTable): DataFrame = {
+    /**
+     * [[org.apache.spark.sql.catalyst.expressions.objects.ValidateExternalType]] validates the
+     * datatype of column data and corresponding datatype in schema provided to create dataframe.
+     * Since carbonScanRDD gives Long data for timestamp column and corresponding column datatype in
+     * schema is Timestamp, this validation fails if we use createDataFrame API which takes rdd as
+     * input. Hence, using below API which creates dataframe from tablename.
+     */
+    sparkSession.sqlContext.table(carbonTable.getTableName)
+  }
 }
