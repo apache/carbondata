@@ -31,10 +31,13 @@ public interface SegmentPropertiesFetcher {
 
   /**
    * get the Segment properties based on the SegmentID.
-   * @param segmentId
+   * @param segment
    * @return
    * @throws IOException
    */
+  SegmentProperties getSegmentProperties(Segment segment)
+      throws IOException;
+
   SegmentProperties getSegmentProperties(Segment segment, List<PartitionSpec> partitionSpecs)
       throws IOException;
 

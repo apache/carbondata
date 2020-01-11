@@ -233,7 +233,7 @@ class TestDataMapFactory(
     ???
   }
 
-  override def getDataMaps(segment: Segment, partitions: java.util.List[PartitionSpec]): util.List[CoarseGrainDataMap] = {
+  override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = {
     ???
   }
 
@@ -311,4 +311,12 @@ class TestDataMapFactory(
   }
 
   override def supportRebuild(): Boolean = true
+
+  /**
+   * Get the datamap for segmentId and partitionSpecs
+   */
+  override def getDataMaps(segment: Segment,
+      partitions: util.List[PartitionSpec]): util.List[CoarseGrainDataMap] = {
+    ???
+  }
 }

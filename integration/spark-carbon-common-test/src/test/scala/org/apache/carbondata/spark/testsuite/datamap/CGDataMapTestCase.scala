@@ -64,8 +64,7 @@ class CGDataMapFactory(
   /**
    * Get the datamap for segmentId
    */
-  override def getDataMaps(segment: Segment,
-      partitions: java.util.List[PartitionSpec]): java.util.List[CoarseGrainDataMap] = {
+  override def getDataMaps(segment: Segment): java.util.List[CoarseGrainDataMap] = {
     val path = identifier.getTablePath
     val file = FileFactory.getCarbonFile(
       path+ "/" +dataMapSchema.getDataMapName + "/" + segment.getSegmentNo)
@@ -153,6 +152,14 @@ class CGDataMapFactory(
   override def createBuilder(segment: Segment,
       shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
     ???
+  }
+
+  /**
+   * Get the datamap for segmentId and partitionSpecs
+   */
+  override def getDataMaps(segment: Segment,
+      partitions: java.util.List[PartitionSpec]): java.util.List[CoarseGrainDataMap] = {
+    getDataMaps(segment);
   }
 }
 

@@ -63,7 +63,7 @@ class FGDataMapFactory(carbonTable: CarbonTable,
   /**
    * Get the datamap for segmentId
    */
-  override def getDataMaps(segment: Segment, partitions: java.util.List[PartitionSpec]): java.util.List[FineGrainDataMap] = {
+  override def getDataMaps(segment: Segment): java.util.List[FineGrainDataMap] = {
     val path = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segment.getSegmentNo)
     val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getDataMapName)
 
@@ -150,6 +150,14 @@ class FGDataMapFactory(carbonTable: CarbonTable,
   override def createBuilder(segment: Segment,
       shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
     ???
+  }
+
+  /**
+   * Get the datamap for segmentId
+   */
+  override def getDataMaps(segment: Segment,
+      partitions: java.util.List[PartitionSpec]): java.util.List[FineGrainDataMap] = {
+    getDataMaps(segment)
   }
 }
 

@@ -255,8 +255,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(Segment segment, List<PartitionSpec> partitions)
-      throws IOException {
+  public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
     try {
       Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
@@ -282,6 +281,12 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       throw new IOException("Error occurs while init Bloom DataMap", e);
     }
     return dataMaps;
+  }
+
+  @Override
+  public List<CoarseGrainDataMap> getDataMaps(Segment segment, List<PartitionSpec> partitionSpecs)
+      throws IOException {
+    return getDataMaps(segment);
   }
 
   @Override

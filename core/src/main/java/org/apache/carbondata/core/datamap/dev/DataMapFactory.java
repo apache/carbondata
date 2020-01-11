@@ -82,17 +82,35 @@ public abstract class DataMapFactory<T extends DataMap> {
   /**
    * Get the datamap for all segments
    */
-  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments,
-      List<PartitionSpec> partitions) throws IOException {
+  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments)
+      throws IOException {
     Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
     for (Segment segment : segments) {
-      dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment, partitions));
+      dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment));
+    }
+    return dataMaps;
+  }
+
+  /**
+   * Get the datamap for all segments with matched partitions. Load datamaps to cache, only if it
+   * matches the partition.
+   */
+  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments,
+      List<PartitionSpec> partitionSpecs) throws IOException {
+    Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
+    for (Segment segment : segments) {
+      dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment, partitionSpecs));
     }
     return dataMaps;
   }
 
   /**
    * Get the datamap for segmentId
+   */
+  public abstract List<T> getDataMaps(Segment segment) throws IOException;
+
+  /**
+   * Get the datamap for segmentId with matched partitions
    */
   public abstract List<T> getDataMaps(Segment segment, List<PartitionSpec> partitions)
       throws IOException;

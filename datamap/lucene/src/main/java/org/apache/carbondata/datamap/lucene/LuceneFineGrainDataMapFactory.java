@@ -51,8 +51,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
    * Get the datamap for segmentId
    */
   @Override
-  public List<FineGrainDataMap> getDataMaps(Segment segment,
-      List<PartitionSpec> partitions) throws IOException {
+  public List<FineGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<FineGrainDataMap> lstDataMap = new ArrayList<>();
     FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
     try {
@@ -65,6 +64,12 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
     }
     lstDataMap.add(dataMap);
     return lstDataMap;
+  }
+
+  @Override
+  public List<FineGrainDataMap> getDataMaps(Segment segment, List<PartitionSpec> partitions)
+      throws IOException {
+    return getDataMaps(segment);
   }
 
   /**

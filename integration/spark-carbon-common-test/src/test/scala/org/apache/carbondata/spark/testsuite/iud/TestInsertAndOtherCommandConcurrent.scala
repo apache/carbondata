@@ -311,7 +311,7 @@ class WaitingDataMapFactory(
 
   override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = ???
 
-  override def getDataMaps(segment: Segment, partitions: java.util.List[PartitionSpec]): util.List[CoarseGrainDataMap] = ???
+  override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = ???
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter = {
     new DataMapWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
@@ -367,6 +367,14 @@ class WaitingDataMapFactory(
 
   override def createBuilder(segment: Segment,
       shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
+    ???
+  }
+
+  /**
+   * Get the datamap for segmentId and partitionSpecs
+   */
+  override def getDataMaps(segment: Segment,
+      partitions: util.List[PartitionSpec]): util.List[CoarseGrainDataMap] = {
     ???
   }
 }

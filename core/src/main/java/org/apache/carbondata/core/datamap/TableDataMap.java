@@ -116,8 +116,8 @@ public final class TableDataMap extends OperationEventListener {
     final List<ExtendedBlocklet> blocklets = new ArrayList<>();
     List<Segment> segments = getCarbonSegments(allsegments);
     final Map<Segment, List<DataMap>> dataMaps;
-    if (filter == null || filter.isEmpty()) {
-      dataMaps = dataMapFactory.getDataMaps(segments, null);
+    if (filter == null || filter.isEmpty() || partitions == null || partitions.isEmpty()) {
+      dataMaps = dataMapFactory.getDataMaps(segments);
     } else {
       dataMaps = dataMapFactory.getDataMaps(segments, partitions);
     }
@@ -125,8 +125,9 @@ public final class TableDataMap extends OperationEventListener {
     // for filter queries
     int totalFiles = 0;
     int datamapsCount = 0;
-    // In case if filter has matched partitions, update the segment list
-    if (null != partitions) {
+    // In case if filter has matched partitions, then update the segments with datamap's
+    // segment list, as getDataMaps will return segments that matches the partition.
+    if (null != partitions && !partitions.isEmpty()) {
       segments = new ArrayList<>(dataMaps.keySet());
     }
     for (Segment segment : segments) {
@@ -496,8 +497,7 @@ public final class TableDataMap extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     Map<String, Long> blockletToRowCountMap = new HashMap<>();
     for (Segment segment : segments) {
-      List<CoarseGrainDataMap> dataMaps =
-          defaultDataMap.getDataMapFactory().getDataMaps(segment, partitions);
+      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getDataMapFactory().getDataMaps(segment);
       for (CoarseGrainDataMap dataMap : dataMaps) {
         dataMap.getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
       }
@@ -518,8 +518,7 @@ public final class TableDataMap extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     long totalRowCount = 0L;
     for (Segment segment : segments) {
-      List<CoarseGrainDataMap> dataMaps =
-          defaultDataMap.getDataMapFactory().getDataMaps(segment, partitions);
+      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getDataMapFactory().getDataMaps(segment);
       for (CoarseGrainDataMap dataMap : dataMaps) {
         totalRowCount += dataMap.getRowCount(segment, partitions);
       }
