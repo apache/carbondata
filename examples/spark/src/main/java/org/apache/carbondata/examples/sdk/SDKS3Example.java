@@ -26,7 +26,7 @@ import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.sdk.file.CarbonReader;
 import org.apache.carbondata.sdk.file.CarbonWriter;
-import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.sdk.file.Schema;
 
 import org.apache.hadoop.conf.Configuration;

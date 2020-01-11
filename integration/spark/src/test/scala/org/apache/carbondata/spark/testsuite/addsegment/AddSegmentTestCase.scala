@@ -19,26 +19,26 @@ package org.apache.carbondata.spark.testsuite.addsegment
 import java.io.File
 import java.nio.file.{Files, Paths}
 
-import scala.io.Source
-
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
-import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.common.Strings
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.row.CarbonRow
-import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport
-import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter, Field, Schema}
+import org.apache.carbondata.sdk.file.{CarbonReader, CarbonWriter}
+import org.junit.Assert
+import scala.io.Source
+
+import org.apache.carbondata.common.Strings
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
 
 class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -758,7 +758,9 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val writer = CarbonWriter.builder
       .outputPath(externalSegmentPath)
       .writtenBy("AddSegmentTestCase")
-      .withCsvInput(new Schema(fields))
+      .withSchemaFile(CarbonTablePath.getSchemaFilePath(CarbonEnv.getCarbonTable(None,
+        tableName)(sqlContext.sparkSession).getTablePath))
+      .withCsvInput()
       .build()
     val source = Source.fromFile(s"$resourcesPath/data.csv")
     var count = 0

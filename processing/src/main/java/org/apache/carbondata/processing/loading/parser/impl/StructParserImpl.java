@@ -65,6 +65,16 @@ public class StructParserImpl implements ComplexParser<StructObject> {
   }
 
   @Override
+  public StructObject parseRaw(Object data) {
+    Object[] d = ((Object[]) data);
+    Object[] array = new Object[children.size()];
+    for (int i = 0; i < d.length; i++) {
+      array[i] = children.get(i).parseRaw(d[i]);
+    }
+    return new StructObject(array);
+  }
+
+  @Override
   public void addChildren(GenericParser parser) {
     children.add(parser);
   }

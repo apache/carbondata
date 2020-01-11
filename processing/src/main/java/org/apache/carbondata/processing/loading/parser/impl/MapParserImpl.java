@@ -70,4 +70,12 @@ public class MapParserImpl extends ArrayParserImpl {
     }
     return null;
   }
+
+  @Override
+  public ArrayObject parseRaw(Object data) {
+    Object keyArray = ((Object[]) data)[0];
+    Object valueArray = ((Object[]) data)[1];
+    return new ArrayObject(new Object[]{child.parseRaw(keyArray), child.parseRaw(valueArray)});
+  }
+
 }

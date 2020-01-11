@@ -88,7 +88,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   public static final String INPUT_FILES = "mapreduce.input.carboninputformat.files";
   private static final Logger LOG =
       LogServiceFactory.getLogService(CarbonTableInputFormat.class.getName());
-  private static final String CARBON_TRANSACTIONAL_TABLE =
+  public static final String CARBON_TRANSACTIONAL_TABLE =
       "mapreduce.input.carboninputformat.transactional";
   public static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
   public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
@@ -108,7 +108,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    */
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
-    AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
     carbonTable = getOrCreateCarbonTable(job.getConfiguration());
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
@@ -133,7 +132,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         throw new IOException(e);
       }
     }
-    this.readCommittedScope = getReadCommitted(job, identifier);
+    this.readCommittedScope = getReadCommitted(job, carbonTable.getAbsoluteTableIdentifier());
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
     String updateDeltaVersion = job.getConfiguration().get(UPDATE_DELTA_VERSION);
     SegmentUpdateStatusManager updateStatusManager;
@@ -147,8 +146,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     List<String> invalidSegmentIds = new ArrayList<>();
     List<Segment> streamSegments = null;
     // get all valid segments and set them into the configuration
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier,
-        readCommittedScope.getConfiguration());
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
+            readCommittedScope.getConfiguration());
     SegmentStatusManager.ValidAndInvalidSegmentsInfo segments = segmentStatusManager
         .getValidAndInvalidSegments(carbonTable.isChildTableForMV(), loadMetadataDetails,
             this.readCommittedScope);

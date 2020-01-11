@@ -208,7 +208,7 @@ public final class DataLoadProcessBuilder {
         }
       }
     }
-
+    configuration.setSkipParsers(loadModel.isSkipParsers());
     configuration.setTaskNo(loadModel.getTaskNo());
     configuration.setOutputFilesInfoHolder(loadModel.getOutputFilesInfoHolder());
     String[] complexDelimiters = new String[loadModel.getComplexDelimiters().size()];

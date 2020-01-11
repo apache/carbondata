@@ -46,7 +46,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.sdk.file.CarbonWriter;
 import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
-import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.sdk.file.Schema;
 
 public class TestSdk {
@@ -92,7 +92,7 @@ import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.sdk.file.AvroCarbonWriter;
 import org.apache.carbondata.sdk.file.CarbonWriter;
-import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.core.metadata.datatype.Field;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.lang.CharEncoding;
@@ -150,7 +150,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.sdk.file.CarbonWriter;
 import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
-import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.sdk.file.Schema;
  
 public class TestSdkJson {
@@ -528,7 +528,7 @@ public abstract void write(Object object) throws IOException;
 public abstract void close() throws IOException;
 ```
 
-### Class org.apache.carbondata.sdk.file.Field
+### Class org.apache.carbondata.core.metadata.datatype.Field
 ```
 /**
  * Field Constructor
@@ -987,7 +987,7 @@ public static Schema parseJson(String json);
 public Schema asOriginOrder();
 ```
 
-### Class org.apache.carbondata.sdk.file.Field
+### Class org.apache.carbondata.core.metadata.datatype.Field
 ```
 /**
  * Field Constructor

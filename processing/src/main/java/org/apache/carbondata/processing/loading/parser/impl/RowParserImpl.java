@@ -36,7 +36,10 @@ public class RowParserImpl implements RowParser {
 
   private int numberOfColumns;
 
+  private boolean skipParsing;
+
   public RowParserImpl(DataField[] output, CarbonDataLoadConfiguration configuration) {
+    skipParsing = configuration.isSkipParsers();
     String[] tempComplexDelimiters =
         (String[]) configuration.getDataLoadProperty(DataLoadProcessorConstants.COMPLEX_DELIMITERS);
     ArrayList<String> complexDelimiters = new ArrayList<>();
@@ -109,7 +112,11 @@ public class RowParserImpl implements RowParser {
         continue;
       }
       Object obj = row[inputMapping[i]];
-      out[outputMapping[i]] = genericParsers[i].parse(obj);
+      if (skipParsing) {
+        out[outputMapping[i]] = genericParsers[i].parseRaw(obj);
+      } else {
+        out[outputMapping[i]] = genericParsers[i].parse(obj);
+      }
     }
     return out;
   }

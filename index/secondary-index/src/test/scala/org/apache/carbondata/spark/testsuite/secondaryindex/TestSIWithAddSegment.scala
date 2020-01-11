@@ -22,8 +22,9 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.datatype.Field
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.sdk.file.{CarbonSchemaReader, CarbonWriterBuilder, Field, Schema}
+import org.apache.carbondata.sdk.file.{CarbonSchemaReader, CarbonWriterBuilder, Schema}
 
 @Ignore
 class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {

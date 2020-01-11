@@ -68,7 +68,7 @@ import org.apache.log4j.Logger;
 // TODO Move dictionary generater which is coded in spark to MR framework.
 public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, ObjectArrayWritable> {
 
-  private static final String LOAD_MODEL = "mapreduce.carbontable.load.model";
+  protected static final String LOAD_MODEL = "mapreduce.carbontable.load.model";
   private static final String DATABASE_NAME = "mapreduce.carbontable.databaseName";
   private static final String TABLE_NAME = "mapreduce.carbontable.tableName";
   private static final String TABLE = "mapreduce.carbontable.table";

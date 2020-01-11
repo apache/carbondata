@@ -17,34 +17,36 @@
 
 package org.apache.carbondata.hive;
 
-import java.util.Set;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.google.common.collect.ImmutableSet;
-import org.apache.hadoop.hive.ql.io.AbstractStorageFormatDescriptor;
+import org.apache.hadoop.io.Writable;
 
-/**
- * TODO : enable this class
- */
-class CarbonStorageFormatDescriptor extends AbstractStorageFormatDescriptor {
+public class CarbonHiveRow implements Writable {
 
-  @Override
-  public Set<String> getNames() {
-    return ImmutableSet.of("CARBONDATA");
+  private List<Object> rawRow = new ArrayList();
+
+  CarbonHiveRow() {
+  }
+
+  public void addToRow(Object object) {
+    rawRow.add(object);
+  }
+
+  public Object[] getData() {
+    return rawRow.toArray();
   }
 
   @Override
-  public String getInputFormat() {
-    return MapredCarbonInputFormat.class.getName();
+  public void write(DataOutput dataOutput) throws IOException {
+
   }
 
   @Override
-  public String getOutputFormat() {
-    return MapredCarbonOutputFormat.class.getName();
-  }
+  public void readFields(DataInput dataInput) throws IOException {
 
-  @Override
-  public String getSerde() {
-    return CarbonHiveSerDe.class.getName();
   }
-
 }

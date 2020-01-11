@@ -29,7 +29,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
+import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterAll {

@@ -54,6 +54,10 @@ public class StructField implements Serializable {
     return children;
   }
 
+  public void setFieldName(String fieldName) {
+    this.fieldName = fieldName;
+  }
+
   @Override
   public int hashCode() {
     final int prime = 31;

@@ -58,6 +58,8 @@ public class HiveEmbeddedServer2 {
     log.info("Starting Hive Local/Embedded Server...");
     SCRATCH_DIR = storePath;
     if (hiveServer == null) {
+      System.setProperty("datanucleus.schema.autoCreateAll", "true");
+      System.setProperty("hive.metastore.schema.verification", "false");
       config = configure();
       hiveServer = new HiveServer2();
       port = findFreePort();
@@ -90,7 +92,7 @@ public class HiveEmbeddedServer2 {
     for (int interval = 0; interval < timeout / unitOfWait; interval++) {
       Thread.sleep(unitOfWait);
       try {
-        Map<String, String> sessionConf = new HashMap<String, String>();
+        Map<String, String> sessionConf = new HashMap<>();
         sessionHandle = hs2Client.openSession("foo", "bar", sessionConf);
         return;
       } catch (Exception e) {
@@ -161,7 +163,7 @@ public class HiveEmbeddedServer2 {
     // intercept SessionState to clean the threadlocal
     Field tss = SessionState.class.getDeclaredField("tss");
     tss.setAccessible(true);
-    return new HiveConf(conf);
+    return conf;
   }
 
   public void stop() {

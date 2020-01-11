@@ -226,6 +226,16 @@ public class CarbonLoadModel implements Serializable {
 
   private OutputFilesInfoHolder outputFilesInfoHolder;
 
+  private boolean skipParsers = false;
+
+  public void setSkipParsers() {
+    skipParsers = true;
+  }
+
+  public boolean isSkipParsers() {
+    return skipParsers;
+  }
+
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;
   }

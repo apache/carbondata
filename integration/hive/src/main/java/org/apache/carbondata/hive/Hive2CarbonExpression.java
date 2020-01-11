@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.hive;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,8 +36,8 @@ import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.hadoop.api.CarbonInputFormat;
+import org.apache.carbondata.hive.util.DataTypeUtil;
 
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeFieldDesc;
@@ -153,7 +154,11 @@ public class Hive2CarbonExpression {
   }
 
   public static DataType getDateType(String type) {
-    return DataTypeUtil.valueOf(type);
+    try {
+      return DataTypeUtil.convertHiveTypeToCarbon(type);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
 

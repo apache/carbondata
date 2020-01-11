@@ -34,6 +34,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.metadata.datatype.MapType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.datatype.StructType;
@@ -601,7 +602,8 @@ import org.apache.log4j.Logger;
           keyValueFields.add(keyField);
           keyValueFields.add(valueField);
           StructField mapKeyValueField =
-              new StructField(fieldName + ".val", DataTypes.createStructType(keyValueFields));
+              new StructField(fieldName + ".val", DataTypes.createStructType(keyValueFields),
+                  keyValueFields);
           // value dataType will be at position 1 in the fields
           MapType mapType =
               DataTypes.createMapType(DataTypes.STRING, mapKeyValueField.getDataType());
@@ -619,14 +621,17 @@ import org.apache.log4j.Logger;
             structSubFields.add(structField);
           }
         }
-        return (new StructField(fieldName, DataTypes.createStructType(structSubFields)));
+        return (new StructField(fieldName, DataTypes.createStructType(structSubFields),
+            structSubFields));
       case ARRAY:
         // recursively get the sub fields
         // array will have only one sub field.
         DataType subType =
             getMappingDataTypeForCollectionRecord(fieldName, childSchema.getElementType());
+        List<StructField> subFields = new ArrayList<>();
+        subFields.add(prepareSubFields(childSchema.getName(), childSchema.getElementType()));
         if (subType != null) {
-          return (new StructField(fieldName, DataTypes.createArrayType(subType)));
+          return (new StructField(fieldName, DataTypes.createArrayType(subType), subFields));
         } else {
           return null;
         }
@@ -640,7 +645,8 @@ import org.apache.log4j.Logger;
             structSubTypes.add(structField);
           }
         }
-        return (new StructField(fieldName, DataTypes.createStructType(structSubTypes)));
+        return (new StructField(fieldName, DataTypes.createStructType(structSubTypes),
+            structSubTypes));
       case BYTES:
         // DECIMAL type is defined in Avro as a BYTE type with the logicalType property
         // set to "decimal" and a specified precision and scale
