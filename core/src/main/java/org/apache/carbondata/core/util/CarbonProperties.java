@@ -855,7 +855,13 @@ public final class CarbonProperties {
    * Return the store path
    */
   public static String getStorePath() {
-    return getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION);
+    String storePath = getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION);
+    if (storePath == null) {
+      // Internally spark sets the value of spark.warehouse.dir to hive.metastore.warehouse.dir.
+      // So no need to check for spark property.
+      storePath = FileFactory.getConfiguration().get("hive.metastore.warehouse.dir");
+    }
+    return storePath;
   }
 
   /**

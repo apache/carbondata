@@ -89,7 +89,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   public static final String INPUT_FILES = "mapreduce.input.carboninputformat.files";
   private static final Logger LOG =
       LogServiceFactory.getLogService(CarbonTableInputFormat.class.getName());
-  public static final String CARBON_TRANSACTIONAL_TABLE =
+  protected static final String CARBON_TRANSACTIONAL_TABLE =
       "mapreduce.input.carboninputformat.transactional";
   public static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
   public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
@@ -354,7 +354,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   private List<InputSplit> getSplits(JobContext job, IndexFilter expression,
       List<Segment> validSegments, SegmentUpdateStatusManager updateStatusManager,
       List<Segment> invalidSegments) throws IOException {
-
     List<String> segmentsToBeRefreshed = new ArrayList<>();
     if (!CarbonProperties.getInstance()
         .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())) {

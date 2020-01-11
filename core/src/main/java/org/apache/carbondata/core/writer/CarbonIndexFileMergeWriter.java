@@ -202,7 +202,7 @@ public class CarbonIndexFileMergeWriter {
     return null;
   }
 
-  private String writeMergeIndexFileBasedOnSegmentFile(String segmentId,
+  public String writeMergeIndexFileBasedOnSegmentFile(String segmentId,
       List<String> indexFileNamesTobeAdded, SegmentFileStore segmentFileStore,
       CarbonFile[] indexFiles, String uuid, String partitionPath) throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
