@@ -50,7 +50,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
           CREATE TABLE IF NOT EXISTS table_blocksize1
           (ID Int, date Timestamp, country String,
           name String, phonetype String, serialname String, salary Int)
-          STORED BY 'org.apache.carbondata.format'
+          STORED AS carbondata
           TBLPROPERTIES('table_blocksize'='4096 MB')
         """)
       assert(false)
@@ -69,7 +69,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
           CREATE TABLE IF NOT EXISTS table_blocksize2
           (ID Int, date Timestamp, country String,
           name String, phonetype String, serialname String, salary Int)
-          STORED BY 'org.apache.carbondata.format'
+          STORED AS carbondata
           TBLPROPERTIES('table_blocksize'='10Y4 MB')
         """)
       assert(false)
@@ -88,7 +88,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
         CREATE TABLE IF NOT EXISTS table_blocksize3
         (ID Int, date Timestamp, country String,
         name String, phonetype String, serialname String, salary Int)
-        STORED BY 'org.apache.carbondata.format'
+        STORED AS carbondata
         TBLPROPERTIES('table_blocksize'='512 MB')
       """)
 
@@ -117,7 +117,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
         CREATE TABLE IF NOT EXISTS table_max_block_size
         (ID Int, date Timestamp, country String,
         name String, phonetype String, serialname String, salary Int)
-        STORED BY 'org.apache.carbondata.format'
+        STORED AS carbondata
         TBLPROPERTIES('table_blocksize'='2048 MB')
       """)
     CarbonProperties.getInstance()

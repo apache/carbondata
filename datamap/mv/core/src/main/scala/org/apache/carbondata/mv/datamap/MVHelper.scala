@@ -23,7 +23,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapter, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Coalesce, Expression, Literal, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
@@ -32,7 +32,7 @@ import org.apache.spark.sql.execution.command.{Field, PartitionerField, TableMod
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.execution.command.timeseries.{TimeSeriesFunction, TimeSeriesUtil}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.parser.CarbonSpark2SqlParser
+import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.sql.types.{ArrayType, DateType, MapType, StructType}
 import org.apache.spark.util.{DataMapUtil, PartitionUtils}
 
@@ -68,9 +68,8 @@ object MVHelper {
     }
     val mvUtil = new MVUtil
     mvUtil.validateDMProperty(dmProperties)
-    val updatedQuery = new CarbonSpark2SqlParser().addMVSkipFunction(queryString)
-    val query = sparkSession.sql(updatedQuery)
-    val logicalPlan = MVHelper.dropDummFuc(query.queryExecution.analyzed)
+    val logicalPlan = MVHelper.dropDummFuc(
+      CarbonSparkSqlParserUtil.getMVPlan(queryString, sparkSession))
     // if there is limit in MV ctas query string, throw exception, as its not a valid usecase
     logicalPlan match {
       case Limit(_, _) =>
@@ -233,9 +232,9 @@ object MVHelper {
     TableIdentifier(dataMapSchema.getDataMapName + "_table",
       selectTables.head.identifier.database)
     // prepare table model of the collected tokens
-    val tableModel: TableModel = new CarbonSpark2SqlParser().prepareTableModel(
+    val tableModel: TableModel = CarbonParserUtil.prepareTableModel(
       ifNotExistPresent = ifNotExistsSet,
-      new CarbonSpark2SqlParser().convertDbNameToLowerCase(tableIdentifier.database),
+      CarbonParserUtil.convertDbNameToLowerCase(tableIdentifier.database),
       tableIdentifier.table.toLowerCase,
       fields,
       partitionerFields,

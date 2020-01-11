@@ -41,20 +41,20 @@ class JoinWithoutDictionaryColumn extends QueryTest with BeforeAndAfterAll {
 
     sql(
       """
-        create table mobile (mid String,Mobileid String, Color String, id int) STORED BY 'org.apache.carbondata.format'
+        create table mobile (mid String,Mobileid String, Color String, id int) STORED AS carbondata
       """)
     sql(
       """
-        create table emp (eid String,ename String, Mobileid String,Color String, id int) STORED BY 'org.apache.carbondata.format'
+        create table emp (eid String,ename String, Mobileid String,Color String, id int) STORED AS carbondata
       """)
 
     sql(
       """
-        create table mobile_d (mid String,Mobileid String, Color String, id int) STORED BY 'org.apache.carbondata.format'
+        create table mobile_d (mid String,Mobileid String, Color String, id int) STORED AS carbondata
       """)
     sql(
       """
-        create table emp_d (eid String,ename String, Mobileid String,Color String, id int) STORED BY 'org.apache.carbondata.format'
+        create table emp_d (eid String,ename String, Mobileid String,Color String, id int) STORED AS carbondata
       """)
 
     sql(

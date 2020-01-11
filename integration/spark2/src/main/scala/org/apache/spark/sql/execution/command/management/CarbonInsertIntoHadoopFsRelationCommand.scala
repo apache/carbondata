@@ -77,9 +77,9 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
     val qualifiedOutputPath = outputPath.makeQualified(fs.getUri, fs.getWorkingDirectory)
 
     val partitionsTrackedByCatalog = sparkSession.sessionState.conf.manageFilesourcePartitions &&
-      catalogTable.isDefined &&
-      catalogTable.get.partitionColumnNames.nonEmpty &&
-      catalogTable.get.tracksPartitionsInCatalog
+                                     catalogTable.isDefined &&
+                                     catalogTable.get.partitionColumnNames.nonEmpty &&
+                                     catalogTable.get.tracksPartitionsInCatalog
 
     var initialMatchingPartitions: Seq[TablePartitionSpec] = Nil
     var customPartitionLocations: Map[TablePartitionSpec, String] = Map.empty
@@ -102,7 +102,7 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
     // This config only makes sense when we are overwriting a partitioned dataset with dynamic
     // partition columns.
     val dynamicPartitionOverwrite = enableDynamicOverwrite && mode == SaveMode.Overwrite &&
-      staticPartitions.size < partitionColumns.length
+                                    staticPartitions.size < partitionColumns.length
 
     val committer = FileCommitProtocol.instantiate(
       sparkSession.sessionState.conf.fileCommitProtocolClass,
@@ -196,7 +196,7 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
           cols.toList.mkString("/")
       }
 
-     // update metastore partition metadata
+      // update metastore partition metadata
       refreshUpdatedPartitions(update)
 
       // refresh cached files in FileIndex
@@ -226,9 +226,9 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
       committer: FileCommitProtocol): Unit = {
     val staticPartitionPrefix = if (staticPartitions.nonEmpty) {
       "/" + partitionColumns.flatMap { p =>
-        staticPartitions.get(p.name) match {
+        staticPartitions.get(p.name.toLowerCase) match {
           case Some(value) =>
-            Some(escapePathName(p.name) + "=" + escapePathName(value))
+            Some(escapePathName(p.name.toLowerCase) + "=" + escapePathName(value))
           case None =>
             None
         }
@@ -240,7 +240,7 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
     val staticPrefixPath = qualifiedOutputPath.suffix(staticPartitionPrefix)
     if (fs.exists(staticPrefixPath) && !committer.deleteWithJob(fs, staticPrefixPath, true)) {
       throw new IOException(s"Unable to clear output " +
-        s"directory $staticPrefixPath prior to writing to it")
+                            s"directory $staticPrefixPath prior to writing to it")
     }
     // now clear all custom partition locations (e.g. /custom/dir/where/foo=2/bar=4)
     for ((spec, customLoc) <- customPartitionLocations) {
@@ -250,7 +250,7 @@ case class CarbonInsertIntoHadoopFsRelationCommand(
       val path = new Path(customLoc)
       if (fs.exists(path) && !committer.deleteWithJob(fs, path, true)) {
         throw new IOException(s"Unable to clear partition " +
-          s"directory $path prior to writing to it")
+                              s"directory $path prior to writing to it")
       }
     }
   }

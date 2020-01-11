@@ -44,7 +44,7 @@ class TestRenameTableWithDataMap extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon_table(
          | id INT, name String, city String, age INT
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     sql(
@@ -117,7 +117,7 @@ class TestRenameTableWithDataMap extends QueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")

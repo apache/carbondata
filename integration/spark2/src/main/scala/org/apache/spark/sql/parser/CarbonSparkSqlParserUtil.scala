@@ -17,30 +17,39 @@
 
 package org.apache.spark.sql.parser
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.antlr.v4.runtime.tree.TerminalNode
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.{CarbonEnv, DataFrame, SparkSession}
+import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
+import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType, CatalogUtils}
+import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.{PartitionerField, TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.command.{Field, PartitionerField, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
+import org.apache.spark.sql.hive.CarbonMVRules
 import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.SchemaReader
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.CarbonOption
-import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 /**
  * Utility class to validate the create table and CTAS command,
@@ -59,6 +68,39 @@ object CarbonSparkSqlParserUtil {
       case _: IllegalArgumentException =>
         throw new MalformedCarbonCommandException(
           "Table property 'streaming' should be either 'true' or 'false'")
+    }
+  }
+
+  def validateTableProperties(tableInfo: TableInfo): Unit = {
+    val tablePath = tableInfo.getTablePath
+    val streaming = tableInfo.getFactTable.getTableProperties.get("streaming")
+    if (streaming != null && streaming.equalsIgnoreCase("true") && tablePath.startsWith("s3")) {
+      throw new UnsupportedOperationException("streaming is not supported with s3 store")
+    }
+    // Add validation for sort scope when create table
+    val sortScope = tableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+    if (!CarbonUtil.isValidSortOption(sortScope)) {
+      throw new InvalidConfigurationException(
+        s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT'," +
+        s" 'LOCAL_SORT' and 'GLOBAL_SORT' ")
+    }
+
+    if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
+      throw new ProcessMetaDataException(tableInfo.getDatabaseName,
+        tableInfo.getFactTable.getTableName, "Table should have at least one column.")
+    }
+
+    // Add validatation for column compressor when create table
+    val columnCompressor = tableInfo.getFactTable.getTableProperties.get(
+      CarbonCommonConstants.COMPRESSOR)
+    try {
+      if (null != columnCompressor) {
+        CompressorFactory.getInstance().getCompressor(columnCompressor)
+      }
+    } catch {
+      case ex : UnsupportedOperationException =>
+        throw new InvalidConfigurationException(ex.getMessage)
     }
   }
 
@@ -212,7 +254,7 @@ object CarbonSparkSqlParserUtil {
       table
     } else {
       // prepare table model of the collected tokens
-      val tableModel: TableModel = parser.prepareTableModel(
+      val tableModel: TableModel = CarbonParserUtil.prepareTableModel(
         ifNotExists,
         convertDbNameToLowerCase(tableIdentifier.database),
         tableIdentifier.table.toLowerCase,
@@ -239,6 +281,185 @@ object CarbonSparkSqlParserUtil {
           tableLocation = tablePath,
           external)
     }
+  }
+
+  def getProperties(table: CatalogTable): Map[String, String] = {
+    if (table.storage.properties.nonEmpty) {
+      // for carbon session, properties get from storage.
+      table.storage.properties
+    } else {
+      // for leo session, properties can not get from storageFormat, should use tableDesc.
+      table.properties
+    }
+  }
+
+  def normalizeProperties(properties: Map[String, String]): Map[String, String] = {
+    properties.map { entry =>
+      if (needToConvertToLowerCase(entry._1)) {
+        (entry._1.toLowerCase, entry._2.toLowerCase)
+      } else {
+        (entry._1.toLowerCase, entry._2)
+      }
+    }
+  }
+
+  def buildTableInfoFromCatalogTable(
+      table: CatalogTable,
+      ifNotExists: Boolean,
+      sparkSession: SparkSession,
+      selectQuery: Option[LogicalPlan]): TableInfo = {
+    val tableProperties = normalizeProperties(getProperties(table))
+    val options = new CarbonOption(tableProperties)
+    // validate streaming property
+    validateStreamingProperty(options)
+    val parser = new CarbonSpark2SqlParser()
+    val isExternal = table.tableType == CatalogTableType.EXTERNAL
+    var fields = parser.getFields(table.schema.fields, isExternal)
+    val provider = table.provider.get
+    val partitionColumnNames = table.partitionColumnNames.map(_.toLowerCase)
+
+    // validate for create table as select
+    selectQuery match {
+      case Some(q) =>
+        // create table as select does not allow creation of partitioned table
+        if (partitionColumnNames.nonEmpty) {
+          throw new MalformedCarbonCommandException(
+            "A Create Table As Select (CTAS) statement is not allowed to " +
+            "create a partitioned table using Carbondata file formats.")
+        }
+        // create table as select does not allow to explicitly specify schema
+        if (fields.nonEmpty) {
+          throw new MalformedCarbonCommandException(
+            "Schema can not be specified in a Create Table As Select (CTAS) statement")
+        }
+        // external table is not allow
+        if (isExternal) {
+          throw new MalformedCarbonCommandException(
+            "Create external table as select is not allowed")
+        }
+        fields = parser
+          .getFields(CarbonEnv.getInstance(sparkSession).carbonMetaStore
+            .getSchemaFromUnresolvedRelation(sparkSession, Some(q).get))
+      case _ =>
+      // ignore this case
+    }
+
+    if (partitionColumnNames.nonEmpty && options.isStreaming) {
+      throw new MalformedCarbonCommandException(
+        "Streaming is not allowed on partitioned table")
+    }
+    if (!isExternal && fields.isEmpty) {
+      throw new MalformedCarbonCommandException(
+        "Creating table without column(s) is not supported")
+    }
+    if (isExternal && fields.isEmpty && tableProperties.nonEmpty) {
+      // as fields are always zero for external table, cannot validate table properties.
+      throw new MalformedCarbonCommandException(
+        "Table properties are not supported for external table")
+    }
+
+    // validate tblProperties
+    val tblProperties = mutable.Map(tableProperties.toSeq: _*)
+    val bucketFields =
+      parser.getBucketFields(tblProperties, fields, options)
+    var isTransactionalTable: Boolean = true
+    // table must convert database name and table name to lower case
+    val identifier = AbsoluteTableIdentifier.from(
+      table.storage.locationUri.map(CatalogUtils.URIToString).getOrElse(""),
+      CarbonEnv.getDatabaseName(table.identifier.database)(sparkSession).toLowerCase(),
+      table.identifier.table.toLowerCase()
+    )
+    val tableInfo = if (isExternal) {
+      if (partitionColumnNames.nonEmpty) {
+        throw new MalformedCarbonCommandException(
+          "Partition is not supported for external table")
+      }
+      // read table info from schema file in the provided table path
+      val tableInfo = {
+        try {
+          val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
+          if (!FileFactory.isFileExist(schemaPath)) {
+            if (provider.equalsIgnoreCase("'carbonfile'")) {
+              SchemaReader.inferSchema(identifier, true)
+            } else {
+              isTransactionalTable = false
+              SchemaReader.inferSchema(identifier, false)
+            }
+          } else {
+            SchemaReader.getTableInfo(identifier)
+          }
+        } catch {
+          case e: Throwable =>
+            if (fields.nonEmpty) {
+              val tableModel: TableModel = CarbonParserUtil.prepareTableModel(
+                ifNotExists,
+                Some(identifier.getDatabaseName),
+                identifier.getTableName,
+                fields,
+                Seq.empty,
+                tblProperties,
+                bucketFields,
+                isAlterFlow = false,
+                table.comment
+              )
+              TableNewProcessor(tableModel)
+            } else {
+              throw new MalformedCarbonCommandException(
+                s"Invalid table path provided: ${ identifier.getTablePath } ")
+            }
+        }
+      }
+      // set "_external" property, so that DROP TABLE will not delete the data
+      if (provider.equalsIgnoreCase("'carbonfile'")) {
+        tableInfo.getFactTable.getTableProperties.put("_filelevelformat", "true")
+        tableInfo.getFactTable.getTableProperties.put("_external", "false")
+      } else {
+        tableInfo.getFactTable.getTableProperties.put("_external", "true")
+        tableInfo.getFactTable.getTableProperties.put("_filelevelformat", "false")
+      }
+      var isLocalDic_enabled = tableInfo.getFactTable.getTableProperties
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
+      if (null == isLocalDic_enabled) {
+        tableInfo.getFactTable.getTableProperties
+          .put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+            CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE,
+                CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT))
+      }
+      isLocalDic_enabled = tableInfo.getFactTable.getTableProperties
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
+      if (CarbonScalaUtil.validateLocalDictionaryEnable(isLocalDic_enabled) &&
+          isLocalDic_enabled.toBoolean) {
+        val allcolumns = tableInfo.getFactTable.getListOfColumns
+        for (i <- 0 until allcolumns.size()) {
+          val cols = allcolumns.get(i)
+          if (cols.getDataType == DataTypes.STRING || cols.getDataType == DataTypes.VARCHAR) {
+            cols.setLocalDictColumn(true)
+          }
+        }
+        tableInfo.getFactTable.setListOfColumns(allcolumns)
+      }
+      tableInfo
+    } else {
+      val partitionerFields = fields
+        .filter(field => partitionColumnNames.contains(field.column))
+        .map(field => PartitionerField(field.column, field.dataType, null))
+      // prepare table model of the collected tokens
+      val tableModel: TableModel = CarbonParserUtil.prepareTableModel(
+        ifNotExists,
+        Option(identifier.getDatabaseName),
+        identifier.getTableName,
+        fields,
+        partitionerFields,
+        tblProperties,
+        bucketFields,
+        isAlterFlow = false,
+        table.comment
+      )
+      TableNewProcessor(tableModel)
+    }
+    tableInfo.setTransactionalTable(isTransactionalTable)
+    tableInfo
   }
 
   /**
@@ -309,6 +530,17 @@ object CarbonSparkSqlParserUtil {
   }
 
   /**
+   * check's whether need to convert to lower case
+   *
+   * @param key <String> property key
+   * @return returns <true> if lower case conversion is needed else <false>
+   */
+  def needToConvertToLowerCase(key: String): Boolean = {
+    val noConvertList = Array(CarbonCommonConstants.COMPRESSOR, "PATH")
+    !noConvertList.exists(x => x.equalsIgnoreCase(key))
+  }
+
+  /**
    * The method validate the create table command and returns the table's columns.
    *
    * @param tableHeader       An instance of CreateTableHeaderContext having parser rules for
@@ -369,6 +601,7 @@ object CarbonSparkSqlParserUtil {
 
   /**
    * The method return's the storage type
+   *
    * @param createFileFormat
    * @return
    */
@@ -386,5 +619,24 @@ object CarbonSparkSqlParserUtil {
         }
       case _ => ""
     }
+  }
+
+  def getMVQuery(query: String, sparkSession: SparkSession): DataFrame = {
+    SparkSQLUtil
+      .execute(getMVPlan(query, sparkSession), sparkSession)
+      .drop(CarbonEnv.MV_SKIP_RULE_UDF)
+  }
+
+  def getMVPlan(query: String, sparkSession: SparkSession): LogicalPlan = {
+    val updatedQuery = new CarbonSpark2SqlParser().addMVSkipFunction(query)
+    val analyzed = sparkSession.sql(updatedQuery).queryExecution.analyzed
+    CarbonMVRules(sparkSession).apply(analyzed)
+  }
+
+
+
+  def copyTablePartition(source: TablePartitionSpec): TablePartitionSpec = {
+    val target: TablePartitionSpec = source.map(entry => (entry._1.toLowerCase, entry._2))
+    target
   }
 }

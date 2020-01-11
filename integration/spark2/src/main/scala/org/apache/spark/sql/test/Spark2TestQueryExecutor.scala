@@ -62,7 +62,9 @@ object Spark2TestQueryExecutor {
       System.getProperty("spark.hadoop.hive.metastore.uris"))
   }
   val metaStoreDB = s"$integrationPath/spark-common-cluster-test/target"
-  System.setProperty("derby.system.home", metaStoreDB)
+  val extensions = CarbonProperties
+    .getInstance()
+    .getProperty("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
   val spark = SparkSession
     .builder().config(conf)
     .master(TestQueryExecutor.masterUrl)
@@ -70,11 +72,10 @@ object Spark2TestQueryExecutor {
     .enableHiveSupport()
     .config("spark.sql.warehouse.dir", warehouse)
     .config("spark.sql.crossJoin.enabled", "true")
-    .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+    .config("spark.sql.codegen.wholeStage", false)
+    .config("spark.sql.extensions", extensions)
     .getOrCreate()
-
   CarbonEnv.getInstance(spark)
-
   if (warehouse.startsWith("hdfs://")) {
     System.setProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, warehouse)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,

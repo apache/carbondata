@@ -146,13 +146,3 @@ object CarbonSetCommand {
     sessionParams.removeProperty(key)
   }
 }
-
-case class CarbonResetCommand()
-  extends RunnableCommand {
-  override val output = ResetCommand.output
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams.clear()
-    ResetCommand.run(sparkSession)
-  }
-}

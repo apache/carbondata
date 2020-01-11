@@ -131,7 +131,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' " +
+        "serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     // load with 4 bounds
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
@@ -153,7 +153,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' " +
+        "serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     // load with 4 bounds
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
@@ -172,7 +172,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' " +
+        "serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     // bounds have empty value
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
@@ -189,7 +189,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' " +
+        "serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
         s" OPTIONS('fileheader'='ID,date,country,name,phonetype,serialname,salary'," +
@@ -205,7 +205,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' " +
+        "serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     val e = intercept[Exception] {
       // number of column value does not match that of sort columns
@@ -238,7 +238,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata'" +
+        "serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name','sort_scope'='global_sort')")
     // since the sort_scope is 'global_sort', we will ignore the sort column bounds,
     // so the error in sort_column bounds will not be thrown
@@ -258,7 +258,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata'")
+        "serialname String, salary Int) STORED AS carbondata")
     // the sort_columns will have 5 columns if we don't specify it explicitly
     val e = intercept[Exception] {
       sql(s"LOAD DATA INPATH '$filePath' INTO TABLE $tableName " +
@@ -277,7 +277,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' " +
+        "serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='ID,name')")
     // ID is sort column and dictionary column. Since the actual order and literal order of
     // this column are not necessarily the same, this will not cause error but will cause data skewed.
@@ -296,7 +296,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
 
     sql(s"CREATE TABLE $tableName (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' " +
+        "serialname String, salary Int) STORED AS carbondata " +
         "tblproperties('sort_columns'='name,ID')")
     // 'name' is sort column and dictionary column, but value for 'name' in bounds does not exists
     // in dictionary. It will not cause error but will cause data skewed.

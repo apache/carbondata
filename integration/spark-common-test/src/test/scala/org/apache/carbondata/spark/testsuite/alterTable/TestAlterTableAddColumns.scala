@@ -43,7 +43,7 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
       s"""
         | CREATE TABLE IF NOT EXISTS ${ tableName }(id INT, name STRING, file array<array<float>>,
         | city STRING, salary FLOAT, ls STRING, map_column map<short,int>, struct_column struct<s:short>)
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | TBLPROPERTIES('sort_columns'='name', 'SORT_SCOPE'='LOCAL_SORT', 'LONG_STRING_COLUMNS'='ls',
         | 'LOCAL_DICTIONARY_ENABLE'='true', 'LOCAL_DICTIONARY_INCLUDE'='city')
       """.stripMargin)

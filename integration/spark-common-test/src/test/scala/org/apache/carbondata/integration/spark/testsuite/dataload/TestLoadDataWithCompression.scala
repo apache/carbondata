@@ -222,7 +222,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
          |    stringLocalDictField string,
          |    longStringField string
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(
          |  ${if (StringUtils.isBlank(columnCompressor)) "" else s"'${CarbonCommonConstants.COMPRESSOR}'='$columnCompressor',"}
          |  ${if (streaming) "" else s"'LONG_STRING_COLUMNS'='longStringField',"}

@@ -20,17 +20,16 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 
 import org.apache.spark.sql.{CarbonEnv, Row}
-import org.apache.spark.sql.test.util.CarbonQueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
-class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
+class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     drop()
@@ -46,7 +45,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -56,7 +55,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -67,7 +66,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table3 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table3 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -78,7 +77,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table4 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table4 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -88,7 +87,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table5 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table5 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -99,7 +98,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -109,8 +108,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists datamap1")
     sql("create datamap datamap1 using 'mv' as select empname, designation from fact_table1")
     val df = sql("select empname,designation from fact_table1")
-    val analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     checkAnswer(df, sql("select empname,designation from fact_table2"))
     sql(s"drop datamap datamap1")
   }
@@ -119,8 +117,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists datamap2")
     sql("create datamap datamap2 using 'mv' as select empname, designation from fact_table1")
     val df = sql("select empname from fact_table1")
-    val analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap2"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
     checkAnswer(df, sql("select empname from fact_table2"))
     sql(s"drop datamap datamap2")
   }
@@ -129,8 +126,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists datamap3")
     sql("create datamap datamap3 using 'mv' as select empname, designation from fact_table1")
     val frame = sql("select empname, designation from fact_table1 where empname='shivani'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap3"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap3"))
 
     checkAnswer(frame, sql("select empname, designation from fact_table2 where empname='shivani'"))
     sql(s"drop datamap datamap3")
@@ -139,8 +135,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
   test("test create datamap with simple and sub projection with non projection filter") {
     sql("create datamap datamap4 using 'mv' as select empname, designation from fact_table1")
     val frame = sql("select designation from fact_table1 where empname='shivani'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap4"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap4"))
     checkAnswer(frame, sql("select designation from fact_table2 where empname='shivani'"))
     sql(s"drop datamap datamap4")
   }
@@ -148,8 +143,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
   test("test create datamap with simple and sub projection with datamap filter") {
     sql("create datamap datamap5 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select designation from fact_table1 where empname='shivani'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap5"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap5"))
     checkAnswer(frame, sql("select designation from fact_table2 where empname='shivani'"))
     sql(s"drop datamap datamap5")
   }
@@ -157,8 +151,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
   test("test create datamap with simple and same projection with datamap filter ") {
     sql("create datamap datamap6 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select empname,designation from fact_table1 where empname='shivani'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap6"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap6"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where empname='shivani'"))
     sql(s"drop datamap datamap6")
   }
@@ -167,8 +160,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap7 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql(
       "select empname,designation from fact_table1 where empname='shivani' and designation='SA'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap7"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap7"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where empname='shivani' and designation='SA'"))
     sql(s"drop datamap datamap7")
   }
@@ -176,8 +168,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
   test("test create datamap with simple and same projection with datamap filter and different column filter") {
     sql("create datamap datamap8 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select empname,designation from fact_table1 where designation='SA'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap8"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap8"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where designation='SA'"))
     sql(s"drop datamap datamap8")
   }
@@ -185,8 +176,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
   test("test create datamap with simple and same projection with datamap filter on non projection column and extra column filter") {
     sql("create datamap datamap9 using 'mv' as select empname, designation,deptname  from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1 where deptname='cloud'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap9"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap9"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where deptname='cloud'"))
     sql(s"drop datamap datamap9")
   }
@@ -194,8 +184,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
   test("test create datamap with simple and same projection with datamap filter on non projection column and no column filter") {
     sql("create datamap datamap10 using 'mv' as select empname, designation,deptname from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1")
-    val analyzed = frame.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap10"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap10"))
     checkAnswer(frame, sql("select empname,designation from fact_table2"))
     sql(s"drop datamap datamap10")
   }
@@ -203,8 +192,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
   test("test create datamap with simple and same projection with datamap filter on non projection column and different column filter") {
     sql("create datamap datamap11 using 'mv' as select empname, designation,deptname from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1 where designation='SA'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap11"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap11"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where designation='SA'"))
     sql(s"drop datamap datamap11")
   }
@@ -213,8 +201,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists datamap12")
     sql("create datamap datamap12 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql("select empname, sum(utilization) from fact_table1 group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap12"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap12"))
     checkAnswer(frame, sql("select empname, sum(utilization) from fact_table2 group by empname"))
     sql(s"drop datamap datamap12")
   }
@@ -223,8 +210,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists datamap13")
     sql("create datamap datamap13 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql("select sum(utilization) from fact_table1 group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap13"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap13"))
     checkAnswer(frame, sql("select sum(utilization) from fact_table2 group by empname"))
     sql(s"drop datamap datamap13")
   }
@@ -234,8 +220,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap14 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql(
       "select empname,sum(utilization) from fact_table1 group by empname having empname='shivani'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap14"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap14"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop datamap datamap14")
   }
@@ -245,8 +230,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap32 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql(
       "select empname, sum(utilization) from fact_table1 group by empname having empname='shivani'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap32"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap32"))
     checkAnswer(frame, sql( "select empname, sum(utilization) from fact_table2 group by empname having empname='shivani'"))
     sql(s"drop datamap datamap32")
   }
@@ -255,8 +239,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap15 using 'mv' as select empname, sum(utilization) from fact_table1 where empname='shivani' group by empname")
     val frame = sql(
       "select empname,sum(utilization) from fact_table1 where empname='shivani' group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap15"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap15"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop datamap datamap15")
   }
@@ -264,8 +247,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
   test("test create datamap with simple and sub group by query with filter on datamap and no filter on query") {
     sql("create datamap datamap16 using 'mv' as select empname, sum(utilization) from fact_table1 where empname='shivani' group by empname")
     val frame = sql("select empname,sum(utilization) from fact_table1 group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap16"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap16"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 group by empname"))
     sql(s"drop datamap datamap16")
   }
@@ -275,8 +257,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group" +
       " by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap17"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap17"))
     checkAnswer(frame, sql("select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group" +
                            " by empname"))
     sql(s"drop datamap datamap17")
@@ -287,8 +268,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap18 using 'mv' as select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
     val frame = sql(
       "select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap18"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap18"))
     checkAnswer(frame, sql("select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group by empname"))
     sql(s"drop datamap datamap18")
   }
@@ -298,8 +278,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap19 using 'mv' as select empname, count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
     val frame = sql(
       "select count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap19"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap19"))
     checkAnswer(frame, sql("select count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group by empname"))
     sql(s"drop datamap datamap19")
   }
@@ -310,8 +289,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 where " +
       "empname='shivani' group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap20"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap20"))
     checkAnswer(frame, sql("select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 where " +
                            "empname='shivani' group by empname"))
     sql(s"drop datamap datamap20")
@@ -322,8 +300,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap21 using 'mv' as select t1.empname as c1, t2.designation, t2.empname as c2 from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname)")
     val frame = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap21"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap21"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
     sql(s"drop datamap datamap21")
   }
@@ -334,8 +311,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = " +
       "t2.empname and t1.empname='shivani'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap22"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap22"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = " +
                            "t2.empname and t1.empname='shivani'"))
     sql(s"drop datamap datamap22")
@@ -348,8 +324,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = " +
       "t2.empname and t1.empname='shivani'")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap23"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap23"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = " +
                            "t2.empname and t1.empname='shivani'"))
     sql(s"drop datamap datamap23")
@@ -360,8 +335,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap24 using 'mv' as select t1.empname, t2.designation, t2.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) where t1.empname='shivani'")
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap24"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap24"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
     sql(s"drop datamap datamap24")
   }
@@ -371,12 +345,10 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap25 using 'mv' as select t1.empname as c1, t2.designation, t2.empname, t3.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname)")
     val frame = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap25"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap25"))
     val frame1 = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname)")
-    val analyzed1 = frame1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "datamap25"))
+    assert(TestUtil.verifyMVDataMap(frame1.queryExecution.optimizedPlan, "datamap25"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
     sql(s"drop datamap datamap25")
   }
@@ -386,8 +358,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2,fact_table3 " +
       "t3  where t1.empname = t2.empname and t1.empname=t3.empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap26"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap26"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2,fact_table6 " +
                            "t3  where t1.empname = t2.empname and t1.empname=t3.empname"))
     sql(s"drop datamap datamap26")
@@ -398,8 +369,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname, t2.designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap27"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap27"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t2.designation"))
     sql(s"drop datamap datamap27")
@@ -411,8 +381,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname group by t2.designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap28"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap28"))
     checkAnswer(frame, sql("select t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname group by t2.designation"))
     sql(s"drop datamap datamap28")
@@ -424,8 +393,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap29"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap29"))
     checkAnswer(frame, sql("select t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation"))
     sql(s"drop datamap datamap29")
@@ -437,8 +405,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname ,t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname ")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap29"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap29"))
     checkAnswer(frame, sql("select t1.empname ,t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname "))
     sql(s"drop datamap datamap29")
@@ -450,8 +417,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname ,t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname ")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap29"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap29"))
     checkAnswer(frame, sql("select t1.empname ,t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname "))
     sql(s"drop datamap datamap29")
@@ -463,8 +429,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t2.designation='SA' group by t1.empname, t2.designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap30"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap30"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  " +
                            "where t1.empname = t2.empname and t2.designation='SA' group by t1.empname, t2.designation"))
     sql(s"drop datamap datamap30")
@@ -475,8 +440,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap31 using 'mv' as select empname, designation, utilization, projectcode from fact_table1 ")
     val frame = sql(
       "select empname, designation, utilization+projectcode from fact_table1")
-    val analyzed = frame.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap31"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap31"))
     checkAnswer(frame, sql("select empname, designation, utilization+projectcode from fact_table2"))
     sql(s"drop datamap datamap31")
   }
@@ -485,8 +449,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql(s"drop datamap if exists datamap32")
     sql("create datamap datamap32 using 'mv' as select empname, count(utilization) from fact_table1 group by empname")
     val frame = sql("select empname,count(utilization) from fact_table1 where empname='shivani' group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap32"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap32"))
     checkAnswer(frame, sql("select empname,count(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop datamap datamap32")
   }
@@ -495,8 +458,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql(s"drop datamap if exists datamap33")
     sql("create datamap datamap33 using 'mv' as select empname, avg(utilization) from fact_table1 group by empname")
     val frame = sql("select empname,avg(utilization) from fact_table1 where empname='shivani' group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap33"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap33"))
     checkAnswer(frame, sql("select empname,avg(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop datamap datamap33")
   }
@@ -507,8 +469,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname group by t1.empname, t2.designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap34"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap34"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname group by t1.empname, t2.designation"))
     sql(s"drop datamap datamap34")
@@ -518,8 +479,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap35 using 'mv' as select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
     val frame = sql(
       "select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap35"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap35"))
     checkAnswer(frame, sql("select designation, sum(utilization) from fact_table2 where empname='shivani' group by designation"))
     sql(s"drop datamap datamap35")
   }
@@ -528,8 +488,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap36 using 'mv' as select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
     val frame = sql(
       "select sum(utilization) from fact_table1 where empname='shivani' group by designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap36"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap36"))
     checkAnswer(frame, sql("select sum(utilization) from fact_table2 where empname='shivani' group by designation"))
     sql(s"drop datamap datamap36")
   }
@@ -540,8 +499,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap37"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap37"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t1.designation"))
     sql(s"drop datamap datamap37")
@@ -553,8 +511,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t1.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname,t1.designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap38"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap38"))
     checkAnswer(frame, sql("select t1.empname,t1.designation, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t1.designation"))
     sql(s"drop datamap datamap38")
@@ -566,8 +523,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t1.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap39"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap39"))
     checkAnswer(frame, sql("select t1.empname,t1.designation, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname, t1.designation"))
     sql(s"drop datamap datamap39")
@@ -579,8 +535,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t1.designation, sum(t1.utilization),count(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap40"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap40"))
     checkAnswer(frame, sql("select t1.empname, t1.designation, sum(t1.utilization),count(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation"))
     sql(s"drop datamap datamap40")
@@ -592,8 +547,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap41"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap41"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation"))
     sql(s"drop datamap datamap41")
@@ -605,8 +559,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname group by t1.empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap42"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap42"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname group by t1.empname"))
     sql(s"drop datamap datamap42")
@@ -618,8 +571,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap43"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap43"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname"))
     sql(s"drop datamap datamap43")
@@ -631,8 +583,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap44"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap44"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname"))
     sql(s"drop datamap datamap44")
@@ -646,8 +597,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t2.designation='SA' group by t1.empname, t2.designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap45"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap45"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t2.designation='SA' group by t1.empname, t2.designation"))
     sql(s"drop datamap datamap45")
@@ -657,14 +607,13 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
     sql("drop datamap if exists mv13")
     sql("drop table if exists test4")
-    sql("create table test4 ( name string,age int,salary int) stored by 'carbondata'")
+    sql("create table test4 ( name string,age int,salary int) STORED AS carbondata")
 
     sql(" insert into test4 select 'babu',12,12").show()
     sql("create datamap mv13 using 'mv' as select name,sum(salary) from test4 group by name")
     val frame = sql(
       "select name,sum(salary) from test4 group by name")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "mv13"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv13"))
   }
 
   test("jira carbondata-2528-1") {
@@ -673,8 +622,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap MV_order using 'mv' as select empname,sum(salary) as total from fact_table1 group by empname")
     val frame = sql(
       "select empname,sum(salary) as total from fact_table1 group by empname order by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "MV_order"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
   }
 
   test("jira carbondata-2528-2") {
@@ -683,8 +631,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap MV_order using 'mv' as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname")
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "MV_order"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
   }
 
   test("jira carbondata-2528-3") {
@@ -693,8 +640,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap MV_order using 'mv' as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "MV_order"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
     sql("drop datamap if exists MV_order")
   }
 
@@ -704,8 +650,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap MV_order using 'mv' as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 where empname = 'ravi' group by empname order by empname DESC")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "MV_order"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
     sql("drop datamap if exists MV_order")
   }
 
@@ -713,16 +658,14 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
     sql("drop table if exists test1")
     sql("drop datamap if exists datamv2")
-    sql("create table test1( name string,country string,age int,salary int) stored by 'carbondata'")
+    sql("create table test1( name string,country string,age int,salary int) STORED AS carbondata")
     sql("insert into test1 select 'name1','USA',12,23")
     sql("create datamap datamv2 using 'mv' as select country,sum(salary) from test1 group by country")
     val frame = sql("select country,sum(salary) from test1 where country='USA' group by country")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamv2"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamv2"))
     sql("insert into test1 select 'name1','USA',12,23")
     val frame1 = sql("select country,sum(salary) from test1 where country='USA' group by country")
-    val analyzed1 = frame1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "datamv2"))
+    assert(TestUtil.verifyMVDataMap(frame1.queryExecution.optimizedPlan, "datamv2"))
     sql("drop datamap if exists datamv2")
     sql("drop table if exists test1")
   }
@@ -733,8 +676,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap MV_exp using 'mv' as select sum(salary),substring(empname,2,5),designation from fact_table1 group by substring(empname,2,5),designation")
     val frame = sql(
       "select sum(salary),substring(empname,2,5),designation from fact_table1 group by substring(empname,2,5),designation")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "MV_exp"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp"))
     sql("drop datamap if exists MV_exp")
   }
 
@@ -747,14 +689,13 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql("drop datamap if exists MV_exp")
     sql("create datamap MV_exp using 'mv' as select doj,sum(salary) from xy.fact_tablexy group by doj")
     val frame = sql(
       "select doj,sum(salary) from xy.fact_tablexy group by doj")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "MV_exp"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp"))
     sql("drop datamap if exists MV_exp")
     sql("""drop database if exists xy cascade""")
   }
@@ -763,15 +704,14 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
     sql("drop table if exists mvtable1")
     sql("drop datamap if exists map1")
-    sql("create table mvtable1(name string,age int,salary int) stored by 'carbondata'")
+    sql("create table mvtable1(name string,age int,salary int) STORED AS carbondata")
     sql(" insert into mvtable1 select 'n1',12,12")
     sql("  insert into mvtable1 select 'n1',12,12")
     sql(" insert into mvtable1 select 'n3',12,12")
     sql(" insert into mvtable1 select 'n4',12,12")
     sql("create datamap map1 using 'mv' as select name,sum(salary) from mvtable1 group by name")
     val frame = sql("select name,sum(salary) from mvtable1 group by name limit 1")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "map1"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "map1"))
     sql("drop datamap if exists map1")
     sql("drop table if exists mvtable1")
   }
@@ -782,8 +722,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap_comp_maxsumminavg using 'mv' as select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
     val frame = sql(
       "select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_comp_maxsumminavg"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap_comp_maxsumminavg"))
     sql("drop datamap if exists datamap_comp_maxsumminavg")
   }
 
@@ -806,8 +745,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
       val frame = sql(
         "select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
-      val analyzed = frame.queryExecution.analyzed
-      assert(TestUtil.verifyMVDataMap(analyzed, "MV_exp"))
+      assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp"))
     }
     sql("drop datamap if exists MV_exp")
   }
@@ -824,8 +762,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("show datamap").show()
     val frame = sql(
       "select empname, sum(utilization) from fact_table1 group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "MV_exp1"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp1"))
     sql("drop datamap if exists MV_exp1")
     sql("drop datamap if exists MV_exp2")
   }
@@ -836,8 +773,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap46 using 'mv' as select deptname, sum(salary) from fact_table1 group by deptname")
     val frame = sql(
       "select deptname as babu, sum(salary) from fact_table1 as tt group by deptname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap46"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap46"))
     sql("drop datamap if exists datamap46")
   }
 
@@ -847,8 +783,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap_subqry using 'mv' as select empname, min(salary) from fact_table1 group by empname")
     val frame = sql(
       "SELECT max(utilization) FROM fact_table1 WHERE salary IN (select min(salary) from fact_table1 group by empname ) group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_subqry"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap_subqry"))
     sql("drop datamap if exists datamap_subqry")
   }
 
@@ -859,8 +794,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap_subqry using 'mv' as select min(salary) from fact_table1")
     val frame = sql(
       "SELECT max(utilization) FROM fact_table1 WHERE salary IN (select min(salary) from fact_table1) group by empname")
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_subqry"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap_subqry"))
     sql("drop datamap if exists datamap_subqry")
   }
 
@@ -868,8 +802,8 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
     sql("drop table if exists mvtable1")
     sql("drop table if exists mvtable2")
-    sql("create table mvtable1(name string,age int,salary int) stored by 'carbondata'")
-    sql("create table mvtable2(name string,age int,salary int) stored by 'carbondata'")
+    sql("create table mvtable1(name string,age int,salary int) STORED AS carbondata")
+    sql("create table mvtable2(name string,age int,salary int) STORED AS carbondata")
     sql("create datamap MV11 using 'mv' as select name from mvtable2")
     sql(" insert into mvtable1 select 'n1',12,12")
     sql("  insert into mvtable1 select 'n1',12,12")
@@ -891,7 +825,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | tblproperties('streaming'='true')
       """.stripMargin)
     sql(
@@ -919,7 +853,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | tblproperties('streaming'='true')
       """.stripMargin)
     sql(
@@ -964,14 +898,13 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
        | create table all_table(x1 bigint,x2 bigint,
        | x3 string,x4 bigint,x5 bigint,x6 int,x7 string,x8 int, x9 int,x10 bigint,
        | x11 bigint, x12 bigint,x13 bigint,x14 bigint,x15 bigint,x16 bigint,
-       | x17 bigint,x18 bigint,x19 bigint) stored by 'carbondata'""".stripMargin)
+       | x17 bigint,x18 bigint,x19 bigint) STORED AS carbondata""".stripMargin)
     sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,1,1")
 
     sql("create datamap all_table_mv on table all_table using 'mv' as " + querySQL)
 
     val frame = sql(querySQL)
-    val analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "all_table_mv"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "all_table_mv"))
     assert(1 == frame.collect().size)
 
     sql("drop table if exists all_table")
@@ -979,15 +912,14 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
   test("test select * and distinct when MV is enabled") {
     sql("drop table if exists limit_fail")
-    sql("CREATE TABLE limit_fail (empname String, designation String, doj Timestamp,workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE limit_fail (empname String, designation String, doj Timestamp,workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)STORED AS carbondata")
     sql(s"LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE limit_fail  OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
     sql("create datamap limit_fail_dm1 using 'mv' as select empname,designation from limit_fail")
     try {
       val df = sql("select distinct(empname) from limit_fail limit 10")
       sql("select * from limit_fail limit 10").show()
-      val analyzed = df.queryExecution.analyzed
-      assert(TestUtil.verifyMVDataMap(analyzed, "limit_fail_dm1"))
+      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "limit_fail_dm1"))
     } catch {
       case ex: Exception =>
         assert(false)
@@ -1006,7 +938,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         | create table all_table(x1 bigint,x2 bigint,
         | x3 string,x4 bigint,x5 bigint,x6 int,x7 string,x8 int, x9 int,x10 bigint,
         | x11 bigint, x12 bigint,x13 bigint,x14 bigint,x15 bigint,x16 bigint,
-        | x17 bigint,x18 bigint,x19 bigint,x20 binary) stored by 'carbondata'""".stripMargin)
+        | x17 bigint,x18 bigint,x19 bigint,x20 binary) STORED AS carbondata""".stripMargin)
     sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,1,1,'binary1'")
     sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,12,2,'binary2'")
     sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,1,2,'binary2'")
@@ -1015,8 +947,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("rebuild datamap all_table_mv")
 
     var frame = sql(querySQL)
-    var analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "all_table_mv"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "all_table_mv"))
     assert(2 == frame.collect().size)
     frame.collect().foreach { each =>
       if (1 == each.get(0)) {
@@ -1031,8 +962,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     }
 
     frame = sql(querySQL2)
-    analyzed = frame.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "all_table_mv"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "all_table_mv"))
     assert(1 == frame.collect().size)
     frame.collect().foreach { each =>
       if (2 == each.get(0)) {
@@ -1049,7 +979,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
   test(" test MV with like queries and filter queries") {
     sql("drop table if exists mv_like")
     sql(
-      "create table mv_like(name string, age int, address string, Country string, id int) stored by 'carbondata'")
+      "create table mv_like(name string, age int, address string, Country string, id int) STORED AS carbondata")
     sql(
       "create datamap mvlikedm1 using 'mv' as select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
     sql(
@@ -1057,50 +987,45 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("insert into mv_like select 'chandler', 32, 'newYork', 'US', 5")
     val df1 = sql(
       "select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
-    val analyzed1 = df1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "mvlikedm1"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "mvlikedm1"))
     val df2 = sql(
       "select name,address,Country from mv_like where Country = 'US' or Country = 'China' group by name,address,Country")
-    val analyzed2 = df2.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed2, "mvlikedm2"))
+    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "mvlikedm2"))
   }
 
   test("test distinct, count, sum on MV with single projection column") {
     sql("drop table if exists maintable")
-    sql("create table maintable(name string, age int, add string) stored by 'carbondata'")
+    sql("create table maintable(name string, age int, add string) STORED AS carbondata")
     sql("create datamap single_mv using 'mv' as select age from maintable")
     sql("insert into maintable select 'pheobe',31,'NY'")
     sql("insert into maintable select 'rachel',32,'NY'")
     val df1 = sql("select distinct(age) from maintable")
     val df2 = sql("select sum(age) from maintable")
     val df3 = sql("select count(age) from maintable")
-    val analyzed1 = df1.queryExecution.analyzed
-    val analyzed2 = df2.queryExecution.analyzed
-    val analyzed3 = df3.queryExecution.analyzed
     checkAnswer(df1, Seq(Row(31), Row(32)))
     checkAnswer(df2, Seq(Row(63)))
     checkAnswer(df3, Seq(Row(2)))
-    assert(TestUtil.verifyMVDataMap(analyzed1, "single_mv"))
-    assert(TestUtil.verifyMVDataMap(analyzed2, "single_mv"))
-    assert(TestUtil.verifyMVDataMap(analyzed3, "single_mv"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "single_mv"))
+    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "single_mv"))
+    assert(TestUtil.verifyMVDataMap(df3.queryExecution.optimizedPlan, "single_mv"))
   }
 
   test("count test case") {
 
     sql("drop table if exists mvtable1")
-    sql("create table mvtable1(name string,age int,salary int) stored by 'carbondata'")
+    sql("create table mvtable1(name string,age int,salary int) STORED AS carbondata")
     sql("create datamap MV11 using 'mv' as select name from mvtable1")
     sql("insert into mvtable1 select 'n1',12,12")
     sql("rebuild datamap MV11")
     val frame = sql("select count(*) from mvtable1")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.analyzed, "MV11"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV11"))
     checkAnswer(frame,Seq(Row(1)))
     sql("drop table if exists mvtable1")
   }
 
   test("test mv with duplicate columns in query and constant column") {
     sql("drop table if exists maintable")
-    sql("create table maintable(name string, age int, add string) stored by 'carbondata'")
+    sql("create table maintable(name string, age int, add string) STORED AS carbondata")
     sql("create datamap dupli_mv using 'mv' as select name, sum(age),sum(age) from maintable group by name")
     sql("create datamap dupli_projection using 'mv' as select age, age,add from maintable")
     sql("create datamap constant_mv using 'mv' as select name, sum(1) ex1 from maintable group by name")
@@ -1111,35 +1036,28 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val df4 = sql("select sum(1) ex1 from maintable group by name")
     val df5 = sql("select age,age,add from maintable")
     val df6 = sql("select age,add from maintable")
-    val analyzed1 = df1.queryExecution.analyzed
-    val analyzed2 = df2.queryExecution.analyzed
-    val analyzed3 = df3.queryExecution.analyzed
-    val analyzed4 = df4.queryExecution.analyzed
-    val analyzed5 = df5.queryExecution.analyzed
-    val analyzed6 = df6.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "dupli_mv"))
-    assert(TestUtil.verifyMVDataMap(analyzed2, "dupli_mv"))
-    assert(TestUtil.verifyMVDataMap(analyzed3, "constant_mv"))
-    assert(TestUtil.verifyMVDataMap(analyzed4, "constant_mv"))
-    assert(TestUtil.verifyMVDataMap(analyzed5, "dupli_projection"))
-    assert(TestUtil.verifyMVDataMap(analyzed6, "dupli_projection"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "dupli_mv"))
+    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "dupli_mv"))
+    assert(TestUtil.verifyMVDataMap(df3.queryExecution.optimizedPlan, "constant_mv"))
+    assert(TestUtil.verifyMVDataMap(df4.queryExecution.optimizedPlan, "constant_mv"))
+    assert(TestUtil.verifyMVDataMap(df5.queryExecution.optimizedPlan, "dupli_projection"))
+    assert(TestUtil.verifyMVDataMap(df6.queryExecution.optimizedPlan, "dupli_projection"))
   }
 
   test("test mv query when the column names and table name same in join scenario") {
     sql("drop table IF EXISTS price")
     sql("drop table IF EXISTS quality")
-    sql("create table price(product string,price int) stored by 'carbondata'")
-    sql("create table quality(product string,quality string) stored by 'carbondata'")
+    sql("create table price(product string,price int) STORED AS carbondata")
+    sql("create table quality(product string,quality string) STORED AS carbondata")
     sql("create datamap same_mv using 'mv' as select price.product,price.price,quality.product,quality.quality from price,quality where price.product = quality.product")
     val df1 = sql("select price.product from price,quality where price.product = quality.product")
-    val analyzed1 = df1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "same_mv"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "same_mv"))
   }
 
   test("test datamap column having more than 128 characters") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable (m_month smallint, c_code string, " +
-        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) stored by 'carbondata'")
+        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) STORED AS carbondata")
     sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
     sql("drop datamap if exists da_agg")
     sql("create datamap da_agg using 'mv' as select u_unit, y_year, m_month, c_country, b_country, sum(case when i_id=1 and (y_year=2000 and m_month=10)" +
@@ -1148,15 +1066,14 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     val df = sql("select u_unit, y_year, m_month, c_country, b_country, sum(case when i_id=1 and (y_year=2000 and m_month=10) then d_dollar_value else 0 end), " +
                  "sum(case when i_id=1 and (y_year=2000 and m_month=10) then q_quantity else 0 end) ex, sum(case when i_id=1 and (y_year=2011 and (m_month>=7 and m_month " +
                  "<=12)) then q_quantity else 0 end) from maintable group by u_unit,y_year, m_month, c_country, b_country")
-    val analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "da_agg"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "da_agg"))
     sql("drop table IF EXISTS maintable")
   }
 
   test("test cast expression with mv") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable (m_month bigint, c_code string, " +
-        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) stored by 'carbondata'")
+        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) STORED AS carbondata")
     sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
     sql("drop datamap if exists da_cast")
     sql(
@@ -1165,14 +1082,13 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a ,c_code as abc  from maintable")
     val df2 = sql(
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT),c_code as abc  from maintable")
-    val analyzed1 = df1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "da_cast"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
   }
 
   test("test cast of expression with mv") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable (m_month bigint, c_code string, " +
-        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) stored by 'carbondata'")
+        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) STORED AS carbondata")
     sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
     sql("drop datamap if exists da_cast")
     sql(
@@ -1181,50 +1097,45 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a ,c_code as abc  from maintable")
     val df2 = sql(
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT),c_code as abc  from maintable")
-    val analyzed1 = df1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "da_cast"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
   }
 
   test("test cast with & without alias") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable (m_month bigint, c_code string, " +
-        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) stored by 'carbondata'")
+        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) STORED AS carbondata")
     sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
     sql("drop datamap if exists da_cast")
     sql(
       "create datamap da_cast using 'mv' as select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
     checkAnswer(sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable"), Seq(Row(1010, "xxx")))
     var df1 = sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
-    var analyzed1 = df1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "da_cast"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
     sql("drop datamap if exists da_cast")
     sql(
       "create datamap da_cast using 'mv' as select cast(m_month + 1000 AS INT), c_code from maintable")
     df1 = sql("select cast(m_month + 1000 AS INT), c_code from maintable")
-    analyzed1 = df1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "da_cast"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
     checkAnswer(sql("select cast(m_month + 1000 AS INT), c_code from maintable"), Seq(Row(1010, "xxx")))
   }
 
   test("test mv with floor & ceil exp") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable (m_month bigint, c_code string, " +
-        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) stored by 'carbondata'")
+        "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) STORED AS carbondata")
     sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
     sql("drop datamap if exists da_floor")
     sql(
       "create datamap da_floor using 'mv' as select floor(m_month) as a, c_code as abc from maintable")
     checkAnswer(sql("select floor(m_month) as a, c_code as abc from maintable"), Seq(Row(10, "xxx")))
-    var df1 = sql("select floor(m_month) as a, c_code as abc from maintable")
-    var analyzed1 = df1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "da_floor"))
+    val df1 = sql("select floor(m_month) as a, c_code as abc from maintable")
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_floor"))
     sql("drop datamap if exists da_ceil")
     sql(
       "create datamap da_ceil using 'mv' as select ceil(m_month) as a, c_code as abc from maintable")
     checkAnswer(sql("select ceil(m_month) as a, c_code as abc from maintable"), Seq(Row(10, "xxx")))
-    var df2 = sql("select ceil(m_month) as a, c_code as abc from maintable")
-    var analyzed2 = df2.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed2, "da_ceil"))
+    val df2 = sql("select ceil(m_month) as a, c_code as abc from maintable")
+    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "da_ceil"))
   }
 
   def drop(): Unit = {
@@ -1251,7 +1162,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table_addseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -1261,15 +1172,14 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table_addseg1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     sql("drop datamap if exists datamap_addseg")
     sql("create datamap datamap_addseg using 'mv' as select empname, designation from fact_table_addseg")
     val df = sql("select empname,designation from fact_table_addseg")
-    val analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_addseg"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_addseg"))
     assert(df.collect().length == 90)
     val table = CarbonEnv.getCarbonTable(None, "fact_table_addseg1") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
@@ -1279,8 +1189,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").show()
     sql("select empname,designation from fact_table_addseg").show()
     val df1 = sql("select empname,designation from fact_table_addseg")
-    val analyzed1 = df1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "datamap_addseg"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap_addseg"))
     assert(df1.collect().length == 180)
     sql(s"drop datamap datamap_addseg")
     FileFactory.deleteAllFilesOfDir(new File(newPath))
@@ -1297,7 +1206,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table_addseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -1307,7 +1216,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table_addseg1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -1315,8 +1224,7 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("create datamap datamap_addseg using 'mv' WITH DEFERRED REBUILD as select empname, designation from fact_table_addseg")
     sql("rebuild datamap datamap_addseg")
     val df = sql("select empname,designation from fact_table_addseg")
-    val analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_addseg"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_addseg"))
     assert(df.collect().length == 90)
     val table = CarbonEnv.getCarbonTable(None, "fact_table_addseg1") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
@@ -1325,15 +1233,13 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
 
     sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").show()
     val df1 = sql("select empname,designation from fact_table_addseg")
-    val analyzed1 = df1.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed1, "datamap_addseg"))
+    assert(!TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap_addseg"))
     assert(df1.collect().length == 180)
 
     sql("rebuild datamap datamap_addseg")
 
     val df2 = sql("select empname,designation from fact_table_addseg")
-    val analyzed2 = df2.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed2, "datamap_addseg"))
+    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "datamap_addseg"))
     assert(df2.collect().length == 180)
 
     sql(s"drop datamap datamap_addseg")
@@ -1346,14 +1252,14 @@ class MVCreateTestCase extends CarbonQueryTest with BeforeAndAfterAll {
     sql("drop table if exists t1")
     sql("drop table if exists t2")
     sql("drop datamap if exists mv1")
-    sql("create table t1(userId string,score int) stored by 'carbondata'")
-    sql("create table t2(userId string,age int,sex string) stored by 'carbondata'")
+    sql("create table t1(userId string,score int) STORED AS carbondata")
+    sql("create table t2(userId string,age int,sex string) STORED AS carbondata")
     sql("insert into t1 values(1,100),(2,500)")
     sql("insert into t2 values(1,20,'f'),(2,30,'m')")
     val result  = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
     sql("create datamap mv1 using 'mv' as select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
     val df = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
-    TestUtil.verifyMVDataMap(df.queryExecution.analyzed, "mv1")
+    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1")
     checkAnswer(df, result)
     intercept[ProcessMetaDataException] {
       sql("alter table t1 drop columns(userId)")

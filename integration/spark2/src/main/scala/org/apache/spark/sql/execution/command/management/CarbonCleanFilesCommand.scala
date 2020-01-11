@@ -51,7 +51,8 @@ case class CarbonCleanFilesCommand(
     databaseNameOp: Option[String],
     tableName: Option[String],
     forceTableClean: Boolean = false,
-    isInternalCleanCall: Boolean = false)
+    isInternalCleanCall: Boolean = false,
+    truncateTable: Boolean = false)
   extends AtomicRunnableCommand {
 
   var carbonTable: CarbonTable = _
@@ -137,7 +138,8 @@ case class CarbonCleanFilesCommand(
       tablePath = carbonTable.getTablePath,
       carbonTable = carbonTable,
       forceTableClean = forceTableClean,
-      currentTablePartitions = partitions)
+      currentTablePartitions = partitions,
+      truncateTable = truncateTable)
   }
 
   // Clean garbage data in all tables in all databases

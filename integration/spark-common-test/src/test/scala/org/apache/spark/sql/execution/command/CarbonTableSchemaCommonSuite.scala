@@ -34,7 +34,7 @@ class CarbonTableSchemaCommonSuite extends QueryTest with BeforeAndAfterAll {
            | CREATE TABLE carbon_table(
            | BB INT, bb char(10)
            | )
-           | STORED BY 'carbondata'
+           | STORED AS carbondata
        """.stripMargin)
       Assert.assertTrue(false)
     } catch {
@@ -52,7 +52,7 @@ class CarbonTableSchemaCommonSuite extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE if not exists carbon_table(
          | BB INT, cc char(10)
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     val ex = intercept[ProcessMetaDataException] {

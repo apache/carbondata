@@ -21,6 +21,7 @@ import org.apache.spark.sql.catalyst.parser.ParserUtils.{string, withOrigin}
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{AddTableColumnsContext, ChangeColumnContext, CreateTableContext, ShowTablesContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.CarbonParserUtil
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
 import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand}
@@ -49,10 +50,9 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
     }
 
     val alterTableColRenameAndDataTypeChangeModel =
-      AlterTableDataTypeChangeModel(new CarbonSpark2SqlParser()
-        .parseDataType(typeString, values, isColumnRename),
-        new CarbonSpark2SqlParser()
-          .convertDbNameToLowerCase(Option(ctx.tableIdentifier().db).map(_.getText)),
+      AlterTableDataTypeChangeModel(
+        CarbonParserUtil.parseDataType(typeString, values, isColumnRename),
+        CarbonParserUtil.convertDbNameToLowerCase(Option(ctx.tableIdentifier().db).map(_.getText)),
         ctx.tableIdentifier().table.getText.toLowerCase,
         ctx.identifier.getText.toLowerCase,
         newColumn.name.toLowerCase,
@@ -67,9 +67,8 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
     val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
     val fields = parser.getFields(cols)
     val tblProperties = scala.collection.mutable.Map.empty[String, String]
-    val tableModel = new CarbonSpark2SqlParser().prepareTableModel(false,
-      new CarbonSpark2SqlParser().convertDbNameToLowerCase(Option(ctx.tableIdentifier().db)
-        .map(_.getText)),
+    val tableModel = CarbonParserUtil.prepareTableModel(false,
+      CarbonParserUtil.convertDbNameToLowerCase(Option(ctx.tableIdentifier().db).map(_.getText)),
       ctx.tableIdentifier.table.getText.toLowerCase,
       fields,
       Seq.empty,

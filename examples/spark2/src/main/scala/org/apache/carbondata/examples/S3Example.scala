@@ -18,7 +18,7 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{Row, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
 
 import org.apache.carbondata.spark.util.CarbonSparkUtil
@@ -60,8 +60,6 @@ object S3Example {
       .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
       .getOrCreate()
 
-    CarbonEnv.getInstance(spark)
-
     spark.sparkContext.setLogLevel("WARN")
 
     spark.sql("Drop table if exists carbon_table")
@@ -79,7 +77,7 @@ object S3Example {
          | charField CHAR(5),
          | floatField FLOAT
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | LOCATION '${args(2)}'
        """.stripMargin)
 

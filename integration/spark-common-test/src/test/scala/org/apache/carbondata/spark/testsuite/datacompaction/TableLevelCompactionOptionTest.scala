@@ -100,7 +100,7 @@ class TableLevelCompactionOptionTest extends QueryTest
       """
         |CREATE TABLE carbon_table
         |(id INT, name STRING, city STRING, age INT)
-        |STORED BY 'org.apache.carbondata.format'
+        |STORED AS carbondata
         |TBLPROPERTIES('SORT_COLUMNS'='city,name')
       """.stripMargin)
 
@@ -130,7 +130,7 @@ class TableLevelCompactionOptionTest extends QueryTest
       """
         |CREATE TABLE carbon_table
         |(id INT, name STRING, city STRING, age INT)
-        |STORED BY 'org.apache.carbondata.format'
+        |STORED AS carbondata
         |TBLPROPERTIES('SORT_COLUMNS'='city,name',
         |'MAJOR_COMPACTION_SIZE'='1', 'LOCAL_DICTIONARY_ENABLE'='false')
       """.stripMargin)
@@ -167,7 +167,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     sql(
       """
         | CREATE TABLE carbon_table(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name')
       """.stripMargin)
 
@@ -194,7 +194,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     sql(
       """
         | CREATE TABLE carbon_table(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name',
         | 'AUTO_LOAD_MERGE'='false')
       """.stripMargin)
@@ -225,7 +225,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     sql(
       """
          | CREATE TABLE carbon_table(id INT, name STRING, city STRING, age INT)
-         | STORED BY 'org.apache.carbondata.format'
+         | STORED AS carbondata
          | TBLPROPERTIES('SORT_COLUMNS'='city,name',
          | 'AUTO_LOAD_MERGE'='true',
          | 'COMPACTION_LEVEL_THRESHOLD'='3,2',
@@ -277,7 +277,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     sql(
       """
         |create table tablecompaction_table(
-        |name string,age int) stored by 'carbondata'
+        |name string,age int) STORED AS carbondata
         |tblproperties('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,1')
       """.stripMargin)
 
@@ -296,7 +296,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     sql(
       """
         |create table tablecompaction_table(
-        |name string,age int) stored by 'carbondata'
+        |name string,age int) STORED AS carbondata
         |tblproperties('COMPACTION_LEVEL_THRESHOLD'='2,1')
       """.stripMargin)
 
@@ -318,7 +318,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     sql(
       """
         |create table tablecompaction_table(
-        |name string,age int) stored by 'carbondata'
+        |name string,age int) STORED AS carbondata
         |tblproperties('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,0')
       """.stripMargin)
 
@@ -341,7 +341,7 @@ class TableLevelCompactionOptionTest extends QueryTest
     sql(
       """
         |create table tablecompaction_table(
-        |name string,age int) stored by 'carbondata'
+        |name string,age int) STORED AS carbondata
       """.stripMargin)
 
     for(i <-0 until 4){

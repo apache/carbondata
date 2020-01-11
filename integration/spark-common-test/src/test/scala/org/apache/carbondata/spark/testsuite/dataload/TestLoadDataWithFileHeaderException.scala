@@ -30,7 +30,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
            CREATE TABLE IF NOT EXISTS t3
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
-           STORED BY 'carbondata'
+           STORED AS carbondata
            """)
   }
 

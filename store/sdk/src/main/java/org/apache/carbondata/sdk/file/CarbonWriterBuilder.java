@@ -784,7 +784,7 @@ public class CarbonWriterBuilder {
     String tableName;
     String dbName;
     dbName = "";
-    tableName = "_tempTable_" + String.valueOf(timestamp);
+    tableName = "_tempTable-" + UUID.randomUUID().toString() + "_" + timestamp;
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
     CarbonTable table =

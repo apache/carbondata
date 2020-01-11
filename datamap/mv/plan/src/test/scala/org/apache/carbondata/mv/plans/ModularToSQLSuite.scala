@@ -21,7 +21,6 @@ import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.scalatest.BeforeAndAfter
 import org.apache.carbondata.mv.dsl.Plans._
 import org.apache.carbondata.mv.testutil.ModularPlanTest
-import org.apache.spark.sql.util.SparkSQLUtil
 
 class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
 
@@ -123,8 +122,7 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
     testHive.udf.register("my_fun", (s: Integer) => s)
     
     testSQLBatch.foreach { query =>
-      val analyzed = testHive.sql(query).queryExecution.analyzed
-      val optimized = analyzed.optimize
+      val analyzed = testHive.sql(query).queryExecution.optimizedPlan
       val modularPlan = analyzed.optimize.modularize
 
       LOGGER.info(s"\n\n===== MODULAR PLAN =====\n\n${modularPlan.treeString} \n")
@@ -134,7 +132,7 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
 
       LOGGER.info(s"\n\n===== CONVERTED SQL =====\n\n$compactSql \n")
       
-      val analyzed1 = testHive.sql(convertedSql).queryExecution.analyzed
+      val analyzed1 = testHive.sql(convertedSql).queryExecution.optimizedPlan
       val modularPlan1 = analyzed1.optimize.modularize
 
       LOGGER.info(s"\n\n===== CONVERTED SQL =====\n\n$compactSql \n")

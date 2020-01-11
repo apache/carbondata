@@ -103,7 +103,7 @@ class TestHybridCompaction extends QueryTest with BeforeAndAfterEach with Before
       s"""
          | CREATE TABLE $tableName(seq int, first string, last string,
          |   age int, city string, state string, date date)
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(
          |   'sort_scope'='local_sort',
          |   'sort_columns'='state, age',

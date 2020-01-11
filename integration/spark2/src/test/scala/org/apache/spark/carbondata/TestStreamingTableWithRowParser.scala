@@ -881,7 +881,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
          | register TIMESTAMP,
          | updated TIMESTAMP
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
          | 'sort_columns'='name')
          | """.stripMargin)
@@ -910,7 +910,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
          | updated TIMESTAMP,
          | file struct<school:array<string>, age:int>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
          | 'sort_columns'='name')
          | """.stripMargin)

@@ -43,7 +43,7 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
                 | country String,
                 | area String
                 | )
-                | STORED BY 'carbondata'
+                | STORED AS carbondata
               """.stripMargin)
 
     sql(s"CREATE DATABASE if not exists partitionDB")

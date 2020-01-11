@@ -67,8 +67,10 @@ public class InExpression extends BinaryConditionalExpression {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getDouble());
         } else if (dataType == DataTypes.LONG) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getLong());
-        } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+        } else if (dataType == DataTypes.DATE) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getTime());
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          val = new ExpressionResult(val.getDataType(), expressionResVal.getTimeAsMillisecond());
         } else if (DataTypes.isDecimal(dataType)) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getDecimal());
         } else {

@@ -17,6 +17,9 @@
 
 package org.apache.carbondata.core.metadata.schema.table;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
+
 public class DataMapSchemaFactory {
   public static final DataMapSchemaFactory INSTANCE = new DataMapSchemaFactory();
 
@@ -28,5 +31,17 @@ public class DataMapSchemaFactory {
    */
   public DataMapSchema getDataMapSchema(String dataMapName, String providerName) {
     return new DataMapSchema(dataMapName, providerName);
+  }
+
+  public static DataMapSchemaStorageProvider getDataMapSchemaStorageProvider() {
+    String provider = CarbonProperties.getDataMapStorageProvider();
+    switch (provider) {
+      case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DATABASE:
+        return new DatabaseDMSchemaStorageProvider();
+      case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DISK:
+      default:
+        return new DiskBasedDMSchemaStorageProvider(
+            CarbonProperties.getInstance().getSystemFolderLocation());
+    }
   }
 }

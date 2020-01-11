@@ -24,7 +24,7 @@ class TestCarbonCli extends Spark2QueryTest with BeforeAndAfterAll{
 
   override protected def beforeAll(): Unit = {
     sql("drop table if exists OneRowTable")
-    sql("create table OneRowTable(col1 string, col2 string, col3 int, col4 double) stored by 'carbondata'")
+    sql("create table OneRowTable(col1 string, col2 string, col3 int, col4 double) STORED AS carbondata")
     sql("insert into OneRowTable select '0.1', 'a.b', 1, 1.2")
   }
 

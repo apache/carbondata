@@ -21,15 +21,14 @@ import java.io.File
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
-
 
 class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
@@ -37,7 +36,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
                             "../../src/test/resources/SparkCarbonFileFormat/WriterOutput")
     .getCanonicalPath
   //getCanonicalPath gives path with \, but the code expects /.
-  writerPath = writerPath.replace("\\", "/");
+  writerPath = writerPath.replace("\\", "/")
 
 
   def buildTestData(): Any = {
@@ -55,7 +54,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     try {
       val builder = CarbonWriter.builder()
       val writer =
-        builder.outputPath(writerPath + "/Fact/Part0/Segment_null")
+        builder.outputPath(writerPath)
           .withCsvInput(Schema.parseJson(schema)).writtenBy("TestCarbonFileInputFormatWithExternalCarbonTable").build()
 
       var i = 0
@@ -103,7 +102,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
     //new provider carbonfile
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbonfile' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbon LOCATION
          |'$writerPath' """.stripMargin)
 
     sql("Describe formatted sdkOutputTable").show(false)
@@ -143,15 +142,15 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
     //data source file format
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbonfile' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbon LOCATION
          |'$writerPath' """.stripMargin)
 
-    val exception = intercept[MalformedCarbonCommandException]
+    val exception = intercept[AnalysisException]
     {
       sql("Alter table sdkOutputTable change age age BIGINT")
     }
-    assert(exception.getMessage()
-      .contains("Unsupported alter operation on Carbon external fileformat table"))
+    assert(exception.getMessage().contains(
+      "ALTER TABLE CHANGE COLUMN is not supported for changing column 'age' with type 'IntegerType' to 'age' with type 'LongType'"))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -167,15 +166,11 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
     //data source file format
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbonfile' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbon LOCATION
          |'$writerPath' """.stripMargin)
 
     //org.apache.spark.SparkException: Index file not present to read the carbondata file
-    val exception = intercept[Exception]
-    {
-      sql("select * from sdkOutputTable").show(false)
-    }
-    assert(exception.getMessage().contains("No Index files are present in the table location"))
+    checkAnswer(sql("select count(*) from sdkOutputTable"), Seq(Row(100)))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -193,11 +188,11 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     val exception = intercept[Exception] {
       //    data source file format
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbonfile' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbon LOCATION
          |'$writerPath' """.stripMargin)
     }
     assert(exception.getMessage()
-      .contains("Operation not allowed: Invalid table path provided:"))
+      .contains("Unable to infer the schema"))
 
 
     // drop table should not delete the files
@@ -216,13 +211,13 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     val exception = intercept[Exception] {
       //data source file format
       sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbonfile' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbon LOCATION
          |'$writerPath' """.stripMargin)
 
       sql("select * from sdkOutputTable").show(false)
     }
     assert(exception.getMessage()
-        .contains("Operation not allowed: Invalid table path provided:"))
+        .contains("Unable to infer the schema"))
 
     // drop table should not delete the files
     assert(new File(writerPath).exists())

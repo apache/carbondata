@@ -192,7 +192,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -264,7 +264,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Test delete by id for added segment") {
     createCarbonTable()
-    createCarbonTable()
+    createParquetTable
 
     sql("select * from addsegment2").show()
     val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
@@ -422,7 +422,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists addSegParless")
     sql("drop table if exists addSegParmore")
 
-    sql("create table addSegCar(a int, b string) stored by 'carbondata'")
+    sql("create table addSegCar(a int, b string) STORED AS carbondata")
     sql("create table addSegPar(a int, b string) using parquet")
     sql("create table addSegParless(a int) using parquet")
     sql("create table addSegParmore(a int, b string, c string) using parquet")
@@ -811,7 +811,7 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
         |  utilization int,salary int, empno int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE addsegment1 OPTIONS
@@ -844,7 +844,6 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""insert into addsegment3 select * from addsegment1""")
   }
 
-
   override def afterAll = {
     dropTable
   }
@@ -857,5 +856,4 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists addSegParless")
     sql("drop table if exists addSegParmore")
   }
-
 }

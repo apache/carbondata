@@ -49,7 +49,7 @@ class InsertIntoNonCarbonTableTestCase extends QueryTest with BeforeAndAfterAll 
       "Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
       "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
       "Latest_operatorId string, gamePointDescription string,gamePointId double,contractNumber " +
-      "BigInt) STORED BY 'org.apache.carbondata.format'")
+      "BigInt) STORED AS carbondata")
     sql(
       s"LOAD DATA INPATH '$resourcesPath/100_olap.csv' INTO table TCarbonSource options " +
       "('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='imei,deviceInformationId,MAC,deviceColor," +
@@ -120,7 +120,7 @@ class InsertIntoNonCarbonTableTestCase extends QueryTest with BeforeAndAfterAll 
     spark.sql("DROP TABLE IF EXISTS test_table")
 
     df.write.format("carbon").saveAsTable("personTable")
-    spark.sql("create table test_table(ID int, name string, city string, age decimal) stored by 'carbondata' tblproperties('sort_columns'='ID')")
+    spark.sql("create table test_table(ID int, name string, city string, age decimal) STORED AS carbondata tblproperties('sort_columns'='ID')")
     spark.sql("insert into test_table select * from personTable")
     spark.sql("insert into test_table select * from personTable limit 2")
 

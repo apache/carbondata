@@ -18,7 +18,7 @@ package org.apache.carbondata.spark.testsuite.standardpartition
 
 import java.io.{File, FileWriter, IOException}
 import java.util
-import java.util.concurrent.{Callable, ExecutorService, Executors}
+import java.util.concurrent.{Callable, Executors, ExecutorService}
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.conf.Configuration
@@ -30,6 +30,7 @@ import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.Strings
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -52,7 +53,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -63,7 +64,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originMultiLoads OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -88,7 +89,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -107,7 +108,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (doj Timestamp, empname String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiontwo OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -126,7 +127,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (workgroupcategory int, empname String, designation String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionthree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -144,7 +145,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int)
         | PARTITIONED BY (utilization int,salary int,workgroupcategory int, empname String,
         | designation String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionfive OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -165,7 +166,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (workgroupcategory int, empname String, designation String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -185,7 +186,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (workgroupcategory int, empname String, designation String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""insert into insertpartitionthree select empno,doj,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation from originTable""")
     sql(s"""insert into insertpartitionthree select empno,doj,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation from originTable""")
@@ -205,7 +206,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""insert into staticpartitionone PARTITION(empno='1') select empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary from originTable""")
 
@@ -220,7 +221,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitionone PARTITION(empno='1') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -236,7 +237,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitiononeoverwrite PARTITION(empno='1') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -258,7 +259,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empname String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_with_special_char.csv' INTO TABLE loadpartitionwithspecialchar OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -269,7 +270,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
   }
 
   test("Restrict streaming on partitioned table") {
-    intercept[AnalysisException] {
+    intercept[MalformedCarbonCommandException] {
       sql(
         """
           | CREATE TABLE streamingpartitionedtable (empname String, designation String, doj
@@ -278,7 +279,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
           |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
           |  utilization int,salary int)
           | PARTITIONED BY (empno int)
-          | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('streaming'='true')
+          | STORED AS carbondata TBLPROPERTIES('streaming'='true')
         """.stripMargin)
     }
   }
@@ -292,7 +293,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (workgroupcategory int, empname String, designation String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     val tasks = new util.ArrayList[Callable[String]]()
@@ -333,7 +334,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (workgroupcategory int, empname String, designation String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE mergeindexpartitionthree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -356,7 +357,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitiononeissue PARTITION(empno='1')""")
@@ -366,7 +367,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
   }
 
   test("bad record test with null values") {
-    sql(s"""CREATE TABLE IF NOT EXISTS emp1 (emp_no int,ename string,job string,mgr_id int,date_of_joining string,salary int,bonus int) partitioned by (dept_no int) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""CREATE TABLE IF NOT EXISTS emp1 (emp_no int,ename string,job string,mgr_id int,date_of_joining string,salary int,bonus int) partitioned by (dept_no int) STORED AS carbondata""")
     sql(s"""LOAD DATA INPATH '$resourcesPath/emp.csv' overwrite INTO TABLE emp1 OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '\')""")
     val rows = sql(s"select count(*) from emp1").collect()
     sql(s"""LOAD DATA INPATH '$resourcesPath/emp.csv' overwrite INTO TABLE emp1 OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '\','BAD_RECORDS_ACTION'='FORCE')""")
@@ -381,7 +382,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int, empname String, designation String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE restorepartition""")
@@ -409,7 +410,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empNo int, empName String, designation String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE casesensitivepartition""")
     checkAnswer(sql("select * from  casesensitivepartition where empNo=17"),
@@ -421,7 +422,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql(
       """
         | CREATE TABLE smallpartitionfiles(id INT, name STRING, age INT) PARTITIONED BY(city STRING)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     val inputPath = new File("target/small_files").getCanonicalPath
     val folder = new File(inputPath)
@@ -453,7 +454,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE smallpartitionfilesread(id INT, name STRING, age INT) PARTITIONED BY
           | (city STRING)
-          | STORED BY 'org.apache.carbondata.format'
+          | STORED AS carbondata
         """.stripMargin)
       val inputPath = new File("target/small_files").getCanonicalPath
       val folder = new File(inputPath)
@@ -485,14 +486,14 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
 
   test("test number of segment files should not be more than 1 per segment") {
     sql("drop table if exists new_par")
-    sql("create table new_par(a string) partitioned by ( b int) stored by 'carbondata'")
+    sql("create table new_par(a string) partitioned by ( b int) STORED AS carbondata")
     sql("insert into new_par select 'k',1")
     assert(new File(s"$storeLocation/new_par/Metadata/segments/").listFiles().size == 1)
   }
 
   test("test index and data size after merge index on partition table") {
     sql("drop table if exists new_par")
-    sql("create table new_par(a int) partitioned by (b string) stored by 'carbondata'")
+    sql("create table new_par(a int) partitioned by (b string) STORED AS carbondata")
     sql("insert into new_par select 1,'k'")
     val result = sql("show segments for table new_par").collectAsList()
     val dataAndIndexSize = getDataAndIndexSize(s"$storeLocation/new_par/b=k")

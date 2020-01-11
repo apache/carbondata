@@ -47,7 +47,7 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
                | floatField FLOAT,
                | decimalField DECIMAL(18,2)
                | )
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
 
           val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"

@@ -55,7 +55,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       "CREATE TABLE restructure (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure OPTIONS
           |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
@@ -63,14 +63,14 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       "CREATE TABLE restructure_test (empno int, empname String, designation String, doj " +
       "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
       "String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance " +
-      "int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "int,utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure_test OPTIONS
           |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
 
     sql(
       """CREATE TABLE IF NOT EXISTS restructure_bad(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata""")
 
     sql(
     s"""LOAD DATA LOCAL INPATH '$resourcesPath/badrecords/datasample.csv' INTO TABLE
@@ -115,7 +115,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   }
 
   ignore ("test add timestamp column and load as dictionary") {
-    sql("create table table1(name string) stored by 'carbondata'")
+    sql("create table table1(name string) STORED AS carbondata")
     sql("insert into table1 select 'abc'")
     sql("alter table table1 add columns(tmpstmp timestamp) TBLPROPERTIES " +
         "('DEFAULT.VALUE.tmpstmp'='17-01-3007')")
@@ -140,7 +140,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   // test alter add LONG datatype before load, see CARBONDATA-2131
   test("test add long column before load") {
     sql("drop table if exists alterLong")
-    sql("create table alterLong (name string) stored by 'carbondata'")
+    sql("create table alterLong (name string) STORED AS carbondata")
     sql("alter table alterLong add columns(newCol long)")
     sql("insert into alterLong select 'a',60000")
     checkAnswer(sql("select * from alterLong"), Row("a", 60000))
@@ -150,7 +150,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   // test alter add LONG datatype after load, see CARBONDATA-2131
   test("test add long column after load") {
     sql("drop table if exists alterLong1")
-    sql("create table alterLong1 (name string) stored by 'carbondata'")
+    sql("create table alterLong1 (name string) STORED AS carbondata")
     sql("insert into alterLong1 select 'a'")
     sql("alter table alterLong1 add columns(newCol long)")
     checkAnswer(sql("select * from alterLong1"), Row("a", null))
@@ -179,8 +179,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
 
   test("test drop all keycolumns in a table") {
     sql(
-      "create table allKeyCol (name string, age int, address string) stored by 'org.apache" +
-      ".carbondata.format'")
+      "create table allKeyCol (name string, age int, address string) STORED AS carbondata")
     try {
       sql("alter table allKeyCol drop columns(name,address)")
       assert(true)
@@ -472,7 +471,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   test("test table rename without use db, let current db be default") {
     sql("drop database if exists testdb cascade")
     sql("create database testdb")
-    sql("create table testdb.test1(name string, id int) stored by 'carbondata'")
+    sql("create table testdb.test1(name string, id int) STORED AS carbondata")
     sql("insert into testdb.test1 select 'xx',1")
     sql("insert into testdb.test1 select 'xx',11")
     sql("alter table testdb.test1 rename to testdb.test2")
@@ -482,7 +481,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   }
 
   test("test to check if the lock file is successfully deleted") {
-      sql("create table lock_check(id int, name string) stored by 'carbondata'")
+      sql("create table lock_check(id int, name string) STORED AS carbondata")
     sql("alter table lock_check rename to lock_rename")
     assert(!new File(s"${ CarbonCommonConstants.STORE_LOCATION } + /lock_rename/meta.lock")
       .exists())
@@ -491,7 +490,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   test("table rename with dbname in Camel Case") {
     sql("drop table if exists uniqdata")
     sql("drop table if exists uniqdata1")
-    sql("""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String) STORED BY 'org.apache.carbondata.format'""")
+    sql("""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String) STORED AS carbondata""")
     sql("""insert into table uniqdata values(1,"hello")""")
     sql("alter table Default.uniqdata rename to uniqdata1")
     checkAnswer(sql("select * from Default.uniqdata1"), Row(1,"hello"))
@@ -500,8 +499,8 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   // test query before&after renaming, see CARBONDATA-1690
   test("RenameTable_query_before_and_after_renaming") {
     try {
-      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
-      sql(s"""create table test2 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
+      sql(s"""create table test2 (name string, id int) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx1',1""").collect
       sql(s"""insert into test2 select 'xx2',2""").collect
       // query before rename
@@ -522,13 +521,13 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
 
   // after changing default sort_scope to no_sort, all dimensions are not selected for sorting.
   ignore("describe formatted for default sort_columns pre and post alter") {
-    sql("CREATE TABLE defaultSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' ")
+    sql("CREATE TABLE defaultSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED AS carbondata ")
     sql("alter table defaultSortColumnsWithAlter drop columns (designation)")
     sql("alter table defaultSortColumnsWithAlter add columns (designation12 String)")
     checkExistence(sql("describe formatted defaultSortColumnsWithAlter"),true,"Sort Columns empno, empname, role, doj")
   }
   test("describe formatted for specified sort_columns pre and post alter") {
-    sql("CREATE TABLE specifiedSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
+    sql("CREATE TABLE specifiedSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED AS carbondata " +
         "tblproperties('sort_columns'='empno,empname,designation,role,doj')")
     sql("alter table specifiedSortColumnsWithAlter drop columns (designation)")
     sql("alter table specifiedSortColumnsWithAlter add columns (designation12 String)")
@@ -542,7 +541,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       "CREATE TABLE restructure (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
@@ -556,14 +555,14 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists restructure")
   }
 test("test alter command for boolean data type with correct default measure value") {
-  sql("create table testalterwithboolean(id int,name string) stored by 'carbondata' ")
+  sql("create table testalterwithboolean(id int,name string) STORED AS carbondata ")
   sql("insert into testalterwithboolean values(1,'anubhav')  ")
   sql(
     "alter table testalterwithboolean add columns(booleanfield boolean) tblproperties('default.value.booleanfield'='true')")
   checkAnswer(sql("select * from testalterwithboolean"),Seq(Row(1,"anubhav",true)))
 }
   test("test alter command for boolean data type with out default measure value") {
-    sql("create table testalterwithbooleanwithoutdefaultvalue(id int,name string) stored by 'carbondata' ")
+    sql("create table testalterwithbooleanwithoutdefaultvalue(id int,name string) STORED AS carbondata ")
     sql("insert into testalterwithbooleanwithoutdefaultvalue values(1,'anubhav')  ")
     sql(
       "alter table testalterwithbooleanwithoutdefaultvalue add columns(booleanfield boolean)")
@@ -573,7 +572,7 @@ test("test alter command for boolean data type with correct default measure valu
     sql("drop table if exists test")
     sql(
       "create table test(id int,vin string,phonenumber long,area string,salary int,country " +
-      "string,longdate date) stored by 'carbondata'")
+      "string,longdate date) STORED AS carbondata")
     sql("insert into test select 1,'String1',12345,'area',20,'country','2017-02-12'")
     sql("alter table test add columns (c3 date) TBLPROPERTIES('DEFAULT.VALUE.c3' = '1993-01-01')")
     sql("alter table test add columns (c4 date)")
@@ -599,7 +598,7 @@ test("test alter command for boolean data type with correct default measure valu
         sql("drop table if exists test")
         sql(
           "create table test(id int,vin string,phonenumber long,area string,salary int,country " +
-          "string,longdate date) stored by 'carbondata'")
+          "string,longdate date) STORED AS carbondata")
         sql("insert into test select 1,'String1',12345,'area',20,'country','2017-02-12'")
         if (flag) {
           sql(
@@ -645,7 +644,7 @@ test("test alter command for boolean data type with correct default measure valu
       sql("drop table if exists test")
       sql(
         "create table test(id int,vin string,phonenumber long,area string,salary int,country " +
-        "string,longdate date) stored by 'carbondata'")
+        "string,longdate date) STORED AS carbondata")
       sql("insert into test select 1,'String1',12345,'area',5000,'country','2017/02/12'")
       if (flag) {
         sql(s"alter table test add columns (c3 int) TBLPROPERTIES('DEFAULT.VALUE.c3' = '23')")
@@ -673,7 +672,7 @@ test("test alter command for boolean data type with correct default measure valu
     sql(
       """
          CREATE TABLE retructure_iud(id int, name string, city string, age int)
-         STORED BY 'org.apache.carbondata.format'
+         STORED AS carbondata
       """)
     val testData = s"$resourcesPath/sample.csv"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table retructure_iud")
@@ -693,7 +692,7 @@ test("test alter command for boolean data type with correct default measure valu
     def test(): Unit ={
       sql("drop table if exists restructure_random_select")
       sql("create table restructure_random_select (imei string,channelsId string,gamePointId double,deviceInformationId double," +
-          " deliverycharge double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('table_blocksize'='2000','sort_columns'='imei')")
+          " deliverycharge double) STORED AS carbondata TBLPROPERTIES('table_blocksize'='2000','sort_columns'='imei')")
       sql("insert into restructure_random_select values('abc','def',50.5,30.2,40.6) ")
       sql("Alter table restructure_random_select add columns (age int,name String)")
       checkAnswer(
@@ -719,7 +718,7 @@ test("test alter command for boolean data type with correct default measure valu
   test("load table after alter drop column scenario") {
     sql("drop table if exists alterTable")
     sql(
-      "create table alterTable(empno string, salary string) stored by 'carbondata' tblproperties" +
+      "create table alterTable(empno string, salary string) STORED AS carbondata tblproperties" +
       "('sort_columns'='')")
     sql("alter table alterTable drop columns(empno)")
     sql("alter table alterTable add columns(empno string)")
@@ -739,7 +738,7 @@ test("test alter command for boolean data type with correct default measure valu
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='empname,deptno,projectcode,projectjoindate,
         | projectenddate,attendance')
       """.stripMargin)
@@ -755,7 +754,7 @@ test("test alter command for boolean data type with correct default measure valu
 
   test("Alter Table Change Sort Scope 1") {
     sql("DROP TABLE IF EXISTS t1")
-    sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
+    sql(s"CREATE TABLE t1(age int, name string) STORED AS carbondata TBLPROPERTIES" +
         s"('sort_columns'='age', 'sort_scope'='local_sort')")
     sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='global_sort')")
     assert(sortScopeInDescFormatted("t1").equalsIgnoreCase("global_sort"))
@@ -764,7 +763,7 @@ test("test alter command for boolean data type with correct default measure valu
 
   test("Alter Table Change Sort Scope 2") {
     sql("DROP TABLE IF EXISTS t1")
-    sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
+    sql(s"CREATE TABLE t1(age int, name string) STORED AS carbondata TBLPROPERTIES" +
         s"('sort_columns'='age', 'sort_scope'='local_sort')")
     sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='no_sort')")
     assert(sortScopeInDescFormatted("t1").equalsIgnoreCase("NO_SORT"))
@@ -773,7 +772,7 @@ test("test alter command for boolean data type with correct default measure valu
 
   test("Alter Table Change Sort Scope 3") {
     sql("DROP TABLE IF EXISTS t1")
-    sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
+    sql(s"CREATE TABLE t1(age int, name string) STORED AS carbondata TBLPROPERTIES" +
         s"('sort_columns'='')")
 
     // This throws exception as SORT_COLUMNS is empty
@@ -790,7 +789,7 @@ test("test alter command for boolean data type with correct default measure valu
 
   test("Alter Table Change Sort Scope 4") {
     sql("DROP TABLE IF EXISTS t1")
-    sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
+    sql(s"CREATE TABLE t1(age int, name string) STORED AS carbondata TBLPROPERTIES" +
         s"('sort_columns'='age', 'sort_scope'='local_sort')")
     sql("ALTER TABLE t1 UNSET TBLPROPERTIES('sort_scope')")
 
@@ -803,7 +802,7 @@ test("test alter command for boolean data type with correct default measure valu
 
   test("Alter Table Change Sort Scope 5") {
     sql("DROP TABLE IF EXISTS t1")
-    sql(s"CREATE TABLE t1(age int, name string) STORED BY 'carbondata' TBLPROPERTIES" +
+    sql(s"CREATE TABLE t1(age int, name string) STORED AS carbondata TBLPROPERTIES" +
         s"('sort_scope'='local_sort', 'sort_columns'='age')")
     intercept[RuntimeException] {
       sql("ALTER TABLE t1 SET TBLPROPERTIES('sort_scope'='fake_sort')")

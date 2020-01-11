@@ -171,7 +171,7 @@ public class EqualToExpressionUnitTest {
       value.setValues(objectRow);
 
       new MockUp<ExpressionResult>() {
-        @Mock public Long getTime() {
+        @Mock public Long getTimeAsMillisecond() {
           return 18465213000000L;
         }
       };

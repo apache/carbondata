@@ -26,7 +26,7 @@ class TestUpdateForPartitionTable extends QueryTest with BeforeAndAfterAll {
     dropTable
 
     sql("create table test_hive_partition_table (id int) partitioned by (name string) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
   }
 
   def dropTable = {

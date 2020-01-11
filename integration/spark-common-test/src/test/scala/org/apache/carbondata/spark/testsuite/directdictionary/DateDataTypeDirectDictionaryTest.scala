@@ -47,7 +47,7 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
       sql(
         "CREATE TABLE if not exists directDictionaryTable (empno int,doj date, " +
           "salary int) " +
-          "STORED BY 'org.apache.carbondata.format'"
+          "STORED AS carbondata"
       )
 
       CarbonProperties.getInstance()

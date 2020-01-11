@@ -21,7 +21,7 @@ import java.util.Date
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, EnvHelper, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -99,8 +99,14 @@ private[sql] case class CarbonDescribeFormattedCommand(
       ("Database", catalogTable.database, ""),
       ("Table", catalogTable.identifier.table, ""),
       ("Owner", catalogTable.owner, ""),
-      ("Created", new Date(catalogTable.createTime).toString, ""),
-      ("Location ", carbonTable.getTablePath, ""),
+      ("Created", new Date(catalogTable.createTime).toString, ""))
+
+    if (!EnvHelper.isPrivacy(sparkSession, carbonTable.isExternalTable)) {
+      results ++= Seq(
+        ("Location ", carbonTable.getTablePath, "")
+      )
+    }
+    results ++= Seq(
       ("External", carbonTable.isExternalTable.toString, ""),
       ("Transactional", carbonTable.isTransactionalTable.toString, ""),
       ("Streaming", streaming, ""),
@@ -136,6 +142,9 @@ private[sql] case class CarbonDescribeFormattedCommand(
     )
     if (carbonTable.getRangeColumn != null) {
       results ++= Seq(("RANGE COLUMN", carbonTable.getRangeColumn.getColName, ""))
+    }
+    if (carbonTable.getGlobalSortPartitions != null) {
+      results ++= Seq(("GLOBAL SORT PARTITIONS", carbonTable.getGlobalSortPartitions, ""))
     }
     //////////////////////////////////////////////////////////////////////////////
     //  Encoding Information

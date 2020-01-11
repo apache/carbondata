@@ -294,18 +294,14 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
     val columns = if (SparkUtil.isSparkVersionXandAbove("2.2") &&
                       carbonTable.isHivePartitionTable) {
       val partitionColumns = carbonTable.getPartitionInfo.getColumnSchemaList.asScala
-      val carbonColumnsWithoutPartition = carbonColumns.filterNot(col => partitionColumns.contains(
-        col))
-      Some(carbonColumnsWithoutPartition)
+      Some(carbonColumns.filterNot(col => partitionColumns.contains(col)))
     } else {
       Some(carbonColumns)
     }
     val (tableIdentifier, schemaParts) = AlterTableUtil.updateSchemaInfo(
-      carbonTable,
-      schemaEvolutionEntry,
-      tableInfo)(sparkSession)
-    CarbonSessionCatalogUtil
-      .alterColumnChangeDataTypeOrRename(tableIdentifier, schemaParts, columns, sparkSession)
+      carbonTable, schemaEvolutionEntry, tableInfo)(sparkSession)
+    CarbonSessionCatalogUtil.alterColumnChangeDataTypeOrRename(
+      tableIdentifier, schemaParts, columns, sparkSession)
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
   }
 

@@ -66,7 +66,7 @@ class BloomFilterDataMapTestCase extends QueryTest with BeforeAndAfterEach with 
          |    stringLocalDictField string,
          |    longStringField string
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(
          |  'LONG_STRING_COLUMNS'='longStringField',
          |  'SORT_COLUMNS'='stringSortField',
@@ -148,7 +148,7 @@ class BloomFilterDataMapTestCase extends QueryTest with BeforeAndAfterEach with 
          |    stringLocalDictField string,
          |    longStringField string
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(
          |  'LONG_STRING_COLUMNS'='longStringField',
          |  'local_dictionary_enable'='true',
@@ -186,8 +186,8 @@ class BloomFilterDataMapTestCase extends QueryTest with BeforeAndAfterEach with 
     val dataMapName = "bloom_datamap"
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
-    sql(s"CREATE TABLE $normalTable(c1 string, c2 int, c3 string) STORED BY 'carbondata'")
-    sql(s"CREATE TABLE $bloomDMSampleTable(c1 string, c2 int, c3 string) STORED BY 'carbondata'")
+    sql(s"CREATE TABLE $normalTable(c1 string, c2 int, c3 string) STORED AS carbondata")
+    sql(s"CREATE TABLE $bloomDMSampleTable(c1 string, c2 int, c3 string) STORED AS carbondata")
     // load data with empty value
     sql(s"INSERT INTO $normalTable SELECT '', 1, 'xxx'")
     sql(s"INSERT INTO $bloomDMSampleTable SELECT '', 1, 'xxx'")

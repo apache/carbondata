@@ -37,6 +37,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.exception.ConcurrentOperationException;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
@@ -1096,6 +1097,62 @@ public class SegmentStatusManager {
                     isForceDeletion, partitionSpecs);
           }
         }
+      }
+    }
+  }
+
+  public static void truncateTable(CarbonTable carbonTable)
+      throws ConcurrentOperationException, IOException {
+    ICarbonLock carbonTableStatusLock = CarbonLockFactory.getCarbonLockObj(
+        carbonTable.getAbsoluteTableIdentifier(), LockUsage.TABLE_STATUS_LOCK);
+    boolean locked = false;
+    try {
+      // Update load metadate file after cleaning deleted nodes
+      locked = carbonTableStatusLock.lockWithRetries();
+      if (locked) {
+        LOG.info("Table status lock has been successfully acquired.");
+        LoadMetadataDetails[] listOfLoadFolderDetailsArray =
+            SegmentStatusManager.readLoadMetadata(
+                CarbonTablePath.getMetadataPath(carbonTable.getTablePath()));
+        for (LoadMetadataDetails listOfLoadFolderDetails : listOfLoadFolderDetailsArray) {
+          boolean writing;
+          switch (listOfLoadFolderDetails.getSegmentStatus()) {
+            case INSERT_IN_PROGRESS:
+              writing = true;
+              break;
+            case INSERT_OVERWRITE_IN_PROGRESS:
+              writing = true;
+              break;
+            case STREAMING:
+              writing = true;
+              break;
+            default:
+              writing = false;
+          }
+          if (writing) {
+            throw new ConcurrentOperationException(carbonTable, "insert", "truncate");
+          }
+        }
+        for (LoadMetadataDetails listOfLoadFolderDetails : listOfLoadFolderDetailsArray) {
+          listOfLoadFolderDetails.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+        }
+        SegmentStatusManager
+            .writeLoadDetailsIntoFile(
+                CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()),
+                listOfLoadFolderDetailsArray);
+      } else {
+        String dbName = carbonTable.getDatabaseName();
+        String tableName = carbonTable.getTableName();
+        String errorMsg = "truncate table request is failed for " +
+            dbName + "." + tableName +
+            ". Not able to acquire the table status lock due to other operation " +
+            "running in the background.";
+        LOG.error(errorMsg);
+        throw new IOException(errorMsg + " Please try after some time.");
+      }
+    } finally {
+      if (locked) {
+        CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
       }
     }
   }

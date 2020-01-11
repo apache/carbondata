@@ -36,7 +36,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
 
   private def createTablesAndInsertData {
     // create carbon table and insert data
-    sql("CREATE TABLE carbon_ctas_test(key INT, value STRING) STORED BY 'carbondata'")
+    sql("CREATE TABLE carbon_ctas_test(key INT, value STRING) STORED AS carbondata")
     sql("insert into carbon_ctas_test select 100,'spark'")
     sql("insert into carbon_ctas_test select 200,'hive'")
 
@@ -63,19 +63,19 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
 
   test("test create table as select with select from same carbon table name with if not exists clause") {
     sql("drop table if exists ctas_same_table_name")
-    sql("CREATE TABLE ctas_same_table_name(key INT, value STRING) STORED BY 'carbondata'")
+    sql("CREATE TABLE ctas_same_table_name(key INT, value STRING) STORED AS carbondata")
     checkExistence(sql("SHOW TABLES"), true, "ctas_same_table_name")
     sql(
       """
         | CREATE TABLE IF NOT EXISTS ctas_same_table_name
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | AS SELECT * FROM ctas_same_table_name
       """.stripMargin)
     val e = intercept[TableAlreadyExistsException] {
       sql(
         """
           | CREATE TABLE ctas_same_table_name
-          | STORED BY 'carbondata'
+          | STORED AS carbondata
           | AS SELECT * FROM ctas_same_table_name
         """.stripMargin)
     }
@@ -85,70 +85,70 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
   test("test create table as select with select from same table name when table does not exists") {
     sql("drop table if exists ctas_same_table_name")
     intercept[Exception] {
-      sql("create table ctas_same_table_name stored by 'carbondata' as select * from ctas_same_table_name")
+      sql("create table ctas_same_table_name STORED AS carbondata as select * from ctas_same_table_name")
     }
   }
 
   test("test create table as select with select from another carbon table") {
     sql("DROP TABLE IF EXISTS ctas_select_carbon")
-    sql("create table ctas_select_carbon stored by 'carbondata' as select * from carbon_ctas_test")
+    sql("create table ctas_select_carbon STORED AS carbondata as select * from carbon_ctas_test")
     checkAnswer(sql("select * from ctas_select_carbon"), sql("select * from carbon_ctas_test"))
   }
 
   test("test create table as select with select from another parquet table") {
     sql("DROP TABLE IF EXISTS ctas_select_parquet")
-    sql("create table ctas_select_parquet stored by 'carbondata' as select * from parquet_ctas_test")
+    sql("create table ctas_select_parquet STORED AS carbondata as select * from parquet_ctas_test")
     checkAnswer(sql("select * from ctas_select_parquet"), sql("select * from parquet_ctas_test"))
   }
 
   test("test create table as select with select from another hive/orc table") {
     sql("DROP TABLE IF EXISTS ctas_select_orc")
-    sql("create table ctas_select_orc stored by 'carbondata' as select * from orc_ctas_test")
+    sql("create table ctas_select_orc STORED AS carbondata as select * from orc_ctas_test")
     checkAnswer(sql("select * from ctas_select_orc"), sql("select * from orc_ctas_test"))
   }
 
   test("test create table as select with where clause in select from carbon table that returns data") {
     sql("DROP TABLE IF EXISTS ctas_select_where_carbon")
-    sql("create table ctas_select_where_carbon stored by 'carbondata' as select * from carbon_ctas_test where key=100")
+    sql("create table ctas_select_where_carbon STORED AS carbondata as select * from carbon_ctas_test where key=100")
     checkAnswer(sql("select * from ctas_select_where_carbon"), sql("select * from carbon_ctas_test where key=100"))
   }
 
   test(
     "test create table as select with where clause in select from carbon table that does not return data") {
     sql("DROP TABLE IF EXISTS ctas_select_where_carbon")
-    sql("create table ctas_select_where_carbon stored by 'carbondata' as select * from carbon_ctas_test where key=300")
+    sql("create table ctas_select_where_carbon STORED AS carbondata as select * from carbon_ctas_test where key=300")
     checkAnswer(sql("select * from ctas_select_where_carbon"), sql("select * from carbon_ctas_test where key=300"))
   }
 
   test("test create table as select with where clause in select from carbon table and load again") {
     sql("DROP TABLE IF EXISTS ctas_select_where_carbon")
-    sql("create table ctas_select_where_carbon stored by 'carbondata' as select * from carbon_ctas_test where key=100")
+    sql("create table ctas_select_where_carbon STORED AS carbondata as select * from carbon_ctas_test where key=100")
     sql("insert into ctas_select_where_carbon select 200,'hive'")
     checkAnswer(sql("select * from ctas_select_where_carbon"), sql("select * from carbon_ctas_test"))
   }
 
   test("test create table as select with where clause in select from parquet table") {
     sql("DROP TABLE IF EXISTS ctas_select_where_parquet")
-    sql("create table ctas_select_where_parquet stored by 'carbondata' as select * from parquet_ctas_test where key=100")
+    sql("create table ctas_select_where_parquet STORED AS carbondata as select * from parquet_ctas_test where key=100")
     checkAnswer(sql("select * from ctas_select_where_parquet"), sql("select * from parquet_ctas_test where key=100"))
   }
 
   test("test create table as select with where clause in select from hive/orc table") {
     sql("DROP TABLE IF EXISTS ctas_select_where_orc")
-    sql("create table ctas_select_where_orc stored by 'carbondata' as select * from orc_ctas_test where key=100")
+    sql("create table ctas_select_where_orc STORED AS carbondata as select * from orc_ctas_test where key=100")
     checkAnswer(sql("select * from ctas_select_where_orc"), sql("select * from orc_ctas_test where key=100"))
   }
 
   test("test create table as select with select directly having the data") {
     sql("DROP TABLE IF EXISTS ctas_select_direct_data")
-    sql("create table ctas_select_direct_data stored by 'carbondata' as select 300,'carbondata'")
+    sql("create table ctas_select_direct_data STORED AS carbondata as select 300,'carbondata'")
     checkAnswer(sql("select * from ctas_select_direct_data"), Seq(Row(300, "carbondata")))
   }
 
   test("test create table as select with TBLPROPERTIES") {
     sql("DROP TABLE IF EXISTS ctas_tblproperties_testt")
     sql(
-      "create table ctas_tblproperties_testt stored by 'carbondata' TBLPROPERTIES" +
+      "create table ctas_tblproperties_testt STORED AS carbondata TBLPROPERTIES" +
         "('sort_scope'='global_sort') as select * from carbon_ctas_test")
     checkAnswer(sql("select * from ctas_tblproperties_testt"), sql("select * from carbon_ctas_test"))
     val carbonTable = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetaStore
@@ -160,19 +160,19 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
 
   test("test create table as select with column name as tupleid") {
     intercept[Exception] {
-      sql("create table t2 stored by 'carbondata' as select count(value) AS tupleid from carbon_ctas_test")
+      sql("create table t2 STORED AS carbondata as select count(value) AS tupleid from carbon_ctas_test")
     }
   }
 
   test("test create table as select with column name as positionid") {
     intercept[Exception] {
-      sql("create table t2 stored by 'carbondata' as select count(value) AS positionid from carbon_ctas_test")
+      sql("create table t2 STORED AS carbondata as select count(value) AS positionid from carbon_ctas_test")
     }
   }
 
   test("test create table as select with column name as positionreference") {
     intercept[Exception] {
-      sql("create table t2 stored by 'carbondata' as select count(value) AS positionreference from carbon_ctas_test")
+      sql("create table t2 STORED AS carbondata as select count(value) AS positionreference from carbon_ctas_test")
     }
   }
 
@@ -181,7 +181,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE ctas_select_where_parquet
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | as select * FROM parquet_ctas_test
         | where key=300""".stripMargin)
     checkAnswer(sql("SELECT * FROM ctas_select_where_parquet"),
@@ -193,7 +193,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE ctas_select_where_orc
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | AS SELECT * FROM orc_ctas_test
         | where key=300""".stripMargin)
     checkAnswer(sql("SELECT * FROM ctas_select_where_orc"),
@@ -208,7 +208,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
       sql(
         """
           | CREATE TABLE IF NOT EXISTS ctas_same_table_name
-          | STORED BY 'carbondata'
+          | STORED AS carbondata
           | AS SELECT * FROM ctas_same_table_name
         """.stripMargin)
     }
@@ -233,7 +233,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE target_table
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | AS
         |   SELECT city,avg(age) FROM source_table group by city
       """.stripMargin)
@@ -258,14 +258,14 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
       """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
     sql(
       """
         | CREATE TABLE target_table
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | AS
         |   SELECT city,sum(age),count(age),min(age),max(age)
         |   FROM source_table group by city
@@ -284,14 +284,14 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        |     STORED BY 'carbondata'
+        |     STORED AS carbondata
         |     """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
     sql(
       """
         | CREATE TABLE target_table
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | AS
         |   SELECT city,sum(age),count(age),min(age),max(age)
         |   FROM source_table group by city
@@ -314,14 +314,14 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        |     STORED BY 'carbondata'
+        |     STORED AS carbondata
         |     """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
     sql(
       """
         | CREATE TABLE target_table
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | AS
         |   SELECT city,avg(age)
         |   FROM source_table group by city
@@ -354,7 +354,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        |     STORED BY 'carbondata'
+        |     STORED AS carbondata
         |     """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
@@ -363,7 +363,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE target_table
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | AS
         |   SELECT city,avg(age)
         |   FROM source_table where age > 20 and age <= 31 GROUP BY city
@@ -383,7 +383,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        |     STORED BY 'carbondata'
+        |     STORED AS carbondata
         |     """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
@@ -392,7 +392,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE target_table
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | AS
         |   SELECT city,avg(age)
         |   FROM source_table where age >= 20 or age = 5 group by city
@@ -412,14 +412,14 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        |     STORED BY 'carbondata'
+        |     STORED AS carbondata
         |     """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     val e = intercept[AnalysisException] {
       sql(
         """
           | CREATE TABLE target_table
-          | STORED BY 'carbondata'
+          | STORED AS carbondata
           | AS
           |   SELECT t1.city, t2.city
           |   FROM source_table t1, source_table t2 where t1.city=t2.city and t1.city = 'shenzhen'
@@ -430,7 +430,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE target_table
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | AS
         |   SELECT t1.city as a, t2.city as b
         |   FROM source_table t1, source_table t2 where t1.city=t2.city and t1.city = 'shenzhen'

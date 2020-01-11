@@ -27,7 +27,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object DataManagementExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("DataManagementExample")
+    val spark = ExampleUtils.createSparkSession("DataManagementExample")
     exampleBody(spark)
     spark.close()
   }
@@ -39,15 +39,16 @@ object DataManagementExample {
     spark.sql(
       s"""
          | CREATE TABLE IF NOT EXISTS datamanagement_table(
-         | ID Int,
-         | date Date,
-         | country String,
-         | name String,
-         | phonetype String,
-         | serialname String,
-         | salary Int,
-         | floatField float
-         | ) STORED BY 'carbondata'
+         |   ID Int,
+         |   date Date,
+         |   country String,
+         |   name String,
+         |   phonetype String,
+         |   serialname String,
+         |   salary Int,
+         |   floatField float
+         | )
+         | STORED AS carbondata
        """.stripMargin)
 
     val rootPath = new File(this.getClass.getResource("/").getPath

@@ -73,7 +73,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql(
       "create table test(person struct<detail:struct<id:int,name:string,height:double," +
-      "status:boolean,dob:date,dobt:timestamp>>) stored by 'carbondata'")
+      "status:boolean,dob:date,dobt:timestamp>>) STORED AS carbondata")
     sql("insert into test values(named_struct('detail', named_struct('id', 1, 'name', 'abc', 'height', 4.30, 'status', true, 'dob', '2017-08-09', 'dobt', '2017-08-09 00:00:00.0')))")
     checkAnswer(sql("select * from test"),
       Seq(Row(Row(Row(1, "abc", 4.3, true, java.sql.Date.valueOf("2017-08-09"),
@@ -81,7 +81,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql(
       "create table test(p1 array<int>,p2 array<string>,p3 array<double>,p4 array<boolean>,p5 " +
-      "array<date>,p6 array<timestamp>) stored by 'carbondata'")
+      "array<date>,p6 array<timestamp>) STORED AS carbondata")
     sql("insert into test values(array(1,2,3), array('abc','def','mno'), array(4.30,4.60,5.20), array(true,true,false), array('2017-08-09','2017-08-09','2017-07-07'), array('2017-08-09 00:00:00.0','2017-08-09 00:00:00.0','2017-07-07 00:00:00.0'))")
     checkAnswer(sql("select * from test"),
       Seq(Row(mutable.WrappedArray.make(Array(1, 2, 3)),
@@ -112,7 +112,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
         "ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>," +
         "proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId " +
         "double,contractNumber double) " +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED AS carbondata")
     sql(
       s"LOAD DATA local inpath '$filePath/complexdata.csv' INTO table " +
       "complexcarbontable " +
@@ -138,7 +138,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql(
       "create table test(person struct<detail:struct<id:int,name:string,height:double," +
-      "status:boolean,dob:date,dobt:timestamp>>) stored by 'carbondata' ")
+      "status:boolean,dob:date,dobt:timestamp>>) STORED AS carbondata ")
     sql("insert into test values(named_struct('detail', named_struct('id', 1, 'name', 'abc', 'height', 4.30, 'status', true, 'dob', '2017-08-09', 'dobt', '2017-08-09 00:00:00.0')))")
     checkAnswer(sql("select * from test"),
       Seq(Row(Row(Row(1,
@@ -147,7 +147,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test")
     sql(
       "create table test(p1 array<int>,p2 array<string>,p3 array<double>,p4 array<boolean>,p5 " +
-      "array<date>,p6 array<timestamp>) stored by 'carbondata' ")
+      "array<date>,p6 array<timestamp>) STORED AS carbondata ")
     sql("insert into test values(array(1,2,3), array('abc','def','mno'), array(4.30,4.60,5.20), array(true,true,false), array('2017-08-09','2017-08-09','2017-07-07'), array('2017-08-09 00:00:00.0','2017-08-09 00:00:00.0','2017-07-07 00:00:00.0'))")
     checkAnswer(sql("select * from test"),
       Seq(Row(mutable.WrappedArray.make(Array(1, 2, 3)),
@@ -178,7 +178,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
         "ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>," +
         "proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId " +
         "double,contractNumber double) " +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED AS carbondata")
     sql(
       s"LOAD DATA local inpath '$filePath/complexdata.csv' INTO table " +
       "complexcarbontable " +
@@ -187,7 +187,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
     checkAnswer(sql("select count(*) from complexcarbontable"), Seq(Row(100)))
     sql("DROP TABLE IF EXISTS test")
-    sql("create table test stored by 'carbondata' as select * from complexcarbontable")
+    sql("create table test STORED AS carbondata as select * from complexcarbontable")
     checkAnswer(sql("select count(*) from test"), Seq(Row(100)))
   }
 
@@ -196,10 +196,8 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS complexcarbontable")
     sql(
       "create table complexcarbontable (roll int,a struct<b:int,c:string,d:int,e:string," +
-      "f:struct<g:int," +
-      "h:string,i:int>,j:int>) stored " +
-      "by " +
-      "'carbondata'")
+      "f:struct<g:int,h:string,i:int>,j:int>) " +
+      "STORED AS carbondata")
     sql("insert into complexcarbontable values(1, named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', 'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
     sql("insert into complexcarbontable values(2, named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', 'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
     sql("insert into complexcarbontable values(3, named_struct('b', 1, 'c', 'abc', 'd', 2, 'e', 'efg', 'f', named_struct('g', 3, 'h', 'mno', 'i', 4), 'j', 5))")
@@ -241,7 +239,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   // check create table with complex datatype columns and insert into table and apply filters
   test("test Complex_DataType-006") {
     sql("DROP TABLE IF EXISTS test")
-    sql("create table test(id int,a struct<b:int,c:int>) stored by 'carbondata'")
+    sql("create table test(id int,a struct<b:int,c:int>) STORED AS carbondata")
     sql("insert into test values(1, named_struct('b', 2, 'c', 3))")
     sql("insert into test values(3, named_struct('b', 5, 'c', 3))")
     sql("insert into test values(2, named_struct('b', 4, 'c', 5))")
@@ -261,7 +259,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
         "ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>," +
         "proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId " +
         "double,contractNumber double) " +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED AS carbondata")
     sql(
       s"LOAD DATA local inpath '$filePath/complexdata.csv' INTO table " +
       "complexcarbontable " +
@@ -276,7 +274,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
         "ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>," +
         "proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId " +
         "double,contractNumber double) " +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED AS carbondata")
     sql("insert overwrite table test select * from complexcarbontable")
     checkAnswer(sql("select count(*) from test"), Seq(Row(100)))
   }
@@ -287,7 +285,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table complexcarbontable(roll int, student struct<id:int,name:string," +
       "marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into complexcarbontable values(1, named_struct('id', 1, 'name', 'abc', 'marks', array(1,null,null)))")
     checkAnswer(sql("select * from complexcarbontable"),
       Seq(Row(1, Row(1, "abc", mutable.WrappedArray.make(Array(1, null, null))))))
@@ -299,13 +297,13 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table complexcarbontable(struct_dbl struct<double1:double,double2:double," +
       "double3:double>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into complexcarbontable values(named_struct('double1', 10000000, 'double2', 300000, 'double3', 3000))")
     checkExistence(sql("select * from complexcarbontable"), true, "1.0E7,300000.0,3000.0")
     sql("Drop table if exists complexcarbontable")
     sql(
-      "create table complexcarbontable(struct_arr struct<array_db1:array<double>>) stored by " +
-      "'carbondata'")
+      "create table complexcarbontable(struct_arr struct<array_db1:array<double>>) " +
+      "STORED AS carbondata")
     sql("insert into complexcarbontable values(named_struct('array_db1', array(5555555.9559,12345678991234567,3444.999)))")
     checkExistence(sql("select * from complexcarbontable"),
       true,
@@ -358,7 +356,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     writer.close()
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("abcde", 34, Row(100.0))))

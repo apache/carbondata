@@ -27,13 +27,13 @@ class SubQueryJoinTestSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists t1")
     sql("drop table if exists t2")
 
-    sql("create table t1 (s1 string) stored by 'carbondata' ")
+    sql("create table t1 (s1 string) STORED AS carbondata ")
     sql("insert into t1 select 'abcd' ")
     sql("insert into t1 select 'efgh' ")
     sql("insert into t1 select 'ijkl' ")
     sql("insert into t1 select 'MNOP' ")
 
-    sql("create table t2 (t2 string) stored by 'carbondata'")
+    sql("create table t2 (t2 string) STORED AS carbondata")
     sql("insert into t2 select 'ef' ")
     sql("insert into t2 select 'mnop' ")
     sql("insert into t2 select '4' ")
@@ -62,9 +62,9 @@ class SubQueryJoinTestSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists t2")
     sql(
       "create table t1 (m_month smallint, hs_code string, country smallint, dollar_value double, " +
-      "quantity double, unit smallint, b_country smallint, imex int, y_year smallint) stored by " +
-      "'carbondata' tblproperties('sort_columns'='y_year,m_month,country,b_country,imex')")
-    sql("create table t2(id bigint, hs string, hs_cn string, hs_en string) stored by 'carbondata' ")
+      "quantity double, unit smallint, b_country smallint, imex int, y_year smallint) " +
+      "STORED AS carbondata tblproperties('sort_columns'='y_year,m_month,country,b_country,imex')")
+    sql("create table t2(id bigint, hs string, hs_cn string, hs_en string) STORED AS carbondata ")
     checkAnswer(sql(
       "select a.hs,count(*) tb from (select substring(hs_code,1,2) as hs,count(*) v2000 from t1 " +
       "group by substring(hs_code,1,2),y_year) a left join t2 h on (a.hs=h.hs) group by a.hs"),

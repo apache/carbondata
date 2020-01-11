@@ -57,7 +57,7 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
       //table should have only two records.
       sql(
         """CREATE TABLE IF NOT EXISTS emptyColumnValues(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata
         """)
       csvFilePath = s"$resourcesPath/badrecords/emptyValues.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE emptyColumnValues OPTIONS"
@@ -69,7 +69,7 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
       sql(
         """CREATE TABLE IF NOT EXISTS emptyColumnValues_false(ID BigInt, date Timestamp, country
            String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata
         """)
       csvFilePath = s"$resourcesPath/badrecords/emptyValues.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE emptyColumnValues_false OPTIONS"
@@ -82,7 +82,7 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
       // only one value should be loadded.
       sql(
         """CREATE TABLE IF NOT EXISTS empty_timestamp(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata
         """)
       csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE empty_timestamp OPTIONS"
@@ -94,7 +94,7 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
       sql(
         """CREATE TABLE IF NOT EXISTS empty_timestamp_false(ID BigInt, date Timestamp, country
            String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata
         """)
       csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE empty_timestamp_false OPTIONS"
@@ -144,7 +144,7 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
     sql(
       """CREATE TABLE IF NOT EXISTS dataloadOptionTests(ID BigInt, date Timestamp, country
            String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata
       """)
     val csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
     try {
@@ -158,7 +158,7 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test load multiple loads- pne with valid record and one with invalid") {
-    sql("create table bigtab (val string, bal int) STORED BY 'carbondata'")
+    sql("create table bigtab (val string, bal int) STORED AS carbondata")
     intercept[Exception] {
       sql(s"load data  inpath '$resourcesPath/badrecords/bigtabbad.csv' into table bigtab " +
         "options('DELIMITER'=',','QUOTECHAR'='\"','BAD_RECORDS_ACTION'='FAIL'," +

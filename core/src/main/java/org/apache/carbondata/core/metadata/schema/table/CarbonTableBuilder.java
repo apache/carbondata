@@ -67,7 +67,7 @@ public class CarbonTableBuilder {
 
     TableInfo tableInfo = new TableInfo();
     tableInfo.setDatabaseName(databaseName);
-    tableInfo.setTableUniqueName(databaseName + "_" + tableName);
+    tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(databaseName, tableName));
     tableInfo.setFactTable(tableSchema);
     tableInfo.setTablePath(tablePath);
     tableInfo.setTransactionalTable(isTransactionalTable);

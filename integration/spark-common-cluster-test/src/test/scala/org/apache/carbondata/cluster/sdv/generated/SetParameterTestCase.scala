@@ -55,7 +55,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       "doj Timestamp," +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/sortcolumns/data.csv' into table
           |carbon_table_disable_bad_record_logger options('FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary',
@@ -72,7 +72,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       " doj Timestamp," +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/sortcolumns/data.csv' into table
           |carbon_table_bad_record_logger options('FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary',
@@ -88,7 +88,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       "create table carbon_table(empno int, empname String, designation String, doj Timestamp," +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/sortcolumns/data.csv' into table
           |carbon_table options('FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')"""
@@ -107,7 +107,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       "create table carbon_table(empno int, empname String, designation String, doj date," +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/sortcolumns/data.csv' into table
           |carbon_table options('FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')"""
@@ -125,7 +125,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       "create table carbon_table(empno int, empname String, designation String, doj date," +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/sortcolumns/data.csv' into table
           |carbon_table options('FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')"""
@@ -143,7 +143,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       "create table carbon_table(empno int, empname String, designation String, doj date," +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     val exMessage = intercept[Exception] {
       sql(
         s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/sortcolumns/data.csv' into table
@@ -160,8 +160,8 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("SET carbon.options.bad.records.logger.enable=true")
     sql("SET carbon.options.is.empty.data.badrecord=false")
     sql(
-      """CREATE TABLE IF NOT EXISTS emptyColumnValues(ID int,CUST_ID int,cust_name string) STORED
-          BY 'org.apache.carbondata.format'
+      """CREATE TABLE IF NOT EXISTS emptyColumnValues(ID int,CUST_ID int,cust_name string)
+         STORED AS carbondata
       """)
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/badrecord/doubleqoute.csv' into table
@@ -179,8 +179,8 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("SET carbon.options.bad.records.action=redirect")
     sql(s"SET carbon.options.bad.record.path=$resourcesPath")
     sql(
-      """CREATE TABLE IF NOT EXISTS emptyColumnValues(ID int,CUST_ID int,cust_name string) STORED
-          BY 'org.apache.carbondata.format'
+      """CREATE TABLE IF NOT EXISTS emptyColumnValues(ID int,CUST_ID int,cust_name string)
+         STORED AS carbondata
       """)
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/badrecord/doubleqoute.csv' into table
@@ -197,7 +197,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("SET carbon.options.sort.scope=local_sort")
     sql(
       "create table carbon_table(empno int, empname String, designation String, doj Timestamp," +
-      "workgroupcategory int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_COLUMNS'='empno,empname')")
+      "workgroupcategory int) STORED AS carbondata TBLPROPERTIES('SORT_COLUMNS'='empno,empname')")
     checkExistence(sql("DESC FORMATTED carbon_table"), true, "local_sort")
     val sortscope=sql("DESC FORMATTED carbon_table").collect().filter(_.getString(1).trim.equals("local_sort"))
     assertResult(1)(sortscope.length)
@@ -212,7 +212,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       "create table carbon_table(empno int, empname String, designation String, doj Timestamp," +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
   }
 
   test("TC_012-test same property with SET and LOAD") {
@@ -222,7 +222,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
       "create table carbon_table_load(empno int, empname String, designation String, doj Timestamp," +
         "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
         "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-        "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+        "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/sortcolumns/data.csv' into table
          |carbon_table_load options('BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary',

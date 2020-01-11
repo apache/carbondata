@@ -61,7 +61,7 @@ class MajorCompactionWithMeasureSortColumns extends QueryTest with BeforeAndAfte
          | count2 LONG,
          | count3 LONG
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(
          | 'SORT_COLUMNS'='code1, code2, country_code, date, category_id, product_id',
          | 'SORT_SCOPE'='LOCAL_SORT',

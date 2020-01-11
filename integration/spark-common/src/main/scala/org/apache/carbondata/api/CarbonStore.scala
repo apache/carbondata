@@ -178,8 +178,9 @@ object CarbonStore {
       tablePath: String,
       carbonTable: CarbonTable,
       forceTableClean: Boolean,
-      currentTablePartitions: Option[Seq[PartitionSpec]] = None): Unit = {
-    var carbonCleanFilesLock: ICarbonLock = null
+      currentTablePartitions: Option[Seq[PartitionSpec]] = None,
+      truncateTable: Boolean = false): Unit = {
+  var carbonCleanFilesLock: ICarbonLock = null
     val absoluteTableIdentifier = if (forceTableClean) {
       AbsoluteTableIdentifier.from(tablePath, dbName, tableName, tableName)
     } else {
@@ -198,6 +199,9 @@ object CarbonStore {
         carbonCleanFilesLock =
           CarbonLockUtil
             .getLockObject(absoluteTableIdentifier, LockUsage.CLEAN_FILES_LOCK, errorMsg)
+        if (truncateTable) {
+          SegmentStatusManager.truncateTable(carbonTable)
+        }
         SegmentStatusManager.deleteLoadsAndUpdateMetadata(
           carbonTable, true, currentTablePartitions.map(_.asJava).orNull)
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)

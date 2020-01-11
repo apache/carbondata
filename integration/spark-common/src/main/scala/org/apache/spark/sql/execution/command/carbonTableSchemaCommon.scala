@@ -32,7 +32,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.indexstore.PartitionSpec
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, DatabaseLocationProvider}
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
@@ -224,7 +224,7 @@ class AlterTableColumnSchemaGenerator(
     if(sortColumns.isDefined) {
       sortColumns.get.contains(columnName)
     } else {
-      true
+      false
     }
   }
 
@@ -586,6 +586,14 @@ object TableNewProcessor {
     columnSchema.setScale(scale)
     columnSchema.setSchemaOrdinal(schemaOrdinal)
     columnSchema.setSortColumn(isSortColumn)
+    if (field.columnComment != null) {
+      var columnProperties = columnSchema.getColumnProperties()
+      if (columnProperties == null) {
+        columnProperties = new java.util.HashMap[String, String]()
+        columnSchema.setColumnProperties(columnProperties)
+      }
+      columnProperties.put("comment", field.columnComment)
+    }
     columnSchema
   }
 }
@@ -922,7 +930,8 @@ class TableNewProcessor(cm: TableModel) {
     if (badRecordsPath == null || badRecordsPath.isEmpty) {
       CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL
     } else {
-      badRecordsPath + CarbonCommonConstants.FILE_SEPARATOR + databaseName +
+      badRecordsPath + CarbonCommonConstants.FILE_SEPARATOR +
+      DatabaseLocationProvider.get().provide(databaseName) +
       CarbonCommonConstants.FILE_SEPARATOR + s"${tableName}_$tableId"
     }
   }

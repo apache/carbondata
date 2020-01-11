@@ -43,13 +43,13 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
-         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         | STORED AS carbondata TBLPROPERTIES('table_blocksize'='128')
          |  """.stripMargin)
     sql(
       s"""
         | CREATE TABLE $minMaxDMSampleTable(id INT, name STRING, city STRING, age INT,
         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
-        | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+        | STORED AS carbondata TBLPROPERTIES('table_blocksize'='128')
         |  """.stripMargin)
     sql(
       s"""

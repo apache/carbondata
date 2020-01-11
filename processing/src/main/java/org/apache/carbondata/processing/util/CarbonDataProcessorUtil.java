@@ -36,6 +36,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
+import org.apache.carbondata.core.metadata.DatabaseLocationProvider;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -153,7 +154,8 @@ public final class CarbonDataProcessorUtil {
    */
   public static String getTempStoreLocationKey(String databaseName, String tableName,
       String segmentId, String taskId, boolean isCompactionFlow, boolean isAltPartitionFlow) {
-    String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
+    String tempLocationKey = DatabaseLocationProvider.get().provide(databaseName)
+        + CarbonCommonConstants.UNDERSCORE + tableName
         + CarbonCommonConstants.UNDERSCORE + segmentId + CarbonCommonConstants.UNDERSCORE + taskId;
     if (isCompactionFlow) {
       tempLocationKey = CarbonCommonConstants.COMPACTION_KEY_WORD + CarbonCommonConstants.UNDERSCORE

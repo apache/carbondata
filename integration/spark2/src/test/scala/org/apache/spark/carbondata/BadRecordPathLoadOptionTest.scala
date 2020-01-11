@@ -41,7 +41,7 @@ class BadRecordPathLoadOptionTest extends Spark2QueryTest with BeforeAndAfterAll
   test("data load log file and csv file written at the configured location") {
     sql(
       s"""CREATE TABLE IF NOT EXISTS salestest(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata' TBLPROPERTIES('BAD_RECORD_PATH'='$warehouse')""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata TBLPROPERTIES('BAD_RECORD_PATH'='$warehouse')""")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"

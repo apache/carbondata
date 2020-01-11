@@ -35,7 +35,7 @@ import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 object DirectSQLExample {
 
   def main(args: Array[String]) {
-    val carbonSession = ExampleUtils.createCarbonSession("DirectSQLExample")
+    val carbonSession = ExampleUtils.createSparkSession("DirectSQLExample")
     exampleBody(carbonSession)
     carbonSession.close()
   }

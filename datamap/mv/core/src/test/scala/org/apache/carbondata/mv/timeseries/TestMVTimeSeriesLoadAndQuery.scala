@@ -38,8 +38,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       "select timeseries(projectjoindate,'minute'), sum(projectcode) from maintable group by timeseries(projectjoindate,'minute')")
     loadData("maintable")
     val df = sql("select timeseries(projectjoindate,'minute'), sum(projectcode) from maintable group by timeseries(projectjoindate,'minute')")
-    val analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     dropDataMap("datamap1")
     sql(
       "create datamap datamap1 on table maintable using 'mv' as " +
@@ -48,8 +47,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     sql("select * from datamap1_table").show(false)
     val df1 = sql("select timeseries(projectjoindate,'minute'),sum(projectcode) from maintable where timeseries(projectjoindate,'minute') = '2016-02-23 09:17:00'" +
                   "group by timeseries(projectjoindate,'minute')")
-    val analyzed1 = df1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1"))
     dropDataMap("datamap1")
   }
 
@@ -61,8 +59,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     loadData("maintable")
     val df = sql("select timeseries(projectjoindate,'hour'), sum(projectcode) from maintable where timeseries(projectjoindate,'hour') = '2016-02-23 09:00:00' " +
                  "group by timeseries(projectjoindate,'hour')")
-    val analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     dropDataMap("datamap1")
   }
 
@@ -315,7 +312,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists secondtable")
     sql(
       "CREATE TABLE secondtable (empno int,empname string, projectcode int, projectjoindate " +
-      "Timestamp,salary double) STORED BY 'org.apache.carbondata.format'")
+      "Timestamp,salary double) STORED AS carbondata")
     loadData("secondtable")
     sql(
       "create datamap datamap1 using 'mv' as " +
@@ -357,7 +354,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   def createTable(): Unit = {
     sql(
       "CREATE TABLE maintable (empno int,empname string, projectcode int, projectjoindate " +
-      "Timestamp,salary double) STORED BY 'org.apache.carbondata.format'")
+      "Timestamp,salary double) STORED AS carbondata")
   }
 
   def loadData(table: String): Unit = {
@@ -367,7 +364,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   def checkPlan(dataMapName: String, df: DataFrame): Unit = {
-    val analyzed = df.queryExecution.analyzed
+    val analyzed = df.queryExecution.optimizedPlan
     assert(TestUtil.verifyMVDataMap(analyzed, dataMapName))
   }
 }

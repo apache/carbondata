@@ -447,6 +447,8 @@ object AlterTableUtil {
       // validate the range column properties
       validateRangeColumnProperties(carbonTable, lowerCasePropertiesMap)
 
+      validateGlobalSortPartitions(carbonTable, lowerCasePropertiesMap)
+
       // validate the Sort Scope and Sort Columns
       validateSortScopeAndSortColumnsProperties(carbonTable, lowerCasePropertiesMap)
       // if SORT_COLUMN is changed, it will move them to the head of column list
@@ -490,9 +492,13 @@ object AlterTableUtil {
             if (propKey.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)) {
               tblPropertiesMap
                 .put(propKey.toLowerCase, CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+              lowerCasePropertiesMap
+                .put(propKey.toLowerCase, CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
             } else if (propKey.equalsIgnoreCase(CarbonCommonConstants.SORT_SCOPE)) {
               tblPropertiesMap
                 .put(propKey.toLowerCase, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+              lowerCasePropertiesMap
+                .put(propKey.toLowerCase, CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
             } else if (propKey.equalsIgnoreCase(CarbonCommonConstants.SORT_COLUMNS)) {
               val errorMessage = "Error: Invalid option(s): " + propKey +
                                  ", please set SORT_COLUMNS as empty instead of unset"
@@ -512,6 +518,8 @@ object AlterTableUtil {
         carbonTable = carbonTable,
         thriftTable = thriftTable)(sparkSession)
       CarbonSessionCatalogUtil.alterTable(tableIdentifier, schemParts, None, sparkSession)
+      CarbonSessionCatalogUtil.alterTableProperties(
+        sparkSession, tableIdentifier, lowerCasePropertiesMap.toMap, propKeys)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       // check and clear the block/blocklet cache
       checkAndClearBlockletCache(carbonTable,
@@ -630,6 +638,27 @@ object AlterTableUtil {
           s" is not exists in the table")
       } else {
         propertiesMap.put(CarbonCommonConstants.RANGE_COLUMN, rangeColumn.getColName)
+      }
+    }
+  }
+
+  def validateGlobalSortPartitions(carbonTable: CarbonTable,
+      propertiesMap: mutable.Map[String, String]): Unit = {
+    if (propertiesMap.get("global_sort_partitions").isDefined) {
+      val globalSortPartitionsProp = propertiesMap.get("global_sort_partitions").get
+      var pass = false
+      try {
+        val globalSortPartitions = Integer.parseInt(globalSortPartitionsProp)
+        if (globalSortPartitions > 0) {
+          pass = true
+        }
+      } catch {
+        case _ =>
+      }
+      if (!pass) {
+        throw new MalformedCarbonCommandException(
+          s"Table property global_sort_partitions : ${ globalSortPartitionsProp }" +
+          s" is invalid")
       }
     }
   }

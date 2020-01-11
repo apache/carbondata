@@ -17,16 +17,16 @@
 package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.test.util.CarbonQueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class MVFilterAndJoinTest extends CarbonQueryTest with BeforeAndAfterAll {
+class MVFilterAndJoinTest extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     drop
-    sql("create table main_table (name string,age int,height int) stored by 'carbondata'")
-    sql("create table dim_table (name string,age int,height int) stored by 'carbondata'")
-    sql("create table sdr_table (name varchar(20),score int) stored by 'carbondata'")
+    sql("create table main_table (name string,age int,height int) STORED AS carbondata")
+    sql("create table dim_table (name string,age int,height int) STORED AS carbondata")
+    sql("create table sdr_table (name varchar(20),score int) STORED AS carbondata")
   }
 
   def drop() {
@@ -43,7 +43,7 @@ class MVFilterAndJoinTest extends CarbonQueryTest with BeforeAndAfterAll {
     sql("insert into main_table select 'lily',30,160")
     sql("create datamap main_table_mv on table main_table using 'mv' as select sum(age),name from main_table group by name")
     sql("rebuild datamap main_table_mv")
-    assert(TestUtil.verifyMVDataMap(sql(querySQL).queryExecution.analyzed, "main_table_mv"))
+    assert(TestUtil.verifyMVDataMap(sql(querySQL).queryExecution.optimizedPlan, "main_table_mv"))
     checkAnswer(sql(querySQL), Seq(Row(20,"tom")))
   }
 
@@ -59,7 +59,7 @@ class MVFilterAndJoinTest extends CarbonQueryTest with BeforeAndAfterAll {
     sql("insert into sdr_table select 'tom',50")
     sql("insert into sdr_table select 'lily',80")
     sql("rebuild datamap main_table_mv1")
-    assert(TestUtil.verifyMVDataMap(sql(querySQL).queryExecution.analyzed, "main_table_mv1"))
+    assert(TestUtil.verifyMVDataMap(sql(querySQL).queryExecution.optimizedPlan, "main_table_mv1"))
     checkAnswer(sql(querySQL), Seq(Row(120,"tom")))
   }
 

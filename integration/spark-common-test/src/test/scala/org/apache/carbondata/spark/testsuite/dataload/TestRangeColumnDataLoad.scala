@@ -65,7 +65,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
@@ -82,7 +82,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column2(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
@@ -100,7 +100,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       sql(
         """
           | CREATE TABLE carbon_range_column3(id INT, name STRING, city STRING, age INT)
-          | STORED BY 'org.apache.carbondata.format'
+          | STORED AS carbondata
           | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name,id')
         """.stripMargin)
     }
@@ -111,7 +111,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column3(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
@@ -147,7 +147,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age SHORT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'SORT_COLUMNS'='age, city',
         | 'range_column'='age')
       """.stripMargin)
@@ -162,7 +162,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age SHORT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city', 'range_column'='age')
       """.stripMargin)
 
@@ -184,7 +184,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city', 'range_column'='age')
       """.stripMargin)
 
@@ -208,7 +208,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING)
         | PARTITIONED BY (age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'SORT_COLUMNS'='age, city',
         | 'range_column'='age')
       """.stripMargin)
@@ -232,7 +232,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'SORT_COLUMNS'='age, city',
         | 'range_column'='age')
       """.stripMargin)
@@ -255,7 +255,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'SORT_COLUMNS'='age, city',
         | 'range_column'='age')
       """.stripMargin)
@@ -280,7 +280,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
         | 'range_column'='name')
       """.stripMargin)
@@ -313,7 +313,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       sql(
         """
           | CREATE TABLE carbon_range_column1(id Boolean, name STRING, city STRING, age INT)
-          | STORED BY 'org.apache.carbondata.format'
+          | STORED AS carbondata
           | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='id, city',
           | 'range_column'='id')
         """.stripMargin)
@@ -328,7 +328,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
       sql(
         """
           | CREATE TABLE carbon_range_column1(id decimal, name STRING, city STRING, age INT)
-          | STORED BY 'org.apache.carbondata.format'
+          | STORED AS carbondata
           | TBLPROPERTIES('range_column'='id')
         """.stripMargin)
     )
@@ -347,7 +347,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='id, city',
         | 'range_column'='id')
       """.stripMargin)
@@ -385,7 +385,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='id, city',
         | 'range_column'='id')
       """.stripMargin)
@@ -449,7 +449,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('range_column'='age')
       """.stripMargin)
 
@@ -473,7 +473,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('range_column'='id')
       """.stripMargin)
 
@@ -497,7 +497,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city', 'range_column'='age')
       """.stripMargin)
 
@@ -519,7 +519,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('range_column'='age')
       """.stripMargin)
 
@@ -541,7 +541,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
         | 'range_column'='name')
       """.stripMargin)
@@ -568,7 +568,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='city',
         | 'range_column'='city')
       """.stripMargin)
@@ -598,7 +598,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age LONG)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city',
         | 'range_column'='name')
       """.stripMargin)
@@ -632,7 +632,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age DATE)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='age, city' ,
         | 'range_column'='age')
       """.stripMargin)
@@ -667,7 +667,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, age TIMESTAMP)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='city' ,
         | 'range_column'='age')
       """.stripMargin)
@@ -700,7 +700,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column1(id INT, name STRING, city STRING, floatval FLOAT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('range_column'='floatval')
       """.stripMargin)
 
@@ -812,7 +812,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column5(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city', 'range_column'='name')
       """.stripMargin)
 
@@ -828,7 +828,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
     sql(
       """
         | CREATE TABLE carbon_range_column6(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='LOCAL_SORT', 'SORT_COLUMNS'='name, city')
       """.stripMargin)
 

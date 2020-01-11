@@ -47,8 +47,8 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
     // drop table
     dropTable
     // create table
-    sql("create table alter_column_meta_cache(c1 String, c2 String, c3 int, c4 double, c5 struct<imei:string, imsi:string>, c6 array<string>) stored by 'carbondata'")
-    sql("create table cache_level(c1 String) stored by 'carbondata'")
+    sql("create table alter_column_meta_cache(c1 String, c2 String, c3 int, c4 double, c5 struct<imei:string, imsi:string>, c6 array<string>) STORED AS carbondata")
+    sql("create table cache_level(c1 String) STORED AS carbondata")
   }
 
   test("validate column_meta_cache with only empty spaces - alter_column_meta_cache_01") {

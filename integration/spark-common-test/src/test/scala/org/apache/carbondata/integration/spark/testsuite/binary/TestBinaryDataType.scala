@@ -22,8 +22,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.commons.codec.binary.Hex
-import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.spark.SparkException
 import org.apache.spark.sql.{AnalysisException, Row}
@@ -47,7 +45,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
                | TBLPROPERTIES('SORT_COLUMNS'='')
              """.stripMargin)
         sql(
@@ -170,7 +168,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                    |    name STRING,
                    |    binaryField BINARY,
                    |    autoLabel boolean)
-                   | STORED BY 'carbondata'
+                   | STORED AS carbondata
                    | TBLPROPERTIES('SORT_COLUMNS'='binaryField')
              """.stripMargin)
         }
@@ -189,12 +187,12 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                   |     city string,
                   |     age int,
                   |     binaryField binary)
-                  | STORED BY 'org.apache.carbondata.format'
+                  | STORED AS carbondata
                   | tblproperties('local_dictionary_enable'='true','local_dictionary_include'='binaryField')
                 """.stripMargin)
         }
         assert(exception.getMessage.contains(
-            "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: binaryField is not a string/complex/varchar datatype column. " +
+            "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: binaryfield is not a string/complex/varchar datatype column. " +
                     "LOCAL_DICTIONARY_COLUMN should be no dictionary string/complex/varchar datatype column"))
     }
 
@@ -208,7 +206,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
               |     city string,
               |     age int,
               |     binaryField binary)
-              | STORED BY 'org.apache.carbondata.format'
+              | STORED AS carbondata
               | tblproperties('local_dictionary_enable'='true','LOCAL_DICTIONARY_EXCLUDE'='binaryField')
             """.stripMargin)
         assert(true)
@@ -225,7 +223,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                   |     city string,
                   |     age int,
                   |     binaryField binary)
-                  | STORED BY 'org.apache.carbondata.format'
+                  | STORED AS carbondata
                   | tblproperties('inverted_index'='binaryField')
                 """.stripMargin)
         }
@@ -243,11 +241,11 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                   |     city string,
                   |     age int,
                   |     binaryField binary)
-                  | STORED BY 'org.apache.carbondata.format'
+                  | STORED AS carbondata
                   | tblproperties('inverted_index'='binaryField','SORT_COLUMNS'='binaryField')
                 """.stripMargin)
         }
-        assert(exception.getMessage.contains("sort_columns is unsupported for binary datatype column: binaryField"))
+        assert(exception.getMessage.contains("sort_columns is unsupported for binary datatype column: binaryfield"))
     }
 
     test("COLUMN_META_CACHE doesn't support binary") {
@@ -261,7 +259,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                    |    name STRING,
                    |    binaryField BINARY,
                    |    autoLabel boolean)
-                   | STORED BY 'carbondata'
+                   | STORED AS carbondata
                    | TBLPROPERTIES('COLUMN_META_CACHE'='binaryField')
              """.stripMargin)
         }
@@ -279,7 +277,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                    |    name STRING,
                    |    binaryField BINARY,
                    |    autoLabel boolean)
-                   | STORED BY 'carbondata'
+                   | STORED AS carbondata
                    | TBLPROPERTIES('RANGE_COLUMN'='binaryField')
              """.stripMargin)
         }
@@ -296,7 +294,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name STRING,
                |    binaryField BINARY,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
                | TBLPROPERTIES('carbon.column.compressor'='zstd')
              """.stripMargin)
         sql(
@@ -325,7 +323,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name STRING,
                |    binaryField BINARY,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
                | TBLPROPERTIES('carbon.column.compressor'='gzip')
              """.stripMargin)
         sql(
@@ -354,7 +352,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name STRING,
                |    binaryField BINARY,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
                | TBLPROPERTIES('carbon.column.compressor'='snappy')
              """.stripMargin)
         sql(
@@ -383,7 +381,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name STRING,
                |    binaryField BINARY,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
                | TBLPROPERTIES('carbon.column.compressor'='zstd')
              """.stripMargin)
         sql(
@@ -410,7 +408,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name STRING,
                |    binaryField BINARY,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
                | TBLPROPERTIES('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='binaryField')
              """.stripMargin)
         sql(
@@ -458,7 +456,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
         sql("insert into carbontable values(1,true,'Bob','binary',false)")
         sql("insert into carbontable values(2,false,'Xu','test',true)")
@@ -511,7 +509,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
         sql("insert into carbontable values(1,true,'Bob','binary',false)")
         sql("insert into carbontable values(2,false,'Xu','test',true)")
@@ -576,7 +574,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
         sql("insert into carbontable values(1,true,'Bob','binary',false)")
         sql("insert into carbontable values(2,false,'Xu','test',true)")
@@ -659,7 +657,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
         sql(
             s"""
@@ -778,7 +776,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
         sql(
             s"""
@@ -876,7 +874,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
         sql("insert into carbontable select * from hivetable")
         val carbonResult = sql("SELECT * FROM carbontable")
@@ -899,7 +897,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         }
 
         sql("CREATE TABLE hivetable2 AS SELECT * FROM carbontable")
-        sql("CREATE TABLE carbontable2 STORED BY 'carbondata' AS SELECT * FROM hivetable")
+        sql("CREATE TABLE carbontable2 STORED AS carbondata AS SELECT * FROM hivetable")
         val carbonResult2 = sql("SELECT * FROM carbontable2")
         val hiveResult2 = sql("SELECT * FROM hivetable2")
         checkAnswer(hiveResult2, carbonResult2)
@@ -931,7 +929,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
         for (i <- 0 until (3)) {
             sql(
@@ -1023,7 +1021,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    id int,
                |    label boolean,
                |    name string)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
 
 
@@ -1169,7 +1167,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
         sql(
             s"""
@@ -1246,7 +1244,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
                | tblproperties('streaming'='true')
              """.stripMargin)
         sql(
@@ -1326,7 +1324,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
         val e = intercept[Exception] {
             sql(
@@ -1349,7 +1347,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
                | TBLPROPERTIES('SORT_COLUMNS'='')
              """.stripMargin)
         sql(
@@ -1411,7 +1409,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name string,
                |    binaryField binary,
                |    autoLabel boolean)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
                | TBLPROPERTIES('SORT_COLUMNS'='')
              """.stripMargin)
         val e = intercept[Exception] {
@@ -1482,7 +1480,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    name STRING,
                |    id string)
                | PARTITIONED BY(photo binary)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
              """.stripMargin)
 
 
@@ -1585,7 +1583,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                |    Double_COLUMN1 double,
                |    Double_COLUMN2 double,
                |    INTEGER_COLUMN1 int)
-               | STORED BY 'org.apache.carbondata.format'
+               | STORED AS carbondata
                | TBLPROPERTIES('table_blocksize'='2000')
              """.stripMargin)
         sql(
@@ -1652,7 +1650,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             s"""
                | CREATE TABLE IF NOT EXISTS binaryTable (
                |    binaryField binary)
-               | STORED BY 'carbondata'
+               | STORED AS carbondata
                      """.stripMargin)
         val exception = intercept[AnalysisException] {
             sql("insert into binaryTable select 1")

@@ -60,13 +60,13 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table DataRetentionTable (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
+      "phonetype String, serialname String, salary int) STORED AS carbondata"
 
     )
     sql(
       "CREATE table retentionlock (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
+      "phonetype String, serialname String, salary int) STORED AS carbondata"
 
     )
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
@@ -186,7 +186,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       CREATE TABLE IF NOT EXISTS carbon_table_1
       (ID Int, date Timestamp, country String,
       name String, phonetype String, serialname String, salary Int)
-      STORED BY 'org.apache.carbondata.format'
+      STORED AS carbondata
       """)
 
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptyDimensionData.csv' into table carbon_table_1")

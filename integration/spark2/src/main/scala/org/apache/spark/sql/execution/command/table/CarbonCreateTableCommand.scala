@@ -23,18 +23,16 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, _}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.MetadataCommand
+import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
-import org.apache.carbondata.core.util.{CarbonUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTablePreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -70,47 +68,18 @@ case class CarbonCreateTableCommand(
         throw new TableAlreadyExistsException(dbName, tableName)
       }
     } else {
-      val path = tableLocation.getOrElse(
-        CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession))
-      val tablePath = if (FileFactory.getCarbonFile(path).exists() && !isExternal &&
-                          isTransactionalTable && tableLocation.isEmpty) {
-        path + "_" + tableInfo.getFactTable.getTableId
-      } else {
-        path
-      }
-      val streaming = tableInfo.getFactTable.getTableProperties.get("streaming")
-      if (streaming != null && streaming.equalsIgnoreCase("true") && path.startsWith("s3")) {
-        throw new UnsupportedOperationException("streaming is not supported with s3 store")
-      }
+      val tablePath = CarbonEnv.createTablePath(
+        Some(dbName),
+        tableName,
+        tableInfo.getFactTable.getTableId,
+        tableLocation,
+        isExternal,
+        isTransactionalTable
+      )(sparkSession)
       tableInfo.setTablePath(tablePath)
+      CarbonSparkSqlParserUtil.validateTableProperties(tableInfo)
       val tableIdentifier = AbsoluteTableIdentifier
         .from(tablePath, dbName, tableName, tableInfo.getFactTable.getTableId)
-
-      // Add validation for sort scope when create table
-      val sortScope = tableInfo.getFactTable.getTableProperties.asScala
-        .getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
-      if (!CarbonUtil.isValidSortOption(sortScope)) {
-        throw new InvalidConfigurationException(
-          s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT'," +
-          s" 'LOCAL_SORT' and 'GLOBAL_SORT' ")
-      }
-
-      if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
-        throwMetadataException(dbName, tableName, "Table should have at least one column.")
-      }
-
-      // Add validatation for column compressor when create table
-      val columnCompressor = tableInfo.getFactTable.getTableProperties.get(
-        CarbonCommonConstants.COMPRESSOR)
-      try {
-        if (null != columnCompressor) {
-          CompressorFactory.getInstance().getCompressor(columnCompressor)
-        }
-      } catch {
-        case ex : UnsupportedOperationException =>
-          throw new InvalidConfigurationException(ex.getMessage)
-      }
-
       val operationContext = new OperationContext
       val createTablePreExecutionEvent: CreateTablePreExecutionEvent =
         CreateTablePreExecutionEvent(sparkSession, tableIdentifier, Some(tableInfo))
@@ -140,10 +109,30 @@ case class CarbonCreateTableCommand(
                   s"Dictionary include cannot be applied on partition columns")
               }
               s" PARTITIONED BY (${partitionInfo.getColumnSchemaList.asScala.map(
-                _.getColumnName).mkString(",")})"
+                _.getColumnName.toLowerCase).mkString(",")})"
             } else {
               ""
             }
+
+          val repeatedPropKeys =
+            Seq("tablename",
+              "dbname",
+              "tablePath",
+              "isExternal",
+              "path",
+              "isTransactional",
+              "isVisible",
+              "carbonSchemaPartsNo")
+          val tableProperties =
+            tableInfo
+              .getFactTable
+              .getTableProperties
+              .asScala
+              .filter(prop => !repeatedPropKeys.exists(_.equalsIgnoreCase(prop._1)))
+              .map { property =>
+                s"""  ${ property._1 }  "${ property._2 }","""
+              }
+              .mkString("\n", "\n", "")
 
           // synchronized to prevent concurrently creation of table with same name
           CarbonCreateTableCommand.synchronized {
@@ -153,8 +142,8 @@ case class CarbonCreateTableCommand(
             sparkSession.sql(
               s"""CREATE TABLE $dbName.$tableName
                  |(${ rawSchema })
-                 |USING org.apache.spark.sql.CarbonSource
-                 |OPTIONS (
+                 |USING carbondata
+                 |OPTIONS (${tableProperties}
                  |  tableName "$tableName",
                  |  dbName "$dbName",
                  |  tablePath "$tablePath",

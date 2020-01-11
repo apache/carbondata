@@ -459,7 +459,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkMapOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED AS carbondata LOCATION
           |'$writerPath' """.stripMargin)
     checkAnswer(sql("select count(*) from sdkMapOutputTable where maprecord['street']='abc'"),
       Row(0))
@@ -478,7 +478,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkMapOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED AS carbondata LOCATION
           |'$writerPath' """.stripMargin)
     checkAnswer(sql("select maprecord['details'] from sdkMapOutputTable"), Seq(
       Row(Map("city" -> "bangalore", "street" -> "k-lane")),
@@ -491,7 +491,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkMapOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED AS carbondata LOCATION
           |'$writerPath' """.stripMargin)
     checkAnswer(sql("select count(*) from sdkMapOutputTable"), Row(3))
   }
@@ -501,7 +501,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkMapOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED AS carbondata LOCATION
           |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkMapOutputTable"), Seq(
       Row("bob", 10, Map("city" -> Seq("city1", "city2"))),
@@ -514,7 +514,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkMapOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED AS carbondata LOCATION
           |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkMapOutputTable"), Seq(
       Row("bob", 10, Map("details" -> Row("street1", "bang"))),
@@ -527,7 +527,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkMapOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED AS carbondata LOCATION
           |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkMapOutputTable"), Seq(
       Row("bob", 10, Row("street1", Map("101" -> "Rahul", "102" -> "Pawan"))),
@@ -540,7 +540,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkMapOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED AS carbondata LOCATION
           |'$writerPath' """.stripMargin)
     sql("desc formatted sdkMapOutputTable").show(1000, false)
     sql("select * from sdkMapOutputTable").show(false)
@@ -555,7 +555,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkMapOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED AS carbondata LOCATION
           |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkMapOutputTable"), Seq(
       Row("bob", 10, Seq(Map("101" -> "Rahul", "102" -> "Pawan"))),
@@ -568,7 +568,7 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkMapOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED AS carbondata LOCATION
           |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkMapOutputTable"), Seq(
       Row("bob", 10, Seq(Seq(Map("101" -> "Rahul", "102" -> "Pawan")))),

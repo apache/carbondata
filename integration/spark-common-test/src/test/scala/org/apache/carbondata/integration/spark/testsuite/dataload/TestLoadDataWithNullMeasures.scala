@@ -30,7 +30,7 @@ class TestLoadDataWithNullMeasures extends QueryTest with BeforeAndAfterAll {
       "CREATE TABLE carbontable (empno int, empname String, designation String, doj String, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate String, projectenddate String,attendance int,utilization " +
-      "int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "int,salary int) STORED AS carbondata")
   }
 
   test("test carbon table data loading when there are null measures in data") {

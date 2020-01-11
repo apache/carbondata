@@ -33,7 +33,7 @@ class PrestoSampleTestCase extends QueryTest with BeforeAndAfterAll {
     sql("show tables").show(false)
 
     sql("DROP TABLE IF EXISTS sample_table")
-    sql("CREATE TABLE sample_table (name string) STORED BY 'carbondata'")
+    sql("CREATE TABLE sample_table (name string) STORED AS carbondata")
     sql("insert into sample_table select 'ajantha'")
     sql("select * from sample_table ").show(200, false)
     sql("describe formatted sample_table ").show(200, false)

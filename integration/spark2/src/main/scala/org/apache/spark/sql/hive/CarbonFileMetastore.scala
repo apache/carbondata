@@ -26,11 +26,11 @@ import java.util.concurrent.locks.{Lock, ReentrantReadWriteLock}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, EnvHelper, SparkSession}
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.sources.BaseRelation
@@ -81,7 +81,9 @@ case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
 }
 
 object MatchLogicalRelation {
-  def unapply(logicalPlan: LogicalPlan): Option[(BaseRelation, Any, Any)] = logicalPlan match {
+  def unapply(
+      logicalPlan: LogicalPlan
+  ): Option[(BaseRelation, Any, Option[CatalogTable])] = logicalPlan match {
     case l: LogicalRelation => Some(l.relation, l.output, l.catalogTable)
     case _ => None
   }
@@ -150,10 +152,17 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tables = Option(CarbonMetadata.getInstance.getCarbonTable(database, tableName))
     tables match {
       case Some(t) =>
-        if (isSchemaRefreshed(t.getAbsoluteTableIdentifier, sparkSession)) {
-          readCarbonSchema(t.getAbsoluteTableIdentifier, parameters)
+        if (t.getTablePath.equals(absIdentifier.getTablePath)) {
+          if (isSchemaRefreshed(t.getAbsoluteTableIdentifier, sparkSession)) {
+            readCarbonSchema(t.getAbsoluteTableIdentifier, parameters)
+          } else {
+            CarbonRelation(database, tableName, CarbonSparkUtil.createSparkMeta(t), t)
+          }
         } else {
-          CarbonRelation(database, tableName, CarbonSparkUtil.createSparkMeta(t), t)
+          DataMapStoreManager.getInstance().clearDataMaps(absIdentifier)
+          CarbonMetadata.getInstance().removeTable(
+            absIdentifier.getCarbonTableIdentifier.getTableUniqueName)
+          readCarbonSchema(absIdentifier, parameters)
         }
       case None =>
         readCarbonSchema(absIdentifier, parameters)
@@ -162,7 +171,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
   private def readCarbonSchema(absIdentifier: AbsoluteTableIdentifier,
       parameters: Map[String, String]): CarbonRelation = {
-    readCarbonSchema(absIdentifier,
+    readCarbonSchema(absIdentifier, parameters,
       !parameters.getOrElse("isTransactional", "true").toBoolean) match {
       case Some(meta) =>
         CarbonRelation(absIdentifier.getDatabaseName, absIdentifier.getTableName,
@@ -251,7 +260,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
   }
 
   private def readCarbonSchema(identifier: AbsoluteTableIdentifier,
-      inferSchema: Boolean): Option[CarbonTable] = {
+      parameters: Map[String, String], inferSchema: Boolean): Option[CarbonTable] = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val dbName = identifier.getCarbonTableIdentifier.getDatabaseName
     val tableName = identifier.getCarbonTableIdentifier.getTableName
@@ -264,7 +273,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         val tblInfoFromCache = if (carbonTbl != null) {
           carbonTbl.getTableInfo
         } else {
-          null
+          CarbonUtil.convertGsonToTableInfo(parameters.asJava)
         }
 
         val thriftTableInfo: TableInfo = if (tblInfoFromCache != null) {
@@ -450,7 +459,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
     }
   }
 
-
   def dropTable(absoluteTableIdentifier: AbsoluteTableIdentifier)(sparkSession: SparkSession) {
     val dbName = absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName
     val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
@@ -463,7 +471,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
     SegmentPropertiesAndSchemaHolder.getInstance().invalidate(absoluteTableIdentifier)
     removeTableFromMetadata(dbName, tableName)
   }
-
 
   def isTransactionalCarbonTable(identifier: AbsoluteTableIdentifier): Boolean = {
     val table = Option(CarbonMetadata.getInstance()
@@ -557,13 +564,21 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tablesList = sparkSession.sessionState.catalog.listDatabases().flatMap {
       database =>
         sparkSession.sessionState.catalog.listTables(database)
-          .map(table => s"${ database }_${ table.table }".toLowerCase(Locale.getDefault()))
+          .map(table => CarbonTable.buildUniqueName(database, table.table))
     }
-    val invalidTableIds = CarbonMetadata.getInstance().getAllTables.asScala.collect {
-      case carbonTable if !tablesList.contains(carbonTable.getTableUniqueName
-        .toLowerCase(Locale.getDefault())) =>
-        CarbonMetadata.getInstance()
-          .removeTable(carbonTable.getTableUniqueName.toLowerCase(Locale.getDefault()))
+    val cachedTableList = if (EnvHelper.isCloud(sparkSession)) {
+      // for multi-tenant scenario, it need to check the table unique name
+      // ensure the current user own this table
+      CarbonMetadata.getInstance().getAllTables.asScala.filter { carbonTable =>
+        carbonTable.getTableUniqueName.equals(
+          CarbonTable.buildUniqueName(carbonTable.getDatabaseName, carbonTable.getTableName))
+      }
+    } else {
+      CarbonMetadata.getInstance().getAllTables.asScala
+    }
+    val invalidTableIds = cachedTableList.map {
+      case carbonTable if !tablesList.contains(carbonTable.getTableUniqueName) =>
+        CarbonMetadata.getInstance().removeTable(carbonTable.getTableUniqueName)
         carbonTable.getTableId
     }
     CarbonFileMetastore.removeStaleEntries(invalidTableIds.toList)

@@ -65,7 +65,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
       if (partitionWithLoc.nonEmpty) {
         val partitionSpecs = partitionWithLoc.map{ case (part, location) =>
           new PartitionSpec(
-            new util.ArrayList(part.map(p => p._1 + "=" + p._2).toList.asJava),
+            new util.ArrayList(part.map(p => p._1.toLowerCase + "=" + p._2).toList.asJava),
             location.get)
         }
         // Get all the partitions which are not already present in hive.

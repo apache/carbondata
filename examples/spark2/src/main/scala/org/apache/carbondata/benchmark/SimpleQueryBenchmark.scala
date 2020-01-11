@@ -21,7 +21,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SaveMode, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
+import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -308,7 +309,7 @@ object SimpleQueryBenchmark {
         .addProperty("enable.unsafe.sort", "true")
         .addProperty("carbon.blockletgroup.size.in.mb", "32")
         .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
-
+    import org.apache.spark.sql.CarbonSession._
     val rootPath = new File(this.getClass.getResource("/").getPath
         + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
@@ -323,7 +324,6 @@ object SimpleQueryBenchmark {
         .config("spark.driver.host", "127.0.0.1")
         .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
         .getOrCreate()
-    CarbonEnv.getInstance(spark)
     spark.sparkContext.setLogLevel("warn")
 
     val table1 = parquetTableName

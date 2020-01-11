@@ -67,7 +67,7 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         CREATE TABLE IF NOT EXISTS blockprune (name string, id int)
-        STORED BY 'org.apache.carbondata.format'
+        STORED AS carbondata
       """)
     sql(
         s"LOAD DATA LOCAL INPATH '$outputPath' INTO table blockprune options('FILEHEADER'='name,id')"

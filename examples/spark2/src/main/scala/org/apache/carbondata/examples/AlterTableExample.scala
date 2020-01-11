@@ -30,7 +30,7 @@ object AlterTableExample {
 
   def main(args: Array[String]): Unit = {
 
-    val spark = ExampleUtils.createCarbonSession("AlterTableExample")
+    val spark = ExampleUtils.createSparkSession("AlterTableExample")
     exampleBody(spark)
     spark.close()
   }
@@ -54,7 +54,7 @@ object AlterTableExample {
          | floatField FLOAT,
          | complexData ARRAY<STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     // Alter table change data type

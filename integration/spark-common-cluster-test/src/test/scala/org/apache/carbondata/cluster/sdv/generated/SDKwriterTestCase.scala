@@ -164,9 +164,9 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
-         |'carbondata' LOCATION
-         |'$writerPath' """.stripMargin)
+      s"""CREATE EXTERNAL TABLE sdkTable
+         | STORED AS carbondata
+         | LOCATION '$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkTable"), Seq(Row("abc0", 0, 0.0),
       Row("abc1", 1, 0.5),
@@ -178,9 +178,9 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable comment 'this is comment' STORED BY
-         |'carbondata' LOCATION
-         |'$writerPath' """.stripMargin)
+      s"""CREATE EXTERNAL TABLE sdkTable comment 'this is comment'
+         |STORED AS carbondata
+         |LOCATION '$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkTable"), Seq(Row("abc0", 0, 0.0),
       Row("abc1", 1, 0.5),
@@ -193,8 +193,8 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS sdkTable")
 
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
-         |'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata
+         |LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkTable"), Seq(Row("abc0", 0, 0.0),
       Row("abc1", 1, 0.5),
@@ -227,8 +227,8 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS sdkTable")
 
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
-         |'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata
+         |LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql(s"""select count(*) from sdkTable where age = 1"""),
@@ -248,11 +248,11 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS table1")
 
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
-         |'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata
+         |LOCATION
          |'$writerPath' """.stripMargin)
     sql(
-      "create table if not exists table1 (name string, age int) STORED BY 'carbondata'")
+      "create table if not exists table1 (name string, age int) STORED AS carbondata")
     sql("insert into table1 select * from sdkTable")
     checkAnswer(sql("select * from table1"), Seq(Row("abc0", 0),
       Row("abc1", 1),
@@ -265,12 +265,12 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS sdkTable1")
     sql("DROP TABLE IF EXISTS sdkTable2")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable1 STORED BY
-         |'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable1 STORED AS carbondata
+         |LOCATION
          |'$writerPath' """.stripMargin)
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable2 STORED BY
-         |'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable2 STORED AS carbondata
+         |LOCATION
          |'$writerPath' """.stripMargin)
 
     sql("insert into sdkTable1 select *from sdkTable2")
@@ -283,8 +283,8 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS sdkTable")
 
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
-         |'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata
+         |LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkTable"), Seq(Row("abc0", 0, 0.0),
@@ -299,8 +299,8 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS table1")
 
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
-         |'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata
+         |LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkTable"), Seq(Row("abc0", 0, 0.0),
@@ -308,8 +308,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
       Row("abc2", 2, 1.0)))
 
     sql(
-      "create table if not exists table1 (name string, age int, height double) STORED BY 'org" +
-      ".apache.carbondata.format'")
+      "create table if not exists table1 (name string, age int, height double) STORED AS carbondata")
     sql(s"""insert into table1 values ("aaaaa", 12, 20)""")
 
     checkAnswer(sql(s"""select count(*) from sdkTable where age = 1"""),
@@ -328,8 +327,8 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
     val ex = intercept[AnalysisException] {
       sql(
-        s"""CREATE EXTERNAL TABLE sdkTable STORED BY
-           |'carbondata' LOCATION
+        s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata
+           |LOCATION
            |'$writerPath' TBLPROPERTIES('sort_scope'='local_sort') """.stripMargin)
     }
     assert(ex.message.contains("Table properties are not supported for external table"))
@@ -346,7 +345,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     val exception = intercept[Exception] {
       //data source file format
       sql(
-        s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+        s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
            |'$writerPath' """.stripMargin)
     }
     assert(exception.getMessage()
@@ -359,15 +358,15 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS sdkTable")
     sql("DROP TABLE IF EXISTS table1")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
-         |'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata
+         |LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkTable"), Seq(Row("abc0", 0, 0.0),
       Row("abc1", 1, 0.5),
       Row("abc2", 2, 1.0)))
 
-    sql("create table table1 stored by 'carbondata' as select *from sdkTable")
+    sql("create table table1 STORED AS carbondata as select *from sdkTable")
 
     checkAnswer(sql("select * from table1"), Seq(Row("abc0", 0, 0.0),
       Row("abc1", 1, 0.5),
@@ -380,12 +379,12 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS sdkTable")
     sql("DROP TABLE IF EXISTS sdkTable1")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
-         |'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata
+         |LOCATION
          |'$writerPath' """.stripMargin)
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable1 STORED BY
-         |'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable1 STORED AS carbondata
+         |LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkTable JOIN sdkTable1 on (sdkTable.age=sdkTable1.age)"),
@@ -410,7 +409,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkTable"), Seq(
       Row("abc0", null, null),
@@ -426,7 +425,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkTable"), Seq(
@@ -440,7 +439,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkTable"), Seq(
       Row("abc3", 3, 1.5)))
@@ -667,7 +666,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkTable"), Seq(
@@ -682,7 +681,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkTable"), Seq(
       Row("bob", 10, Row("abc", "bang"), mutable.WrappedArray.newBuilder[Int].+=(1, 2, 3, 4)),
@@ -695,7 +694,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql(s"""select count(*) from sdkTable"""),
@@ -707,7 +706,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql(s"""select count(*) from sdkTable"""),
@@ -733,7 +732,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
     assert(FileFactory.getCarbonFile(writerPath).exists)
     sql("DROP TABLE IF EXISTS sdkTable")
-    sql(s"CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION '$writerPath'")
+    sql(s"CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION '$writerPath'")
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(5)))
   }
 
@@ -759,7 +758,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
     assert(FileFactory.getCarbonFile(writerPath).exists)
     sql("DROP TABLE IF EXISTS sdkTable")
-    sql(s"CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION '$writerPath'")
+    sql(s"CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION '$writerPath'")
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(3)))
 
     val op = sql("select address from sdkTable limit 1").collectAsList()
@@ -793,7 +792,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
     assert(FileFactory.getCarbonFile(writerPath).exists)
     sql("DROP TABLE IF EXISTS sdkTable")
-    sql(s"CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION '$writerPath'")
+    sql(s"CREATE EXTERNAL TABLE sdkTable STORED AS carbondata LOCATION '$writerPath'")
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(5)))
   }
 }

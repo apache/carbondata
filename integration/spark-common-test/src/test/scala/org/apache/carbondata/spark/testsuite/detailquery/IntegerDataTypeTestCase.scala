@@ -27,7 +27,7 @@ import org.scalatest.BeforeAndAfterAll
 class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE TABLE integertypetable (empno int, workgroupcategory string, deptno int, projectcode int,attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE integertypetable (empno int, workgroupcategory string, deptno int, projectcode int,attendance int) STORED AS carbondata")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE integertypetable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
   }
 

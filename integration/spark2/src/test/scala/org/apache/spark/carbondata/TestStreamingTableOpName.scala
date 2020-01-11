@@ -73,7 +73,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
         |    c2 int,
         |    c3 string,
         |    c5 string
-        | ) STORED BY 'org.apache.carbondata.format'
+        | ) STORED AS carbondata
         | TBLPROPERTIES ('streaming' = 'true')
       """.stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO TABLE source""")
@@ -134,7 +134,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE correct(
         |    c1 string
-        | ) STORED BY 'org.apache.carbondata.format'
+        | ) STORED AS carbondata
         | TBLPROPERTIES ('streaming' = 'true')
       """.stripMargin)
     sql("DROP TABLE correct")
@@ -142,7 +142,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE correct(
         |    c1 string
-        | ) STORED BY 'org.apache.carbondata.format'
+        | ) STORED AS carbondata
         | TBLPROPERTIES ('streaming' = 'false')
       """.stripMargin)
     sql("DROP TABLE correct")
@@ -151,7 +151,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
         """
           | create table wrong(
           |    c1 string
-          | ) STORED BY 'org.apache.carbondata.format'
+          | ) STORED AS carbondata
           | TBLPROPERTIES ('streaming' = 'invalid')
         """.stripMargin)
     }
@@ -1306,7 +1306,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
          | city STRING,
          | salary FLOAT
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('streaming'='true')
          | """.stripMargin)
 
@@ -1335,7 +1335,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
          | city STRING,
          | salary FLOAT
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('streaming'='true')
          | """.stripMargin)
 
@@ -2183,7 +2183,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
          | register TIMESTAMP,
          | updated TIMESTAMP
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
          | 'sort_columns'='name', 'BAD_RECORD_PATH'='$badRecordFilePath')
          | """.stripMargin)
@@ -2212,7 +2212,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
          | updated TIMESTAMP,
          | file struct<school:array<string>, age:int>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
          | 'sort_columns'='name', 'BAD_RECORD_PATH'='$badRecordFilePath')
          | """.stripMargin)

@@ -36,17 +36,17 @@ class TestLoadTblNameIsKeyword extends QueryTest with BeforeAndAfterAll {
     sql("""
           CREATE TABLE IF NOT EXISTS STRING
           (id Int, name String, city String)
-          STORED BY 'org.apache.carbondata.format'
+          STORED AS carbondata
         """)
     sql("""
           CREATE TABLE IF NOT EXISTS DoUbLe
           (id Int, name String, city String)
-          STORED BY 'org.apache.carbondata.format'
+          STORED AS carbondata
         """)
     sql("""
           CREATE TABLE IF NOT EXISTS timestamp
           (id Int, name String, city String)
-          STORED BY 'org.apache.carbondata.format'
+          STORED AS carbondata
         """)
   }
 

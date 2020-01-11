@@ -17,12 +17,11 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
-import java.util.concurrent.{Callable, ExecutorService, Executors, Future, TimeUnit}
+import java.util.concurrent.{Callable, Executors, ExecutorService, Future, TimeUnit}
 
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.AnalysisException
 import org.scalatest.BeforeAndAfterAll
-
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
 class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
 
@@ -34,10 +33,10 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table if not exists") {
-    sql("create table test(a int, b string) stored by 'carbondata'")
+    sql("create table test(a int, b string) STORED AS carbondata")
     try {
       // table creation should be successful
-      sql("create table if not exists test(a int, b string) stored by 'carbondata'")
+      sql("create table if not exists test(a int, b string) STORED AS carbondata")
       assert(true)
     } catch {
       case ex: Exception =>
@@ -66,7 +65,7 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
           // Create table
           var result = "PASS"
           try {
-            sql("create table IF NOT EXISTS TestIfExists(name string) stored by 'carbondata'")
+            sql("create table IF NOT EXISTS TestIfExists(name string) STORED AS carbondata")
           } catch {
             case exception: Exception =>
               result = exception.getMessage
@@ -79,10 +78,10 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table without column specified") {
-    val exception = intercept[MalformedCarbonCommandException] {
-      sql("create table TableWithoutColumn stored by 'carbondata' tblproperties('sort_columns'='')")
+    val exception = intercept[AnalysisException] {
+      sql("create table TableWithoutColumn STORED AS carbondata tblproperties('sort_columns'='')")
     }
-    assert(exception.getMessage.contains("Creating table without column(s) is not supported"))
+    assert(exception.getMessage.contains("Unable to infer the schema"))
   }
 
   override def afterAll {

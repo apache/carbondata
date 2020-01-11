@@ -17,6 +17,10 @@
 
 package org.apache.carbondata.core.locks;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -45,6 +49,8 @@ public class CarbonLockFactory {
       .getProperty(CarbonCommonConstants.LOCK_PATH, CarbonCommonConstants.LOCK_PATH_DEFAULT)
       .toLowerCase();
 
+  private static Constructor lockConstructor;
+
   static {
     CarbonLockFactory.getLockTypeConfigured();
   }
@@ -66,7 +72,9 @@ public class CarbonLockFactory {
           getLockpath(absoluteTableIdentifier.getCarbonTableIdentifier().getTableId());
     }
     FileFactory.FileType fileType = FileFactory.getFileType(absoluteLockPath);
-    if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
+    if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_CUSTOM)) {
+      return newCustomLock(absoluteLockPath, lockFile);
+    } else if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
       return new ZooKeeperLocking(absoluteLockPath, lockFile);
     } else if (fileType == FileFactory.FileType.S3) {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_S3;
@@ -98,6 +106,8 @@ public class CarbonLockFactory {
       lockFileLocation = getLockpath("1");
     }
     switch (lockTypeConfigured) {
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_CUSTOM:
+        return newCustomLock(lockFileLocation, lockFile);
       case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
         return new LocalFileLock(lockFileLocation, lockFile);
       case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
@@ -121,10 +131,61 @@ public class CarbonLockFactory {
         .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT)
         .toUpperCase();
     LOGGER.info("Configured lock type is: " + lockTypeConfigured);
+    String lockClassName =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOCK_CLASS);
+    if (lockClassName == null) {
+      return;
+    }
+    CarbonLockFactory.lockConstructor = getCustomLockConstructor(lockClassName);
   }
 
   public static String getLockpath(String tableId) {
     return lockPath + CarbonCommonConstants.FILE_SEPARATOR + tableId;
   }
 
+  private static ICarbonLock newCustomLock(final String lockFileLocation, final String lockFile) {
+    if (lockConstructor == null) {
+      throw new IllegalArgumentException(
+          "Carbon property [" + CarbonCommonConstants.LOCK_CLASS + "] is not set.");
+    }
+    try {
+      return (ICarbonLock) lockConstructor.newInstance(lockFileLocation, lockFile);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static Constructor<?> getCustomLockConstructor(final String lockClassName) {
+    final Class<?> lockClass;
+    try {
+      lockClass = CarbonLockFactory.class.getClassLoader().loadClass(lockClassName);
+    } catch (ClassNotFoundException e) {
+      throw new IllegalArgumentException("The class [" + lockClassName + "] is not found.");
+    }
+    if (!ICarbonLock.class.isAssignableFrom(lockClass)) {
+      throw new IllegalArgumentException(
+          "The class [" + lockClassName + "] is not an ICarbonLock class.");
+    }
+    if (Modifier.isAbstract(lockClass.getModifiers())) {
+      throw new IllegalArgumentException(
+          "The class [" + lockClassName + "] can not be initialized.");
+    }
+    if (!Modifier.isPublic(lockClass.getModifiers())) {
+      throw new IllegalArgumentException(
+          "The class [" + lockClassName + "] is not a public class.");
+    }
+    final Constructor<?> lockConstructor;
+    try {
+      lockConstructor = lockClass.getConstructor(String.class, String.class);
+    } catch (NoSuchMethodException e) {
+      throw new IllegalArgumentException(
+          "The class [" + lockClassName + "] do not have the constructor(String, String).", e
+      );
+    }
+    if (!Modifier.isPublic(lockClass.getModifiers())) {
+      throw new IllegalArgumentException(
+          "The constructor [" + lockConstructor + "] is not a public constructor.");
+    }
+    return lockConstructor;
+  }
 }

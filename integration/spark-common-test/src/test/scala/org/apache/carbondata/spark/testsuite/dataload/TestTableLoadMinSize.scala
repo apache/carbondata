@@ -47,7 +47,7 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
         CREATE TABLE IF NOT EXISTS table_loadminsize1
         (ID Int, date Timestamp, country String,
         name String, phonetype String, serialname String, salary Int)
-        STORED BY 'org.apache.carbondata.format'
+        STORED AS carbondata
         TBLPROPERTIES('table_blocksize'='128 MB')
       """)
 
@@ -73,7 +73,7 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
         CREATE TABLE IF NOT EXISTS table_loadminsize2
         (ID Int, date Timestamp, country String,
         name String, phonetype String, serialname String, salary Int)
-        STORED BY 'org.apache.carbondata.format'
+        STORED AS carbondata
         TBLPROPERTIES('table_blocksize'='128 MB')
       """)
 
@@ -100,7 +100,7 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
         CREATE TABLE IF NOT EXISTS table_loadminsize3
         (ID Int, date Timestamp, country String,
         name String, phonetype String, serialname String, salary Int)
-        STORED BY 'org.apache.carbondata.format'
+        STORED AS carbondata
         TBLPROPERTIES('table_blocksize'='128 MB')
       """)
 
@@ -127,7 +127,7 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
         CREATE TABLE IF NOT EXISTS table_loadminsize4
         (ID Int, date Timestamp, country String,
         name String, phonetype String, serialname String, salary Int)
-        STORED BY 'org.apache.carbondata.format'
+        STORED AS carbondata
         TBLPROPERTIES('table_blocksize'='128 MB', 'load_min_size_inmb'='256')
       """)
 

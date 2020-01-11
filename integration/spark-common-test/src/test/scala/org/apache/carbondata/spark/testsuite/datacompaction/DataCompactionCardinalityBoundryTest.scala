@@ -39,9 +39,7 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
     sql(
       "CREATE TABLE IF NOT EXISTS cardinalityTest (country String, ID String, date Timestamp, name " +
-        "String, " +
-        "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata" +
-        ".format'"
+        "String, phonetype String, serialname String, salary Int) STORED AS carbondata"
     )
 
 
@@ -73,10 +71,9 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
     var status = true
     var noOfRetries = 0
     while (status && noOfRetries < 10) {
-
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
           AbsoluteTableIdentifier.from(
-            CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
+            CarbonProperties.getStorePath(),
             new CarbonTableIdentifier("default", "cardinalityTest", "1")
           )
       )

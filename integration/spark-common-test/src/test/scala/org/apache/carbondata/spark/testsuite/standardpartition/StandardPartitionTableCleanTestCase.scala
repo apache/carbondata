@@ -43,7 +43,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -71,7 +71,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     checkAnswer(
@@ -101,7 +101,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
           |  projectjoindate Timestamp, projectenddate Date,attendance int,
           |  utilization int,salary int)
           | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
-          | STORED BY 'org.apache.carbondata.format'
+          | STORED AS carbondata
         """.stripMargin)
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmany OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmany OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -125,7 +125,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
         |  projectjoindate Timestamp, projectenddate Date,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionall OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionall OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -151,7 +151,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
         |  projectjoindate Timestamp, projectenddate Date,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")

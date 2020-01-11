@@ -21,12 +21,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.SettableStructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.WritableHiveVarcharObjectInspector;
+import org.apache.hadoop.hive.serde2.typeinfo.CharTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.ListTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.MapTypeInfo;
@@ -62,8 +64,12 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
   private ObjectInspector getObjectInspector(final TypeInfo typeInfo) {
     if (typeInfo.equals(TypeInfoFactory.stringTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
+    } else if (typeInfo instanceof CharTypeInfo) {
+      return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.doubleTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableDoubleObjectInspector;
+    } else if (typeInfo.equals(TypeInfoFactory.floatTypeInfo)) {
+      return PrimitiveObjectInspectorFactory.writableFloatObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.floatTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableFloatObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.intTypeInfo)) {
@@ -181,8 +187,7 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
       return false;
     }
     final CarbonObjectInspector other = (CarbonObjectInspector) obj;
-    return !(this.typeInfo != other.typeInfo && (this.typeInfo == null || !this.typeInfo
-        .equals(other.typeInfo)));
+    return !(!Objects.equals(this.typeInfo, other.typeInfo));
   }
 
   @Override

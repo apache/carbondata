@@ -19,10 +19,10 @@ package org.apache.carbondata.mv.rewrite
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.test.util.CarbonQueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class MVCoalesceTestCase  extends CarbonQueryTest with BeforeAndAfterAll  {
+class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
   override def beforeAll(): Unit = {
     drop()
     sql("create table coalesce_test_main(id int,name string,height int,weight int) " +
@@ -43,7 +43,7 @@ class MVCoalesceTestCase  extends CarbonQueryTest with BeforeAndAfterAll  {
     sql("rebuild datamap coalesce_test_main_mv")
 
     val frame = sql("select coalesce(sum(id),0) as sumid,name from coalesce_test_main group by name")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "coalesce_test_main_mv"))
     checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
 
     sql("drop datamap if exists coalesce_test_main_mv")
@@ -59,7 +59,7 @@ class MVCoalesceTestCase  extends CarbonQueryTest with BeforeAndAfterAll  {
     assert("MV doesn't support Coalesce".equals(exception.getMessage))
 
     val frame = sql("select coalesce(sum(id),0) as sumid,name from coalesce_test_main group by name")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "coalesce_test_main_mv"))
     checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
 
     sql("drop datamap if exists coalesce_test_main_mv")
@@ -72,7 +72,7 @@ class MVCoalesceTestCase  extends CarbonQueryTest with BeforeAndAfterAll  {
     sql("rebuild datamap coalesce_test_main_mv")
 
     val frame = sql("select sum(coalesce(id,0)) as sumid,name from coalesce_test_main group by name")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.analyzed, "coalesce_test_main_mv"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "coalesce_test_main_mv"))
     checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
 
     sql("drop datamap if exists coalesce_test_main_mv")

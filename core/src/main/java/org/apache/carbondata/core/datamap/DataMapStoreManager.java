@@ -40,8 +40,8 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaFactory;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
-import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
@@ -87,8 +87,8 @@ public final class DataMapStoreManager {
 
   private Map<String, TableSegmentRefresher> segmentRefreshMap = new ConcurrentHashMap<>();
 
-  private DataMapSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
-      CarbonProperties.getInstance().getSystemFolderLocation());
+  private DataMapSchemaStorageProvider provider =
+      DataMapSchemaFactory.getDataMapSchemaStorageProvider();
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataMapStoreManager.class.getName());
@@ -603,21 +603,21 @@ public final class DataMapStoreManager {
     tablePathMap.remove(tableId);
   }
 
+
+
+
   /**
    * Clear the datamap/datamaps of a table from memory and disk
-   *
-   * @param identifier Table identifier
    */
-  public void deleteDataMap(AbsoluteTableIdentifier identifier, String dataMapName) {
-    CarbonTable carbonTable = getCarbonTable(identifier);
+  public void deleteDataMap(CarbonTable carbonTable, String dataMapName) {
     if (carbonTable == null) {
       // If carbon table is null then it means table is already deleted, therefore return without
       // doing any further changes.
       return;
     }
-    String tableId = identifier.getCarbonTableIdentifier().getTableId();
+    String tableId = carbonTable.getTableId();
     if (CarbonProperties.getInstance()
-        .isDistributedPruningEnabled(identifier.getDatabaseName(), identifier.getTableName())) {
+        .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())) {
       try {
         DataMapUtil
             .executeClearDataMapJob(carbonTable, DataMapUtil.DISTRIBUTED_JOB_NAME, dataMapName);

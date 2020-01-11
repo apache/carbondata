@@ -22,7 +22,7 @@ import java.util
 
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.test.util.CarbonQueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -34,14 +34,14 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 /**
  * Test Class for MV Datamap to verify all scenerios
  */
-class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
+class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
 
   override def beforeEach(): Unit = {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop table IF EXISTS testtable")
-    sql("create table testtable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table testtable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table testtable select 'abc',21,2000")
     sql("drop datamap if exists dm1")
     sql("create datamap dm1 using 'mv' WITH DEFERRED REBUILD as select name,sum(price) " +
@@ -146,12 +146,12 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test table properties") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('LOCAL_DICTIONARY_ENABLE'='false')")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('LOCAL_DICTIONARY_ENABLE'='false')")
     sql("drop datamap if exists dm1")
     sql("create datamap dm1  using 'mv' WITH DEFERRED REBUILD as select name,price from maintable")
     checkExistence(sql("describe formatted dm1_table"), true, "Local Dictionary Enabled false")
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('TABLE_BLOCKSIZE'='256 MB')")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('TABLE_BLOCKSIZE'='256 MB')")
     sql("drop datamap if exists dm1")
     sql("create datamap dm1  using 'mv' WITH DEFERRED REBUILD as select name,price from maintable")
     checkExistence(sql("describe formatted dm1_table"), true, "Table Block Size  256 MB")
@@ -159,7 +159,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test delete segment by id on main table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("insert into table maintable select 'abc',21,2000")
     sql("Delete from table maintable where segment.id in (0)")
@@ -177,7 +177,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test delete segment by date on main table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("insert into table maintable select 'abc',21,2000")
     sql("Delete from table maintable where segment.id in (0)")
@@ -195,7 +195,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test direct load to mv datamap table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm1")
     sql("create datamap dm1 using 'mv' WITH DEFERRED REBUILD as select name " +
@@ -209,7 +209,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test drop datamap with tablename") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm1 on table maintable")
     sql("create datamap dm1 using 'mv' WITH DEFERRED REBUILD as select price " +
@@ -224,7 +224,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test mv with attribute having qualifier") {
     sql("drop table if exists maintable")
-    sql("create table maintable (product string) partitioned by (amount int) stored by 'carbondata' ")
+    sql("create table maintable (product string) partitioned by (amount int) STORED AS carbondata ")
     sql("insert into maintable values('Mobile',2000)")
     sql("drop datamap if exists p")
     sql("Create datamap p using 'mv' as Select p.product, p.amount from maintable p where p.product = 'Mobile'")
@@ -247,7 +247,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
   //Test show datamap
   test("test datamap status with single table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm1 ")
     sql("create datamap dm1 using 'mv' WITH DEFERRED REBUILD as select price from maintable")
@@ -267,10 +267,10 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test datamap status with multiple tables") {
     sql("drop table if exists products")
-    sql("create table products (product string, amount int) stored by 'carbondata' ")
+    sql("create table products (product string, amount int) STORED AS carbondata ")
     sql(s"load data INPATH '$resourcesPath/products.csv' into table products")
     sql("drop table if exists sales")
-    sql("create table sales (product string, quantity int) stored by 'carbondata'")
+    sql("create table sales (product string, quantity int) STORED AS carbondata")
     sql(s"load data INPATH '$resourcesPath/sales_data.csv' into table sales")
     sql("drop datamap if exists innerjoin")
     sql(
@@ -299,7 +299,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("directly drop datamap table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm1 ")
     sql("create datamap dm1 using 'mv' WITH DEFERRED REBUILD as select price from maintable")
@@ -311,7 +311,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("create datamap on child table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm1 ")
     sql("create datamap dm1 using 'mv' as select name, price from maintable")
@@ -322,7 +322,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("create datamap if already exists") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm1 ")
     sql("create datamap dm1 using 'mv' as select name from maintable")
@@ -334,7 +334,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test create datamap with select query having 'like' expression") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("select name from maintable where name like '%b%'").show(false)
     sql("drop datamap if exists dm_like ")
@@ -345,7 +345,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test datamap with streaming dmproperty") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm ")
     intercept[MalformedCarbonCommandException] {
@@ -356,7 +356,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test set streaming after creating datamap table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm ")
     sql("create datamap dm using 'mv' as select name from maintable")
@@ -368,7 +368,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test block complex data types") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code array<int>, price struct<b:int>,type map<string, string>) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code array<int>, price struct<b:int>,type map<string, string>) STORED AS carbondata")
     sql("insert into table maintable values('abc', array(21), named_struct('b', 2000), map('ab','type1'))")
     sql("drop datamap if exists dm ")
     intercept[UnsupportedOperationException] {
@@ -388,7 +388,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("validate dmproperties") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm ")
     intercept[MalformedCarbonCommandException] {
@@ -398,7 +398,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test todate UDF function with mv") {
     sql("drop table IF EXISTS maintable")
-    sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata")
   sql("insert into maintable values(1, 'abc', 'abc001', '1975-06-11 01:00:03.0','1975-06-11 02:00:03.0', 120, 1234,4.34,24.56,12345, 2464, 45)")
     sql("drop datamap if exists dm ")
     sql("create datamap dm using 'mv' as select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'")
@@ -407,7 +407,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test preagg and mv") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm_mv ")
     sql("create datamap dm_mv using 'mv' as select name, sum(price) from maintable group by name")
@@ -419,7 +419,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test inverted index  & no-inverted index inherited from parent table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_columns'='name', 'inverted_index'='name','sort_scope'='local_sort')")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('sort_columns'='name', 'inverted_index'='name','sort_scope'='local_sort')")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm ")
     sql("create datamap dm using 'mv' as select name, sum(price) from maintable group by name")
@@ -430,7 +430,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test column compressor on preagg and mv") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('carbon.column.compressor'='zstd')")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('carbon.column.compressor'='zstd')")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm_mv ")
     sql("create datamap dm_mv on table maintable using 'mv' as select name, sum(price) from maintable group by name")
@@ -441,7 +441,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test sort_scope if sort_columns are provided") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_columns'='name')")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('sort_columns'='name')")
     sql("insert into table maintable select 'abc',21,2000")
     sql("create datamap dm_mv on table maintable using 'mv' as select name, sum(price) from maintable group by name")
     checkExistence(sql("describe formatted dm_mv_table"), true, "Sort Scope LOCAL_SORT")
@@ -450,7 +450,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test inverted_index if sort_scope is provided") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_scope'='no_sort','sort_columns'='name', 'inverted_index'='name')")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('sort_scope'='no_sort','sort_columns'='name', 'inverted_index'='name')")
     sql("insert into table maintable select 'abc',21,2000")
     checkExistence(sql("describe formatted maintable"), true, "Inverted Index Columns name")
     sql("create datamap dm_mv on table maintable using 'mv' as select name, sum(price) from maintable group by name")
@@ -461,13 +461,13 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
   test("test sort column") {
     sql("drop table IF EXISTS maintable")
     intercept[MalformedCarbonCommandException] {
-      sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_scope'='local_sort','sort_columns'='')")
+      sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('sort_scope'='local_sort','sort_columns'='')")
     }.getMessage.contains("Cannot set SORT_COLUMNS as empty when SORT_SCOPE is LOCAL_SORT")
   }
 
   test("test delete on datamap table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata' tblproperties('sort_scope'='no_sort','sort_columns'='name', 'inverted_index'='name')")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('sort_scope'='no_sort','sort_columns'='name', 'inverted_index'='name')")
     sql("insert into table maintable select 'abc',21,2000")
     sql("create datamap dm_mv on table maintable using 'mv' as select name, sum(price) from maintable group by name")
     intercept[UnsupportedOperationException] {
@@ -478,7 +478,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test drop/show meta cache directly on mv datamap table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm ")
     sql("create datamap dm using 'mv' as select name, sum(price) from maintable group by name")
@@ -495,7 +495,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
     sql("drop table if exists maintable")
     sql("create table maintable(id int, name string, id1 string, id2 string, dob timestamp, doj " +
         "timestamp, v1 bigint, v2 bigint, v3 decimal(30,10), v4 decimal(20,10), v5 double, v6 " +
-        "double ) stored by 'carbondata'")
+        "double ) STORED AS carbondata")
     sql("insert into maintable values(1, 'abc', 'id001', 'id002', '2017-01-01 00:00:00','2017-01-01 " +
         "00:00:00', 234, 2242,12.4,23.4,2323,455 )")
     checkAnswer(sql("select count(*) from maintable where  id1 < id2"), Seq(Row(1)))
@@ -504,18 +504,18 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test mv with filter instance of expression") {
     sql("drop table IF EXISTS maintable")
-    sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB date, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB date, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata")
     sql("insert into maintable values(1, 'abc', 'abc001', '1975-06-11','1975-06-11 02:00:03.0', 120, 1234,4.34,24.56,12345, 2464, 45)")
     sql("drop datamap if exists dm ")
     sql("create datamap dm using 'mv' as select dob from maintable where (dob='1975-06-11' or cust_id=2)")
     val df = sql("select dob from maintable where (dob='1975-06-11' or cust_id=2)")
-    TestUtil.verifyMVDataMap(df.queryExecution.analyzed, "dm")
+    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "dm")
     sql("drop table IF EXISTS maintable")
   }
 
   test("test histogram_numeric, collect_set & collect_list functions") {
     sql("drop table IF EXISTS maintable")
-    sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata")
     sql("insert into maintable values(1, 'abc', 'abc001', '1975-06-11 01:00:03.0','1975-06-11 02:00:03.0', 120, 1234,4.34,24.56,12345, 2464, 45)")
     sql("drop datamap if exists dm ")
     intercept[UnsupportedOperationException] {
@@ -532,26 +532,26 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("test query aggregation on mv datamap ") {
     sql("drop table if exists maintable")
-    sql("create table maintable(name string, age int, add string) stored by 'carbondata'")
+    sql("create table maintable(name string, age int, add string) STORED AS carbondata")
     sql("insert into maintable values('abc',1,'a'),('def',2,'b'),('ghi',3,'c')")
     val res = sql("select sum(age) from maintable")
     sql("drop datamap if exists mv3")
     sql("create datamap mv3 on table maintable using 'mv' as select age,sum(age) from maintable group by age")
     val df = sql("select sum(age) from maintable")
-    TestUtil.verifyMVDataMap(df.queryExecution.analyzed, "mv3")
+    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv3")
     checkAnswer(res, df)
     sql("drop table if exists maintable")
   }
 
   test("test order by columns not given in projection") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     val res = sql("select name from maintable order by c_code")
     sql("drop datamap if exists dm1")
     sql("create datamap dm1 using 'mv' as select name from maintable order by c_code")
     val df = sql("select name from maintable order by c_code")
-    TestUtil.verifyMVDataMap(df.queryExecution.analyzed, "dm1")
+    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "dm1")
     checkAnswer(res, df)
     intercept[Exception] {
       sql("alter table maintable drop columns(c_code)")
@@ -561,7 +561,7 @@ class TestAllOperationsOnMV extends CarbonQueryTest with BeforeAndAfterEach {
 
   test("drop meta cache on mv datamap table") {
     sql("drop table IF EXISTS maintable")
-    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop datamap if exists dm ")
     sql("create datamap dm using 'mv' as select name, sum(price) from maintable group by name")

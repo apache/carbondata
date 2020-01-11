@@ -27,7 +27,7 @@ case class People(name: String, occupation: String, id: Int)
 object CaseClassDataFrameAPIExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("CaseClassDataFrameAPIExample")
+    val spark = ExampleUtils.createSparkSession("CaseClassDataFrameAPIExample")
     exampleBody(spark)
     spark.close()
   }

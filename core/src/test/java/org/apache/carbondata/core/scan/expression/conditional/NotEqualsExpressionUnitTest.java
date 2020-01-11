@@ -304,7 +304,7 @@ public class NotEqualsExpressionUnitTest {
       new MockUp<ExpressionResult>() {
         Boolean returnMockFlag = true;
 
-        @Mock public Long getTime() {
+        @Mock public Long getTimeAsMillisecond() {
           if (returnMockFlag) {
             returnMockFlag = false;
             return 1190592000L;
@@ -349,7 +349,7 @@ public class NotEqualsExpressionUnitTest {
       new MockUp<ExpressionResult>() {
         Boolean returnMockFlag = true;
 
-        @Mock public Long getTime() {
+        @Mock public Long getTimeAsMillisecond() {
           return 1190592000L;
         }
       };

@@ -37,7 +37,7 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     sql(
       """create table sourceTable
         |(a int, b string)
-        |stored by 'carbondata'
+        |STORED AS carbondata
         |TBLPROPERTIES(
         |  'SORT_COLUMNS'='b',
         |  'SORT_SCOPE'='GLOBAL_SORT',
@@ -158,7 +158,7 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
         | CREATE TABLE hive_pt (
         | a int, b string)
         | PARTITIONED BY (id int)
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
       """.stripMargin)
     sql("create table targetTable like hive_pt")
     checkTableProperties(TableIdentifier("hive_pt"), TableIdentifier("targetTable"))
@@ -168,7 +168,7 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     sql("""
         | CREATE TABLE IF NOT EXISTS bkt_tbl (
         |   a int, b string
-        | ) STORED BY 'carbondata'
+        | ) STORED AS carbondata
         | TBLPROPERTIES ('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='b')
         | """.stripMargin)
 
@@ -180,7 +180,7 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     sql("""
           | CREATE TABLE IF NOT EXISTS stream_tbl (
           |   a int, b string
-          | ) STORED BY 'carbondata'
+          | ) STORED AS carbondata
           | TBLPROPERTIES ('streaming' = 'true')
           | """.stripMargin)
 

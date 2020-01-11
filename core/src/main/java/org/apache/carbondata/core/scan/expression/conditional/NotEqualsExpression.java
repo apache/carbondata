@@ -74,8 +74,10 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
       result = val1.getInt().intValue() != val2.getInt().intValue();
     } else if (dataType == DataTypes.DOUBLE) {
       result = val1.getDouble().doubleValue() != val2.getDouble().doubleValue();
-    } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+    } else if (dataType == DataTypes.DATE) {
       result = val1.getTime().longValue() != val2.getTime().longValue();
+    } else if (dataType == DataTypes.TIMESTAMP) {
+      result = val1.getTimeAsMillisecond().longValue() != val2.getTimeAsMillisecond().longValue();
     } else if (dataType == DataTypes.LONG) {
       result = elRes.getLong().longValue() != (erRes.getLong()).longValue();
     } else if (DataTypes.isDecimal(dataType)) {

@@ -37,13 +37,13 @@ class TestCreateTableWithDatabaseNameCaseChange extends QueryTest with BeforeAnd
     // separate folders are created for the matching case in commands executed.
     sql("create database dbCaseChange")
     sql("use DBCaseChanGe")
-    sql("create table carbonTable(a int, b string)stored by 'carbondata'")
+    sql("create table carbonTable(a int, b string)STORED AS carbondata")
     sql("drop table carbonTable")
     sql("use default")
     sql("use dbcasechange")
     try {
       // table creation should be successful
-      sql("create table carbonTable(a int, b string)stored by 'carbondata'")
+      sql("create table carbonTable(a int, b string)STORED AS carbondata")
       assert(true)
     } catch {
       case ex: Exception =>
@@ -59,13 +59,13 @@ class TestCreateTableWithDatabaseNameCaseChange extends QueryTest with BeforeAnd
     sql("drop database if exists AbCdEf cascade")
     sql("create database AbCdEf")
     sql("use AbCdEf")
-    sql("create table carbonTable(a int, b string)stored by 'carbondata'")
+    sql("create table carbonTable(a int, b string)STORED AS carbondata")
     sql("use default")
     sql("drop database if exists AbCdEf cascade")
     sql("create database AbCdEf")
     sql("use AbCdEf")
     try {
-      sql("create table carbonTable(a int, b string)stored by 'carbondata'")
+      sql("create table carbonTable(a int, b string)STORED AS carbondata")
       assert(true)
     } catch {
       case ex: Exception =>

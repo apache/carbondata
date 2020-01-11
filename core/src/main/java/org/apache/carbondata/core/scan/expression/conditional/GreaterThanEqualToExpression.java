@@ -60,8 +60,10 @@ public class GreaterThanEqualToExpression extends BinaryConditionalExpression {
       result = elRes.getInt() >= (erRes.getInt());
     } else if (dataType == DataTypes.DOUBLE) {
       result = elRes.getDouble() >= (erRes.getDouble());
-    } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+    } else if (dataType == DataTypes.DATE) {
       result = elRes.getTime() >= (erRes.getTime());
+    } else if (dataType == DataTypes.TIMESTAMP) {
+      result = elRes.getTimeAsMillisecond() >= (erRes.getTimeAsMillisecond());
     } else if (dataType == DataTypes.LONG) {
       result = elRes.getLong() >= (erRes.getLong());
     } else if (DataTypes.isDecimal(dataType)) {

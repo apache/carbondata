@@ -43,7 +43,7 @@ class TimestampNoDictionaryColumnCastTestCase extends QueryTest with BeforeAndAf
       sql(
         """
          CREATE TABLE IF NOT EXISTS timestamp_nodictionary
-        (timestamptype timestamp) STORED BY 'carbondata'"""
+        (timestamptype timestamp) STORED AS carbondata"""
       )
       val csvFilePath = s"$resourcesPath/timestampdatafile.csv"
       sql(s"LOAD DATA LOCAL INPATH '$csvFilePath' into table timestamp_nodictionary")
@@ -51,7 +51,7 @@ class TimestampNoDictionaryColumnCastTestCase extends QueryTest with BeforeAndAf
     sql(
       """
          CREATE TABLE IF NOT EXISTS datetype
-        (datetype1 date) STORED BY 'carbondata'"""
+        (datetype1 date) STORED AS carbondata"""
     )
     val csvFilePath1 = s"$resourcesPath/datedatafile.csv"
     sql(s"LOAD DATA LOCAL INPATH '$csvFilePath1' into table datetype")

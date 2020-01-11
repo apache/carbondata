@@ -33,7 +33,7 @@ class TestBetweenFilter extends QueryTest with BeforeAndAfterAll {
     sql("""
            CREATE TABLE IF NOT EXISTS carbonTableBetween
            (id String, name String, orders int)
-           STORED BY 'carbondata'
+           STORED AS carbondata
         """)
     sql(s"""
            LOAD DATA LOCAL INPATH '$csvFilePath' into table carbonTableBetween OPTIONS('BAD_RECORDS_ACTION'='FORCE')

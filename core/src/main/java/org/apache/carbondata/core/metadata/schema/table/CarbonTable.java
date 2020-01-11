@@ -42,6 +42,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.DatabaseLocationProvider;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -228,8 +229,8 @@ public class CarbonTable implements Serializable, Writable {
    * Return table unique name
    */
   public static String buildUniqueName(String databaseName, String tableName) {
-    return (databaseName + CarbonCommonConstants.UNDERSCORE + tableName).toLowerCase(
-        Locale.getDefault());
+    return (DatabaseLocationProvider.get().provide(databaseName) +
+        CarbonCommonConstants.UNDERSCORE + tableName).toLowerCase(Locale.getDefault());
   }
 
   /**
@@ -1127,6 +1128,10 @@ public class CarbonTable implements Serializable, Writable {
     } else {
       return SortScopeOptions.getSortScope(sortScope);
     }
+  }
+
+  public String getGlobalSortPartitions() {
+    return tableInfo.getFactTable().getTableProperties().get("global_sort_partitions");
   }
 
   @Override

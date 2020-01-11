@@ -26,7 +26,7 @@ class TestInFilter extends QueryTest with BeforeAndAfterAll{
   override def beforeAll: Unit = {
     sql("drop table if exists test_table")
     sql("create table test_table(intField INT, floatField FLOAT, doubleField DOUBLE, " +
-        "decimalField DECIMAL(18,2))  stored by 'carbondata'")
+        "decimalField DECIMAL(18,2))  STORED AS carbondata")
 
     // turn on  row level filter in carbon
     // because only row level is on, 'in' will be pushdowned into CarbonScanRDD

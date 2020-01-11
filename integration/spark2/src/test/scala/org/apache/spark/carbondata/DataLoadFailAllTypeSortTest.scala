@@ -46,7 +46,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL");
       sql("create table data_pm(name String, dob long, weight int) " +
-          "STORED BY 'org.apache.carbondata.format'")
+          "STORED AS carbondata")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
       sql(s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_pm""")
 
@@ -74,7 +74,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL");
       sql("create table data_um(name String, dob long, weight int) " +
-          "STORED BY 'org.apache.carbondata.format'")
+          "STORED AS carbondata")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
       sql(s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_um""")
 
@@ -104,7 +104,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
       sql("create table data_bm(name String, dob long, weight int) " +
-          "STORED BY 'org.apache.carbondata.format'")
+          "STORED AS carbondata")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
       sql(s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_bm""")
     } catch {
@@ -133,7 +133,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
       sql("create table data_bmf(name String, dob long, weight int) " +
-          "STORED BY 'org.apache.carbondata.format'")
+          "STORED AS carbondata")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
       sql(s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_bmf""")
 
@@ -162,7 +162,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "local_sort")
       sql("create table data_bm_no_good_data(name String, dob long, weight int) " +
-          "STORED BY 'org.apache.carbondata.format'")
+          "STORED AS carbondata")
       val testData = s"$resourcesPath/badrecords/dummy2.csv"
       sql(
         s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_bm_no_good_data options
@@ -191,7 +191,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
       sql("create table data_tbm(name String, dob long, weight int) " +
-          "stored by 'carbondata' tblproperties('bucketnumber'='4', " +
+          "STORED AS carbondata tblproperties('bucketnumber'='4', " +
           "'bucketcolumns'='name', 'tableName'='data_tbm')")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
       sql(s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_tbm""")

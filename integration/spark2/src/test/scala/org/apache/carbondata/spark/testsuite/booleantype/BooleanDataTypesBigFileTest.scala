@@ -64,7 +64,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
          | doubleField DOUBLE,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     sql(
@@ -89,7 +89,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
          | doubleField DOUBLE,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     sql(
@@ -101,7 +101,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
          | doubleField DOUBLE,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     sql(
@@ -124,7 +124,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
          | CREATE TABLE boolean_table(
          | booleanField BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     sql(
@@ -210,7 +210,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
          | doubleField DOUBLE,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     sql(
@@ -316,7 +316,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
          | doubleField DOUBLE,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
     val repeat: Int = 2
     for (i <- 0 until repeat) {
@@ -426,7 +426,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
          | doubleField DOUBLE,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='booleanField')
        """.stripMargin)
 
@@ -453,7 +453,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
          | doubleField DOUBLE,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     sql(
@@ -522,7 +522,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
          | doubleField DOUBLE,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     sql(
@@ -567,7 +567,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
          | doubleField DOUBLE,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
     val repeat: Int = 2
     for (i <- 0 until repeat) {

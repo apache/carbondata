@@ -62,7 +62,7 @@ class DataLoadingIUDTestCase extends QueryTest with BeforeAndAfterAll with Befor
     sql("drop table if exists t_carbn01b").collect
     sql("drop table if exists T_Hive1").collect
     sql("drop table if exists T_Hive6").collect
-    sql(s"""create table default.t_carbn01b(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01b(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01B options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
 
   }
@@ -84,7 +84,7 @@ test("IUD-01-01-01_001-001", Include) {
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1_hive10.csv' overwrite into table T_Hive1""").collect
  sql("create table T_Hive6(Item_code STRING, Sub_item_cd ARRAY<string>)row format delimited fields terminated by ',' collection items terminated by '$'")
  sql(s"""load data inpath '$resourcesPath/Data/InsertData/T_Hive1_hive11.csv' overwrite into table T_Hive6""").collect
- sql(s"""create table t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into t_carbn02 select * from default.t_carbn01b limit 4""").collect
   checkAnswer(s"""select count(*) from t_carbn01b""",
     Seq(Row(10)), "DataLoadingIUDTestCase_IUD-01-01-01_001-001")
@@ -94,7 +94,7 @@ test("IUD-01-01-01_001-001", Include) {
 
 //Check for update Carbon table using a data value
 test("IUD-01-01-01_001-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status, profit) = ('YES',1) where active_status = 'TRUE'""").collect
   checkAnswer(s"""select active_status,profit from default.t_carbn01  where active_status='YES' group by active_status,profit""",
@@ -106,7 +106,7 @@ test("IUD-01-01-01_001-01", Include) {
 //Check for update Carbon table using a data value on a string column where it was udpated before
 test("IUD-01-01-01_001-02", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status) = ('YES') where active_status = 'TRUE'""").collect
  sql(s"""update default.t_carbn01  set (active_status) = ('NO') where active_status = 'YES'""").collect
@@ -120,7 +120,7 @@ test("IUD-01-01-01_001-02", Include) {
 test("IUD-01-01-01_001-03", Include) {
   intercept[Exception] {
    sql(s"""drop table IF EXISTS default.t_carbn01""").collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status) = (NO) """).collect
     sql(s"""NA""").collect
@@ -133,7 +133,7 @@ test("IUD-01-01-01_001-03", Include) {
 //Check for update Carbon table using a data value on a string column using numeric value
 test("IUD-01-01-01_001-04", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status) = (234530508098098098080)""").collect
   checkAnswer(s"""select active_status from default.t_carbn01  group by active_status""",
@@ -145,7 +145,7 @@ test("IUD-01-01-01_001-04", Include) {
 //Check for update Carbon table using a data value on a string column using numeric value in single quote
 test("IUD-01-01-01_001-05", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status) = ('234530508098098098080')""").collect
   checkAnswer(s"""select active_status from default.t_carbn01  group by active_status""",
@@ -157,7 +157,7 @@ test("IUD-01-01-01_001-05", Include) {
 //Check for update Carbon table using a data value on a string column using decimal value
 test("IUD-01-01-01_001-06", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status) = (2.55860986095689088)""").collect
   checkAnswer(s"""select active_status from default.t_carbn01  group by active_status""",
@@ -169,7 +169,7 @@ test("IUD-01-01-01_001-06", Include) {
 //Check for update Carbon table using a data value on a string column using decimal value
 test("IUD-01-01-01_001-07", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status) = ('2.55860986095689088')""").collect
   checkAnswer(s"""select active_status from default.t_carbn01  group by active_status""",
@@ -181,7 +181,7 @@ test("IUD-01-01-01_001-07", Include) {
 //Check for update Carbon table using a data value on a string column using string value which is having special characters
 test("IUD-01-01-01_001-11", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status) = ('fdfdskflksdf#?…..fdffs')""").collect
   checkAnswer(s"""select active_status from default.t_carbn01  group by active_status""",
@@ -193,7 +193,7 @@ test("IUD-01-01-01_001-11", Include) {
 //Check for update Carbon table using a data value on a string column using array value having ')'
 //test("IUD-01-01-01_001-12", Include) {
 //   sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-// sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+// sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
 // sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
 // sql(s"""update default.t_carbn01  set (active_status) = ('abd$asjdh$adasj$l;sdf$*)$*)(&^)')""").collect
 //  checkAnswer(s"""select count(*) from t_carbn01b""",
@@ -206,7 +206,7 @@ test("IUD-01-01-01_001-11", Include) {
 test("IUD-01-01-01_001-14", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set (item_status_cd)  = ('10')""").collect
     sql(s"""NA""").collect
@@ -218,7 +218,7 @@ test("IUD-01-01-01_001-14", Include) {
 //Check for update Carbon table for a numeric value column
 test("IUD-01-01-01_001-15", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd)  = (10)""").collect
   checkAnswer(s"""select item_type_cd from default.t_carbn01  group by item_type_cd""",
@@ -230,7 +230,7 @@ test("IUD-01-01-01_001-15", Include) {
 //Check for update Carbon table for a numeric value column in single quote
 test("IUD-01-01-01_001-16", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd)  = ('10')""").collect
   checkAnswer(s"""select item_type_cd from default.t_carbn01  group by item_type_cd""",
@@ -243,7 +243,7 @@ test("IUD-01-01-01_001-16", Include) {
 test("IUD-01-01-01_001-17", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set (item_type_cd)  = ('Orange')""").collect
     sql(s"""NA""").collect
@@ -256,7 +256,7 @@ test("IUD-01-01-01_001-17", Include) {
 test("IUD-01-01-01_001-18", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set (item_type_cd)  = ('10.11')""").collect
     sql(s"""NA""").collect
@@ -268,7 +268,7 @@ test("IUD-01-01-01_001-18", Include) {
 //Check for update Carbon table for a numeric Int value column using large numeric value
 test("IUD-01-01-01_001-19", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd)  = (2147483647)""").collect
   checkAnswer(s"""select item_type_cd from default.t_carbn01  group by item_type_cd""",
@@ -280,7 +280,7 @@ test("IUD-01-01-01_001-19", Include) {
 //Check for update Carbon table for a numeric Int value column using large numeric negative value
 test("IUD-01-01-01_001-20", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd)  = (-2147483648)""").collect
   checkAnswer(s"""select item_type_cd from default.t_carbn01  group by item_type_cd""",
@@ -293,7 +293,7 @@ test("IUD-01-01-01_001-20", Include) {
 test("IUD-01-01-01_001-21", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set (item_type_cd)  = (-2147483649)""").collect
     sql(s"""NA""").collect
@@ -305,7 +305,7 @@ test("IUD-01-01-01_001-21", Include) {
 //Check for update Carbon table for a numeric BigInt value column using large numeric value which is at the boundary of 64 bit
 test("IUD-01-01-01_001-22", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_price)  = (9223372036854775807)""").collect
   checkAnswer(s"""select sell_price from default.t_carbn01  group by sell_price""",
@@ -317,7 +317,7 @@ test("IUD-01-01-01_001-22", Include) {
 //Check for update Carbon table for a decimal value column using decimal value
 test("IUD-01-01-01_001-23", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (profit) = (1.11)""").collect
   checkAnswer(s"""select profit from default.t_carbn01  group by profit""",
@@ -329,7 +329,7 @@ test("IUD-01-01-01_001-23", Include) {
 //Check for update Carbon table for a decimal value column using decimal value in quote
 test("IUD-01-01-01_001-24", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (profit)  = ('1.11')""").collect
   checkAnswer(s"""select profit from default.t_carbn01  group by profit""",
@@ -341,7 +341,7 @@ test("IUD-01-01-01_001-24", Include) {
 //Check for update Carbon table for a decimal value column using numeric value
 test("IUD-01-01-01_001-25", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (profit)  = (1)""").collect
   checkAnswer(s"""select profit from default.t_carbn01  group by profit""",
@@ -353,7 +353,7 @@ test("IUD-01-01-01_001-25", Include) {
 //Check for update Carbon table for a decimal value column (3,2) using numeric value which is greater than the allowed
 test("IUD-01-01-01_001-26", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (profit)  = (10)""").collect
   checkAnswer(s"""select count(Active_status) from default.t_carbn01 where profit = 10 """,
@@ -366,7 +366,7 @@ test("IUD-01-01-01_001-26", Include) {
 test("IUD-01-01-01_001-27", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set (profit)  = ('hakshk')""").collect
     sql(s"""NA""").collect
@@ -378,7 +378,7 @@ test("IUD-01-01-01_001-27", Include) {
 //Check for update Carbon table for a decimal value(3,2) column using a decimal value which is having 1 decimal
 test("IUD-01-01-01_001-28", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (profit)  = ('1.1')""").collect
   checkAnswer(s"""select profit from default.t_carbn01  group by profit""",
@@ -390,7 +390,7 @@ test("IUD-01-01-01_001-28", Include) {
 //Check for update Carbon table for a decimal value(3,2) column using a decimal value which is having 3 decimal
 test("IUD-01-01-01_001-29", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (profit)  = ('1.118')""").collect
   checkAnswer(s"""select profit from default.t_carbn01  group by profit""",
@@ -402,7 +402,7 @@ test("IUD-01-01-01_001-29", Include) {
 //Check for update Carbon table for a double column using a decimal value which is having 3 decimal
 test("IUD-01-01-01_001-30", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)  = ('10.1116756')""").collect
   checkAnswer(s"""select sell_pricep from default.t_carbn01  group by sell_pricep""",
@@ -414,7 +414,7 @@ test("IUD-01-01-01_001-30", Include) {
 //Check for update Carbon table for a time stamp  value column using date timestamp
 test("IUD-01-01-01_001-31", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set(update_time) = ('2016-11-04 18:13:59.113')""").collect
   checkAnswer(s"""select update_time from default.t_carbn01  group by update_time""",
@@ -427,7 +427,7 @@ test("IUD-01-01-01_001-31", Include) {
 test("IUD-01-01-01_001-35", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set(update_time) = ('04-11-20004 18:13:59.113')""").collect
     sql(s"""NA""").collect
@@ -440,7 +440,7 @@ test("IUD-01-01-01_001-35", Include) {
 test("IUD-01-01-01_001-32", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set(update_time) = ('fhjfhjfdshf')""").collect
     sql(s"""NA""").collect
@@ -453,7 +453,7 @@ test("IUD-01-01-01_001-32", Include) {
 test("IUD-01-01-01_001-33", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set(update_time) = (56546)""").collect
     sql(s"""NA""").collect
@@ -466,7 +466,7 @@ test("IUD-01-01-01_001-33", Include) {
 test("IUD-01-01-01_001-34", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set(update_time) = ('2016-11-04')""").collect
     sql(s"""NA""").collect
@@ -479,7 +479,7 @@ test("IUD-01-01-01_001-34", Include) {
 test("IUD-01-01-01_001-36", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set(update_time) = ('2016-11-04 18:63:59.113')""").collect
     sql(s"""NA""").collect
@@ -491,7 +491,7 @@ test("IUD-01-01-01_001-36", Include) {
 //Check for update Carbon table for a time stamp  value column using date timestamp
 test("IUD-01-01-01_001-37", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set(update_time) = ('2016-11-04 18:13:59.113435345345433 ')""").collect
   checkAnswer(s"""select update_time from default.t_carbn01  group by update_time""",
@@ -503,7 +503,7 @@ test("IUD-01-01-01_001-37", Include) {
 //Check update Carbon table using a * operation on a column value
 test("IUD-01-01-01_001-40", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set(profit, item_type_cd)= (profit*1.2, item_type_cd*3)""").collect
   checkAnswer(s"""select profit, item_type_cd from default.t_carbn01  group by profit, item_type_cd""",
@@ -516,7 +516,7 @@ test("IUD-01-01-01_001-40", Include) {
 test("IUD-01-01-01_001-41", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set(item_type_cd)= (item_type_cd/1)""").collect
     sql(s"""NA""").collect
@@ -528,7 +528,7 @@ test("IUD-01-01-01_001-41", Include) {
 //Check update Carbon table using a / operation on a column value
 test("IUD-01-01-01_001-42", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set(profit)= (profit/1)""").collect
   checkAnswer(s"""select profit from default.t_carbn01  group by profit""",
@@ -540,7 +540,7 @@ test("IUD-01-01-01_001-42", Include) {
 //Check update Carbon table using a - operation on a column value
 test("IUD-01-01-01_001-43", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set(profit, item_type_cd)= (profit-1.2, item_type_cd-3)""").collect
   checkAnswer(s"""select profit, item_type_cd from default.t_carbn01  group by profit, item_type_cd""",
@@ -552,7 +552,7 @@ test("IUD-01-01-01_001-43", Include) {
 //Check update Carbon table using a + operation on a column value
 test("IUD-01-01-01_001-44", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set(profit, item_type_cd)= (profit+1.2, item_type_cd+qty_day_avg)""").collect
   checkAnswer(s"""select profit, item_type_cd from default.t_carbn01  where profit = 3.64 and item_type_cd = 4291""",
@@ -564,7 +564,7 @@ test("IUD-01-01-01_001-44", Include) {
 //Check update Carbon table using a + operation on a column value which is string
 test("IUD-01-01-01_001-45", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set(item_code) = (item_code+1)""").collect
   checkAnswer(s"""select count(*) from t_carbn01""",
@@ -576,7 +576,7 @@ test("IUD-01-01-01_001-45", Include) {
 //Check for update Carbon table without where clause
 test("IUD-01-01-01_002-01", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (active_status) = ('NO')""").collect
   checkAnswer(s"""select active_status from default.t_carbn01  group by active_status""",
@@ -588,7 +588,7 @@ test("IUD-01-01-01_002-01", Include) {
 //Check for update Carbon table with where clause
 test("IUD-01-01-01_002-02", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (active_status) = ('NO') where active_status = 'TRUE' """).collect
   checkAnswer(s"""select active_status from default.t_carbn01  where active_status='NO' group by active_status""",
@@ -599,7 +599,7 @@ test("IUD-01-01-01_002-02", Include) {
 
 //Check for update Carbon table with where exists clause
 test("IUD-01-01-01_002-03", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  X set (active_status) = ('NO') where exists (select 1 from default.t_carbn01b Y where Y.item_code = X.item_code)""").collect
   checkAnswer(s"""select active_status from default.t_carbn01   group by active_status""",
@@ -611,7 +611,7 @@ test("IUD-01-01-01_002-03", Include) {
 //Check for delete Carbon table without where clause
 test("IUD-01-01-01_002-04", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Delete from default.t_carbn01 """).collect
   checkAnswer(s"""select count(*) from default.t_carbn01 """,
@@ -623,7 +623,7 @@ test("IUD-01-01-01_002-04", Include) {
 //Check for delete Carbon table with where clause
 test("IUD-01-01-01_002-05", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Delete from default.t_carbn01  where active_status = 'TRUE'""").collect
   checkAnswer(s"""select count(*) from default.t_carbn01  where active_status='TRUE'""",
@@ -635,7 +635,7 @@ test("IUD-01-01-01_002-05", Include) {
 //Check for delete Carbon table with where exists clause
 test("IUD-01-01-01_002-06", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Delete from default.t_carbn01  X where exists (select 1 from default.t_carbn01b Y where Y.item_code = X.item_code)""").collect
   checkAnswer(s"""select count(*) from default.t_carbn01 """,
@@ -646,7 +646,7 @@ test("IUD-01-01-01_002-06", Include) {
 //Check for update Carbon table using query involving filters
 test("IUD-01-01-01_003-03", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set ( a.item_type_cd, a.profit) = ( select b.item_type_cd, b.profit from default.t_carbn01b b where b.item_type_cd = 2)""").collect
   checkAnswer(s"""select item_type_cd, profit from default.t_carbn01  limit 1""",
@@ -658,7 +658,7 @@ test("IUD-01-01-01_003-03", Include) {
 //Check for update Carbon table using query involving sub query
 test("IUD-01-01-01_003-04", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set ( a.item_type_cd, a.Profit) = ( select b.item_type_cd, b.profit from default.t_carbn01b b where a.item_type_cd = b.item_type_cd and b.item_type_cd in (select c.item_type_cd from t_carbn02 c where c.item_type_cd=2))""").collect
   checkAnswer(s"""select item_type_cd, profit from default.t_carbn01 order by item_type_cd limit 1""",
@@ -670,7 +670,7 @@ test("IUD-01-01-01_003-04", Include) {
 //Check for update Carbon table using query involving sub query
 test("IUD-01-01-01_003-04_01", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.item_type_cd, a.Profit) = (select b.item_type_cd, b.profit from default.t_carbn01b b where b.item_type_cd not in (select c.item_type_cd from t_carbn02 c where c.item_type_cd != 2) and a.item_type_cd = b.item_type_cd)""").collect
   checkAnswer(s"""select item_type_cd, profit from default.t_carbn01 order by item_type_cd limit 1""",
@@ -682,7 +682,7 @@ test("IUD-01-01-01_003-04_01", Include) {
 //Check for update Carbon table using query involving Logical operation
 test("IUD-01-01-01_003-05", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  A set (a.item_type_cd, a.profit) = ( select b.item_type_cd, b.profit from default.t_carbn01b b where b.profit > 1 AND b.item_type_cd <3 and a.item_type_cd = b.item_type_cd)""").collect
   checkAnswer(s"""select item_type_cd, profit from default.t_carbn01 order by item_type_cd limit 1""",
@@ -694,7 +694,7 @@ test("IUD-01-01-01_003-05", Include) {
 //Check for update Carbon table using query involving group by
 test("IUD-01-01-01_003-06", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.item_type_cd, a.profit) = ( select b.item_type_cd, b.profit from default.t_carbn01b b where b.item_type_cd =2)""").collect
   checkAnswer(s"""select item_type_cd, profit from default.t_carbn01 limit 1""",
@@ -706,7 +706,7 @@ test("IUD-01-01-01_003-06", Include) {
 //Check for update Carbon table using inner join and filter condition on a table to pick only non duplicate records
 test("IUD-01-01-01_003-07", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update t_carbn01 a set (a.active_status) = (select b.active_status from t_carbn01b b where a.item_type_cd = b.item_type_cd and b.item_code in (select item_code from t_carbn01b group by item_code, profit having count(*)>1))""").collect
   checkAnswer(s"""select count(active_status) from t_carbn01 where active_status = 'true' limit 1""",
@@ -718,7 +718,7 @@ test("IUD-01-01-01_003-07", Include) {
 //Check for update Carbon table using query involving max
 test("IUD-01-01-01_004-01", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update t_carbn01  a set (a.item_type_cd) = ((select c.code from (select max(b.item_type_cd) as code  from t_carbn01b b) c))""").collect
   checkAnswer(s"""select item_type_cd from default.t_carbn01 limit 1""",
@@ -730,7 +730,7 @@ test("IUD-01-01-01_004-01", Include) {
 //Check for update Carbon table using query involving spark functions
 test("IUD-01-01-01_004-02", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.create_date) = (select to_date(b.create_date) from default.t_carbn01b b where b.update_time = '2012-01-06 06:08:05.0')""").collect
   checkAnswer(s"""select create_date from default.t_carbn01 limit 1""",
@@ -742,7 +742,7 @@ test("IUD-01-01-01_004-02", Include) {
 //Check for update Carbon table for all data types using data values
 test("IUD-01-01-01_004-03", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price,profit,item_code,item_name,outlet_name,update_time,create_date) = ('true',34,344,456,1,5.5,1.1,1.1,'hheh','gfhfhfdh','fghfdhdfh',current_timestamp,'01-10-1900') where item_code='ASD423ee'""").collect
   checkAnswer(s"""select create_date from default.t_carbn01  where create_date = '01-10-1900' limit 1""",
@@ -754,7 +754,7 @@ test("IUD-01-01-01_004-03", Include) {
 //Check for update Carbon table where source table is havign numeric and target is having string value column for update
 test("IUD-01-01-01_004-04", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.item_code) = (select b.sell_price from default.t_carbn01b b where b.sell_price=200000000003454300)""").collect
   checkAnswer(s"""select count(*) from default.t_carbn01 """,
@@ -766,7 +766,7 @@ test("IUD-01-01-01_004-04", Include) {
 //Check for update Carbon table where source table is havign numeric and target is having decimal value column for update
 test("IUD-01-01-01_004-05", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.profit) = (select b.item_type_cd from default.t_carbn01b b where b.item_type_cd = 2 and b.active_status='TRUE' )""").collect
   checkAnswer(s"""select profit from default.t_carbn01  limit 1""",
@@ -779,7 +779,7 @@ test("IUD-01-01-01_004-05", Include) {
 test("IUD-01-01-01_004-06", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  a set (a.item_type_cd) = (select b.sell_price from default.t_carbn01b b where b.sell_price=200000343430000000)""").collect
     sql(s"""NA""").collect
@@ -791,7 +791,7 @@ test("IUD-01-01-01_004-06", Include) {
 //Check for update Carbon table where source table is having string and target is having numeric value column for update
 test("IUD-01-01-01_004-07", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.item_code) = (select b.item_type_cd from default.t_carbn01b b where b.item_code='DE3423ee')""").collect
   checkAnswer(s"""select item_type_cd from default.t_carbn01  order by item_type_cd limit 1""",
@@ -804,7 +804,7 @@ test("IUD-01-01-01_004-07", Include) {
 test("IUD-01-01-01_004-08", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  a set (a.profit) = (select b.item_code from default.t_carbn01b b where b.item_code='DE3423ee')""").collect
     sql(s"""NA""").collect
@@ -817,7 +817,7 @@ test("IUD-01-01-01_004-08", Include) {
 test("IUD-01-01-01_004-09", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  a set (a.update_time) = (select b.item_code from default.t_carbn01b b where b.item_code='DE3423ee')""").collect
     sql(s"""NA""").collect
@@ -829,7 +829,7 @@ test("IUD-01-01-01_004-09", Include) {
 //Check for update Carbon table where source table is having decimal and target is having numeric column for update
 test("IUD-01-01-01_004-10", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.item_type_cd) = (select b.profit from default.t_carbn01b b where b.profit=2.445)""").collect
   checkAnswer(s"""select count(*) from default.t_carbn01 """,
@@ -841,7 +841,7 @@ test("IUD-01-01-01_004-10", Include) {
 //Check for update Carbon table where source table is having float and target is having numeric column for update
 test("IUD-01-01-01_004-11", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.item_type_cd) = (select b.sell_pricep from default.t_carbn01b b where b.sell_pricep=11.5)""").collect
   checkAnswer(s"""select count(*) from default.t_carbn01 """,
@@ -853,7 +853,7 @@ test("IUD-01-01-01_004-11", Include) {
 //Check for update Carbon table where source table is having float and target is having double column for update
 test("IUD-01-01-01_004-12", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.discount_price) = (select b.sell_pricep from default.t_carbn01b b where b.sell_pricep=11.5)""").collect
   checkAnswer(s"""select count(*) from default.t_carbn01 """,
@@ -865,7 +865,7 @@ test("IUD-01-01-01_004-12", Include) {
 //Check for update Carbon table where source table is having Decimal(4,3)   and target is having Decimal(3,2) column for update
 test("IUD-01-01-01_004-13", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.profit) = (select b.profit*.2 from default.t_carbn01b b where b.profit=2.444)""").collect
   checkAnswer(s"""select count(*) from default.t_carbn01 """,
@@ -877,7 +877,7 @@ test("IUD-01-01-01_004-13", Include) {
 //Check for update Carbon table for all data types using query on a different table
 test("IUD-01-01-01_004-14", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  a set (a.Active_status,a.Item_type_cd,a.Qty_day_avg,a.Qty_total,a.Sell_price,a.Sell_pricep,a.Discount_price,a.Profit,a.Item_code,a.Item_name,a.Outlet_name,a.Update_time,a.Create_date) = (select b.Active_status,b.Item_type_cd,b.Qty_day_avg,b.Qty_total,b.Sell_price,b.Sell_pricep,b.Discount_price,b.Profit,b.Item_code,b.Item_name,b.Outlet_name,b.Update_time,b.Create_date from default.t_carbn01b b where b.Item_type_cd=2)""").collect
   checkAnswer(s"""select count(*) from default.t_carbn01""",
@@ -889,7 +889,7 @@ test("IUD-01-01-01_004-14", Include) {
 //Check for update Carbon table where a update column is having a shared dictionary. Check dictionary file being updated.
 test("IUD-01-01-01_005-11", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES("COLUMNPROPERTIES.Item_code.shared_column"="sharedFolder.Item_code")""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata TBLPROPERTIES("COLUMNPROPERTIES.Item_code.shared_column"="sharedFolder.Item_code")""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (item_code) = ('Ram')""").collect
   checkAnswer(s"""select item_code from default.t_carbn01  group by item_code""",
@@ -901,7 +901,7 @@ test("IUD-01-01-01_005-11", Include) {
 //Check for update Carbon table where a update column is measue and is defined with include ddictionary. Check dictionary file being updated.
 test("IUD-01-01-01_005-12", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Item_type_cd INT, Profit DECIMAL(3,2))STORED BY 'org.apache.carbondata.format' """).collect
+ sql(s"""create table default.t_carbn01 (Item_type_cd INT, Profit DECIMAL(3,2))STORED AS carbondata """).collect
  sql(s"""insert into default.t_carbn01  select item_type_cd, profit from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd) = (100100)""").collect
   checkAnswer(s"""select item_type_cd from default.t_carbn01  group by item_type_cd""",
@@ -913,7 +913,7 @@ test("IUD-01-01-01_005-12", Include) {
 //Check for update Carbon table where a update column is dimension and is defined with exclude dictionary. 
 test("IUD-01-01-01_005-13", Include) {
   sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-  sql(s"""create table default.t_carbn01 (Item_type_cd INT, Profit DECIMAL(3,2))STORED BY 'org.apache.carbondata.format' """).collect
+  sql(s"""create table default.t_carbn01 (Item_type_cd INT, Profit DECIMAL(3,2))STORED AS carbondata """).collect
   sql(s"""insert into default.t_carbn01  select item_type_cd, profit from default.t_carbn01b""").collect
   val currProperty = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
     .CARBON_BAD_RECORDS_ACTION);
@@ -932,7 +932,7 @@ test("IUD-01-01-01_005-13", Include) {
 
 //Check for update Carbon table where a update column is dimension and is defined with exclude dictionary. 
 test("IUD-01-01-01_005-14", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format' """).collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata """).collect
  sql(s""" insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (Item_code) = ('Ram')""").collect
   checkAnswer(s"""select item_code from default.t_carbn01  group by item_code""",
@@ -943,7 +943,7 @@ test("IUD-01-01-01_005-14", Include) {
 
 //Check for update Carbon table where a update column is dimension and is defined with exclude dictionary. 
 test("IUD-01-01-01_005-15", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format' """).collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata """).collect
  sql(s""" insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (Item_code) = ('123')""").collect
   checkAnswer(s"""select item_code from default.t_carbn01  group by item_code""",
@@ -954,7 +954,7 @@ test("IUD-01-01-01_005-15", Include) {
 
 //Check update on data in multiple blocks
 test("IUD-01-01-01_006-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
@@ -968,7 +968,7 @@ test("IUD-01-01-01_006-01", Include) {
 //Check update on data in multiple blocks
 test("IUD-01-01-01_007-01", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd) = ('120') where Item_type_cd = '114'""").collect
   checkAnswer(s"""select item_type_cd from default.t_carbn01   where item_type_cd = 120 group by item_type_cd""",
@@ -979,7 +979,7 @@ test("IUD-01-01-01_007-01", Include) {
 
 //check update using parquet table
 test("IUD-01-01-02_022-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""drop table if exists T_Parq1""").collect
  sql(s"""create table T_Parq1(Active_status BOOLEAN, Item_type_cd TINYINT, Qty_day_avg SMALLINT, Qty_total INT, Sell_price BIGINT, Sell_pricep FLOAT, Discount_price DOUBLE , Profit DECIMAL(3,2), Item_code STRING, Item_name VARCHAR(500), Outlet_name CHAR(100), Update_time TIMESTAMP, Create_date DATE)stored as parquet""").collect
@@ -994,7 +994,7 @@ test("IUD-01-01-02_022-01", Include) {
 
 //Check update on carbon table using query on Parquet table
 test("IUD-01-01-01_009-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""drop table if exists T_Parq1""").collect
  sql(s"""create table T_Parq1(Active_status BOOLEAN, Item_type_cd TINYINT, Qty_day_avg SMALLINT, Qty_total INT, Sell_price BIGINT, Sell_pricep FLOAT, Discount_price DOUBLE , Profit DECIMAL(3,2), Item_code STRING, Item_name VARCHAR(500), Outlet_name CHAR(100), Update_time TIMESTAMP, Create_date DATE)stored as parquet""").collect
@@ -1011,7 +1011,7 @@ test("IUD-01-01-01_009-01", Include) {
 test("IUD-01-01-01_010-01", Include) {
   intercept[Exception] {
     sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""update default.t_carbn01  set Update_time = '11-11-2012 77:77:77') where item_code='ASD423ee')""").collect
     sql(s"""NA""").collect
@@ -1022,7 +1022,7 @@ test("IUD-01-01-01_010-01", Include) {
 
 //Check multiple updates on the same column - for correctness of data and horizontal compaction of delta file
 test("IUD-01-01-02_001-02", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (Item_code) = ('Ram')""").collect
  sql(s"""Update default.t_carbn01  set (Item_code) = ('Orange') where Item_code = 'Ram'""").collect
@@ -1040,7 +1040,7 @@ test("IUD-01-01-02_001-02", Include) {
 
 //Check for compaction of delta files within a segment working fine as per the configuration
 test("IUD-01-01-02_003-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (Item_code) = ('Ram')""").collect
  sql(s"""Update default.t_carbn01  set (Item_code) = ('Orange') where Item_code = 'Ram'""").collect
@@ -1058,7 +1058,7 @@ test("IUD-01-01-02_003-01", Include) {
 
 //Check multiple updates on the same column - for correctness of data along with horizontal compaction of delta file
 test("IUD-01-01-02_002-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (Item_code) = ('Ram')""").collect
  sql(s"""Update default.t_carbn01  set (Item_code) = ('Orange') where Item_code = 'Ram'""").collect
@@ -1076,7 +1076,7 @@ test("IUD-01-01-02_002-01", Include) {
 
 //Check multiple updates on the different column - for correctness of data and horizontal compaction of delta file
 test("IUD-01-01-01_012-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (Item_code) = ('Orange')""").collect
  sql(s"""update default.t_carbn01  set (Item_type_cd) = (24523)""").collect
@@ -1098,7 +1098,7 @@ test("IUD-01-01-01_012-01", Include) {
 
 //Check for delta files handling during table compaction and not breaking the data integrity
 test("IUD-01-01-02_004-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
@@ -1117,7 +1117,7 @@ test("IUD-01-01-02_004-01", Include) {
 //Check update by doing data insert before and after update also check data consistency, no residual file left in HDFS
 test("IUD-01-01-02_006-01", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b """).collect
  sql(s"""update default.t_carbn01  set (profit) = (1.2) where item_type_cd = 2 """).collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
@@ -1130,7 +1130,7 @@ test("IUD-01-01-02_006-01", Include) {
 //Check update by doing data load before and after update also check data consistency, no residual file left in HDFS
 test("IUD-01-01-02_006-02", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b """).collect
  sql(s"""update default.t_carbn01  set (profit) = (1.2) where item_type_cd = 2 """).collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -1144,7 +1144,7 @@ test("IUD-01-01-02_006-02", Include) {
 //do a delete rows after update and see that the updated columns are deleted
 test("IUD-01-01-02_006-12", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b """).collect
  sql(s"""update default.t_carbn01  set (profit) = (1.2) where item_type_cd = 2 """).collect
  sql(s"""delete from default.t_carbn01  where profit = 1.2 """).collect
@@ -1157,7 +1157,7 @@ test("IUD-01-01-02_006-12", Include) {
 //do an update after delete rows and see that update is not done on the deleted rows(should not fethch those rows)
 test("IUD-01-01-02_006-13", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b """).collect
  sql(s"""delete from default.t_carbn01  where item_type_cd = 2""").collect
  sql(s"""update default.t_carbn01  set (profit) = (1.22) where item_type_cd = 2""").collect
@@ -1170,7 +1170,7 @@ test("IUD-01-01-02_006-13", Include) {
 //Run select query with count(column) after update and esnure the correct count is fetched
 test("IUD-01-01-01_014-01", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b """).collect
  sql(s"""update default.t_carbn01  set (profit) = (1.2) where item_type_cd = 2""").collect
   checkAnswer(s"""select count(profit) from  default.t_carbn01  where profit=1.2 """,
@@ -1182,7 +1182,7 @@ test("IUD-01-01-01_014-01", Include) {
 //Run select query with count(*) after delete and esnure the correct count is fetched
 test("IUD-01-01-01_014-02", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""delete from default.t_carbn01  where item_type_cd = 2""").collect
   checkAnswer(s"""select count(*) from  default.t_carbn01  where item_type_cd = 2""",
@@ -1194,7 +1194,7 @@ test("IUD-01-01-01_014-02", Include) {
 //Run select query with a filter condition after update and esnure the correct count is fetched
 test("IUD-01-01-01_014-03", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (profit) = (1.2) where item_type_cd = 2""").collect
   checkAnswer(s"""select count(profit) from  default.t_carbn01  where profit=1.2""",
@@ -1206,7 +1206,7 @@ test("IUD-01-01-01_014-03", Include) {
 //Run select query with a filter condition after delete and esnure the correct count is fetched
 test("IUD-01-01-01_014-04", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""delete from default.t_carbn01  where item_type_cd = 2""").collect
   checkAnswer(s"""select count(*) from  default.t_carbn01  where item_type_cd = 2""",
@@ -1218,7 +1218,7 @@ test("IUD-01-01-01_014-04", Include) {
 //Run select * on table after update operation and ensure the correct data is fetched
 test("IUD-01-01-01_014-05", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (profit) = (1.2) where item_type_cd = 2""").collect
   checkAnswer(s"""select profit from default.t_carbn01  where profit = 1.2 group by profit""",
@@ -1230,7 +1230,7 @@ test("IUD-01-01-01_014-05", Include) {
 //Run select (coumn) on table after update operation and ensure the correct data is fetched
 test("IUD-01-01-01_014-06", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (profit) = (1.2) where item_type_cd = 2""").collect
   checkAnswer(s"""select profit from default.t_carbn01  where profit = 1.2 group by profit""",
@@ -1242,7 +1242,7 @@ test("IUD-01-01-01_014-06", Include) {
 //Run select * on table after delete operation and ensure the correct data is fetched
 test("IUD-01-01-01_014-07", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b """).collect
  sql(s"""delete from default.t_carbn01 """).collect
   checkAnswer(s"""select count(*) from  default.t_carbn01  """,
@@ -1254,7 +1254,7 @@ test("IUD-01-01-01_014-07", Include) {
 //Run select (coumn) on table after delete operation and ensure the correct data is fetched
 test("IUD-01-01-01_014-08", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b """).collect
  sql(s"""delete from default.t_carbn01 """).collect
   sql(s"""select profit from  default.t_carbn01 """).collect
@@ -1266,7 +1266,7 @@ test("IUD-01-01-01_014-08", Include) {
 //Run select query joining another carbon table after update is done and check that correct data is fetched
 test("IUD-01-01-01_014-09", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b """).collect
  sql(s"""update default.t_carbn01  set (item_type_cd) = (20) where item_type_cd in (2)""").collect
   checkAnswer(s""" select c.item_type_cd from default.t_carbn01  c  where exists(select a.item_type_cd from default.t_carbn01  a, default.t_carbn01b b  where a.item_type_cd = b.item_type_cd)and c.item_type_cd = 20""",
@@ -1278,7 +1278,7 @@ test("IUD-01-01-01_014-09", Include) {
 //Run select query joining another carbon table after delete  is done and check that correct data is fetched
 test("IUD-01-01-01_014-10", Include) {
    sql(s"""drop table IF EXISTS default.t_carbn01 """).collect
- sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""delete from default.t_carbn01  where qty_day_avg < 4550""").collect
   checkAnswer(s"""select a.qty_day_avg, a.item_code from default.t_carbn01  a, default.t_carbn01b b  where a.qty_day_avg = b.qty_day_avg """,
@@ -1289,7 +1289,7 @@ test("IUD-01-01-01_014-10", Include) {
 
 //Run select query with limit condition after delete is done and check that correct data is fetched
 test("IUD-01-01-01_014-15", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""delete from default.t_carbn01  where item_type_cd = 2""").collect
   checkAnswer(s"""select count(*) from default.t_carbn01  where qty_day_avg >= 4500 limit 3 """,
@@ -1300,7 +1300,7 @@ test("IUD-01-01-01_014-15", Include) {
 
 //Run select query when the data is distrbuted in multiple blocks(do multiple insert on the table) after an update and check the correct data is fetched
 test("IUD-01-01-01_014-16", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
@@ -1313,7 +1313,7 @@ test("IUD-01-01-01_014-16", Include) {
 
 //Run select query when the data is distrbuted in single blocks(do single insert on the table and keep data small) after an update and check the correct data is fetched
 test("IUD-01-01-01_014-17", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s""" update default.t_carbn01  set (item_type_cd) = (20) where item_type_cd < 10""").collect
   checkAnswer(s"""select count(*) from default.t_carbn01  where item_type_cd =20""",
@@ -1324,7 +1324,7 @@ test("IUD-01-01-01_014-17", Include) {
 
 //Run select query when the data is distrbuted in multiple blocks(do multiple insert on the table) after an delete and check the correct data is fetched
 test("IUD-01-01-01_014-18", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
@@ -1337,7 +1337,7 @@ test("IUD-01-01-01_014-18", Include) {
 
 //Check data consistency when select is executed after multiple updates on different columns
 test("IUD-01-01-01_015-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (item_code) = ('Orange')""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd) = (24523)""").collect
@@ -1360,7 +1360,7 @@ test("IUD-01-01-01_015-01", Include) {
 
 //Check data consistency when select is executed after multiple updates on same row and same columns
 test("IUD-01-01-01_016-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (item_code) = ('Ram')""").collect
  sql(s"""update default.t_carbn01  set (item_code) = ('Orange')""").collect
@@ -1376,7 +1376,7 @@ test("IUD-01-01-01_016-01", Include) {
 
 //Run select query on the updated column after multiple updates on the same column at different rows(control this using where condition) and enforce horizontal compaction and see that there is no data loss
 test("IUD-01-01-01_016-02", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (Item_code) = ('Orange')""").collect
  sql(s"""update default.t_carbn01  set (Item_type_cd) = (24523)""").collect
@@ -1399,7 +1399,7 @@ test("IUD-01-01-01_016-02", Include) {
 
 //Run select query after multiple deletes(control this using where condition) and enforce horizontal compaction and see that there is no data loss
 test("IUD-01-01-01_016-03", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""delete from default.t_carbn01  where item_type_cd = 123 """).collect
  sql(s"""delete from default.t_carbn01  where item_type_cd = 41 """).collect
@@ -1417,7 +1417,7 @@ test("IUD-01-01-01_016-03", Include) {
 
 //Run select query on the updated column after multiple updates on different column at different rows(control this using where condition) and enforce horizontal compaction and see that there is no data loss
 test("IUD-01-01-01_016-04", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd) = (21) where item_type_cd = 123""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd) = (21) where item_type_cd = 41""").collect
@@ -1437,7 +1437,7 @@ test("IUD-01-01-01_016-04", Include) {
 
 //Run alternate update and insert and do a vertical compaction and see that there is no data loss
 test("IUD-01-01-01_016-06", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (item_code) = ('Banana')""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
@@ -1459,7 +1459,7 @@ test("IUD-01-01-01_016-06", Include) {
 
 //do a delete after segment deletion and see that the delta files are not created in the deleted segmnet
 test("IUD-01-01-02_006-15", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""delete from table default.t_carbn01  where segment.id in (1) """).collect
@@ -1472,7 +1472,7 @@ test("IUD-01-01-02_006-15", Include) {
 
 //do an update after segment delete and see that delta files are not created in the deleted segments
 test("IUD-01-01-02_006-14", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""delete from table default.t_carbn01  where segment.id in (1) """).collect
@@ -1485,7 +1485,7 @@ test("IUD-01-01-02_006-14", Include) {
 
 //Check data consistency when select is executed after update and delete segment
 test("IUD-01-01-02_007-01", Include) {
-   sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (item_code) = ('Banana')""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
@@ -1502,7 +1502,7 @@ test("IUD-01-01-02_007-01", Include) {
 
 //Check select after deleting segment and reloading and reupdating same data.
 test("IUD-01-01-02_008-01", Include) {
-   sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (item_code) = ('Banana')""").collect
  sql(s"""delete from table default.t_carbn01  where segment.id in (0)""").collect
@@ -1516,7 +1516,7 @@ test("IUD-01-01-02_008-01", Include) {
 
 //Run 2 deletes on a table where update is done after data load - 1 block from load, 1 block from update in a segment(set detla threshold = 1).
 test("IUD-01-01-02_009-01", Include) {
-   sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
   sql(s"""select item_type_cd from default.t_carbn01""").show(100, false)
  sql(s"""Update default.t_carbn01  set (item_code) = ('Banana')""").collect
@@ -1531,7 +1531,7 @@ test("IUD-01-01-02_009-01", Include) {
 //Check update on carbon table where a column being updated with incorrect data type.
 test("IUD-01-01-02_011-01", Include) {
   intercept[Exception] {
-    sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""Update T_Carbn04 set (Item_type_cd) = ('Banana')""").collect
     sql(s"""NA""").collect
@@ -1542,7 +1542,7 @@ test("IUD-01-01-02_011-01", Include) {
 
 //Check update on empty carbon table where a column being updated with incorrect data type.
 test("IUD-01-01-01_022-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""Update default.t_carbn01  set (item_type_cd) = (11) """).collect
   checkAnswer(s"""select item_type_cd from default.t_carbn01  where item_type_cd=11 limit 1""",
@@ -1554,7 +1554,7 @@ test("IUD-01-01-01_022-01", Include) {
 //Check update on carbon table where multiple values are returned in expression.
 test("IUD-01-01-01_023-00", Include) {
   intercept[Exception] {
-    sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""Update default.t_carbn01  set Item_type_cd = (select Item_type_cd from default.t_carbn01b )""").collect
     sql(s"""NA""").collect
@@ -1565,7 +1565,7 @@ test("IUD-01-01-01_023-00", Include) {
 
 //check update using case statement joiining 2 tables
 test("IUD-01-01-02_023-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""drop table if exists T_Parq1""").collect
  sql(s"""create table T_Parq1(Active_status BOOLEAN, Item_type_cd TINYINT, Qty_day_avg SMALLINT, Qty_total INT, Sell_price BIGINT, Sell_pricep FLOAT, Discount_price DOUBLE , Profit DECIMAL(3,2), Item_code STRING, Item_name VARCHAR(500), Outlet_name CHAR(100), Update_time TIMESTAMP, Create_date DATE)stored as parquet""").collect
@@ -1580,7 +1580,7 @@ test("IUD-01-01-02_023-01", Include) {
 //Check update on carbon table where non matching values are returned from expression.
 test("IUD-01-01-01_024-01", Include) {
   intercept[Exception] {
-    sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
     sql(s"""Update default.t_carbn01  set Item_type_cd = (select Item_code from default.t_carbn01b)""").collect
     sql(s"""NA""").collect
@@ -1591,7 +1591,7 @@ test("IUD-01-01-01_024-01", Include) {
 
 //Check for updating carbon table set column value to a base64 function value
 test("IUD-01-01-01_040-01", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (base64('A')) """).collect
   checkAnswer(s""" select count(active_status) from default.t_carbn01  group by active_status """,
@@ -1602,7 +1602,7 @@ test("IUD-01-01-01_040-01", Include) {
 
 //Check for updating carbon table set column value to a ascii function value
 test("IUD-01-01-01_040-02", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (ascii(FALSE)) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1613,7 +1613,7 @@ test("IUD-01-01-01_040-02", Include) {
 
 //Check for updating carbon table set column value to a concat function value
 test("IUD-01-01-01_040-03", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (concat('FAL','SE')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1624,7 +1624,7 @@ test("IUD-01-01-01_040-03", Include) {
 
 //Check for updating carbon table set column to a value returned by concat_ws function
 test("IUD-01-01-01_040-04", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (concat_ws('FAL','SE')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1635,7 +1635,7 @@ test("IUD-01-01-01_040-04", Include) {
 
 //Check for updating carbon table set column to a value returned by find_in_set function
 test("IUD-01-01-01_040-05", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (find_in_set('t','test1')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1646,7 +1646,7 @@ test("IUD-01-01-01_040-05", Include) {
 
 //Check for updating carbon table set column to a value returned by format_number function
 test("IUD-01-01-01_040-06", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (format_number(10,12)) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1657,7 +1657,7 @@ test("IUD-01-01-01_040-06", Include) {
 
 //Check for updating carbon table set column to a value returned by get_json_object function
 test("IUD-01-01-01_040-07", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (get_json_object('test','test1')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1668,7 +1668,7 @@ test("IUD-01-01-01_040-07", Include) {
 
 //Check for updating carbon table set column value to a value returned by instr function
 test("IUD-01-01-01_040-08", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (instr('test','test1')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1679,7 +1679,7 @@ test("IUD-01-01-01_040-08", Include) {
 
 //Check for updating carbon table set column value to a value returned by length function
 test("IUD-01-01-01_040-09", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (length('test')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1690,7 +1690,7 @@ test("IUD-01-01-01_040-09", Include) {
 
 //Check for updating carbon table set column value to a value returned by locate function
 test("IUD-01-01-01_040-10", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (locate('test','test1')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1701,7 +1701,7 @@ test("IUD-01-01-01_040-10", Include) {
 
 //Check for updating carbon table set column value to a value returned by lower function
 test("IUD-01-01-01_040-11", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (lower('test')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1712,7 +1712,7 @@ test("IUD-01-01-01_040-11", Include) {
 
 //Check for updating carbon table set column value to a value returned by lcase function
 test("IUD-01-01-01_040-12", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (lcase('test')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1723,7 +1723,7 @@ test("IUD-01-01-01_040-12", Include) {
 
 //Check for updating carbon table set column value to a value returned by lpad function
 test("IUD-01-01-01_040-13", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (lpad('te',1,'test1')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1734,7 +1734,7 @@ test("IUD-01-01-01_040-13", Include) {
 
 //Check for updating carbon table set column value to a value returned by ltrim function
 test("IUD-01-01-01_040-14", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (ltrim('te')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1745,7 +1745,7 @@ test("IUD-01-01-01_040-14", Include) {
 
 //Check for updating carbon table set column value to a value returned by parse_url function
 test("IUD-01-01-01_040-15", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (parse_url('test','test1')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1756,7 +1756,7 @@ test("IUD-01-01-01_040-15", Include) {
 
 //Check for updating carbon table set column value to a value returned by printf function
 test("IUD-01-01-01_040-16", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (printf('test','test1')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1767,7 +1767,7 @@ test("IUD-01-01-01_040-16", Include) {
 
 //Check for updating carbon table set column value to a value returned by regexp_extract function
 test("IUD-01-01-01_040-17", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (regexp_extract('test','test1',1)) """).collect
   checkAnswer(s""" select count(active_status) from default.t_carbn01  group by active_status """,
@@ -1778,7 +1778,7 @@ test("IUD-01-01-01_040-17", Include) {
 
 //Check for updating carbon table set column value to a value returned by regexp_replace function
 test("IUD-01-01-01_040-18", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (regexp_replace('test','test1','test2')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1789,7 +1789,7 @@ test("IUD-01-01-01_040-18", Include) {
 
 //Check for updating carbon table set column value to a value returned by repeat function
 test("IUD-01-01-01_040-19", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (repeat('test',1)) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1800,7 +1800,7 @@ test("IUD-01-01-01_040-19", Include) {
 
 //Check for updating carbon table set column value to a value returned by reverse function
 test("IUD-01-01-01_040-20", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (reverse('test')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1811,7 +1811,7 @@ test("IUD-01-01-01_040-20", Include) {
 
 //Check for updating carbon table set column value to a value returned by rpad function
 test("IUD-01-01-01_040-21", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (rpad('test',1,'test1')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1822,7 +1822,7 @@ test("IUD-01-01-01_040-21", Include) {
 
 //Check for updating carbon table set column value to a value returned by rtrim function
 test("IUD-01-01-01_040-22", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (rtrim('test')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1833,7 +1833,7 @@ test("IUD-01-01-01_040-22", Include) {
 
 //Check for updating carbon table set column value to a value returned by sentences function
 ignore("IUD-01-01-01_040-23", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (sentences('Hello there! How are you?')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1844,7 +1844,7 @@ ignore("IUD-01-01-01_040-23", Include) {
 
   //Check for updating carbon table set column value to a value returned by space function
   test("IUD-01-01-01_040-24", Include) {
-    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""create table default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
     sql(s"""select active_status from default.t_carbn01b""").show
   sql(s"""select active_status from default.t_carbn01""").show
 
@@ -1860,7 +1860,7 @@ ignore("IUD-01-01-01_040-23", Include) {
 //Check for updating carbon table set column value to a value returned by split function
 //Split will give us array value
 test("IUD-01-01-01_040-25", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  intercept[Exception] {
    sql(s"""update default.t_carbn01  set (active_status)= (split('t','a')) """).collect
@@ -1870,7 +1870,7 @@ test("IUD-01-01-01_040-25", Include) {
 
 //Check for updating carbon table set column value to a value returned by substr function with 2 parameters
 test("IUD-01-01-01_040-26", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (substr('test',1)) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1881,7 +1881,7 @@ test("IUD-01-01-01_040-26", Include) {
 
 //Check for updating carbon table set column value to a value returned by substring function with 2 parameters
 test("IUD-01-01-01_040-27", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (substring('test',1,2)) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1892,7 +1892,7 @@ test("IUD-01-01-01_040-27", Include) {
 
 //Check for updating carbon table set column value to a value returned by substring function  with 3 parameters
 test("IUD-01-01-01_040-28", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (substr('test1',2,3)) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1903,7 +1903,7 @@ test("IUD-01-01-01_040-28", Include) {
 
 //Check for updating carbon table set column value to a value returned by translate function
 test("IUD-01-01-01_040-29", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (translate('test','test1','test2')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1914,7 +1914,7 @@ test("IUD-01-01-01_040-29", Include) {
 
 //Check for updating carbon table set column value to a value returned by trim function
 test("IUD-01-01-01_040-30", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (trim('test')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1925,7 +1925,7 @@ test("IUD-01-01-01_040-30", Include) {
 
 //Check for updating carbon table set column value to a value returned by unbase64 function
 test("IUD-01-01-01_040-31", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (unbase64('test')) """).collect
   checkAnswer(s""" select count(*) from default.t_carbn01  group by active_status""",
@@ -1936,7 +1936,7 @@ test("IUD-01-01-01_040-31", Include) {
 
 //Check for updating carbon table set column value to a value returned by upper function
 test("IUD-01-01-01_040-32", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (upper('test')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1947,7 +1947,7 @@ test("IUD-01-01-01_040-32", Include) {
 
 //Check for updating carbon table set column value to a value returned by lower function
 test("IUD-01-01-01_040-33", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (lower('TEST')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1958,7 +1958,7 @@ test("IUD-01-01-01_040-33", Include) {
 
 //Check for updating carbon table set column value to a value returned by levenshtein function
 test("IUD-01-01-01_040-35", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= ( levenshtein('kitten','sitting')) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -1969,7 +1969,7 @@ test("IUD-01-01-01_040-35", Include) {
 
 //Check for updating carbon table set column value to a value returned by round function with single parameter
 test("IUD-01-01-01_040-36", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s""" update default.t_carbn01  set (sell_pricep)= (round(10.66)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -1980,7 +1980,7 @@ test("IUD-01-01-01_040-36", Include) {
 
 //Check for updating carbon table set column value to a value returned by round function with 2  parameters
 test("IUD-01-01-01_040-37", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (round(10.66,1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -1991,7 +1991,7 @@ test("IUD-01-01-01_040-37", Include) {
 
 //Check for updating carbon table set column value to a value returned by bround function having single parameter
 test("IUD-01-01-01_040-38", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (bround(10.66)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2002,7 +2002,7 @@ test("IUD-01-01-01_040-38", Include) {
 
 //Check for updating carbon table set column value to a value returned by bround function having 2 parameters
 test("IUD-01-01-01_040-39", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (bround(10.66,1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2013,7 +2013,7 @@ test("IUD-01-01-01_040-39", Include) {
 
 //Check for updating carbon table set column value to a value returned by floor function
 test("IUD-01-01-01_040-40", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (floor(10.1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2024,7 +2024,7 @@ test("IUD-01-01-01_040-40", Include) {
 
 //Check for updating carbon table set column value to a value returned by ceil function
 test("IUD-01-01-01_040-41", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (ceil(10.1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2035,7 +2035,7 @@ test("IUD-01-01-01_040-41", Include) {
 
 //Check for updating carbon table set column value to a value returned by ceiling function
 test("IUD-01-01-01_040-42", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (ceiling(11.1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2046,7 +2046,7 @@ test("IUD-01-01-01_040-42", Include) {
 
 //Check for updating carbon table set column value to a value returned by exp function with parameters
 test("IUD-01-01-01_040-45", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (exp(10.1234242323)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2057,7 +2057,7 @@ test("IUD-01-01-01_040-45", Include) {
 
 //Check for updating carbon table set column value to a value returned by ln function with parameters
 test("IUD-01-01-01_040-46", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (ln(10.1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2068,7 +2068,7 @@ test("IUD-01-01-01_040-46", Include) {
 
 //Check for updating carbon table set column value to a value returned by log10 function
 test("IUD-01-01-01_040-47", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (log10(10.1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2079,7 +2079,7 @@ test("IUD-01-01-01_040-47", Include) {
 
 //Check for updating carbon table set column value to a value returned by log2 function
 test("IUD-01-01-01_040-48", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (log2(10.1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2090,7 +2090,7 @@ test("IUD-01-01-01_040-48", Include) {
 
 //Check for updating carbon table set column value to a value returned by log function
 test("IUD-01-01-01_040-49", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (log(10.1,10.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2101,7 +2101,7 @@ test("IUD-01-01-01_040-49", Include) {
 
 //Check for updating carbon table set column value to a value returned by pow function
 test("IUD-01-01-01_040-50", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (pow(10.1,10.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2112,7 +2112,7 @@ test("IUD-01-01-01_040-50", Include) {
 
 //Check for updating carbon table set column value to a value returned by power function
 test("IUD-01-01-01_040-51", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (power(11.1,11.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2123,7 +2123,7 @@ test("IUD-01-01-01_040-51", Include) {
 
 //Check for updating carbon table set column value to a value returned by sqrt function
 test("IUD-01-01-01_040-52", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (sqrt(11.1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2134,7 +2134,7 @@ test("IUD-01-01-01_040-52", Include) {
 
 //Check for updating carbon table set column value to a value returned by bin function
 test("IUD-01-01-01_040-53", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s""" update default.t_carbn01  set (sell_pricep)= (bin(1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2145,7 +2145,7 @@ test("IUD-01-01-01_040-53", Include) {
 
 //Check for updating carbon table set column value to a value returned by hex function
 test("IUD-01-01-01_040-54", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (hex(1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2156,7 +2156,7 @@ test("IUD-01-01-01_040-54", Include) {
 
 //Check for updating carbon table set column value to a value returned by unhex function
 test("IUD-01-01-01_040-55", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (unhex(1)) """).collect
   checkAnswer(s"""select count(active_status) from default.t_carbn01  group by active_status """,
@@ -2167,7 +2167,7 @@ test("IUD-01-01-01_040-55", Include) {
 
 //Check for updating carbon table set column value to a value returned by conv function
 test("IUD-01-01-01_040-56", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (active_status)= (conv(1,1,2)) """).collect
   checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
@@ -2178,7 +2178,7 @@ test("IUD-01-01-01_040-56", Include) {
 
 //Check for updating carbon table set column value to a value returned by abs function
 test("IUD-01-01-01_040-57", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (abs(1.9)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2189,7 +2189,7 @@ test("IUD-01-01-01_040-57", Include) {
 
 //Check for updating carbon table set column value to a value returned by pmod function
 test("IUD-01-01-01_040-58", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (pmod(1,2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2200,7 +2200,7 @@ test("IUD-01-01-01_040-58", Include) {
 
 //Check for updating carbon table set column value to a value returned by sin function
 test("IUD-01-01-01_040-59", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (sin(1.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2211,7 +2211,7 @@ test("IUD-01-01-01_040-59", Include) {
 
 //Check for updating carbon table set column value to a value returned by cos function
 test("IUD-01-01-01_040-60", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (cos(1.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2222,7 +2222,7 @@ test("IUD-01-01-01_040-60", Include) {
 
 //Check for updating carbon table set column value to a value returned by tan function
 test("IUD-01-01-01_040-61", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (tan(1.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2233,7 +2233,7 @@ test("IUD-01-01-01_040-61", Include) {
 
 //Check for updating carbon table set column value to a value returned by atan function
 test("IUD-01-01-01_040-62", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (atan(1.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2244,7 +2244,7 @@ test("IUD-01-01-01_040-62", Include) {
 
 //Check for updating carbon table set column value to a value returned by degrees function
 test("IUD-01-01-01_040-63", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (degrees(1.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2255,7 +2255,7 @@ test("IUD-01-01-01_040-63", Include) {
 
 //Check for updating carbon table set column value to a value returned by radians function
 test("IUD-01-01-01_040-64", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (radians(1.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2266,7 +2266,7 @@ test("IUD-01-01-01_040-64", Include) {
 
 //Check for updating carbon table set column value to a value returned by positive function
 test("IUD-01-01-01_040-65", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (positive(1.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2277,7 +2277,7 @@ test("IUD-01-01-01_040-65", Include) {
 
 //Check for updating carbon table set column value to a value returned by negative function
 test("IUD-01-01-01_040-66", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (negative(1.2)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2288,7 +2288,7 @@ test("IUD-01-01-01_040-66", Include) {
 
 //Check for updating carbon table set column value to a value returned by sign function
 test("IUD-01-01-01_040-67", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (sign(2.1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2299,7 +2299,7 @@ test("IUD-01-01-01_040-67", Include) {
 
 //Check for updating carbon table set column value to a value returned by e() function
 test("IUD-01-01-01_040-68", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (e()) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2310,7 +2310,7 @@ test("IUD-01-01-01_040-68", Include) {
 
 //Check for updating carbon table set column value to a value returned by pi() function
 test("IUD-01-01-01_040-69", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (sell_pricep)= (pi()) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2321,7 +2321,7 @@ test("IUD-01-01-01_040-69", Include) {
 
 //Check for updating carbon table set column value to a value returned by factorial function
 test("IUD-01-01-01_040-70", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s""" update default.t_carbn01  set (sell_pricep)= (factorial(5)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2332,7 +2332,7 @@ test("IUD-01-01-01_040-70", Include) {
 
 //Check for updating carbon table set column value to a value returned by cbrt function
 test("IUD-01-01-01_040-71", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s""" update default.t_carbn01  set (sell_pricep)= (cbrt(5.1)) """).collect
   checkAnswer(s"""select  sell_pricep from default.t_carbn01  group by  sell_pricep """,
@@ -2343,7 +2343,7 @@ test("IUD-01-01-01_040-71", Include) {
 
 //Check for updating carbon table set column value to a value returned by greatest function
 test("IUD-01-01-01_040-72", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd)= (greatest(2,3)) """).collect
   checkAnswer(s"""select  item_type_cd from default.t_carbn01  group by  item_type_cd """,
@@ -2354,7 +2354,7 @@ test("IUD-01-01-01_040-72", Include) {
 
 //Check for updating carbon table set column value to a value returned by least function
 test("IUD-01-01-01_040-73", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""update default.t_carbn01  set (item_type_cd)= (least(2,3)) """).collect
   checkAnswer(s"""select  item_type_cd from default.t_carbn01  group by  item_type_cd """,
@@ -2365,10 +2365,10 @@ test("IUD-01-01-01_040-73", Include) {
 
 //Check for delete where in (select from tabl2)
 test("IUD-01-01-02_023-03", Include) {
-   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""create database if not exists test1""").collect
- sql(s"""create table if not exists test1.t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table if not exists test1.t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into test1.t_carbn02 select * from default.t_carbn01b""").collect
  sql(s"""delete from default.t_carbn01  a where (a.item_code) in (select b.item_code from test1.t_carbn02 b)""").collect
   sql(s"""select  item_type_cd from default.t_carbn01  order by  item_type_cd limit 1""").collect
@@ -2381,7 +2381,7 @@ test("IUD-01-01-02_023-03", Include) {
 
 //delete using a temp table
 test("IUD-01-01-02_023-04", Include) {
-   sql(s"""create table IF NOT EXISTS  default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table IF NOT EXISTS  default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""delete from default.t_carbn01  a where a.item_code in (select b.item_code from (select c.item_code, c.item_type_cd from t_carbn01b c)b)""").collect
   checkAnswer(s"""select  count(*) from t_carbn01  """,
@@ -2392,7 +2392,7 @@ test("IUD-01-01-02_023-04", Include) {
 
 //Check for delete using a temp table using group by using subquery
 test("IUD-01-01-02_023-05", Include) {
-   sql(s"""create table IF NOT EXISTS  default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table IF NOT EXISTS  default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
  sql(s"""delete from default.t_carbn01  a where a.item_type_cd in ( select b.profit from (select sum(item_type_cd) profit from default.t_carbn01b group by item_code) b)""").collect
   checkAnswer(s"""select  item_type_cd from default.t_carbn01  order by  item_type_cd  limit 1""",
@@ -2403,7 +2403,7 @@ test("IUD-01-01-02_023-05", Include) {
 
 //Check for update with null value for multiple update operations
 test("IUD-01-01-01_016-05", Include) {
-   sql(s"""CREATE TABLE table_C21 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""CREATE TABLE table_C21 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv'  into table table_C21 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
  sql(s"""update table_C21 set (cust_id)= (10000) where cust_name='CUST_NAME_00000'""").collect
  sql(s"""update table_C21 set (cust_id)= (NULL) where cust_name='CUST_NAME_00000'""").collect
@@ -2417,7 +2417,7 @@ test("IUD-01-01-01_016-05", Include) {
 //Test horizontal compaction when In same segment, single block, full update in one update
 test("IUD-01-01-02_023-09", Include) {
    sql(s"""drop table if exists t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s""" update t_carbn01 set(item_name) = ('Ram')""").collect
  sql(s"""clean files for table t_carbn01""").collect
@@ -2430,7 +2430,7 @@ test("IUD-01-01-02_023-09", Include) {
 //Test horizontal compaction when ,In same segment, single block, full delete in one delete
 test("IUD-01-01-02_023-10", Include) {
    sql(s"""drop table  if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""delete from t_carbn01""").collect
  sql(s"""clean files for table t_carbn01""").collect
@@ -2443,7 +2443,7 @@ test("IUD-01-01-02_023-10", Include) {
 //Test horizontal compaction when  In same segment, single block, sequential updates leading to full delete
 test("IUD-01-01-02_023-11", Include) {
    sql(s"""drop table  if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""update t_carbn01 set (item_name) =('Apple') where item_type_cd =123""").collect
  sql(s"""update t_carbn01 set (item_name) =('Apple') where item_type_cd =41""").collect
@@ -2464,7 +2464,7 @@ test("IUD-01-01-02_023-11", Include) {
 //Test horizontal compaction when  In same segment, single block, sequential deletes leading to full delete
 test("IUD-01-01-02_023-12", Include) {
    sql(s"""drop table if exists t_carbn01""").collect
- sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""delete from t_carbn01 where item_type_cd =123""").collect
  sql(s"""delete from t_carbn01 where item_type_cd =41""").collect
@@ -2485,7 +2485,7 @@ test("IUD-01-01-02_023-12", Include) {
 //Run updates 2 times after multiple data load - 1 block and multiple segment and check that compaction is applied in all segmnets(set detla threshold = 1).
 test("IUD-01-01-02_023-07", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2500,7 +2500,7 @@ test("IUD-01-01-02_023-07", Include) {
 //Test horizontal compaction when In same segment, single block, multiple full updates
 test("IUD-01-01-02_023-13", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""update t_carbn01 set (item_name) =('Apple1') """).collect
  sql(s"""update t_carbn01 set (item_name) =('Apple2') """).collect
@@ -2521,7 +2521,7 @@ test("IUD-01-01-02_023-13", Include) {
 //Test horizontal compaction when In same segment, single block, Delete on udpates
 test("IUD-01-01-02_023-14", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""update t_carbn01 set (item_name) =('Apple1')""").collect
  sql(s"""delete from t_carbn01""").collect
@@ -2535,7 +2535,7 @@ test("IUD-01-01-02_023-14", Include) {
 //Test horizontal compaction when In same segment, single block, Load after complete deletion
 test("IUD-01-01-02_023-15", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s""" insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""delete from t_carbn01""").collect
  sql(s"""clean files for table t_carbn01""").collect
@@ -2549,7 +2549,7 @@ test("IUD-01-01-02_023-15", Include) {
 //Test horizontal compaction when In same segment, single block, Insert after complete deletion
 test("IUD-01-01-02_023-16", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""delete from t_carbn01""").collect
  sql(s"""clean files for table t_carbn01""").collect
@@ -2564,7 +2564,7 @@ test("IUD-01-01-02_023-16", Include) {
 //Test horizontal compaction when In same segment, single block, Veritcal compaction does not consider the deleted segment
 test("IUD-01-01-02_023-17", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s""" insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""delete from t_carbn01""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2582,12 +2582,12 @@ test("IUD-01-01-02_023-18", Include) {
    sql(s"""drop table if exists  t_carbn1""").collect
  sql(s"""drop table if exists  t_carbn2""").collect
  sql(s"""drop table if exists  t_hive01""").collect
- sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
+ sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 2,300000,33.3,'Orange','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Banana','2012-11-11 11:11:11'""").collect
  sql(s"""create table t_hive01 as select * from t_carbn1""").collect
- sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
+ sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn2 select * from t_hive01""").collect
  sql(s"""insert into t_carbn2 select 2, 200000,23.3,'Banana','2012-11-11 11:11:11'""").collect
  sql(s"""delete from t_carbn2 where item_name = 'Banana'""").collect
@@ -2601,7 +2601,7 @@ test("IUD-01-01-02_023-18", Include) {
 //Test horizontal compaction when In same segment, single block(single block data created out of full update), Perform delete on updated block
 test("IUD-01-01-02_023-19", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""update t_carbn01 set (item_name) =('Apple1')""").collect
  sql(s"""delete from t_carbn01""").collect
@@ -2615,7 +2615,7 @@ test("IUD-01-01-02_023-19", Include) {
 //Test horizontal compaction when In same segment, single block,partial update creates a block and rest of the current block is deleted
 test("IUD-01-01-02_023-20", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""update t_carbn01 set (item_name) =('Apple1') where item_type_cd in (123,41,14,13,114)""").collect
  sql(s"""delete from t_carbn01 where item_type_cd in (11,3,4,2)""").collect
@@ -2630,10 +2630,10 @@ test("IUD-01-01-02_023-20", Include) {
 test("IUD-01-01-02_023-21", Include) {
    sql(s"""drop table if exists  t_carbn1""").collect
  sql(s"""drop table if exists  t_carbn2""").collect
- sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
+ sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 2,300000,33.3,'Orange','2012-11-11 11:11:11'""").collect
- sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
+ sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn2 select * from t_carbn1""").collect
  sql(s"""delete from t_carbn2 where item_name = 'Apple'""").collect
  sql(s"""clean files for table t_carbn2""").collect
@@ -2647,10 +2647,10 @@ test("IUD-01-01-02_023-21", Include) {
 test("IUD-01-01-02_023-22", Include) {
    sql(s"""drop table if exists  t_carbn1""").collect
  sql(s"""drop table if exists  t_carbn2""").collect
- sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
+ sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 2,300000,33.3,'Orange','2012-11-11 11:11:11'""").collect
- sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
+ sql(s"""create table t_carbn2(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn2 select * from t_carbn1""").collect
  sql(s"""delete from t_carbn2 where item_name in ('Orange','Apple')""").collect
  sql(s"""clean files for table t_carbn2""").collect
@@ -2663,7 +2663,7 @@ test("IUD-01-01-02_023-22", Include) {
 //Test horizontal compaction when different segments same data ,full delete across all segments
 test("IUD-01-01-02_023-23", Include) {
    sql(s"""drop table if exists  t_carbn1""").collect
- sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
+ sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 2,300000,33.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""delete from t_carbn1 where item_name = 'Apple'""").collect
@@ -2677,7 +2677,7 @@ test("IUD-01-01-02_023-23", Include) {
 //Test horizontal compaction when multiple segments, compacted to single segment,set autocompaction true with level (3,4). Full update
 test("IUD-01-01-02_023-24", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2692,7 +2692,7 @@ test("IUD-01-01-02_023-24", Include) {
 //Test horizontal compaction when multiple segments, compacted to single segment,set autocompaction true with level (3,4). Full delete
 test("IUD-01-01-02_023-25", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2707,7 +2707,7 @@ test("IUD-01-01-02_023-25", Include) {
 //Test horizontal compaction when multiple segments, set autocompaction (carbon.enable.auto.load.merge)true with level (3,4). Partial update and delete
 test("IUD-01-01-02_023-26", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2723,7 +2723,7 @@ test("IUD-01-01-02_023-26", Include) {
 //Do insert multiple time and update and do a manual minor compaction on table and check that delta files are removed and no residual file left in HDFS
 test("IUD-01-01-02_006-08", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
@@ -2739,7 +2739,7 @@ test("IUD-01-01-02_006-08", Include) {
 //Do load multiple time and update and a delete segment do a manual minor compaction on table and check that delta files are removed and no residual file left in HDFS
 test("IUD-01-01-02_006-09", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""delete from t_carbn01""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2758,7 +2758,7 @@ test("IUD-01-01-02_006-09", Include) {
 //Do load multiple time and update and do a manual minor compaction on table and check that delta files are removed and no residual file left in HDFS
 test("IUD-01-01-02_006-03", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""delete from t_carbn01""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2775,7 +2775,7 @@ test("IUD-01-01-02_006-03", Include) {
 //Do update after table insert  and run select query and check data
 test("IUD-01-01-02_006-04", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""update t_carbn01 set (item_code) = ('Apple')""").collect
   checkAnswer(s"""select  count(item_code) from t_carbn01""",
@@ -2787,7 +2787,7 @@ test("IUD-01-01-02_006-04", Include) {
 //Test horizontal compaction when minor compaction after complete deletion in a segment (manual )
 test("IUD-01-01-02_023-27", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""delete from t_carbn01""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2804,7 +2804,7 @@ test("IUD-01-01-02_023-27", Include) {
 //Test horizontal compaction when major compaction after complete deletion in a segment(manual)
 test("IUD-01-01-02_023-28", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""insert into t_carbn01 select * from t_carbn01b""").collect
  sql(s"""delete from t_carbn01""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2820,7 +2820,7 @@ test("IUD-01-01-02_023-28", Include) {
 //Test horizontal compaction when h-compcation threshold set to higher value(10),full updates multiple time
 test("IUD-01-01-02_023-29", Include) {
    sql(s"""drop table if exists  t_carbn1""").collect
- sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) stored by 'carbondata'  """).collect
+ sql(s"""create table t_carbn1(item_type_cd int, sell_price bigint, profit decimal(10,4), item_name string, update_time timestamp) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn1 select 2, 200000,23.3,'Apple','2012-11-11 11:11:11'""").collect
  sql(s"""insert into t_carbn1 select 3, 300000,33.3,'Orange','2012-11-11 11:11:11'""").collect
  sql(s"""update t_carbn1 set (sell_price) = (2)""").collect
@@ -2844,7 +2844,7 @@ test("IUD-01-01-02_023-29", Include) {
 //Test horizontal compaction when  h-compcation threshold set to higher value(10),full deletes multiple times
 test("IUD-01-01-02_023-30", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""delete from t_carbn01 where item_type_cd=123""").collect
  sql(s"""delete from t_carbn01 where item_type_cd=41""").collect
@@ -2865,7 +2865,7 @@ test("IUD-01-01-02_023-30", Include) {
 //Test horizontal compaction when  large number of segments (50),full delete across all segments
 test("IUD-01-01-02_023-31", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2893,7 +2893,7 @@ test("IUD-01-01-02_023-31", Include) {
 //Test horizontal compaction when large number of segments (50), full updates across all segments
 test("IUD-01-01-02_023-32", Include) {
    sql(s"""drop table if exists  t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -2922,10 +2922,10 @@ test("IUD-01-01-02_023-32", Include) {
 test("IUD-01-01-02_023-34", Include) {
    sql(s"""drop table if exists  t1""").collect
  sql(s"""drop table if exists  t2""").collect
- sql(s"""create table t1(name string, dept string) stored by 'carbondata'""").collect
+ sql(s"""create table t1(name string, dept string) STORED AS carbondata""").collect
  sql(s"""insert into t1 select 'Kris','HR'""").collect
  sql(s"""insert into t1 select 'Ram','DEV'""").collect
- sql(s"""create table t2(name string, dept string) stored by 'carbondata'""").collect
+ sql(s"""create table t2(name string, dept string) STORED AS carbondata""").collect
  sql(s"""insert into t2 select 'Kris','HR'""").collect
  sql(s"""insert into t2 select 'Ram','FIN'""").collect
  sql(s"""update t2 a set(a.dept) = (select b.dept from t1 b where a.name = b.name and a.dept != b.dept)""").collect
@@ -2948,27 +2948,27 @@ test("IUD-01-01-02_023-35", Include) {
  sql(s"""drop table if exists  t_carbn28""").collect
  sql(s"""drop table if exists  t_carbn29""").collect
  sql(s"""drop table if exists  t_carbn30""").collect
- sql(s"""create table t_carbn31 (item_code string, item_name1 string,item_name2 string,item_name3 string,item_name4 string,item_name5 string,item_name6 string,item_name7 string,item_name8 string,item_name9 string,item_name10 string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn31 (item_code string, item_name1 string,item_name2 string,item_name3 string,item_name4 string,item_name5 string,item_name6 string,item_name7 string,item_name8 string,item_name9 string,item_name10 string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn31 select 'a1','aa','ba','ca','da','ea','fa','ga','ia','ja','ka'""").collect
- sql(s"""create table t_carbn21(item_code string, item_name string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn21(item_code string, item_name string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn21 select 'a1','x1'""").collect
- sql(s"""create table t_carbn22(item_code string, item_name string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn22(item_code string, item_name string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn22 select 'a1','x2'""").collect
- sql(s"""create table t_carbn23(item_code string, item_name string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn23(item_code string, item_name string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn23 select 'a1','x3'""").collect
- sql(s"""create table t_carbn24(item_code string, item_name string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn24(item_code string, item_name string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn24 select 'a1','x4'""").collect
- sql(s"""create table t_carbn25(item_code string, item_name string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn25(item_code string, item_name string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn25 select 'a1','x5'""").collect
- sql(s"""create table t_carbn26(item_code string, item_name string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn26(item_code string, item_name string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn26 select 'a1','x6'""").collect
- sql(s"""create table t_carbn27(item_code string, item_name string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn27(item_code string, item_name string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn27 select 'a1','x7'""").collect
- sql(s"""create table t_carbn28(item_code string, item_name string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn28(item_code string, item_name string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn28 select 'a1','x8'""").collect
- sql(s"""create table t_carbn29(item_code string, item_name string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn29(item_code string, item_name string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn29 select 'a1','x9'""").collect
- sql(s"""create table t_carbn30(item_code string, item_name string) stored by 'carbondata'""").collect
+ sql(s"""create table t_carbn30(item_code string, item_name string) STORED AS carbondata""").collect
  sql(s"""insert into t_carbn30 select 'a1','x10'""").collect
  sql(s"""select * from t_carbn31""").collect
  sql(s"""update t_carbn31 a set (a.item_name1, a.item_name2, a.item_name3, a.item_name4, a.item_name5, a.item_name6, a.item_name7, a.item_name8, a.item_name9, a.item_name10) = (select b.item_name,c.item_name,d.item_name,e.item_name,f.item_name,g.item_name,h.item_name,i.item_name,j.item_name,k.item_name from t_carbn21 b,t_carbn22 c,t_carbn23 d,t_carbn24 e,t_carbn25 f,t_carbn26 g,t_carbn27 h,t_carbn28 i,t_carbn29 j,t_carbn30 k where a.item_code=b.item_code and b.item_code=c.item_code and c.item_code=d.item_code and d.item_code=e.item_code and e.item_code=f.item_code and f.item_code=g.item_code and g.item_code=h.item_code and h.item_code=i.item_code and i.item_code=j.item_code and j.item_code=k.item_code)""").collect
@@ -2981,7 +2981,7 @@ test("IUD-01-01-02_023-35", Include) {
 //Creating table 
 test("IUD-01-01-02_023-36", Include) {
    sql(s"""use default""").collect
- sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
   checkAnswer(s"""select count(cust_name) as count from uniqdata where cust_id='9001'""",
     Seq(Row(0)), "DataLoadingIUDTestCase_IUD-01-01-02_023-36")
   
@@ -3536,7 +3536,7 @@ test("IUD-01-01-02_023-90", Include) {
 //Creating table 
 test("IUD-01-01-02_023-91", Include) {
    sql(s"""use default""").collect
- sql(s"""CREATE TABLE uniqdata1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""CREATE TABLE uniqdata1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
   checkAnswer(s"""select count(cust_name) as count from uniqdata1 where cust_id='9001' """,
     Seq(Row(0)), "DataLoadingIUDTestCase_IUD-01-01-02_023-91")
   
@@ -3546,7 +3546,7 @@ test("IUD-01-01-02_023-91", Include) {
 //Creating table 
 test("IUD-01-01-02_023-92", Include) {
    sql(s"""use default""").collect
- sql(s"""CREATE TABLE uniqdata2 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""CREATE TABLE uniqdata2 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
   sql(s"""select cust_name from uniqdata2 where cust_id='9001' """).collect
   
   
@@ -3606,7 +3606,7 @@ test("IUD-01-01-02_023-98", Include) {
 test("HQ_Defect_TC_2016121910112", Include) {
    sql(s"""use default""").collect
  sql(s"""drop table if exists t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""update t_carbn01 set (item_name) = ('x') where item_type_cd < 10""").collect
  sql(s"""select * from t_carbn01""").collect
@@ -3621,7 +3621,7 @@ test("HQ_Defect_TC_2016121910112", Include) {
 
 test("HQ_Defect_TC_2016122803692", Include) {
    sql(s"""drop table if exists t_carbn01""").collect
- sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""update t_carbn01 set (item_type_cd) = (1) where item_code = 'RE3423ee'""").collect
@@ -3639,7 +3639,7 @@ test("HQ_Defect_TC_2016122803692", Include) {
 //delete the column which be updated,the result has problem
 test("HQ_Defect_TC_2016120804163", Include) {
    sql(s"""drop table if exists t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""update t_carbn01 set (item_name) = ('x') where item_type_cd < 10""").collect
  sql(s"""update t_carbn01 set (item_name) = ('xx') where item_type_cd in (14,41)""").collect
@@ -3653,7 +3653,7 @@ test("HQ_Defect_TC_2016120804163", Include) {
 //Carries on the algorithm update to the string type's data,the display result is inconsistent
 test("HQ_Defect_TC_2016110808686", Include) {
    sql(s"""drop table if exists t_carbn01""").collect
- sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s"""create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""update t_carbn01 set (active_status, item_type_cd,qty_day_avg,sell_price,sell_pricep,update_time) = (active_status+1, item_type_cd-10, qty_day_avg*2,sell_price%2,sell_price/2,concat(update_time,2))""").collect
   checkAnswer(s"""select active_status from t_carbn01""",
@@ -3665,7 +3665,7 @@ test("HQ_Defect_TC_2016110808686", Include) {
 //Carries on the algorithm update to the string type's data,the display result is inconsistent
 test("HQ_Defect_TC_2016110901163", Include) {
    sql(s"""drop table if exists t_carbn01""").collect
- sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+ sql(s""" create table t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
  sql(s"""update t_carbn01 set(item_code) = ('xx1') where item_type_cd between 0 and 5""").collect
  sql(s"""update t_carbn01 set(item_code) = ('xx2') where item_type_cd =41 and exists(select 1 from t_carbn01 a where a.item_type_cd < 100)""").collect
@@ -3678,7 +3678,7 @@ test("HQ_Defect_TC_2016110901163", Include) {
 
   test("[CARBONDATA-2604] ", Include){
     sql("drop table if exists brinjal").collect
-    sql("create table brinjal (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId double,productionDate Timestamp,deliveryDate timestamp,deliverycharge double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('table_blocksize'='2000','sort_columns'='imei')").collect
+    sql("create table brinjal (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId double,productionDate Timestamp,deliveryDate timestamp,deliverycharge double) STORED AS carbondata TBLPROPERTIES('table_blocksize'='2000','sort_columns'='imei')").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE brinjal OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE brinjal OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE brinjal OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect

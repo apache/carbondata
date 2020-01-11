@@ -55,7 +55,7 @@ class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
 
         writer.print(s"\n\n==== ${testcase._1} ====\n\n==== mv ====\n\n${testcase._2}\n\n==== original query ====\n\n${testcase._3}\n")
         
-        val rewriteSQL = mvSession.mvSession.rewriteToSQL(mvSession.mvSession.sparkSession.sql(testcase._3).queryExecution.analyzed)
+        val rewriteSQL = mvSession.mvSession.rewriteToSQL(mvSession.mvSession.sparkSession.sql(testcase._3).queryExecution.optimizedPlan)
         LOGGER.info(s"\n\n\n\n===== Rewritten query for ${testcase._1} =====\n\n${rewriteSQL}\n")
         
         if (!rewriteSQL.trim.equals(testcase._4)) {

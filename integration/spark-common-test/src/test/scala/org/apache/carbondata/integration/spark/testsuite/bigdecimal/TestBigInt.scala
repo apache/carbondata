@@ -32,7 +32,7 @@ class TestBigInt extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hiveTable")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    sql("CREATE TABLE IF NOT EXISTS carbonTable (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary bigint)STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE IF NOT EXISTS carbonTable (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary bigint)STORED AS carbondata")
     sql("create table if not exists hiveTable(ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary bigint)row format delimited fields terminated by ','")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/bigIntDataWithHeader.csv' into table carbonTable")
     sql(s"LOAD DATA local inpath '$resourcesPath/bigIntDataWithoutHeader.csv' INTO table hiveTable")
@@ -81,7 +81,7 @@ class TestBigInt extends QueryTest with BeforeAndAfterAll {
   test("test big int data type storage for boundary values") {
     sql("DROP TABLE IF EXISTS Test_Boundary_carbon")
     sql("DROP TABLE IF EXISTS Test_Boundary_hive")
-    sql("create table Test_Boundary_carbon (c1_String string, c2_Bigint Bigint) STORED BY 'org.apache.carbondata.format'")
+    sql("create table Test_Boundary_carbon (c1_String string, c2_Bigint Bigint) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/testBigInt_boundary_value.csv' into table Test_Boundary_carbon OPTIONS('FILEHEADER'='c1_String,c2_Bigint')")
     sql("create table Test_Boundary_hive (c1_String string, c2_Bigint Bigint) row format delimited fields terminated by ','")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/testBigInt_boundary_value.csv' into table Test_Boundary_hive")

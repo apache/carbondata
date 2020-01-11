@@ -26,7 +26,7 @@ class InsertIntoCarbonTableSpark2TestCase extends Spark2QueryTest with BeforeAnd
   }
 
   test("insert select one row") {
-    sql("create table OneRowTable(col1 string, col2 string, col3 int, col4 double) stored by 'carbondata'")
+    sql("create table OneRowTable(col1 string, col2 string, col3 int, col4 double) STORED AS carbondata")
     sql("insert into OneRowTable select '0.1', 'a.b', 1, 1.2")
     checkAnswer(sql("select * from OneRowTable"), Seq(Row("0.1", "a.b", 1, 1.2)))
   }

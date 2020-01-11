@@ -40,7 +40,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE TABLE datamap_main (id Int, date date, country string,name String, phonetype " +
       "string, " +
-      "serialname String,salary int ) STORED BY 'org.apache.carbondata.format'")
+      "serialname String,salary int ) STORED AS carbondata")
     sql(
       s"""
          | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
@@ -56,7 +56,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
       "CREATE TABLE datamap_main (id Int, date date, country string,name String, phonetype " +
-      "string, serialname String,salary int ) STORED BY 'org.apache.carbondata.format' ")
+      "string, serialname String,salary int ) STORED AS carbondata ")
     val exception_otherdataType: Exception = intercept[Exception] {
       sql(
         s"""
@@ -75,7 +75,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE TABLE datamap_main (id Int, date string, country string,name String, phonetype " +
       "string, " +
-      "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
+      "serialname String,salary int ) STORED AS carbondata TBLPROPERTIES" +
       "('SORT_COLUMNS'='country,name','SORT_SCOPE'='LOCAL_SORT')")
     sql(
       s"""
@@ -97,7 +97,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE TABLE datamap_main (id Int, date string, country string,name String, phonetype " +
       "string, " +
-      "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' ")
+      "serialname String,salary int ) STORED AS carbondata ")
     sql(
       s"""
          | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
@@ -128,7 +128,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE TABLE datamap_main (id Int, date date, country string,name String, phonetype " +
       "string, " +
-      "serialname String,salary int ) STORED BY 'org.apache.carbondata.format'")
+      "serialname String,salary int ) STORED AS carbondata")
     sql(
       s"""
          | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
@@ -153,7 +153,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE TABLE datamap_main (id Int, date string, country string,name String, phonetype " +
       "string, " +
-      "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' " +
+      "serialname String,salary int ) STORED AS carbondata " +
       "TBLPROPERTIES('SORT_COLUMNS'='country,name','SORT_SCOPE'='LOCAL_SORT')")
     sql(
       s"""
@@ -173,8 +173,8 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
   ignore("LuceneDataMap_TC007", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
-      "CREATE TABLE datamap_main (id Int,country string,name String) STORED BY 'org.apache" +
-      ".carbondata.format'")
+      "CREATE TABLE datamap_main (id Int,country string,name String) " +
+      "STORED AS carbondata")
     sql(
       s"""
          | CREATE DATAMAP lucene_datamap ON TABLE datamap_main

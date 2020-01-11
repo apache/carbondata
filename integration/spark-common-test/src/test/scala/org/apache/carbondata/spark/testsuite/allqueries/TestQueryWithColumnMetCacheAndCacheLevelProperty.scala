@@ -61,7 +61,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   private def createAndLoadTable(cacheLevel: String): Unit = {
-    sql(s"CREATE table column_min_max_cache_test (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp, attendance int, utilization int,salary int) STORED BY 'carbondata' TBLPROPERTIES('column_meta_cache'='workgroupcategoryname,designation,salary,attendance', 'CACHE_LEVEL'= '$cacheLevel')")
+    sql(s"CREATE table column_min_max_cache_test (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp, attendance int, utilization int,salary int) STORED AS carbondata TBLPROPERTIES('column_meta_cache'='workgroupcategoryname,designation,salary,attendance', 'CACHE_LEVEL'= '$cacheLevel')")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO " +
         "TABLE column_min_max_cache_test OPTIONS('DELIMITER'=',', " +
         "'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
@@ -96,7 +96,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
 
   test("verify if number of columns cached are as per the COLUMN_META_CACHE property dataMap instance is as per CACHE_LEVEL property") {
     sql("drop table if exists metaCache")
-    sql("create table metaCache(name string, c1 string, c2 string) stored by 'carbondata'")
+    sql("create table metaCache(name string, c1 string, c2 string) STORED AS carbondata")
     sql("insert into metaCache select 'a','aa','aaa'")
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
     var dataMaps = getDataMaps("default", "metaCache", "0")
@@ -144,7 +144,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
 
   test("test UPDATE scenario after column_meta_cache") {
     sql("drop table if exists metaCache")
-    sql("create table metaCache(name string, c1 string, c2 string) stored by 'carbondata' TBLPROPERTIES('COLUMN_META_CACHE'='')")
+    sql("create table metaCache(name string, c1 string, c2 string) STORED AS carbondata TBLPROPERTIES('COLUMN_META_CACHE'='')")
     sql("insert into metaCache select 'a','aa','aaa'")
     sql("insert into metaCache select 'b','bb','bbb'")
     sql("update metaCache set(c1)=('new_c1') where c1='aa'").show()
@@ -250,7 +250,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
 
   test("verify column caching with alter add column") {
     sql("drop table if exists alter_add_column_min_max")
-    sql("create table alter_add_column_min_max (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId double,productionDate Timestamp,deliveryDate timestamp,deliverycharge double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('table_blocksize'='1','COLUMN_META_CACHE'='AMSize','CACHE_LEVEL'='BLOCKLET')")
+    sql("create table alter_add_column_min_max (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId double,productionDate Timestamp,deliveryDate timestamp,deliverycharge double) STORED AS carbondata TBLPROPERTIES('table_blocksize'='1','COLUMN_META_CACHE'='AMSize','CACHE_LEVEL'='BLOCKLET')")
     sql("insert into alter_add_column_min_max select '1AA1','8RAM size','4','Chinese','guangzhou',2738,1,'2014-07-01 12:07:28','2014-07-01 12:07:28',25")
     sql("alter table alter_add_column_min_max add columns(age int, name string)")
     sql("ALTER TABLE alter_add_column_min_max SET TBLPROPERTIES('COLUMN_META_CACHE'='age,name')")
@@ -261,7 +261,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
 
   test("verify min/max getting serialized to executor when cache_level = blocklet") {
     sql("drop table if exists minMaxSerialize")
-    sql("create table minMaxSerialize(name string, c1 string, c2 string) stored by 'carbondata' TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET', 'COLUMN_META_CACHE'='c1,c2')")
+    sql("create table minMaxSerialize(name string, c1 string, c2 string) STORED AS carbondata TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET', 'COLUMN_META_CACHE'='c1,c2')")
     sql("insert into minMaxSerialize select 'a','aa','aaa'")
     checkAnswer(sql("select * from minMaxSerialize where name='a'"), Row("a", "aa", "aaa"))
     checkAnswer(sql("select * from minMaxSerialize where name='b'"), Seq.empty)
@@ -303,7 +303,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
          | age STRING,
          | desc STRING
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('COLUMN_META_CACHE'='name,desc')
        """.stripMargin)
     sql(
@@ -326,7 +326,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
          | age STRING,
          | desc STRING
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('COLUMN_META_CACHE'='name,desc','CACHE_LEVEL'='BLOCKLET')
        """.stripMargin)
     sql(

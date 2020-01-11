@@ -186,8 +186,8 @@ public class CarbonLoadModelBuilder {
     // if there isn't file header in csv file and load sql doesn't provide FILEHEADER option,
     // we should use table schema to generate file header.
     String fileHeader = optionsFinal.get("fileheader");
-    String headerOption = options.get("header");
-    if (headerOption != null) {
+    String headerOption = optionsFinal.get("header");
+    if (StringUtils.isNotEmpty(headerOption)) {
       if (!headerOption.equalsIgnoreCase("true") &&
           !headerOption.equalsIgnoreCase("false")) {
         throw new InvalidLoadOptionException(
@@ -244,6 +244,9 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setSkipEmptyLine(optionsFinal.get("skip_empty_line"));
 
     carbonLoadModel.setSortScope(sort_scope);
+    if (global_sort_partitions == null) {
+      global_sort_partitions = table.getGlobalSortPartitions();
+    }
     carbonLoadModel.setGlobalSortPartitions(global_sort_partitions);
 
     if (delimiter.equalsIgnoreCase(complex_delimiter_level1) ||

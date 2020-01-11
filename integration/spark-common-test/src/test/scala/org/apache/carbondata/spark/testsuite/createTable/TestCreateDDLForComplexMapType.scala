@@ -78,7 +78,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<STRING,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     val desc = sql(
@@ -96,8 +96,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<STRING,map<INT,STRING>>
          | )
-         | STORED BY
-         |'carbondata'
+         | STORED AS carbondata
          |"""
         .stripMargin)
     val desc = sql(
@@ -115,7 +114,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<STRING,array<INT>>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          |
          """
         .stripMargin)
@@ -134,8 +133,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<STRING,struct<key:INT,val:INT>>
          | )
-         | STORED BY
-         | 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     val desc = sql(
@@ -154,8 +152,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField struct<key:INT,val:map<INT,INT>>
          | )
-         | STORED BY
-         |'carbondata' """
+         | STORED AS carbondata """
         .stripMargin)
     val desc = sql(
       s"""
@@ -173,7 +170,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField array<map<INT,INT>>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     val desc = sql(
@@ -192,7 +189,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<INT,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     val desc = sql(
@@ -212,7 +209,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<INT,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     val desc = sql(
@@ -233,7 +230,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<STRING,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     sql("insert into carbon values(map('vi','Nalla','sh','Singh','al','Gupta'))")
@@ -253,7 +250,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
            | b STRING
            | )
            | PARTITIONED BY (mp map<int,string>)
-           | STORED BY 'carbondata'
+           | STORED AS carbondata
            | """
           .stripMargin)
     )
@@ -268,7 +265,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | a INT,
          | mapField map<INT,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     sql("insert into carbon values(1, map(1,'Nalla',2,'Singh',3,'Gupta',4,'Kumar'))")
@@ -289,7 +286,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<INT,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     val desc = sql(
@@ -309,8 +306,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<STRING,map<INT,STRING>>
          | )
-         | STORED BY
-         |'carbondata' """
+         | STORED AS carbondata """
         .stripMargin)
     sql("insert into carbon values(map('manish', map(1,'nalla',2,'gupta'), 'kunal', map(1, 'kapoor', 2, 'sharma')))")
     checkAnswer(sql("select * from carbon"), Seq(
@@ -325,8 +321,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<STRING,map<INT,STRING>>
          | )
-         | STORED BY
-         |'carbondata'
+         | STORED AS carbondata
          |"""
         .stripMargin)
     sql("insert into carbon values(map('manish', map(1,'nalla',1,'gupta'), 'kunal', map(1, 'kapoor', 2, 'sharma')))")
@@ -343,7 +338,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<INT,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     sql("insert into carbon values(map(1,'Nalla',2,'Singh',3,'Gupta',4,'Kumar'))")
@@ -366,7 +361,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<DOUBLE,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     sql("insert into carbon values(map(1.23,'Nalla',2.34,'Singh',3.67676,'Gupta',3.67676,'Kumar'))")
@@ -381,7 +376,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<INT,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     sql(
@@ -403,7 +398,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<INT,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     sql(
@@ -453,14 +448,14 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
            | CREATE TABLE carbon(
            | mapField map<STRING,STRING>
            | )
-           | STORED BY 'carbondata'
+           | STORED AS carbondata
            | TBLPROPERTIES('SORT_COLUMNS'='mapField')
            | """
           .stripMargin)
     }
     assert(exception1.getMessage
       .contains(
-        "sort_columns is unsupported for map datatype column: mapField"))
+        "sort_columns is unsupported for map datatype column: mapfield"))
   }
 
   test("Data Load Fail Issue") {
@@ -470,7 +465,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<INT,STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     sql(
@@ -495,7 +490,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<INT,struct<kk:STRING,mm:STRING>>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     sql("INSERT INTO carbon values(map(1, named_struct('kk', 'man', 'mm', 'nan'), 2, named_struct('kk', 'kands', 'mm', 'dsnknd')))")
@@ -511,7 +506,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | mapField map<INT,struct<kk:STRING,mm:STRING>>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     sql("INSERT INTO carbon values(map(1, named_struct('kk', 'man', 'mm', 'nan'), 2, named_struct('kk', 'kands', 'mm', 'dsnknd')))")
@@ -525,7 +520,7 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon(
          | structField struct<intVal:INT,map1:MAP<STRING,STRING>>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | """
         .stripMargin)
     sql("INSERT INTO carbon values(named_struct('intVal', 1, 'map1', map('man','nan','kands','dsnknd')))")

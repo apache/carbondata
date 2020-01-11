@@ -570,7 +570,7 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
          | updated TIMESTAMP,
          | longstr STRING
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
          | 'sort_columns'='name', 'LONG_STRING_COLUMNS'='longstr')
          | """.stripMargin)
@@ -600,7 +600,7 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
          | longstr STRING,
          | file struct<school:array<string>, age:int>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
          | 'sort_columns'='name', 'LONG_STRING_COLUMNS'='longstr')
          | """.stripMargin)

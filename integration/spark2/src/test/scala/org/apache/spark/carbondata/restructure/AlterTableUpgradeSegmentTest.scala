@@ -13,7 +13,7 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil
 class AlterTableUpgradeSegmentTest extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
     sql("drop table if exists altertest")
-    sql("create table altertest(a string) stored by 'carbondata'")
+    sql("create table altertest(a string) STORED AS carbondata")
     sql("insert into altertest select 'k'")
     sql("insert into altertest select 'tttttt'")
   }

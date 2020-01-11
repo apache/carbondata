@@ -32,7 +32,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object StandardPartitionExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("StandardPartitionExample")
+    val spark = ExampleUtils.createSparkSession("StandardPartitionExample")
     exampleBody(spark)
     spark.close()
   }
@@ -59,7 +59,7 @@ object StandardPartitionExample {
         | country String,
         | area String,
         | salary Int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     spark.sql(
@@ -82,7 +82,7 @@ object StandardPartitionExample {
         | area String,
         | salary Int)
         | PARTITIONED BY (logdate Date)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='id,vin')
       """.stripMargin)
 
@@ -151,7 +151,7 @@ object StandardPartitionExample {
         | city String,
         | population Int)
         | PARTITIONED BY (country String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     df.write.format("carbondata")

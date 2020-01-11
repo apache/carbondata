@@ -31,7 +31,7 @@ object DataUpdateDeleteExample {
 
   def main(args: Array[String]) {
 
-    val spark = ExampleUtils.createCarbonSession("DataUpdateDeleteExample")
+    val spark = ExampleUtils.createSparkSession("DataUpdateDeleteExample")
     exampleBody(spark)
     spark.close()
   }

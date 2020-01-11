@@ -26,7 +26,7 @@ class ColumnPropertyValidationTestCase extends QueryTest with BeforeAndAfterAll 
 
   test("Validate ColumnProperties_ valid key") {
      try {
-       sql("create table employee(empname String,empid String,city String,country String,gender String,salary Double) stored by 'org.apache.carbondata.format' tblproperties('columnproperties.gender.key'='value')")
+       sql("create table employee(empname String,empid String,city String,country String,gender String,salary Double) STORED AS carbondata tblproperties('columnproperties.gender.key'='value')")
        assert(true)
        sql("drop table employee")
      } catch {
@@ -44,7 +44,7 @@ class ColumnPropertyValidationTestCase extends QueryTest with BeforeAndAfterAll 
            |    country String,
            |    gender String,
            |    salary Double)
-           | stored by 'org.apache.carbondata.format'
+           | STORED AS carbondata
            | tblproperties('columnproperties.invalid.key'='value')
          """.stripMargin)
     }

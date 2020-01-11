@@ -33,7 +33,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object QuerySegmentExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("QuerySegmentExample")
+    val spark = ExampleUtils.createSparkSession("QuerySegmentExample")
     exampleBody(spark)
     spark.close()
   }
@@ -58,7 +58,7 @@ object QuerySegmentExample {
          | charField CHAR(5),
          | floatField FLOAT
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     val rootPath = new File(this.getClass.getResource("/").getPath

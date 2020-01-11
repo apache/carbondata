@@ -17,7 +17,7 @@
 package org.apache.carbondata.examples
 
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.slf4j.{Logger, LoggerFactory}
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes
@@ -100,8 +100,6 @@ object S3UsingSdkExample {
       .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
       .getOrCreate()
 
-    CarbonEnv.getInstance(spark)
-
     spark.sparkContext.setLogLevel("WARN")
     val path = if (args.length < 3) {
       "s3a://sdk/WriterOutput2 "
@@ -116,7 +114,7 @@ object S3UsingSdkExample {
     buildTestData(args, path, num)
 
     spark.sql("DROP TABLE IF EXISTS s3_sdk_table")
-    spark.sql(s"CREATE EXTERNAL TABLE s3_sdk_table STORED BY 'carbondata'" +
+    spark.sql(s"CREATE EXTERNAL TABLE s3_sdk_table STORED AS carbondata" +
       s" LOCATION '$path'")
     spark.sql("SELECT * FROM s3_sdk_table LIMIT 10").show()
     spark.stop()

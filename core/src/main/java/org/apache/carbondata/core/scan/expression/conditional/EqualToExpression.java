@@ -78,8 +78,10 @@ public class EqualToExpression extends BinaryConditionalExpression {
       result = val1.getInt().equals(val2.getInt());
     } else if (dataType == DataTypes.DOUBLE) {
       result = FilterUtil.nanSafeEqualsDoubles(val1.getDouble(), val2.getDouble());
-    } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+    } else if (dataType == DataTypes.DATE) {
       result = val1.getTime().equals(val2.getTime());
+    } else if (dataType == DataTypes.TIMESTAMP) {
+      result = val1.getTimeAsMillisecond().equals(val2.getTimeAsMillisecond());
     } else if (dataType == DataTypes.LONG) {
       result = val1.getLong().equals(val2.getLong());
     } else if (DataTypes.isDecimal(dataType)) {

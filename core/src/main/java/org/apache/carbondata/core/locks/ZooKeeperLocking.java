@@ -181,7 +181,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   public boolean unlock() {
     try {
       // exists will return null if the path doesn't exists.
-      if (null != zk.exists(lockPath, true)) {
+      if (lockPath != null && null != zk.exists(lockPath, true)) {
         zk.delete(lockPath, -1);
         lockPath = null;
       }

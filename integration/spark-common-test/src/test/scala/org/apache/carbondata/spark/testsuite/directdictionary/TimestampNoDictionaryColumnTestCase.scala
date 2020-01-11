@@ -41,7 +41,7 @@ class TimestampNoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterA
          CREATE TABLE IF NOT EXISTS timestamp_nodictionary
         (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String,
          projectcode int, projectjoindate Timestamp, projectenddate Timestamp, attendance int,
-         utilization int, salary Int) STORED BY 'org.apache.carbondata.format'"""
+         utilization int, salary Int) STORED AS carbondata"""
       )
 
       val csvFilePath = s"$resourcesPath/data_beyond68yrs.csv"

@@ -36,7 +36,7 @@ class TestLoadDataWithMaxMinBigInt extends QueryTest with BeforeAndAfterAll {
     sql(
         """
         CREATE TABLE bigint_table_01(imei string,age bigint)
-    STORED BY 'org.apache.carbondata.format'
+    STORED AS carbondata
     """)
     sql(
         s"""
@@ -55,7 +55,7 @@ class TestLoadDataWithMaxMinBigInt extends QueryTest with BeforeAndAfterAll {
     sql(
         """
         CREATE TABLE bigint_table_02(imei string,age bigint)
-    STORED BY 'org.apache.carbondata.format'
+    STORED AS carbondata
     """)
     sql(
         s"""
@@ -74,7 +74,7 @@ class TestLoadDataWithMaxMinBigInt extends QueryTest with BeforeAndAfterAll {
     sql(
         """
         CREATE TABLE bigint_table_03(imei string,age bigint)
-    STORED BY 'org.apache.carbondata.format'
+    STORED AS carbondata
     """)
     sql(
         s"""

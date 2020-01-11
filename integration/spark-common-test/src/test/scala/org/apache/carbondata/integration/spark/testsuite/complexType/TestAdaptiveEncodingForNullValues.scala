@@ -54,7 +54,7 @@ class TestAdaptiveEncodingForNullValues
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     //sql("insert into adaptive values(1,'null\001abc\001null\002null\002null')")
     sql("insert into adaptive values(1,named_struct('id', 1, 'name', 'abc', 'marks', array(1,null,null)))")
     checkAnswer(sql("select * from adaptive"),
@@ -66,7 +66,7 @@ class TestAdaptiveEncodingForNullValues
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:smallint,name:string," +
-      "marks:array<smallint>>) stored by 'carbondata'")
+      "marks:array<smallint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1, 'name', 'abc', 'marks', array(1,null,null)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1, "abc", mutable.WrappedArray.make(Array(1, null, null))))))
@@ -77,7 +77,7 @@ class TestAdaptiveEncodingForNullValues
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
-      "marks:array<bigint>>) stored by 'carbondata'")
+      "marks:array<bigint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1, 'name', 'abc', 'marks', array(1,null,null)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1, "abc", mutable.WrappedArray.make(Array(1, null, null))))))
@@ -87,7 +87,7 @@ class TestAdaptiveEncodingForNullValues
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1, 'name', 'abc', 'marks', array(1,null,null)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1, "abc", mutable.WrappedArray.make(Array(1, null, null))))))
@@ -97,8 +97,8 @@ class TestAdaptiveEncodingForNullValues
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:decimal(3,2),name:string," +
-      "marks:array<decimal(3,2)>>) stored by " +
-      "'carbondata'")
+      "marks:array<decimal(3,2)>>) " +
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 3.42, 'name', 'abc', 'marks', array(3.42,null,null)))")
     val decimal = new java.math.BigDecimal("3.42").setScale(2)
     checkAnswer(sql("select * from adaptive"),
@@ -111,8 +111,8 @@ class TestAdaptiveEncodingForNullValues
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
-      "create table adaptive(roll int, student struct<id:timestamp,name:string>) stored by " +
-      "'carbondata'")
+      "create table adaptive(roll int, student struct<id:timestamp,name:string>)" +
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', null, 'name', 'abc'))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(null, "abc"))))
@@ -124,7 +124,7 @@ class TestAdaptiveEncodingForNullValues
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
       "create table adaptive(roll int, student struct<name:string," +
-      "marks:array<timestamp>>) stored by 'carbondata'")
+      "marks:array<timestamp>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('name', 'abc', 'marks', array('2018-01-01 00:00:00', null, null)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row("abc", mutable.WrappedArray.make(Array(Timestamp.valueOf("2018-01-01 00:00:00.0"), null, null))))))
@@ -134,7 +134,7 @@ class TestAdaptiveEncodingForNullValues
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<name:string," +
-      "marks:array<date>>) stored by 'carbondata'")
+      "marks:array<date>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('name', 'abc', 'marks', array('1992-02-19', null, null)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row("abc", mutable.WrappedArray.make(Array(java.sql.Date.valueOf("1992-02-19"), null, null))))))
@@ -144,7 +144,7 @@ class TestAdaptiveEncodingForNullValues
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:long,name:string,marks:array<long>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11, 'name', 'abc', 'marks', array(111, null, null)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11, "abc", mutable.WrappedArray.make(Array(111, null, null))))))
@@ -154,7 +154,7 @@ class TestAdaptiveEncodingForNullValues
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:short,name:string,marks:array<short>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11, 'name', 'abc', 'marks', array(11, null, null)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11, "abc", mutable.WrappedArray.make(Array(11, null, null))))))
@@ -165,7 +165,7 @@ class TestAdaptiveEncodingForNullValues
     sql(
       "create table adaptive(roll int, student struct<id:boolean,name:string," +
       "marks:array<boolean>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', true, 'name', 'abc', 'marks', array(false, null, null)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(true, "abc", mutable.WrappedArray.make(Array(false, null, null))))))

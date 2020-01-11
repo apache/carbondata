@@ -31,7 +31,7 @@ class MultiFilesDataLoagdingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table multifile(empno int, empname String, designation string, doj String," +
       "workgroupcategory int, workgroupcategoryname String,deptno int, deptname String," +
       "projectcode int, projectjoindate String,projectenddate String, attendance double," +
-      "utilization double,salary double) STORED BY 'org.apache.carbondata.format'")
+      "utilization double,salary double) STORED AS carbondata")
   }
 
   test("test data loading for multi files and nested folder") {

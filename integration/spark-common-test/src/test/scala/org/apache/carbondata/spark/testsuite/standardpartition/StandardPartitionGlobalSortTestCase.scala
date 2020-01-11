@@ -41,7 +41,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -55,7 +55,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'GLOBAL_SORT_PARTITIONS'='1')""")
 
@@ -72,7 +72,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (doj Timestamp, empname String)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiontwo OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -89,7 +89,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""insert into staticpartitionone PARTITION(empno='1') select empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary from originTable""")
 
@@ -103,7 +103,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitionone PARTITION(empno='1') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -119,7 +119,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitiononeoverwrite PARTITION(empno='1') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -141,7 +141,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empname String)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_with_special_char.csv' INTO TABLE loadpartitionwithspecialchar OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -160,7 +160,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int,workgroupcategory int,designation String)
         | PARTITIONED BY (empname String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
 
@@ -197,7 +197,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   }
 
   test("global sort bad record test with null values") {
-    sql(s"""CREATE TABLE IF NOT EXISTS emp1 (emp_no int,ename string,job string,mgr_id int,date_of_joining string,salary int,bonus int) partitioned by (dept_no int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""")
+    sql(s"""CREATE TABLE IF NOT EXISTS emp1 (emp_no int,ename string,job string,mgr_id int,date_of_joining string,salary int,bonus int) partitioned by (dept_no int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')""")
     sql(s"""LOAD DATA INPATH '$resourcesPath/emp.csv' overwrite INTO TABLE emp1 OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '\')""")
     val rows = sql(s"select count(*) from emp1").collect()
     sql(s"""LOAD DATA INPATH '$resourcesPath/emp.csv' overwrite INTO TABLE emp1 OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '\','BAD_RECORDS_ACTION'='FORCE')""")
@@ -205,7 +205,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   }
 
   test("global sort badrecords on partition column") {
-    sql("create table badrecordsPartition(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
+    sql("create table badrecordsPartition(intField1 int, stringField1 string) partitioned by (intField2 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
     sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartition options('bad_records_action'='force')")
     sql("select count(*) from badrecordsPartition").show()
     checkAnswer(sql("select count(*) cnt from badrecordsPartition where intfield2 is null"), Seq(Row(9)))
@@ -213,7 +213,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   }
 
   test("global sort badrecords fail on partition column") {
-    sql("create table badrecordsPartitionfail(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
+    sql("create table badrecordsPartitionfail(intField1 int, stringField1 string) partitioned by (intField2 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
     intercept[Exception] {
       sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionfail options('bad_records_action'='fail')")
 
@@ -221,8 +221,8 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   }
 
   test("global sort badrecords ignore on partition column") {
-    sql("create table badrecordsPartitionignore(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
-    sql("create table badrecordsignore(intField1 int,intField2 int, stringField1 string) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
+    sql("create table badrecordsPartitionignore(intField1 int, stringField1 string) partitioned by (intField2 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
+    sql("create table badrecordsignore(intField1 int,intField2 int, stringField1 string) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
     sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionignore options('bad_records_action'='ignore')")
     sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsignore options('bad_records_action'='ignore')")
     checkAnswer(sql("select count(*) cnt from badrecordsPartitionignore where intfield2 is null"), sql("select count(*) cnt from badrecordsignore where intfield2 is null"))
@@ -231,14 +231,14 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
 
   test("global sort test partition fails on int null partition") {
-    sql("create table badrecordsPartitionintnull(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
+    sql("create table badrecordsPartitionintnull(intField1 int, stringField1 string) partitioned by (intField2 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
     sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionintnull options('bad_records_action'='force')")
     checkAnswer(sql("select count(*) cnt from badrecordsPartitionintnull where intfield2 = 13"), Seq(Row(1)))
   }
 
   test("global sort test partition fails on int null partition read alternate") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT, "false")
-    sql("create table badrecordsPartitionintnullalt(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
+    sql("create table badrecordsPartitionintnullalt(intField1 int, stringField1 string) partitioned by (intField2 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
     sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionintnullalt options('bad_records_action'='force')")
     checkAnswer(sql("select count(*) cnt from badrecordsPartitionintnullalt where intfield2 = 13"), Seq(Row(1)))
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT, CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT)
@@ -253,7 +253,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  deptname String,projectcode int,
         |  utilization int,salary int,projectenddate Date,doj Timestamp)
         | PARTITIONED BY (empname String)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionload partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     val frame = sql("select empno,empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from staticpartitionload")
@@ -269,7 +269,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  deptname String,projectcode int,
         |  utilization int,salary int)
         | PARTITIONED BY (projectenddate Date,doj Timestamp)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""insert into staticpartitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
     sql(s"""insert into staticpartitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
@@ -289,7 +289,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (empno int, empname String)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitiondynamic PARTITION(empno='1', empname) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -301,7 +301,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       """
         | CREATE TABLE insertstaticpartitiondynamic (designation String, doj Timestamp,salary int)
         | PARTITIONED BY (empno int, empname String)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE insertstaticpartitiondynamic PARTITION(empno, empname) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     val rows = sql(s"select count(*) from insertstaticpartitiondynamic").collect()
@@ -323,7 +323,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectjoindate Timestamp, projectenddate Date,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE partitionallcompaction OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE partitionallcompaction PARTITION(deptname='Learning', doj, projectcode) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"') """)
@@ -340,7 +340,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       """
         | CREATE TABLE weather6 (type String)
         | PARTITIONED BY (year int, month int, day int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
 
     sql("insert into weather6 partition(year=2014, month=5, day=25) select 'rainy'")
@@ -355,7 +355,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       """
         | CREATE TABLE weather7 (type String)
         | PARTITIONED BY (year int, month int, day int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
 
     sql("insert into weather7 partition(year=2014, month=05, day=25) select 'rainy'")
@@ -376,7 +376,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       name string
       )
       PARTITIONED BY(record_date int)
-      STORED BY 'org.apache.carbondata.format'
+      STORED AS carbondata
       TBLPROPERTIES('SORT_COLUMNS'='id')""")
     sql(s"""create table carbon_test_hive(
       id string,
@@ -415,7 +415,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         | country String,
         | area String,
         | salary Int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(
@@ -435,7 +435,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         | area String,
         | salary Int)
         | PARTITIONED BY (logdate Timestamp)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='id,vin')
       """.stripMargin)
     sql(
@@ -509,7 +509,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         | country String,
         | area String,
         | salary Int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
 
     sql(
@@ -529,7 +529,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         | area String,
         | salary Int)
         | PARTITIONED BY (logdate date)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='id,vin')
       """.stripMargin)
     sql(
@@ -595,7 +595,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FAIL.name())
       sql("drop table if exists partdatecarb")
       sql(
-        "create table partdatecarb(name string, age Int) partitioned by(dob date) stored by 'carbondata'")
+        "create table partdatecarb(name string, age Int) partitioned by(dob date) STORED AS carbondata")
 
       sql("insert into partdatecarb partition(dob='2016-06-28') select 'name1',121")
       checkAnswer(sql("select name,age,cast(dob as string) from partdatecarb"),
@@ -612,7 +612,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FAIL.name())
       sql("drop table if exists partdatecarb1")
       sql(
-        "create table partdatecarb1(name string, age Int) partitioned by(dob timestamp) stored by 'carbondata'")
+        "create table partdatecarb1(name string, age Int) partitioned by(dob timestamp) STORED AS carbondata")
 
       sql("insert into partdatecarb1 partition(dob='2016-06-28 00:00:00') select 'name1',121")
       checkAnswer(sql("select name,age,cast(dob as string) from partdatecarb1"),
@@ -629,7 +629,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FAIL.name())
       sql("drop table if exists partdatecarb2")
       sql(
-        "create table partdatecarb2(name string, dob string) partitioned by(age Int) stored by 'carbondata' ")
+        "create table partdatecarb2(name string, dob string) partitioned by(age Int) STORED AS carbondata ")
 
       sql("insert into partdatecarb2 partition(age='12') select 'name1','2016-06-28'")
       checkAnswer(sql("select name,age,cast(dob as string) from partdatecarb2"),
@@ -649,7 +649,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode String, projectjoindate Timestamp, projectenddate Timestamp,attendance String,
         |  utilization String,salary String)
         | PARTITIONED BY (doj Timestamp, empname String)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiontwoalldims OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     checkAnswer(sql("select count(*) from partitiontwoalldims"), Seq(Row(10)))
@@ -669,7 +669,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
       sql("drop table if exists partdatecarb4")
       sql(
-        "create table partdatecarb4(name string, age Int) partitioned by(country string, state string, city string) stored by 'carbondata'")
+        "create table partdatecarb4(name string, age Int) partitioned by(country string, state string, city string) STORED AS carbondata")
 
       sql("insert into partdatecarb4 partition(state,city,country='india') select 'name1',12,'KA', 'BGLR'")
       sql("insert into partdatecarb4 partition(city,state,country='india') select 'name1',12, 'BGLR','KA'")
@@ -694,7 +694,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String)
         | PARTITIONED BY (salary decimal)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondecimal OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -711,7 +711,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String)
         | PARTITIONED BY (salary decimal)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondecimalstatic partition(salary='1.0') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -727,7 +727,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int,empno int, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String,salary int)
         | PARTITIONED BY (projectjoindate Timestamp)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondatadelete OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
@@ -738,7 +738,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   test("partition colunm test without partition column in fileheader of load command") {
     sql("DROP TABLE IF EXISTS partitiontablewithoutpartcolumninfileheader")
 
-    sql("CREATE TABLE partitiontablewithoutpartcolumninfileheader (CUST_ID int,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) partitioned by(CUST_NAME String) STORED BY 'org.apache.carbondata.format' ")
+    sql("CREATE TABLE partitiontablewithoutpartcolumninfileheader (CUST_ID int,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) partitioned by(CUST_NAME String) STORED AS carbondata ")
     sql(s"""LOAD DATA INPATH '$resourcesPath/data_with_all_types.csv' into table partitiontablewithoutpartcolumninfileheader partition(cust_name='ravi') OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME1,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""")
 
     checkAnswer(sql("select count(*) from partitiontablewithoutpartcolumninfileheader"), Seq(Row(10)))
@@ -754,7 +754,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String)
         | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     intercept[MalformedCarbonCommandException] {
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionwrongformat partition(projectjoindate='2016-12-01',salary='gg') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -775,7 +775,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String)
         | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultpartition partition(projectjoindate='__HIVE_DEFAULT_PARTITION__',salary='1.0') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     checkAnswer(sql("select count(salary) from partitiondefaultpartition"), Seq(Row(10)))
@@ -791,7 +791,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String)
         | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultpartitionfail partition(projectjoindate='__HIVE_DEFAULT_PARTITION__',salary='1.0') OPTIONS('bad_records_logger_enable'='true', 'bad_records_action'='fail','DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     checkAnswer(sql("select count(*) from partitiondefaultpartitionfail"), Seq(Row(10)))
@@ -802,21 +802,21 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
   test("data loading with int partition issue") {
     sql("DROP TABLE IF EXISTS intissue")
-    sql("create table intissue(a int) partitioned by (b int) stored by 'carbondata'")
+    sql("create table intissue(a int) partitioned by (b int) STORED AS carbondata")
     sql("insert into intissue values(1,1)")
     checkAnswer(sql("select * from intissue"), Seq(Row(1,1)))
   }
 
   test("data loading with int partition issue with global sort") {
     sql("DROP TABLE IF EXISTS intissuesort")
-    sql("create table intissuesort(a int) partitioned by (b int) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
+    sql("create table intissuesort(a int) partitioned by (b int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
     sql("insert into intissuesort values(1,1)")
     checkAnswer(sql("select * from intissuesort"), Seq(Row(1,1)))
   }
 
   test("data loading with decimal column fail issue") {
     sql("DROP TABLE IF EXISTS partitiondecimalfailissue")
-    sql("CREATE TABLE IF NOT EXISTS partitiondecimalfailissue (ID Int, date Timestamp, country String, name String, phonetype String, serialname String) partitioned by (salary Decimal(17,2)) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE IF NOT EXISTS partitiondecimalfailissue (ID Int, date Timestamp, country String, name String, phonetype String, serialname String) partitioned by (salary Decimal(17,2)) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalDataWithHeader.csv' into table partitiondecimalfailissue")
     sql(s"select * from partitiondecimalfailissue").show()
     sql(s"insert into partitiondecimalfailissue partition(salary='13000000.7878788') select ID,date,country,name,phonetype,serialname from partitiondecimalfailissue" )
@@ -825,14 +825,14 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
   test("data loading with decimalissue partition issue") {
     sql("DROP TABLE IF EXISTS decimalissue")
-    sql("create table decimalissue(a int) partitioned by (b decimal(2,2)) stored by 'carbondata'")
+    sql("create table decimalissue(a int) partitioned by (b decimal(2,2)) STORED AS carbondata")
     sql("insert into decimalissue values(23,21.2)")
     checkAnswer(sql("select * from decimalissue"), Seq(Row(23,null)))
   }
 
   test("data loading scalar query partition issue") {
     sql("DROP TABLE IF EXISTS scalarissue")
-    sql("create table scalarissue(a int) partitioned by (salary double) stored by 'carbondata'")
+    sql("create table scalarissue(a int) partitioned by (salary double) STORED AS carbondata")
     sql("insert into scalarissue values(23,21.2)")
     sql("DROP TABLE IF EXISTS scalarissue_hive")
     sql("create table scalarissue_hive(a int,salary double) using parquet partitioned by (salary) ")
@@ -859,7 +859,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
   test("global sort badrecords fail on partition column message") {
     sql("DROP TABLE IF EXISTS badrecordsPartitionfailmessage")
-    sql("create table badrecordsPartitionfailmessage(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
+    sql("create table badrecordsPartitionfailmessage(intField1 int, stringField1 string) partitioned by (intField2 int) STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
     val ex = intercept[Exception] {
       sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionfailmessage options('bad_records_action'='fail')")
     }
@@ -868,7 +868,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
   test("multiple compaction on partition table") {
     sql("DROP TABLE IF EXISTS comp_dt2")
-    sql("create table comp_dt2(id int,name string) partitioned by (dt date,c4 int) stored by 'carbondata'")
+    sql("create table comp_dt2(id int,name string) partitioned by (dt date,c4 int) STORED AS carbondata")
     sql("insert into comp_dt2 select 1,'A','2001-01-01',1")
     sql("insert into comp_dt2 select 2,'B','2001-01-01',1")
     sql("insert into comp_dt2 select 3,'C','2002-01-01',2")
@@ -910,7 +910,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
   test("test insert into partition column which does not exists") {
     sql("drop table if exists partitionNoColumn")
-    sql("create table partitionNoColumn (name string, dob date) partitioned by(year int,month int) stored by 'carbondata'")
+    sql("create table partitionNoColumn (name string, dob date) partitioned by(year int,month int) STORED AS carbondata")
     val exMessage = intercept[Exception] {
       sql("insert into partitionNoColumn partition(year=2014,month=01,day=01) select 'martin','2014-04-07'")
     }
@@ -926,7 +926,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String)
         | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='local_sort')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='local_sort')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultlocalsort OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     checkAnswer(sql("select count(*) from partitiondefaultlocalsort"), Seq(Row(10)))
@@ -941,7 +941,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String)
         | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='NO_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='NO_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultnosort OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     checkAnswer(sql("select count(*) from partitiondefaultnosort"), Seq(Row(10)))
@@ -957,7 +957,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String)
         | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultrename OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     checkAnswer(sql("select count(*) from partitiondefaultrename"), Seq(Row(10)))
@@ -977,7 +977,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectenddate Timestamp,attendance int,
         |  utilization int, doj Timestamp, empname String)
         | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"alter table partitiondefaultrenamefirst rename to partitiondefaultrenamefirst_new")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultrenamefirst_new OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -993,7 +993,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int,doj Timestamp, empname String)
         | PARTITIONED BY (newcol1 date, newcol2 int)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiontwonocolumns partition(newcol1='2016-08-09', newcol2='20') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 

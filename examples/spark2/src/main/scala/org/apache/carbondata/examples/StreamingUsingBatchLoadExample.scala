@@ -46,7 +46,7 @@ object StreamingUsingBatchLoadExample {
       System.currentTimeMillis().toString()
     val streamTableName = s"dstream_batch_table"
 
-    val spark = ExampleUtils.createCarbonSession("StreamingUsingBatchLoadExample", 4)
+    val spark = ExampleUtils.createSparkSession("StreamingUsingBatchLoadExample", 4)
 
     val requireCreateTable = true
 
@@ -63,7 +63,7 @@ object StreamingUsingBatchLoadExample {
            | city STRING,
            | salary FLOAT
            | )
-           | STORED BY 'carbondata'
+           | STORED AS carbondata
            | TBLPROPERTIES(
            | 'sort_columns'='name',
            | 'AUTO_LOAD_MERGE'='true',

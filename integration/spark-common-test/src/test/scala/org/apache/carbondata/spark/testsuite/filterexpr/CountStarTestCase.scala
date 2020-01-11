@@ -34,7 +34,7 @@ class CountStarTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql("CREATE TABLE filterTimestampDataType (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
-      "STORED BY 'org.apache.carbondata.format'"
+      "STORED AS carbondata"
     )
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")

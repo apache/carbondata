@@ -164,8 +164,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       } else {
         Some(cols)
       }
-      CarbonSessionCatalogUtil
-        .alterDropColumns(tableIdentifier, schemaParts, columns, sparkSession)
+      CarbonSessionCatalogUtil.alterDropColumns(
+        tableIdentifier, schemaParts, columns, sparkSession)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       // TODO: 1. add check for deletion of index tables
 

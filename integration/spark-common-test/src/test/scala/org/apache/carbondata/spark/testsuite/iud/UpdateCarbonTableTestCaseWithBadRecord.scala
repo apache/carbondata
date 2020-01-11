@@ -33,7 +33,7 @@ class UpdateCarbonTableTestCaseWithBadRecord extends QueryTest with BeforeAndAft
 
   test("test update operation with Badrecords action as force.") {
     sql("""drop table if exists badtable""").show
-    sql("""create table badtable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table badtable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/badrecord.csv' INTO table badtable""")
     sql("""update badtable d  set (d.c2) = (d.c2 / 1)""").show()
     checkAnswer(
@@ -48,7 +48,7 @@ class UpdateCarbonTableTestCaseWithBadRecord extends QueryTest with BeforeAndAft
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION , LoggerAction.FAIL.name())
     sql("""drop table if exists badtable""").show
-    sql("""create table badtable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table badtable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/badrecord.csv' INTO table badtable""")
     val exec = intercept[Exception] {
       sql("""update badtable d  set (d.c2) = (d.c2 / 1)""").show()

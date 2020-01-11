@@ -33,7 +33,7 @@ class FloatDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS tfloat
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int,rating float)
-           STORED BY 'carbondata'
+           STORED AS carbondata
            """)
     sql(s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/floatSample.csv' into table tfloat

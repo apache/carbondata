@@ -28,7 +28,7 @@ class TestLoadOptions extends QueryTest with BeforeAndAfterAll{
   override def beforeAll {
     sql("drop table if exists TestLoadTableOptions")
     sql("CREATE table TestLoadTableOptions (ID int, date String, country String, name String," +
-        "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'")
+        "phonetype String, serialname String, salary int) STORED AS carbondata")
   }
 
   override def afterAll {

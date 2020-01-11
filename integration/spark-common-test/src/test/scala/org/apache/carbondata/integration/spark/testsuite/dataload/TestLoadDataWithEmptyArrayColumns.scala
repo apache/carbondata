@@ -33,7 +33,7 @@ class TestLoadDataWithEmptyArrayColumns extends QueryTest with BeforeAndAfterAll
            CREATE TABLE nest13 (imei string,age int,
            productdate timestamp,gamePointId double,
            reserved6 array<string>,mobile struct<poc:string, imsi:int>)
-           STORED BY 'org.apache.carbondata.format'
+           STORED AS carbondata
         """)
   }
 

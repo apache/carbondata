@@ -55,7 +55,7 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
       "array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, " +
       "ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>, " +
       "proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId " +
-      "double,contractNumber double)  STORED BY 'org.apache.carbondata.format'")
+      "double,contractNumber double)  STORED AS carbondata")
     sql("LOAD DATA local inpath '" + resourcesPath +
         "/complextypesample.csv' INTO table complexcarbontable  OPTIONS('DELIMITER'=',', " +
         "'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,ROMName," +
@@ -73,8 +73,8 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
         s"complexhivetable")
     sql(
       "create table complex_filter(test1 int, test2 array<String>,test3 array<bigint>,test4 " +
-      "array<int>,test5 array<string>,test6 array<timestamp>,test7 array<string>) STORED BY 'org" +
-      ".apache.carbondata.format'")
+      "array<int>,test5 array<string>,test6 array<timestamp>,test7 array<string>) " +
+      "STORED AS carbondata")
     sql("LOAD DATA INPATH '" + resourcesPath +
         "/array1.csv'  INTO TABLE complex_filter options ('DELIMITER'=',', 'QUOTECHAR'='\"', " +
         "'COMPLEX_DELIMITER_LEVEL_1'='$', 'FILEHEADER'= 'test1,test2,test3,test4,test5,test6," +
@@ -82,7 +82,7 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
 
     sql(
       "create table structusingarraycarbon (MAC struct<MAC1:array<string>," +
-      "ActiveCountry:array<string>>) STORED BY 'org.apache.carbondata.format'");
+      "ActiveCountry:array<string>>) STORED AS carbondata");
     sql("LOAD DATA local INPATH '" + resourcesPath +
         "/struct_all.csv' INTO table structusingarraycarbon options ('DELIMITER'=',', " +
         "'QUOTECHAR'='\"', 'FILEHEADER'='MAC','COMPLEX_DELIMITER_LEVEL_1'='$'," +
@@ -96,8 +96,7 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
 
     sql(
       "create table structusingstructCarbon(name struct<middlename:string, " +
-      "othernames:struct<firstname:string,lastname:string>,age:int> ) STORED BY 'org.apache" +
-      ".carbondata.format'")
+      "othernames:struct<firstname:string,lastname:string>,age:int> ) STORED AS carbondata")
     sql("LOAD DATA local INPATH '" + resourcesPath +
         "/structusingstruct.csv' INTO table structusingstructCarbon options ('DELIMITER'=',', " +
         "'QUOTECHAR'='\"', 'FILEHEADER'='name','COMPLEX_DELIMITER_LEVEL_1'='$'," +
@@ -115,8 +114,8 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
     try {
       sql("drop table if exists carbon_table")
       sql(
-        ("CREATE TABLE CARBON_TABLE(stringField string,complexData array<string>)stored by " +
-         "'CARBONDATA' ")
+        ("CREATE TABLE CARBON_TABLE(stringField string,complexData array<string>) " +
+         "STORED AS carbondata")
           .stripMargin)
       assert(true)
     }
@@ -133,13 +132,13 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
       "imsi:string>, MAC array<string>, locationinfo array<struct<ActiveAreaId:int, " +
       "ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, " +
       "ActiveStreet:string>>, proddate struct<productionDate:string," +
-      "activeDeactivedate:array<string>>, gamePointId double,contractNumber double)  STORED BY " +
-      "'org.apache.carbondata.format'");
+      "activeDeactivedate:array<string>>, gamePointId double,contractNumber double) " +
+      "STORED AS carbondata")
     sql("LOAD DATA local inpath '" + resourcesPath +
         "/complextypespecialchardelimiter.csv' INTO table complexcarbonwithspecialchardelimiter  " +
         "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId," +
         "ROMSize,ROMName,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId," +
-        "contractNumber', 'COMPLEX_DELIMITER_LEVEL_1'='^', 'COMPLEX_DELIMITER_LEVEL_2'='*')");
+        "contractNumber', 'COMPLEX_DELIMITER_LEVEL_1'='^', 'COMPLEX_DELIMITER_LEVEL_2'='*')")
     sql(
       "create table complexhivewithspecialchardelimiter(deviceInformationId int, channelsId " +
       "string, ROMSize string, ROMName String, purchasedate string, mobile struct<imei:string, " +
@@ -150,7 +149,7 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
       "delimited fields terminated by ',' collection items terminated by '^' map keys terminated " +
       "by '*'")
     sql("LOAD DATA local inpath '" + resourcesPath +
-        "/complextypespecialchardelimiter.csv' INTO table complexhivewithspecialchardelimiter");
+        "/complextypespecialchardelimiter.csv' INTO table complexhivewithspecialchardelimiter")
     checkAnswer(sql("select * from complexcarbonwithspecialchardelimiter"),
       sql("select * from complexhivewithspecialchardelimiter"))
     sql("drop table if exists complexcarbonwithspecialchardelimiter")

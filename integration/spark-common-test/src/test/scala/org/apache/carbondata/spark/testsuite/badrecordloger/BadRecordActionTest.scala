@@ -44,7 +44,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales")
     sql(
       """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata""")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS" +
         "('bad_records_action'='force', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"','timestampformat'='yyyy/MM/dd')")
@@ -57,7 +57,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales")
     sql(
       """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata""")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS" +
         "('bad_records_action'='FORCE', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"','timestampformat'='yyyy/MM/dd')")
@@ -69,7 +69,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales")
     sql(
       """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata""")
     val exception = intercept[Exception] {
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS" +
           "('bad_records_action'='fail', 'DELIMITER'=" +
@@ -87,7 +87,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales")
     sql(
       """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata""")
     val exception = intercept[Exception] {
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS" +
           "('bad_records_action'='FAIL', 'DELIMITER'=" +
@@ -105,7 +105,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales")
     sql(
       """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata""")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS" +
         "('bad_records_action'='ignore', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"','timestampformat'='yyyy/MM/dd')")
@@ -117,7 +117,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales")
     sql(
       """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata""")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS" +
         "('bad_records_action'='IGNORE', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"','timestampformat'='yyyy/MM/dd')")
@@ -129,7 +129,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales")
     sql(
       """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata""")
     val badRecordLocation = CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
@@ -153,7 +153,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales")
     sql(
       """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata""")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS" +
         "('bad_records_action'='REDIRECT', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"','timestampformat'='yyyy/MM/dd')")
@@ -165,7 +165,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales")
     sql(
       """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata""")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS" +
         "('bad_records_action'='REDIRECT', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"', 'BAD_RECORD_PATH'='" + { badRecordFilePath.getCanonicalPath } +
@@ -178,7 +178,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales_no_sort")
     sql(
       """CREATE TABLE IF NOT EXISTS sales_no_sort(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata' tblproperties('sort_scope'='NO_SORT')""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
 
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_no_sort OPTIONS" +
         "('bad_records_action'='FORCE', 'DELIMITER'=" +
@@ -191,7 +191,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales_no_sort")
     sql(
       """CREATE TABLE IF NOT EXISTS sales_no_sort(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata' tblproperties('sort_scope'='NO_SORT')""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
 
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_no_sort OPTIONS" +
         "('bad_records_action'='REDIRECT', 'DELIMITER'=" +
@@ -205,7 +205,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales_no_sort")
     sql(
       """CREATE TABLE IF NOT EXISTS sales_no_sort(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata' tblproperties('sort_scope'='NO_SORT')""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
 
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_no_sort OPTIONS" +
         "('bad_records_action'='IGNORE', 'DELIMITER'=" +
@@ -218,7 +218,7 @@ class BadRecordActionTest extends QueryTest {
     sql("drop table if exists sales_no_sort")
     sql(
       """CREATE TABLE IF NOT EXISTS sales_no_sort(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata' tblproperties('sort_scope'='NO_SORT')""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata tblproperties('sort_scope'='NO_SORT')""")
 
     val exception = intercept[Exception] {
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_no_sort OPTIONS" +
@@ -235,7 +235,7 @@ class BadRecordActionTest extends QueryTest {
   test("test bad record with IGNORE option and sort scope as NO_SORT for bucketed table") {
     sql("drop table if exists sales_bucket")
     sql("CREATE TABLE IF NOT EXISTS sales_bucket(ID BigInt, date Timestamp, country String," +
-          "actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata' TBLPROPERTIES ('BUCKETNUMBER'='2', 'BUCKETCOLUMNS'='country','sort_scope'='NO_SORT')")
+          "actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata TBLPROPERTIES ('BUCKETNUMBER'='2', 'BUCKETCOLUMNS'='country','sort_scope'='NO_SORT')")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_bucket OPTIONS" +
         "('bad_records_action'='IGNORE', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"','timestampformat'='yyyy/MM/dd')")
@@ -246,7 +246,7 @@ class BadRecordActionTest extends QueryTest {
   test("test bad record with REDIRECT option and sort scope as NO_SORT for bucketed table") {
     sql("drop table if exists sales_bucket")
     sql("CREATE TABLE IF NOT EXISTS sales_bucket(ID BigInt, date Timestamp, country String," +
-        "actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata' TBLPROPERTIES ('BUCKETNUMBER'='2', 'BUCKETCOLUMNS'='country', 'sort_scope'='NO_SORT')")
+        "actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata TBLPROPERTIES ('BUCKETNUMBER'='2', 'BUCKETCOLUMNS'='country', 'sort_scope'='NO_SORT')")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_bucket OPTIONS" +
         "('bad_records_action'='REDIRECT', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"', 'BAD_RECORD_PATH'='" + { badRecordFilePath.getCanonicalPath } +

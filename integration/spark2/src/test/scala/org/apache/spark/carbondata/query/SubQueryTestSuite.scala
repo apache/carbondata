@@ -28,7 +28,7 @@ class SubQueryTestSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(){
     sql("drop table if exists subquery")
-    sql("create table subquery(id int, name string, rating float) stored by 'carbondata'")
+    sql("create table subquery(id int, name string, rating float) STORED AS carbondata")
     sql(s"load data local inpath '$tempDirPath/data1.csv' into table subquery")
   }
 
@@ -41,7 +41,7 @@ class SubQueryTestSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test to check Broad cast filter works") {
     sql("drop table if exists anothertable")
-    sql("create table anothertable(id int, name string, rating float) stored by 'carbondata'")
+    sql("create table anothertable(id int, name string, rating float) STORED AS carbondata")
     sql(s"load data local inpath '$tempDirPath/data1.csv' into table anothertable")
 
     val executedPlan =

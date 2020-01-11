@@ -39,7 +39,7 @@ class TestAlterTableWithTableComment extends QueryTest with BeforeAndAfterAll {
          | id int,
          | name string
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin
     )
 
@@ -71,7 +71,7 @@ class TestAlterTableWithTableComment extends QueryTest with BeforeAndAfterAll {
          | name string
          | comment "This is table comment"
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin
     )
 
@@ -98,7 +98,7 @@ class TestAlterTableWithTableComment extends QueryTest with BeforeAndAfterAll {
          | name string
          | )
          | comment "This is table comment"
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin
     )
 
