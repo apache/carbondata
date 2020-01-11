@@ -192,6 +192,13 @@ public final class CarbonCommonConstants {
   public static final String LOCK_PATH_DEFAULT = "";
 
   /**
+   * Specifies the lock implement class.
+   * the class should be the implement of ICarbonLock
+   */
+  @CarbonProperty
+  public static final String LOCK_CLASS = "carbon.lock.class";
+
+  /**
    * ZOOKEEPER_LOCATION this is the location in zookeeper file system where locks are created.
    * mechanism of carbon
    */
@@ -361,6 +368,15 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_SYSTEM_FOLDER_LOCATION = "carbon.system.folder.location";
+
+  @CarbonProperty
+  public static final String CARBON_DATAMAP_SCHEMA_STORAGE = "carbon.datamap.schema.storage";
+
+  public static final String CARBON_DATAMAP_SCHEMA_STORAGE_DEFAULT = "DISK";
+
+  public static final String CARBON_DATAMAP_SCHEMA_STORAGE_DISK = "DISK";
+
+  public static final String CARBON_DATAMAP_SCHEMA_STORAGE_DATABASE = "DATABASE";
 
   /**
    * It is internal configuration and used only for test purpose.
@@ -1898,6 +1914,11 @@ public final class CarbonCommonConstants {
   public static final long CARBON_256MB = 256 * 1024 * 1024;
 
   /**
+   * CUSTOM TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_CUSTOM = "CUSTOM";
+
+  /**
    * ZOOKEEPERLOCK TYPE
    */
   public static final String CARBON_LOCK_TYPE_ZOOKEEPER = "ZOOKEEPERLOCK";
@@ -2287,6 +2308,9 @@ public final class CarbonCommonConstants {
    * hive column-name maximum length
    */
   public static final int MAXIMUM_CHAR_LENGTH = 128;
+
+  public static final String DATABASE_LOCATION_PROVIDER =
+      "org.apache.carbondata.database.location.provider";
 
   /**
    * Carbon property for timeseries MV to define the first day of week

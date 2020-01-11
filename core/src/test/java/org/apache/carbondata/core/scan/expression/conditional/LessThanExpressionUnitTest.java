@@ -266,7 +266,7 @@ public class LessThanExpressionUnitTest {
       new MockUp<ExpressionResult>() {
         Boolean returnMockFlag = true;
 
-        @Mock public Long getTime() {
+        @Mock public Long getTimeAsMillisecond() {
           if (returnMockFlag) {
             returnMockFlag = false;
             return 1190505600L;
@@ -311,7 +311,7 @@ public class LessThanExpressionUnitTest {
       new MockUp<ExpressionResult>() {
         Boolean returnMockFlag = true;
 
-        @Mock public Long getTime() {
+        @Mock public Long getTimeAsMillisecond() {
           if (returnMockFlag) {
             returnMockFlag = false;
             return 1190592000L;

@@ -32,7 +32,7 @@ class TestLoadDataWithBlankLine extends QueryTest with BeforeAndAfterAll {
       "doj String, workgroupcategory int, workgroupcategoryname String, deptno int, " +
       "deptname String, projectcode int, projectjoindate String, projectenddate String, " +
       "attendance int,utilization int,salary int) " +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithblanklines.csv' INTO TABLE" +
         " carbontable OPTIONS('DELIMITER'= ',')")
 
@@ -41,7 +41,7 @@ class TestLoadDataWithBlankLine extends QueryTest with BeforeAndAfterAll {
       "doj String, workgroupcategory int, workgroupcategoryname String, deptno int, " +
       "deptname String, projectcode int, projectjoindate String, projectenddate String, " +
       "attendance int,utilization int,salary int) " +
-      "STORED BY 'org.apache.carbondata.format'")
+      "STORED AS carbondata")
   }
   test("test carbon table data loading when there are  blank lines in data") {
     checkAnswer(sql("select count(*) from carbontable"),

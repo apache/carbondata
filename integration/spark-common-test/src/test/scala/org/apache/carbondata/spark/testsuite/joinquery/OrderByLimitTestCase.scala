@@ -32,7 +32,7 @@ class OrderByLimitTestCase extends QueryTest with BeforeAndAfterAll {
       "CREATE TABLE carbon1 (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE carbon1 OPTIONS
           |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin);
@@ -41,7 +41,7 @@ class OrderByLimitTestCase extends QueryTest with BeforeAndAfterAll {
       "CREATE TABLE carbon2 (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE carbon2 OPTIONS
           |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin);

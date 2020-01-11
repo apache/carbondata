@@ -29,7 +29,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object TableLevelCompactionOptionExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("TableLevelCompactionOptionExample")
+    val spark = ExampleUtils.createSparkSession("TableLevelCompactionOptionExample")
     exampleBody(spark)
     spark.close()
   }
@@ -54,7 +54,8 @@ object TableLevelCompactionOptionExample {
          | serialname String,
          | salary Int,
          | floatField float
-         | ) STORED BY 'carbondata'
+         | )
+         | STORED AS carbondata
          | TBLPROPERTIES (
          | 'MAJOR_COMPACTION_SIZE'='1024',
          | 'AUTO_LOAD_MERGE'='true',

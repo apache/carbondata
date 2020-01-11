@@ -50,7 +50,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("Update operation on carbon table with insert into") {
     sql(s"create database carbon2 location '$dblocation'")
     sql("use carbon2")
-    sql("""create table carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     // update operation
@@ -81,7 +81,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("create table and load data") {
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/dblocation/test.csv' INTO table carbon.carbontable""")
     checkAnswer(sql("select count(*) from carbontable"), Row(5))
   }
@@ -89,7 +89,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("create table and insert data") {
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     checkAnswer(sql("select count(*) from carbontable"), Row(1))
     checkAnswer(sql("select c1 from carbontable"), Seq(Row("a")))
@@ -98,7 +98,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("create table and 2 times data load") {
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'aa','aaa'")
     checkAnswer(sql("select count(*) from carbontable"), Row(2))
@@ -112,7 +112,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql(
       """
          CREATE TABLE automerge(id int, name string, city string, age int)
-         STORED BY 'org.apache.carbondata.format'
+         STORED AS carbondata
       """)
     val testData = s"$resourcesPath/sample.csv"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table automerge")
@@ -128,7 +128,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("Delete operation on carbon table") {
     sql(s"create database carbon1 location '$dblocation'")
     sql("use carbon1")
-    sql("""create table carbon1.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table carbon1.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     // delete operation
@@ -143,7 +143,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("Alter table add column test") {
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     sql("Alter table carbontable add columns(c4 string) " +
@@ -158,7 +158,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("Alter table change column datatype test") {
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     sql("Alter table carbontable change c2 c2 long")
@@ -174,7 +174,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("use carbon")
     sql(
       """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
-        |STORED BY 'org.apache.carbondata.format'
+        |STORED AS carbondata
         |TBLPROPERTIES('SORT_COLUMNS' = 'c2')
         |""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
@@ -193,7 +193,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("use carbon")
     sql(
       """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
-        |STORED BY 'org.apache.carbondata.format'
+        |STORED AS carbondata
         |TBLPROPERTIES('SORT_COLUMNS' = 'c2')
         |""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
@@ -212,7 +212,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("use carbon")
     sql(
       """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
-        |STORED BY 'org.apache.carbondata.format'
+        |STORED AS carbondata
         |TBLPROPERTIES('SORT_COLUMNS' = 'c2')
         |""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
@@ -231,7 +231,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
     sql("use carbon")
     sql(
       """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
-        |STORED BY 'org.apache.carbondata.format'
+        |STORED AS carbondata
         |TBLPROPERTIES('SORT_COLUMNS' = 'c2')
         |""".stripMargin)
     sql("insert into carbontable select 'a',1,'aa','aaa'")
@@ -250,7 +250,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   test("Alter table drop column test") {
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     sql("Alter table carbontable drop columns(c2)")

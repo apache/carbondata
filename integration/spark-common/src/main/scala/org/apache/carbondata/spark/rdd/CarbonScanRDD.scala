@@ -654,7 +654,8 @@ class CarbonScanRDD[T: ClassTag](
           carbonSessionInfo.getThreadParams
             .getProperty(inputSegmentsKey, carbonSessionInfo.getSessionParams
               .getProperty(inputSegmentsKey,
-              CarbonProperties.getInstance().getProperty(inputSegmentsKey, "*"))))
+                CarbonProperties.getInstance()
+                  .getProperty(inputSegmentsKey, conf.get(inputSegmentsKey, "*")))))
     }
     format
   }

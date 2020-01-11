@@ -36,7 +36,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       "CREATE TABLE alldatatypestableAGG (empno int, empname String, designation String, doj " +
       "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
       "String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance " +
-      "int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "int,utilization int,salary int) STORED AS carbondata")
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE alldatatypestableAGG " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")

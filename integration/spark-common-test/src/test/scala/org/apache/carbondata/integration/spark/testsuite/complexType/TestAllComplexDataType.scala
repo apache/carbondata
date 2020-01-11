@@ -65,7 +65,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
 
   def createTables(schema: String): Unit = {
     dropTables()
-    sql("create table complextable" + schema + " stored by 'carbondata'")
+    sql("create table complextable" + schema + " STORED AS carbondata")
     sql("create table hivetable" + schema + " row format delimited fields terminated by ','")
     sql("create table fileformatTable" + schema + " using carbon")
   }
@@ -398,7 +398,7 @@ class TestAllComplexDataType extends QueryTest with BeforeAndAfterAll {
     val schema = "(smallintColumn map<double,array<short>>, intColumn map<double,array<int>>, bigintColumn map<double,array<bigint>>, " +
     "doubleColumn map<double,array<double>>, decimalColumn map<double,array<decimal(10,3)>>, floatColumn map<double,array<float>>,timestampColumn map<double,array<timestamp>>, " +
     "dateColumn map<double,array<date>>, stringColumn map<double,array<string>>, booleanColumn map<double,array<boolean>>)"
-    sql("create table complextable" + schema + " stored by 'carbondata'")
+    sql("create table complextable" + schema + " STORED AS carbondata")
     def insertData(tableName: String) = {
       sql(s"insert into $tableName values(map(1.1,array(1)),map(4.1,array(5)), map(4.1,array(789)), map(1.1,array(2.3)), map(2.1,array(23)), " +
           "map(2.1,array(56)), map(2.1,array('2017-04-01 12:00:00.0')), map(1.1,array('2017-09-08')), map(4.1,array('abc')), map(1.1,array(true)))")

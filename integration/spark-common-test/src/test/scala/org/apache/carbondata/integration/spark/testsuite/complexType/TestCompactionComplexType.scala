@@ -49,7 +49,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -61,7 +61,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500, 'name', 'abc', 'marks', array(20,30,40)))")
     sql("insert into adaptive values(2,named_struct('id', 600, 'name', 'abc', 'marks', array(30,30,40)))")
     sql("insert into adaptive values(3,named_struct('id', 700, 'name', 'abc', 'marks', array(40,30,40)))")
@@ -78,7 +78,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -90,7 +90,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500, 'name', 'abc', 'marks', array(200,300,400)))")
     sql("insert into adaptive values(2,named_struct('id', 600, 'name', 'abc', 'marks', array(300,300,400)))")
     sql("insert into adaptive values(3,named_struct('id', 700, 'name', 'abc', 'marks', array(400,300,400)))")
@@ -107,7 +107,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -119,7 +119,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 50000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(2,named_struct('id', 70000, 'name', 'abc', 'marks', array(2000000,4000000,4000000)))")
     sql("insert into adaptive values(3,named_struct('id', 100000, 'name', 'abc', 'marks', array(2000000,5000000,4000000)))")
@@ -136,7 +136,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -148,7 +148,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500000, 'name', 'abc', 'marks', array(200,300,52000000)))")
     sql("insert into adaptive values(2,named_struct('id', 700000, 'name', 'abc', 'marks', array(210,350,52000000)))")
     sql("insert into adaptive values(3,named_struct('id', 10000000, 'name', 'abc', 'marks', array(200,300,52000000)))")
@@ -166,7 +166,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:smallint,name:string," +
-      "marks:array<smallint>>) stored by 'carbondata'")
+      "marks:array<smallint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 100, 'name', 'abc', 'marks', array(20,30,40)))")
     sql("insert into adaptive values(2,named_struct('id', 200, 'name', 'abc', 'marks', array(30,40,50)))")
     sql("insert into adaptive values(3,named_struct('id', 300, 'name', 'abd', 'marks', array(30,41,55)))")
@@ -183,7 +183,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:smallint,name:string," +
-      "marks:array<smallint>>) stored by 'carbondata'")
+      "marks:array<smallint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500, 'name', 'abc', 'marks', array(200,300,400)))")
     sql("insert into adaptive values(2,named_struct('id', 8000, 'name', 'abc', 'marks', array(300,410,500)))")
     sql("insert into adaptive values(3,named_struct('id', 9000, 'name', 'abee', 'marks', array(310,420,400)))")
@@ -219,7 +219,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
-      "marks:array<bigint>>) stored by 'carbondata'")
+      "marks:array<bigint>>) STORED AS carbondata")
     sql("insert into adaptive values(11,named_struct('id', 1, 'name', 'abc', 'marks', array(21,30,40)))")
     sql("insert into adaptive values(12,named_struct('id', 1, 'name', 'ab1', 'marks', array(22,30,40)))")
     sql("insert into adaptive values(13,named_struct('id', 1, 'name', 'ab2', 'marks', array(23,30,40)))")
@@ -258,7 +258,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
-      "marks:array<bigint>>) stored by 'carbondata'")
+      "marks:array<bigint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500, 'name', 'abc', 'marks', array(200,300,400)))")
     sql("insert into adaptive values(2,named_struct('id', 8000, 'name', 'abc', 'marks', array(300,400,500)))")
     sql("insert into adaptive values(3,named_struct('id', 9000, 'name', 'abc', 'marks', array(300,400,500)))")
@@ -274,7 +274,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -312,7 +312,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
-      "marks:array<bigint>>) stored by 'carbondata'")
+      "marks:array<bigint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 50000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(2,named_struct('id', 70000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(3,named_struct('id', 100000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
@@ -346,7 +346,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -385,7 +385,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -421,7 +421,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500000, 'name', 'abc', 'marks', array(200,300,52000000)))")
     sql("insert into adaptive values(2,named_struct('id', 700000, 'name', 'abc', 'marks', array(200,300,52000000)))")
     sql("insert into adaptive values(3,named_struct('id', 10000000, 'name','abc', 'marks', array(200,300,52000000)))")
@@ -456,7 +456,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
 
     sql("insert into adaptive values(1,named_struct('id', 1.323, 'name', 'abc', 'marks', array(2.2,3.3,4.4)))")
     sql("insert into adaptive values(2,named_struct('id', 1.324, 'name', 'abc', 'marks', array(2.2,3.3,4.4)))")
@@ -473,7 +473,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_double1.csv' into table adaptive options('delimiter'='," +
       "'," +
@@ -515,7 +515,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1.323, 'name', 'abc', 'marks', array(20.2,30.3,40.4)))")
     sql("insert into adaptive values(2,named_struct('id', 1.324, 'name', 'abc', 'marks', array(20.2,30.3,40.5)))")
     sql("insert into adaptive values(3,named_struct('id', 1.325, 'name', 'abc', 'marks', array(20.2,30.3,40.6)))")
@@ -531,7 +531,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_double2.csv' into table adaptive options('delimiter'='," +
       "'," +
@@ -573,7 +573,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 10.323, 'name', 'abc', 'marks', array(20.2,30.3,501.423)))")
     sql("insert into adaptive values(2,named_struct('id', 10.323, 'name', 'abc', 'marks', array(20.2,30.3,502.421)))")
     sql("insert into adaptive values(3,named_struct('id', 10.323, 'name', 'abc', 'marks', array(20.2,30.3,503.422)))")
@@ -589,7 +589,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_double3.csv' into table adaptive options('delimiter'='," +
       "'," +
@@ -631,7 +631,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1000.323, 'name', 'abc', 'marks', array(20.2,30.3,60000.423)))")
     sql("insert into adaptive values(2,named_struct('id', 1000.324, 'name', 'abc', 'marks', array(20.2,30.3,70000.424)))")
     sql("insert into adaptive values(3,named_struct('id', 1000.325, 'name', 'abc', 'marks', array(20.2,30.3,80000.425)))")
@@ -648,7 +648,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_double4.csv' into table adaptive options('delimiter'='," +
       "'," +
@@ -690,7 +690,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1.797693134862315, 'name', 'abc', 'marks', array(2.2,30.3,1.797693134862315)))")
     sql("insert into adaptive values(2,named_struct('id', 1.797693134862316, 'name', 'abc', 'marks', array(2.2,30.3,1.797693134862316)))")
     sql("insert into adaptive values(3,named_struct('id', 1.797693134862317, 'name', 'abc', 'marks', array(2.2,30.3,1.797693134862317)))")
@@ -720,8 +720,8 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
   test("test Decimal with Struct") {
     sql("Drop table if exists adaptive")
     sql(
-      "create table adaptive(roll int, student struct<id:decimal(3,2),name:string>) stored by " +
-      "'carbondata'")
+      "create table adaptive(roll int, student struct<id:decimal(3,2),name:string>)" +
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 3.2, 'name', 'abc'))")
     sql("select * from adaptive").show(false)
   }
@@ -730,7 +730,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<name:string," +
-      "marks:array<decimal>>) stored by 'carbondata'")
+      "marks:array<decimal>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('name', 'abc', 'marks', array(20.2,30.3,40.4)))")
     sql("select * from adaptive").show(false)
   }
@@ -740,8 +740,8 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
-      "create table adaptive(roll int, student struct<id:timestamp,name:string>) stored by " +
-      "'carbondata'")
+      "create table adaptive(roll int, student struct<id:timestamp,name:string>) " +
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', '2017-01-01 00:00:00', 'name', 'abc'))")
     sql("insert into adaptive values(2,named_struct('id', '2017-01-02 00:00:00', 'name', 'abc'))")
     sql("insert into adaptive values(3,named_struct('id', '2017-01-03 00:00:00', 'name', 'abc'))")
@@ -761,7 +761,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
       "create table adaptive(roll int, student struct<name:string," +
-      "marks:array<timestamp>>) stored by 'carbondata'")
+      "marks:array<timestamp>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('name', 'abc1', 'marks', array('2017-01-01 00:00:00.0','2018-01-01 00:00:00.0')))")
     sql("insert into adaptive values(2,named_struct('name', 'abc2', 'marks', array('2017-01-02 00:00:00.0','2018-01-03 00:00:00.0')))")
     sql("insert into adaptive values(3,named_struct('name', 'abc3', 'marks', array('2017-01-04 00:00:00.0','2018-01-05 00:00:00.0')))")
@@ -795,7 +795,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<name:string," +
-      "marks:array<date>>) stored by 'carbondata'")
+      "marks:array<date>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('name', 'abc', 'marks', array('2017-01-01')))")
     sql("select * from adaptive").show(false)
   }
@@ -804,7 +804,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:long,name:string,marks:array<long>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(20,30,40)))")
     sql("insert into adaptive values(2,named_struct('id', 11111, 'name', 'abc', 'marks', array(55,65,75)))")
     sql("insert into adaptive values(3,named_struct('id', 11111, 'name', 'abc', 'marks', array(88,98,8)))")
@@ -822,7 +822,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:long,name:string,marks:array<long>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(200,300,400)))")
     sql("insert into adaptive values(2,named_struct('id', 11111, 'name', 'abc', 'marks', array(201,301,401)))")
     sql("insert into adaptive values(3,named_struct('id', 11111, 'name', 'abc', 'marks', array(202,302,402)))")
@@ -837,7 +837,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -875,7 +875,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -887,7 +887,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 50000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(2,named_struct('id', 70000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(3,named_struct('id', 100000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
@@ -901,7 +901,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -913,7 +913,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500000, 'name', 'abc', 'marks', array(200,300,52000000)))")
     sql("insert into adaptive values(2,named_struct('id', 700000, 'name', 'abc', 'marks', array(200,300,52000000)))")
     sql("insert into adaptive values(3,named_struct('id', 10000000, 'name', 'abc', 'marks', array(200,300,52000000)))")
@@ -927,7 +927,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500000, 'name', 'abc', 'marks', array(200,300,52000000000)))")
     sql("insert into adaptive values(2,named_struct('id', 700000, 'name', 'abc', 'marks', array(200,300,52000000000)))")
     sql("insert into adaptive values(3,named_struct('id', 10000000, 'name', 'abc', 'marks', array(200,300,52000000000)))")
@@ -938,7 +938,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:short,name:string,marks:array<short>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11, 'name', 'abc', 'marks', array(20,30,40)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11, "abc", mutable.WrappedArray.make(Array(20, 30, 40))))))
@@ -948,7 +948,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:SHORT,name:string,marks:array<SHORT>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(200,300,400)))")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(200,300,401)))")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(200,300,402)))")
@@ -963,7 +963,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:SHORT,name:string,marks:array<SHORT>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -1002,7 +1002,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:boolean,name:string," +
       "marks:array<boolean>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', true, 'name', 'abc', 'marks', array(false,true,false)))")
     sql("insert into adaptive values(1,named_struct('id', true, 'name', 'abc', 'marks', array(false,true,true)))")
     sql("insert into adaptive values(1,named_struct('id', true, 'name', 'abc', 'marks', array(false,true,true)))")
@@ -1024,7 +1024,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
         "ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>," +
         "proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId " +
         "double,contractNumber double) " +
-        "STORED BY 'org.apache.carbondata.format' "
+        "STORED AS carbondata"
     )
     sql(
       s"LOAD DATA local inpath '$resourcesPath/complexdata.csv' INTO table " +
@@ -1060,7 +1060,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table adaptive(roll int, student struct<id:SHORT,name:string,marks:array<SHORT>>, " +
       "mapField map<int, string>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(200,300,400)),map(1, 'Nalla', 2, 'Singh', 3, 'Gupta', 4, 'Kumar'))")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(200,300,401)),map(11, 'Nalla', 12, 'Singh', 13, 'Gupta', 14, 'Kumar'))")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(200,300,402)),map(21, 'Nalla', 22, 'Singh', 23, 'Gupta', 24, 'Kumar'))")
@@ -1084,7 +1084,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
       "STRUCT_OF_ARRAY struct<ID:int,CHECK_DATE:string,SNo:array<int>,sal1:array<double>," +
       "state:array<string>," +
       "date1:array<string>>,CARD_COUNT int,DEBIT_COUNT int,CREDIT_COUNT int, DEPOSIT double, " +
-      "HQ_DEPOSIT double) STORED BY 'carbondata'")
+      "HQ_DEPOSIT double) STORED AS carbondata")
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/structofarray.csv' INTO TABLE compactComplex OPTIONS" +
       s"('DELIMITER'=',','QUOTECHAR'='\'," +

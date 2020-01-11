@@ -48,7 +48,7 @@ class DateDataTypeDirectDictionaryWithOffHeapSortDisabledTest
 
       sql("drop table if exists directDictionaryTable ")
       sql("CREATE TABLE if not exists directDictionaryTable (empno int,doj date, salary int) " +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED AS carbondata")
 
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")

@@ -44,7 +44,7 @@ class CompactionSupportSpecifiedSegmentsTest
       """
         |CREATE TABLE seg_compact
         |(id INT, name STRING, city STRING, age INT)
-        |STORED BY 'org.apache.carbondata.format'
+        |STORED AS carbondata
         |TBLPROPERTIES('SORT_COLUMNS'='city,name')
       """.stripMargin)
   }

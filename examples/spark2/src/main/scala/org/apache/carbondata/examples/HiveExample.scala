@@ -21,6 +21,7 @@ import java.sql.{DriverManager, ResultSet, Statement}
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
+import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -31,78 +32,73 @@ import org.apache.carbondata.hive.test.server.HiveEmbeddedServer2
 object HiveExample {
 
   private val driverName: String = "org.apache.hive.jdbc.HiveDriver"
-
   val rootPath = new File(this.getClass.getResource("/").getPath
                           + "../../../..").getCanonicalPath
-  private val targetLoc = s"$rootPath/examples/spark2/target"
+  val targetLoc = s"$rootPath/examples/spark2/target"
+  System.setProperty("derby.system.home", s"$targetLoc")
   val metaStoreLoc = s"$targetLoc/metastore_db"
-  val storeLocation = s"$targetLoc/store"
   val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-
   def main(args: Array[String]) {
-    createCarbonTable(storeLocation)
+    val sparkSession = ExampleUtils.createSparkSession("HiveExample")
+    createCarbonTable(sparkSession)
     readFromHive
     System.exit(0)
   }
 
-  def createCarbonTable(store: String): Unit = {
+  def createCarbonTable(sparkSession: SparkSession): Unit = {
 
-    val carbonSession = ExampleUtils.createCarbonSession("HiveExample")
+    sparkSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
 
-    carbonSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
-
-    carbonSession.sql(
+    sparkSession.sql(
       s"""
          | CREATE TABLE HIVE_CARBON_EXAMPLE
          | (ID int,NAME string,SALARY double)
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     var inputPath = FileFactory
       .getUpdatedFilePath(s"$rootPath/examples/spark2/src/main/resources/sample.csv")
 
-    carbonSession.sql(
+    sparkSession.sql(
       s"""
          | LOAD DATA LOCAL INPATH '$inputPath'
          | INTO TABLE HIVE_CARBON_EXAMPLE
        """.stripMargin)
 
-    carbonSession.sql(
+    sparkSession.sql(
       s"""
          | LOAD DATA LOCAL INPATH '$inputPath'
          | INTO TABLE HIVE_CARBON_EXAMPLE
        """.stripMargin)
 
-    carbonSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
+    sparkSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
 
-    carbonSession.sql("DROP TABLE IF EXISTS TEST_BOUNDARY")
+    sparkSession.sql("DROP TABLE IF EXISTS TEST_BOUNDARY")
 
-    carbonSession
+    sparkSession
       .sql(
         s"""CREATE TABLE TEST_BOUNDARY (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,30),
            |c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string)
-           |STORED BY 'org.apache.carbondata.format' """.stripMargin)
+           |STORED AS carbondata""".stripMargin)
 
     inputPath = FileFactory
       .getUpdatedFilePath(s"$rootPath/examples/spark2/src/main/resources/Test_Data1.csv")
 
-    carbonSession
+    sparkSession
       .sql(
         s"LOAD DATA INPATH '$inputPath' INTO table TEST_BOUNDARY OPTIONS('DELIMITER'=','," +
         "'QUOTECHAR'='\"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='c1_int,c2_Bigint," +
         "c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc')")
 
-    carbonSession.sql("""DROP TABLE IF EXISTS complexMap""".stripMargin)
+    sparkSession.sql("""DROP TABLE IF EXISTS complexMap""".stripMargin)
 
-    carbonSession.sql("create table complexMap(name map<string,string>) stored by 'carbondata'")
+    sparkSession.sql("create table complexMap(name map<string,string>) STORED AS carbondata")
 
-    carbonSession
+    sparkSession
       .sql(
         "insert into complexMap values(map('Manish','Nalla','Shardul','Singh','Vishal','Kumar'," +
         "'EmptyVal','','NullVal', 'null'))")
-
-    carbonSession.close()
 
     // delete the already existing lock on metastore so that new derby instance
     // for HiveServer can run on the same metastore
@@ -205,7 +201,7 @@ object HiveExample {
       individualColRowsFetched = individualColRowsFetched + 1
     }
     println(" ********** Total Rows Fetched When Quering The Individual Columns **********" +
-      s"$individualColRowsFetched")
+            s"$individualColRowsFetched")
     assert(individualColRowsFetched == 4)
 
     logger.info("Fetching the Out Of Order Columns ")
@@ -239,7 +235,7 @@ object HiveExample {
       outOfOrderColFetched = outOfOrderColFetched + 1
     }
     println(" ********** Total Rows Fetched When Quering The Out Of Order Columns **********" +
-      s"$outOfOrderColFetched")
+            s"$outOfOrderColFetched")
     assert(outOfOrderColFetched == 4)
 
     val resultAggQuery = statement

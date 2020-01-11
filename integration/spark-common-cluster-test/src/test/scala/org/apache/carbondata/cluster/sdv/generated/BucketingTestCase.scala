@@ -43,7 +43,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql("DROP TABLE IF EXISTS bucket_table")
       sql("CREATE TABLE bucket_table (ID Int, date Timestamp, country String, name String, phonetype String," +
-          "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+          "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
           "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='ID')")
     }
   }
@@ -52,7 +52,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql("DROP TABLE IF EXISTS bucket_table")
       sql("CREATE TABLE bucket_table (Id int, number double, name string, " +
-          "gamePoint array<double>, mac struct<num:double>) STORED BY 'carbondata' TBLPROPERTIES" +
+          "gamePoint array<double>, mac struct<num:double>) STORED AS carbondata TBLPROPERTIES" +
           "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='gamePoint')")
     }
   }
@@ -60,7 +60,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
   test("test multi columns as bucketcolumns") {
     sql("DROP TABLE IF EXISTS bucket_table")
     sql("CREATE TABLE bucket_table (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name,phonetype')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE bucket_table")
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_bucket_table")
@@ -74,7 +74,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
   test("test multi columns as bucketcolumns with bucket join") {
     sql("DROP TABLE IF EXISTS bucket_table")
     sql("CREATE TABLE bucket_table (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='country,name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE bucket_table")
 
@@ -94,7 +94,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
   test("test non bucket column join") {
     sql("DROP TABLE IF EXISTS bucket_table")
     sql("CREATE TABLE bucket_table (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='country')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE bucket_table")
 
@@ -115,7 +115,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
   test("test bucketcolumns through multi data loading plus compaction") {
     sql("DROP TABLE IF EXISTS bucket_table")
     sql("CREATE TABLE bucket_table (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     val numOfLoad = 10
     for (j <- 0 until numOfLoad) {
@@ -139,7 +139,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
   test("drop non-bucket column, test bucket column join") {
     sql("DROP TABLE IF EXISTS bucket_table")
     sql("CREATE TABLE bucket_table (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE bucket_table")
 

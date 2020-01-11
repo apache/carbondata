@@ -30,7 +30,7 @@ import org.apache.carbondata.hadoop.CarbonProjection
 object HadoopFileExample {
 
   def main(args: Array[String]): Unit = {
-    val spark = ExampleUtils.createCarbonSession("HadoopFileExample")
+    val spark = ExampleUtils.createSparkSession("HadoopFileExample")
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
     val storeLocation: String = rootPath + "/examples/spark2/target/store/default"

@@ -180,7 +180,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from carbon10 where c3 > 500"), Row(500)
     )
     sql("drop table carbon10")
-    assert(!new File(path).exists())
+    assert(new File(path).exists())
     assert(intercept[AnalysisException](
       sql("select count(*) from carbon10 where c3 > 500"))
       .message
@@ -271,7 +271,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
 
   test("test load dataframe while giving already created table") {
 
-    sql(s"create table carbon_table_df(c1 string, c2 string, c3 int) stored by 'carbondata'")
+    sql(s"create table carbon_table_df(c1 string, c2 string, c3 int) STORED AS carbondata")
     // save dataframe to carbon file
     df.write
       .format("carbondata")
@@ -293,7 +293,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
 
   test("test load dataframe while giving already created table with delete segment") {
 
-    sql(s"create table carbon_table_df1(c1 string, c2 string, c3 int) stored by 'carbondata'")
+    sql(s"create table carbon_table_df1(c1 string, c2 string, c3 int) STORED AS carbondata")
     val table = CarbonEnv.getCarbonTable(TableIdentifier("carbon_table_df1"))(sqlContext.sparkSession)
     // save dataframe to carbon file
     df.write

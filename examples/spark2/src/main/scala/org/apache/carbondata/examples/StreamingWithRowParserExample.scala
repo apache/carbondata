@@ -37,7 +37,7 @@ object StreamingWithRowParserExample {
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
 
-    val spark = ExampleUtils.createCarbonSession("StreamingWithRowParserExample", 4)
+    val spark = ExampleUtils.createSparkSession("StreamingWithRowParserExample", 4)
     val streamTableName = s"stream_table_with_row_parser"
 
     val requireCreateTable = true
@@ -57,7 +57,7 @@ object StreamingWithRowParserExample {
              | salary FLOAT,
              | file struct<school:array<string>, age:int>
              | )
-             | STORED BY 'carbondata'
+             | STORED AS carbondata
              | TBLPROPERTIES(
              | 'streaming'='true', 'sort_columns'='name')
              | """.stripMargin)
@@ -70,7 +70,7 @@ object StreamingWithRowParserExample {
              | city STRING,
              | salary FLOAT
              | )
-             | STORED BY 'carbondata'
+             | STORED AS carbondata
              | TBLPROPERTIES(
              | 'streaming'='true', 'sort_columns'='name')
              | """.stripMargin)

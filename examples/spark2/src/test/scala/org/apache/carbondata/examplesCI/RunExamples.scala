@@ -122,7 +122,7 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
   }
 
   test("HiveExample") {
-    HiveExample.createCarbonTable(TestQueryExecutor.warehouse)
+    HiveExample.createCarbonTable(spark)
     HiveExample.readFromHive
   }
 

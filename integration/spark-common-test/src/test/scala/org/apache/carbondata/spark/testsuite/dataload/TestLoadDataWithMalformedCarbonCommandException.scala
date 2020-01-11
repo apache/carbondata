@@ -27,7 +27,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
   override def beforeAll {
 
     sql("CREATE table TestLoadTableOptions (ID int, date String, country String, name String," +
-        "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'")
+        "phonetype String, serialname String, salary int) STORED AS carbondata")
 
   }
 

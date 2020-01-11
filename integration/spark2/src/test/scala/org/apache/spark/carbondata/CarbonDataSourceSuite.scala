@@ -166,7 +166,7 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
   test("test drop database with and without cascade") {
     sql("drop database if exists testdb cascade")
     sql("create database testdb")
-    sql("create table testdb.test1(name string, id int)stored by 'carbondata'")
+    sql("create table testdb.test1(name string, id int)STORED AS carbondata")
     sql("insert into testdb.test1 select 'xx',1")
     sql("insert into testdb.test1 select 'xx',11")
     try {

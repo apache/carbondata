@@ -37,19 +37,19 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(
       "create table a12(empid String,ename String,sal double,deptno int,mgr string,gender string," +
-        "dob timestamp,comm decimal(4,2),desc string) stored by 'org.apache.carbondata.format'"
+        "dob timestamp,comm decimal(4,2),desc string) STORED AS carbondata"
     )
     sql(
       "create table a12_all_null(empid String,ename String,sal double,deptno int,mgr string,gender" +
         " string," +
-        "dob timestamp,comm decimal(4,2),desc string) stored by 'org.apache.carbondata.format'"
+        "dob timestamp,comm decimal(4,2),desc string) STORED AS carbondata"
     )
     sql(
       "create table a12_no_null(empid String,ename String,sal double,deptno int,mgr string,gender" +
         " string," +
-        "dob timestamp,comm decimal(4,2),desc string) stored by 'org.apache.carbondata.format'"
+        "dob timestamp,comm decimal(4,2),desc string) STORED AS carbondata"
     )
-    sql("create table Test_Boundary1 (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,38),c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string) STORED BY 'org.apache.carbondata.format'")
+    sql("create table Test_Boundary1 (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,38),c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string) STORED AS carbondata")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
     var testData = s"$resourcesPath/filter/emp2.csv"

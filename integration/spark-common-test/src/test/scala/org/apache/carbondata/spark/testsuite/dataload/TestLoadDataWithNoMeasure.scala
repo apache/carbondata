@@ -30,8 +30,7 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("DROP TABLE IF EXISTS nomeasureTest")
     sql(
-      "CREATE TABLE nomeasureTest (empno String, doj String) STORED BY 'org.apache.carbondata" +
-        ".format'"
+      "CREATE TABLE nomeasureTest (empno String, doj String) STORED AS carbondata"
     )
     val testData = s"$resourcesPath/datasample.csv"
     sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest")
@@ -47,7 +46,7 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
 
   test("test data loading with single dictionary column") {
     sql("DROP TABLE IF EXISTS nomeasureTest_sd")
-    sql("CREATE TABLE nomeasureTest_sd (city String) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE nomeasureTest_sd (city String) STORED AS carbondata")
     val testData = s"$resourcesPath/datasingleCol.csv"
     sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_sd options " +
       "('FILEHEADER'='city')"
@@ -61,7 +60,7 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
 
   test("test data loading with single no dictionary column") {
     sql("DROP TABLE IF EXISTS nomeasureTest_sd")
-    sql("CREATE TABLE nomeasureTest_sd (city String) STORED BY 'org.apache.carbondata.format' ")
+    sql("CREATE TABLE nomeasureTest_sd (city String) STORED AS carbondata ")
     val testData = s"$resourcesPath/datasingleCol.csv"
     sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_sd options " +
       "('FILEHEADER'='city')"
@@ -77,9 +76,8 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
     //only data load check
     sql("DROP TABLE IF EXISTS nomeasureTest_scd")
     sql(
-      "CREATE TABLE nomeasureTest_scd (cityDetail struct<cityName:string,cityCode:string>) STORED" +
-        " " +
-        "BY 'org.apache.carbondata.format'"
+      "CREATE TABLE nomeasureTest_scd (cityDetail struct<cityName:string,cityCode:string>) " +
+        "STORED AS carbondata"
     )
     val testData = s"$resourcesPath/datasingleComplexCol.csv"
     sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_scd options " +
@@ -92,9 +90,8 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
     //only data load check
     sql("DROP TABLE IF EXISTS nomeasureTest_scd")
     sql(
-      "CREATE TABLE nomeasureTest_scd (cityDetail array<string>) STORED" +
-        " " +
-        "BY 'org.apache.carbondata.format'"
+      "CREATE TABLE nomeasureTest_scd (cityDetail array<string>) " +
+        "STORED AS carbondata"
     )
     val testData = s"$resourcesPath/datasingleComplexCol.csv"
     sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_scd options " +

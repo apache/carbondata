@@ -54,7 +54,7 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("get data size and index size after load data") {
-    sql("CREATE TABLE tableSize1 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableSize1 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize1 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     checkExistence(sql("DESCRIBE FORMATTED tableSize1"), true, CarbonCommonConstants.TABLE_DATA_SIZE)
     checkExistence(sql("DESCRIBE FORMATTED tableSize1"), true, CarbonCommonConstants.TABLE_INDEX_SIZE)
@@ -66,7 +66,7 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("get data size and index size after major compaction") {
-    sql("CREATE TABLE tableSize2 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableSize2 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize2 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize2 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     sql("ALTER TABLE tableSize2 compact 'major'")
@@ -80,7 +80,7 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("get data size and index size after minor compaction") {
-    sql("CREATE TABLE tableSize3 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableSize3 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize3 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
@@ -98,9 +98,9 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("get data size and index size after insert into") {
-    sql("CREATE TABLE tableSize4 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableSize4 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize4 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
-    sql("CREATE TABLE tableSize5 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableSize5 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     sql("INSERT INTO TABLE tableSize5 SELECT * FROM tableSize4")
     checkExistence(sql("DESCRIBE FORMATTED tableSize5"), true, CarbonCommonConstants.TABLE_DATA_SIZE)
     checkExistence(sql("DESCRIBE FORMATTED tableSize5"), true, CarbonCommonConstants.TABLE_INDEX_SIZE)
@@ -112,9 +112,9 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("get data size and index size after insert overwrite") {
-    sql("CREATE TABLE tableSize6 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableSize6 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize6 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
-    sql("CREATE TABLE tableSize7 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableSize7 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     sql("INSERT OVERWRITE TABLE tableSize7 SELECT * FROM tableSize6")
     checkExistence(sql("DESCRIBE FORMATTED tableSize7"), true, CarbonCommonConstants.TABLE_DATA_SIZE)
     checkExistence(sql("DESCRIBE FORMATTED tableSize7"), true, CarbonCommonConstants.TABLE_INDEX_SIZE)
@@ -126,7 +126,7 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("get data size and index size for empty table") {
-    sql("CREATE TABLE tableSize8 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableSize8 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     val res6 = sql("DESCRIBE FORMATTED tableSize8").collect()
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
         row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
@@ -135,14 +135,14 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("get last update time for empty table") {
-    sql("CREATE TABLE tableSize9 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableSize9 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     val res7 = sql("DESCRIBE FORMATTED tableSize9").collect()
       .filter(row => row.getString(0).contains("Last Update"))
     assert(res7.length == 1)
   }
 
   test("get last update time for unempty table") {
-    sql("CREATE TABLE tableSize10 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableSize10 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize10 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
 
     val res8 = sql("DESCRIBE FORMATTED tableSize10").collect()
@@ -153,7 +153,7 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
   test("index and datasize for update scenario") {
     sql(
       "CREATE TABLE tableSize11 (empno int, workgroupcategory string, deptno int, projectcode " +
-      "int, attendance int) STORED BY 'org.apache.carbondata.format'")
+      "int, attendance int) STORED AS carbondata")
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize11 OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""".stripMargin)

@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command.table
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, EnvHelper, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
@@ -164,7 +164,7 @@ case class CarbonDropTableCommand(
         }
       } catch {
         case _: Exception =>
-          // Do nothing
+        // Do nothing
       }
     } catch {
       case ex: NoSuchTableException =>
@@ -193,7 +193,9 @@ case class CarbonDropTableCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     // clear driver side index and dictionary cache
-    if (carbonTable != null && !(carbonTable.isChildTableForMV && !dropChildTable)) {
+    if (!EnvHelper.isCloud(sparkSession)
+        && carbonTable != null
+        && !(carbonTable.isChildTableForMV && !dropChildTable)) {
       // delete the table folder
       val tablePath = carbonTable.getTablePath
       // delete table data only if it is not external table

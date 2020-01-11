@@ -36,7 +36,7 @@ class SparkCarbonStoreTest extends QueryTest with BeforeAndAfterAll {
         "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
         "projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
         "attendance int,utilization int,salary int)" +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED AS carbondata")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE t1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
 
     store = new SparkCarbonStore("test", storeLocation)

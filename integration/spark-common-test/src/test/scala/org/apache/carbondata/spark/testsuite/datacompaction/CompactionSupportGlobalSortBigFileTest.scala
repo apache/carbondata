@@ -59,7 +59,7 @@ class CompactionSupportGlobalSortBigFileTest extends QueryTest with BeforeAndAft
     sql(
       """
         | CREATE TABLE compaction_globalsort(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='global_sort')
       """.stripMargin)
 
@@ -67,7 +67,7 @@ class CompactionSupportGlobalSortBigFileTest extends QueryTest with BeforeAndAft
     sql(
       """
         | CREATE TABLE carbon_localsort(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
   }
 

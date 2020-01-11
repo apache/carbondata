@@ -20,6 +20,8 @@ package org.apache.carbondata.core.metadata;
 import java.io.File;
 import java.io.Serializable;
 
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+
 /**
  * Identifier class which will hold the table qualified name
  */
@@ -53,7 +55,7 @@ public class CarbonTableIdentifier implements Serializable {
     this.databaseName = databaseName;
     this.tableName = tableName;
     this.tableId = tableId;
-    tableUniqueName = databaseName + '_' + tableName;
+    tableUniqueName = CarbonTable.buildUniqueName(databaseName, tableName);
   }
 
   /**

@@ -289,7 +289,7 @@ public class GreaterThanEqualToExpressionUnitTest {
       value.setValues(objectRow);
 
       new MockUp<ExpressionResult>() {
-        @Mock public Long getTime() {
+        @Mock public Long getTimeAsMillisecond() {
           return 18465213000000L;
         }
       };
@@ -320,7 +320,7 @@ public class GreaterThanEqualToExpressionUnitTest {
 
       new MockUp<ExpressionResult>() {
         boolean isFirst = true;
-        @Mock public Long getTime() {
+        @Mock public Long getTimeAsMillisecond() {
           if (isFirst) {
             isFirst = false;
             return 1190505600L;

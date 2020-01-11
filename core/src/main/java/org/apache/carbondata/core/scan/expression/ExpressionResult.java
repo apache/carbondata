@@ -389,6 +389,57 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
 
   }
 
+  public Long getTimeAsMillisecond() throws FilterIllegalMemberException {
+    if (value == null) {
+      return null;
+    }
+    try {
+      DataType dataType = this.getDataType();
+      if (dataType == DataTypes.STRING) {
+        // Currently the query engine layer only supports yyyy-MM-dd HH:mm:ss date format
+        // no matter in which format the data is been stored, so while retrieving the direct
+        // surrogate value for filter member first it should be converted in date form as per
+        // above format and needs to retrieve time stamp.
+        SimpleDateFormat parser =
+            new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+        Date dateToStr;
+        try {
+          dateToStr = parser.parse(value.toString());
+          return dateToStr.getTime();
+        } catch (ParseException e) {
+          throw new FilterIllegalMemberException(
+              "Cannot convert" + this.getDataType().getName() + " to Time type value");
+        }
+      } else if (dataType == DataTypes.SHORT) {
+        return ((Short) value).longValue();
+      } else if (dataType == DataTypes.INT || dataType == DataTypes.LONG) {
+        return (Long) value;
+      } else if (dataType == DataTypes.DOUBLE) {
+        return (Long) value;
+      } else if (dataType == DataTypes.DATE) {
+        if (value instanceof java.sql.Date) {
+          return ((Date) value).getTime();
+        } else {
+          return (Long) value;
+        }
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        if (value instanceof Date) {
+          return ((Date) value).getTime();
+        } else if (value instanceof Timestamp) {
+          return ((Timestamp) value).getTime();
+        } else {
+          return (Long) value;
+        }
+      } else {
+        throw new FilterIllegalMemberException(
+            "Cannot convert " + this.getDataType().getName() + " to Time type value");
+      }
+    } catch (ClassCastException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert " + this.getDataType().getName() + " to Time type value");
+    }
+  }
+
   public Boolean getBoolean() throws FilterIllegalMemberException {
     if (value == null) {
       return null;

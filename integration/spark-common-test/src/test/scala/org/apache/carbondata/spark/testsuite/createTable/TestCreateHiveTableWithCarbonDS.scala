@@ -34,7 +34,7 @@ class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS source")
   }
 
-  test("test create table and verify the hive table correctness with stored by") {
+  test("test create table and verify the hive table correctness with stored as") {
     sql("DROP TABLE IF EXISTS source")
     sql(
       s"""

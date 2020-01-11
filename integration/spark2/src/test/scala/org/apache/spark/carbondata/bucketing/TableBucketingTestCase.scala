@@ -50,7 +50,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test create table with buckets") {
     sql("CREATE TABLE t4 (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t4")
     val table = CarbonEnv.getCarbonTable(Option("default"), "t4")(sqlContext.sparkSession)
@@ -64,7 +64,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   test("test create table with buckets unsafe") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
     sql("CREATE TABLE t10 (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t10")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
@@ -105,7 +105,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
           | phonetype String,
           | serialname String,
           | salary Int)
-          | STORED BY 'CARBONDATA'
+          | STORED AS carbondata
           | TBLPROPERTIES('bucketnumber'='0', 'bucketcolumns'='name')
         """.stripMargin
       )
@@ -118,7 +118,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test create table with no bucket join of carbon tables") {
     sql("CREATE TABLE t5 (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata'")
+        "serialname String, salary Int) STORED AS carbondata")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t5")
     val plan = sql(
       """
@@ -139,7 +139,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test create table with bucket join of carbon tables") {
     sql("CREATE TABLE t6 (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t6")
     val plan = sql(
@@ -161,7 +161,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test create table with bucket join of carbon table and parquet table") {
     sql("CREATE TABLE t7 (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t7")
 
@@ -191,7 +191,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test create table with bucket join of carbon table and non bucket parquet table") {
     sql("CREATE TABLE t8 (ID Int, date Timestamp, country String, name String, phonetype String," +
-        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t8")
 

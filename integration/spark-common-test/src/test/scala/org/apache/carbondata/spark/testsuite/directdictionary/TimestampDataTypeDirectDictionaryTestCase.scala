@@ -48,7 +48,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
       sql("drop table if exists directDictionaryTable_hive")
       sql(
         "CREATE TABLE if not exists directDictionaryTable (empno int,doj Timestamp, salary int) " +
-          "STORED BY 'org.apache.carbondata.format'"
+          "STORED AS carbondata"
       )
 
       sql(
@@ -149,7 +149,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
     sql(
-      "create table test_timestamp(col timestamp) stored by 'carbondata' tblproperties" +
+      "create table test_timestamp(col timestamp) STORED AS carbondata tblproperties" +
       "('no_inverted_index'='col')")
     val csvFilePath = s"$resourcesPath/data_timestamp.csv"
     sql(

@@ -33,7 +33,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object ExternalTableExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("ExternalTableExample")
+    val spark = ExampleUtils.createSparkSession("ExternalTableExample")
     exampleBody(spark)
     spark.close()
   }
@@ -48,18 +48,18 @@ object ExternalTableExample {
     spark.sql(
       s"""
          | CREATE TABLE origin_table(
-         | shortField SHORT,
-         | intField INT,
-         | bigintField LONG,
-         | doubleField DOUBLE,
-         | stringField STRING,
-         | timestampField TIMESTAMP,
-         | decimalField DECIMAL(18,2),
-         | dateField DATE,
-         | charField CHAR(5),
-         | floatField FLOAT
+         |   shortField SHORT,
+         |   intField INT,
+         |   bigintField LONG,
+         |   doubleField DOUBLE,
+         |   stringField STRING,
+         |   timestampField TIMESTAMP,
+         |   decimalField DECIMAL(18,2),
+         |   dateField DATE,
+         |   charField CHAR(5),
+         |   floatField FLOAT
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     val rootPath = new File(this.getClass.getResource("/").getPath
@@ -83,7 +83,7 @@ object ExternalTableExample {
 
     // Create external_table
     spark.sql("DROP TABLE IF EXISTS external_table")
-    spark.sql("CREATE EXTERNAL TABLE external_table STORED BY 'carbondata'" +
+    spark.sql("CREATE EXTERNAL TABLE external_table STORED AS carbondata" +
               s" LOCATION '$origin_table_path'")
     spark.sql("SELECT count(*) FROM external_table").show()
 

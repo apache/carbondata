@@ -32,7 +32,7 @@ class TestSkipEmptyLines extends QueryTest with BeforeAndAfterAll {
 
   test("test load options with true") {
     sql("drop table if exists skipEmptyRowCarbonTable")
-    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) stored by 'carbondata'")
+    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptylines.csv' into table skipEmptyRowCarbonTable " +
         s"OPTIONS('skip_empty_line'='true')")
     checkAnswer(sql("select * from skipEmptyRowCarbonTable"), Seq(Row("a",25),Row("b",22),Row("c",23)))
@@ -40,7 +40,7 @@ class TestSkipEmptyLines extends QueryTest with BeforeAndAfterAll {
 
   test("test load options with false") {
     sql("drop table if exists skipEmptyRowCarbonTable")
-    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) stored by 'carbondata'")
+    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptylines.csv' into table skipEmptyRowCarbonTable " +
         s"OPTIONS('skip_empty_line'='false')")
     checkAnswer(sql("select * from skipEmptyRowCarbonTable"),
@@ -50,7 +50,7 @@ class TestSkipEmptyLines extends QueryTest with BeforeAndAfterAll {
   test("test carbonproperties with true") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE, "true")
     sql("drop table if exists skipEmptyRowCarbonTable")
-    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) stored by 'carbondata'")
+    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptylines.csv' into table skipEmptyRowCarbonTable")
     checkAnswer(sql("select * from skipEmptyRowCarbonTable"),
       Seq(Row("a",25),Row("b",22),Row("c",23)))
@@ -61,7 +61,7 @@ class TestSkipEmptyLines extends QueryTest with BeforeAndAfterAll {
   test("test carbonproperties with false") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE, "false")
     sql("drop table if exists skipEmptyRowCarbonTable")
-    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) stored by 'carbondata'")
+    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptylines.csv' into table skipEmptyRowCarbonTable")
     checkAnswer(sql("select * from skipEmptyRowCarbonTable"),
       Seq(Row("a",25),Row("b",22),Row("c",23),Row(null,null),Row(null,null),Row(null,null)))
@@ -72,7 +72,7 @@ class TestSkipEmptyLines extends QueryTest with BeforeAndAfterAll {
   test("test carbonproperties with false and load options true") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE, "false")
     sql("drop table if exists skipEmptyRowCarbonTable")
-    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) stored by 'carbondata'")
+    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptylines.csv' into table skipEmptyRowCarbonTable " +
         s"OPTIONS('skip_empty_line'='true')")
     checkAnswer(sql("select * from skipEmptyRowCarbonTable"),
@@ -84,7 +84,7 @@ class TestSkipEmptyLines extends QueryTest with BeforeAndAfterAll {
   test("test carbonproperties with true and load options false") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE, "true")
     sql("drop table if exists skipEmptyRowCarbonTable")
-    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) stored by 'carbondata'")
+    sql("CREATE TABLE skipEmptyRowCarbonTable (name string, age int) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptylines.csv' into table skipEmptyRowCarbonTable " +
         s"OPTIONS('skip_empty_line'='false')")
     checkAnswer(sql("select * from skipEmptyRowCarbonTable"),

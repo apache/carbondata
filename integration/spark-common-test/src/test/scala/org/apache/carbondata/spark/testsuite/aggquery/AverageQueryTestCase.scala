@@ -32,7 +32,7 @@ class AverageQueryTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""
        CREATE TABLE carbonTable (ID int, date timeStamp, country string, count int,
        phonetype string, serialname string, salary double)
-       STORED BY 'org.apache.carbondata.format'""")
+       STORED AS carbondata""")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/avgTest.csv' INTO table carbonTable""")

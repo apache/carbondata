@@ -33,7 +33,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("DROP TABLE IF EXISTS integertypetableAgg")
     sql("DROP TABLE IF EXISTS short_table")
-    sql("CREATE TABLE integertypetableAgg (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE integertypetableAgg (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED AS carbondata")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE integertypetableAgg OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
   }
 
@@ -53,7 +53,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE short_int_table
         | (value int, value2 int, name string)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(
       s"""
@@ -89,7 +89,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE short_int_table
         | (value int, value2 int, name string)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(
       s"""
@@ -127,7 +127,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
         | begin_time9 bigint,begin_time10 bigint,begin_time11 bigint,begin_time12 int,
         | begin_time13 int,begin_time14 short,begin_time15 double,begin_time16 double,
         | begin_time17 double,begin_time18 double,begin_time19 int,begin_time20 double)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin.replaceAll(System.lineSeparator, ""))
 
     sql(
@@ -156,7 +156,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   test("Create a table that contains short data type") {
-    sql("CREATE TABLE if not exists short_table(col1 short, col2 BOOLEAN) STORED BY 'carbondata'")
+    sql("CREATE TABLE if not exists short_table(col1 short, col2 BOOLEAN) STORED AS carbondata")
 
     sql("insert into short_table values(1,true)")
     sql("insert into short_table values(11,false)")

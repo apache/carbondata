@@ -28,7 +28,7 @@ class NullMeasureValueTestCaseAggregate extends QueryTest with BeforeAndAfterAll
     sql("drop table IF EXISTS t3")
     sql(
       "CREATE TABLE IF NOT EXISTS t3 (ID Int, date Timestamp, country String, name String, " +
-        "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata.format'"
+        "phonetype String, serialname String, salary Int) STORED AS carbondata"
     )
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")

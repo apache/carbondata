@@ -39,7 +39,7 @@ class TestCreateTableWithTableComment extends QueryTest with BeforeAndAfterAll {
          | name string
          | )
          | comment "This table has table comment"
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin
     )
 
@@ -56,7 +56,7 @@ class TestCreateTableWithTableComment extends QueryTest with BeforeAndAfterAll {
          | id int,
          | name string
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin
     )
 

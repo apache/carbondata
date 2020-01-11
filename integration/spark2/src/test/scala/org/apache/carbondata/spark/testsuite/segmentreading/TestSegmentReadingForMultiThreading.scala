@@ -22,7 +22,7 @@ class TestSegmentReadingForMultiThreading extends QueryTest with BeforeAndAfterA
       "CREATE TABLE carbon_table_MulTI_THread (empno int, empname String, designation String, doj " +
       "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
       "String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance " +
-      "int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "int,utilization int,salary int) STORED AS carbondata")
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE carbon_table_MulTI_THread " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")

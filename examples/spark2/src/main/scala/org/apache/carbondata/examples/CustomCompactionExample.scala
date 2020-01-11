@@ -33,7 +33,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object CustomCompactionExample {
 
   def main(args: Array[String]): Unit = {
-    val spark = ExampleUtils.createCarbonSession("CustomCompactionExample")
+    val spark = ExampleUtils.createSparkSession("CustomCompactionExample")
     exampleBody(spark)
     spark.close()
   }
@@ -47,15 +47,16 @@ object CustomCompactionExample {
     spark.sql(
       s"""
          | CREATE TABLE IF NOT EXISTS custom_compaction_table(
-         | ID Int,
-         | date Date,
-         | country String,
-         | name String,
-         | phonetype String,
-         | serialname String,
-         | salary Int,
-         | floatField float
-         | ) STORED BY 'carbondata'
+         |   ID Int,
+         |   date Date,
+         |   country String,
+         |   name String,
+         |   phonetype String,
+         |   serialname String,
+         |   salary Int,
+         |   floatField float
+         | )
+         | STORED AS carbondata
        """.stripMargin)
 
     val rootPath = new File(this.getClass.getResource("/").getPath

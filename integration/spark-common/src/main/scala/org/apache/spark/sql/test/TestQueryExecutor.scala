@@ -21,7 +21,6 @@ import java.io.{File, FilenameFilter}
 import java.util.ServiceLoader
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.util.Utils
@@ -102,24 +101,19 @@ object TestQueryExecutor {
     s"$integrationPath/spark-common-test/src/test/resources"
   }
 
-  val storeLocation = if (hdfsUrl.startsWith("hdfs://")) {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
-      CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
-    val carbonFile = FileFactory.getCarbonFile(s"$hdfsUrl/store")
-    FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
-    s"$hdfsUrl/store_" + System.nanoTime()
-  } else {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
-      CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
-    s"$target/store"
-  }
   val warehouse = if (hdfsUrl.startsWith("hdfs://")) {
     val carbonFile = FileFactory.getCarbonFile(s"$hdfsUrl/warehouse")
     FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
+      CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
     s"$hdfsUrl/warehouse_" + System.nanoTime()
   } else {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
+      CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
     s"$target/warehouse"
   }
+
+  val storeLocation = warehouse
 
   val badStoreLocation = if (hdfsUrl.startsWith("hdfs://")) {
        s"$hdfsUrl/bad_store_" + System.nanoTime()
@@ -131,7 +125,7 @@ object TestQueryExecutor {
   } else {
     s"$target/systemfolder"
   }
-    createDirectory(badStoreLocation)
+  createDirectory(badStoreLocation)
 
   val hiveresultpath = if (hdfsUrl.startsWith("hdfs://")) {
     val p = s"$hdfsUrl/hiveresultpath"
@@ -180,13 +174,8 @@ object TestQueryExecutor {
     .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, systemFolderPath)
 
   private def lookupQueryExecutor: Class[_] = {
-    import scala.collection.JavaConverters._
     ServiceLoader.load(classOf[TestQueryExecutorRegister], Utils.getContextOrSparkClassLoader)
-      .asScala
-      .filter(instance => instance
-        .getClass
-        .getName.equals("org.apache.spark.sql.test.Spark2TestQueryExecutor"))
-      .head.getClass
+      .iterator().next().getClass
   }
 
   private def createDirectory(badStoreLocation: String) = {

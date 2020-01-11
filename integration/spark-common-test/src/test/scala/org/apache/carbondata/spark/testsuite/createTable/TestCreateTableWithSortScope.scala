@@ -40,11 +40,11 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | intField INT,
          | stringField STRING
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
-    checkExistence(sql("DESCRIBE FORMATTED tableWithGlobalSort"), true, "GLOBAL_SORT")
+    checkExistence(sql("DESCRIBE FORMATTED tableWithGlobalSort"), true, "global_sort")
 
     sql(
       s"""
@@ -52,13 +52,13 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | intField INT,
          | stringField STRING
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='LOCAL_SORT')
        """.stripMargin)
 
     sql("DESCRIBE FORMATTED tableWithLocalSort")
 
-    checkExistence(sql("DESCRIBE FORMATTED tableWithLocalSort"), true, "LOCAL_SORT")
+    checkExistence(sql("DESCRIBE FORMATTED tableWithLocalSort"), true, "local_sort")
 
     sql(
       s"""
@@ -66,11 +66,11 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | intField INT,
          | stringField STRING
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='NO_SORT')
        """.stripMargin)
 
-    checkExistence(sql("DESCRIBE FORMATTED tableWithNoSort"), true, "NO_SORT")
+    checkExistence(sql("DESCRIBE FORMATTED tableWithNoSort"), true, "no_sort")
   }
 
   test("test create table with sort scope in abnormal cases") {
@@ -81,7 +81,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
            | intField INT,
            | stringField STRING
            | )
-           | STORED BY 'carbondata'
+           | STORED AS carbondata
            | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='abc')
        """.stripMargin)
     }

@@ -35,7 +35,7 @@ class TestLoadDataWithMaxMinInteger extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         CREATE TABLE integer_table_01(imei string,age int)
-        STORED BY 'org.apache.carbondata.format'
+        STORED AS carbondata
       """)
     sql(
       s"""
@@ -54,7 +54,7 @@ class TestLoadDataWithMaxMinInteger extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         CREATE TABLE integer_table_02(imei string,age int)
-        STORED BY 'org.apache.carbondata.format'
+        STORED AS carbondata
       """)
     sql(
       s"""
@@ -73,7 +73,7 @@ class TestLoadDataWithMaxMinInteger extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         CREATE TABLE integer_table_03(imei string,age int)
-        STORED BY 'org.apache.carbondata.format'
+        STORED AS carbondata
       """)
     sql(
       s"""

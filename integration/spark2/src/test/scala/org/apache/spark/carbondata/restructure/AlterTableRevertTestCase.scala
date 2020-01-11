@@ -33,7 +33,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists reverttest")
     sql(
       "CREATE TABLE reverttest(intField int,stringField string,timestampField timestamp," +
-      "decimalField decimal(6,2)) STORED BY 'carbondata'")
+      "decimalField decimal(6,2)) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE reverttest " +
         s"options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
   }

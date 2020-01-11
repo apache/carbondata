@@ -35,7 +35,7 @@ class TestLoadDataWithAutoLoadMerge extends QueryTest with BeforeAndAfterAll {
     sql(
       """
          CREATE TABLE automerge(id int, name string, city string, age int)
-         STORED BY 'org.apache.carbondata.format'
+         STORED AS carbondata
       """)
   }
 

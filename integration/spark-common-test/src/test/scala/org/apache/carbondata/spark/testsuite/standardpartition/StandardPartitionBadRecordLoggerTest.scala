@@ -42,7 +42,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
   test("test partition redirect") {
     sql(
       s"""CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED BY 'carbondata' TBLPROPERTIES('BAD_RECORD_PATH'='$warehouse')""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED AS carbondata TBLPROPERTIES('BAD_RECORD_PATH'='$warehouse')""")
 
     val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS"
@@ -62,7 +62,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     val csvFilePath = s"$resourcesPath/badrecords/seriazableValue.csv"
     sql(
       """CREATE TABLE IF NOT EXISTS serializable_values(ID BigInt, date Timestamp,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED AS carbondata
         """)
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE serializable_values OPTIONS"
         +
@@ -80,7 +80,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     // load with bad_records_logger_enable false
     sql(
       """CREATE TABLE IF NOT EXISTS serializable_values_false(ID BigInt, date Timestamp,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED AS carbondata
         """)
     sql(
       "LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE serializable_values_false OPTIONS"
@@ -99,7 +99,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     // only one value should be loadded.
     sql(
       """CREATE TABLE IF NOT EXISTS empty_timestamp(ID BigInt, date Timestamp,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED AS carbondata
         """)
     val csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE empty_timestamp OPTIONS"
@@ -118,7 +118,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     // 2. insufficient columns - Bad records/Null value based on configuration
     sql(
       """CREATE TABLE IF NOT EXISTS insufficientColumn(date Timestamp,country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (ID BigInt) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (ID BigInt) STORED AS carbondata
         """)
     val csvFilePath = s"$resourcesPath/badrecords/insufficientColumns.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE insufficientColumn OPTIONS"
@@ -136,7 +136,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     // load with bad_records_logger_enable false
     sql(
       """CREATE TABLE IF NOT EXISTS insufficientColumn_false(date Timestamp,country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (ID BigInt) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (ID BigInt) STORED AS carbondata
         """)
     val csvFilePath = s"$resourcesPath/badrecords/insufficientColumns.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE insufficientColumn_false OPTIONS"
@@ -155,7 +155,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     //table should have only two records.
     sql(
       """CREATE TABLE IF NOT EXISTS emptyColumnValues(date Timestamp,country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (ID BigInt) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (ID BigInt) STORED AS carbondata
         """)
     val csvFilePath = s"$resourcesPath/badrecords/emptyValues.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE emptyColumnValues OPTIONS"
@@ -174,7 +174,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     // load with bad_records_logger_enable to false
     sql(
       """CREATE TABLE IF NOT EXISTS emptyColumnValues_false(date Timestamp,country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (ID BigInt) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (ID BigInt) STORED AS carbondata
         """)
     val csvFilePath = s"$resourcesPath/badrecords/emptyValues.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE emptyColumnValues_false OPTIONS"
@@ -190,7 +190,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     // load with bad_records_logger_enable to false
     sql(
       """CREATE TABLE IF NOT EXISTS empty_timestamp_false(ID BigInt, date Timestamp,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED AS carbondata
         """)
     val csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE empty_timestamp_false OPTIONS"
@@ -206,7 +206,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     sql(
       """CREATE TABLE IF NOT EXISTS dataloadOptionTests(ID BigInt, date Timestamp, country
            String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata
       """)
     val csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
     try {

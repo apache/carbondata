@@ -62,8 +62,10 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
       result = exprLeftRes.getShort() > (exprRightRes.getShort());
     } else if (dataType == DataTypes.INT) {
       result = exprLeftRes.getInt() > (exprRightRes.getInt());
-    } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+    } else if (dataType == DataTypes.DATE) {
       result = exprLeftRes.getTime() > (exprRightRes.getTime());
+    } else if (dataType == DataTypes.TIMESTAMP) {
+      result = exprLeftRes.getTimeAsMillisecond() > (exprRightRes.getTimeAsMillisecond());
     } else if (dataType == DataTypes.LONG) {
       result = exprLeftRes.getLong() > (exprRightRes.getLong());
     } else if (DataTypes.isDecimal(dataType)) {

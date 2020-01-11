@@ -28,7 +28,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object CarbonSortColumnsExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("CarbonSessionExample")
+    val spark = ExampleUtils.createSparkSession("CarbonSessionExample")
     exampleBody(spark)
     spark.close()
   }
@@ -58,7 +58,7 @@ object CarbonSortColumnsExample {
          | floatField FLOAT,
          | complexData ARRAY<STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('SORT_COLUMNS'='')
        """.stripMargin)
 
@@ -81,7 +81,7 @@ object CarbonSortColumnsExample {
          | floatField FLOAT,
          | complexData ARRAY<STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('SORT_COLUMNS'='intField, stringField, charField')
        """.stripMargin)
 

@@ -50,7 +50,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_globalsort(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
       """.stripMargin)
   }
 
@@ -65,7 +65,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_localsort_once(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_once")
   }
@@ -96,7 +96,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_globalsort1(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
       """.stripMargin)
 
@@ -143,7 +143,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   test("compaction major: timestamp and long data type confliction")
   {
     sql("drop table if exists compactionTable")
-    sql("create table compactionTable (DOJ timestamp, DOB date) STORED BY 'org.apache.carbondata.format'")
+    sql("create table compactionTable (DOJ timestamp, DOB date) STORED AS carbondata")
     sql("alter table compactionTable set tblproperties('sort_columns'='doj, dob', 'sort_scope'='global_sort')")
     sql("INSERT INTO compactionTable select '2017-10-12 21:22:23', '1997-10-10'")
     sql("INSERT INTO compactionTable select '2018-11-12 20:22:23', '1997-10-10'")
@@ -164,7 +164,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_localsort_twice(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_twice")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_twice")
@@ -184,7 +184,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_globalsort_minor(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES(
+        | STORED AS carbondata TBLPROPERTIES(
         | 'SORT_SCOPE'='GLOBAL_SORT',
         | 'sort_columns' = 'name, city',
         | 'AUTO_LOAD_MERGE'='false',
@@ -214,7 +214,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_globalsort_major(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES(
+        | STORED AS carbondata TBLPROPERTIES(
         | 'SORT_SCOPE'='GLOBAL_SORT',
         | 'sort_columns' = 'name, city',
         | 'AUTO_LOAD_MERGE'='false',
@@ -244,7 +244,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_globalsort_custom(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES(
+        | STORED AS carbondata TBLPROPERTIES(
         | 'SORT_SCOPE'='GLOBAL_SORT',
         | 'sort_columns' = 'name, city',
         | 'AUTO_LOAD_MERGE'='false', 'GLOBAL_SORT_PARTITIONS'='3')
@@ -313,7 +313,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_localsort_delete(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_delete")
     sql("DELETE FROM carbon_localsort_delete WHERE id = 1").show
@@ -332,7 +332,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_localsort_update(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
+        | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'name, city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_update")
 
@@ -428,7 +428,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
          | charField CHAR(5),
          | floatField FLOAT
          | )
-         | STORED BY 'org.apache.carbondata.format'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='stringField')
        """.stripMargin)
     sql(
@@ -452,7 +452,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
          | charField CHAR(5),
          | floatField FLOAT
          | )
-         | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'stringField')
+         | STORED AS carbondata TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT', 'sort_columns' = 'stringField')
        """.stripMargin)
     sql(
       s"""

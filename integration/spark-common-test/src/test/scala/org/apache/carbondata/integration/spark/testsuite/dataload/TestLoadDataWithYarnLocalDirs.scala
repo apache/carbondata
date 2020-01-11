@@ -38,7 +38,7 @@ class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop table if exists carbontable_yarnLocalDirs")
     sql("CREATE TABLE carbontable_yarnLocalDirs (id int, name string, city string, age int) " +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED AS carbondata")
   }
 
   private def getMockedYarnLocalDirs = {

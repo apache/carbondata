@@ -19,7 +19,7 @@ package org.apache.carbondata.examples
 import java.io.File
 
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, SECRET_KEY}
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.slf4j.{Logger, LoggerFactory}
 
 object S3CsvExample {
@@ -42,8 +42,7 @@ object S3CsvExample {
       System.exit(0)
     }
 
-    val spark =
-      SparkSession
+    val spark = SparkSession
       .builder()
       .master(args(3))
       .appName("S3CsvExample")
@@ -52,8 +51,6 @@ object S3CsvExample {
       .config("spark.hadoop." + SECRET_KEY, args(1))
       .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
       .getOrCreate()
-
-    CarbonEnv.getInstance(spark)
 
     spark.sparkContext.setLogLevel("INFO")
 
@@ -71,7 +68,7 @@ object S3CsvExample {
          | charField CHAR(5),
          | floatField FLOAT
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | LOCATION '$rootPath/examples/spark2/target/store'
        """.stripMargin)
 

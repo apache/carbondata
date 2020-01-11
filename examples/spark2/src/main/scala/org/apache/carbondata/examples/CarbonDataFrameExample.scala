@@ -24,7 +24,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object CarbonDataFrameExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("CarbonDataFrameExample")
+    val spark = ExampleUtils.createSparkSession("CarbonDataFrameExample")
     exampleBody(spark)
     spark.close()
   }

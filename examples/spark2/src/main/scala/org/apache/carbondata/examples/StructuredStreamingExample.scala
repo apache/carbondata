@@ -36,7 +36,7 @@ object StructuredStreamingExample {
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
 
-    val spark = ExampleUtils.createCarbonSession("StructuredStreamingExample", 4)
+    val spark = ExampleUtils.createSparkSession("StructuredStreamingExample", 4)
     val streamTableName = s"stream_table"
 
     val requireCreateTable = true
@@ -55,7 +55,7 @@ object StructuredStreamingExample {
              | salary FLOAT,
              | file struct<school:array<string>, age:int>
              | )
-             | STORED BY 'carbondata'
+             | STORED AS carbondata
              | TBLPROPERTIES(
              | 'streaming'='true', 'sort_columns'='name')
              | """.stripMargin)
@@ -67,7 +67,7 @@ object StructuredStreamingExample {
              | name STRING,
              | salary FLOAT
              | )
-             | STORED BY 'carbondata'
+             | STORED AS carbondata
              | TBLPROPERTIES(
              | 'streaming'='true', 'sort_columns'='name')
              | """.stripMargin)

@@ -95,7 +95,7 @@ public class IndexDataMapProvider extends DataMapProvider {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
     }
     DataMapStoreManager.getInstance().deleteDataMap(
-        mainTable.getAbsoluteTableIdentifier(), getDataMapSchema().getDataMapName());
+        mainTable, getDataMapSchema().getDataMapName());
   }
 
   @Override

@@ -263,7 +263,7 @@ object CarbonSession {
             case e @ (_: ClassCastException |
                       _: ClassNotFoundException |
                       _: NoClassDefFoundError) =>
-              // Ignore extensions
+            // Ignore extensions
           }
         }
 

@@ -39,13 +39,13 @@ class TestCreateTableWithSpaceInColumnName extends QueryTest with BeforeAndAfter
     // separate folders are created for the matching case in commands executed.
     sql("create database dbColumnSpace")
     sql("use dbColumnSpace")
-    sql("create table carbonTable(`my id` int, `full name` string)stored by 'carbondata'")
+    sql("create table carbonTable(`my id` int, `full name` string)STORED AS carbondata")
     sql("drop table carbonTable")
     sql("use default")
     sql("use dbColumnSpace")
     try {
       // table creation should be successful
-      sql("create table carbonTable(`my id` int, `full name` string)stored by 'carbondata'")
+      sql("create table carbonTable(`my id` int, `full name` string)STORED AS carbondata")
       assert(true)
     } catch {
       case ex: Exception =>

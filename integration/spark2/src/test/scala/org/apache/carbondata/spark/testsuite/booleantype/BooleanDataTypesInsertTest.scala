@@ -36,7 +36,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
     sql("drop table if exists boolean_table4")
     sql("drop table if exists carbon_table")
     sql("drop table if exists hive_table")
-    sql("CREATE TABLE if not exists boolean_one_column(booleanField BOOLEAN) STORED BY 'carbondata'")
+    sql("CREATE TABLE if not exists boolean_one_column(booleanField BOOLEAN) STORED AS carbondata")
   }
 
   override def afterAll(): Unit = {
@@ -93,7 +93,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Inserting and selecting table: two columns boolean and many rows, should support") {
-    sql("CREATE TABLE if not exists boolean_table2(col1 BOOLEAN, col2 BOOLEAN) STORED BY 'carbondata'")
+    sql("CREATE TABLE if not exists boolean_table2(col1 BOOLEAN, col2 BOOLEAN) STORED AS carbondata")
 
     sql("insert into boolean_table2 values(true,true)")
     sql("insert into boolean_table2 values(True,false)")
@@ -111,7 +111,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Inserting and selecting table: two columns and other data type, should support") {
-    sql("CREATE TABLE if not exists boolean_table2(col1 INT, col2 BOOLEAN) STORED BY 'carbondata'")
+    sql("CREATE TABLE if not exists boolean_table2(col1 INT, col2 BOOLEAN) STORED AS carbondata")
 
     sql("insert into boolean_table2 values(1,true)")
     sql("insert into boolean_table2 values(100,true)")
@@ -145,7 +145,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -166,7 +166,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -179,7 +179,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | stringField STRING,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
     sql(
@@ -191,7 +191,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | stringField STRING,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -262,7 +262,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -283,7 +283,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -333,7 +333,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -353,7 +353,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | floatField FLOAT,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -389,7 +389,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
            | floatField FLOAT,
            | complexData ARRAY<STRING>
            | )
-           | STORED BY 'carbondata'
+           | STORED AS carbondata
            | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -410,7 +410,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
            | complexData ARRAY<STRING>,
            | booleanField2 BOOLEAN
            | )
-           | STORED BY 'carbondata'
+           | STORED AS carbondata
            | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -447,7 +447,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -540,7 +540,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -624,7 +624,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Inserting overwrite: two columns boolean and many rows, should support") {
-    sql("CREATE TABLE if not exists boolean_table2(col1 BOOLEAN, col2 BOOLEAN) STORED BY 'carbondata'")
+    sql("CREATE TABLE if not exists boolean_table2(col1 BOOLEAN, col2 BOOLEAN) STORED AS carbondata")
 
     sql("insert overwrite table boolean_table2 values(true,true)")
     checkAnswer(
@@ -651,7 +651,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Inserting overwrite: two columns and other data type, should support") {
-    sql("CREATE TABLE if not exists boolean_table2(col1 INT, col2 BOOLEAN) STORED BY 'carbondata'")
+    sql("CREATE TABLE if not exists boolean_table2(col1 INT, col2 BOOLEAN) STORED AS carbondata")
     sql("insert overwrite table boolean_table2 values(1,true)")
     checkAnswer(
       sql("select * from boolean_table2"),
@@ -698,7 +698,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -719,7 +719,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -732,7 +732,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | stringField STRING,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
     sql(
@@ -744,7 +744,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | stringField STRING,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -815,7 +815,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -908,7 +908,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -951,7 +951,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
          | CREATE TABLE if not exists carbon_table(
          | cc BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('SORT_COLUMNS'='cc')
        """.stripMargin)
     sql("insert into carbon_table values(true)")

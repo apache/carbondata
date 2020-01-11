@@ -34,14 +34,14 @@ class TestCreateTableWithColumnComment extends QueryTest with BeforeAndAfterAll 
   test("test create table with column comment") {
     sql(
       "create table columnComment(id int, name string comment \"This column is called name\") " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     checkExistence(sql("describe formatted columnComment"), true, "This column is called name")
   }
 
   test("test create table with default column comment value") {
     sql(
       "create table defaultComment(id int, name string) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     checkExistence(sql("describe formatted defaultComment"), true, "null")
   }
 

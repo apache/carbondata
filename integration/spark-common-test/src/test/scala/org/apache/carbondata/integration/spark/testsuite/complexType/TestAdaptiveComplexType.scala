@@ -33,7 +33,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -45,7 +45,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500, 'name', 'abc', 'marks', array(20,30,40)))")
     sql("insert into adaptive values(2,named_struct('id', 600, 'name', 'abc', 'marks', array(20,30,40)))")
     sql("insert into adaptive values(3,named_struct('id', 600, 'name', 'abc', 'marks', array(20,30,40)))")
@@ -59,7 +59,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -71,7 +71,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500, 'name', 'abc', 'marks', array(200,300,400)))")
     sql("insert into adaptive values(2,named_struct('id', 700, 'name', 'abc', 'marks', array(200,300,400)))")
     sql("insert into adaptive values(3,named_struct('id', 800, 'name', 'abc', 'marks', array(200,300,400)))")
@@ -85,7 +85,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -97,7 +97,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 50000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(2,named_struct('id', 70000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(3,named_struct('id', 100000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
@@ -111,7 +111,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -123,7 +123,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500000, 'name', 'abc', 'marks', array(200,300,52000000)))")
     sql("insert into adaptive values(2,named_struct('id', 700000, 'name', 'abc', 'marks', array(200,300,52000000)))")
     sql("insert into adaptive values(3,named_struct('id', 10000000, 'name', 'abc', 'marks', array(200,300,52000000)))")
@@ -138,7 +138,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:smallint,name:string," +
-      "marks:array<smallint>>) stored by 'carbondata'")
+      "marks:array<smallint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 100, 'name', 'abc', 'marks', array(20,30,40)))")
     sql("insert into adaptive values(2,named_struct('id', 200, 'name', 'abc', 'marks', array(30,40,50)))")
     checkAnswer(sql("select * from adaptive"),
@@ -150,7 +150,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:smallint,name:string," +
-      "marks:array<smallint>>) stored by 'carbondata'")
+      "marks:array<smallint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500, 'name', 'abc', 'marks', array(200,300,400)))")
     sql("insert into adaptive values(2,named_struct('id', 8000, 'name', 'abc', 'marks', array(300,400,500)))")
     checkAnswer(sql("select * from adaptive"),
@@ -162,7 +162,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
-      "marks:array<bigint>>) stored by 'carbondata'")
+      "marks:array<bigint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1, 'name', 'abc', 'marks', array(20,30,40)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1, "abc", mutable.WrappedArray.make(Array(20, 30, 40))))))
@@ -172,7 +172,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
-      "marks:array<bigint>>) stored by 'carbondata'")
+      "marks:array<bigint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500, 'name', 'abc', 'marks', array(200,300,400)))")
     sql("insert into adaptive values(2,named_struct('id', 8000, 'name', 'abc', 'marks', array(300,400,500)))")
     checkAnswer(sql("select * from adaptive"),
@@ -182,7 +182,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -197,7 +197,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
-      "marks:array<bigint>>) stored by 'carbondata'")
+      "marks:array<bigint>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 50000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(2,named_struct('id', 70000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(3,named_struct('id', 100000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
@@ -209,7 +209,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -225,7 +225,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -238,7 +238,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500000, 'name', 'abc', 'marks', array(200,300,52000000)))")
     sql("insert into adaptive values(2,named_struct('id', 700000, 'name', 'abc', 'marks', array(200,300,52000000)))")
     sql("insert into adaptive values(3,named_struct('id', 10000000, 'name', 'abc', 'marks', array(200,300,52000000)))")
@@ -252,7 +252,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1.323, 'name', 'abc', 'marks', array(2.2,3.3,4.4)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1.323, "abc", mutable.WrappedArray.make(Array(2.2, 3.3, 4.4))))))
@@ -260,7 +260,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_double1.csv' into table adaptive options('delimiter'='," +
       "'," +
@@ -276,7 +276,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1.323, 'name', 'abc', 'marks', array(20.2,30.3,40.4)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 40.4))))))
@@ -284,7 +284,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_double2.csv' into table adaptive options('delimiter'='," +
       "'," +
@@ -300,7 +300,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 10.323, 'name', 'abc', 'marks', array(20.2,30.3,500.423)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(10.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 500.423))))))
@@ -308,7 +308,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_double3.csv' into table adaptive options('delimiter'='," +
       "'," +
@@ -324,7 +324,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1000.323, 'name', 'abc', 'marks', array(20.2,30.3,50000.423)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1000.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 50000.423))))))
@@ -332,7 +332,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string,marks:array<double>>)" +
       " " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_double4.csv' into table adaptive options('delimiter'='," +
       "'," +
@@ -348,7 +348,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
-      "marks:array<double>>) stored by 'carbondata'")
+      "marks:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 1.797693134862315, 'name', 'abc', 'marks', array(2.2,30.3,1.797693134862315)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1,
@@ -361,8 +361,8 @@ trait TestAdaptiveComplexType extends QueryTest {
   test("test Decimal with Struct") {
     sql("Drop table if exists adaptive")
     sql(
-      "create table adaptive(roll int, student struct<id:decimal(3,2),name:string>) stored by " +
-      "'carbondata'")
+      "create table adaptive(roll int, student struct<id:decimal(3,2),name:string>) " +
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 3.2, 'name', 'abc'))")
     sql("select * from adaptive").show(false)
   }
@@ -371,7 +371,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<name:string," +
-      "marks:array<decimal>>) stored by 'carbondata'")
+      "marks:array<decimal>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('name', 'abc', 'marks', array(20.2,30.3,40.4)))")
     sql("select * from adaptive").show(false)
   }
@@ -381,8 +381,8 @@ trait TestAdaptiveComplexType extends QueryTest {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
-      "create table adaptive(roll int, student struct<id:timestamp,name:string>) stored by " +
-      "'carbondata'")
+      "create table adaptive(roll int, student struct<id:timestamp,name:string>) " +
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', '2017-01-01 00:00:00', 'name', 'abc'))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(Timestamp.valueOf("2017-01-01 00:00:00.0"), "abc"))))
@@ -394,7 +394,7 @@ trait TestAdaptiveComplexType extends QueryTest {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
       "create table adaptive(roll int, student struct<name:string," +
-      "marks:array<timestamp>>) stored by 'carbondata'")
+      "marks:array<timestamp>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('name', 'abc', 'marks', array('2017-01-01 00:00:00','2018-01-01 00:00:00')))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1,
@@ -408,7 +408,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<name:string," +
-      "marks:array<date>>) stored by 'carbondata'")
+      "marks:array<date>>) STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('name', 'abc', 'marks', array('2017/01/01')))")
     sql("select * from adaptive").show(false)
   }
@@ -417,7 +417,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:long,name:string,marks:array<long>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(20,30,40)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11111, "abc", mutable.WrappedArray.make(Array(20, 30, 40))))))
@@ -427,14 +427,14 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:long,name:string,marks:array<long>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(200,300,400)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11111, "abc", mutable.WrappedArray.make(Array(200, 300, 400))))))
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -449,7 +449,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int2.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -461,7 +461,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 50000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(2,named_struct('id', 70000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
     sql("insert into adaptive values(3,named_struct('id', 100000, 'name', 'abc', 'marks', array(2000000,3000000,4000000)))")
@@ -475,7 +475,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int3.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -487,7 +487,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500000, 'name', 'abc', 'marks', array(200, 300, 52000000)))")
     sql("insert into adaptive values(2,named_struct('id', 700000, 'name', 'abc', 'marks', array(200, 300, 52000000)))")
     sql("insert into adaptive values(3,named_struct('id', 10000000,'name', 'abc', 'marks', array(200, 300, 52000000)))")
@@ -501,7 +501,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 500000, 'name', 'abc', 'marks', array(200, 300, 52000000000)))")
     sql("insert into adaptive values(2,named_struct('id', 700000, 'name', 'abc', 'marks', array(200, 300, 52000000000)))")
     sql("insert into adaptive values(3,named_struct('id', 10000000,'name', 'abc', 'marks', array(200, 300, 52000000000)))")
@@ -512,7 +512,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:short,name:string,marks:array<short>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11, 'name', 'abc', 'marks', array(20, 30, 40)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11, "abc", mutable.WrappedArray.make(Array(20, 30, 40))))))
@@ -522,14 +522,14 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:SHORT,name:string,marks:array<SHORT>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', 11111, 'name', 'abc', 'marks', array(200, 300, 400)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11111, "abc", mutable.WrappedArray.make(Array(200, 300, 400))))))
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(roll int, student struct<id:SHORT,name:string,marks:array<SHORT>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql(
       s"load data inpath '$resourcesPath/adap_int1.csv' into table adaptive options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,student','complex_delimiter_level_1'='$'," +
@@ -545,7 +545,7 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:boolean,name:string," +
       "marks:array<boolean>>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(1,named_struct('id', true, 'name', 'abc', 'marks', array(false, true, false)))")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(true, "abc", mutable.WrappedArray.make(Array(false, true, false))))))
@@ -555,12 +555,12 @@ trait TestAdaptiveComplexType extends QueryTest {
     sql("Drop table if exists adaptive")
     sql(
       "create table adaptive(array1 struct<double1:double,double2:double,double3:double>) " +
-      "stored by 'carbondata'")
+      "STORED AS carbondata")
     sql("insert into adaptive values(named_struct('double1', 10000000.0, 'double2', 300000.0, 'double3', 3000.0))")
     sql("select * from adaptive").show(false)
     checkExistence(sql("select * from adaptive"), true, "1.0E7,300000.0,3000.0")
     sql("Drop table if exists adaptive")
-    sql("create table adaptive(struct_arr struct<array_db1:array<double>>) stored by 'carbondata'")
+    sql("create table adaptive(struct_arr struct<array_db1:array<double>>) STORED AS carbondata")
     sql("insert into adaptive values(named_struct('array_db1', array(5555555.9559, 12345678991234567, 3444.999)))")
     checkExistence(sql("select * from adaptive"),
       true,

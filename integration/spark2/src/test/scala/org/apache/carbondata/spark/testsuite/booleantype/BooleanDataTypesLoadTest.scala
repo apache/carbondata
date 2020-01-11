@@ -36,7 +36,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     sql("drop table if exists boolean_table3")
     sql("drop table if exists boolean_table4")
     sql("drop table if exists badRecords")
-    sql("CREATE TABLE if not exists carbon_table(booleanField BOOLEAN) STORED BY 'carbondata'")
+    sql("CREATE TABLE if not exists carbon_table(booleanField BOOLEAN) STORED AS carbondata")
     sql(
       s"""
          | CREATE TABLE badRecords(
@@ -52,7 +52,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     sql(
@@ -72,7 +72,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
   }
@@ -170,7 +170,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | floatField FLOAT,
          | complexData ARRAY<STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -208,7 +208,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | floatField FLOAT,
          | complexData ARRAY<STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -246,7 +246,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
@@ -336,7 +336,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | floatField FLOAT,
          | complexData ARRAY<STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('TABLE_BLOCKSIZE'='512','NO_INVERTED_INDEX'='charField', 'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
@@ -504,7 +504,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -517,7 +517,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | stringField STRING,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
     sql(
@@ -529,7 +529,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | stringField STRING,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -654,7 +654,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -714,7 +714,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -754,7 +754,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
     val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanBadRecords.csv"
     sql(

@@ -41,8 +41,8 @@ class TestImplicitFilterExpression extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     sql("drop table if exists implicit_test")
     sql(
-      "create table implicit_test(firstname string, lastname string, age int) stored by " +
-      "'carbondata'")
+      "create table implicit_test(firstname string, lastname string, age int) " +
+      "STORED AS carbondata")
     sql("insert into implicit_test select 'bob','marshall',35")
   }
 

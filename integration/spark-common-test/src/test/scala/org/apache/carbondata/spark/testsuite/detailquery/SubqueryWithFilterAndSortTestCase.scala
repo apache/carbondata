@@ -30,7 +30,7 @@ class SubqueryWithFilterAndSortTestCase extends QueryTest with BeforeAndAfterAll
     FileFactory.mkdirs(tempDirPath)
     sql("drop table if exists subqueryfilterwithsort")
     sql("drop table if exists subqueryfilterwithsort_hive")
-    sql("CREATE TABLE subqueryfilterwithsort (name String, id int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE subqueryfilterwithsort (name String, id int) STORED AS carbondata")
     sql("CREATE TABLE subqueryfilterwithsort_hive (name String, id int)row format delimited fields terminated by ','")
     val data ="name_a,1\nname_b,2\nname_c,3\nname_d,4\nname_e,5\nname_f,6"
     writedata(tempFilePath, data)

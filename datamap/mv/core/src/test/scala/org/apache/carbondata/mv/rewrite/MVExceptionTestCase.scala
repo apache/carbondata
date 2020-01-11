@@ -18,13 +18,13 @@ package org.apache.carbondata.mv.rewrite
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.test.util.CarbonQueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class MVExceptionTestCase  extends CarbonQueryTest with BeforeAndAfterAll {
+class MVExceptionTestCase  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll: Unit = {
     drop()
-    sql("create table main_table (name string,age int,height int) stored by 'carbondata'")
+    sql("create table main_table (name string,age int,height int) STORED AS carbondata")
   }
 
   test("test mv no base table") {

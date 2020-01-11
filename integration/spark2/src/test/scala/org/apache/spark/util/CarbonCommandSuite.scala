@@ -107,8 +107,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
   }
 
-  private lazy val location =
-    CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
+  private lazy val location = CarbonProperties.getStorePath()
 
 
   test("delete segment by id") {
@@ -155,7 +154,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   test("separate visible and invisible segments info into two files") {
     val tableName = "test_tablestatus_history"
     sql(s"drop table if exists ${tableName}")
-    sql(s"create table ${tableName} (name String, age int) stored by 'carbondata' "
+    sql(s"create table ${tableName} (name String, age int) STORED AS carbondata "
       + "TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,2')")
     val carbonTable = CarbonEnv.getCarbonTable(Some("default"), tableName)(sqlContext.sparkSession)
     sql(s"insert into ${tableName} select 'abc1',1")
@@ -181,7 +180,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   test("show history segments") {
     val tableName = "test_tablestatus_history"
     sql(s"drop table if exists ${tableName}")
-    sql(s"create table ${tableName} (name String, age int) stored by 'carbondata' "
+    sql(s"create table ${tableName} (name String, age int) STORED AS carbondata "
       + "TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,2')")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
     sql(s"insert into ${tableName} select 'abc1',1")

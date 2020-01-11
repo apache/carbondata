@@ -34,8 +34,7 @@ class DeleteTableTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE TABLE IS (imei string,age int,task bigint,name string,country string," +
       "city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp," +
-      "enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata" +
-      ".format'")
+      "enddate timestamp,PointId double,score decimal(10,3))STORED AS carbondata")
     sql(
       s"LOAD DATA INPATH '$resourcesPath/big_int_Decimal.csv'  INTO TABLE IS " +
       "options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$'," +
@@ -45,8 +44,7 @@ class DeleteTableTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE TABLE IS (imei string,age int,task bigint,name string,country string," +
       "city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp," +
-      "enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata" +
-      ".format'")
+      "enddate timestamp,PointId double,score decimal(10,3))STORED AS carbondata")
     sql("drop table if exists IS")
   }
 
@@ -55,8 +53,7 @@ class DeleteTableTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE TABLE IS (imei string,age int,task bigint,name string,country string," +
       "city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp," +
-      "enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata" +
-      ".format'")
+      "enddate timestamp,PointId double,score decimal(10,3))STORED AS carbondata")
     sql("drop table if exists IS")
   }
   override def afterAll {

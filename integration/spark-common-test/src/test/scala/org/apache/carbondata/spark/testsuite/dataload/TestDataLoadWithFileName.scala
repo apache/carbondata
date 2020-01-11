@@ -47,7 +47,7 @@ class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE test_table_v3(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     val testData = s"$resourcesPath/sample.csv"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table test_table_v3")

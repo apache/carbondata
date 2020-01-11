@@ -56,7 +56,7 @@ class TestBooleanCompressSuite extends QueryTest with BeforeAndAfterEach with Be
          | CREATE TABLE boolean_table(
          | booleanField BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
        """.stripMargin)
 
     sql(

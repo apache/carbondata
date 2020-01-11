@@ -194,7 +194,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     sql("select * from sdkOutputTable").show(false)
@@ -211,7 +211,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS localComplex")
     sql(
-      s"""CREATE EXTERNAL TABLE localComplex STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE localComplex STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     assert(FileFactory.getCarbonFile(writerPath).exists())
     assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
@@ -273,7 +273,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     writer.close()
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     sql("select * from sdkOutputTable").show(false)
@@ -291,7 +291,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select BuildNum[0][0][0].street from sdkOutputTable"),
@@ -491,7 +491,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkOutputTable"),

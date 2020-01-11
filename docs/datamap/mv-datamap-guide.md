@@ -29,7 +29,7 @@
 
 Start spark-sql in terminal and run the following queries,
 ```
-CREATE TABLE maintable(a int, b string, c int) stored by 'carbondata';
+CREATE TABLE maintable(a int, b string, c int) stored as carbondata;
 insert into maintable select 1, 'ab', 2;
 CREATE DATAMAP datamap_1 on table maintable as SELECT a, sum(b) from maintable group by a;
 SELECT a, sum(b) from maintable group by a;

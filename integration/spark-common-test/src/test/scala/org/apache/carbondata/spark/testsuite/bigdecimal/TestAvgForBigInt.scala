@@ -30,7 +30,7 @@ class TestAvgForBigInt extends QueryTest with BeforeAndAfterAll {
       """
       CREATE TABLE IF NOT EXISTS carbonTable (ID Int, date Timestamp, country String,
       name String, phonetype String, serialname String, salary bigint)
-      STORED BY 'org.apache.carbondata.format'
+      STORED AS carbondata
       """
     )
 

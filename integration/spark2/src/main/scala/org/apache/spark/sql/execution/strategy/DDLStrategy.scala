@@ -16,383 +16,200 @@
  */
 package org.apache.spark.sql.execution.strategy
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql._
-import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReturnAnswer}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand, CarbonInsertIntoHadoopFsRelationCommand, CarbonLoadDataCommand, RefreshCarbonTableCommand}
-import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableAddHivePartitionCommand, CarbonAlterTableDropHivePartitionCommand}
+import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand}
+import org.apache.spark.sql.execution.command.mutation.CarbonTruncateCommand
 import org.apache.spark.sql.execution.command.schema._
-import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDescribeFormattedCommand, CarbonDropTableCommand}
-import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
-import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
+import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDropTableCommand, CarbonShowCreateTableCommand}
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, RefreshResource, RefreshTable}
-import org.apache.spark.sql.hive.{CarbonRelation, CreateCarbonSourceTableAsSelectCommand}
-import org.apache.spark.sql.parser.CarbonSpark2SqlParser
-import org.apache.spark.sql.types.StructField
-import org.apache.spark.util.{CarbonReflectionUtils, DataMapUtil, FileUtils, SparkUtil}
+import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
+import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
-import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
-  /**
-   * Carbon strategies for ddl commands
-   * CreateDataSourceTableAsSelectCommand class has extra argument in
-   * 2.3, so need to add wrapper to match the case
-   */
+/**
+ * Carbon strategies for ddl commands
+ * CreateDataSourceTableAsSelectCommand class has extra argument in
+ * 2.3, so need to add wrapper to match the case
+ */
 object MatchCreateDataSourceTable {
-  def unapply(plan: LogicalPlan): Option[(CatalogTable, SaveMode, LogicalPlan)] = plan match {
-    case t: CreateDataSourceTableAsSelectCommand => Some(t.table, t.mode, t.query)
-    case _ => None
+  def unapply(plan: LogicalPlan): Option[(CatalogTable, SaveMode, LogicalPlan)] = {
+    plan match {
+      case t: CreateDataSourceTableAsSelectCommand => Some(t.table, t.mode, t.query)
+      case _ => None
+    }
   }
 }
 
 class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
-      case LoadDataCommand(identifier, path, isLocal, isOverwrite, partition)
-        if CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(identifier)(sparkSession) =>
-        ExecutedCommandExec(
-          CarbonLoadDataCommand(
-            databaseNameOp = identifier.database,
-            tableName = identifier.table.toLowerCase,
-            factPathFromUser = path,
-            dimFilesPath = Seq(),
-            options = Map(),
-            isOverwriteTable = isOverwrite,
-            inputSqlString = null,
-            dataFrame = None,
-            updateModel = None,
-            tableInfoOp = None,
-            internalOptions = Map.empty,
-            partition = partition.getOrElse(Map.empty).map { case (col, value) =>
-              (col, Some(value))})) :: Nil
-      case alter@AlterTableRenameCommand(oldTableIdentifier, newTableIdentifier, _) =>
-        val dbOption = oldTableIdentifier.database.map(_.toLowerCase)
-        val tableIdentifier = TableIdentifier(oldTableIdentifier.table.toLowerCase(), dbOption)
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(tableIdentifier)(sparkSession)
-        if (isCarbonTable) {
-          val renameModel = AlterTableRenameModel(tableIdentifier, newTableIdentifier)
-          ExecutedCommandExec(CarbonAlterTableRenameCommand(renameModel)) :: Nil
-        } else {
-          ExecutedCommandExec(alter) :: Nil
-        }
-      case DropTableCommand(identifier, ifNotExists, isView, _)
-        if CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .isTablePathExists(identifier)(sparkSession) =>
-        ExecutedCommandExec(
-          CarbonDropTableCommand(ifNotExists, identifier.database,
-            identifier.table.toLowerCase)) :: Nil
-      case createLikeTable: CreateTableLikeCommand =>
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(createLikeTable.sourceTable)(sparkSession)
-        if (isCarbonTable) {
-          ExecutedCommandExec(CarbonCreateTableLikeCommand(createLikeTable.sourceTable,
-            createLikeTable.targetTable, createLikeTable.ifNotExists)) :: Nil
-        } else {
-          ExecutedCommandExec(createLikeTable) :: Nil
-        }
-      case InsertIntoCarbonTable(relation: CarbonDatasourceHadoopRelation,
-      partition, child: LogicalPlan, overwrite, _) =>
+      case _: ReturnAnswer => Nil
+      // load data / insert into
+      case loadData: LoadDataCommand
+        if isCarbonTable(loadData.table) =>
+        ExecutedCommandExec(DMLHelper.loadData(loadData, sparkSession)) :: Nil
+      case InsertIntoCarbonTable(
+      relation: CarbonDatasourceHadoopRelation, partition, child: LogicalPlan, overwrite, _) =>
         ExecutedCommandExec(CarbonInsertIntoCommand(relation, child, overwrite, partition)) :: Nil
-      case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
-        val dbLocation = try {
-          CarbonEnv.getDatabaseLocation(dbName, sparkSession)
-        } catch {
-          case e: NoSuchDatabaseException =>
-            CarbonProperties.getStorePath
-        }
-        ThreadLocalSessionInfo
-          .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
-        FileUtils.createDatabaseDirectory(dbName, dbLocation, sparkSession.sparkContext)
-        ExecutedCommandExec(createDb) :: Nil
-      case drop@DropDatabaseCommand(dbName,
-      ifExists, isCascade) if CarbonEnv.databaseLocationExists(dbName, sparkSession, ifExists) =>
-        ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
-      case alterTable@CarbonAlterTableCompactionCommand(altertablemodel, _, _) =>
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(TableIdentifier(altertablemodel.tableName,
-            altertablemodel.dbName))(sparkSession)
-        if (isCarbonTable) {
-            ExecutedCommandExec(alterTable) :: Nil
-        } else {
-          throw new MalformedCarbonCommandException(
-            String.format("Table or view '%s' not found in database '%s' or not carbon fileformat",
-            altertablemodel.tableName,
-            altertablemodel.dbName.getOrElse("default")))
-        }
-      case colRenameDataTypeChange@CarbonAlterTableColRenameDataTypeChangeCommand(
-      alterTableColRenameAndDataTypeChangeModel, _) =>
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(TableIdentifier(alterTableColRenameAndDataTypeChangeModel.tableName,
-            alterTableColRenameAndDataTypeChangeModel.databaseName))(sparkSession)
-        if (isCarbonTable) {
-          val carbonTable = CarbonEnv
-            .getCarbonTable(alterTableColRenameAndDataTypeChangeModel.databaseName,
-              alterTableColRenameAndDataTypeChangeModel.tableName)(sparkSession)
-          if (carbonTable != null && carbonTable.isFileLevelFormat) {
-            throw new MalformedCarbonCommandException(
-              "Unsupported alter operation on Carbon external fileformat table")
-          } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-            throw new MalformedCarbonCommandException(
-              "Unsupported operation on non transactional table")
-          } else {
-            ExecutedCommandExec(colRenameDataTypeChange) :: Nil
-          }
-        } else {
-          throw new MalformedCarbonCommandException(
-            String.format("Table or view '%s' not found in database '%s' or not carbon fileformat",
-              alterTableColRenameAndDataTypeChangeModel.tableName,
-              alterTableColRenameAndDataTypeChangeModel.
-                databaseName.getOrElse("default")))
-        }
-      case addColumn@CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel) =>
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(TableIdentifier(alterTableAddColumnsModel.tableName,
-            alterTableAddColumnsModel.databaseName))(sparkSession)
-        if (isCarbonTable) {
-          val carbonTable = CarbonEnv.getCarbonTable(alterTableAddColumnsModel.databaseName,
-            alterTableAddColumnsModel.tableName)(sparkSession)
-          if (carbonTable != null && carbonTable.isFileLevelFormat) {
-            throw new MalformedCarbonCommandException(
-              "Unsupported alter operation on Carbon external fileformat table")
-          } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-            throw new MalformedCarbonCommandException(
-              "Unsupported operation on non transactional table")
-          } else {
-            ExecutedCommandExec(addColumn) :: Nil
-          }
-          // TODO: remove this else if check once the 2.1 version is unsupported by carbon
-        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-          val structField = (alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols)
-            .map { f =>
-              val structField =
-                StructField(f.column, CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(
-                  DataTypeConverterUtil.convertToCarbonType(f))
-                )
-              if (StringUtils.isNotEmpty(f.columnComment)) {
-                structField.withComment(f.columnComment)
-              } else {
-                structField
-              }
-            }
-          val identifier = TableIdentifier(
-            alterTableAddColumnsModel.tableName,
-            alterTableAddColumnsModel.databaseName)
-          ExecutedCommandExec(CarbonReflectionUtils
-            .invokeAlterTableAddColumn(identifier, structField).asInstanceOf[RunnableCommand]) ::
-          Nil
-          // TODO: remove this else check once the 2.1 version is unsupported by carbon
-        } else {
-          throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
-        }
-      case dropColumn@CarbonAlterTableDropColumnCommand(alterTableDropColumnModel) =>
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(TableIdentifier(alterTableDropColumnModel.tableName,
-            alterTableDropColumnModel.databaseName))(sparkSession)
-        if (isCarbonTable) {
-          val carbonTable = CarbonEnv.getCarbonTable(alterTableDropColumnModel.databaseName,
-            alterTableDropColumnModel.tableName)(sparkSession)
-          if (carbonTable != null && carbonTable.isFileLevelFormat) {
-            throw new MalformedCarbonCommandException(
-              "Unsupported alter operation on Carbon external fileformat table")
-          } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-            throw new MalformedCarbonCommandException(
-              "Unsupported operation on non transactional table")
-          } else {
-            ExecutedCommandExec(dropColumn) :: Nil
-          }
-        } else {
-          throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
-        }
-      case desc@DescribeTableCommand(identifier, partitionSpec, isExtended) =>
-        val isFormatted: Boolean = if (sparkSession.version.startsWith("2.1")) {
-          CarbonReflectionUtils
-            .getDescribeTableFormattedField(desc.asInstanceOf[DescribeTableCommand])
-        } else {
-          false
-        }
-        if (CarbonEnv.getInstance(sparkSession).carbonMetaStore
-              .tableExists(identifier)(sparkSession) && (isExtended || isFormatted)) {
-          val resolvedTable =
-            sparkSession.sessionState.executePlan(UnresolvedRelation(identifier)).analyzed
-          val resultPlan = sparkSession.sessionState.executePlan(resolvedTable).executedPlan
-          ExecutedCommandExec(
-            CarbonDescribeFormattedCommand(
-              resultPlan,
-              plan.output,
-              partitionSpec,
-              identifier)) :: Nil
-        } else {
-          Nil
-        }
-      case adp@AlterTableDropPartitionCommand(tableName, specs, ifExists, purge, retainData) =>
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(tableName)(sparkSession)
-        if (isCarbonTable) {
-          ExecutedCommandExec(
-            CarbonAlterTableDropHivePartitionCommand(
-              tableName,
-              specs,
-              ifExists,
-              purge,
-              retainData)) :: Nil
-        } else {
-          ExecutedCommandExec(adp) :: Nil
-        }
-      case set@SetCommand(kv) =>
+      case insert: InsertIntoHadoopFsRelationCommand
+        if insert.catalogTable.isDefined && isCarbonTable(insert.catalogTable.get.identifier) =>
+        DataWritingCommandExec(DMLHelper.insertInto(insert), planLater(insert.query)) :: Nil
+      // alter table
+      case renameTable: AlterTableRenameCommand
+        if isCarbonTable(renameTable.oldName) =>
+        ExecutedCommandExec(DDLHelper.renameTable(renameTable)) :: Nil
+      case compaction: CarbonAlterTableCompactionCommand =>
+        CarbonPlanHelper.compact(compaction, sparkSession)
+      case changeColumn: AlterTableChangeColumnCommand
+        if isCarbonTable(changeColumn.tableName) =>
+        ExecutedCommandExec(DDLHelper.changeColumn(changeColumn, sparkSession)) :: Nil
+      case colRenameDataTypeChange: CarbonAlterTableColRenameDataTypeChangeCommand =>
+        CarbonPlanHelper.changeColumn(colRenameDataTypeChange, sparkSession)
+      case addColumns: AlterTableAddColumnsCommand
+        if isCarbonTable(addColumns.table) =>
+        ExecutedCommandExec(DDLHelper.addColumns(addColumns, sparkSession)) :: Nil
+      case addColumn: CarbonAlterTableAddColumnCommand =>
+        CarbonPlanHelper.addColumn(addColumn, sparkSession)
+      case dropColumn: CarbonAlterTableDropColumnCommand
+        if isCarbonTable(TableIdentifier(
+          dropColumn.alterTableDropColumnModel.tableName,
+          dropColumn.alterTableDropColumnModel.databaseName)) =>
+        CarbonPlanHelper.dropColumn(dropColumn, sparkSession)
+      case AlterTableSetLocationCommand(tableName, _, _)
+        if isCarbonTable(tableName) =>
+        throw new UnsupportedOperationException("Set partition location is not supported")
+      // partition
+      case showPartitions: ShowPartitionsCommand
+        if isCarbonTable(showPartitions.tableName) =>
+        ExecutedCommandExec(DDLHelper.showPartitions(showPartitions, sparkSession)) :: Nil
+      case dropPartition: AlterTableDropPartitionCommand
+        if isCarbonTable(dropPartition.tableName) =>
+        ExecutedCommandExec(DDLHelper.dropPartition(dropPartition, sparkSession)) :: Nil
+      case renamePartition: AlterTableRenamePartitionCommand
+        if isCarbonTable(renamePartition.tableName) =>
+        throw new UnsupportedOperationException("Renaming partition on table is not supported")
+      case addPartition: AlterTableAddPartitionCommand
+        if isCarbonTable(addPartition.tableName) =>
+        ExecutedCommandExec(DDLHelper.addPartition(addPartition)) :: Nil
+      // set/unset/reset
+      case set: SetCommand =>
         ExecutedCommandExec(CarbonSetCommand(set)) :: Nil
-      case reset@ResetCommand =>
+      case MatchResetCommand(_) =>
         ExecutedCommandExec(CarbonResetCommand()) :: Nil
-      case org.apache.spark.sql.execution.datasources.CreateTable(tableDesc, mode, None)
-        if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
-          && (tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource")
-          || tableDesc.provider.get.equalsIgnoreCase("carbondata")) =>
-        val updatedCatalog =
-          CarbonSource.updateCatalogTableWithCarbonSchema(tableDesc, sparkSession)
-        val cmd =
-          CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
-        ExecutedCommandExec(cmd) :: Nil
-      case MatchCreateDataSourceTable(tableDesc, mode, query)
-        if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
-           && (tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource")
-               || tableDesc.provider.get.equalsIgnoreCase("carbondata")) =>
-        val updatedCatalog = CarbonSource
-          .updateCatalogTableWithCarbonSchema(tableDesc, sparkSession, Option(query))
-        val cmd = CreateCarbonSourceTableAsSelectCommand(updatedCatalog, SaveMode.Ignore, query)
-        ExecutedCommandExec(cmd) :: Nil
-      case cmd@org.apache.spark.sql.execution.datasources.CreateTable(tableDesc, mode, query)
-        if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
-           && (tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource")
-               || tableDesc.provider.get.equalsIgnoreCase("carbondata")) =>
-        val updatedCatalog = CarbonSource
-          .updateCatalogTableWithCarbonSchema(tableDesc, sparkSession, query)
-        val cmd = CreateCarbonSourceTableAsSelectCommand(updatedCatalog, SaveMode.Ignore, query.get)
-        ExecutedCommandExec(cmd) :: Nil
-      case CreateDataSourceTableCommand(table, ignoreIfExists)
-        if table.provider.get != DDLUtils.HIVE_PROVIDER
-          && (table.provider.get.equals("org.apache.spark.sql.CarbonSource")
-          || table.provider.get.equalsIgnoreCase("carbondata")) =>
-        val updatedCatalog = CarbonSource
-          .updateCatalogTableWithCarbonSchema(table, sparkSession)
-        val cmd = new CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists)
-        ExecutedCommandExec(cmd) :: Nil
-      case AlterTableSetPropertiesCommand(tableName, properties, isView)
-        if CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(tableName)(sparkSession) => {
-
-        val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
-        if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-          throw new MalformedCarbonCommandException(
-            "Unsupported operation on non transactional table")
+      case setProperties: AlterTableSetPropertiesCommand
+        if isCarbonTable(setProperties.tableName) =>
+        ExecutedCommandExec(DDLHelper.setProperties(setProperties, sparkSession)) :: Nil
+      case unsetProperties: AlterTableUnsetPropertiesCommand
+        if isCarbonTable(unsetProperties.tableName) =>
+        ExecutedCommandExec(DDLHelper.unsetProperties(unsetProperties)) :: Nil
+      // create/describe/drop table
+      case createTable: CreateTableCommand
+        if isCarbonHiveTable(createTable.table) =>
+        ExecutedCommandExec(DDLHelper.createHiveTable(createTable, sparkSession)) :: Nil
+      case createTable: CreateTableCommand
+        if isCarbonFileHiveTable(createTable.table) =>
+        if (EnvHelper.isCloud(sparkSession)) {
+          Nil
+        } else {
+          ExecutedCommandExec(DDLHelper.createCarbonFileHiveTable(createTable, sparkSession)) :: Nil
         }
-
-        // TODO remove this limitation later
-        val property = properties.find(_._1.equalsIgnoreCase("streaming"))
-        if (property.isDefined) {
-          if (carbonTable.getTablePath.startsWith("s3") && property.get._2.equalsIgnoreCase("s3")) {
-            throw new UnsupportedOperationException("streaming is not supported with s3 store")
-          }
-          if (carbonTable.isStreamingSink) {
-            throw new MalformedCarbonCommandException(
-              "Streaming property can not be changed once it is 'true'")
-          } else {
-            if (!property.get._2.trim.equalsIgnoreCase("true")) {
-              throw new MalformedCarbonCommandException(
-                "Streaming property value is incorrect")
-            }
-            if (DataMapUtil.hasMVDataMap(carbonTable)) {
-              throw new MalformedCarbonCommandException(
-                "The table which has MV datamap does not support set streaming property")
-            }
-            if (carbonTable.isChildTableForMV) {
-              throw new MalformedCarbonCommandException(
-                "Datamap table does not support set streaming property")
-            }
-          }
-        }
-        ExecutedCommandExec(CarbonAlterTableSetCommand(tableName, properties, isView)) :: Nil
-      }
-      case AlterTableUnsetPropertiesCommand(tableName, propKeys, ifExists, isView)
-        if CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(tableName)(sparkSession) => {
-        // TODO remove this limitation later
-        if (propKeys.exists(_.equalsIgnoreCase("streaming"))) {
-          throw new MalformedCarbonCommandException(
-            "Streaming property can not be removed")
-        }
+      case ctas: CreateHiveTableAsSelectCommand
+        if isCarbonHiveTable(ctas.tableDesc) =>
         ExecutedCommandExec(
-          CarbonAlterTableUnsetCommand(tableName, propKeys, ifExists, isView)) :: Nil
-      }
-      case rename@AlterTableRenamePartitionCommand(tableName, oldPartition, newPartition) =>
-        val dbOption = tableName.database.map(_.toLowerCase)
-        val tableIdentifier = TableIdentifier(tableName.table.toLowerCase(), dbOption)
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(tableIdentifier)(sparkSession)
-        if (isCarbonTable) {
-          throw new UnsupportedOperationException("Renaming partition on table is not supported")
+          DDLHelper.createHiveTableAsSelect(ctas, sparkSession)
+        ) :: Nil
+      case ctas: CreateHiveTableAsSelectCommand
+        if isCarbonFileHiveTable(ctas.tableDesc) =>
+        if (EnvHelper.isCloud(sparkSession)) {
+          Nil
         } else {
-          ExecutedCommandExec(rename) :: Nil
+          DataWritingCommandExec(
+            DDLHelper.createCarbonFileHiveTableAsSelect(ctas, sparkSession),
+            planLater(ctas.query)
+          ) :: Nil
         }
-      case addPart@AlterTableAddPartitionCommand(tableName, partitionSpecsAndLocs, ifNotExists) =>
-        val dbOption = tableName.database.map(_.toLowerCase)
-        val tableIdentifier = TableIdentifier(tableName.table.toLowerCase(), dbOption)
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(tableIdentifier)(sparkSession)
-        if (isCarbonTable) {
-          ExecutedCommandExec(
-            CarbonAlterTableAddHivePartitionCommand(
-              tableName,
-              partitionSpecsAndLocs,
-              ifNotExists)) :: Nil
-        } else {
-          ExecutedCommandExec(addPart) :: Nil
-        }
-      case RefreshTable(tableIdentifier) =>
-        RefreshCarbonTableCommand(tableIdentifier.database,
-          tableIdentifier.table).run(sparkSession)
-        ExecutedCommandExec(RefreshTable(tableIdentifier)) :: Nil
-      case refresh@RefreshResource(path : String) =>
-        val plan = try {
-          new CarbonSpark2SqlParser().parse(s"REFRESH $path")
-        } catch {
-          case e: Exception =>
-            LOGGER.error(e.getMessage)
-            refresh
-        }
-        ExecutedCommandExec(plan.asInstanceOf[RunnableCommand]) :: Nil
-      case alterSetLoc@AlterTableSetLocationCommand(tableName, _, _) =>
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(tableName)(sparkSession)
-        if (isCarbonTable) {
-          throw new UnsupportedOperationException("Set partition location is not supported")
-        } else {
-          ExecutedCommandExec(alterSetLoc) :: Nil
-        }
-      case iihrc@InsertIntoHadoopFsRelationCommand(
-      outputPath, staticPartitions, ifPartitionNotExists, partitionColumns,
-      bucketSpec, fileFormat, options, query, mode, catalogTable, fileIndex, outputColumnNames)
-        if (catalogTable.isDefined && CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(catalogTable.get.identifier)(sparkSession)) =>
-        DataWritingCommandExec(
-          CarbonInsertIntoHadoopFsRelationCommand(
-            outputPath, staticPartitions, ifPartitionNotExists, partitionColumns,
-            bucketSpec, fileFormat, options, query, mode, catalogTable, fileIndex,
-            outputColumnNames),
-          planLater(iihrc.query)) :: Nil
+      case showCreateTable: ShowCreateTableCommand
+        if isCarbonTable(showCreateTable.table) =>
+        ExecutedCommandExec(CarbonShowCreateTableCommand(showCreateTable)) :: Nil
+      case createLikeTable: CreateTableLikeCommand
+        if isCarbonTable(createLikeTable.sourceTable) =>
+        ExecutedCommandExec(CarbonCreateTableLikeCommand(createLikeTable.sourceTable,
+          createLikeTable.targetTable, createLikeTable.ifNotExists)) :: Nil
+      case truncateTable: TruncateTableCommand
+        if isCarbonTable(truncateTable.tableName) =>
+        ExecutedCommandExec(CarbonTruncateCommand(truncateTable)) :: Nil
+      case createTable@org.apache.spark.sql.execution.datasources.CreateTable(_, _, None)
+        if isCarbonDataSourceTable(createTable.tableDesc) =>
+        ExecutedCommandExec(DDLHelper.createDataSourceTable(createTable, sparkSession)) :: Nil
+      case MatchCreateDataSourceTable(tableDesc, mode, query)
+        if isCarbonDataSourceTable(tableDesc) =>
+        ExecutedCommandExec(
+          DDLHelper.createDataSourceTableAsSelect(tableDesc, query, mode, sparkSession)
+        ) :: Nil
+      case org.apache.spark.sql.execution.datasources.CreateTable(tableDesc, mode, query)
+        if isCarbonDataSourceTable(tableDesc) =>
+        ExecutedCommandExec(
+          DDLHelper.createDataSourceTableAsSelect(tableDesc, query.get, mode, sparkSession)
+        ) :: Nil
+      case createTable@CreateDataSourceTableCommand(table, _)
+        if isCarbonDataSourceTable(table) =>
+        ExecutedCommandExec(
+          DDLHelper.createDataSourceTable(createTable, sparkSession)
+        ) :: Nil
+      case desc: DescribeTableCommand if isCarbonTable(desc.table) =>
+        ExecutedCommandExec(DDLHelper.describeTable(desc, sparkSession)) :: Nil
+      case DropTableCommand(identifier, ifNotExists, _, _)
+        if isCarbonTable(identifier) =>
+        ExecutedCommandExec(
+          CarbonDropTableCommand(ifNotExists, identifier.database, identifier.table.toLowerCase)
+        ) :: Nil
+      // refresh
+      case refreshTable: RefreshTable =>
+        ExecutedCommandExec(DDLHelper.refreshTable(refreshTable)) :: Nil
+      case refreshResource: RefreshResource =>
+        DDLHelper.refreshResource(refreshResource)
+      // database
+      case createDb: CreateDatabaseCommand =>
+        ExecutedCommandExec(DDLHelper.createDatabase(createDb, sparkSession)) :: Nil
+      case drop@DropDatabaseCommand(dbName, ifExists, _)
+        if CarbonEnv.databaseLocationExists(dbName, sparkSession, ifExists) =>
+        ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
+      // explain
+      case explain: ExplainCommand =>
+        DDLHelper.explain(explain, sparkSession)
+      case showTables: ShowTablesCommand =>
+        DDLHelper.showTables(showTables, sparkSession)
       case _ => Nil
     }
   }
 
+  private def isCarbonTable(tableIdent: TableIdentifier): Boolean = {
+    CarbonPlanHelper.isCarbonTable(tableIdent, sparkSession)
+  }
+
+  private def isCarbonDataSourceTable(table: CatalogTable): Boolean = {
+    table.provider.get != DDLUtils.HIVE_PROVIDER &&
+    (table.provider.get.equals("org.apache.spark.sql.CarbonSource") ||
+     table.provider.get.equalsIgnoreCase("carbondata"))
+  }
+
+  private def isCarbonHiveTable(table: CatalogTable): Boolean = {
+    table.provider.isDefined &&
+    DDLUtils.HIVE_PROVIDER == table.provider.get &&
+    table.storage.serde.get == "org.apache.carbondata.hive.CarbonHiveSerDe"
+  }
+
+  private def isCarbonFileHiveTable(table: CatalogTable): Boolean = {
+    table.provider.isDefined &&
+    DDLUtils.HIVE_PROVIDER == table.provider.get &&
+    table.storage.serde.get == "org.apache.carbondata.hive.CarbonFileHiveSerDe"
+  }
 }

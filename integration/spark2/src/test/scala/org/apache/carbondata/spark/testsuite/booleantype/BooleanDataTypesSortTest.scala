@@ -53,7 +53,7 @@ class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with Be
          | floatField FLOAT,
          | complexData ARRAY<STRING>
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='booleanField')
        """.stripMargin)
 
@@ -63,7 +63,7 @@ class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with Be
          | shortField SHORT,
          | booleanField BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='booleanField')
        """.stripMargin)
 
@@ -106,7 +106,7 @@ class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='shortField,booleanField,booleanField2')
        """.stripMargin)
 
@@ -117,7 +117,7 @@ class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with Be
          | booleanField BOOLEAN,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='shortField,booleanField,booleanField2')
        """.stripMargin)
 

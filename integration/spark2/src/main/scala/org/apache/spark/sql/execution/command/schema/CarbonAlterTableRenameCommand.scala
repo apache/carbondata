@@ -136,9 +136,11 @@ private[sql] case class CarbonAlterTableRenameCommand(
       }
       sparkSession.catalog.refreshTable(oldTableIdentifier.quotedString)
       CarbonSessionCatalogUtil.alterTableRename(
-          oldTableIdentifier,
-          newTableIdentifier,
-        oldAbsoluteTableIdentifier.getTablePath, sparkSession)
+        oldTableIdentifier,
+        newTableIdentifier,
+        oldAbsoluteTableIdentifier.getTablePath,
+        sparkSession,
+        carbonTable.isExternalTable)
       hiveRenameSuccess = true
 
       metastore.updateTableSchemaForAlter(
@@ -170,7 +172,9 @@ private[sql] case class CarbonAlterTableRenameCommand(
           CarbonSessionCatalogUtil.alterTableRename(
             newTableIdentifier,
             oldTableIdentifier,
-            carbonTable.getAbsoluteTableIdentifier.getTablePath, sparkSession)
+            carbonTable.getAbsoluteTableIdentifier.getTablePath,
+            sparkSession,
+            carbonTable.isExternalTable)
         }
         if (carbonTable != null) {
           AlterTableUtil.revertRenameTableChanges(

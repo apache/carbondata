@@ -136,7 +136,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"),
       Seq(Row("ajantha\"bhat\"",
@@ -197,7 +197,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     sql("select * from sdkOutputTable").show(false)
@@ -231,7 +231,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
 
     sql("select * from sdkOutputTable").show(false)
@@ -265,7 +265,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     assert(sql("select * from sdkOutputTable").collectAsList().toString.equals(
       "[[[bob,10,12345678,123400.78,true,WrappedArray(1, 2, 3, 4, 5, 6),WrappedArray(abc, def)," +
@@ -290,7 +290,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"),
       Seq(Row(null,
@@ -317,7 +317,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"),
       Seq(Row(null, 26, null, null, null)))
@@ -340,7 +340,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"),
       Seq(Row("ajantha\"bhat\"", 26)))
@@ -364,7 +364,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
          |'$writerPath' """.stripMargin)
     sql("select * from sdkOutputTable").show()
     checkAnswer(sql("select * from sdkOutputTable"),

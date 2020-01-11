@@ -35,11 +35,11 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE IF NOT EXISTS table1(empno Int, empname Array<String>, designation String, doj Timestamp, "
         + "workgroupcategory Int, workgroupcategoryname String, deptno Int, deptname String, projectcode Int, "
         + "projectjoindate Timestamp, projectenddate Timestamp , attendance Int,utilization Int,salary Int )"
-        + " STORED BY 'org.apache.carbondata.format' ")
+        + " STORED AS carbondata ")
     sql("CREATE TABLE IF NOT EXISTS table2(empno Int, empname Array<String>, designation String, doj Timestamp, "
         + "workgroupcategory Int, workgroupcategoryname String, deptno Int, deptname String, projectcode Int, "
         + "projectjoindate Timestamp, projectenddate Timestamp , attendance Int,utilization Int,salary Int )"
-        + " STORED BY 'org.apache.carbondata.format' ")
+        + " STORED AS carbondata ")
 
   }
 
@@ -63,7 +63,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("create database testdb")
     sql("use testdb")
     sql("CREATE TABLE IF NOT EXISTS testtable(empno Int, empname string, utilization Int,salary Int)"
-        + " STORED BY 'org.apache.carbondata.format' ")
+        + " STORED AS carbondata ")
     intercept[Exception] {
       sql("drop database testdb")
     }
@@ -105,7 +105,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table CaseInsensitiveTable (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
+      "phonetype String, serialname String, salary int) STORED AS carbondata"
     )
     // table should drop wihout any error
     sql("drop table caseInsensitiveTable")
@@ -114,7 +114,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table CaseInsensitiveTable (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
+      "phonetype String, serialname String, salary int) STORED AS carbondata"
     )
 
   }
@@ -124,7 +124,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table default.table3 (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
+      "phonetype String, serialname String, salary int) STORED AS carbondata"
     )
     // table should drop without any error
     sql("drop table default.table3")
@@ -136,7 +136,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table dropTableTest1 (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' "
+      "phonetype String, serialname String, salary int) STORED AS carbondata "
 
     )
 
@@ -148,7 +148,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table dropTableTest1 (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary String) stored by 'org.apache.carbondata.format' "
+      "phonetype String, serialname String, salary String) STORED AS carbondata "
     )
 
     sql(
@@ -163,7 +163,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table dropTableTest2 (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' "
+      "phonetype String, serialname String, salary int) STORED AS carbondata "
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest2 " +
@@ -172,7 +172,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table dropTableTest2 (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' "
+      "phonetype String, serialname String, salary decimal) STORED AS carbondata "
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest2 " +
@@ -187,7 +187,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       sql(
         "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
         "String," +
-        "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' "
+        "phonetype String, serialname String, salary int) STORED AS carbondata "
       )
       sql(
         s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE test.dropTableTest3 " +
@@ -196,7 +196,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       sql(
         "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
         "String," +
-        "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' "
+        "phonetype String, serialname String, salary decimal) STORED AS carbondata "
       )
       sql(
         s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE test.dropTableTest3 " +
@@ -213,8 +213,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE TABLE dropTableTest4 (imei string,age int,task bigint,name string,country string," +
       "city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp," +
-      "enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata" +
-      ".format'")
+      "enddate timestamp,PointId double,score decimal(10,3))STORED AS carbondata")
     sql(
       s"LOAD DATA INPATH '$resourcesPath/big_int_Decimal.csv'  INTO TABLE dropTableTest4 " +
       "options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$'," +
@@ -223,7 +222,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE table dropTableTest4 (ID int, date String, country String, name " +
       "String," +
-      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' "
+      "phonetype String, serialname String, salary decimal) STORED AS carbondata "
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest4 " +

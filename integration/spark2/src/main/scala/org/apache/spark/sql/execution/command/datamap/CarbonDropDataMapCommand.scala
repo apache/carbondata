@@ -62,26 +62,21 @@ case class CarbonDropDataMapCommand(
       val tableName = table.get.table
       val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
       val locksToBeAcquired = List(LockUsage.METADATA_LOCK)
-      val carbonEnv = CarbonEnv.getInstance(sparkSession)
-      val catalog = carbonEnv.carbonMetaStore
-      val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName)(sparkSession)
       if (mainTable == null) {
-        mainTable = try {
-          CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+        try {
+          mainTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
         } catch {
           case ex: NoSuchTableException =>
             throwMetadataException(dbName, tableName,
               s"Dropping datamap $dataMapName failed: ${ ex.getMessage }")
-            null
         }
       }
       setAuditTable(mainTable)
-      val tableIdentifier =
-        AbsoluteTableIdentifier
-          .from(tablePath,
-            dbName.toLowerCase,
-            tableName.toLowerCase,
-            mainTable.getCarbonTableIdentifier.getTableId)
+      val tableIdentifier = AbsoluteTableIdentifier.from(
+        mainTable.getTablePath,
+        dbName.toLowerCase,
+        tableName.toLowerCase,
+        mainTable.getCarbonTableIdentifier.getTableId)
       // forceDrop will be true only when parent table schema updation has failed.
       // This method will forcefully drop child table instance from metastore.
       if (forceDrop) {

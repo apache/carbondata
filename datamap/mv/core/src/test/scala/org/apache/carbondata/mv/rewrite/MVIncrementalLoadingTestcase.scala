@@ -17,10 +17,8 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.test.util.CarbonQueryTest
+import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -33,7 +31,7 @@ import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusMan
  * Test Class to verify Incremental Load on  MV Datamap
  */
 
-class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAll {
+class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     sql("drop table IF EXISTS test_table")
@@ -60,8 +58,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
       "from test_table")
     val query: String = "select empname from test_table"
     val df1 = sql(s"$query")
-    val analyzed1 = df1.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed1, "datamap1"))
+    assert(!TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1"))
     sql(s"rebuild datamap datamap1")
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
@@ -73,8 +70,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     segmentList.add("0")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
     val df2 = sql(s"$query")
-    val analyzed2 = df2.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed2, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "datamap1"))
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     sql(s"rebuild datamap datamap1")
@@ -86,13 +82,11 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     checkAnswer(sql("select empname, designation from test_table"),
       sql("select empname, designation from test_table1"))
     val df3 = sql(s"$query")
-    val analyzed3 = df3.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed3, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df3.queryExecution.optimizedPlan, "datamap1"))
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     val df4 = sql(s"$query")
-    val analyzed4 = df4.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed4, "datamap1"))
+    assert(!TestUtil.verifyMVDataMap(df4.queryExecution.optimizedPlan, "datamap1"))
     checkAnswer(sql("select empname, designation from test_table"),
       sql("select empname, designation from test_table1"))
   }
@@ -130,10 +124,10 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
   test("test MV incremental loading with update operation on main table") {
     sql("drop table IF EXISTS main_table")
     sql("drop table IF EXISTS testtable")
-    sql("create table main_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table main_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
-    sql("create table testtable(a string,b string,c int) stored by 'carbondata'")
+    sql("create table testtable(a string,b string,c int) STORED AS carbondata")
     sql("insert into testtable values('a','abc',1)")
     sql("insert into testtable values('b','bcd',2)")
     sql("drop datamap if exists datamap1")
@@ -141,16 +135,14 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     sql(s"rebuild datamap datamap1")
     var df = sql(
       s"""select a, sum(b) from main_table group by a""".stripMargin)
-    var analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("update main_table set(a) = ('aaa') where b = 'abc'").show(false)
     sql("update testtable set(a) = ('aaa') where b = 'abc'").show(false)
-    val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table"
-    )
+    val dataMapTable = CarbonEnv.getCarbonTable(
+      Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "datamap1_table")(sqlContext.sparkSession)
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
     checkAnswer(sql("select * from main_table"), sql("select * from testtable"))
@@ -162,8 +154,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     segmentList.add("1")
     assert(segmentList.containsAll( segmentMap.get("default.main_table")))
     df = sql(s""" select a, sum(b) from main_table group by a""".stripMargin)
-    analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("drop table IF EXISTS main_table")
@@ -239,7 +230,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
 
   test("test insert overwrite") {
     sql("drop table IF EXISTS test_table")
-    sql("create table test_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table test_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into test_table values('a','abc',1)")
     sql("insert into test_table values('b','bcd',2)")
     sql("drop datamap if exists datamap1")
@@ -248,9 +239,9 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     sql(s"rebuild datamap datamap1")
     checkAnswer(sql(" select a, sum(b) from test_table  group by a"), Seq(Row("a", null), Row("b", null)))
     sql("insert overwrite table test_table select 'd','abc',3")
-    val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table")
+    val dataMapTable = CarbonEnv.getCarbonTable(
+      Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "datamap1_table")(sqlContext.sparkSession)
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
     checkAnswer(sql(" select a, sum(b) from test_table  group by a"), Seq(Row("d", null)))
@@ -265,19 +256,19 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
 
   test("test inner join with mv") {
     sql("drop table if exists products")
-    sql("create table products (product string, amount int) stored by 'carbondata' ")
+    sql("create table products (product string, amount int) STORED AS carbondata ")
     sql(s"load data INPATH '$resourcesPath/products.csv' into table products")
     sql("drop table if exists sales")
-    sql("create table sales (product string, quantity int) stored by 'carbondata'")
+    sql("create table sales (product string, quantity int) STORED AS carbondata")
     sql(s"load data INPATH '$resourcesPath/sales_data.csv' into table sales")
     sql("drop datamap if exists innerjoin")
     sql("Create datamap innerjoin using 'mv'  with deferred rebuild as Select p.product, p.amount, s.quantity, s.product from " +
         "products p, sales s where p.product=s.product")
     sql("drop table if exists products1")
-    sql("create table products1 (product string, amount int) stored by 'carbondata' ")
+    sql("create table products1 (product string, amount int) STORED AS carbondata ")
     sql(s"load data INPATH '$resourcesPath/products.csv' into table products1")
     sql("drop table if exists sales1")
-    sql("create table sales1 (product string, quantity int) stored by 'carbondata'")
+    sql("create table sales1 (product string, quantity int) STORED AS carbondata")
     sql(s"load data INPATH '$resourcesPath/sales_data.csv' into table sales1")
     sql(s"rebuild datamap innerjoin")
     checkAnswer(sql("Select p.product, p.amount, s.quantity from products1 p, sales1 s where p.product=s.product"),
@@ -296,10 +287,10 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
   test("test set segments with main table having mv datamap") {
     sql("drop table IF EXISTS main_table")
     sql("drop table IF EXISTS test_table")
-    sql("create table main_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table main_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
-    sql("create table test_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table test_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into test_table values('a','abc',1)")
     sql("insert into test_table values('b','bcd',2)")
     sql("drop datamap if exists datamap_mt")
@@ -319,7 +310,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
 
   test("test set segments with main table having mv datamap before rebuild") {
     sql("drop table IF EXISTS main_table")
-    sql("create table main_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table main_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
     sql("drop datamap if exists datamap1")
@@ -327,19 +318,17 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     sql("SET carbon.input.segments.default.main_table=1")
     sql(s"rebuild datamap datamap1")
     val df = sql("select a, sum(c) from main_table  group by a")
-    val analyzed = df.queryExecution.analyzed
-    assert(!TestUtil.verifyMVDataMap(analyzed, "datamap1"))
+    assert(!TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     sql("reset")
     checkAnswer(sql("select a, sum(c) from main_table  group by a"), Seq(Row("a", 1), Row("b", 2)))
     val df1= sql("select a, sum(c) from main_table  group by a")
-    val analyzed1 = df1.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed1, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1"))
     sql("drop table IF EXISTS main_table")
   }
 
   test("test datamap table after datamap table compaction- custom") {
     sql("drop table IF EXISTS main_table")
-    sql("create table main_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table main_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
     sql("drop datamap if exists datamap1")
@@ -368,7 +357,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
   test("test sum(a) + sum(b)") {
     // Full rebuild will happen in this case
     sql("drop table IF EXISTS main_table")
-    sql("create table main_table(a int,b int,c int) stored by 'carbondata'")
+    sql("create table main_table(a int,b int,c int) STORED AS carbondata")
     sql("insert into main_table values(1,2,3)")
     sql("insert into main_table values(1,4,5)")
     sql("drop datamap if exists datamap_1")
@@ -406,8 +395,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     segmentList.add("0")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
     val df2 = sql(s"$query")
-    val analyzed2 = df2.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed2, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "datamap1"))
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
@@ -418,13 +406,11 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     checkAnswer(sql("select empname, designation from test_table"),
       sql("select empname, designation from test_table1"))
     val df3 = sql(s"$query")
-    val analyzed3 = df3.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed3, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df3.queryExecution.optimizedPlan, "datamap1"))
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     val df4 = sql(s"$query")
-    val analyzed4 = df4.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed4, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df4.queryExecution.optimizedPlan, "datamap1"))
     checkAnswer(sql("select empname, designation from test_table"),
       sql("select empname, designation from test_table1"))
   }
@@ -432,17 +418,16 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
   test("test MV incremental loading on non-lazy datamap with update operation on main table") {
     sql("drop table IF EXISTS main_table")
     sql("drop table IF EXISTS testtable")
-    sql("create table main_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table main_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
-    sql("create table testtable(a string,b string,c int) stored by 'carbondata'")
+    sql("create table testtable(a string,b string,c int) STORED AS carbondata")
     sql("insert into testtable values('a','abc',1)")
     sql("insert into testtable values('b','bcd',2)")
     sql("drop datamap if exists datamap1")
     sql("create datamap datamap1 using 'mv' as select a, sum(b) from main_table group by a")
     var df = sql(s"""select a, sum(b) from main_table group by a""".stripMargin)
-    var analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("update main_table set(a) = ('aaa') where b = 'abc'").show(false)
@@ -458,8 +443,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     segmentList.add("1")
     assert(segmentList.containsAll(segmentMap.get("default.main_table")))
     df = sql(s""" select a, sum(b) from main_table group by a""".stripMargin)
-    analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("drop table IF EXISTS main_table")
@@ -469,17 +453,16 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
   test("test MV incremental loading on non-lazy datamap with delete operation on main table") {
     sql("drop table IF EXISTS main_table")
     sql("drop table IF EXISTS testtable")
-    sql("create table main_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table main_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
-    sql("create table testtable(a string,b string,c int) stored by 'carbondata'")
+    sql("create table testtable(a string,b string,c int) STORED AS carbondata")
     sql("insert into testtable values('a','abc',1)")
     sql("insert into testtable values('b','bcd',2)")
     sql("drop datamap if exists datamap1")
     sql("create datamap datamap1 using 'mv' as select a, sum(b) from main_table group by a")
     var df = sql(s"""select a, sum(b) from main_table group by a""".stripMargin)
-    var analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("delete from  main_table  where b = 'abc'").show(false)
@@ -495,8 +478,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     segmentList.add("1")
     assert(segmentList.containsAll(segmentMap.get("default.main_table")))
     df = sql(s""" select a, sum(b) from main_table group by a""".stripMargin)
-    analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     checkAnswer(sql(" select a, sum(b) from testtable group by a"),
       sql(" select a, sum(b) from main_table group by a"))
     sql("drop table IF EXISTS main_table")
@@ -505,7 +487,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
 
   test("test whether datamap table is compacted after main table compaction") {
     sql("drop table IF EXISTS main_table")
-    sql("create table main_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table main_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
     sql("drop datamap if exists datamap1")
@@ -520,7 +502,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
 
   test("test delete record when table contains single segment") {
     sql("drop table IF EXISTS main_table")
-    sql("create table main_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table main_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into main_table values('a','abc',1)")
     sql("drop datamap if exists datamap1")
     sql("create datamap datamap1 using 'mv' as select a, sum(b) from main_table group by a")
@@ -535,13 +517,13 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
 
   test("set segments on datamap table") {
     sql("drop table IF EXISTS main_table")
-    sql("create table main_table(a string,b string,c int) stored by 'carbondata'")
+    sql("create table main_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into main_table values('a','abc',1)")
     sql("drop datamap if exists datamap1")
     sql("create datamap datamap1 using 'mv' as select a,b from main_table")
     sql("insert into main_table values('b','abcd',1)")
     sql("SET carbon.input.segments.default.datamap1_table=0")
-    assert(sql("select a,b from main_table").count() == 1)
+    assert(sql("select a,b from main_table").collect().length == 1)
     sql("drop table IF EXISTS main_table")
   }
 
@@ -576,7 +558,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
          |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
          |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
          |  utilization int,salary int)
-         | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='6,0')
+         | STORED AS carbondata TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='6,0')
       """.stripMargin)
     loadDataToFactTable("test_table")
     sql("drop datamap if exists datamap1")
@@ -593,8 +575,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
     val result = sql("show datamap on table test_table").collectAsList()
     assert(result.get(0).get(5).toString.contains("\"default.test_table\":\"12.1\""))
     val df = sql(s""" select empname, designation from test_table""".stripMargin)
-    val analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_com"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_com"))
   }
 
   test("test all aggregate functions") {
@@ -615,8 +596,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
       "skewness(workgroupcategory),kurtosis(workgroupcategory),covar_pop(projectcode," +
       "workgroupcategory),covar_samp(projectcode,workgroupcategory),projectjoindate from " +
       "test_table group by projectjoindate")
-    val analyzed = df.queryExecution.analyzed
-    assert(TestUtil.verifyMVDataMap(analyzed, "datamap_agg"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_agg"))
     checkAnswer(sql(
       "select variance(workgroupcategory),var_samp(projectcode), var_pop(projectcode), stddev" +
       "(projectcode),stddev_samp(workgroupcategory),corr(projectcode,workgroupcategory)," +
@@ -651,7 +631,7 @@ class MVIncrementalLoadingTestcase extends CarbonQueryTest with BeforeAndAfterAl
          |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
          |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
          |  utilization int,salary int)
-         | STORED BY 'org.apache.carbondata.format'
+         | STORED AS carbondata
       """.stripMargin)
   }
 

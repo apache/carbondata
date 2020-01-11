@@ -32,7 +32,7 @@ class TestCSVHavingOnlySpaceChar extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table if not exists emptyRowCarbonTable (eid int,ename String,sal decimal,presal " +
         "decimal,comm decimal" +
-        "(37,37),deptno decimal(18,2),Desc String) STORED BY 'org.apache.carbondata.format'"
+        "(37,37),deptno decimal(18,2),Desc String) STORED AS carbondata"
     )
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")

@@ -23,7 +23,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.mv.dsl.Plans._
 import org.apache.carbondata.mv.plans.modular.ModularPlanSignatureGenerator
 import org.apache.carbondata.mv.testutil.ModularPlanTest
-import org.apache.spark.sql.util.SparkSQLUtil
 
 class SignatureSuite extends ModularPlanTest with BeforeAndAfterAll {
   import org.apache.carbondata.mv.testutil.TestSQLBatch._
@@ -59,7 +58,7 @@ class SignatureSuite extends ModularPlanTest with BeforeAndAfterAll {
         )   
         
     testSQLBatch.foreach { query =>
-      val analyzed = testHive.sql(query).queryExecution.analyzed
+      val analyzed = testHive.sql(query).queryExecution.optimizedPlan
       val modularPlan = analyzed.optimize.modularize
       val sig = ModularPlanSignatureGenerator.generate(modularPlan)
       sig match {

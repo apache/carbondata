@@ -25,7 +25,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object StreamSQLExample {
   def main(args: Array[String]) {
 
-    val spark = ExampleUtils.createCarbonSession("StructuredStreamingExample", 4)
+    val spark = ExampleUtils.createSparkSession("StructuredStreamingExample", 4)
     val requireCreateTable = true
     val recordFormat = "json" // can be "json" or "csv"
 

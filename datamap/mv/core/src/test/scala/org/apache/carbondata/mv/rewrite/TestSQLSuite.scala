@@ -21,7 +21,6 @@ import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.scalatest.BeforeAndAfter
 import org.apache.carbondata.mv.testutil.ModularPlanTest
-import org.apache.spark.sql.util.SparkSQLUtil
 
 class TestSQLSuite extends ModularPlanTest with BeforeAndAfter { 
   import org.apache.carbondata.mv.rewrite.matching.TestSQLBatch._
@@ -82,7 +81,7 @@ class TestSQLSuite extends ModularPlanTest with BeforeAndAfter {
         mvSession.registerSummaryDataset(summary)
         val rewrittenSQL =
           mvSession.mvSession.rewrite(mvSession.mvSession.sparkSession.sql(
-            testcase._3).queryExecution.analyzed).toCompactSQL.trim
+            testcase._3).queryExecution.optimizedPlan).toCompactSQL.trim
 
         if (!rewrittenSQL.trim.equals(testcase._4)) {
           fail(

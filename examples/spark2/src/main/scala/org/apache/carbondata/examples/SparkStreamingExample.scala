@@ -50,7 +50,7 @@ object SparkStreamingExample {
       System.currentTimeMillis().toString()
     val streamTableName = s"dstream_stream_table"
 
-    val spark = ExampleUtils.createCarbonSession("SparkStreamingExample", 4)
+    val spark = ExampleUtils.createSparkSession("SparkStreamingExample", 4)
 
     val requireCreateTable = true
 
@@ -66,7 +66,7 @@ object SparkStreamingExample {
            | city STRING,
            | salary FLOAT
            | )
-           | STORED BY 'carbondata'
+           | STORED AS carbondata
            | TBLPROPERTIES(
            | 'streaming'='true',
            | 'sort_columns'='name')

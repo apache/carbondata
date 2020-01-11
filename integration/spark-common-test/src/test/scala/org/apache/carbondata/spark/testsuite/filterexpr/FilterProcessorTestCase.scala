@@ -48,18 +48,18 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql("CREATE TABLE filtertestTables (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
-        "STORED BY 'org.apache.carbondata.format'"
+        "STORED AS carbondata"
     )
     sql("CREATE TABLE noloadtable (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
-      "STORED BY 'org.apache.carbondata.format'"
+      "STORED AS carbondata"
     )
      CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "MM-dd-yyyy HH:mm:ss")
 
      sql("CREATE TABLE filterTimestampDataType (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
-        "STORED BY 'org.apache.carbondata.format'"
+        "STORED AS carbondata"
     )
        CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "MM-dd-yyyy HH:mm:ss")
@@ -80,7 +80,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       "CREATE TABLE filtertestTablesWithDecimal (ID decimal, date Timestamp, country " +
         "String, " +
         "name String, phonetype String, serialname String, salary int) " +
-      "STORED BY 'org.apache.carbondata.format'"
+      "STORED AS carbondata"
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/source.csv' INTO TABLE " +
@@ -93,14 +93,14 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       "CREATE TABLE filtertestTablesWithNull (ID int, date Timestamp, country " +
         "String, " +
         "name String, phonetype String, serialname String,salary int) " +
-      "STORED BY 'org.apache.carbondata.format'"
+      "STORED AS carbondata"
     )
     sql("DROP TABLE IF EXISTS filtertestTablesWithNullJoin")
     sql(
       "CREATE TABLE filtertestTablesWithNullJoin (ID int, date Timestamp, country " +
         "String, " +
         "name String, phonetype String, serialname String,salary int) " +
-      "STORED BY 'org.apache.carbondata.format'"
+      "STORED AS carbondata"
     )
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
@@ -121,8 +121,8 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS big_int_basicc_1")
     sql("DROP TABLE IF EXISTS big_int_basicc_Hive")
     sql("DROP TABLE IF EXISTS big_int_basicc_Hive_1")
-    sql("CREATE TABLE big_int_basicc (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata.format'")
-    sql("CREATE TABLE big_int_basicc_1 (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE big_int_basicc (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED AS carbondata")
+    sql("CREATE TABLE big_int_basicc_1 (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED AS carbondata")
     sql("CREATE TABLE big_int_basicc_Hive (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate date,enddate date,PointId double,score decimal(10,3))row format delimited fields terminated by ',' " +
         "tblproperties(\"skip.header.line.count\"=\"1\") ")
     sql("CREATE TABLE big_int_basicc_Hive_1 (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate date,enddate date,PointId double,score decimal(10,3))row format delimited fields terminated by ',' " +
@@ -133,7 +133,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"load data local inpath '$resourcesPath/big_int_Decimal.csv' into table big_int_basicc_Hive")
     sql(s"load data local inpath '$resourcesPath/big_int_Decimal.csv' into table big_int_basicc_Hive_1")
 
-    sql("create table if not exists date_test(name String, age int, dob date,doj timestamp) stored by 'carbondata' ")
+    sql("create table if not exists date_test(name String, age int, dob date,doj timestamp) STORED AS carbondata ")
     sql("insert into date_test select 'name1',12,'2014-01-01','2014-01-01 00:00:00' ")
     sql("insert into date_test select 'name2',13,'2015-01-01','2015-01-01 00:00:00' ")
     sql("insert into date_test select 'name3',14,'2016-01-01','2016-01-01 00:00:00' ")
@@ -285,7 +285,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test FilterUnsupportedException when using big numbers") {
     sql("drop table if exists outofrange")
-    sql("CREATE table outofrange (column1 STRING, column2 STRING,column3 INT, column4 INT,column5 INT, column6 INT) stored by 'org.apache.carbondata.format'")
+    sql("CREATE table outofrange (column1 STRING, column2 STRING,column3 INT, column4 INT,column5 INT, column6 INT) STORED AS carbondata")
     sql(s"""LOAD DATA INPATH '$resourcesPath/outofrange.csv' INTO TABLE outofrange OPTIONS('DELIMITER'=',','QUOTECHAR'='\"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='')""")
 
     sql("select * from outofrange where column4=-9223372036854775808").show()
@@ -361,7 +361,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE like_filter(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE like_filter OPTIONS('header'='false')")
@@ -395,7 +395,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test if query is giving empty results for table with no segments") {
     sql("drop table if exists q1")
-    sql("create table q1(a string) stored by 'carbondata' ")
+    sql("create table q1(a string) STORED AS carbondata ")
     assert(sql("select * from q1 where a > 10").count() == 0)
     sql("drop table if exists q1")
   }

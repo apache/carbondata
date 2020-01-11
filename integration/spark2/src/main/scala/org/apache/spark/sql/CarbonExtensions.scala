@@ -17,24 +17,23 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.sql.catalyst.catalog.SessionCatalog
+import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
-import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonPreInsertionCasts}
+import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonMVRules, CarbonPreInsertionCasts, CarbonPreOptimizerRule}
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
-import org.apache.spark.sql.parser.CarbonSparkSqlParser
-import org.apache.spark.util.CarbonReflectionUtils
+import org.apache.spark.sql.parser.CarbonExtensionSqlParser
 
 class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
 
-  CarbonExtensions
-
   override def apply(extensions: SparkSessionExtensions): Unit = {
-    // Carbon parser
+    // Carbon internal parser
     extensions
-      .injectParser((sparkSession: SparkSession, _: ParserInterface) =>
-        new CarbonSparkSqlParser(new SQLConf, sparkSession))
+      .injectParser((sparkSession: SparkSession, parser: ParserInterface) =>
+        new CarbonExtensionSqlParser(new SQLConf, sparkSession, parser))
 
     // carbon analyzer rules
     extensions
@@ -42,58 +41,71 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
     extensions
       .injectResolutionRule((session: SparkSession) => CarbonPreInsertionCasts(session))
 
-    // Carbon Pre optimization rules
-    // TODO: Make CarbonOptimizerRule injectable Rule
-    val optimizerRules = Seq(new CarbonIUDRule,
-      new CarbonUDFTransformRule, new CarbonLateDecodeRule)
-    extensions
-      .injectResolutionRule((sparkSession: SparkSession) => {
-        CarbonUDFTransformRuleWrapper(sparkSession, optimizerRules)
-      })
-
-    // TODO: CarbonPreAggregateDataLoadingRules
-    // TODO: CarbonPreAggregateQueryRules
-    // TODO: MVAnalyzerRule
+    // carbon optimizer rules
+    extensions.injectPostHocResolutionRule((session: SparkSession) => OptimizerRule(session) )
 
     // carbon planner strategies
-    var streamingTableStratergy : StreamingTableStrategy = null
-    val decodeStrategy = new CarbonLateDecodeStrategy
-    var ddlStrategy : DDLStrategy = null
-
     extensions
-      .injectPlannerStrategy((session: SparkSession) => {
-        if (streamingTableStratergy == null) {
-          streamingTableStratergy = new StreamingTableStrategy(session)
-        }
-        streamingTableStratergy
-      })
-
+      .injectPlannerStrategy((session: SparkSession) => new StreamingTableStrategy(session))
     extensions
-      .injectPlannerStrategy((_: SparkSession) => decodeStrategy)
-
+      .injectPlannerStrategy((_: SparkSession) => new CarbonLateDecodeStrategy)
     extensions
-      .injectPlannerStrategy((sparkSession: SparkSession) => {
-        if (ddlStrategy == null) {
-          ddlStrategy = new DDLStrategy(sparkSession)
-        }
-        ddlStrategy
-      })
+      .injectPlannerStrategy((session: SparkSession) => new DDLStrategy(session))
+
+    // init CarbonEnv
+    CarbonEnv.init
   }
 }
 
-object CarbonExtensions {
-  CarbonEnv.init
-  CarbonReflectionUtils.updateCarbonSerdeInfo
-}
+case class OptimizerRule(session: SparkSession) extends Rule[LogicalPlan] {
+  self =>
 
-case class CarbonUDFTransformRuleWrapper(session: SparkSession,
-                                         rules: Seq[Rule[LogicalPlan]])
-  extends Rule[LogicalPlan] {
+  var notAdded = true
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    if (session.sessionState.experimentalMethods.extraOptimizations.isEmpty) {
-      session.sessionState.experimentalMethods.extraOptimizations = rules
+    if (notAdded) {
+      self.synchronized {
+        if (notAdded) {
+          notAdded = false
+          val sessionState = session.sessionState
+          val field = sessionState.getClass.getDeclaredField("optimizer")
+          field.setAccessible(true)
+          field.set(sessionState,
+            new OptimizerProxy(session, sessionState.catalog, sessionState.optimizer))
+        }
+      }
     }
-  plan
+    plan
+  }
 }
+
+class OptimizerProxy(
+    session: SparkSession,
+    catalog: SessionCatalog,
+    optimizer: Optimizer) extends Optimizer(catalog) {
+
+  private lazy val firstBatchRules = Seq(Batch("First Batch Optimizers", Once,
+      Seq(CarbonMVRules(session), new CarbonPreOptimizerRule()): _*))
+
+  private lazy val LastBatchRules = Batch("Last Batch Optimizers", fixedPoint,
+    Seq(new CarbonIUDRule(), new CarbonUDFTransformRule(), new CarbonLateDecodeRule()): _*)
+
+  override def batches: Seq[Batch] = {
+    firstBatchRules ++ convertedBatch() :+ LastBatchRules
+  }
+
+  def convertedBatch(): Seq[Batch] = {
+    optimizer.batches.map { batch =>
+      Batch(
+        batch.name,
+        batch.strategy match {
+          case optimizer.Once =>
+            Once
+          case _: optimizer.FixedPoint =>
+            fixedPoint
+        },
+        batch.rules: _*
+      )
+    }
+  }
 }

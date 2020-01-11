@@ -39,7 +39,7 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
 
   val absoluteTableIdentifier: AbsoluteTableIdentifier =
       AbsoluteTableIdentifier.from(
-        CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
+        storeLocation,
         new CarbonTableIdentifier(
           CarbonCommonConstants.DATABASE_DEFAULT_NAME, "compactionlocktesttable", "1")
       )
@@ -57,10 +57,8 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
     sql(
       "CREATE TABLE IF NOT EXISTS compactionlocktesttable (country String, ID Int, date " +
-        "Timestamp, name " +
-        "String, " +
-        "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata" +
-        ".format'"
+      "Timestamp, name String, phonetype String, serialname String, salary Int)" +
+      "STORED AS carbondata"
     )
 
     var csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"

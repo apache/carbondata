@@ -29,7 +29,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object LuceneDataMapExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("LuceneDataMapExample")
+    val spark = ExampleUtils.createSparkSession("LuceneDataMapExample")
     exampleBody(spark)
     spark.close()
   }

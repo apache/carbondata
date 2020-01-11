@@ -31,7 +31,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   test("ActualDataType:double,ChangedDatatype:Short,CompressionType:NonDecimalMaxMin") {
     val tempFilePath = s"$tempDirPath/double2short.csv"
     try {
-      sql("CREATE TABLE double2short (name String, value double) STORED BY 'org.apache.carbondata.format'")
+      sql("CREATE TABLE double2short (name String, value double) STORED AS carbondata")
       sql("CREATE TABLE double2short_hive (name String, value double)row format delimited fields terminated by ','")
       val data ="a,3.141111\nb,3.141212\nc,3.141313\nd,3.141515\ne,3.141616\nf,3.141616\ng,3.141717\nh,3.141818";
       writeData(tempFilePath, data)
@@ -53,7 +53,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   test("ActualDataType:double,ChangedDatatype:byte,CompressionType:NonDecimalMaxMin") {
     val tempFilePath = s"$tempDirPath/double2byte.csv"
     try {
-      sql("CREATE TABLE double2byte (name String, value double) STORED BY 'org.apache.carbondata.format'")
+      sql("CREATE TABLE double2byte (name String, value double) STORED AS carbondata")
       sql("CREATE TABLE double2byte_hive (name String, value double)row format delimited fields terminated by ','")
       val data ="a,4.200001\nb,4.200009";
       writeData(tempFilePath, data)
@@ -77,7 +77,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
     try {
       sql("drop table if exists doubleISnegtive")
       sql("drop table if exists doubleISnegtive_hive")
-      sql("CREATE TABLE doubleISnegtive (name String, value double) STORED BY 'org.apache.carbondata.format'")
+      sql("CREATE TABLE doubleISnegtive (name String, value double) STORED AS carbondata")
       sql("CREATE TABLE doubleISnegtive_hive (name String, value double)row format delimited fields terminated by ','")
       val data ="a,-7489.7976000000\nb,-11234567489.797\nc,-11234567489.7\nd,-1.2\ne,-2\nf,-11234567489.7976000000\ng,-11234567489.7976000000"
       writeData(tempFilePath, data)
@@ -101,7 +101,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
     try {
       sql("drop table if exists doublePAN")
       sql("drop table if exists doublePAN_hive")
-      sql("CREATE TABLE doublePAN (name String, value double) STORED BY 'org.apache.carbondata.format'")
+      sql("CREATE TABLE doublePAN (name String, value double) STORED AS carbondata")
       sql("CREATE TABLE doublePAN_hive (name String, value double)row format delimited fields terminated by ','")
       val data ="a,-7489.7976000000\nb,11234567489.797\nc,-11234567489.7\nd,-1.2\ne,2\nf,-11234567489.7976000000\ng,11234567489.7976000000"
       writeData(tempFilePath, data)

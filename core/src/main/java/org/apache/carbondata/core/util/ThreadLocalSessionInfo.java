@@ -51,4 +51,18 @@ public class ThreadLocalSessionInfo {
   public static void unsetAll() {
     threadLocal.remove();
   }
+
+  /**
+   * use to check whether the thread has the hadoop configuration or not
+   */
+  public static void shouldHaveCarbonConf() {
+    CarbonSessionInfo sessionInfo = getCarbonSessionInfo();
+    if (sessionInfo == null) {
+      throw new RuntimeException("the thread not contain CarbonSessionInfo");
+    }
+    Object conf = sessionInfo.getNonSerializableExtraInfo().get("carbonConf");
+    if (conf == null) {
+      throw new RuntimeException("the thread not contain hadoop configuration");
+    }
+  }
 }

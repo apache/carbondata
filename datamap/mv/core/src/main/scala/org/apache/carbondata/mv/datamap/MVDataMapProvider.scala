@@ -20,13 +20,10 @@ import java.io.IOException
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, CarbonUtils, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
+import org.apache.spark.sql.{CarbonUtils, SparkSession}
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
-import org.apache.spark.sql.execution.datasources.FindDataSourceTable
-import org.apache.spark.sql.parser.CarbonSpark2SqlParser
+import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
@@ -121,10 +118,7 @@ class MVDataMapProvider(
     val ctasQuery = dataMapSchema.getCtasQuery
     if (ctasQuery != null) {
       val identifier = dataMapSchema.getRelationIdentifier
-      val updatedQuery = new CarbonSpark2SqlParser().addMVSkipFunction(ctasQuery)
-      val queryPlan = SparkSQLUtil.execute(
-        sparkSession.sql(updatedQuery).queryExecution.analyzed,
-        sparkSession).drop("mv")
+      val updatedQuery = CarbonSparkSqlParserUtil.getMVQuery(ctasQuery, sparkSession)
       var isOverwriteTable = false
       val isFullRefresh =
         if (null != dataMapSchema.getProperties.get("full_refresh")) {
@@ -154,7 +148,7 @@ class MVDataMapProvider(
         options = scala.collection.immutable.Map("fileheader" -> header),
         isOverwriteTable,
         inputSqlString = null,
-        dataFrame = Some(queryPlan),
+        dataFrame = Some(updatedQuery),
         updateModel = None,
         tableInfoOp = None,
         internalOptions = Map("mergedSegmentName" -> newLoadName,

@@ -19,7 +19,7 @@ package org.apache.carbondata.mv.timeseries
 
 import java.util.concurrent.{Callable, Executors, TimeUnit}
 
-import org.apache.spark.sql.test.util.CarbonQueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -27,7 +27,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.mv.rewrite.TestUtil
 
-class TestMVTimeSeriesCreateDataMapCommand extends CarbonQueryTest with BeforeAndAfterAll {
+class TestMVTimeSeriesCreateDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
   private val timestampFormat = CarbonProperties.getInstance()
     .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
@@ -36,7 +36,7 @@ class TestMVTimeSeriesCreateDataMapCommand extends CarbonQueryTest with BeforeAn
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     drop()
     sql("CREATE TABLE maintable (empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
-        "deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int, utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+        "deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int, utilization int,salary int) STORED AS carbondata")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE maintable  OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
   }
@@ -56,7 +56,7 @@ class TestMVTimeSeriesCreateDataMapCommand extends CarbonQueryTest with BeforeAn
     assert(result.get(0).get(0).toString.equalsIgnoreCase("datamap1"))
     assert(result.get(0).get(4).toString.equalsIgnoreCase("ENABLED"))
     val df = sql("select timeseries(projectjoindate,'second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'second')")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.analyzed, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     sql("drop datamap if exists datamap1")
   }
 
@@ -81,7 +81,7 @@ class TestMVTimeSeriesCreateDataMapCommand extends CarbonQueryTest with BeforeAn
   test("test mv_timeseries create datamap with date type as timeseries_column") {
     sql("drop table IF EXISTS maintable_new")
     sql("CREATE TABLE maintable_new (projectcode int, projectjoindate date, projectenddate Timestamp,attendance int) " +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED AS carbondata")
     sql("drop datamap if exists datamap1")
     sql(
       "create datamap datamap1 on table maintable_new using 'mv' as " +
@@ -95,7 +95,7 @@ class TestMVTimeSeriesCreateDataMapCommand extends CarbonQueryTest with BeforeAn
   test("test mv_timeseries create datamap with date type as timeseries_column with incorrect granularity") {
     sql("drop table IF EXISTS maintable_new")
     sql("CREATE TABLE maintable_new (projectcode int, projectjoindate date, projectenddate Timestamp,attendance int) " +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED AS carbondata")
     sql("drop datamap if exists datamap1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -118,7 +118,7 @@ class TestMVTimeSeriesCreateDataMapCommand extends CarbonQueryTest with BeforeAn
   test("test mv_timeseries create datamap - Parent table name is different in Create and Select Statement") {
     sql("drop table if exists main_table")
     sql("CREATE TABLE main_table (empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
-        "deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int, utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+        "deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int, utilization int,salary int) STORED AS carbondata")
     sql("drop datamap if exists datamap1")
     intercept[MalformedCarbonCommandException] {
       sql(

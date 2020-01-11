@@ -24,68 +24,20 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.util.ExampleUtils
 
 /**
  * This example doesn't create carbonsession, but use CarbonSource when creating table
  */
 
 object SparkSessionExample {
-
+  val rootPath = new File(this.getClass.getResource("/").getPath
+                          + "../../../..").getCanonicalPath
   def main(args: Array[String]): Unit = {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/examples/spark2/target/store"
-    val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metaStoreDB = s"$rootPath/examples/spark2/target/metastore_db"
-
-    // clean data folder
-    if (true) {
-      val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
-      clean(storeLocation)
-      clean(warehouse)
-      clean(metaStoreDB)
-    }
-
-    val sparksession = SparkSession
-      .builder()
-      .master("local")
-      .appName("SparkSessionExample")
-      .enableHiveSupport()
-      .config("spark.sql.warehouse.dir", warehouse)
-      .config("javax.jdo.option.ConnectionURL",
-        s"jdbc:derby:;databaseName=$metaStoreDB;create=true")
-      .getOrCreate()
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-      .addProperty("carbon.storelocation", storeLocation)
-
-    sparksession.sparkContext.setLogLevel("ERROR")
-
-    // Create table
-    sparksession.sql("DROP TABLE IF EXISTS sparksession_table")
-    sparksession.sql(
-      s"""
-         | CREATE TABLE sparksession_table(
-         | shortField SHORT,
-         | intField INT,
-         | bigintField LONG,
-         | doubleField DOUBLE,
-         | stringField STRING,
-         | timestampField TIMESTAMP,
-         | decimalField DECIMAL(18,2),
-         | dateField DATE,
-         | charField CHAR(5)
-         | )
-         | USING carbondata
-         | OPTIONS('tableName'='sparksession_table')
-       """.stripMargin)
-
+    val sparkSession = ExampleUtils.createSparkSession("SparkSessionExample")
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
-
-    sparksession.sql("DROP TABLE IF EXISTS csv_table")
-    sparksession.sql(
+    sparkSession.sql("DROP TABLE IF EXISTS csv_table")
+    sparkSession.sql(
       s"""
          | CREATE TABLE csv_table(
          | shortField SHORT,
@@ -100,86 +52,128 @@ object SparkSessionExample {
          | ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
        """.stripMargin)
 
-    sparksession.sql(
+    sparkSession.sql(
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE csv_table
        """.stripMargin)
 
-    sparksession.sql("SELECT * FROM csv_table").show()
+    sparkSession.sql("SELECT * FROM csv_table").show()
 
-    sparksession.sql(
+    sparkTableExample(sparkSession)
+    hiveTableExample(sparkSession)
+
+    // Drop table
+    sparkSession.sql("DROP TABLE IF EXISTS csv_table")
+    sparkSession.stop()
+  }
+
+  def sparkTableExample(sparkSession: SparkSession): Unit = {
+    // Create table
+    sparkSession.sql("DROP TABLE IF EXISTS sparksession_table")
+    sparkSession.sql(
       s"""
-         | INSERT INTO TABLE sparksession_table
+         | CREATE TABLE sparksession_table(
+         | shortField SHORT,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | timestampField TIMESTAMP,
+         | decimalField DECIMAL(18,2),
+         | dateField DATE,
+         | charField CHAR(5)
+         | )
+         | USING carbondata
+       """.stripMargin)
+
+    validateTable(sparkSession, "sparksession_table")
+
+    sparkSession.sql("DROP TABLE IF EXISTS sparksession_table")
+  }
+
+  def hiveTableExample(sparkSession: SparkSession): Unit = {
+    // Create table
+    sparkSession.sql("DROP TABLE IF EXISTS sparksession_hive_table")
+    sparkSession.sql(
+      s"""
+         | CREATE TABLE sparksession_hive_table(
+         | shortField SHORT,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | timestampField TIMESTAMP,
+         | decimalField DECIMAL(18,2),
+         | dateField DATE,
+         | charField CHAR(5)
+         | )
+         | STORED AS carbondata
+       """.stripMargin)
+
+    validateTable(sparkSession, "sparksession_hive_table")
+  }
+
+  def validateTable(sparkSession: SparkSession, tableName: String): Unit = {
+    sparkSession.sql(
+      s"""
+         | INSERT INTO TABLE $tableName
          | SELECT shortField, intField, bigintField, doubleField, stringField,
          | from_unixtime(unix_timestamp(timestampField,'yyyy/MM/dd HH:mm:ss')) timestampField,
          | decimalField,from_unixtime(unix_timestamp(dateField,'yyyy/MM/dd')), charField
          | FROM csv_table
        """.stripMargin)
 
-    sparksession.sql("SELECT * FROM sparksession_table").show()
+    sparkSession.sql(s"SELECT * FROM $tableName").show()
 
-    sparksession.sql(
+    sparkSession.sql(
       s"""
          | SELECT *
-         | FROM sparksession_table
+         | FROM $tableName
          | WHERE stringfield = 'spark' AND decimalField > 40
       """.stripMargin).show()
 
     // Shows with raw data's timestamp format
-    sparksession.sql(
+    sparkSession.sql(
       s"""
          | SELECT
          | stringField, date_format(timestampField, "yyyy/MM/dd HH:mm:ss") AS
          | timestampField
-         | FROM sparksession_table WHERE length(stringField) = 5
+         | FROM $tableName WHERE length(stringField) = 5
        """.stripMargin).show()
 
-    sparksession.sql(
+    sparkSession.sql(
       s"""
          | SELECT *
-         | FROM sparksession_table where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
+         | FROM $tableName where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
        """.stripMargin).show()
 
-    sparksession.sql("SELECT count(stringField) FROM sparksession_table").show()
+    sparkSession.sql(s"SELECT count(stringField) FROM $tableName").show()
 
-    sparksession.sql(
+    sparkSession.sql(
       s"""
          | SELECT sum(intField), stringField
-         | FROM sparksession_table
+         | FROM $tableName
          | GROUP BY stringField
        """.stripMargin).show()
 
-    sparksession.sql(
+    sparkSession.sql(
       s"""
          | SELECT t1.*, t2.*
-         | FROM sparksession_table t1, sparksession_table t2
+         | FROM $tableName t1, $tableName t2
          | WHERE t1.stringField = t2.stringField
       """.stripMargin).show()
 
-    sparksession.sql(
+    sparkSession.sql(
       s"""
          | WITH t1 AS (
-         | SELECT * FROM sparksession_table
+         | SELECT * FROM $tableName
          | UNION ALL
-         | SELECT * FROM sparksession_table
+         | SELECT * FROM $tableName
          | )
          | SELECT t1.*, t2.*
-         | FROM t1, sparksession_table t2
+         | FROM t1, $tableName t2
          | WHERE t1.stringField = t2.stringField
       """.stripMargin).show()
-
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-
-    // Drop table
-    sparksession.sql("DROP TABLE IF EXISTS sparksession_table")
-    sparksession.sql("DROP TABLE IF EXISTS csv_table")
-
-    sparksession.stop()
   }
 }

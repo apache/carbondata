@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql
 
 import java.util.concurrent.atomic.AtomicLong
@@ -34,8 +35,8 @@ object CarbonUtils {
   private[sql] val threadStatementId = new ThreadLocal[Long]
 
   private def withProfiler(sparkSession: SparkSession,
-                            sqlText: String,
-                            generateDF: (QueryExecution, SQLStart) => DataFrame): DataFrame = {
+      sqlText: String,
+      generateDF: (QueryExecution, SQLStart) => DataFrame): DataFrame = {
     val sse = SQLStart(sqlText, CarbonUtils.statementId.getAndIncrement())
     CarbonUtils.threadStatementId.set(sse.statementId)
     sse.startTime = System.currentTimeMillis()

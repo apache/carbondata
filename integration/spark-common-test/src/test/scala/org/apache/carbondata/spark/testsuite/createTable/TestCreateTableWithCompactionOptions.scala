@@ -56,7 +56,7 @@ class TestCreateTableWithCompactionOptions extends QueryTest with BeforeAndAfter
          | intField INT,
          | stringField STRING
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('MAJOR_COMPACTION_SIZE'='10240',
          | 'AUTO_LOAD_MERGE'='true',
          | 'COMPACTION_LEVEL_THRESHOLD'='5,6',
@@ -88,7 +88,7 @@ class TestCreateTableWithCompactionOptions extends QueryTest with BeforeAndAfter
            |intField INT,
            |stringField STRING
            |)
-           |STORED BY 'carbondata'
+           |STORED AS carbondata
            |TBLPROPERTIES('MAJOR_COMPACTION_SIZE'='abc')
        """.stripMargin)
     }
@@ -106,7 +106,7 @@ class TestCreateTableWithCompactionOptions extends QueryTest with BeforeAndAfter
            |intField INT,
            |stringField STRING
            |)
-           |STORED BY 'carbondata'
+           |STORED AS carbondata
            |TBLPROPERTIES('AUTO_LOAD_MERGE'='123')
        """.stripMargin)
     }
@@ -123,7 +123,7 @@ class TestCreateTableWithCompactionOptions extends QueryTest with BeforeAndAfter
            |intField INT,
            |stringField STRING
            |)
-           |STORED BY 'carbondata'
+           |STORED AS carbondata
            |TBLPROPERTIES(
            |'AUTO_LOAD_MERGE'='true',
            |'COMPACTION_LEVEL_THRESHOLD'='x,6')
@@ -143,7 +143,7 @@ class TestCreateTableWithCompactionOptions extends QueryTest with BeforeAndAfter
            |intField INT,
            |stringField STRING
            |)
-           |STORED BY 'carbondata'
+           |STORED AS carbondata
            |TBLPROPERTIES(
            |'AUTO_LOAD_MERGE'='true',
            |'COMPACTION_LEVEL_THRESHOLD'='4,6',
@@ -164,7 +164,7 @@ class TestCreateTableWithCompactionOptions extends QueryTest with BeforeAndAfter
            |intField INT,
            |stringField STRING
            |)
-           |STORED BY 'carbondata'
+           |STORED AS carbondata
            |TBLPROPERTIES(
            |'AUTO_LOAD_MERGE'='true',
            |'ALLOWED_COMPACTION_DAYS'='abc')

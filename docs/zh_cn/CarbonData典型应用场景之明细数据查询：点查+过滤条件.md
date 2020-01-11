@@ -404,7 +404,7 @@ create table IF NOT EXISTS example_table
 `REQ_TIME_SEC`    BIGINT,
 `REQ_SUCCED_FLAG` INT
 .....
-) STORED BY 'org.apache.carbondata.format' 
+) STORED AS carbondata 
 TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false','SORT_COLUMNS'='msisdn,req_time_sec,req_succed_flag', 'SORT_SCOPE'='LOCAL_SORT' )
 ```
 

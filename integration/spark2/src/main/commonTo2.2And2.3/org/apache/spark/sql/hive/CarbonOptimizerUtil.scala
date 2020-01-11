@@ -36,7 +36,7 @@ object CarbonOptimizerUtil {
                 lr.relation.asInstanceOf[CarbonDatasourceHadoopRelation].isSubquery += true
                 lr
             }
-            In(value, Seq(ListQuery(tPlan, l.children, l.exprId)))
+            In(value, Seq(ListQuery(tPlan, l.children, l.exprId, l.childOutputs)))
         }
     }
     transFormedPlan

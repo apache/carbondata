@@ -37,8 +37,7 @@ class TestNullValueSerialization extends QueryTest with BeforeAndAfterAll {
     val csvFilePath = s"$resourcesPath/nullvalueserialization.csv"
     sql(
       "CREATE TABLE IF NOT EXISTS carbonTable (ID String, date Timestamp, country String, name " +
-        "String, phonetype String, serialname String, salary Decimal(17,2))STORED BY 'org.apache" +
-        ".carbondata.format'"
+        "String, phonetype String, serialname String, salary Decimal(17,2))STORED AS carbondata"
     )
     sql(
       "create table if not exists hiveTable(ID String, date Timestamp, country String, name " +

@@ -21,11 +21,12 @@ import java.util
 
 import com.univocity.parsers.common.TextParsingException
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.{Accumulator, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.TaskContext
+import org.apache.spark.util.LongAccumulator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -71,7 +72,7 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[Array[AnyRef]],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+      rowCounter: LongAccumulator): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val rowParser = new RowParserImpl(conf.getDataFields, conf)
@@ -101,7 +102,7 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[StringArrayRow],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+      rowCounter: LongAccumulator): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val rowParser = new RowParserImpl(conf.getDataFields, conf)
@@ -130,7 +131,7 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[InternalRow],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Option[Accumulator[Int]],
+      rowCounter: Option[LongAccumulator],
       rangeField: Option[DataField]): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
@@ -168,8 +169,8 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[Array[AnyRef]],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      partialSuccessAccum: Accumulator[Int],
-      rowCounter: Accumulator[Int],
+      partialSuccessAccum: LongAccumulator,
+      rowCounter: LongAccumulator,
       keepActualData: Boolean = false): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
@@ -218,8 +219,8 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[CarbonRow],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      partialSuccessAccum: Accumulator[Int],
-      rowCounter: Accumulator[Int],
+      partialSuccessAccum: LongAccumulator,
+      rowCounter: LongAccumulator,
       keepActualData: Boolean = false): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
@@ -295,7 +296,7 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[CarbonRow],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+      rowCounter: LongAccumulator): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val sortParameters = SortParameters.createSortParameters(conf)
@@ -319,19 +320,17 @@ object DataLoadProcessorStepOnSpark {
   def writeFunc(
       rows: Iterator[CarbonRow],
       index: Int,
-      modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Accumulator[Int],
-      conf: Configuration) {
+      model: CarbonLoadModel,
+      rowCounter: LongAccumulator,
+      conf: Configuration): Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
         conf.get(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME))
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf)
-    var model: CarbonLoadModel = null
     var tableName: String = null
     var rowConverter: RowConverterImpl = null
     var dataWriter: DataWriterProcessorStepImpl = null
     try {
-      model = modelBroadcast.value.getCopyWithTaskNo(index.toString)
       val storeLocation = CommonUtil.getTempStoreLocations(index.toString)
       val conf = DataLoadProcessBuilder.createConfiguration(model, storeLocation)
 
@@ -403,7 +402,7 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[CarbonRow],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Accumulator[Int],
+      rowCounter: LongAccumulator,
       conf: Configuration) {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,

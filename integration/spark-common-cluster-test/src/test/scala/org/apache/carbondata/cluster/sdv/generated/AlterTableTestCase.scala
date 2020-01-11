@@ -40,7 +40,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check alter table using with alter command in lower case
   test("RenameTable_001_01", Include) {
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""alter table test1 rename to test2""").collect
     checkAnswer(s"""select count(*) from test2""",
@@ -51,7 +51,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check alter table using with alter command in upper & lower case
   test("RenameTable_001_02", Include) {
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""alter table Test1 RENAME to teSt2""").collect
    sql(s"""insert into test2 select 'yy',2""").collect
@@ -63,7 +63,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check alter table using with alter command in upper case
   test("RenameTable_001_03", Include) {
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""alter table test1 RENAME TO test2""").collect
     checkAnswer(s"""select count(*) from test2""",
@@ -74,7 +74,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check alter table where target table speficifed with database name
   test("RenameTable_001_04", Include) {
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""alter table test1 RENAME TO defAult.test2""").collect
     checkAnswer(s"""select count(*) from test2""",
@@ -88,7 +88,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists test2""").collect
     sql(s"""drop table if exists test1""").collect
     sql(s"""drop table if exists test3""").collect
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""alter table test1 rename to test2""").collect
    sql(s"""alter table test2 rename to test3""").collect
@@ -103,7 +103,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("RenameTable_001_07_1", Include) {
     sql(s"""drop table if exists test2""").collect
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""alter table test1 RENAME TO test2""").collect
    sql(s"""Insert into test2 select 'yy',2""").collect
@@ -125,9 +125,9 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check alter table when the altered name is already present in the database
   test("RenameTable_001_08", Include) {
     intercept[Exception] {
-      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx',1""").collect
-      sql(s"""create table test2 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test2 (name string, id int) STORED AS carbondata""").collect
       sql(s"""alter table test1 RENAME TO test2""").collect
     }
 
@@ -139,7 +139,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check alter table when the altered name is given multiple times
   test("RenameTable_001_09", Include) {
     intercept[Exception] {
-      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx',1""").collect
       sql(s"""alter table test1 RENAME TO test2 test3""").collect
     }
@@ -150,7 +150,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check delete column for dimension column
   test("DeleteCol_001_01", Include) {
     intercept[Exception] {
-      sql(s"""create table test1 (name string, id int) stored by 'carbondata'  """).collect
+      sql(s"""create table test1 (name string, id int) STORED AS carbondata  """).collect
       sql(s"""insert into test1 select 'xx',1""").collect
       sql(s"""alter table test1 drop columns (name)""").collect
       sql(s"""select name from test1""").collect
@@ -162,7 +162,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check delete column for measure column
   test("DeleteCol_001_02", Include) {
     intercept[Exception] {
-      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx',1""").collect
       sql(s"""alter table test1 drop columns (id)""").collect
       sql(s"""select id from test1""").collect
@@ -174,7 +174,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check delete column for measure and dimension column
   test("DeleteCol_001_03", Include) {
     intercept[Exception] {
-      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
       sql(s"""alter table test1 drop columns (id,name)""").collect
       sql(s"""select id,name  from test1""").collect
@@ -186,7 +186,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check delete column for multiple column
   test("DeleteCol_001_04", Include) {
     intercept[Exception] {
-      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata' """).collect
+      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata """).collect
       sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
       sql(s"""alter table test1 drop columns (name, upd_time)""").collect
       sql(s"""select name, upd_time from test1""").collect
@@ -197,7 +197,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check delete column for all columns
   test("DeleteCol_001_05", Include) {
-    sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
+    sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
     sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
     sql(s"""alter table test1 drop columns (name, upd_time, country,id)""").collect
     sql(s"""drop table if exists test1""").collect
@@ -207,7 +207,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check delete column for include dictionary column
   test("DeleteCol_001_06", Include) {
     intercept[Exception] {
-      sql(s"""create table test1 (name string, id int) stored by 'carbondata' """).collect
+      sql(s"""create table test1 (name string, id int) STORED AS carbondata """).collect
       sql(s"""insert into test1 select 'xx',1""").collect
       sql(s"""alter table test1 drop columns (id)""").collect
       sql(s"""select id from test1""").collect
@@ -219,7 +219,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check delete column for timestamp column
   test("DeleteCol_001_08", Include) {
     intercept[Exception] {
-      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
       sql(s"""alter table test1 drop columns (upd_time)""").collect
       sql(s"""select upd_time from test1""").collect
@@ -230,7 +230,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check the drop of added column will remove the column from table
   test("DeleteCol_001_09_1", Include) {
-     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
    sql(s"""alter table test1 add columns (name2 string)""").collect
    sql(s"""insert into test1 select 'xx','yy',current_timestamp,1,'abc'""").collect
@@ -243,7 +243,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check the drop of added column will remove the column from table
   test("DeleteCol_001_09_2", Include) {
     intercept[Exception] {
-     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
      sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
      sql(s"""alter table test1 add columns (name2 string)""").collect
      sql(s"""insert into test1 select 'xx','yy',current_timestamp,1,'abc'""").collect
@@ -256,7 +256,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Drop a column and add it again with a default value
   test("DeleteCol_001_10", Include) {
-     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
    sql(s"""alter table test1 drop columns (id)""").collect
    sql(s"""alter table test1 add columns (id bigint) tblproperties('default.value.id'='999')""").collect
@@ -269,7 +269,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Drop a column and add it again with a default value
   test("DeleteCol_001_11", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
    sql(s"""alter table test1 drop columns (id)""").collect
    sql(s"""insert into test1 select 'a','china',current_timestamp""").collect
@@ -283,7 +283,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column for multiple column adds
   test("AddColumn_001_01", Include) {
      sql(s"""drop table if exists test1""").collect
-   sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+   sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (upd_time timestamp, country string)""").collect
     checkAnswer(s"""select upd_time, country from test1""",
@@ -295,7 +295,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column for dimension column and add table property to set default value
   test("AddColumn_001_02", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""insert into test1 select 'xx',12""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (country string) TBLPROPERTIES('DEFAULT.VALUE.country'='China')""").collect
@@ -308,7 +308,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column to add a measure column
   test("AddColumn_001_03", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (id1 int)""").collect
     checkAnswer(s"""select id1 from test1""",
@@ -320,7 +320,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column to add a measure column added with dictionary include
   test("AddColumn_001_04", Include) {
      sql(s"""drop table if exists test1""").collect
-   sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+   sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""insert into test1 select 'xx',11""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (id1 int) """).collect
@@ -333,7 +333,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column to add a measure column initialized with default value
   ignore("AddColumn_001_05", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""insert into test1 select 'xx',11""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (price decimal(10,6)) TBLPROPERTIES('DEFAULT.VALUE.price'='11.111')""").collect
@@ -346,7 +346,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column to add a measure column initialized with default value which does not suite the data type
   test("AddColumn_001_06", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (price bigint) TBLPROPERTIES('DEFAULT.VALUE.Price'='1.1')""").collect
     checkAnswer(s"""select price from test1""",
@@ -358,7 +358,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column to add a measure column initialized with default value on a empty table
   test("AddColumn_001_07", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (price bigint) TBLPROPERTIES('DEFAULT.VALUE.Price'='11')""").collect
     checkAnswer(s"""select count(id) from test1 where price = 11""",
@@ -370,7 +370,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column to add a dim and measure column
   test("AddColumn_001_08", Include) {
      sql(s"""drop table if exists test1""").collect
-   sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+   sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (id1 int, country string) """).collect
     checkAnswer(s"""select id1, country from test1""",
@@ -382,7 +382,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column for measure and make it dictionary column
   test("AddColumn_001_09", Include) {
      sql(s"""drop table if exists test1""").collect
-   sql(s"""create table test1 (name string) stored by 'carbondata'""").collect
+   sql(s"""create table test1 (name string) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx'""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (Id int)  """).collect
     checkAnswer(s"""select id from test1""",
@@ -394,7 +394,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column to add columns and exclude the dim col from dictionary
   test("AddColumn_001_10", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx'""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (upd_time timestamp, country string) """).collect
     checkAnswer(s"""select country, upd_time from test1""",
@@ -406,7 +406,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column to add a timestamp column
   test("AddColumn_001_11", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (upd_time timestamp)""").collect
     checkAnswer(s"""select upd_time from test1""",
@@ -419,7 +419,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("AddColumn_001_14", Include) {
     intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
-      sql(s"""create table test1 (name string) stored by 'carbondata'""").collect
+      sql(s"""create table test1 (name string) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx'""").collect
       sql(s"""ALTER TABLE test1 ADD COLUMNS (Id int) TBLPROPERTIES('default.value.name'='yy')""").collect
     }
@@ -430,7 +430,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //check alter column for small decimal to big decimal
   test("AlterData_001_02", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, price decimal(3,2)) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, price decimal(3,2)) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1.2""").collect
    sql(s"""alter table test1 change price price decimal(10,7)""").collect
    sql(s"""insert into test1 select 'xx2',999.9999999""").collect
@@ -443,7 +443,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //check drop table after table rename using new name
   test("DropTable_001_01", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, price decimal(3,2)) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, price decimal(3,2)) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1.2""").collect
    sql(s"""alter table test1 rename to test2""").collect
     sql(s"""drop table test2""").collect
@@ -454,7 +454,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("DropTable_001_02", Include) {
     intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
-      sql(s"""create table test1 (name string, price decimal(3,2)) stored by 'carbondata'""").collect
+      sql(s"""create table test1 (name string, price decimal(3,2)) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx',1.2""").collect
       sql(s"""alter table test1 rename to test2""").collect
       sql(s"""drop table test1""").collect
@@ -465,7 +465,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //check drop table after table rename using new name, after table load
   test("DropTable_001_03", Include) {
-     sql(s"""create table test1 (name string, price decimal(3,2)) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, price decimal(3,2)) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1.2""").collect
    sql(s"""alter table test1 rename to test2""").collect
    sql(s"""insert into test2 select 'yy',1""").collect
@@ -477,7 +477,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //check drop table after alter table name, using new name when table is empty
   test("DropTable_001_04", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, price decimal(3,2)) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, price decimal(3,2)) STORED AS carbondata""").collect
    sql(s"""alter table test1 rename to test2""").collect
     sql(s"""drop table test2""").collect
 
@@ -487,7 +487,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //check drop table when table is altered by adding columns
   test("DropTable_001_05", Include) {
      sql(s"""drop table if exists test1""").collect
-   sql(s"""create table test1 (name string, id int) stored by 'carbondata'  """).collect
+   sql(s"""create table test1 (name string, id int) STORED AS carbondata  """).collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (upd_time timestamp, country string) TBLPROPERTIES( 'DEFAULT.VALUE.country'='China')""").collect
    sql(s"""insert into test1 select 'yy',1,current_timestamp,'xx'""").collect
@@ -499,7 +499,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check schema changes and carbon dictionary additions for alter table when new column added
   test("StorageFi_001_02", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (country string, name string) stored by 'carbondata' """).collect
+     sql(s"""create table test1 (country string, name string) STORED AS carbondata """).collect
    sql(s"""insert into test1 select 'xx','uu'""").collect
     sql(s"""alter table test1 add columns (price decimal(10,4)) tblproperties('DEFAULT.VALUE.price'='11.111')""").collect
      sql(s"""drop table if exists test1""").collect
@@ -509,7 +509,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check dictionary cache is loaded with new added column when query is run
   ignore("Dictionary_001_01", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id decimal(3,2),country string) stored by 'carbondata' """).collect
+     sql(s"""create table test1 (name string, id decimal(3,2),country string) STORED AS carbondata """).collect
    sql(s"""insert into test1 select 'xx',1.22,'china'""").collect
    sql(s"""alter table test1 add columns (price decimal(10,4)) tblproperties('DEFAULT.VALUE.price'='11.111')""").collect
     checkAnswer(s"""select * from test1""",
@@ -521,7 +521,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check if dropped column is removed from driver side LRU cache
   test("Dictionary_001_02", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id decimal(3,2),country string) stored by 'carbondata' """).collect
+     sql(s"""create table test1 (name string, id decimal(3,2),country string) STORED AS carbondata """).collect
    sql(s"""insert into test1 select 'xx',1.22,'china'""").collect
    sql(s"""alter table test1 drop columns (country)""").collect
     checkAnswer(s"""select * from test1""",
@@ -533,7 +533,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check if dropped column is removed from driver side LRU cache at driver side
   test("Dictionary_001_03", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id decimal(3,2),country string) stored by 'carbondata' """).collect
+     sql(s"""create table test1 (name string, id decimal(3,2),country string) STORED AS carbondata """).collect
    sql(s"""insert into test1 select 'xx',1.22,'china'""").collect
    sql(s"""alter table test1 drop columns(country)""").collect
     checkAnswer(s"""select * from test1""",
@@ -546,7 +546,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Dataload_001_01", Include) {
      sql(s"""drop table if exists t_carbn01t""").collect
    sql(s"""drop table if exists t_carbn01""").collect
-   sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""alter table t_carbn01 rename to t_carbn01t""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01t options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -557,7 +557,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check table load into old table after alter table name
   test("Dataload_001_02", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""alter table t_carbn01 rename to t_carbn01t""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01t options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -570,7 +570,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check table load works fine after alter table name
   test("Dataload_001_03", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""alter table t_carbn01 change Profit Profit Decimal(10,4)""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -581,7 +581,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check table load works fine after alter table name
   test("Dataload_001_04", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""alter table t_carbn01 add columns (item_code1 string, item_code2 string)""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive2.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date,item_code1, item_code2')""").collect
@@ -594,7 +594,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check table load works fine after alter table name
   test("Dataload_001_05", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""alter table t_carbn01 drop columns (Update_time, create_date)""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive2.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name')""").collect
@@ -607,7 +607,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check if alter table(add column) is supported when data load is happening
   test("Concurrent_alter_001_01", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""alter table t_carbn01 add columns (item_code1 string, item_code2 string)""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive2.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date,item_code1,item_code2')""").collect
@@ -618,7 +618,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check if alter table(delete column) is supported when data load is happening
   test("Concurrent_alter_001_02", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
     sql(s"""alter table t_carbn01 drop columns (Update_time, create_date)""").collect
      sql(s"""drop table if exists t_carbn01""").collect
@@ -628,7 +628,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check if alter table(change column) is supported when data load is happening
   test("Concurrent_alter_001_03", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
     sql(s"""alter table t_carbn01 change Profit Profit Decimal(10,4)""").collect
      sql(s"""drop table if exists t_carbn01""").collect
@@ -638,7 +638,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check if alter table(rename) is supported when data load is happening
   test("Concurrent_alter_001_04", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
     sql(s"""alter table t_carbn01 rename to t_carbn01t""").collect
      sql(s"""drop table if exists t_carbn01t""").collect
@@ -649,9 +649,9 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Insertint_001_03", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
     sql(s"""drop table if exists default.t_carbn02""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
-   sql(s"""create table default.t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table default.t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""alter table t_carbn02 add columns (item_name1 string)""").collect
    sql(s"""insert into t_carbn02 select *, 'xxx' from t_carbn01""").collect
     sql(s"""Select count(*) from t_carbn02""").collect
@@ -665,9 +665,9 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Insertint_001_04", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
     sql(s"""drop table if exists default.t_carbn02""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
-   sql(s"""create table default.t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+   sql(s"""create table default.t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""alter table t_carbn02 change Profit Profit decimal(10,4)""").collect
    sql(s"""insert into t_carbn02 select * from t_carbn01""").collect
     sql(s"""Select count(*) from t_carbn02""").collect
@@ -680,8 +680,8 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //check table insert works fine after alter table to drop columns
   test("Insertint_001_05", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test2 (country string, name string, state_id int,id int) stored by 'carbondata' """).collect
-   sql(s"""create table test1 (country string, state_id int) stored by 'carbondata' """).collect
+     sql(s"""create table test2 (country string, name string, state_id int,id int) STORED AS carbondata """).collect
+   sql(s"""create table test1 (country string, state_id int) STORED AS carbondata """).collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""alter table test2 drop columns (name, id)""").collect
    sql(s"""insert into test2 select * from test1""").collect
@@ -695,7 +695,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check show segments on old table After altering the Table name.
   test("Showsegme_001_01", Include) {
     intercept[Exception] {
-      sql(s"""create table test1 (country string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1 (country string, id int) STORED AS carbondata""").collect
       sql(s"""alter table test1 rename to test2""").collect
       sql(s"""show segments for table test1""").collect
     }
@@ -707,7 +707,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Compaction_001_01", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
-   sql(s"""create table test1(name string, id int) stored by 'carbondata'""").collect
+   sql(s"""create table test1(name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""insert into test1 select 'xe',2""").collect
    sql(s"""insert into test1 select 'xr',3""").collect
@@ -721,7 +721,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Compaction_001_02", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
-   sql(s"""create table test1(name string, id int) stored by 'carbondata'""").collect
+   sql(s"""create table test1(name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""insert into test1 select 'xe',2""").collect
    sql(s"""insert into test1 select 'xr',3""").collect
@@ -737,7 +737,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Compaction_001_03", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
-   sql(s"""create table test1(name string, id int) stored by 'carbondata'""").collect
+   sql(s"""create table test1(name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""insert into test1 select 'xe',2""").collect
    sql(s"""alter table test1 rename to test2""").collect
@@ -754,7 +754,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
     sql(s"""drop table if exists test3""").collect
-   sql(s"""create table test1(name string, id int) stored by 'carbondata'""").collect
+   sql(s"""create table test1(name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""alter table test1 rename to test2""").collect
    sql(s"""insert into test2 select 'xe',2""").collect
@@ -771,7 +771,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Compaction_001_05", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
-   sql(s"""create table test1(name string, id int) stored by 'carbondata'""").collect
+   sql(s"""create table test1(name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""insert into test1 select 'xe',2""").collect
    sql(s"""alter table test1 rename to test2""").collect
@@ -788,7 +788,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
       sql(s"""drop table if exists test2""").collect
-      sql(s"""create table test1(name string, country string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1(name string, country string, id int) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx','china',1""").collect
       sql(s"""insert into test1 select 'xe','china',2""").collect
       sql(s"""insert into test1 select 'xe','china',3""").collect
@@ -805,7 +805,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
       sql(s"""drop table if exists test2""").collect
-      sql(s"""create table test1(name string, country string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1(name string, country string, id int) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx','china',1""").collect
       sql(s"""insert into test1 select 'xe','china',2""").collect
       sql(s"""alter table test1 drop columns (country)""").collect
@@ -822,7 +822,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
       sql(s"""drop table if exists test2""").collect
-      sql(s"""create table test1(name string, country string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1(name string, country string, id int) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx','china',1""").collect
       sql(s"""alter table test1 drop columns (country)""").collect
       sql(s"""insert into test1 select 'xe',3""").collect
@@ -839,7 +839,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Compaction_001_09", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
-   sql(s"""create table test1(name string) stored by 'carbondata'""").collect
+   sql(s"""create table test1(name string) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx3'""").collect
    sql(s"""insert into test1 select 'xx2'""").collect
    sql(s"""insert into test1 select 'xx1'""").collect
@@ -854,7 +854,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check vertical compaction on altered table for column add, when some of the segments crreated before table alter. Ensure added column in the compacted segment
   test("Compaction_001_10", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1(name string) stored by 'carbondata'""").collect
+     sql(s"""create table test1(name string) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx1'""").collect
    sql(s"""insert into test1 select 'xx2'""").collect
    sql(s"""alter table test1 add columns (country string)""").collect
@@ -869,7 +869,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check vertical compaction on multiple altered table for column add, when some of the segments crreated after table alter. Ensure added column in the compacted segment
   test("Compaction_001_11", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1(name string) stored by 'carbondata'""").collect
+     sql(s"""create table test1(name string) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx1'""").collect
    sql(s"""insert into test1 select 'xx2'""").collect
    sql(s"""alter table test1 add columns (id int)  """).collect
@@ -886,7 +886,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check vertical compaction on altered table for change column datatype, when some of the segments crreated after table alter. Ensure added column in the compacted segment
   test("Compaction_001_12", Include) {
     sql(s"""drop table if exists default.test1""").collect
-     sql(s"""create table test1(name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1(name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx1',1""").collect
    sql(s"""insert into test1 select 'xx2',2""").collect
    sql(s"""alter table test1 change id id bigint """).collect
@@ -909,7 +909,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check bad record locaion isnot changed when table name is altered
   test("BadRecords_001_01", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1_Bad.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='true', 'BAD_RECORDS_ACTION'='REDIRECT', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""alter table default.t_carbn01 rename to default.t_carbn01t""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1_Bad.csv' INTO table default.t_carbn01t options ('DELIMITER'=',', 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='true', 'BAD_RECORDS_ACTION'='REDIRECT', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
@@ -920,7 +920,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check bad record locaion isnot changed when table name is altered
   test("BadRecords_001_02", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
-     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
+     sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1_Bad.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='true', 'BAD_RECORDS_ACTION'='REDIRECT', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
     sql(s"""alter table t_carbn01 drop columns (item_name)""").collect
      sql(s"""drop table if exists default.t_carbn01""").collect
@@ -930,7 +930,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check for bad record handling while latering the table if added column is set with default value which is a bad record
   test("BadRecords_001_03", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""insert into test1 select 'xx',12""").collect
    sql(s"""ALTER TABLE test1 ADD COLUMNS (id2 int) TBLPROPERTIES('include_dictionary'='id2','DEFAULT.VALUE.id2'='China')""").collect
@@ -943,7 +943,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check delete segment is not allowed on old table name when table name is altered
   test("DeleteSeg_001_01", Include) {
     intercept[Exception] {
-      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
       sql(s"""insert into test1 select 'xx',1""").collect
       sql(s"""insert into test1 select 'xx',12""").collect
       sql(s"""alter table test1 rename to test2""").collect
@@ -956,7 +956,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check delete segment is allowed on new table name when table name is altered
   test("DeleteSeg_001_02", Include) {
     sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+     sql(s"""create table test1 (name string, id int) STORED AS carbondata""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""insert into test1 select 'xx',12""").collect
    sql(s"""alter table test1 rename to test2""").collect
@@ -971,7 +971,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("AlterTable-001-AltersameTablename-001-TC001", Include) {
      sql(s"""drop table  if exists uniqdata""").collect
    sql(s"""drop table  if exists uniqdata1""").collect
-   sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' """).collect
+   sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata """).collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
    sql(s"""alter table uniqdata RENAME TO  uniqdata1""").collect
    sql(s"""alter table uniqdata1 RENAME TO uniqdata""").collect
@@ -984,7 +984,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check select query after alter the int to Bigint and decimal Lower Precision to higher precision
   test("AlterTable-007-selectquery-001-TC002", Include) {
-     sql(s"""CREATE TABLE uniqdata1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' """).collect
+     sql(s"""CREATE TABLE uniqdata1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata """).collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
    sql(s"""ALTER TABLE uniqdata1 CHANGE CUST_ID CUST_ID BIGINT""").collect
     sql(s"""select * from uniqdata1 where cust_name like 'Cust%'""").collect
@@ -995,7 +995,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check select query after alter from lower to higher precision
   test("AlterTable-008-selectquery-001-TC003", Include) {
-     sql(s"""CREATE TABLE uniqdata1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' """).collect
+     sql(s"""CREATE TABLE uniqdata1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata """).collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
    sql(s"""ALTER TABLE uniqdata1 CHANGE decimal_column1 decimal_column1 DECIMAL(31,11)""").collect
     sql(s"""select * from uniqdata1 where cust_name like 'Cust%'""").collect
@@ -1007,7 +1007,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check add column on Decimal,Timestamp,int,string,Bigint
   test("AlterTable-002-001-TC-004", Include) {
      sql(s"""drop table if exists uniqdata59""").collect
-   sql(s"""CREATE TABLE uniqdata59 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' """).collect
+   sql(s"""CREATE TABLE uniqdata59 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata """).collect
     sql(s"""ALTER TABLE uniqdata59 ADD COLUMNS (a1 int,a2 int,a3 decimal,a4 Bigint,a5 String,a6 timestamp,a7 Bigint,a8 decimal(10,2),a9 timestamp,a10 String,a11 string,a12 string,a13 string,a14 string,a15 string,a16 string,a17 string,a18 string,a19 string,a20 string,a21 string,a22 string,a23 string,a24 string,a25 string,a26 string,a27 string,a28 string,a29 string,a30 string,a31 string,a32 string,a33 string,a34 string,a35 string,a36 string,a37 string,a38 string,a39 string,a40 string,a41 string,a42 string,a43 string,a44 string,a45 string,a46 string,a47 string,a48 string,a49 string,a50 string,a51 string,a52 string,a53 string,a54 string,a55 string,a56 string,a57 string,a58 string,a59 string,a60 string,a61 string,a62 string,a63 string,a64 string,a65 string,a66 string,a67 string,a68 string,a69 string,a70 string,a71 string,a72 string,a73 string,a74 string,a75 string,a76 string,a77 string,a78 string,a79 string,a80 string,a81 string,a82 string,a83 string,a84 string,a85 string,a86 string,a87 string,a88 string) """).collect
      sql(s"""drop table  if exists uniqdata59""").collect
   }
@@ -1090,7 +1090,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Test drop columns not present in the table") {
     sql("drop table if exists test1")
-    sql("create table test1(col1 int) stored by 'carbondata'")
+    sql("create table test1(col1 int) STORED AS carbondata")
     val exception = intercept[ProcessMetaDataException] {
       sql("alter table test1 drop columns(name)")
     }

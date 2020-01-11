@@ -30,7 +30,7 @@ class TestTableNameHasDbName extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS tabledefault")
     sql("CREATE TABLE tabledefault (empno int, workgroupcategory string, " +
       "deptno int, projectcode int,attendance int)" +
-      " STORED BY 'org.apache.carbondata.format'")
+      " STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tabledefault")
   }
 

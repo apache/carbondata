@@ -62,7 +62,7 @@ public class DataTypes {
   static final int BYTE_ARRAY_TYPE_ID = 15;
   static final int SHORT_INT_TYPE_ID = 16;
   static final int LEGACY_LONG_TYPE_ID = 17;
-  static final int DECIMAL_TYPE_ID = 10;
+  public static final int DECIMAL_TYPE_ID = 10;
   public static final int ARRAY_TYPE_ID = 11;
   public static final int STRUCT_TYPE_ID = 12;
   public static final int MAP_TYPE_ID = 13;

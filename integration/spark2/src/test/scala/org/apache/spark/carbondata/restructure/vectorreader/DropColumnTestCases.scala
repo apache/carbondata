@@ -35,7 +35,7 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       beforeAll
       sql(
         "CREATE TABLE dropcolumntest(intField INT,stringField STRING,charField STRING," +
-        "timestampField TIMESTAMP,decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
+        "timestampField TIMESTAMP,decimalField DECIMAL(6,2)) STORED AS carbondata")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest"
           + s" OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
       sql("ALTER TABLE dropcolumntest DROP COLUMNS(charField)")
@@ -57,7 +57,7 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       beforeAll
       sql(
         "CREATE TABLE dropcolumntest(intField INT,stringField STRING,charField STRING," +
-        "timestampField TIMESTAMP,decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
+        "timestampField TIMESTAMP,decimalField DECIMAL(6,2)) STORED AS carbondata")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest"
           + s" OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
       sql("ALTER TABLE dropcolumntest DROP COLUMNS(charField)")
@@ -78,7 +78,7 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       beforeAll
       sql(
         "CREATE TABLE dropcolumntest(intField INT,stringField STRING,charField STRING," +
-        "timestampField TIMESTAMP,decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
+        "timestampField TIMESTAMP,decimalField DECIMAL(6,2)) STORED AS carbondata")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest"
           + s" OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
       sql("ALTER TABLE dropcolumntest DROP COLUMNS(charField)")
@@ -98,7 +98,7 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test dropping of complex column should throw exception") {
     sql("drop table if exists maintbl")
-    sql("create table maintbl (a string, b string, c struct<si:int>) stored by 'carbondata'")
+    sql("create table maintbl (a string, b string, c struct<si:int>) STORED AS carbondata")
     assert(intercept[ProcessMetaDataException] {
       sql("alter table maintbl drop columns(b,c)").show
     }.getMessage.contains("Complex column cannot be dropped"))

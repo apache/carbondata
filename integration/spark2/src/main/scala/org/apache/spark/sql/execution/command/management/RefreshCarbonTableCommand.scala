@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, MetadataCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
+import org.apache.spark.sql.execution.datasources.RefreshTable
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -105,7 +106,9 @@ case class RefreshCarbonTableCommand(
         }
       }
     }
-    Seq.empty
+    RefreshTable(
+      TableIdentifier(identifier.getTableName, Option(identifier.getDatabaseName))
+    ).run(sparkSession)
   }
 
   /**

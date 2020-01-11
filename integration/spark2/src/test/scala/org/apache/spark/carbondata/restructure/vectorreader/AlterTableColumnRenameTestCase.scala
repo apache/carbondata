@@ -18,6 +18,7 @@
 package org.apache.spark.carbondata.restructure.vectorreader
 
 import org.apache.spark.sql.common.util.Spark2QueryTest
+import org.apache.spark.sql.AnalysisException
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
@@ -153,7 +154,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
       "CREATE TABLE rename (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties(" +
+      "utilization int,salary int) STORED AS carbondata tblproperties(" +
       "'local_dictionary_include'='workgroupcategoryname','local_dictionary_exclude'='deptname','COLUMN_META_CACHE'='projectcode,attendance'," +
       "'SORT_COLUMNS'='workgroupcategory,utilization,salary')")
     sql("alter table rename change eMPName name string")
@@ -190,7 +191,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (doj Timestamp, empname String)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED AS carbondata
       """.stripMargin)
     val ex = intercept[ProcessMetaDataException] {
       sql("alter table partitiontwo change empname name string")
@@ -203,7 +204,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     sql(
       """
         | CREATE TABLE datamap_test(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
     sql(
@@ -225,7 +226,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
       s"""
          | CREATE TABLE bloomtable(id INT, name STRING, city STRING, age INT,
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
-         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128', 'sort_columns'='id')
+         | STORED AS carbondata TBLPROPERTIES('table_blocksize'='128', 'sort_columns'='id')
          |  """.stripMargin)
     sql(
       s"""
@@ -243,11 +244,11 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
   test("test rename on complex column") {
     sql("drop table if exists complex")
     sql(
-      "create table complex (id int, name string, structField struct<intval:int, stringval:string>) stored by 'carbondata'")
-    val ex = intercept[ProcessMetaDataException] {
+      "create table complex (id int, name string, structField struct<intval:int, stringval:string>) STORED AS carbondata")
+    val ex = intercept[AnalysisException] {
       sql("alter table complex change structField complexTest struct")
     }
-    assert(ex.getMessage.contains("Rename column is unsupported for complex datatype column structfield"))
+    assert(ex.getMessage.contains("DataType struct is not supported"))
   }
 
   test("test SET command with column rename") {
@@ -268,7 +269,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
 
   test("test column rename with change datatype for decimal datatype") {
     sql("drop table if exists deciTable")
-    sql("create table decitable(name string, age int, avg decimal(30,10)) stored by 'carbondata'")
+    sql("create table decitable(name string, age int, avg decimal(30,10)) STORED AS carbondata")
     sql("alter table decitable change avg newAvg decimal(32,11)")
     val descLoc = sql("describe formatted decitable").collect
     descLoc.find(_.get(0).toString.contains("newavg")) match {
@@ -280,7 +281,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
 
   test("test column rename of bigint column") {
     sql("drop table if exists biginttable")
-    sql("create table biginttable(name string, age int, bigintfield bigint) stored by 'carbondata'")
+    sql("create table biginttable(name string, age int, bigintfield bigint) STORED AS carbondata")
     sql("alter table biginttable change bigintfield testfield bigint")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "biginttable")
     assert(null != carbonTable.getColumnByName("testfield"))
@@ -307,7 +308,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
       "CREATE TABLE test_rename (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE test_rename OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
@@ -331,7 +332,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
       "CREATE TABLE test_alter (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE test_alter OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
@@ -367,7 +368,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
       "CREATE TABLE rename (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE rename OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
@@ -385,6 +386,6 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
       "workgroupcategory int, workgroupcategoryname String, deptno int comment \"This column " +
       "has comment\", deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
-      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+      "utilization int,salary int) STORED AS carbondata")
   }
 }

@@ -21,7 +21,7 @@ import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
-import org.apache.spark.sql.execution.command.AlterTableRenameCommand
+import org.apache.spark.sql.execution.command.{AlterTableAddColumnsCommand, AlterTableChangeColumnCommand, AlterTableRenameCommand}
 import org.apache.spark.sql.execution.command.mutation.{CarbonProjectForDeleteCommand, CarbonProjectForUpdateCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
 
@@ -44,6 +44,11 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
           TableIdentifier(tableName, databaseNameOp),
           "Data delete")
         Nil
+      case addColumns: AlterTableAddColumnsCommand if isCarbonTable(addColumns.table) =>
+        rejectIfStreamingTable(
+          addColumns.table,
+          "Alter table add column")
+        Nil
       case CarbonAlterTableAddColumnCommand(model) =>
         rejectIfStreamingTable(
           new TableIdentifier(model.tableName, model.databaseName),
@@ -53,6 +58,21 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
         rejectIfStreamingTable(
           new TableIdentifier(model.tableName, model.databaseName),
           "Alter table drop column")
+        Nil
+      case changeColumn: AlterTableChangeColumnCommand
+        if isCarbonTable(changeColumn.tableName) =>
+        val columnName = changeColumn.columnName
+        val newColumn = changeColumn.newColumn
+        var isColumnRename = false
+        if (!columnName.equalsIgnoreCase(newColumn.name)) {
+          isColumnRename = true
+        }
+        val operation = if (isColumnRename) {
+          "Alter table column rename"
+        } else {
+          "Alter table change datatype"
+        }
+        rejectIfStreamingTable(changeColumn.tableName, operation)
         Nil
       case CarbonAlterTableColRenameDataTypeChangeCommand(model, _) =>
         val operation = if (model.isColumnRename) {
@@ -88,5 +108,9 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
       throw new MalformedCarbonCommandException(
         s"$operation is not allowed for streaming table")
     }
+  }
+
+  def isCarbonTable(tableIdent: TableIdentifier): Boolean = {
+    CarbonPlanHelper.isCarbonTable(tableIdent, sparkSession)
   }
 }

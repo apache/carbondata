@@ -337,13 +337,13 @@ CarbonData DDL statements are documented here,which includes:
       Syntax:
 
       ```
-      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY 'carbondata' TBLPROPERTIES ('COLUMN_META_CACHE'='col1,col2,…')
+      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED AS carbondata TBLPROPERTIES ('COLUMN_META_CACHE'='col1,col2,…')
       ```
 
       Example:
 
       ```
-      CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('COLUMN_META_CACHE'='name')
+      CREATE TABLE employee (name String, city String, id int) STORED AS carbondata TBLPROPERTIES ('COLUMN_META_CACHE'='name')
       ```
 
       After creation of table or on already created tables use the alter table command to configure the columns to be cached.
@@ -384,13 +384,13 @@ CarbonData DDL statements are documented here,which includes:
       Syntax:
 
       ```
-      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY 'carbondata' TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
+      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED AS carbondata TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
       ```
 
       Example:
 
       ```
-      CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
+      CREATE TABLE employee (name String, city String, id int) STORED AS carbondata TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
       ```
 
       After creation of table or on already created tables use the alter table command to configure the cache level.
@@ -418,7 +418,7 @@ CarbonData DDL statements are documented here,which includes:
 
        Example:
        ```
-       CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('flat_folder'='true')
+       CREATE TABLE employee (name String, city String, id int) STORED AS carbondata TBLPROPERTIES ('flat_folder'='true')
        ```
 
    - ##### String longer than 32000 characters
@@ -875,7 +875,7 @@ Users can specify which columns to include and exclude for local dictionary gene
     [(col_name data_type , ...)]
     [COMMENT table_comment]
     [PARTITIONED BY (col_name data_type , ...)]
-    [STORED BY file_format]
+    [STORED AS file_format]
     [TBLPROPERTIES (property_name=property_value, ...)]
   ```
 

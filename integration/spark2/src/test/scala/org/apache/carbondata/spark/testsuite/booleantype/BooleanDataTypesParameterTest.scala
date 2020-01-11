@@ -36,7 +36,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     sql(
       s"""CREATE TABLE if not exists boolean_one_column(
          |booleanField BOOLEAN)
-         |STORED BY 'carbondata'
+         |STORED AS carbondata
          |""".stripMargin)
   }
 
@@ -137,7 +137,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -182,7 +182,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
          | floatField FLOAT,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
 
@@ -213,7 +213,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     sql(
       s"""CREATE TABLE if not exists boolean_one_column(
          |booleanField BOOLEAN)
-         |STORED BY 'carbondata'
+         |STORED AS carbondata
          |TBLPROPERTIES('sort_columns'='booleanField','SORT_SCOPE'='GLOBAL_SORT')
          |""".stripMargin)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
@@ -252,7 +252,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     sql(
       s"""CREATE TABLE if not exists boolean_one_column(
          |booleanField BOOLEAN)
-         |STORED BY 'carbondata'
+         |STORED AS carbondata
          |TBLPROPERTIES('sort_columns'='booleanField','SORT_SCOPE'='GLOBAL_SORT')
          |""".stripMargin)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")

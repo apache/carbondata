@@ -37,10 +37,8 @@ class DataCompactionBoundaryConditionsTest extends QueryTest with BeforeAndAfter
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
     sql(
       "CREATE TABLE IF NOT EXISTS boundarytest (country String, ID Int, date " +
-      "Timestamp, name " +
-      "String, " +
-      "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata" +
-      ".format'"
+      "Timestamp, name String, phonetype String, serialname String, salary Int) " +
+      "STORED AS carbondata"
     )
 
   }

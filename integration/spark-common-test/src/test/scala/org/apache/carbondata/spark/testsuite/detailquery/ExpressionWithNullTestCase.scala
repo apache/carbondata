@@ -26,7 +26,7 @@ class ExpressionWithNullTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists expression_test_hive")
     sql("drop table if exists expression")
     sql("drop table if exists expression_hive")
-    sql("create table expression_test (id int, name string, number int) stored by 'carbondata'")
+    sql("create table expression_test (id int, name string, number int) STORED AS carbondata")
     sql(s"load data local inpath '$resourcesPath/filter/datawithnull.csv' into table expression_test options('FILEHEADER'='id,name,number')")
     sql("""create table expression_test_hive (id int, name string, number int) row format delimited fields terminated by ','""")
     sql(s"load data local inpath '$resourcesPath/filter/datawithnull.csv' into table expression_test_hive")

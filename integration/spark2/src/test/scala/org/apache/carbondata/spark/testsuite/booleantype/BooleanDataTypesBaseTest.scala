@@ -34,7 +34,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
 
   test("Creating table: boolean one column, should support") {
     try {
-      sql("CREATE TABLE if not exists boolean_table(cc BOOLEAN) STORED BY 'carbondata'")
+      sql("CREATE TABLE if not exists boolean_table(cc BOOLEAN) STORED AS carbondata")
       assert(true)
     } catch {
       case _: Exception => assert(false)
@@ -47,7 +47,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
         s"""
            |CREATE TABLE if not exists boolean_table(
            |aa INT, bb STRING, cc BOOLEAN
-           |) STORED BY 'carbondata'""".stripMargin)
+           |) STORED AS carbondata""".stripMargin)
       assert(true)
     } catch {
       case _: Exception => assert(false)
@@ -59,7 +59,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
       s"""
          |CREATE TABLE if not exists carbon_table(
          |cc BOOLEAN
-         |) STORED BY 'carbondata'""".stripMargin)
+         |) STORED AS carbondata""".stripMargin)
     checkExistence(sql("describe formatted carbon_table"), true, "boolean")
   }
 
@@ -81,7 +81,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
          | complexData ARRAY<STRING>,
          | booleanField2 BOOLEAN
          | )
-         | STORED BY 'carbondata'
+         | STORED AS carbondata
          | TBLPROPERTIES('sort_columns'='')
        """.stripMargin)
     checkExistence(sql("describe formatted carbon_table"), true, "boolean")
@@ -92,7 +92,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
       s"""
          |CREATE TABLE if not exists carbon_table(
          |aa INT, bb STRING
-         |) STORED BY 'carbondata'""".stripMargin)
+         |) STORED AS carbondata""".stripMargin)
     sql("alter table carbon_table add columns (dd BOOLEAN)")
     checkExistence(sql("describe formatted carbon_table"), true, "boolean")
     checkExistence(sql("describe formatted carbon_table"), true, "dd")
@@ -103,7 +103,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
       s"""
          |CREATE TABLE if not exists carbon_table(
          |aa INT, bb STRING, cc BOOLEAN
-         |) STORED BY 'carbondata'""".stripMargin)
+         |) STORED AS carbondata""".stripMargin)
     sql("alter table carbon_table add columns (dd BOOLEAN)")
     checkExistence(sql("describe formatted carbon_table"), true, "boolean")
     checkExistence(sql("describe formatted carbon_table"), true, "dd")
@@ -114,7 +114,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
       s"""
          |CREATE TABLE if not exists carbon_table(
          |aa INT, bb STRING, cc BOOLEAN
-         |) STORED BY 'carbondata'""".stripMargin)
+         |) STORED AS carbondata""".stripMargin)
     sql("alter table carbon_table add columns (dd STRING)")
     checkExistence(sql("describe formatted carbon_table"), true, "boolean")
     checkExistence(sql("describe formatted carbon_table"), true, "dd")
@@ -125,7 +125,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
       s"""
          |CREATE TABLE if not exists carbon_table(
          |aa STRING, bb INT, cc BOOLEAN
-         |) STORED BY 'carbondata'""".stripMargin)
+         |) STORED AS carbondata""".stripMargin)
     sql("alter table carbon_table add columns (dd BOOLEAN)")
     sql("insert into carbon_table values('adam',11,true,false)")
     checkAnswer(sql("select * from carbon_table"), Seq(Row("adam", 11, true, false)))
@@ -136,7 +136,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
       s"""
          |CREATE TABLE if not exists carbon_table(
          |aa STRING, bb INT, cc BOOLEAN, dd BOOLEAN
-         |) STORED BY 'carbondata'""".stripMargin)
+         |) STORED AS carbondata""".stripMargin)
     sql("alter table carbon_table drop columns (dd)")
     sql("insert into carbon_table values('adam',11,true)")
     checkAnswer(sql("select * from carbon_table"), Seq(Row("adam", 11, true)))
@@ -147,7 +147,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
       s"""
          |CREATE TABLE if not exists carbon_table(
          |aa STRING, bb INT, cc BOOLEAN, dd BOOLEAN
-         |) STORED BY 'carbondata'""".stripMargin)
+         |) STORED AS carbondata""".stripMargin)
     sql("alter table carbon_table drop columns (dd)")
     sql("insert into carbon_table values('adam',11,true)")
     checkAnswer(sql("select * from carbon_table"), Seq(Row("adam", 11, true)))
@@ -157,7 +157,7 @@ class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with Be
 
   test("test boolean as dictionary include column and codegen=false"){
     sql("drop table if exists carbon_table")
-    sql("create table carbon_table(a1 boolean,a2 string,a3 int) stored by 'carbondata' ")
+    sql("create table carbon_table(a1 boolean,a2 string,a3 int) STORED AS carbondata ")
     sql("insert into carbon_table select false,'a',1")
     sql("set spark.sql.codegen.wholestage=false")
     checkAnswer(sql("select a1 from carbon_table"), Seq(Row(false)))

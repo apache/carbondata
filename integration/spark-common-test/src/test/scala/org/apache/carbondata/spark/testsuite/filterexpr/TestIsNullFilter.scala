@@ -12,7 +12,7 @@ class TestIsNullFilter extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql("drop table if exists main")
-    sql("create table main(id int, name string, time timestamp) STORED BY 'org.apache.carbondata.format'")
+    sql("create table main(id int, name string, time timestamp) STORED AS carbondata")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/newsample.csv' into table main OPTIONS('bad_records_action'='force')")
   }
 

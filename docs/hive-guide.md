@@ -59,7 +59,7 @@ val metaStoreDB = s"$rootPath/metastore_db"
 
 val carbon = SparkSession.builder().enableHiveSupport().config("spark.sql.warehouse.dir", warehouse).config(org.apache.carbondata.core.constants.CarbonCommonConstants.STORE_LOCATION, storeLocation).getOrCreateCarbonSession(storeLocation, metaStoreDB)
 
-carbon.sql("create table hive_carbon(id int, name string, scale decimal, country string, salary double) STORED BY 'carbondata'")
+carbon.sql("create table hive_carbon(id int, name string, scale decimal, country string, salary double) STORED AS carbondata")
 carbon.sql("LOAD DATA INPATH '<hdfs store path>/sample.csv' INTO TABLE hive_carbon")
 scala>carbon.sql("SELECT * FROM hive_carbon").show()
 ```

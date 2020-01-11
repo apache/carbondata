@@ -32,11 +32,11 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS Desc1")
     sql("DROP TABLE IF EXISTS Desc2")
     sql("drop table if exists a")
-    sql("CREATE TABLE Desc1(Dec1Col1 String, Dec1Col2 String, Dec1Col3 int, Dec1Col4 double) stored by 'carbondata'")
+    sql("CREATE TABLE Desc1(Dec1Col1 String, Dec1Col2 String, Dec1Col3 int, Dec1Col4 double) STORED AS carbondata")
     sql("DESC Desc1")
     sql("DROP TABLE Desc1")
-    sql("CREATE TABLE Desc1(Dec2Col1 BigInt, Dec2Col2 String, Dec2Col3 Bigint, Dec2Col4 Decimal) stored by 'carbondata'")
-    sql("CREATE TABLE Desc2(Dec2Col1 BigInt, Dec2Col2 String, Dec2Col3 Bigint, Dec2Col4 Decimal) stored by 'carbondata'")
+    sql("CREATE TABLE Desc1(Dec2Col1 BigInt, Dec2Col2 String, Dec2Col3 Bigint, Dec2Col4 Decimal) STORED AS carbondata")
+    sql("CREATE TABLE Desc2(Dec2Col1 BigInt, Dec2Col2 String, Dec2Col3 Bigint, Dec2Col4 Decimal) STORED AS carbondata")
   }
 
   test("test describe table") {
@@ -51,7 +51,7 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test describe formatted for partition table") {
-    sql("create table a(a string) partitioned by (b int) stored by 'carbondata'")
+    sql("create table a(a string) partitioned by (b int) STORED AS carbondata")
     sql("insert into a values('a',1)")
     sql("insert into a values('a',2)")
     val desc = sql("describe formatted a").collect()
@@ -70,7 +70,7 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
 
   test(testName = "Compressor Type update from carbon properties") {
     sql("drop table if exists b")
-    sql(sqlText = "create table b(a int,b string) stored by 'carbondata'")
+    sql(sqlText = "create table b(a int,b string) STORED AS carbondata")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "gzip")
     val result = sql(sqlText = "desc formatted b").collect()
     assert(result.filter(row => row.getString(0).contains("Data File Compressor")).head.getString

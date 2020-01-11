@@ -36,18 +36,18 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""create database iud4""")
     sql("""use iud4""")
     sql(
-      """create table iud4.dest (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+      """create table iud4.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/comp1.csv' INTO table iud4.dest""")
     sql(
-      """create table iud4.source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED BY 'org.apache.carbondata.format'""")
+      """create table iud4.source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table iud4.source2""")
-    sql("""create table iud4.other (c1 string,c2 int) STORED BY 'org.apache.carbondata.format'""")
+    sql("""create table iud4.other (c1 string,c2 int) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/other.csv' INTO table iud4.other""")
     sql(
       """create table iud4.hdest (c1 string,c2 int,c3 string,c5 string) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' STORED AS TEXTFILE""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/comp1.csv' INTO table iud4.hdest""")
     sql(
-      """CREATE TABLE iud4.update_01(imei string,age int,task bigint,num double,level decimal(10,3),name string)STORED BY 'org.apache.carbondata.format' """)
+      """CREATE TABLE iud4.update_01(imei string,age int,task bigint,num double,level decimal(10,3),name string)STORED AS carbondata """)
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/update01.csv' INTO TABLE iud4.update_01 OPTIONS('BAD_RECORDS_LOGGER_ENABLE' = 'FALSE', 'BAD_RECORDS_ACTION' = 'FORCE') """)
     CarbonProperties.getInstance()
@@ -61,14 +61,14 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""create database iud4""")
     sql("""use iud4""")
     sql(
-      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
 
     sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp2.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp3.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp4.csv' INTO table dest2""")
     sql(
-      """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED BY 'org.apache.carbondata.format'""")
+      """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table source2""")
     sql(
       """update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""")
@@ -133,14 +133,14 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""create database iud4""")
     sql("""use iud4""")
     sql(
-      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp2.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp3.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp4.csv' INTO table dest2""")
     sql("""select * from dest2""")
     sql(
-      """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED BY 'org.apache.carbondata.format'""")
+      """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table source2""")
     sql("""select * from source2""")
     sql("""delete from dest2 where (c2 < 3) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").show()
@@ -180,13 +180,13 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""create database iud4""")
     sql("""use iud4""")
     sql(
-      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp2.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp3.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp4.csv' INTO table dest2""")
     sql(
-      """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED BY 'org.apache.carbondata.format'""")
+      """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table source2""")
     sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""").show()
     sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c11,s.c66 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""").show()
@@ -249,13 +249,13 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""create database iud4""")
     sql("""use iud4""")
     sql(
-      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp2.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp3.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp4.csv' INTO table dest2""")
     sql(
-      """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED BY 'org.apache.carbondata.format'""")
+      """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table source2""")
     sql("""update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""").show()
     sql("""delete from dest2 where (c2 < 2) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").show()
@@ -294,7 +294,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""create database iud4""")
     sql("""use iud4""")
     sql(
-      """create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""")
+      """create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/T_Hive1.csv' INTO table t_carbn01 options ('BAD_RECORDS_LOGGER_ENABLE' = 'FALSE', 'BAD_RECORDS_ACTION' = 'FORCE','DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""")
     sql("""update t_carbn01 set (item_code) = ('Orange') where item_type_cd = 14""").show()
     sql("""update t_carbn01 set (item_code) = ('Banana') where item_type_cd = 2""").show()
@@ -317,7 +317,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""create database iud4""")
     sql("""use iud4""")
     sql(
-      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp2.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp3.csv' INTO table dest2""")
@@ -341,7 +341,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""create database iud4""")
     sql("""use iud4""")
     sql(
-      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+      """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp2.csv' INTO table dest2""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp3.csv' INTO table dest2""")
@@ -357,7 +357,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   test("test the compaction after alter command") // As per bug Carbondata-2016
   {
       sql(
-        "CREATE TABLE CUSTOMER1 ( C_CUSTKEY INT , C_NAME STRING , C_ADDRESS STRING , C_NATIONKEY INT , C_PHONE STRING , C_ACCTBAL DECIMAL(15,2) , C_MKTSEGMENT STRING , C_COMMENT STRING) stored by 'carbondata'")
+        "CREATE TABLE CUSTOMER1 ( C_CUSTKEY INT , C_NAME STRING , C_ADDRESS STRING , C_NATIONKEY INT , C_PHONE STRING , C_ACCTBAL DECIMAL(15,2) , C_MKTSEGMENT STRING , C_COMMENT STRING) STORED AS carbondata")
 
       sql(
         "insert into customer1 values(1,'vandana','noida',1,'123456789',45987.78,'hello','comment')")
@@ -406,7 +406,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""use iud10""")
 
     sql(
-      """create table dest10 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+      """create table dest10 (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest10""")
 
     val carbonTable = CarbonEnv.getCarbonTable(Some("iud10"), "dest10")(sqlContext.sparkSession)

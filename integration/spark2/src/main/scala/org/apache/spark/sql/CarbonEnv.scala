@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
@@ -30,6 +31,7 @@ import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.listeners.{AlterDataMaptableCompactionPostListener, DataMapAddColumnsPreListener, DataMapAlterTableDropPartitionMetaListener, DataMapAlterTableDropPartitionPreStatusListener, DataMapChangeDataTypeorRenameColumnPreListener, DataMapDeleteSegmentPreListener, DataMapDropColumnPreListener, DropCacheBloomEventListener, DropCacheDataMapEventListener, LoadMVTablePreListener, LoadPostDataMapListener, PrePrimingEventListener, ShowCacheDataMapEventListener, ShowCachePreMVEventListener}
 import org.apache.spark.sql.profiler.Profiler
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -40,7 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.datamap.{TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
@@ -66,7 +68,7 @@ class CarbonEnv {
     val properties = CarbonProperties.getInstance()
     var storePath = properties.getProperty(CarbonCommonConstants.STORE_LOCATION)
     if (storePath == null) {
-      storePath = sparkSession.conf.get("spark.sql.warehouse.dir")
+      storePath = FileFactory.getUpdatedFilePath(sparkSession.conf.get("spark.sql.warehouse.dir"))
       properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
     }
     LOGGER.info(s"Initializing CarbonEnv, store location: $storePath")
@@ -183,9 +185,19 @@ object CarbonEnv {
       if (carbonEnv == null) {
         carbonEnv = new CarbonEnv
         carbonEnv.init(sparkSession)
+        addSparkSessionListener(sparkSession)
         carbonEnvMap.put(sparkSession, carbonEnv)
       }
       carbonEnv
+  }
+
+  private def addSparkSessionListener(sparkSession: SparkSession): Unit = {
+    sparkSession.sparkContext.addSparkListener(new SparkListener {
+      override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+        CarbonEnv.carbonEnvMap.remove(sparkSession)
+        ThreadLocalSessionInfo.unsetAll()
+      }
+    })
   }
 
   /**
@@ -197,6 +209,7 @@ object CarbonEnv {
    */
   val init = {
     initListeners
+    CarbonReflectionUtils.updateCarbonSerdeInfo()
   }
 
   /**
@@ -317,9 +330,8 @@ object CarbonEnv {
     // for default database and db ends with .db
     // check whether the carbon store and hive store is same or different.
     if (dbName.equals("default") || databaseLocation.endsWith(".db")) {
-      val properties = CarbonProperties.getInstance()
       val carbonStorePath =
-        FileFactory.getUpdatedFilePath(properties.getProperty(CarbonCommonConstants.STORE_LOCATION))
+        FileFactory.getUpdatedFilePath(CarbonProperties.getStorePath())
       val hiveStorePath =
         FileFactory.getUpdatedFilePath(sparkSession.conf.get("spark.sql.warehouse.dir"))
       // if carbon.store does not point to spark.sql.warehouse.dir then follow the old table path
@@ -346,9 +358,34 @@ object CarbonEnv {
       getCarbonTable(databaseNameOp, tableName)(sparkSession).getTablePath
     } catch {
       case _: NoSuchTableException =>
-        val dbName = getDatabaseName(databaseNameOp)(sparkSession)
-        val dbLocation = getDatabaseLocation(dbName, sparkSession)
-        dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
+        newTablePath(databaseNameOp, tableName)(sparkSession)
+    }
+  }
+
+  private def newTablePath(
+      databaseNameOp: Option[String],
+      tableName: String
+  )(sparkSession: SparkSession): String = {
+    val dbName = getDatabaseName(databaseNameOp)(sparkSession)
+    val dbLocation = getDatabaseLocation(dbName, sparkSession)
+    dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
+  }
+
+  def createTablePath(
+      databaseNameOp: Option[String],
+      tableName: String,
+      tableId: String,
+      location: Option[String],
+      isExternal: Boolean,
+      isTransactionalTable: Boolean
+  )(sparkSession: SparkSession): String = {
+    val path = location.getOrElse(
+      CarbonEnv.newTablePath(databaseNameOp, tableName)(sparkSession))
+    if (!isExternal && isTransactionalTable && location.isEmpty &&
+        FileFactory.getCarbonFile(path).exists()) {
+      path + "_" + tableId
+    } else {
+      path
     }
   }
 

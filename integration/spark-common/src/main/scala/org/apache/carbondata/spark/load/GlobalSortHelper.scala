@@ -23,7 +23,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.types._
-import org.apache.spark.Accumulator
+import org.apache.spark.util.LongAccumulator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.comparator._
@@ -40,7 +40,7 @@ object GlobalSortHelper {
    * @param hasBadRecord    if <code>true<code> then load bad records vice versa.
    */
   def badRecordsLogger(loadModel: CarbonLoadModel,
-      badRecordsAccum: Accumulator[Int], hasBadRecord: Boolean): Unit = {
+      badRecordsAccum: LongAccumulator, hasBadRecord: Boolean): Unit = {
     if (hasBadRecord) {
       LOGGER.error("Data Load is partially success for table " + loadModel.getTableName)
       badRecordsAccum.add(1)

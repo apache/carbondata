@@ -19,7 +19,6 @@ package org.apache.spark.sql.hive
 import java.util.concurrent.Callable
 
 import org.apache.hadoop.fs.Path
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{QualifiedTableName, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.Analyzer
@@ -31,6 +30,9 @@ import org.apache.spark.sql.internal.SessionState
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
+import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.command.{AlterTableSetPropertiesCommand, AlterTableUnsetPropertiesCommand}
+import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 
 object CarbonSessionCatalogUtil {
 
@@ -52,18 +54,31 @@ object CarbonSessionCatalogUtil {
    * @param newTableIdentifier new table identifier
    * @param newTablePath new table path
    */
-  def alterTableRename(oldTableIdentifier: TableIdentifier,
-                       newTableIdentifier: TableIdentifier,
-                       newTablePath: String,
-                       sparkSession: SparkSession): Unit = {
+  def alterTableRename(
+      oldTableIdentifier: TableIdentifier,
+      newTableIdentifier: TableIdentifier,
+      newTablePath: String,
+      sparkSession: SparkSession,
+      isExternal: Boolean
+  ): Unit = {
+    if (!isExternal) {
+      getClient(sparkSession).runSqlHive(
+        s"ALTER TABLE ${ oldTableIdentifier.database.get }.${ oldTableIdentifier.table } " +
+        s"SET TBLPROPERTIES('EXTERNAL'='TRUE')")
+    }
     getClient(sparkSession).runSqlHive(
       s"ALTER TABLE ${ oldTableIdentifier.database.get }.${ oldTableIdentifier.table } " +
-        s"RENAME TO ${ oldTableIdentifier.database.get }.${ newTableIdentifier.table }")
+      s"RENAME TO ${ newTableIdentifier.database.get }.${ newTableIdentifier.table }")
+    if (!isExternal) {
+      getClient(sparkSession).runSqlHive(
+        s"ALTER TABLE ${ newTableIdentifier.database.get }.${ newTableIdentifier.table } " +
+        s"SET TBLPROPERTIES('EXTERNAL'='FALSE')")
+    }
     getClient(sparkSession).runSqlHive(
-      s"ALTER TABLE ${ oldTableIdentifier.database.get }.${ newTableIdentifier.table } " +
-        s"SET SERDEPROPERTIES" +
-        s"('tableName'='${ newTableIdentifier.table }', " +
-        s"'dbName'='${ oldTableIdentifier.database.get }', 'tablePath'='${ newTablePath }')")
+      s"ALTER TABLE ${ newTableIdentifier.database.get }.${ newTableIdentifier.table } " +
+      s"SET SERDEPROPERTIES" +
+      s"('tableName'='${ newTableIdentifier.table }', " +
+      s"'dbName'='${ newTableIdentifier.database.get }', 'tablePath'='${ newTablePath }')")
   }
 
   /**
@@ -73,14 +88,35 @@ object CarbonSessionCatalogUtil {
    * @param cols cols
    */
   def alterTable(tableIdentifier: TableIdentifier,
-                 schemaParts: String,
-                 cols: Option[Seq[ColumnSchema]],
-                 sparkSession: SparkSession): Unit = {
+      schemaParts: String,
+      cols: Option[Seq[ColumnSchema]],
+      sparkSession: SparkSession): Unit = {
     getClient(sparkSession)
       .runSqlHive(s"ALTER TABLE ${ tableIdentifier.database.get }.${ tableIdentifier.table } " +
-        s"SET TBLPROPERTIES(${ schemaParts })")
+                  s"SET TBLPROPERTIES(${ schemaParts })")
   }
 
+  def alterTableProperties(
+      sparkSession: SparkSession,
+      tableIdentifier: TableIdentifier,
+      properties: Map[String, String],
+      propKeys: Seq[String]
+  ): Unit = {
+    val catalog = sparkSession.sessionState.catalog
+    val table = catalog.getTableMetadata(tableIdentifier)
+    var newProperties = table.storage.properties
+    if (!propKeys.isEmpty) {
+      val updatedPropKeys = propKeys.map(_.toLowerCase)
+      newProperties = newProperties.filter { case (k, _) => !updatedPropKeys.contains(k) }
+    }
+    if (!properties.isEmpty) {
+      newProperties = newProperties ++ CarbonSparkSqlParserUtil.normalizeProperties(properties)
+    }
+    val newTable = table.copy(
+      storage = table.storage.copy(properties = newProperties)
+    )
+    catalog.alterTable(newTable)
+  }
 
   def getCachedPlan(t: QualifiedTableName,
       c: Callable[LogicalPlan], sparkSession: SparkSession): LogicalPlan = {
@@ -94,8 +130,12 @@ object CarbonSessionCatalogUtil {
    * @return
    */
   def getClient(sparkSession: SparkSession): org.apache.spark.sql.hive.client.HiveClient = {
-    sparkSession.sharedState.externalCatalog
-      .asInstanceOf[HiveExternalCatalog].client
+    //    For Spark2.2 we need to use unified Spark thrift server instead of carbon thrift
+    //    server. CarbonSession is not available anymore so HiveClient is created directly
+    //    using sparkSession.sharedState which internally contains all required carbon rules,
+    //    optimizers pluged-in through SessionStateBuilder in spark-defaults.conf.
+    //    spark.sql.session.state.builder=org.apache.spark.sql.hive.CarbonSessionStateBuilder
+    sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
   }
 
   def alterAddColumns(tableIdentifier: TableIdentifier,
@@ -126,13 +166,11 @@ object CarbonSessionCatalogUtil {
    */
   private def updateCatalogTableForAlter(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[ColumnSchema]], sparkSession: SparkSession): Unit = {
+      cols: Option[Seq[ColumnSchema]],
+      sparkSession: SparkSession): Unit = {
     alterTable(tableIdentifier, schemaParts, cols, sparkSession)
-    CarbonSessionUtil
-      .alterExternalCatalogForTableWithUpdatedSchema(tableIdentifier,
-        cols,
-        schemaParts,
-        sparkSession)
+    CarbonSessionUtil.alterExternalCatalogForTableWithUpdatedSchema(
+      tableIdentifier, cols, schemaParts, sparkSession)
   }
 
   def createPartitions(
@@ -182,7 +220,7 @@ object CarbonSessionCatalogUtil {
  * @param sparkSession
  */
 class CarbonSessionStateBuilder(sparkSession: SparkSession,
-                                parentState: Option[SessionState] = None)
+    parentState: Option[SessionState] = None)
   extends HiveSessionStateBuilder(sparkSession, parentState) {
 
   override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
@@ -192,5 +230,12 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
       conf,
       sparkSession,
       super.analyzer)
+  }
+}
+
+class CarbonPreOptimizerRule extends Rule[LogicalPlan] {
+
+  override def apply(plan: LogicalPlan): LogicalPlan = {
+    CarbonOptimizerUtil.transformForScalarSubQuery(plan)
   }
 }

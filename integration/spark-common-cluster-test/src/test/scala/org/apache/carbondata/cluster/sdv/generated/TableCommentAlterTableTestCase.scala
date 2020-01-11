@@ -32,7 +32,7 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check create table with table comment
   test("TableCommentAlterTable_001_01", Include) {
     sql(s"""drop table if exists table_comment""").collect
-    sql(s"""	create table table_comment(id int, name string) comment "This is table comment" STORED BY 'carbondata'""").collect
+    sql(s"""	create table table_comment(id int, name string) comment "This is table comment" STORED AS carbondata""").collect
     val result =   sql("describe formatted table_comment")
     checkExistence(result, true, "Comment")
     checkExistence(result, true, "This is table comment")
@@ -41,7 +41,7 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check create table with comment as numeric/alphanumeric/special symbols
   test("TableCommentAlterTable_001_02", Include) {
     sql(s"""drop table if exists table_comment_special""").collect
-    sql(s"""create table table_comment_special(id int, name string) comment "3432432 @This $$$$ is table comment #$$%^&*@# 34234" STORED BY 'carbondata'""").collect
+    sql(s"""create table table_comment_special(id int, name string) comment "3432432 @This $$$$ is table comment #$$%^&*@# 34234" STORED AS carbondata""").collect
     val result =   sql("describe formatted table_comment_special")
     checkExistence(result, true, "Comment")
     checkExistence(result, true, "3432432 @This $$ is table comment #$%^&*@# 34234")
@@ -50,7 +50,7 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check create table with comment as blank
   test("TableCommentAlterTable_001_03", Include) {
     sql(s"""drop table if exists table_comment_alphabets""").collect
-    sql(s"""create table table_comment_alphabets(id int, name string) comment "" STORED BY 'carbondata'""").collect
+    sql(s"""create table table_comment_alphabets(id int, name string) comment "" STORED AS carbondata""").collect
     val result =   sql("describe formatted table_comment")
     checkExistence(result, true, "Comment")
   }
@@ -58,7 +58,7 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check create table with comment as high values
   test("TableCommentAlterTable_001_04", Include) {
     sql(s"""drop table if exists table_comment_high""").collect
-    sql(s"""create table table_comment_high(id int, name string) comment "This is table comment jgfhdsjgfhsjdgjfsdgfbcfgr763  23x4bt23n8z30bt20t49ct4cb3g93t53945ctbugebgec4c3trbcu4grehrvsgyabrgyuwarcnrwbrcwe rwergrburygwae rwaeuigrwawewrcargw7aer wr766tznzYQEqoie weqeqewqeqweqweqweewqeqwe" STORED BY 'carbondata'""").collect
+    sql(s"""create table table_comment_high(id int, name string) comment "This is table comment jgfhdsjgfhsjdgjfsdgfbcfgr763  23x4bt23n8z30bt20t49ct4cb3g93t53945ctbugebgec4c3trbcu4grehrvsgyabrgyuwarcnrwbrcwe rwergrburygwae rwaeuigrwawewrcargw7aer wr766tznzYQEqoie weqeqewqeqweqweqweewqeqwe" STORED AS carbondata""").collect
     val result =   sql("describe formatted table_comment_high")
     checkExistence(result, true, "Comment")
     checkExistence(result, true, "This is table comment jgfhdsjgfhsjdgjfsdgfbcfgr763  23x4bt23n8z30bt20t49ct4cb3g93t53945ctbugebgec4c3trbcu4grehrvsgyabrgyuwarcnrwbrcwe rwergrburygwae rwaeuigrwawewrcargw7aer wr766tznzYQEqoie weqeqewqeqweqweqweewqeqwe")
@@ -67,22 +67,22 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check create table with comment in the table properties
   test("TableCommentAlterTable_001_05", Include) {
     sql(s"""drop table if exists table_comment_asprop""").collect
-    sql(s"""create table table_comment_asprop (imei string,num bigint,game double,date timestamp,Profit decimal(3,2)) STORED BY 'carbondata' TBLPROPERTIES('comment'='This is table comment..!!')""").collect
+    sql(s"""create table table_comment_asprop (imei string,num bigint,game double,date timestamp,Profit decimal(3,2)) STORED AS carbondata TBLPROPERTIES('comment'='This is table comment..!!')""").collect
     val result =   sql("describe formatted table_comment")
     checkExistence(result, true, "Comment")
     checkExistence(result, false, "This is table comment..!!")
   }
 
-  //Check create table with comment after stored by clause
+  //Check create table with comment after stored as clause
   //This behavior is okay in Spark-2.3 but may fail with earlier spark versions.
   test("TableCommentAlterTable_001_06", Include) {
-    sql("create table table_comment_afterstoredby (id int, name string) STORED BY 'carbondata' comment 'This is table comment'")
+    sql("create table table_comment_afterstoredby (id int, name string) STORED AS carbondata comment 'This is table comment'")
   }
 
   //Check the comment by "describe formatted"
   test("TableCommentAlterTable_001_07", Include) {
     sql(s"""drop table if exists table_comment""").collect
-    sql(s"""	create table table_comment(id int, name string) comment "This is table comment" STORED BY 'carbondata'""").collect
+    sql(s"""	create table table_comment(id int, name string) comment "This is table comment" STORED AS carbondata""").collect
     val result =   sql("describe formatted table_comment")
     checkExistence(result, true, "Comment")
     checkExistence(result, true, "This is table comment")
@@ -91,7 +91,7 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check SET Command by using alter command
   test("TableCommentAlterTable_001_08", Include) {
     sql(s"""drop table if exists table_comment_set""").collect
-    sql(s"""create table table_comment_set (id int, name string) STORED BY 'carbondata'""").collect
+    sql(s"""create table table_comment_set (id int, name string) STORED AS carbondata""").collect
     sql(s"""alter table table_comment_set SET TBLPROPERTIES ('comment'='This table comment is SET by alter table set')""").collect
     val result =   sql("describe formatted table_comment_set")
     checkExistence(result, true, "Comment")
@@ -101,7 +101,7 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check UNSET Command by using alter command
   test("TableCommentAlterTable_001_09", Include) {
     sql(s"""drop table if exists table_comment_unset""").collect
-    sql(s"""create table table_comment_unset(id int, name string) comment "This is table comment" STORED BY 'carbondata'""").collect
+    sql(s"""create table table_comment_unset(id int, name string) comment "This is table comment" STORED AS carbondata""").collect
     val result1 =   sql("describe formatted table_comment_unset")
     checkExistence(result1, true, "Comment")
     checkExistence(result1, true, "This is table comment")
@@ -115,7 +115,7 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check RENAME by using alter command
   test("TableCommentAlterTable_001_10", Include) {
     sql(s"""drop table if exists table_comment_rename1""").collect
-    sql(s"""create table table_comment_rename1 (id int, name string) STORED BY 'carbondata'""").collect
+    sql(s"""create table table_comment_rename1 (id int, name string) STORED AS carbondata""").collect
     sql(s"""alter table table_comment_rename1 rename to table_comment_rename2""").collect
     val result =   sql("describe formatted table_comment_rename2")
     checkExistence(result, true, "Comment")
@@ -125,7 +125,7 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check ADD Columns by using alter command
   test("TableCommentAlterTable_001_11", Include) {
     sql(s"""drop table if exists table_add_column """).collect
-    sql(s"""create table table_add_column (name string, country string, upd_time timestamp) stored by 'carbondata'""").collect
+    sql(s"""create table table_add_column (name string, country string, upd_time timestamp) STORED AS carbondata""").collect
     sql(s"""alter table table_add_column add columns (id bigint)""").collect
     val result =   sql("describe table_add_column ")
     checkExistence(result, true, "id")
@@ -135,7 +135,7 @@ class TableCommentAlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //Check CHANGE DATA TYPE by using alter command
   test("TableCommentAlterTable_001_12", Include) {
     sql(s"""drop table if exists table_change_datatype""").collect
-    sql(s"""create table table_change_datatype (name string, id decimal(3,2),country string) stored by 'carbondata'""").collect
+    sql(s"""create table table_change_datatype (name string, id decimal(3,2),country string) STORED AS carbondata""").collect
     sql(s"""alter table table_change_datatype change id id decimal(10,4)""").collect
     val result =   sql("describe formatted table_change_datatype")
     checkExistence(result, true, "Comment")

@@ -101,12 +101,6 @@ object IndexServer extends ServerInterface {
     CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE) != null
   private val operationContext: OperationContext = new OperationContext
-  /**
-   * Getting sparkSession from ActiveSession because in case of embedded mode the session would
-   * have already been created whereas in case of distributed mode the session would be
-   * created by the main method after some validations.
-   */
-  private lazy val sparkSession: SparkSession = SparkSQLUtil.getSparkSession
 
   /**
    * Perform the operation 'f' on behalf of the login user.
@@ -129,6 +123,7 @@ object IndexServer extends ServerInterface {
 
   def getCount(request: DistributableDataMapFormat): LongWritable = {
     doAs {
+      val sparkSession = SparkSQLUtil.getSparkSession
       lazy val getCountTask = {
         if (!request.isFallbackJob) {
           sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
@@ -156,6 +151,7 @@ object IndexServer extends ServerInterface {
 
   def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer = {
     doAs {
+      val sparkSession = SparkSQLUtil.getSparkSession
       if (!request.isFallbackJob) {
         sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
         sparkSession.sparkContext
@@ -184,6 +180,7 @@ object IndexServer extends ServerInterface {
   override def invalidateSegmentCache(carbonTable: CarbonTable,
       segmentIds: Array[String], jobGroupId: String = "", isFallBack: Boolean = false): Unit = {
     doAs {
+      val sparkSession = SparkSQLUtil.getSparkSession
       val databaseName = carbonTable.getDatabaseName
       val tableName = carbonTable.getTableName
       val jobgroup: String = " Invalided Segment Cache for " + databaseName + "." + tableName
@@ -210,6 +207,7 @@ object IndexServer extends ServerInterface {
       case "" => "for all tables"
       case table => s"for $table"
     })
+    val sparkSession = SparkSQLUtil.getSparkSession
     sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", UUID.randomUUID().toString)
     sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
     new DistributedShowCacheRDD(sparkSession, tableId).collect()
@@ -233,6 +231,7 @@ object IndexServer extends ServerInterface {
       server.start()
       // Define the Authorization Policy provider
       server.refreshServiceAcl(conf, new IndexServerPolicyProvider)
+      val sparkSession = SparkSQLUtil.getSparkSession
       sparkSession.sparkContext.addSparkListener(new SparkListener {
         override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
           LOGGER.info("Spark Application has ended. Stopping the Index Server")
@@ -269,6 +268,7 @@ object IndexServer extends ServerInterface {
    * @return Return a new Client to communicate with the Index Server.
    */
   def getClient: ServerInterface = {
+    val sparkSession = SparkSQLUtil.getSparkSession
     val configuration = SparkSQLUtil.sessionState(sparkSession).newHadoopConf()
     import org.apache.hadoop.ipc.RPC
     RPC.getProtocolProxy(classOf[ServerInterface],

@@ -48,7 +48,7 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
         """CREATE TABLE IF NOT EXISTS timestampTyeNullData
                      (ID Int, dateField Timestamp, country String,
                      name String, phonetype String, serialname String, salary Int)
-                    STORED BY 'org.apache.carbondata.format'"""
+                    STORED AS carbondata"""
       )
 
       CarbonProperties.getInstance()

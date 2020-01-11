@@ -33,7 +33,7 @@ class Vector1TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check select all records with  vectorized carbon reader enabled
   test("Vector1-TC_001", Include) {
-     sql(s"""CREATE TABLE uniqdatavector1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
+     sql(s"""CREATE TABLE uniqdatavector1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdatavector1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
 
     sql(s"""select * from uniqdatavector1 """).collect
@@ -56,7 +56,7 @@ class Vector1TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check select random columns  and order with vectorized carbon reader enabled
   test("Vector1-TC_003", Include) {
-     sql(s"""create table double(id double, name string) STORED BY 'org.apache.carbondata.format' """).collect
+     sql(s"""create table double(id double, name string) STORED AS carbondata """).collect
    sql(s"""load data  inpath '$resourcesPath/Data/InsertData/maxrange_double.csv' into table double""").collect
 
     sql(s"""select id from double order by id""").collect
@@ -93,7 +93,7 @@ class Vector1TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To applied cast method  with vectorized carbon reader enabled
   test("Vector1-TC_007", Include) {
-     sql(s"""CREATE TABLE uniqdatavector11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
+     sql(s"""CREATE TABLE uniqdatavector11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdatavector11 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
 
     sql(s"""select cast(Double_COLUMN1 as int) from uniqdatavector11""").collect

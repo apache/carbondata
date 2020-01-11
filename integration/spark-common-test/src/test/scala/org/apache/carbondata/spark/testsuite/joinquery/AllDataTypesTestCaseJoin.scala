@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE TABLE alldatatypestableJoin (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('TABLE_BLOCKSIZE'='4')")
+    sql("CREATE TABLE alldatatypestableJoin (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata TBLPROPERTIES('TABLE_BLOCKSIZE'='4')")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE alldatatypestableJoin OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""");
 
     sql("CREATE TABLE alldatatypestableJoin_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
@@ -44,11 +44,11 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
 
   test("select e.empid from employee e inner join manager m on e.mgrid=m.empid") {
     sql("drop table if exists employee")
-    sql("create table employee(name string, empid string, mgrid string, mobileno bigint) stored by 'carbondata'")
+    sql("create table employee(name string, empid string, mgrid string, mobileno bigint) STORED AS carbondata")
     sql(s"load data inpath '$resourcesPath/join/emp.csv' into table employee options('fileheader'='name,empid,mgrid,mobileno')")
     
     sql("drop table if exists manager")
-    sql("create table manager(name string, empid string, mgrid string, mobileno bigint) stored by 'carbondata'")
+    sql("create table manager(name string, empid string, mgrid string, mobileno bigint) STORED AS carbondata")
     sql(s"load data inpath '$resourcesPath/join/mgr.csv' into table manager options('fileheader'='name,empid,mgrid,mobileno')")
     checkAnswer(
     sql("select e.empid from employee e inner join manager m on e.mgrid=m.empid"),
@@ -61,9 +61,9 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table1")
     sql("DROP TABLE IF EXISTS carbon_table2")
 
-    sql("CREATE TABLE carbon_table1(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' ")
+    sql("CREATE TABLE carbon_table1(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED AS carbondata ")
 
-    sql("CREATE TABLE carbon_table2(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' ")
+    sql("CREATE TABLE carbon_table2(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED AS carbondata ")
 
     val path1 = s"$resourcesPath/join/data1.csv"
     val path2 = s"$resourcesPath/join/data2.csv"

@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.Maps;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
@@ -51,13 +52,22 @@ public class LoadOption {
   /**
    * Based on the input options, fill and return data loading options with default value
    */
-  public static Map<String, String> fillOptionWithDefaultValue(Map<String, String> options) {
+  public static Map<String, String> fillOptionWithDefaultValue(Map<String, String> options)
+      throws InvalidLoadOptionException {
     Map<String, String> optionsFinal = new HashMap<>();
     optionsFinal.put("delimiter", Maps.getOrDefault(options, "delimiter", ","));
     optionsFinal.put("quotechar", Maps.getOrDefault(options, "quotechar", "\""));
     optionsFinal.put("fileheader", Maps.getOrDefault(options, "fileheader", ""));
     optionsFinal.put("commentchar", Maps.getOrDefault(options, "commentchar", "#"));
-
+    String headerOption = options.get("header");
+    if (headerOption != null) {
+      if (!headerOption.equalsIgnoreCase("true") &&
+          !headerOption.equalsIgnoreCase("false")) {
+        throw new InvalidLoadOptionException(
+            "'header' option should be either 'true' or 'false'.");
+      }
+    }
+    optionsFinal.put("header", Maps.getOrDefault(options, "header", ""));
     optionsFinal.put(
         "escapechar",
         CarbonLoaderUtil.getEscapeChar(Maps.getOrDefault(options, "escapechar", "\\")));

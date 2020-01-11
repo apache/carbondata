@@ -74,8 +74,8 @@ class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndA
         sql("DROP TABLE IF EXISTS binaryCarbon")
         sql("DROP TABLE IF EXISTS binaryCarbon3")
         if (SparkUtil.isSparkVersionXandAbove("2.2")) {
-            sql(s"CREATE EXTERNAL TABLE binaryCarbon STORED BY 'carbondata' LOCATION '$writerPath'")
-            sql(s"CREATE TABLE binaryCarbon3 STORED BY 'carbondata' LOCATION '$outputPath'" + " AS SELECT * FROM binaryCarbon")
+            sql(s"CREATE EXTERNAL TABLE binaryCarbon STORED AS carbondata LOCATION '$writerPath'")
+            sql(s"CREATE TABLE binaryCarbon3 STORED AS carbondata AS SELECT * FROM binaryCarbon")
 
             checkAnswer(sql("SELECT COUNT(*) FROM binaryCarbon"),
                 Seq(Row(3)))
@@ -123,7 +123,7 @@ class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndA
                    |    binary BINARY,
                    |    labelName STRING,
                    |    labelContent STRING
-                   |) STORED BY 'carbondata'""".stripMargin)
+                   |) STORED AS carbondata""".stripMargin)
             sql(
                 s"""
                    | CREATE TABLE binaryCarbon3(
@@ -131,12 +131,12 @@ class TestNonTransactionalCarbonTableForBinary extends QueryTest with BeforeAndA
                    |    binaryName STRING,
                    |    labelName STRING,
                    |    labelContent STRING
-                   |)  partitioned by ( binary BINARY) STORED BY 'carbondata'""".stripMargin)
+                   |)  partitioned by ( binary BINARY) STORED AS carbondata""".stripMargin)
 
             sql("insert into binaryCarbon2 select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
             val carbonResult2 = sql("SELECT * FROM binaryCarbon2")
 
-            sql("create table binaryCarbon4 STORED BY 'carbondata' select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
+            sql("create table binaryCarbon4 STORED AS carbondata select binaryId,binaryName,binary,labelName,labelContent from binaryCarbon where binaryId=0 ")
             val carbonResult4 = sql("SELECT * FROM binaryCarbon4")
             val carbonResult = sql("SELECT * FROM binaryCarbon")
 

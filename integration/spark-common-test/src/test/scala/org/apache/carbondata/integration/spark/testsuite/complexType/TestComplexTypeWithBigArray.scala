@@ -45,7 +45,7 @@ class TestComplexTypeWithBigArray extends QueryTest with BeforeAndAfterAll {
         |  value BIGINT,
         |  list ARRAY<STRING>
         |  )
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
       """.stripMargin)
     sql(
       s"""
@@ -103,7 +103,7 @@ class TestComplexTypeWithBigArray extends QueryTest with BeforeAndAfterAll {
         |  value BIGINT,
         |  list ARRAY<INT>
         |  )
-        | STORED BY 'carbondata'
+        | STORED AS carbondata
       """.stripMargin)
     sql(
       s"""
