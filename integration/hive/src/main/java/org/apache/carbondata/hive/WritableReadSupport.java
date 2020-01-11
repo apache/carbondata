@@ -40,6 +40,7 @@ import org.apache.hadoop.hive.serde2.io.TimestampWritable;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -252,6 +253,8 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
       return createMap(obj, carbonColumn);
     } else if (DataTypes.isDecimal(dataType)) {
       return new HiveDecimalWritable(HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
+    } else if (dataType == DataTypes.FLOAT) {
+      return new FloatWritable((float) obj);
     } else {
       throw new IOException("unsupported data type:" + dataType);
     }

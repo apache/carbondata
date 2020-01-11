@@ -234,6 +234,9 @@ public class TableSchemaBuilder {
           dimension.add(newColumn);
         }
       }
+    } else {
+      newColumn.setSortColumn(true);
+      sortColumns.add(newColumn);
     }
     if (field.getDataType().isComplexType()) {
       String parentFieldName = newColumn.getColumnName();

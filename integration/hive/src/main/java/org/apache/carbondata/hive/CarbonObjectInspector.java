@@ -27,15 +27,11 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.SettableStructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.WritableHiveVarcharObjectInspector;
-import org.apache.hadoop.hive.serde2.typeinfo.CharTypeInfo;
-import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.ListTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.MapTypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
-import org.apache.hadoop.hive.serde2.typeinfo.VarcharTypeInfo;
 import org.apache.hadoop.io.ArrayWritable;
 
 class CarbonObjectInspector extends SettableStructObjectInspector {
@@ -62,44 +58,14 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
   }
 
   private ObjectInspector getObjectInspector(final TypeInfo typeInfo) {
-    if (typeInfo.equals(TypeInfoFactory.stringTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
-    } else if (typeInfo instanceof CharTypeInfo) {
-      return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.doubleTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableDoubleObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.floatTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableFloatObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.floatTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableFloatObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.intTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableIntObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.longTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableLongObjectInspector;
-    } else if (typeInfo instanceof DecimalTypeInfo) {
+    if (typeInfo instanceof PrimitiveTypeInfo) {
       return PrimitiveObjectInspectorFactory
-          .getPrimitiveWritableObjectInspector((DecimalTypeInfo) typeInfo);
+          .getPrimitiveWritableObjectInspector((PrimitiveTypeInfo) typeInfo);
     } else if (typeInfo.getCategory().equals(Category.STRUCT)) {
       return new CarbonObjectInspector((StructTypeInfo) typeInfo);
     } else if (typeInfo.getCategory().equals(Category.LIST)) {
       final TypeInfo subTypeInfo = ((ListTypeInfo) typeInfo).getListElementTypeInfo();
       return new CarbonArrayInspector(getObjectInspector(subTypeInfo));
-    } else if (typeInfo.equals(TypeInfoFactory.shortTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableShortObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.timestampTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableTimestampObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.dateTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableDateObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.charTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.booleanTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableBooleanObjectInspector;
-    } else if (typeInfo.equals(TypeInfoFactory.byteTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableByteObjectInspector;
-    } else if (typeInfo instanceof VarcharTypeInfo) {
-      return new WritableHiveVarcharObjectInspector((VarcharTypeInfo) typeInfo);
-    } else if (typeInfo.equals(TypeInfoFactory.binaryTypeInfo)) {
-      return PrimitiveObjectInspectorFactory.writableBinaryObjectInspector;
     } else if (typeInfo instanceof MapTypeInfo) {
       MapTypeInfo mapTypeInfo = (MapTypeInfo) typeInfo;
       ObjectInspector mapKeyObjectIns = getObjectInspector(mapTypeInfo.getMapKeyTypeInfo());

@@ -40,28 +40,16 @@ import org.apache.hadoop.hive.serde2.AbstractSerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeSpec;
 import org.apache.hadoop.hive.serde2.SerDeStats;
-import org.apache.hadoop.hive.serde2.io.DoubleWritable;
-import org.apache.hadoop.hive.serde2.io.ShortWritable;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.DateObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.DoubleObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.HiveDecimalObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.ShortObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.TimestampObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
@@ -91,17 +79,15 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   }
 
   @Override
-  public void initialize(@Nullable Configuration configuration, Properties tbl) {
-
+  public void initialize(@Nullable Configuration configuration, Properties tbl)
+      throws SerDeException {
     final TypeInfo rowTypeInfo;
     final List<String> columnNames;
     final List<TypeInfo> columnTypes;
     // Get column names and sort order
     assert configuration != null;
-
     final String columnNameProperty = tbl.getProperty(serdeConstants.LIST_COLUMNS);
     final String columnTypeProperty = tbl.getProperty(serdeConstants.LIST_COLUMN_TYPES);
-
     if (columnNameProperty.length() == 0) {
       columnNames = new ArrayList<String>();
     } else {
@@ -112,13 +98,11 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     } else {
       columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
     }
-
     inferSchema(tbl, columnNames, columnTypes);
 
     // Create row related objects
     rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
     this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
-
     // Stats part
     serializedSize = 0;
     deserializedSize = 0;
@@ -173,7 +157,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     }
     serializedSize += ((StructObjectInspector) objInspector).getAllStructFieldRefs().size();
     status = LAST_OPERATION.SERIALIZE;
-    return createStruct(obj, (StructObjectInspector) objInspector);
+    return createStruct(obj, (StructObjectInspector) objectInspector);
   }
 
   private ArrayWritable createStruct(Object obj, StructObjectInspector inspector)
@@ -218,29 +202,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     if (obj == null) {
       return null;
     }
-    switch (inspector.getPrimitiveCategory()) {
-      case VOID:
-        return null;
-      case DOUBLE:
-        return new DoubleWritable(((DoubleObjectInspector) inspector).get(obj));
-      case INT:
-        return new IntWritable(((IntObjectInspector) inspector).get(obj));
-      case LONG:
-        return new LongWritable(((LongObjectInspector) inspector).get(obj));
-      case SHORT:
-        return new ShortWritable(((ShortObjectInspector) inspector).get(obj));
-      case TIMESTAMP:
-        return ((TimestampObjectInspector) inspector).getPrimitiveWritableObject(obj);
-      case DATE:
-        return ((DateObjectInspector) inspector).getPrimitiveWritableObject(obj);
-      case STRING:
-        return ((StringObjectInspector) inspector).getPrimitiveWritableObject(obj);
-      case CHAR:
-        return ((StringObjectInspector) inspector).getPrimitiveWritableObject(obj);
-      case DECIMAL:
-        return ((HiveDecimalObjectInspector) inspector).getPrimitiveWritableObject(obj);
-    }
-    throw new SerDeException("Unknown primitive : " + inspector.getPrimitiveCategory());
+    return (Writable) inspector.getPrimitiveWritableObject(obj);
   }
 
   private Writable createObject(Object obj, ObjectInspector inspector) throws SerDeException {

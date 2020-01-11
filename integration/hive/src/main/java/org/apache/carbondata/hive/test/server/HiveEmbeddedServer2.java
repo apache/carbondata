@@ -82,7 +82,7 @@ public class HiveEmbeddedServer2 {
     for (int interval = 0; interval < timeout / unitOfWait; interval++) {
       Thread.sleep(unitOfWait);
       try {
-        Map<String, String> sessionConf = new HashMap<String, String>();
+        Map<String, String> sessionConf = new HashMap<>();
         sessionHandle = hs2Client.openSession("foo", "bar", sessionConf);
         return;
       } catch (Exception e) {
