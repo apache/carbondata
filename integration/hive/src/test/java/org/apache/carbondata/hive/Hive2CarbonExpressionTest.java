@@ -24,6 +24,8 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.IndexFilter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonInputFormat;
@@ -77,6 +79,7 @@ public class Hive2CarbonExpressionTest {
       Assert.fail("create table failed: " + e.getMessage());
     }
   }
+
   @Test
   public void testEqualHiveFilter() throws IOException {
     ExprNodeDesc column = new ExprNodeColumnDesc(TypeInfoFactory.intTypeInfo, "id", null, false);
@@ -350,5 +353,21 @@ public class Hive2CarbonExpressionTest {
     List<InputSplit> list= format.getSplits(job);
     Assert.assertEquals(0, list.size());
 
+  }
+
+  @Test
+  public void testFilterOnDate() throws IOException {
+    ExprNodeDesc column =
+        new ExprNodeColumnDesc(TypeInfoFactory.dateTypeInfo, "datee", null, false);
+    ExprNodeDesc constant = new ExprNodeConstantDesc(TypeInfoFactory.dateTypeInfo, "2020-01-01");
+    List<ExprNodeDesc> children = Lists.newArrayList();
+    children.add(column);
+    children.add(constant);
+    ExprNodeGenericFuncDesc node =
+        new ExprNodeGenericFuncDesc(TypeInfoFactory.dateTypeInfo, new GenericUDFOPEqual(),
+            children);
+    Expression expression = Hive2CarbonExpression.convertExprHive2Carbon(node);
+    assert (((LiteralExpression) expression.getChildren().get(1)).getLiteralExpValue().toString()
+        .equalsIgnoreCase("2020-01-01"));
   }
 }

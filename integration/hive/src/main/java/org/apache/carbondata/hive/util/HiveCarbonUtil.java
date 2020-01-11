@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -61,6 +60,7 @@ import org.apache.hadoop.hive.metastore.HiveMetaHook;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants;
 import org.apache.log4j.Logger;
 
 public class HiveCarbonUtil {
@@ -68,17 +68,18 @@ public class HiveCarbonUtil {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(HiveCarbonUtil.class.getName());
 
-  public static CarbonLoadModel getCarbonLoadModel(Configuration tableProperties)
-      throws IOException {
+  public static CarbonLoadModel getCarbonLoadModel(Configuration tableProperties) {
     String[] tableUniqueName = tableProperties.get("name").split("\\.");
     String databaseName = tableUniqueName[0];
     String tableName = tableUniqueName[1];
-    String tablePath = tableProperties.get("location");
-    String columns = tableProperties.get("columns");
+    String tablePath = tableProperties.get(hive_metastoreConstants.META_TABLE_LOCATION);
+    String columns = tableProperties.get(hive_metastoreConstants.META_TABLE_COLUMNS);
     String sortColumns = tableProperties.get("sort_columns");
-    String columnTypes = tableProperties.get("columns.types");
-    String partitionColumns = tableProperties.get("partition_columns");
-    String partitionColumnTypes = tableProperties.get("partition_columns.types");
+    String columnTypes = tableProperties.get(hive_metastoreConstants.META_TABLE_COLUMN_TYPES);
+    String partitionColumns =
+        tableProperties.get(hive_metastoreConstants.META_TABLE_PARTITION_COLUMNS);
+    String partitionColumnTypes =
+        tableProperties.get(hive_metastoreConstants.META_TABLE_PARTITION_COLUMN_TYPES);
     if (partitionColumns != null) {
       columns = columns + "," + partitionColumns;
       columnTypes = columnTypes + ":" + partitionColumnTypes;
@@ -97,12 +98,12 @@ public class HiveCarbonUtil {
   }
 
   public static CarbonLoadModel getCarbonLoadModel(Properties tableProperties,
-      Configuration configuration) throws IOException {
+      Configuration configuration) {
     String[] tableUniqueName = tableProperties.getProperty("name").split("\\.");
     String databaseName = tableUniqueName[0];
     String tableName = tableUniqueName[1];
-    String tablePath = tableProperties.getProperty("location");
-    String columns = tableProperties.getProperty("columns");
+    String tablePath = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_LOCATION);
+    String columns = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_COLUMNS);
     String sortColumns = tableProperties.getProperty("sort_columns");
     String[] columnTypes = splitSchemaStringToArray(tableProperties.getProperty("columns.types"));
     String complexDelim = tableProperties.getProperty("complex_delimiter", "");
@@ -117,7 +118,7 @@ public class HiveCarbonUtil {
 
   public static CarbonLoadModel getCarbonLoadModel(String tableName, String databaseName,
       String location, String sortColumnsString, String[] columns, String[] columnTypes,
-      Configuration configuration) throws IOException {
+      Configuration configuration) {
     CarbonLoadModel loadModel;
     CarbonTable carbonTable;
     try {
@@ -146,7 +147,7 @@ public class HiveCarbonUtil {
     options.put("fileheader", Strings.mkString(columns, ","));
     try {
       loadModel = carbonLoadModelBuilder.build(options, System.currentTimeMillis(), "");
-    } catch (InvalidLoadOptionException e) {
+    } catch (InvalidLoadOptionException | IOException e) {
       throw new RuntimeException(e);
     }
     loadModel.setSkipParsers();
@@ -201,21 +202,16 @@ public class HiveCarbonUtil {
 
   private static void writeSchemaFile(TableInfo tableInfo) throws IOException {
     ThriftWrapperSchemaConverterImpl schemaConverter = new ThriftWrapperSchemaConverterImpl();
-    CarbonFile schemaFile =
-        FileFactory.getCarbonFile(CarbonTablePath.getSchemaFilePath(tableInfo.getTablePath()));
-    if (!schemaFile.exists()) {
-      if (!schemaFile.getParentFile().mkdirs()) {
-        throw new IOException(
-            "Unable to create directory: " + schemaFile.getParentFile().getAbsolutePath());
-      }
-    }
-    ThriftWriter thriftWriter = new ThriftWriter(schemaFile.getAbsolutePath(), false);
+    String schemaFilePath = CarbonTablePath.getSchemaFilePath(tableInfo.getTablePath());
+    String metadataPath = CarbonTablePath.getMetadataPath(tableInfo.getTablePath());
+    FileFactory.mkdirs(metadataPath);
+    ThriftWriter thriftWriter = new ThriftWriter(schemaFilePath, false);
     thriftWriter.open(FileWriteOperation.OVERWRITE);
     thriftWriter.write(schemaConverter
         .fromWrapperToExternalTableInfo(tableInfo, tableInfo.getDatabaseName(),
             tableInfo.getFactTable().getTableName()));
     thriftWriter.close();
-    schemaFile.setLastModifiedTime(System.currentTimeMillis());
+    FileFactory.getCarbonFile(schemaFilePath).setLastModifiedTime(System.currentTimeMillis());
   }
 
   public static HiveMetaHook getMetaHook() {
@@ -312,4 +308,5 @@ public class HiveCarbonUtil {
     }
     return tokens.toArray(new String[tokens.size()]);
   }
+
 }

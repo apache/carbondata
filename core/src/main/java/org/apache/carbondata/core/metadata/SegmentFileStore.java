@@ -65,6 +65,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
@@ -318,6 +319,21 @@ public class SegmentFileStore {
       return true;
     }
     return false;
+  }
+
+  public static void mergeIndexAndWriteSegmentFile(CarbonTable carbonTable, String segmentId,
+      String UUID) {
+    String tablePath = carbonTable.getTablePath();
+    String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
+    try {
+      SegmentFileStore sfs = new SegmentFileStore(tablePath, segmentFileName);
+      List<CarbonFile> carbonIndexFiles = sfs.getIndexCarbonFiles();
+      new CarbonIndexFileMergeWriter(carbonTable)
+          .writeMergeIndexFileBasedOnSegmentFile(segmentId, null, sfs,
+              carbonIndexFiles.toArray(new CarbonFile[carbonIndexFiles.size()]), UUID, null);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -1250,7 +1266,7 @@ public class SegmentFileStore {
      */
     private String segmentMetaDataInfo;
 
-    SegmentFile() {
+    public SegmentFile() {
       locationMap = new HashMap<>();
     }
 
