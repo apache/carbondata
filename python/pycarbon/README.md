@@ -1,6 +1,6 @@
 # PyCarbon
 
-Optimized data access for AI based on CarbonData files, and we can use PyCarbon lib to read CarbonData, also prepare training data for different computing framework, e.g. TensorFlow, PyTorch, MXNet. 
+PyCarbon provides python API for integrating CarbonData with AI framework like  TensorFlow, PyTorch, MXNet. By using PyCarbon, AI framework can read training data faster by leveraging CarbonData's indexing and caching ability. Since CarbonData is a columnar storage, AI developer can also perform projection and filtering to pick required data for training efficiently.
 
 ## PyCarbon install
 

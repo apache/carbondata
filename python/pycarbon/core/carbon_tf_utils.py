@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-"""A set of Tensorflow specific helper functions for the unischema"""
+"""A set of TensorFlow specific helper functions"""
 
 import datetime
 import sys
@@ -26,7 +26,7 @@ from decimal import Decimal
 import numpy as np
 import tensorflow as tf
 
-# Mapping of identical datatypes in numpy-ish and tensorflow-ish
+# Mapping of identical datatypes in numpy-ish and TensorFlow-ish
 _NUMPY_TO_TF_DTYPES_MAPPING = {
   np.bool: tf.bool,
   np.int8: tf.int8,

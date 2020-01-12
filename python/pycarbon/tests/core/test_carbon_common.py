@@ -30,7 +30,7 @@ from petastorm.codecs import CompressedImageCodec, NdarrayCodec, \
   ScalarCodec
 from petastorm.unischema import Unischema, UnischemaField, dict_to_spark_row
 
-from pycarbon.etl.carbon_dataset_metadata import materialize_dataset_carbon
+from pycarbon.core.carbon_dataset_metadata import materialize_dataset_carbon
 
 _DEFAULT_IMAGE_SIZE = (32, 16, 3)
 

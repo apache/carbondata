@@ -43,7 +43,7 @@ from pycarbon.tests import DEFAULT_CARBONSDK_PATH
 from pycarbon.tests.mnist.dataset_with_unischema.schema import MnistSchema
 from petastorm.unischema import dict_to_spark_row
 
-from pycarbon.etl.carbon_dataset_metadata import materialize_dataset_carbon
+from pycarbon.core.carbon_dataset_metadata import materialize_dataset_carbon
 
 
 def _arg_parser():
@@ -77,7 +77,6 @@ def download_mnist_data(download_dir, train=True):
   """
   # This is the only function requiring torch in this module.
 
-  import pyarrow  # noqa: F401 pylint: disable=W0611,W0612
   from torchvision import datasets
 
   return datasets.MNIST('{}/{}'.format(download_dir, 'data'), train=train, download=True)

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-"""A set of Tensorflow specific helper functions for the unischema"""
+"""A set of TensorFlow specific helper functions"""
 
 import datetime
 import sys

@@ -31,7 +31,7 @@ from pyspark.sql.types import IntegerType
 from petastorm.codecs import ScalarCodec, CompressedImageCodec, NdarrayCodec
 from petastorm.unischema import dict_to_spark_row, Unischema, UnischemaField
 
-from pycarbon.etl.carbon_dataset_metadata import materialize_dataset_carbon
+from pycarbon.core.carbon_dataset_metadata import materialize_dataset_carbon
 
 from pycarbon.tests import DEFAULT_CARBONSDK_PATH
 
