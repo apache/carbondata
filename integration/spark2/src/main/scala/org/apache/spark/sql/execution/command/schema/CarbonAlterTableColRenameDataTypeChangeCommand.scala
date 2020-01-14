@@ -181,7 +181,7 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       // maintain the added column for schema evolution history
       var addColumnSchema: ColumnSchema = null
       var deletedColumnSchema: ColumnSchema = null
-      val schemaEvolutionEntry: SchemaEvolutionEntry = null
+      var schemaEvolutionEntry: SchemaEvolutionEntry = null
       val columnSchemaList = tableInfo.fact_table.table_columns.asScala.filter(!_.isInvisible)
 
       columnSchemaList.foreach { columnSchema =>
@@ -208,9 +208,8 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
           addColumnSchema = columnSchema
           timeStamp = System.currentTimeMillis()
           // make a new schema evolution entry after column rename or datatype change
-          AlterTableUtil
-            .addNewSchemaEvolutionEntry(schemaEvolutionEntry, timeStamp, addColumnSchema,
-              deletedColumnSchema)
+          schemaEvolutionEntry = AlterTableUtil
+            .addNewSchemaEvolutionEntry(timeStamp, addColumnSchema, deletedColumnSchema)
         }
       }
 
