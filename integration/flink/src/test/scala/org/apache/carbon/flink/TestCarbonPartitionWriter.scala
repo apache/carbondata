@@ -34,7 +34,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.junit.Test
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
@@ -43,9 +42,8 @@ class TestCarbonPartitionWriter extends QueryTest {
 
   val tableName = "test_flink_partition"
 
-  @Test
-  def testLocal(): Unit = {
-    sql(s"drop table if exists $tableName").collect()
+  test("Writing flink data to local partition carbon table") {
+    sql(s"DROP TABLE IF EXISTS $tableName").collect()
     sql(
       s"""
          | CREATE TABLE $tableName (stringField string, intField int, shortField short)
@@ -122,17 +120,16 @@ class TestCarbonPartitionWriter extends QueryTest {
 
       sql(s"INSERT INTO $tableName STAGE")
 
-      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(1000)))
+      checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(1000)))
 
     } finally {
-      sql(s"drop table if exists $tableName").collect()
+      sql(s"DROP TABLE IF EXISTS $tableName").collect()
       delDir(new File(dataPath))
     }
   }
 
-  @Test
-  def testComplexType(): Unit = {
-    sql(s"drop table if exists $tableName").collect()
+  test("Test complex type") {
+    sql(s"DROP TABLE IF EXISTS $tableName").collect()
     sql(
       s"""
          | CREATE TABLE $tableName (stringField string, intField int, shortField short,
@@ -212,14 +209,14 @@ class TestCarbonPartitionWriter extends QueryTest {
 
       sql(s"INSERT INTO $tableName STAGE")
 
-      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(1000)))
+      checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(1000)))
 
-      val rows = sql(s"select * from $tableName limit 1").collect()
+      val rows = sql(s"SELECT * FROM $tableName limit 1").collect()
       assertResult(1)(rows.length)
       assertResult(Array[Byte](2, 3, 4))(rows(0).get(rows(0).fieldIndex("binaryfield")).asInstanceOf[GenericRowWithSchema](0))
 
     } finally {
-      sql(s"drop table if exists $tableName").collect()
+      sql(s"DROP TABLE IF EXISTS $tableName").collect()
       delDir(new File(dataPath))
     }
   }
@@ -231,7 +228,6 @@ class TestCarbonPartitionWriter extends QueryTest {
     val properties = new Properties
     properties.setProperty(CarbonLocalProperty.DATA_TEMP_PATH, dataTempPath)
     properties.setProperty(CarbonLocalProperty.DATA_PATH, dataPath)
-    properties.setProperty(CarbonLocalProperty.COMMIT_THRESHOLD, "100")
     properties
   }
 

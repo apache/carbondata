@@ -523,12 +523,14 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   /**
-   * INSERT INTO [dbName.]tableName STAGE
+   * INSERT INTO [dbName.]tableName STAGE [OPTIONS (key1=value1, key2=value2, ...)]
    */
   protected lazy val insertStageData: Parser[LogicalPlan] =
-    INSERT ~ INTO ~> (ident <~ ".").? ~ ident <~ STAGE <~ opt(";") ^^ {
-      case dbName ~ tableName =>
-        CarbonInsertFromStageCommand(dbName, tableName)
+    INSERT ~ INTO ~> (ident <~ ".").? ~ ident ~ STAGE ~
+    (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
+      case dbName ~ tableName ~ stage ~ options =>
+        CarbonInsertFromStageCommand(dbName, tableName,
+          options.getOrElse(List[(String, String)]()).toMap[String, String])
     }
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =
