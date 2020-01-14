@@ -316,12 +316,29 @@ CarbonData DML statements are documented here,which includes:
   You can use this command to insert them into the table, so that making them visible for query.
   
   ```
-  INSERT INTO <CARBONDATA TABLE> STAGE
+  INSERT INTO <CARBONDATA TABLE> STAGE OPTIONS(property_name=property_value, ...)
   ```
+  **Supported Properties:**
+
+| Property                                                | Description                                                  |
+| ------------------------------------------------------- | ------------------------------------------------------------ |
+| [BATCH_FILE_COUNT](#batch_file_count)                   | The number of stage files per processing                     |
+
+-
+  You can use the following options to load data:
+
+  - ##### BATCH_FILE_COUNT: 
+    The number of stage files per processing.
+
+    ``` 
+    OPTIONS('batch_file_count'=',')
+    ```
 
   Examples:
   ```
   INSERT INTO table1 STAGE
+
+  INSERT INTO table1 STAGE OPTIONS('batch_file_count' = '5')
   ```
 
 ### Load Data Using Static Partition 

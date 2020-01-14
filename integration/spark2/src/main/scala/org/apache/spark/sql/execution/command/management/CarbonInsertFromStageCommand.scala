@@ -28,7 +28,7 @@ import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonEnv, CarbonUtils, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.util.SparkSQLUtil
 
@@ -56,7 +56,8 @@ import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
  */
 case class CarbonInsertFromStageCommand(
     databaseNameOp: Option[String],
-    tableName: String
+    tableName: String,
+    options: Map[String, String]
 ) extends DataCommand {
 
   @transient var LOGGER: Logger = _
@@ -113,7 +114,16 @@ case class CarbonInsertFromStageCommand(
       //   8) delete the snapshot file
 
       // 1) read all existing stage files
-      val stageFiles = listStageFiles(stagePath, hadoopConf)
+      val batchSize = try {
+        Integer.valueOf(options.getOrElse("batch_file_count", Integer.MAX_VALUE.toString))
+      } catch {
+        case _: NumberFormatException =>
+          throw new MalformedCarbonCommandException("Option [batch_file_count] is not a number.")
+      }
+      if (batchSize < 1) {
+        throw new MalformedCarbonCommandException("Option [batch_file_count] is less than 1.")
+      }
+      val stageFiles = listStageFiles(stagePath, hadoopConf, batchSize)
       if (stageFiles.isEmpty) {
         // no stage files, so do nothing
         LOGGER.warn("files not found under stage metadata folder")
@@ -258,25 +268,14 @@ case class CarbonInsertFromStageCommand(
       LOGGER.info(s"start to load ${splits.size} files into " +
                   s"${table.getDatabaseName}.${table.getTableName}")
       val start = System.currentTimeMillis()
-      try {
-        CarbonUtils
-          .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-            table.getDatabaseName + CarbonCommonConstants.POINT + table.getTableName,
-            splits.map(s => s.asInstanceOf[CarbonInputSplit].getSegmentId).mkString(","))
-        val dataFrame = SparkSQLUtil.createInputDataFrame(spark, table)
-        DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
-          spark,
-          Option(dataFrame),
-          loadModel,
-          SparkSQLUtil.sessionState(spark).newHadoopConf()
-        ).map { row =>
+      val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(spark, table, splits)
+      DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
+        spark,
+        Option(dataFrame),
+        loadModel,
+        SparkSQLUtil.sessionState(spark).newHadoopConf()
+      ).map { row =>
           (row._1, FailureCauses.NONE == row._2._2.failureCauses)
-        }
-      } finally {
-        CarbonUtils
-          .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-            table.getDatabaseName + "." +
-            table.getTableName)
       }
       LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
 
@@ -316,26 +315,11 @@ case class CarbonInsertFromStageCommand(
     val start = System.currentTimeMillis()
     partitionDataList.map {
       case (partition, splits) =>
-        LOGGER.info(s"start to load ${ splits.size } files into " +
-          s"${ table.getDatabaseName }.${ table.getTableName }. " +
-          s"Partition information: ${ partition.mkString(",") }")
-        val dataFrame = try {
-          // Segments should be set for query here, because consider a scenario where custom
-          // compaction is triggered, so it can happen that all the segments might be taken into
-          // consideration instead of custom segments if we do not set, leading to duplicate data in
-          // compacted segment. To avoid this, segments to be considered are to be set in threadset.
-          CarbonUtils
-            .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-              table.getDatabaseName + CarbonCommonConstants.POINT +
-              table.getTableName,
-              splits.map(split => split.asInstanceOf[CarbonInputSplit].getSegmentId).mkString(","))
-          SparkSQLUtil.createInputDataFrame(spark, table)
-        } finally {
-          CarbonUtils.threadUnset(
-            CarbonCommonConstants.CARBON_INPUT_SEGMENTS + table.getDatabaseName +
-              CarbonCommonConstants.POINT +
-              table.getTableName)
-        }
+        LOGGER.info(s"start to load ${splits.size} files into " +
+          s"${table.getDatabaseName}.${table.getTableName}. " +
+          s"Partition information: ${partition.mkString(",")}")
+        val dataFrame =
+          DataLoadProcessBuilderOnSpark.createInputDataFrame(spark, table, splits)
         val columns = dataFrame.columns
         val header = columns.mkString(",")
         val selectColumns = columns.filter(!partition.contains(_))
@@ -457,7 +441,8 @@ case class CarbonInsertFromStageCommand(
    */
   private def listStageFiles(
       loadDetailsDir: String,
-      hadoopConf: Configuration
+      hadoopConf: Configuration,
+      batchSize: Int
   ): Array[(CarbonFile, CarbonFile)] = {
     val dir = FileFactory.getCarbonFile(loadDetailsDir, hadoopConf)
     if (dir.exists()) {
@@ -467,12 +452,19 @@ case class CarbonInsertFromStageCommand(
       }.map { file =>
         (file.getName.substring(0, file.getName.indexOf(".")), file)
       }.toMap
-      allFiles.filter { file =>
+      val stageFiles = allFiles.filter { file =>
         !file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
       }.filter { file =>
         successFiles.contains(file.getName)
+      }.sortWith {
+        (file1, file2) => file1.getLastModifiedTime < file2.getLastModifiedTime
       }.map { file =>
         (file, successFiles(file.getName))
+      }
+      if (stageFiles.length <= batchSize) {
+        stageFiles
+      } else {
+        stageFiles.dropRight(stageFiles.length - batchSize)
       }
     } else {
       Array.empty
