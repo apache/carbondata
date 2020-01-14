@@ -110,7 +110,8 @@ object AlterTableUtil {
       thriftTable: TableInfo,
       lowerCasePropertiesMap: mutable.Map[String, String],
       schemaConverter: SchemaConverter
-  ) = {
+  ): SchemaEvolutionEntry = {
+    var schemaEvolutionEntry: SchemaEvolutionEntry = null
     val sortColumnsOption = lowerCasePropertiesMap.get(CarbonCommonConstants.SORT_COLUMNS)
     if (sortColumnsOption.isDefined) {
       val sortColumnsString = CarbonUtil.unquoteChar(sortColumnsOption.get).trim
@@ -169,8 +170,10 @@ object AlterTableUtil {
         // use new columns
         columns.clear()
         columns.addAll(newColumns)
+        schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis())
       }
     }
+    schemaEvolutionEntry
   }
 
   /**
@@ -380,17 +383,15 @@ object AlterTableUtil {
   /**
    * This method create a new SchemaEvolutionEntry and adds to SchemaEvolutionEntry List
    *
-   * @param schemaEvolutionEntry List to add new SchemaEvolutionEntry
    * @param addColumnSchema          added new column schema
    * @param deletedColumnSchema      old column schema which is deleted
    * @return
    */
   def addNewSchemaEvolutionEntry(
-      schemaEvolutionEntry: SchemaEvolutionEntry,
       timeStamp: Long,
       addColumnSchema: org.apache.carbondata.format.ColumnSchema,
       deletedColumnSchema: org.apache.carbondata.format.ColumnSchema): SchemaEvolutionEntry = {
-    var schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
+    val schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
     schemaEvolutionEntry.setAdded(List(addColumnSchema).asJava)
     schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
     schemaEvolutionEntry
@@ -450,7 +451,10 @@ object AlterTableUtil {
       // validate the Sort Scope and Sort Columns
       validateSortScopeAndSortColumnsProperties(carbonTable, lowerCasePropertiesMap)
       // if SORT_COLUMN is changed, it will move them to the head of column list
-      updateSchemaForSortColumns(thriftTable, lowerCasePropertiesMap, schemaConverter)
+      // Make an schemaEvolution entry as we changed the schema with different column order with
+      // alter set sort columns
+      val schemaEvolutionEntry = updateSchemaForSortColumns(thriftTable,
+        lowerCasePropertiesMap, schemaConverter)
       // validate long string columns
       val longStringColumns = lowerCasePropertiesMap.get("long_string_columns");
       if (longStringColumns.isDefined) {
@@ -510,6 +514,7 @@ object AlterTableUtil {
       }
       val (tableIdentifier, schemParts) = updateSchemaInfo(
         carbonTable = carbonTable,
+        schemaEvolutionEntry,
         thriftTable = thriftTable)(sparkSession)
       CarbonSessionCatalogUtil.alterTable(tableIdentifier, schemParts, None, sparkSession)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
