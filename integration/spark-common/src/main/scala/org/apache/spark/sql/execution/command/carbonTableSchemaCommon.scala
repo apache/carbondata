@@ -240,7 +240,8 @@ class AlterTableColumnSchemaGenerator(
   def process: Seq[ColumnSchema] = {
     val tableSchema = tableInfo.getFactTable
     val tableCols = tableSchema.getListOfColumns.asScala
-    val existingColsSize = tableCols.size
+    // previous maximum column schema ordinal + 1 is the current column schema ordinal
+    val currentSchemaOrdinal = tableCols.map(col => col.getSchemaOrdinal).max + 1
     var longStringCols = Seq[ColumnSchema]()
     // get all original dimension columns
     // but exclude complex type columns and long string columns
@@ -263,7 +264,7 @@ class AlterTableColumnSchemaGenerator(
         isDimensionCol = true,
         field.precision,
         field.scale,
-        field.schemaOrdinal + existingColsSize,
+        field.schemaOrdinal + currentSchemaOrdinal,
         alterTableModel.highCardinalityDims,
         alterTableModel.databaseName.getOrElse(dbName),
         isSortColumn(field.name.getOrElse(field.column)),
@@ -296,7 +297,7 @@ class AlterTableColumnSchemaGenerator(
         isDimensionCol = false,
         field.precision,
         field.scale,
-        field.schemaOrdinal + existingColsSize,
+        field.schemaOrdinal + currentSchemaOrdinal,
         alterTableModel.highCardinalityDims,
         alterTableModel.databaseName.getOrElse(dbName)
       )
