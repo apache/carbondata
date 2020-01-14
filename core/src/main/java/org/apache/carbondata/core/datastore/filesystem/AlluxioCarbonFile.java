@@ -60,6 +60,10 @@ public class AlluxioCarbonFile extends HDFSCarbonFile {
   @Override
   public String getAbsolutePath() {
     String absolutePath = super.getAbsolutePath();
+    return getFormattedPath(absolutePath);
+  }
+
+  public static String getFormattedPath(String absolutePath) {
     if (absolutePath.startsWith("alluxio:/") && absolutePath.charAt(9) != '/') {
       return absolutePath.replace("alluxio:/", "alluxio:///");
     }

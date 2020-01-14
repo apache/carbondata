@@ -68,6 +68,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -137,8 +138,8 @@ public class BlockDataMap extends CoarseGrainDataMap
         // if the segment data is written in tablepath then no need to store whole path of file.
         !blockletDataMapInfo.getFilePath().startsWith(
             blockletDataMapInfo.getCarbonTable().getTablePath())) {
-      filePath =
-          path.substring(0, path.lastIndexOf("/")).getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
+      filePath = FilenameUtils.getFullPathNoEndSeparator(path)
+              .getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
       isFilePathStored = true;
     } else {
       filePath = new byte[0];

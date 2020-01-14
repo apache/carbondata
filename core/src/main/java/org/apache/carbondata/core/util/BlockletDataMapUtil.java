@@ -63,6 +63,7 @@ import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
@@ -189,7 +190,7 @@ public class BlockletDataMapUtil {
         CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile);
         return new BlockMetaInfo(new String[] { "localhost" }, carbonFile.getSize());
       default:
-        return fileNameToMetaInfoMapping.get(FileFactory.getCarbonFile(carbonDataFile).getPath());
+        return fileNameToMetaInfoMapping.get(FileFactory.getFormattedPath(carbonDataFile));
     }
   }
 
@@ -200,9 +201,8 @@ public class BlockletDataMapUtil {
     for (Map.Entry<String, String> indexFileEntry : indexFiles.entrySet()) {
       String indexFile = indexFileEntry.getKey();
       tableBlockIndexUniqueIdentifiers.add(
-          new TableBlockIndexUniqueIdentifier(indexFile.substring(0, indexFile.lastIndexOf("/")),
-              indexFile.substring(indexFile.lastIndexOf("/") + 1, indexFile.length()),
-              indexFileEntry.getValue(), segment.getSegmentNo()));
+          new TableBlockIndexUniqueIdentifier(FilenameUtils.getFullPathNoEndSeparator(indexFile),
+              FilenameUtils.getName(indexFile), indexFileEntry.getValue(), segment.getSegmentNo()));
     }
     return tableBlockIndexUniqueIdentifiers;
   }
