@@ -51,6 +51,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.fs.custom.file.provider | None | To support FileTypeInterface for configuring custom CarbonFile implementation to work with custom FileSystem. |
 | carbon.timeseries.first.day.of.week | SUNDAY | This parameter configures which day of the week to be considered as first day of the week. Because first day of the week will be different in different parts of the world. |
 | carbon.enable.tablestatus.backup | false | In cloud object store scenario, overwriting table status file is not an atomic operation since it uses rename API. Thus, it is possible that table status is corrupted if process crashed when overwriting the table status file. To protect from file corruption, user can enable this property. |
+| carbon.lru.cache.expiration.duration.in.minutes | Long.MAX_VALUE | This property configures the value for time-based cache expiration. It takes long value(in minutes) as input. Cache entries expires after the specified duration has passed since the entry was created, or the most recent replacement of the value. |
 
 ## Data Loading Configuration
 

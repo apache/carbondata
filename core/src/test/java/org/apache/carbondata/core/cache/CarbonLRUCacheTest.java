@@ -17,13 +17,20 @@
 
 package org.apache.carbondata.core.cache;
 
+import java.util.concurrent.TimeUnit;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.testing.FakeTicker;
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -66,6 +73,17 @@ public class CarbonLRUCacheTest {
             new CarbonLRUCache("prop2", "200000");//200GB
     assertTrue(carbonLRUCacheForConfig.put("Column1", cacheable, 10L));
     assertFalse(carbonLRUCacheForConfig.put("Column2", cacheable, 107374182400L));//100GB
+  }
+
+  @Test public void testCacheExpiration_expireAfterWrite() {
+    FakeTicker ticker = new FakeTicker();
+    Cache<String, Cacheable> cache =
+        CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).ticker(ticker).build();
+    cache.put("column1", cacheable);
+    assertEquals(1, cache.size());
+    assertNotNull(cache.getIfPresent("column1"));
+    ticker.advance(2, TimeUnit.MINUTES);
+    assertNull(cache.getIfPresent("column1"));
   }
 
   @AfterClass public static void cleanUp() {

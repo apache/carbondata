@@ -1314,6 +1314,17 @@ public final class CarbonCommonConstants {
   public static final double CARBON_LRU_CACHE_PERCENT_OVER_MAX_SIZE = 0.6d;
 
   /**
+   * lruCache can be cleared based on time-based expiration using guava cache
+   */
+  public static final String CARBON_LRU_CACHE_EXPIRATION_DURATION_IN_MINUTES =
+      "carbon.lru.cache.expiration.duration.in.minutes";
+
+  /**
+   * Default time-based expiration for guava cache
+   */
+  public static final long CARBON_LRU_CACHE_EXPIRATION_DURATION_IN_MINUTES_DEFAULT = Long.MAX_VALUE;
+
+  /**
    * property to enable min max during filter query
    */
   @CarbonProperty

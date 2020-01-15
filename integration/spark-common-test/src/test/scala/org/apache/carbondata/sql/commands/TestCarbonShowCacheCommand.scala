@@ -28,6 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
@@ -289,5 +290,22 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     showCache = sql("SHOW METACACHE on table partitionTable").collect()
     assert(showCache(0).get(2).toString.equalsIgnoreCase("5/5 index files cached"))
     sql("drop table if exists partitionTable")
+  }
+
+  test("test time based cache expiration with guava cache") {
+    val defaultValue = java.lang.Long.toString(CarbonCommonConstants.CARBON_LRU_CACHE_EXPIRATION_DURATION_IN_MINUTES_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_LRU_CACHE_EXPIRATION_DURATION_IN_MINUTES, "2")
+    sql("drop table if exists carbonTable")
+    sql("create table carbonTable(col1 int, col2 string,col3 string) stored as carbondata")
+    sql("insert into carbonTable values(1,'aa','bb'),(1,'aa1','bb1')")
+    checkAnswer(sql("select * from carbonTable where col3='bb'"), Seq(Row(1,"aa","bb")))
+    val showCache = sql("SHOW METACACHE on table carbonTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
+    val tableIdentifier = new TableIdentifier("carbonTable", Some("default"))
+    val carbonTablePath = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession).getTablePath
+    val result = CacheProvider.getInstance().getCarbonCache.getCacheMap.keySet().asScala.filter(indexPath => indexPath.startsWith(carbonTablePath))
+    assert(result.size == 1)
+    sql("drop table if exists carbonTable")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_LRU_CACHE_EXPIRATION_DURATION_IN_MINUTES, defaultValue)
   }
 }
