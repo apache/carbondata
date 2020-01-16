@@ -31,6 +31,8 @@ import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, C
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Carbon strategies for ddl commands
@@ -147,20 +149,20 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if isCarbonTable(truncateTable.tableName) =>
         ExecutedCommandExec(CarbonTruncateCommand(truncateTable)) :: Nil
       case createTable@org.apache.spark.sql.execution.datasources.CreateTable(_, _, None)
-        if isCarbonDataSourceTable(createTable.tableDesc) =>
+        if CommonUtil.isCarbonDataSource(createTable.tableDesc) =>
         ExecutedCommandExec(DDLHelper.createDataSourceTable(createTable, sparkSession)) :: Nil
       case MatchCreateDataSourceTable(tableDesc, mode, query)
-        if isCarbonDataSourceTable(tableDesc) =>
+        if CommonUtil.isCarbonDataSource(tableDesc) =>
         ExecutedCommandExec(
           DDLHelper.createDataSourceTableAsSelect(tableDesc, query, mode, sparkSession)
         ) :: Nil
       case org.apache.spark.sql.execution.datasources.CreateTable(tableDesc, mode, query)
-        if isCarbonDataSourceTable(tableDesc) =>
+        if CommonUtil.isCarbonDataSource(tableDesc) =>
         ExecutedCommandExec(
           DDLHelper.createDataSourceTableAsSelect(tableDesc, query.get, mode, sparkSession)
         ) :: Nil
       case createTable@CreateDataSourceTableCommand(table, _)
-        if isCarbonDataSourceTable(table) =>
+        if CommonUtil.isCarbonDataSource(table) =>
         ExecutedCommandExec(
           DDLHelper.createDataSourceTable(createTable, sparkSession)
         ) :: Nil
@@ -193,12 +195,6 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
 
   private def isCarbonTable(tableIdent: TableIdentifier): Boolean = {
     CarbonPlanHelper.isCarbonTable(tableIdent, sparkSession)
-  }
-
-  private def isCarbonDataSourceTable(table: CatalogTable): Boolean = {
-    table.provider.get != DDLUtils.HIVE_PROVIDER &&
-    (table.provider.get.equals("org.apache.spark.sql.CarbonSource") ||
-     table.provider.get.equalsIgnoreCase("carbondata"))
   }
 
   private def isCarbonHiveTable(table: CatalogTable): Boolean = {

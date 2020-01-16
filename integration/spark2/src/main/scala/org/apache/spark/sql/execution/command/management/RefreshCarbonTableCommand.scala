@@ -24,6 +24,7 @@ import scala.collection.mutable
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, MetadataCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
@@ -41,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, RefreshTablePostExecutionEvent, RefreshTablePreExecutionEvent}
+import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Command to register carbon table from existing carbon table data
@@ -52,24 +54,31 @@ case class RefreshCarbonTableCommand(
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val databaseName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     setAuditTable(databaseName, tableName)
     // Steps
-    // 1. get table path
-    // 2. perform the below steps
-    // 2.1 check if the table already register with hive then ignore and continue with the next
-    // schema
+    // 1. Get Table Metadata from spark.
+    // 2 Perform below steps:
+    // 2.1 If table exists then check if provider if carbon. If yes then go for carbon
+    // refresh otherwise no need to do anything.
+    // 2.1.1 If table does not exists then consider the table as carbon and check for schema file
+    // existence.
     // 2.2 register the table with the hive check if the table being registered has aggregate table
     // then do the below steps
     // 2.2.1 validate that all the aggregate tables are copied at the store location.
     // 2.2.2 Register the aggregate tables
-    val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName.toLowerCase)(sparkSession)
-    val identifier = AbsoluteTableIdentifier.from(tablePath, databaseName, tableName.toLowerCase)
     // 2.1 check if the table already register with hive then ignore and continue with the next
     // schema
-    if (!sparkSession.sessionState.catalog.listTables(databaseName)
-      .exists(_.table.equalsIgnoreCase(tableName))) {
+    val isCarbonDataSource = try {
+      CommonUtil.isCarbonDataSource(sparkSession.sessionState.catalog
+        .getTableMetadata(TableIdentifier(tableName, databaseNameOp)))
+    } catch {
+      case _: NoSuchTableException =>
+        true
+    }
+    if (isCarbonDataSource) {
+      val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName.toLowerCase)(sparkSession)
+      val identifier = AbsoluteTableIdentifier.from(tablePath, databaseName, tableName.toLowerCase)
       // check the existence of the schema file to know its a carbon table
       val schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
       // if schema file does not exist then the table will either non carbon table or stale
@@ -106,9 +115,7 @@ case class RefreshCarbonTableCommand(
         }
       }
     }
-    RefreshTable(
-      TableIdentifier(identifier.getTableName, Option(identifier.getDatabaseName))
-    ).run(sparkSession)
+    RefreshTable(TableIdentifier(tableName, Option(databaseName))).run(sparkSession)
   }
 
   /**

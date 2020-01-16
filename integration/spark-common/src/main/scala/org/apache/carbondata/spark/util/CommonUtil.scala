@@ -32,6 +32,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
 import org.apache.spark.util.FileUtils
 
@@ -832,4 +833,13 @@ object CommonUtil {
     }
     displaySize
   }
+
+  def isCarbonDataSource(catalogTable: CatalogTable): Boolean = {
+    catalogTable.provider match {
+      case Some(x) => x.equalsIgnoreCase("org.apache.spark.sql.CarbonSource") ||
+                      x.equalsIgnoreCase("carbondata")
+      case None => false
+    }
+  }
+
 }
