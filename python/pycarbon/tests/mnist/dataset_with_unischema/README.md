@@ -4,7 +4,8 @@ using make_carbon_reader to read data
 
 ## Setup
 ```bash
-PYTHONPATH=~/dev/pycarbon  # replace with your pycarbon install path
+cd python/pycarbon
+pip install . --user
 ```
 
 ## Generating a Pycarbon Dataset from MNIST Data
@@ -12,10 +13,11 @@ PYTHONPATH=~/dev/pycarbon  # replace with your pycarbon install path
 This creates both a `train` and `test` pycarbon datasets in `/tmp/mnist`:
 
 ```bash
-python generate_pycarbon_mnist.py
+cd /tests/mnist/dataset_with_unischema
+python generate_pycarbon_mnist.py 
 ```
 
-## Pytorch training using the Pycarboned MNIST Dataset
+## Pytorch training using the PyCarbon MNIST Dataset
 
 This will invoke a 10-epoch training run using MNIST data in pycarbon form,
 stored by default in `/tmp/mnist`, and show accuracy against the test set:
@@ -52,12 +54,12 @@ This will invoke a training run using MNIST data in pycarbon form,
 for 100 epochs, using a batch size of 100, and log every 10 intervals.
 
 ```bash
-python tf_example_carbon.py
+python tf_example_carbon_unified_api.py
 ```
 
 ```
-python tf_example_carbon.py -h
-usage: tf_example_carbon.py [-h] [--dataset-url S] [--training-iterations N]
+python tf_example_carbon_unified_api.py -h
+usage: tf_example_carbon_unified_api.py [-h] [--dataset-url S] [--training-iterations N]
                      [--batch-size N] [--evaluation-interval N]
 
 Pycarbon Tensorflow MNIST Example

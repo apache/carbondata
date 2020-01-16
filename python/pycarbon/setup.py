@@ -26,10 +26,10 @@ PACKAGE_NAME = 'pycarbon'
 with open('README.md') as f:
     long_description = f.read()
 
-with io.open('pycarbon/__init__.py', 'rt', encoding='utf8') as f:
+with io.open('__init__.py', 'rt', encoding='utf8') as f:
     version = re.search(r'__version__ = \'(.*?)\'', f.read()).group(1)
     if version is None:
-        raise ImportError('Could not find __version__ in pycarbon/__init__.py')
+        raise ImportError('Could not find __version__ in __init__.py')
 
 REQUIRED_PACKAGES = [
     'petastorm==0.7.2',
@@ -42,6 +42,7 @@ REQUIRED_PACKAGES = [
     'pyzmq>=14.0.0',
     'pyarrow==0.11.1',
     'six>=1.5.0',
+    'torchvision>=0.4.0',
     'huaweicloud-sdk-python-modelarts-dataset>=0.1.1',
     'future==0.17.1',
     'futures>=2.0; python_version == "2.7"',
