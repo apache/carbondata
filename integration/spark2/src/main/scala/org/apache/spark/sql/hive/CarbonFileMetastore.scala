@@ -52,7 +52,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.events.{LookupRelationPostEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.spark.util.CarbonSparkUtil
+import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil}
 
 case class MetaData(var carbonTables: ArrayBuffer[CarbonTable]) {
   // use to lock the carbonTables
@@ -216,12 +216,9 @@ class CarbonFileMetastore extends CarbonMetaStore {
               "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
         val catalogTable =
           CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", c).asInstanceOf[CatalogTable]
-        catalogTable.provider match {
-          case Some(name) if (name.equals("org.apache.spark.sql.CarbonSource")
-            || name.equalsIgnoreCase("carbondata")) => name
-          case _ =>
-            CarbonMetadata.getInstance().removeTable(database, tableIdentifier.table)
-            throw new NoSuchTableException(database, tableIdentifier.table)
+        if (!CommonUtil.isCarbonDataSource(catalogTable)) {
+          CarbonMetadata.getInstance().removeTable(database, tableIdentifier.table)
+          throw new NoSuchTableException(database, tableIdentifier.table)
         }
         val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
            catalogTable.location.toString, database, tableIdentifier.table)
@@ -540,11 +537,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
               "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
         val catalogTable =
           CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", c).asInstanceOf[CatalogTable]
-        catalogTable.provider match {
-          case Some(name) if (name.equals("org.apache.spark.sql.CarbonSource")
-            || name.equalsIgnoreCase("carbondata")) => name
-          case _ =>
-            throw new NoSuchTableException(tableIdentifier.database.get, tableIdentifier.table)
+        if (!CommonUtil.isCarbonDataSource(catalogTable)) {
+          throw new NoSuchTableException(tableIdentifier.database.get, tableIdentifier.table)
         }
         val tableLocation = catalogTable.storage.locationUri match {
           case tableLoc@Some(uri) =>

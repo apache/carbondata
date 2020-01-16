@@ -35,6 +35,8 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
+import org.apache.carbondata.spark.util.CommonUtil
+
 /**
  * This class refresh the relation from cache if the carbontable in
  * carbon catalog is not same as cached carbon relation's carbon table.
@@ -59,20 +61,16 @@ object CarbonSessionUtil {
      * Set the stats to none in case of carbontable
      */
     def setStatsNone(catalogTable: CatalogTable): Unit = {
-      catalogTable.provider match {
-        case Some(provider)
-          if provider.equals("org.apache.spark.sql.CarbonSource") ||
-             provider.equalsIgnoreCase("carbondata") =>
-          // Update stats to none in case of carbon table as we are not expecting any stats from
-          // Hive. Hive gives wrong stats for carbon table.
-          catalogTable.stats match {
-            case Some(stats) =>
-              CarbonReflectionUtils.setFieldToCaseClass(catalogTable, "stats", None)
-            case _ =>
-          }
-          isRelationRefreshed =
-            CarbonEnv.isRefreshRequired(catalogTable.identifier)(sparkSession)
-        case _ =>
+      if (CommonUtil.isCarbonDataSource(catalogTable)) {
+        // Update stats to none in case of carbon table as we are not expecting any stats from
+        // Hive. Hive gives wrong stats for carbon table.
+        catalogTable.stats match {
+          case Some(stats) =>
+            CarbonReflectionUtils.setFieldToCaseClass(catalogTable, "stats", None)
+          case _ =>
+        }
+        isRelationRefreshed =
+          CarbonEnv.isRefreshRequired(catalogTable.identifier)(sparkSession)
       }
     }
 
