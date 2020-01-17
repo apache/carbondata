@@ -180,7 +180,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from carbon10 where c3 > 500"), Row(500)
     )
     sql("drop table carbon10")
-    assert(!new File(path).exists())
+    assert(new File(path).exists())
     assert(intercept[AnalysisException](
       sql("select count(*) from carbon10 where c3 > 500"))
       .message

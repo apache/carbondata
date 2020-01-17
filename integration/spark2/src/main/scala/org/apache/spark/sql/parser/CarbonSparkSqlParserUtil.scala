@@ -29,7 +29,9 @@ import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.{Field, PartitionerField, TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, Field, PartitionerField, TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
+import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
 import org.apache.spark.sql.hive.CarbonMVRules
 import org.apache.spark.sql.types.StructField
@@ -633,10 +635,129 @@ object CarbonSparkSqlParserUtil {
     CarbonMVRules(sparkSession).apply(analyzed)
   }
 
-
-
   def copyTablePartition(source: TablePartitionSpec): TablePartitionSpec = {
     val target: TablePartitionSpec = source.map(entry => (entry._1.toLowerCase, entry._2))
     target
+  }
+
+  def alterTableColumnRenameAndModifyDataType(
+      dbName: Option[String],
+      table: String,
+      columnName: String,
+      columnNameCopy: String,
+      dataType: String,
+      values: Option[List[(Int, Int)]]
+  ): CarbonAlterTableColRenameDataTypeChangeCommand = {
+    var isColumnRename = false
+    // If both the column name are not same, then its a call for column rename
+    if (!columnName.equalsIgnoreCase(columnNameCopy)) {
+      isColumnRename = true
+    }
+    val alterTableColRenameAndDataTypeChangeModel =
+      AlterTableDataTypeChangeModel(
+        CarbonParserUtil.parseDataType(dataType.toLowerCase,
+          values,
+          isColumnRename),
+        CarbonParserUtil.convertDbNameToLowerCase(dbName),
+        table.toLowerCase,
+        columnName.toLowerCase,
+        columnNameCopy.toLowerCase,
+        isColumnRename)
+    CarbonAlterTableColRenameDataTypeChangeCommand(alterTableColRenameAndDataTypeChangeModel)
+  }
+
+  def alterTableAddColumns(
+      dbName: Option[String],
+      table: String,
+      fields: List[Field],
+      tblProp: Option[List[(String, String)]]
+  ): CarbonAlterTableAddColumnCommand = {
+    fields.foreach { f =>
+      if (CarbonParserUtil.isComplexType(f.dataType.get)) {
+        throw new MalformedCarbonCommandException(
+          s"Add column is unsupported for complex datatype column: ${ f.column }")
+      }
+    }
+    val tableProps = if (tblProp.isDefined) {
+      tblProp.get.groupBy(_._1.toLowerCase).foreach(f =>
+        if (f._2.size > 1) {
+          val name = f._1.toLowerCase
+          val colName = name.substring(14)
+          if (name.startsWith("default.value.") &&
+              fields.count(p => p.column.equalsIgnoreCase(colName)) == 1) {
+            sys.error(s"Duplicate default value exist for new column: ${ colName }")
+          }
+        }
+      )
+      // default value should not be converted to lower case
+      val tblProps = tblProp.get
+        .map(f => if (CarbonCommonConstants.TABLE_BLOCKSIZE.equalsIgnoreCase(f._1) ||
+                      CarbonCommonConstants.SORT_COLUMNS.equalsIgnoreCase(f._1) ||
+                      CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE.equalsIgnoreCase(f._1) ||
+                      CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD.equalsIgnoreCase(f._1)) {
+          throw new MalformedCarbonCommandException(
+            s"Unsupported Table property in add column: ${ f._1 }")
+        } else if (f._1.toLowerCase.startsWith("default.value.")) {
+          if (fields.count(field => CarbonParserUtil.checkFieldDefaultValue(field.column,
+            f._1.toLowerCase)) == 1) {
+            f._1 -> f._2
+          } else {
+            throw new MalformedCarbonCommandException(
+              s"Default.value property does not matches with the columns in ALTER command. " +
+              s"Column name in property is: ${ f._1 }")
+          }
+        } else {
+          f._1 -> f._2.toLowerCase
+        })
+      scala.collection.mutable.Map(tblProps: _*)
+    } else {
+      scala.collection.mutable.Map.empty[String, String]
+    }
+
+    val tableModel = CarbonParserUtil.prepareTableModel(false,
+      CarbonParserUtil.convertDbNameToLowerCase(dbName),
+      table.toLowerCase,
+      fields.map(CarbonParserUtil.convertFieldNamesToLowercase),
+      Seq.empty,
+      tableProps,
+      None,
+      true)
+
+    val alterTableAddColumnsModel = AlterTableAddColumnsModel(
+      CarbonParserUtil.convertDbNameToLowerCase(dbName),
+      table,
+      tableProps.toMap,
+      tableModel.dimCols,
+      tableModel.msrCols,
+      tableModel.highcardinalitydims.getOrElse(Seq.empty))
+    CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel)
+  }
+
+  def loadDataNew(
+      databaseNameOp: Option[String],
+      tableName: String,
+      optionsList: Option[List[(String, String)]],
+      partitions: Option[List[(String, Option[String])]],
+      filePath: String,
+      isOverwrite: Option[String]
+  ): CarbonLoadDataCommand = {
+    if (optionsList.isDefined) {
+      CarbonParserUtil.validateOptions(optionsList)
+    }
+    val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
+    val partitionSpec = partitions.getOrElse(List.empty[(String, Option[String])]).toMap
+    CarbonLoadDataCommand(
+      databaseNameOp = CarbonParserUtil.convertDbNameToLowerCase(databaseNameOp),
+      tableName = tableName,
+      factPathFromUser = filePath,
+      dimFilesPath = Seq(),
+      options = optionsMap,
+      isOverwriteTable = isOverwrite.isDefined,
+      inputSqlString = null,
+      dataFrame = None,
+      updateModel = None,
+      tableInfoOp = None,
+      internalOptions = Map.empty,
+      partition = partitionSpec)
   }
 }

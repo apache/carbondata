@@ -114,6 +114,7 @@ case class CarbonCreateTableCommand(
               ""
             }
 
+          // add carbon properties into option list in addition to carbon default properties
           val repeatedPropKeys =
             Seq("tablename",
               "dbname",

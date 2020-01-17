@@ -20,6 +20,9 @@ package org.apache.carbondata.core.metadata;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+/**
+ * support converting database name to session-related name
+ */
 public abstract class DatabaseLocationProvider {
 
   private static final DatabaseLocationProvider PROVIDER;

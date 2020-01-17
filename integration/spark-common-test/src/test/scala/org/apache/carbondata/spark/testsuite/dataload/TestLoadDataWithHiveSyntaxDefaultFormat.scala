@@ -719,7 +719,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     assert(new File(path).exists())
     checkAnswer(sql("select salary from test.table_path_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
     sql("drop table test.table_path_test")
-    assert(! new File(path).exists())
+    assert(new File(path).exists())
     assert(intercept[AnalysisException](
       sql("select salary from test.table_path_test limit 1"))
       .message

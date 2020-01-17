@@ -72,7 +72,6 @@ object Spark2TestQueryExecutor {
     .enableHiveSupport()
     .config("spark.sql.warehouse.dir", warehouse)
     .config("spark.sql.crossJoin.enabled", "true")
-    .config("spark.sql.codegen.wholeStage", false)
     .config("spark.sql.extensions", extensions)
     .getOrCreate()
   CarbonEnv.getInstance(spark)

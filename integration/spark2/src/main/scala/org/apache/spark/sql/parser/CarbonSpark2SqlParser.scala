@@ -457,34 +457,17 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
   }
 
-
   protected lazy val loadDataNew: Parser[LogicalPlan] =
     LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
     (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
-    (PARTITION ~>"("~> repsep(partitions, ",") <~ ")").? ~
+    (PARTITION ~> "(" ~> repsep(partitions, ",") <~ ")").? ~
     (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
       case filePath ~ isOverwrite ~ table ~ partitions ~ optionsList =>
         val (databaseNameOp, tableName) = table match {
           case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
         }
-        if (optionsList.isDefined) {
-          CarbonParserUtil.validateOptions(optionsList)
-        }
-        val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-        val partitionSpec = partitions.getOrElse(List.empty[(String, Option[String])]).toMap
-        CarbonLoadDataCommand(
-          databaseNameOp = CarbonParserUtil.convertDbNameToLowerCase(databaseNameOp),
-          tableName = tableName,
-          factPathFromUser = filePath,
-          dimFilesPath = Seq(),
-          options = optionsMap,
-          isOverwriteTable = isOverwrite.isDefined,
-          inputSqlString = null,
-          dataFrame = None,
-          updateModel = None,
-          tableInfoOp = None,
-          internalOptions = Map.empty,
-          partition = partitionSpec)
+        CarbonSparkSqlParserUtil.loadDataNew(
+          databaseNameOp, tableName, optionsList, partitions, filePath, isOverwrite)
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
@@ -592,23 +575,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ CHANGE ~ ident ~ ident ~
     ident ~ opt("(" ~> rep1sep(valueOptions, ",") <~ ")") <~ opt(";") ^^ {
       case dbName ~ table ~ change ~ columnName ~ columnNameCopy ~ dataType ~ values =>
-
-        var isColumnRename = false
-        // If both the column name are not same, then its a call for column rename
-        if (!columnName.equalsIgnoreCase(columnNameCopy)) {
-          isColumnRename = true
-        }
-        val alterTableColRenameAndDataTypeChangeModel =
-          AlterTableDataTypeChangeModel(
-            CarbonParserUtil.parseDataType(dataType.toLowerCase,
-            values,
-            isColumnRename),
-            CarbonParserUtil.convertDbNameToLowerCase(dbName),
-            table.toLowerCase,
-            columnName.toLowerCase,
-            columnNameCopy.toLowerCase,
-            isColumnRename)
-        CarbonAlterTableColRenameDataTypeChangeCommand(alterTableColRenameAndDataTypeChangeModel)
+        CarbonSparkSqlParserUtil.alterTableColumnRenameAndModifyDataType(
+          dbName, table, columnName, columnNameCopy, dataType, values)
     }
 
   protected lazy val alterTableAddColumns: Parser[LogicalPlan] =
@@ -616,65 +584,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (ADD ~> COLUMNS ~> "(" ~> repsep(anyFieldDef, ",") <~ ")") ~
     (TBLPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
       case dbName ~ table ~ fields ~ tblProp =>
-        fields.foreach{ f =>
-          if (CarbonParserUtil.isComplexType(f.dataType.get)) {
-            throw new MalformedCarbonCommandException(
-              s"Add column is unsupported for complex datatype column: ${f.column}")
-          }
-        }
-        val tableProps = if (tblProp.isDefined) {
-          tblProp.get.groupBy(_._1.toLowerCase).foreach(f =>
-            if (f._2.size > 1) {
-              val name = f._1.toLowerCase
-              val colName = name.substring(14)
-              if (name.startsWith("default.value.") &&
-                  fields.count(p => p.column.equalsIgnoreCase(colName)) == 1) {
-                sys.error(s"Duplicate default value exist for new column: ${ colName }")
-              }
-            }
-          )
-          // default value should not be converted to lower case
-          val tblProps = tblProp.get
-            .map(f => if (CarbonCommonConstants.TABLE_BLOCKSIZE.equalsIgnoreCase(f._1) ||
-                          CarbonCommonConstants.SORT_COLUMNS.equalsIgnoreCase(f._1) ||
-                          CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE.equalsIgnoreCase(f._1) ||
-                          CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD.equalsIgnoreCase(f._1)) {
-              throw new MalformedCarbonCommandException(
-                s"Unsupported Table property in add column: ${ f._1 }")
-            } else if (f._1.toLowerCase.startsWith("default.value.")) {
-              if (fields.count(field => CarbonParserUtil.checkFieldDefaultValue(field.column,
-                f._1.toLowerCase)) == 1) {
-                 f._1 -> f._2
-            } else {
-                 throw new MalformedCarbonCommandException(
-                   s"Default.value property does not matches with the columns in ALTER command. " +
-                     s"Column name in property is: ${ f._1}")
-               }
-            } else {
-              f._1 -> f._2.toLowerCase
-            })
-          scala.collection.mutable.Map(tblProps: _*)
-        } else {
-          scala.collection.mutable.Map.empty[String, String]
-        }
-
-        val tableModel = CarbonParserUtil.prepareTableModel (false,
-          CarbonParserUtil.convertDbNameToLowerCase(dbName),
-          table.toLowerCase,
-          fields.map(CarbonParserUtil.convertFieldNamesToLowercase),
-          Seq.empty,
-          tableProps,
-          None,
-          true)
-
-        val alterTableAddColumnsModel = AlterTableAddColumnsModel(
-          CarbonParserUtil.convertDbNameToLowerCase(dbName),
-          table,
-          tableProps.toMap,
-          tableModel.dimCols,
-          tableModel.msrCols,
-          tableModel.highcardinalitydims.getOrElse(Seq.empty))
-        CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel)
+        CarbonSparkSqlParserUtil.alterTableAddColumns(
+          dbName, table, fields, tblProp)
     }
 
   protected lazy val alterTableDropColumn: Parser[LogicalPlan] =

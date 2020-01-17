@@ -143,7 +143,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   test("compaction major: timestamp and long data type confliction")
   {
     sql("drop table if exists compactionTable")
-    sql("create table compactionTable (DOJ timestamp, DOB date) STORED BY 'org.apache.carbondata.format'")
+    sql("create table compactionTable (DOJ timestamp, DOB date) STORED AS carbondata")
     sql("alter table compactionTable set tblproperties('sort_columns'='doj, dob', 'sort_scope'='global_sort')")
     sql("INSERT INTO compactionTable select '2017-10-12 21:22:23', '1997-10-10'")
     sql("INSERT INTO compactionTable select '2018-11-12 20:22:23', '1997-10-10'")

@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -140,10 +140,9 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       sql(" select a, sum(b) from main_table group by a"))
     sql("update main_table set(a) = ('aaa') where b = 'abc'").show(false)
     sql("update testtable set(a) = ('aaa') where b = 'abc'").show(false)
-    val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table"
-    )
+    val dataMapTable = CarbonEnv.getCarbonTable(
+      Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "datamap1_table")(sqlContext.sparkSession)
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
     checkAnswer(sql("select * from main_table"), sql("select * from testtable"))
@@ -240,9 +239,9 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql(s"rebuild datamap datamap1")
     checkAnswer(sql(" select a, sum(b) from test_table  group by a"), Seq(Row("a", null), Row("b", null)))
     sql("insert overwrite table test_table select 'd','abc',3")
-    val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table")
+    val dataMapTable = CarbonEnv.getCarbonTable(
+      Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "datamap1_table")(sqlContext.sparkSession)
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
     checkAnswer(sql(" select a, sum(b) from test_table  group by a"), Seq(Row("d", null)))

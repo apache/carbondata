@@ -193,6 +193,7 @@ public final class CarbonCommonConstants {
 
   /**
    * Specifies the lock implement class.
+   * the class should be the implement of ICarbonLock
    */
   @CarbonProperty
   public static final String LOCK_CLASS = "carbon.lock.class";
