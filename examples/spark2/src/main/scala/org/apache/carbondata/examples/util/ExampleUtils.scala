@@ -66,7 +66,7 @@ object ExampleUtils {
       .config("spark.sql.crossJoin.enabled", "true")
       .enableHiveSupport()
       .getOrCreateCarbonSession(storeLocation, metaStoreDB)
-
+    CarbonEnv.getInstance(spark)
     spark.sparkContext.setLogLevel("ERROR")
     spark
   }

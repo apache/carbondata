@@ -236,6 +236,7 @@ object CarbonSession {
           if (!sparkConf.contains("spark.app.name")) {
             sparkConf.setAppName(randomAppName)
           }
+          sparkConf.set("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
           val sc = SparkContext.getOrCreate(sparkConf)
           // maybe this is an existing SparkContext, update its SparkConf which maybe used
           // by SparkSession
@@ -245,7 +246,31 @@ object CarbonSession {
           }
           sc
         }
+
+        // Initialize extensions if the user has defined a configurator class.
+        val extensionConfOption = sparkContext.conf.get(StaticSQLConf.SPARK_SESSION_EXTENSIONS)
+        val extensionInstance : SparkSessionExtensions = new SparkSessionExtensions
+        if (extensionConfOption.isDefined) {
+          val extensionConfClassName = extensionConfOption.get
+          try {
+            val extensionConfClass = Utils.classForName(extensionConfClassName)
+            val ex = extensionConfClass.newInstance()
+              .asInstanceOf[(SparkSessionExtensions) => Unit]
+            ex(extensionInstance)
+
+          } catch {
+            // Ignore the error if we cannot find the class or when the class has the wrong type.
+            case e @ (_: ClassCastException |
+                      _: ClassNotFoundException |
+                      _: NoClassDefFoundError) =>
+            // Ignore extensions
+          }
+        }
+
         session = new CarbonSession(sparkContext, None, !enableInMemCatlog)
+
+        CarbonReflectionUtils.setSuperFieldToClass(session, "extensions", extensionInstance)
+
         val carbonProperties = CarbonProperties.getInstance()
         if (StringUtils.isNotBlank(storePath)) {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
