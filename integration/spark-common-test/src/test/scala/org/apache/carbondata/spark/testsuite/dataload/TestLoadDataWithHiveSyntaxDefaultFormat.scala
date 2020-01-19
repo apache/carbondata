@@ -682,8 +682,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("drop table if exists double_test")
     sql("CREATE table double_test (empno string, salary double) STORED AS carbondata ")
     sql(
-      s"load data local inpath '$resourcesPath/double.csv' into table double_test options" +
-      "('FILEHEADER'='empno,salary')")
+      s"load data local inpath '$resourcesPath/double.csv' into table double_test")
     checkAnswer(sql("select salary from double_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
   }
 
@@ -695,8 +694,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       s"LOCATION '$path'"
     )
     sql(
-      s"load data local inpath '$resourcesPath/double.csv' into table table_path_test options" +
-      "('FILEHEADER'='empno,salary')")
+      s"load data local inpath '$resourcesPath/double.csv' into table table_path_test")
     assert(new File(path).exists())
     checkAnswer(sql("select salary from table_path_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
     sql("drop table table_path_test")
