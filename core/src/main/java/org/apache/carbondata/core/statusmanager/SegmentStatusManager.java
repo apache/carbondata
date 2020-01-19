@@ -1118,11 +1118,7 @@ public class SegmentStatusManager {
           boolean writing;
           switch (listOfLoadFolderDetails.getSegmentStatus()) {
             case INSERT_IN_PROGRESS:
-              writing = true;
-              break;
             case INSERT_OVERWRITE_IN_PROGRESS:
-              writing = true;
-              break;
             case STREAMING:
               writing = true;
               break;
