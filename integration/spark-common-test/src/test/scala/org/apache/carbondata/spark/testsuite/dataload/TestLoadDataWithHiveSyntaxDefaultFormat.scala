@@ -27,6 +27,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.datastore.impl.FileFactory
 
 /**
   * Test Class for data loading with hive syntax and old syntax
@@ -687,7 +688,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
   }
 
   test("test table with specified table path") {
-    val path = "./source"
+    val path = "./source1"
     sql("drop table if exists table_path_test")
     sql(
       "CREATE table table_path_test (empno string, salary double) STORED AS carbondata " +
@@ -699,6 +700,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     checkAnswer(sql("select salary from table_path_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
     sql("drop table table_path_test")
     assert(new File(path).exists())
+    FileFactory.deleteAllFilesOfDir(new File(path))
     assert(intercept[AnalysisException](
       sql("select salary from table_path_test limit 1"))
       .message
@@ -706,7 +708,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
   }
 
   test("test table with specified database and table path") {
-    val path = "./source"
+    val path = "./source2"
     sql("drop database if exists test cascade")
     sql("create database if not exists test")
     sql("CREATE table test.table_path_test (empno string, salary double) " +
@@ -718,6 +720,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     checkAnswer(sql("select salary from test.table_path_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
     sql("drop table test.table_path_test")
     assert(new File(path).exists())
+    FileFactory.deleteAllFilesOfDir(new File(path))
     assert(intercept[AnalysisException](
       sql("select salary from test.table_path_test limit 1"))
       .message

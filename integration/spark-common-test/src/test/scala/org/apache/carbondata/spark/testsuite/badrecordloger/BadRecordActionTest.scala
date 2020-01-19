@@ -259,7 +259,7 @@ class BadRecordActionTest extends QueryTest {
     val timeStampFormat = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql("drop table if exists complextable")
-    sql("create table complextable(arrayColumn array<timestamp>, structColumn struct<s1:int,s2:timestamp>,arraystruct array<Struct<as1:int,as2:timestamp>>) stored by 'carbondata'")
+    sql("create table complextable(arrayColumn array<timestamp>, structColumn struct<s1:int,s2:timestamp>,arraystruct array<Struct<as1:int,as2:timestamp>>) stored as carbondata")
     sql(s"LOAD DATA local inpath '$resourcesPath/badrecords/complexdata.csv' INTO TABLE complextable OPTIONS('bad_records_action'='ignore', 'DELIMITER'=',', " +
         "'QUOTECHAR'= '\"','COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'='#')")
     checkAnswer(sql("select count(*) from complextable"), Seq(Row(5)))
