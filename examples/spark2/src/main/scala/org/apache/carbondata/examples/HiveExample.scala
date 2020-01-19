@@ -100,8 +100,6 @@ object HiveExample {
         "insert into complexMap values(map('Manish','Nalla','Shardul','Singh','Vishal','Kumar'," +
         "'EmptyVal','','NullVal', 'null'))")
 
-    sparkSession.close()
-
     // delete the already existing lock on metastore so that new derby instance
     // for HiveServer can run on the same metastore
     checkAndDeleteDBLock

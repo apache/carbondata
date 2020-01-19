@@ -293,10 +293,11 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   }
 
   test("duplicate columns in sort_columns") {
+    sql("drop table if exists sorttable1")
     val exceptionCaught = intercept[MalformedCarbonCommandException]{
       sql("CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='empno,empname,empno')")
     }
-  assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either having duplicate columns : empno or it contains illegal argumnet."))
+    assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either having duplicate columns : empno or it contains illegal argumnet."))
   }
 
   test("Test tableTwo data") {
@@ -307,6 +308,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Measure columns in sort_columns") {
+    sql("drop table if exists sorttable1")
     val exceptionCaught = intercept[MalformedCarbonCommandException] {
       sql(
         "CREATE TABLE sorttable1 (empno Double, empname String, designation String, doj Timestamp, " +
@@ -315,7 +317,6 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
         "utilization int,salary int) STORED AS carbondata tblproperties" +
         "('sort_columns'='empno')")
     }
-    println(exceptionCaught.getMessage)
     assert(exceptionCaught.getMessage
       .equals(
         "sort_columns is unsupported for double datatype column: empno"))
