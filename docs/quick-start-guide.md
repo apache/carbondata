@@ -65,12 +65,62 @@ CarbonData can be integrated with Spark,Presto and Hive execution engines. The b
 #### Alluxio
 [CarbonData supports read and write with Alluxio](./alluxio-guide.md)
 
+## Installing and Configuring CarbonData to run locally with Spark SQL
+
+To enable CarbonExtensions in spark, we need to add the following configuration.
+
+|Key|Value|
+|---|---|
+|spark.sql.extensions|org.apache.spark.sql.CarbonExtensions|
+
+Start Spark SQL CLI by running the following command in the Spark directory:
+
+```
+./bin/spark-sql --conf spark.sql.extensions=org.apache.spark.sql.CarbonExtensions --jars <carbondata assembly jar path>
+```
+###### Creating a Table
+
+```
+CREATE TABLE IF NOT EXISTS test_table (
+  id string,
+  name string,
+  city string,
+  age Int)
+STORED AS carbondata;
+```
+
+###### Loading Data to a Table
+
+```
+LOAD DATA INPATH '/path/to/sample.csv' INTO TABLE test_table;
+```
+
+```
+insert into table test_table select '1', 'name1', 'city1', 1;
+```
+
+**NOTE**: Please provide the real file path of `sample.csv` for the above script. 
+If you get "tablestatus.lock" issue, please refer to [FAQ](faq.md)
+
+###### Query Data from a Table
+
+```
+SELECT * FROM test_table;
+```
+
+```
+SELECT city, avg(age), sum(age)
+FROM test_table
+GROUP BY city;
+```
+
 ## Installing and Configuring CarbonData to run locally with Spark Shell
 
 Apache Spark Shell provides a simple way to learn the API, as well as a powerful tool to analyze data interactively. Please visit [Apache Spark Documentation](http://spark.apache.org/docs/latest/) for more details on Spark shell.
 
 #### Basics
 
+###### Option 1: Using CarbonSession
 Start Spark shell by running the following command in the Spark directory:
 
 ```
@@ -98,6 +148,16 @@ val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(
  - By default metastore location points to `../carbon.metastore`, user can provide own metastore location to CarbonSession like 
    `SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<carbon_store_path>", "<local metastore path>")`.
  - Data storage location can be specified by `<carbon_store_path>`, like `/carbon/data/store`, `hdfs://localhost:9000/carbon/data/store` or `s3a://carbon/data/store`.
+
+###### Option 2: Using SparkSession with CarbonExtensions
+Start Spark shell by running the following command in the Spark directory:
+
+```
+./bin/spark-shell --conf spark.sql.extensions=org.apache.spark.sql.CarbonExtensions --jars <carbondata assembly jar path>
+```
+**NOTE** 
+ - In this flow, we can use SparkSession `spark` instead of `carbon`.
+ - Data storage location can be specified by "spark.sql.warehouse.dir".
 
 #### Executing Queries
 
