@@ -4,7 +4,8 @@ using make_carbon_reader to read data
 
 ## Setup
 ```bash
-cd python/pycarbon
+cd python/
+PYTHONPATH=/yourpath/carbondata/python/
 pip install . --user
 ```
 
@@ -13,7 +14,7 @@ pip install . --user
 This creates both a `train` and `test` pycarbon datasets in `/tmp/mnist`:
 
 ```bash
-cd /tests/mnist/dataset_with_unischema
+cd pycarbon/tests/mnist/dataset_with_unischema
 python generate_pycarbon_mnist.py 
 ```
 
