@@ -44,6 +44,7 @@ REQUIRED_PACKAGES = [
     'six>=1.5.0',
     'torchvision>=0.2.1',
     'tensorflow>=1.4.0',
+    'jnius>=1.1.0',
     'pyjnius>=1.2.0',
     'huaweicloud-sdk-python-modelarts-dataset>=0.1.1',
     'future==0.17.1',
