@@ -24,4 +24,3 @@ python/.idea/
 */*/.cache-tests
 */*/*/.cache-main
 */*/*/.cache-tests
-python/pycarbon/.pylintrc
