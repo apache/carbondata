@@ -75,8 +75,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
          |    dateField date,
          |    charField char(5)
          | )
-         | USING org.apache.spark.sql.CarbonSource
-         | OPTIONS ('tableName' '$tableName')
+         | USING carbondata
        """.stripMargin)
     sql(
       s"""
@@ -92,8 +91,6 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
     dropTable("csv_table")
-    createAndLoadInputTable("csv_table", s"$resourcesPath/data_alltypes.csv")
-    createAndLoadTestTable("carbon_table", "csv_table")
     dropTable("carbon_table")
     dropTable("carbon_table2")
     createAndLoadInputTable("csv_table", s"$resourcesPath/data_alltypes.csv")

@@ -528,14 +528,11 @@
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark2/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/commonTo2.2AndAbove</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/commonTo2.3And2.4</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/below2.4</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark2/src/main/spark2.3</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark2/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common/src/main/below2.4</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark-common/src/main/spark2.3</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common-test/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common-test/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
@@ -579,8 +576,6 @@
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark2/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/commonTo2.2AndAbove</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/commonTo2.3And2.4</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark2/src/main/spark2.4</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark2/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common/src/main/scala</sourceDirectory>

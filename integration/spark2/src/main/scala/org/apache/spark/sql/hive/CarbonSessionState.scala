@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.hive
 
 import java.util.concurrent.Callable
@@ -26,15 +27,12 @@ import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.hive.client.HiveClient
+import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.internal.SessionState
+import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.spark.util.CarbonScalaUtil
-import org.apache.spark.sql.catalyst.optimizer.Optimizer
-import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.{AlterTableSetPropertiesCommand, AlterTableUnsetPropertiesCommand}
-import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 
 object CarbonSessionCatalogUtil {
 

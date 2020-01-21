@@ -152,7 +152,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     val mapOfNonCarbonPlanNodes = new java.util.HashMap[LogicalPlan, ExtraNodeInfo]
     fillNodeInfo(plan, mapOfNonCarbonPlanNodes)
     val aliasMap = CarbonAliasDecoderRelation()
-    // collect alias information before hand.
+    // collect alias information beforehand.
     collectInformationOnAttributes(plan, aliasMap)
 
     def hasCarbonRelation(currentPlan: LogicalPlan): Boolean = {

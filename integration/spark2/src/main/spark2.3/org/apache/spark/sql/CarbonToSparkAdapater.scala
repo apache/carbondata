@@ -22,13 +22,15 @@ import java.net.URI
 
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
-import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
+import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, SessionCatalog}
 import org.apache.spark.sql.catalyst.expressions.codegen.ExprCode
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, ScalaUDF, SubqueryExpression}
+import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.ExplainCommand
-import org.apache.spark.sql.hive.{HiveExternalCatalog, HiveSessionCatalog}
+import org.apache.spark.sql.hive.{CarbonMVRules, CarbonPreOptimizerRule, HiveExternalCatalog, HiveSessionCatalog}
+import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.types.{DataType, Metadata}
 
 object CarbonToSparkAdapter {
@@ -103,5 +105,37 @@ object CarbonToSparkAdapter {
 
   def getHiveExternalCatalog(sparkSession: SparkSession): HiveExternalCatalog = {
     sparkSession.sessionState.catalog.externalCatalog.asInstanceOf[HiveExternalCatalog]
+  }
+}
+
+
+class OptimizerProxy(
+    session: SparkSession,
+    catalog: SessionCatalog,
+    optimizer: Optimizer) extends Optimizer(catalog) {
+
+  private lazy val firstBatchRules = Seq(Batch("First Batch Optimizers", Once,
+    Seq(CarbonMVRules(session), new CarbonPreOptimizerRule()): _*))
+
+  private lazy val LastBatchRules = Batch("Last Batch Optimizers", fixedPoint,
+    Seq(new CarbonIUDRule(), new CarbonUDFTransformRule(), new CarbonLateDecodeRule()): _*)
+
+  override def batches: Seq[Batch] = {
+    firstBatchRules ++ convertedBatch() :+ LastBatchRules
+  }
+
+  def convertedBatch(): Seq[Batch] = {
+    optimizer.batches.map { batch =>
+      Batch(
+        batch.name,
+        batch.strategy match {
+          case optimizer.Once =>
+            Once
+          case _: optimizer.FixedPoint =>
+            fixedPoint
+        },
+        batch.rules: _*
+      )
+    }
   }
 }

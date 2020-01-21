@@ -14,24 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReturnAnswer}
-import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand}
 import org.apache.spark.sql.execution.command.mutation.CarbonTruncateCommand
 import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeCommand, CarbonDropTableCommand, CarbonShowCreateTableCommand}
-import org.apache.spark.sql.execution.command.table.{CarbonCreateDataSourceTableCommand, CarbonCreateTableLikeCommand, CarbonDescribeFormattedCommand, CarbonDropTableCommand}
-import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
-import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, RefreshResource, RefreshTable}
-import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
+import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
@@ -118,9 +116,11 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       // create/describe/drop table
       case createTable: CreateTableCommand
         if isCarbonHiveTable(createTable.table) =>
+        // CREATE TABLE STORED AS carbondata
         ExecutedCommandExec(DDLHelper.createHiveTable(createTable, sparkSession)) :: Nil
       case createTable: CreateTableCommand
         if isCarbonFileHiveTable(createTable.table) =>
+        // CREATE TABLE STORED AS carbon
         if (EnvHelper.isCloud(sparkSession)) {
           Nil
         } else {
@@ -128,11 +128,13 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         }
       case ctas: CreateHiveTableAsSelectCommand
         if isCarbonHiveTable(ctas.tableDesc) =>
+        // CREATE TABLE STORED AS carbondata AS SELECT
         ExecutedCommandExec(
           DDLHelper.createHiveTableAsSelect(ctas, sparkSession)
         ) :: Nil
       case ctas: CreateHiveTableAsSelectCommand
         if isCarbonFileHiveTable(ctas.tableDesc) =>
+        // CREATE TABLE STORED AS carbon AS SELECT
         if (EnvHelper.isCloud(sparkSession)) {
           Nil
         } else {
@@ -153,19 +155,23 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         ExecutedCommandExec(CarbonTruncateCommand(truncateTable)) :: Nil
       case createTable@org.apache.spark.sql.execution.datasources.CreateTable(_, _, None)
         if CommonUtil.isCarbonDataSource(createTable.tableDesc) =>
+        // CREATE TABLE USING carbondata
         ExecutedCommandExec(DDLHelper.createDataSourceTable(createTable, sparkSession)) :: Nil
       case MatchCreateDataSourceTable(tableDesc, mode, query)
         if CommonUtil.isCarbonDataSource(tableDesc) =>
+        // CREATE TABLE USING carbondata AS SELECT
         ExecutedCommandExec(
           DDLHelper.createDataSourceTableAsSelect(tableDesc, query, mode, sparkSession)
         ) :: Nil
       case org.apache.spark.sql.execution.datasources.CreateTable(tableDesc, mode, query)
         if CommonUtil.isCarbonDataSource(tableDesc) =>
+        // CREATE TABLE USING carbondata AS SELECT
         ExecutedCommandExec(
           DDLHelper.createDataSourceTableAsSelect(tableDesc, query.get, mode, sparkSession)
         ) :: Nil
       case createTable@CreateDataSourceTableCommand(table, _)
         if CommonUtil.isCarbonDataSource(table) =>
+        // CREATE TABLE USING carbondata
         ExecutedCommandExec(
           DDLHelper.createDataSourceTable(createTable, sparkSession)
         ) :: Nil

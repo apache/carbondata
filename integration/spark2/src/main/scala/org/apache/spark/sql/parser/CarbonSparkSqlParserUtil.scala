@@ -309,7 +309,7 @@ object CarbonSparkSqlParserUtil {
       table: CatalogTable,
       ifNotExists: Boolean,
       sparkSession: SparkSession,
-      selectQuery: Option[LogicalPlan]): TableInfo = {
+      selectQuery: Option[LogicalPlan] = None): TableInfo = {
     val tableProperties = normalizeProperties(getProperties(table))
     val options = new CarbonOption(tableProperties)
     // validate streaming property
