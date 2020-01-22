@@ -17,18 +17,12 @@
 
 package org.apache.spark.sql.execution.command.table
 
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSource, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
 import org.apache.spark.sql.execution.command.{CreateDataSourceTableCommand, DropTableCommand, MetadataCommand}
-import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
-import org.apache.carbondata.core.metadata.schema.table.TableInfo
-import org.apache.carbondata.core.util.CarbonUtil
 
 /**
  * this command wrap schema generation and CreateDataSourceTableCommand
@@ -80,7 +74,7 @@ case class CarbonCreateDataSourceTableCommand(
     // Persist the TableInfo object in table path as schema file.
 
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-    val (tableInfo, catalogTable) = CarbonSource.createTableMeta(sparkSession , table, metaStore)
+    val (tableInfo, catalogTable) = CarbonSource.createTableMeta(sparkSession, table, metaStore)
 
     val rows = try {
       CreateDataSourceTableCommand(
