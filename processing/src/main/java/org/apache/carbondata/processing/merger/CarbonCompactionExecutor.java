@@ -27,7 +27,6 @@ import java.util.Set;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -52,7 +51,6 @@ import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
 import org.apache.hadoop.conf.Configuration;
@@ -297,7 +295,6 @@ public class CarbonCompactionExecutor {
     } catch (QueryExecutionException e) {
       LOGGER.error("Problem while close. Ignoring the exception", e);
     }
-    clearDictionaryFromQueryModel();
   }
 
   private void logStatistics(long queryStartTime) {
@@ -309,21 +306,6 @@ public class CarbonCompactionExecutor {
         recorder.recordStatistics(queryStatistic);
         // print executor query statistics for each task_id
         recorder.logStatistics();
-      }
-    }
-  }
-
-  /**
-   * This method will clear the dictionary access count after its usage is complete so
-   * that column can be deleted form LRU cache whenever memory reaches threshold
-   */
-  private void clearDictionaryFromQueryModel() {
-    if (null != queryModel) {
-      Map<String, Dictionary> columnToDictionaryMapping = queryModel.getColumnToDictionaryMapping();
-      if (null != columnToDictionaryMapping) {
-        for (Map.Entry<String, Dictionary> entry : columnToDictionaryMapping.entrySet()) {
-          CarbonUtil.clearDictionaryCache(entry.getValue());
-        }
       }
     }
   }

@@ -73,7 +73,6 @@ import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
-import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -98,13 +97,12 @@ import org.apache.log4j.Logger;
  * @param <T>
  */
 public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
+  private static final Logger LOG =
+      LogServiceFactory.getLogService(CarbonInputFormat.class.getName());
+
   // comma separated list of input segment numbers
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
-  // comma separated list of input files
-  private static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
-  private static final Logger LOG =
-      LogServiceFactory.getLogService(CarbonInputFormat.class.getName());
   private static final String FILTER_PREDICATE =
       "mapreduce.input.carboninputformat.filter.predicate";
   private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
@@ -211,10 +209,6 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static void setTransactionalTable(Configuration configuration,
       boolean isTransactionalTable) {
     configuration.set(CARBON_TRANSACTIONAL_TABLE, String.valueOf(isTransactionalTable));
-  }
-
-  public static void setPartitionIdList(Configuration configuration, List<String> partitionIds) {
-    configuration.set(ALTER_PARTITION_ID, partitionIds.toString());
   }
 
   /**
@@ -749,7 +743,12 @@ m filterExpression
         LOG.error("Error while creating " + readSupportClass, ex);
       }
     } else {
-      readSupport = new DictionaryDecodeReadSupport<>();
+      readSupport = new CarbonReadSupport<T>() {
+        @Override
+        public T readRow(Object[] data) {
+          return (T) data;
+        }
+      };
     }
     return readSupport;
   }

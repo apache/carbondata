@@ -43,8 +43,7 @@ class CarbonTruncateCommandTest extends Spark2QueryTest with BeforeAndAfterAll {
 
   private def getTableSize(databaseName: String, tableName:String) :Long={
     val table = CarbonMetadata.getInstance.getCarbonTable(databaseName, tableName)
-    val relation = CarbonRelation(databaseName, tableName,
-      CarbonSparkUtil.createSparkMeta(table), table)
+    val relation = CarbonRelation(databaseName, tableName, table)
     relation.sizeInBytes
   }
 }

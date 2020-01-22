@@ -17,11 +17,8 @@
 
 package org.apache.carbondata.presto.readers;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -36,13 +33,10 @@ public class ShortStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   protected BlockBuilder builder;
 
-  private Dictionary dictionary;
-
-  public ShortStreamReader(int batchSize, DataType dataType, Dictionary dictionary) {
+  public ShortStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
     this.builder = type.createBlockBuilder(null, batchSize);
-    this.dictionary = dictionary;
   }
 
   @Override
@@ -53,17 +47,6 @@ public class ShortStreamReader extends CarbonColumnVectorImpl implements PrestoV
   @Override
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
-  }
-
-  @Override
-  public void putInt(int rowId, int value) {
-    Object data = DataTypeUtil
-        .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.SHORT);
-    if (data != null) {
-      type.writeLong(builder, (Short) data);
-    } else {
-      builder.appendNull();
-    }
   }
 
   @Override
@@ -100,11 +83,7 @@ public class ShortStreamReader extends CarbonColumnVectorImpl implements PrestoV
     if (value == null) {
       putNull(rowId);
     } else {
-      if (dictionary == null) {
-        putShort(rowId, (short) value);
-      } else {
-        putInt(rowId, (int) value);
-      }
+      putShort(rowId, (short) value);
     }
   }
 }

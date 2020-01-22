@@ -17,36 +17,15 @@
 
 package org.apache.spark.sql.hive
 
-import java.util.concurrent.Callable
-
-import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.{QualifiedTableName, TableIdentifier}
-import org.apache.spark.sql.catalyst.analysis.Analyzer
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.optimizer.Optimizer
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.internal.SessionState
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 object CarbonSessionCatalogUtil {
-
-  def lookupRelation(name: TableIdentifier, sparkSession: SparkSession): LogicalPlan = {
-    var rtnRelation = sparkSession.sessionState.catalog.lookupRelation(name)
-    val isRelationRefreshed =
-      CarbonSessionUtil.refreshRelationAndSetStats(rtnRelation, name)(sparkSession)
-    if (isRelationRefreshed) {
-      rtnRelation = sparkSession.sessionState.catalog.lookupRelation(name)
-      // Reset the stats after lookup.
-      CarbonSessionUtil.refreshRelationAndSetStats(rtnRelation, name)(sparkSession)
-    }
-    rtnRelation
-  }
 
   /**
    * Method used to update the table name
@@ -118,12 +97,6 @@ object CarbonSessionCatalogUtil {
     catalog.alterTable(newTable)
   }
 
-  def getCachedPlan(t: QualifiedTableName,
-      c: Callable[LogicalPlan], sparkSession: SparkSession): LogicalPlan = {
-    val plan = sparkSession.sessionState.catalog.getCachedPlan(t, c)
-    CarbonSessionUtil.updateCachedPlan(plan)
-  }
-
   /**
    * returns hive client from HiveExternalCatalog
    *
@@ -173,20 +146,6 @@ object CarbonSessionCatalogUtil {
       tableIdentifier, cols, schemaParts, sparkSession)
   }
 
-  def createPartitions(
-      tableName: TableIdentifier,
-      parts: Seq[CatalogTablePartition],
-      ignoreIfExists: Boolean, sparkSession: SparkSession): Unit = {
-    try {
-      val table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
-      val updatedParts = CarbonScalaUtil.updatePartitions(parts, table)
-      sparkSession.sessionState.catalog.createPartitions(tableName, updatedParts, ignoreIfExists)
-    } catch {
-      case e: Exception =>
-        sparkSession.sessionState.catalog.createPartitions(tableName, parts, ignoreIfExists)
-    }
-  }
-
   /**
    * This is alternate way of getting partition information. It first fetches all partitions from
    * hive and then apply filter instead of querying hive along with filters.
@@ -202,41 +161,4 @@ object CarbonSessionCatalogUtil {
     CarbonSessionUtil.prunePartitionsByFilter(partitionFilters, sparkSession, identifier)
   }
 
-  /**
-   * Update the storageformat with new location information
-   */
-  def updateStorageLocation(
-      path: Path,
-      storage: CatalogStorageFormat,
-      newTableName: String,
-      dbName: String): CatalogStorageFormat = {
-    storage.copy(locationUri = Some(path.toUri))
-  }
-}
-
-
-/**
- * Session state implementation to override sql parser and adding strategies
- *
- * @param sparkSession
- */
-class CarbonSessionStateBuilder(sparkSession: SparkSession,
-    parentState: Option[SessionState] = None)
-  extends HiveSessionStateBuilder(sparkSession, parentState) {
-
-  override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
-
-  override protected def analyzer: Analyzer = {
-    new CarbonAnalyzer(catalog,
-      conf,
-      sparkSession,
-      super.analyzer)
-  }
-}
-
-class CarbonPreOptimizerRule extends Rule[LogicalPlan] {
-
-  override def apply(plan: LogicalPlan): LogicalPlan = {
-    CarbonOptimizerUtil.transformForScalarSubQuery(plan)
-  }
 }

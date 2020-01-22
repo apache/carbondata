@@ -23,8 +23,8 @@ import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
-import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonMVRules, CarbonPreInsertionCasts, CarbonPreOptimizerRule}
-import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
+import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonMVRules, CarbonPreInsertionCasts}
+import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.CarbonExtensionSqlParser
 
 class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
@@ -53,7 +53,7 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
       .injectPlannerStrategy((session: SparkSession) => new DDLStrategy(session))
 
     // init CarbonEnv
-    CarbonEnv.init
+    CarbonEnv.init()
   }
 }
 

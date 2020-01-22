@@ -25,7 +25,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
-import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -181,7 +180,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   @Override
   public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
+      BadRecordLogHolder logHolder) throws IOException {
     if (input == null) {
       dataOutputStream.writeInt(1);
       children.writeByteArray(null, dataOutputStream, logHolder);

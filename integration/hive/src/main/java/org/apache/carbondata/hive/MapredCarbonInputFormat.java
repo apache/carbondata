@@ -179,16 +179,14 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
       LOGGER.error("Failed to create record reader: " + e.getMessage(), e);
       return null;
     }
-    CarbonReadSupport<ArrayWritable> readSupport = new CarbonDictionaryDecodeReadSupport<>();
+    CarbonReadSupport<ArrayWritable> readSupport = new WritableReadSupport<>();
     return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
   }
 
   private QueryModel getQueryModel(Configuration configuration, String path)
       throws IOException, InvalidConfigurationException {
     CarbonTable carbonTable = getCarbonTable(configuration, path);
-    AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
-    String projectionString = getProjection(configuration, carbonTable,
-        identifier.getCarbonTableIdentifier().getTableName());
+    String projectionString = getProjection(configuration, carbonTable);
     String[] projectionColumns = projectionString.split(",");
     QueryModel queryModel =
         new QueryModelBuilder(carbonTable)
@@ -205,11 +203,9 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
    *
    * @param configuration
    * @param carbonTable
-   * @param tableName
    * @return
    */
-  private String getProjection(Configuration configuration, CarbonTable carbonTable,
-      String tableName) {
+  private String getProjection(Configuration configuration, CarbonTable carbonTable) {
     // query plan includes projection column
     String projection = getColumnProjection(configuration);
     if (projection == null) {

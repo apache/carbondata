@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.spark.sql
 
 import java.net.URI
@@ -35,7 +34,7 @@ import org.apache.spark.sql.types.{DataType, Metadata}
 
 object CarbonToSparkAdapter {
 
-  def addSparkListener(sparkContext: SparkContext) = {
+  def addSparkListener(sparkContext: SparkContext): Unit = {
     sparkContext.addSparkListener(new SparkListener {
       override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
         SparkSession.setDefaultSession(null)

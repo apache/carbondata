@@ -368,15 +368,10 @@ case class CarbonLoadDataCommand(
       operationContext: OperationContext,
       LOGGER: Logger): Seq[Row] = {
     var rows = Seq.empty[Row]
-    val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
-      val dataFrameWithTupleId: DataFrame = getDataFrameWithTupleID()
-      // getting all fields except tupleId field as it is not required in the value
-      val otherFields = CarbonScalaUtil.getAllFieldsWithoutTupleIdField(dataFrame.get.schema.fields)
-      // use dataFrameWithoutTupleId as dictionaryDataFrame
-      val dataFrameWithoutTupleId = dataFrame.get.select(otherFields: _*)
-      (Some(dataFrameWithoutTupleId), Some(dataFrameWithTupleId))
+    val loadDataFrame = if (updateModel.isDefined) {
+      Some(getDataFrameWithTupleID())
     } else {
-      (dataFrame, dataFrame)
+      dataFrame
     }
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     if (table.isHivePartitionTable) {
@@ -433,7 +428,7 @@ case class CarbonLoadDataCommand(
     // input data from csv files. Convert to logical plan
     val allCols = new ArrayBuffer[String]()
     // get only the visible dimensions from table
-    allCols ++= table.getVisibleDimensions().asScala.map(_.getColName)
+    allCols ++= table.getVisibleDimensions.asScala.map(_.getColName)
     allCols ++= table.getVisibleMeasures.asScala.map(_.getColName)
     var attributes =
       StructType(

@@ -30,8 +30,8 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
@@ -59,8 +59,6 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnRes
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
-import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.log4j.Logger;
@@ -349,19 +347,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           }
         } else {
           // dictionary
-          int dictionaryValue = ByteUtil.toInt(memberBytes, 0);
-          if (dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
-              && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-            memberString =
-                getFilterActualValueFromDictionaryValue(dimColumnEvaluatorInfo, dictionaryValue);
-            record[index] = DataTypeUtil.getDataBasedOnDataType(memberString,
-                dimColumnEvaluatorInfo.getDimension().getDataType());
-          } else if (
-              dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-            Object member = getFilterActualValueFromDirectDictionaryValue(dimColumnEvaluatorInfo,
-                dictionaryValue);
-            record[index] = member;
-          }
+          throw new DeprecatedFeatureException("global dictionary");
         }
       } else {
         // complex
@@ -419,9 +405,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         DimensionColumnPage columnDataChunk =
             blockChunkHolder.getDimensionRawColumnChunks()[dimensionChunkIndex[i]]
                 .decodeColumnPage(pageIndex);
-        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY) && (
-            columnDataChunk instanceof VariableLengthDimensionColumnPage
-                || columnDataChunk instanceof ColumnPageWrapper)) {
+        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY) &&
+            (columnDataChunk instanceof VariableLengthDimensionColumnPage ||
+                columnDataChunk instanceof ColumnPageWrapper)) {
 
           byte[] memberBytes = columnDataChunk.getChunkData(index);
           if (null != memberBytes) {
@@ -433,23 +419,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
                 .getDataBasedOnDataTypeForNoDictionaryColumn(memberBytes,
                     dimColumnEvaluatorInfo.getDimension().getDataType());
-          }
-        } else {
-          int dictionaryValue = readSurrogatesFromColumnChunk(blockChunkHolder, index, pageIndex,
-              dimensionChunkIndex[i]);
-          if (dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
-              && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-            memberString =
-                getFilterActualValueFromDictionaryValue(dimColumnEvaluatorInfo, dictionaryValue);
-            record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
-                .getDataBasedOnDataType(memberString,
-                    dimColumnEvaluatorInfo.getDimension().getDataType());
-          } else if (dimColumnEvaluatorInfo.getDimension()
-              .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-
-            Object member = getFilterActualValueFromDirectDictionaryValue(dimColumnEvaluatorInfo,
-                dictionaryValue);
-            record[dimColumnEvaluatorInfo.getRowIndex()] = member;
           }
         }
       } else {
@@ -566,47 +535,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     } else {
       throw new RuntimeException("Invalid data type for dierct dictionary");
     }
-  }
-
-  /**
-   * Read the actual filter member by passing the dictionary value from
-   * the forward dictionary cache which which holds column wise cache
-   *
-   * @param dimColumnEvaluatorInfo
-   * @param dictionaryValue
-   * @return
-   * @throws IOException
-   */
-  private String getFilterActualValueFromDictionaryValue(
-      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int dictionaryValue) throws IOException {
-    String memberString;
-    Dictionary forwardDictionary = FilterUtil
-        .getForwardDictionaryCache(tableIdentifier, dimColumnEvaluatorInfo.getDimension());
-
-    memberString = forwardDictionary.getDictionaryValueForKey(dictionaryValue);
-    if (null != memberString) {
-      if (memberString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-        memberString = null;
-      }
-    }
-    return memberString;
-  }
-
-  /**
-   * read the filter member dictionary data from the block corresponding to
-   * applied filter column
-   *
-   * @param blockChunkHolder
-   * @param index
-   * @return
-   */
-  private int readSurrogatesFromColumnChunk(RawBlockletColumnChunks blockChunkHolder, int index,
-      int page, int chunkIndex) {
-    DimensionColumnPage dataChunk =
-        blockChunkHolder.getDimensionRawColumnChunks()[chunkIndex].decodeColumnPage(page);
-    byte[] rawData = dataChunk.getChunkData(index);
-    ByteBuffer byteBuffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
-    return CarbonUtil.getSurrogateKey(rawData, byteBuffer);
   }
 
   @Override

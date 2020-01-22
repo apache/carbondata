@@ -29,7 +29,6 @@ import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.cache.dictionary.AbstractColumnDictionaryInfo
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
@@ -70,7 +69,6 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
           AttributeReference("Identifier", StringType, nullable = false)(),
           AttributeReference("Index size", StringType, nullable = false)(),
           AttributeReference("Datamap size", StringType, nullable = false)(),
-          AttributeReference("Dictionary size", StringType, nullable = false)(),
           AttributeReference("Cache Location", StringType, nullable = false)())
       }
     } else {
@@ -111,12 +109,12 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         getTableCacheFromIndexServer(carbonTable,
           numberOfIndexFiles)(showExecutorCache)(sparkSession)
       } else { Seq() }
-      val result = driverRawResults.slice(0, 2) ++
-                   driverRawResults.drop(2).map { row =>
+      val result = driverRawResults.slice(0, 1) ++
+                   driverRawResults.drop(1).map { row =>
                      Row(row.get(0), row.getLong(1) + row.getLong(2), row.get(3))
                    }
-      val serverResults = indexRawResults.slice(0, 2) ++
-                          indexRawResults.drop(2).map { row =>
+      val serverResults = indexRawResults.slice(0, 1) ++
+                          indexRawResults.drop(1).map { row =>
                             Row(row.get(0), row.getLong(1) + row.getLong(2), row.get(3))
                           }
       result.map {
@@ -221,11 +219,11 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         carbonTable =>
           carbonTable.getTablePath
       }
-      val (driverIndexSize, driverDatamapSize, allDictSize) = getAllDriverCacheSize(tablePaths
+      val (driverIndexSize, driverDatamapSize) = getAllDriverCacheSize(tablePaths
         .toList)
-      if (driverIndexSize + driverDatamapSize + allDictSize != 0 && driverRows.size!=0) {
+      if (driverIndexSize + driverDatamapSize != 0 && driverRows.size!=0) {
         (Seq(
-          Row("TOTAL", driverIndexSize, driverDatamapSize, allDictSize, "DRIVER")
+          Row("TOTAL", driverIndexSize, driverDatamapSize, "DRIVER")
         ) ++ driverRows).collect {
           case row if row.getLong(1) != 0L || row.getLong(2) != 0L || row.getLong(3) != 0L =>
             Row(row(0), bytesToDisplaySize(row.getLong(1)),
@@ -241,7 +239,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
     val indexDisplayRows = if (indexAllIndexSize + indexAllDatamapSize != 0 &&
                                indexServerRows.size != 0) {
       (Seq(
-        Row("TOTAL", indexAllIndexSize, indexAllDatamapSize, indexAllDictSize, "INDEX SERVER")
+        Row("TOTAL", indexAllIndexSize, indexAllDatamapSize, "INDEX SERVER")
       ) ++ indexServerRows).collect {
         case row if row.getLong(1) != 0L || row.getLong(2) != 0L || row.getLong(3) != 0L =>
           Row(row.get(0), bytesToDisplaySize(row.getLong(1)),
@@ -272,7 +270,6 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
           (parentCache, dataMapList)
         case Nil => (("", 0, 0L, ""), Nil)
       }
-      val parentDictionary = getDictionarySize(carbonTable)(sparkSession)
       val childMetaCacheInfos = childTableList.flatMap {
         childTable =>
           val tableArray = childTable._1.split("-")
@@ -293,26 +290,24 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         comments += " (external table)"
       }
       Seq(
-        Row("Index", parentMetaCacheInfo._3, comments, ""),
-        Row("Dictionary", parentDictionary, "", "")
+        Row("Index", parentMetaCacheInfo._3, comments, "")
       ) ++ childMetaCacheInfos
     } else {
       Seq(
-        Row("Index", 0L, "", ""),
-        Row("Dictionary", 0L, "", "")
+        Row("Index", 0L, "", "")
       )
     }
   }
 
   override protected def opName: String = "SHOW CACHE"
 
-  private def calculateDBIndexAndDatamapSize(rows: Seq[Row]): (Long, Long, Long) = {
+  private def calculateDBIndexAndDatamapSize(rows: Seq[Row]): (Long, Long) = {
     rows.map {
       row =>
-        (row(1).asInstanceOf[Long], row(2).asInstanceOf[Long], row.get(3).asInstanceOf[Long])
-    }.fold((0L, 0L, 0L)) {
+        (row(2).asInstanceOf[Long], row.get(3).asInstanceOf[Long])
+    }.fold((0L, 0L)) {
       case (a, b) =>
-        (a._1 + b._1, a._2 + b._2, a._3 + b._3)
+        (a._1 + b._1, a._2 + b._2)
     }
   }
 
@@ -323,14 +318,12 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         indexSize += row.getLong(1)
         datamapSize += row.getLong(2)
     }
-    val dictSize = tableResult(1).getLong(1)
-    if (indexSize == 0 && datamapSize == 0 && dictSize == 0) {
+    if (indexSize == 0 && datamapSize == 0) {
       Seq()
     } else {
       Seq(Row(carbonTable.getDatabaseName + "." + carbonTable.getTableName,
         indexSize,
-        datamapSize,
-        dictSize))
+        datamapSize))
     }
   }
 
@@ -368,8 +361,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       comments += " (external table)"
     }
     Seq(
-      Row("Index", mainTableCache, comments),
-      Row("Dictionary", getDictionarySize(mainTable)(sparkSession), "")
+      Row("Index", mainTableCache, comments)
     ) ++ childMetaCacheInfos
 
   }
@@ -418,20 +410,11 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       .asInstanceOf[List[(String, String, String)]]
   }
 
-  private def getDictionarySize(carbonTable: CarbonTable)(sparkSession: SparkSession): Long = {
-    val dictKeys = CacheUtil.getAllDictCacheKeys(carbonTable)
-    val cache = CacheProvider.getInstance().getCarbonCache
-    dictKeys.collect {
-      case dictKey if cache != null && cache.get(dictKey) != null =>
-        cache.get(dictKey).getMemorySize
-    }.sum
-  }
-
-  private def getAllDriverCacheSize(tablePaths: List[String]) = {
+  private def getAllDriverCacheSize(tablePaths: List[String]): (Long, Long) = {
     val cache = CacheProvider.getInstance().getCarbonCache
     // Scan whole cache and fill the entries for All-Database-All-Tables
     // and Current-Database-All-Tables
-    var (allIndexSize, allDatamapSize, allDictSize) = (0L, 0L, 0L)
+    var (allIndexSize, allDatamapSize) = (0L, 0L)
     var dbIndexSize = 0L
     cache.getCacheMap.asScala.foreach {
       case (key, cacheable) =>
@@ -441,14 +424,11 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
             if (tablePaths.exists { path => key.startsWith(path) }) {
               dbIndexSize += cacheable.getMemorySize
             }
-          case _: AbstractColumnDictionaryInfo =>
-            allDictSize += cacheable.getMemorySize
-            // consider eveything else as a datamap.
           case _ =>
             allDatamapSize += cacheable.getMemorySize
         }
     }
-    (allIndexSize, allDatamapSize, allDictSize)
+    (allIndexSize, allDatamapSize)
   }
 
   private def collectDriverMetaCacheInfo(tableName: String,

@@ -52,8 +52,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     val info = CarbonUtil.convertGsonToTableInfo(parameters.asJava)
     val carbonRelation = if (info != null) {
       val table = CarbonTable.buildFromTableInfo(info)
-      CarbonRelation(info.getDatabaseName, info.getFactTable.getTableName,
-        CarbonSparkUtil.createSparkMeta(table), table)
+      CarbonRelation(info.getDatabaseName, info.getFactTable.getTableName, table)
     } else {
       super.createCarbonRelation(parameters, absIdentifier, sparkSession)
     }

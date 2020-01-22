@@ -24,11 +24,9 @@ import scala.util.Try
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.execution.CastExpressionOptimization
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonContainsWith
 import org.apache.spark.sql.CarbonEndsWith
-import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
@@ -45,7 +43,6 @@ import org.apache.carbondata.core.scan.expression.MatchExpression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit}
-import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 /**
  * All filter conversions are done here.
@@ -172,132 +169,6 @@ object CarbonFilters {
     }
 
     createFilter(predicate)
-  }
-
-
-  // Check out which filters can be pushed down to carbon, remaining can be handled in spark layer.
-  // Mostly dimension filters are only pushed down since it is faster in carbon.
-  // TODO - The Filters are first converted Intermediate sources filters expression and then these
-  // expressions are again converted back to CarbonExpression. Instead of two step process of
-  // evaluating the filters it can be merged into a single one.
-  def selectFilters(filters: Seq[Expression],
-      attrList: java.util.HashSet[AttributeReferenceWrapper],
-      aliasMap: CarbonAliasDecoderRelation): Unit = {
-    def translate(expr: Expression, or: Boolean = false): Option[sources.Filter] = {
-      expr match {
-        case or@Or(left, right) =>
-
-          val leftFilter = translate(left, or = true)
-          val rightFilter = translate(right, or = true)
-          if (leftFilter.isDefined && rightFilter.isDefined) {
-            Some(sources.Or(leftFilter.get, rightFilter.get))
-          } else {
-            or.collect {
-              case attr: AttributeReference =>
-                attrList.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
-            }
-            None
-          }
-        case And(left, right) =>
-          val leftFilter = translate(left, or)
-          val rightFilter = translate(right, or)
-          if (or) {
-            if (leftFilter.isDefined && rightFilter.isDefined) {
-              (leftFilter ++ rightFilter).reduceOption(sources.And)
-            } else {
-              None
-            }
-          } else {
-            (leftFilter ++ rightFilter).reduceOption(sources.And)
-          }
-        case EqualTo(a: Attribute, Literal(v, t)) =>
-          Some(sources.EqualTo(a.name, v))
-        case EqualTo(l@Literal(v, t), a: Attribute) =>
-          Some(sources.EqualTo(a.name, v))
-        case c@EqualTo(Cast(a: Attribute, _), Literal(v, t)) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case c@EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case Not(EqualTo(a: Attribute, Literal(v, t))) =>
-          Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Literal(v, t), a: Attribute)) =>
-          Some(sources.Not(sources.EqualTo(a.name, v)))
-        case c@Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case c@Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case IsNotNull(a: Attribute) =>
-          Some(sources.IsNotNull(a.name))
-        case IsNull(a: Attribute) =>
-          Some(sources.IsNull(a.name))
-        case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
-          val hSet = list.map(e => e.eval(EmptyRow))
-          Some(sources.Not(sources.In(a.name, hSet.toArray)))
-        case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
-          val hSet = list.map(e => e.eval(EmptyRow))
-          Some(sources.In(a.name, hSet.toArray))
-        case c@Not(In(Cast(a: Attribute, _), list)) if !list.exists(!_.isInstanceOf[Literal]) =>
-          Some(CastExpr(c))
-        case c@In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
-            Some(CastExpr(c))
-        case InSet(a: Attribute, set) =>
-          Some(sources.In(a.name, set.toArray))
-        case Not(InSet(a: Attribute, set)) =>
-          Some(sources.Not(sources.In(a.name, set.toArray)))
-        case GreaterThan(a: Attribute, Literal(v, t)) =>
-          Some(sources.GreaterThan(a.name, v))
-        case GreaterThan(Literal(v, t), a: Attribute) =>
-          Some(sources.LessThan(a.name, v))
-        case c@GreaterThan(Cast(a: Attribute, _), Literal(v, t)) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case c@GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case LessThan(a: Attribute, Literal(v, t)) =>
-          Some(sources.LessThan(a.name, v))
-        case LessThan(Literal(v, t), a: Attribute) =>
-          Some(sources.GreaterThan(a.name, v))
-        case c@LessThan(Cast(a: Attribute, _), Literal(v, t)) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case c@LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case GreaterThanOrEqual(a: Attribute, Literal(v, t)) =>
-          Some(sources.GreaterThanOrEqual(a.name, v))
-        case GreaterThanOrEqual(Literal(v, t), a: Attribute) =>
-          Some(sources.LessThanOrEqual(a.name, v))
-        case c@GreaterThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case c@GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case LessThanOrEqual(a: Attribute, Literal(v, t)) =>
-          Some(sources.LessThanOrEqual(a.name, v))
-        case LessThanOrEqual(Literal(v, t), a: Attribute) =>
-          Some(sources.GreaterThanOrEqual(a.name, v))
-        case c@LessThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case c@LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
-          CastExpressionOptimization.checkIfCastCanBeRemove(c)
-        case s@StartsWith(a: Attribute, Literal(v, t)) =>
-          Some(sources.StringStartsWith(a.name, v.toString))
-        case c@EndsWith(a: Attribute, Literal(v, t)) =>
-          Some(CarbonEndsWith(c))
-        case c@Contains(a: Attribute, Literal(v, t)) =>
-          Some(CarbonContainsWith(c))
-        case c@Cast(a: Attribute, _) =>
-          Some(CastExpr(c))
-        case c@Literal(v, t) if v == null =>
-          Some(FalseExpr())
-        case others =>
-          if (!or) {
-            others.collect {
-              case attr: AttributeReference =>
-                attrList.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
-            }
-          }
-          None
-      }
-    }
-
-    filters.flatMap(translate(_, false)).toArray
   }
 
   /**

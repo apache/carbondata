@@ -40,19 +40,17 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 case class CarbonRelation(
     databaseName: String,
     tableName: String,
-    var metaData: CarbonMetaData,
     carbonTable: CarbonTable)
   extends LeafNode with MultiInstanceRelation {
 
   override def newInstance(): LogicalPlan = {
-    CarbonRelation(databaseName, tableName, metaData, carbonTable)
-      .asInstanceOf[this.type]
+    CarbonRelation(databaseName, tableName, carbonTable).asInstanceOf[this.type]
   }
 
   val dimensionsAttr: Seq[AttributeReference] = {
     val sett = new LinkedHashSet(carbonTable.getVisibleDimensions.asScala.asJava)
     sett.asScala.toSeq.map(dim => {
-      val dimval = metaData.carbonTable.getDimensionByName(dim.getColName)
+      val dimval = carbonTable.getDimensionByName(dim.getColName)
       val output: DataType = dimval.getDataType.getName.toLowerCase match {
         case "array" =>
           CarbonMetastoreTypes.toDataType(
@@ -80,7 +78,7 @@ case class CarbonRelation(
     new LinkedHashSet(
       carbonTable.getVisibleMeasures.asScala.asJava).asScala.toSeq
       .map { x =>
-      val metastoreType = metaData.carbonTable.getMeasureByName(x.getColName)
+      val metastoreType = carbonTable.getMeasureByName(x.getColName)
         .getDataType.getName.toLowerCase match {
         case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
         case others => others

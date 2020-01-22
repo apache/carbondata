@@ -24,18 +24,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.CacheProvider;
-import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.hive.common.type.HiveDecimal;
@@ -53,13 +46,10 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
 /**
- * This is the class to decode dictionary encoded column data back to its original value.
+ * This is the class to convert to Writable object for Hive
  */
-public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
+public class WritableReadSupport<T> implements CarbonReadSupport<T> {
 
-  protected Dictionary[] dictionaries;
-
-  protected DataType[] dataTypes;
   /**
    * carbon columns
    */
@@ -78,55 +68,19 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
   public void initialize(CarbonColumn[] carbonColumns,
       CarbonTable carbonTable) throws IOException {
     this.carbonColumns = carbonColumns;
-    dictionaries = new Dictionary[carbonColumns.length];
-    dataTypes = new DataType[carbonColumns.length];
-    for (int i = 0; i < carbonColumns.length; i++) {
-      if (carbonColumns[i].hasEncoding(Encoding.DICTIONARY) && !carbonColumns[i]
-          .hasEncoding(Encoding.DIRECT_DICTIONARY) && !carbonColumns[i].isComplex()) {
-        CacheProvider cacheProvider = CacheProvider.getInstance();
-        Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
-            .createCache(CacheType.FORWARD_DICTIONARY);
-        dataTypes[i] = carbonColumns[i].getDataType();
-        dictionaries[i] = forwardDictionaryCache.get(
-            new DictionaryColumnUniqueIdentifier(carbonTable.getAbsoluteTableIdentifier(),
-                carbonColumns[i].getColumnIdentifier(), dataTypes[i]));
-      } else {
-        dataTypes[i] = carbonColumns[i].getDataType();
-      }
-    }
   }
 
   @Override
   public T readRow(Object[] data) {
-    assert (data.length == dictionaries.length);
     writableArr = new Writable[data.length];
-    for (int i = 0; i < dictionaries.length; i++) {
-      if (dictionaries[i] != null) {
-        data[i] = dictionaries[i].getDictionaryValueForKey((int) data[i]);
-      }
+    for (int i = 0; i < data.length; i++) {
       try {
         writableArr[i] = createWritableObject(data[i], carbonColumns[i]);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
-
     return (T) writableArr;
-  }
-
-  /**
-   * to book keep the dictionary cache or update access count for each
-   * column involved during decode, to facilitate LRU cache policy if memory
-   * threshold is reached
-   */
-  @Override
-  public void close() {
-    if (dictionaries == null) {
-      return;
-    }
-    for (int i = 0; i < dictionaries.length; i++) {
-      CarbonUtil.clearDictionaryCache(dictionaries[i]);
-    }
   }
 
   /**

@@ -49,7 +49,6 @@ import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -152,20 +151,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       QueryUtil.getAllFilterDimensionsAndMeasures(queryModel.getDataMapFilter().getResolver(),
           queryProperties.complexFilterDimension, queryProperties.filterMeasures);
     }
-    CarbonTable carbonTable = queryModel.getTable();
 
     queryStatistic = new QueryStatistic();
-    // dictionary column unique column id to dictionary mapping
-    // which will be used to get column actual data
-    queryProperties.columnToDictionaryMapping =
-        QueryUtil.getDimensionDictionaryDetail(
-            queryModel.getProjectionDimensions(),
-            queryProperties.complexFilterDimension,
-            carbonTable);
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
-    queryModel.setColumnToDictionaryMapping(queryProperties.columnToDictionaryMapping);
   }
 
   /**
@@ -514,7 +504,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .getComplexDimensionsMap(projectDimensions,
             segmentProperties.getDimensionOrdinalToChunkMapping(),
             segmentProperties.getEachComplexDimColumnValueSize(),
-            queryProperties.columnToDictionaryMapping, queryProperties.complexFilterDimension));
+            queryProperties.complexFilterDimension));
     IndexKey startIndexKey = null;
     IndexKey endIndexKey = null;
     if (null != queryModel.getDataMapFilter()) {

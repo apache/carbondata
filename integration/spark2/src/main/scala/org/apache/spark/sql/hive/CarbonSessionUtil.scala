@@ -74,13 +74,17 @@ object CarbonSessionUtil {
       case SubqueryAlias(_,
       MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, catalogTable)) =>
         isRelationRefreshed = CarbonEnv.isRefreshRequired(name)(sparkSession)
-        if (catalogTable.isInstanceOf[Option[CatalogTable]]) {
-          catalogTable.asInstanceOf[Option[CatalogTable]].foreach(setStatsNone)
+        catalogTable match {
+          case tableOp: Option[CatalogTable] =>
+            tableOp.foreach(setStatsNone)
+          case _ =>
         }
       case MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, catalogTable) =>
         isRelationRefreshed = CarbonEnv.isRefreshRequired(name)(sparkSession)
-        if (catalogTable.isInstanceOf[Option[CatalogTable]]) {
-          catalogTable.asInstanceOf[Option[CatalogTable]].foreach(setStatsNone)
+        catalogTable match {
+          case tableOp: Option[CatalogTable] =>
+            tableOp.foreach(setStatsNone)
+          case _ =>
         }
       case SubqueryAlias(_, relation) if
       relation.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||

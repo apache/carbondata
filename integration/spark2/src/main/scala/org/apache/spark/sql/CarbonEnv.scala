@@ -207,8 +207,8 @@ object CarbonEnv {
    * 3. Only initialize once for all the listeners in case of concurrent scenarios we have given
    * val, as val initializes once
    */
-  val init = {
-    initListeners
+  def init(): Unit = {
+    initListeners()
     CarbonReflectionUtils.updateCarbonSerdeInfo()
   }
 

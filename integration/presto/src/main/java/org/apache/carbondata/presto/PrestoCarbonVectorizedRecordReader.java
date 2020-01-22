@@ -20,9 +20,7 @@ package org.apache.carbondata.presto;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -42,7 +40,6 @@ import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 import org.apache.carbondata.core.stats.TaskStatistics;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.AbstractRecordReader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
@@ -79,10 +76,10 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   private long queryStartTime;
 
-  private CarbonDictionaryDecodeReadSupport readSupport;
+  private CarbonPrestoDecodeReadSupport readSupport;
 
   public PrestoCarbonVectorizedRecordReader(QueryExecutor queryExecutor, QueryModel queryModel,
-      AbstractDetailQueryResultIterator iterator, CarbonDictionaryDecodeReadSupport readSupport) {
+      AbstractDetailQueryResultIterator iterator, CarbonPrestoDecodeReadSupport readSupport) {
     this.queryModel = queryModel;
     this.iterator = iterator;
     this.queryExecutor = queryExecutor;
@@ -127,13 +124,6 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     logStatistics(rowCount, queryModel.getStatisticsRecorder());
     if (columnarBatch != null) {
       columnarBatch = null;
-    }
-    // clear dictionary cache
-    Map<String, Dictionary> columnToDictionaryMapping = queryModel.getColumnToDictionaryMapping();
-    if (null != columnToDictionaryMapping) {
-      for (Map.Entry<String, Dictionary> entry : columnToDictionaryMapping.entrySet()) {
-        CarbonUtil.clearDictionaryCache(entry.getValue());
-      }
     }
     try {
       queryExecutor.finish();

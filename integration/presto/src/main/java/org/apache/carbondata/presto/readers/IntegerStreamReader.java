@@ -17,11 +17,8 @@
 
 package org.apache.carbondata.presto.readers;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -37,13 +34,10 @@ public class IntegerStreamReader extends CarbonColumnVectorImpl
 
   protected BlockBuilder builder;
 
-  private Dictionary dictionary;
-
-  public IntegerStreamReader(int batchSize, DataType dataType, Dictionary dictionary) {
+  public IntegerStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
     this.builder = type.createBlockBuilder(null, batchSize);
-    this.dictionary = dictionary;
   }
 
   @Override
@@ -58,17 +52,7 @@ public class IntegerStreamReader extends CarbonColumnVectorImpl
 
   @Override
   public void putInt(int rowId, int value) {
-    if (dictionary == null) {
-      type.writeLong(builder, value);
-    } else {
-      Object data = DataTypeUtil
-          .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.INT);
-      if (data != null) {
-        type.writeLong(builder, ((Integer) data).longValue());
-      } else {
-        builder.appendNull();
-      }
-    }
+    type.writeLong(builder, value);
   }
 
   @Override

@@ -49,11 +49,6 @@ public class BlockletDataMapIndexWrapper implements Cacheable, Serializable {
   }
 
   @Override
-  public long getFileTimeStamp() {
-    return 0;
-  }
-
-  @Override
   public int getAccessCount() {
     return 0;
   }

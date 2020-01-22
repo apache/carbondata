@@ -581,9 +581,15 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql("Update  rand set (num) = (rand())").show()
 
+    sql("select num from rand").show()
+
     sql("Update  rand set (num) = (rand(9))").show()
 
+    sql("select num from rand").show()
+
     sql("Update  rand set (name) = ('Lily')").show()
+
+    sql("select name from rand").show()
 
     sql("select name ,  num from  iud.rand").show(100)
 
