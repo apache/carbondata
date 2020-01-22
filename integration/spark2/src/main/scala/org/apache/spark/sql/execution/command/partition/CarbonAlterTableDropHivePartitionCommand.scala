@@ -190,7 +190,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
       DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
     } finally {
       AlterTableUtil.releaseLocks(locks)
-      SegmentFileStore.cleanSegments(table, null, false)
+      SegmentFileStore.cleanSegments(table, null, true)
     }
     Seq.empty[Row]
   }
