@@ -42,8 +42,7 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
 
   test("CARBONDATA-2262: test check results of table with complex data type and bucketing") {
     sql("DROP TABLE IF EXISTS create_source")
-    sql("CREATE TABLE create_source(intField INT, stringField STRING, complexField ARRAY<INT>) " +
-      "USING carbondata")
+    sql("CREATE TABLE create_source(intField INT, stringField STRING, complexField ARRAY<INT>) USING carbondata")
     sql("INSERT INTO create_source VALUES(1,'source',array(1,2,3))")
     checkAnswer(sql("SELECT * FROM create_source"), Row(1, "source", mutable.WrappedArray.newBuilder[Int].+=(1, 2, 3)))
     sql("DROP TABLE IF EXISTS create_source")
@@ -81,13 +80,13 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
     checkAnswer(sql("SELECT * FROM src_carbondata4"), Row(1, "source"))
   }
 
-  test("CARBONDATA-2396 Support Create Table As Select with 'USING org.apache.spark.sql.CarbonSource'") {
+  test("CARBONDATA-2396 Support Create Table As Select with 'USING carbondata'") {
     sql("DROP TABLE IF EXISTS src_carbondata3")
     sql("DROP TABLE IF EXISTS src_carbondata4")
-    sql("CREATE TABLE src_carbondata3(key INT, value STRING) USING org.apache.spark.sql.CarbonSource")
+    sql("CREATE TABLE src_carbondata3(key INT, value STRING) USING carbondata")
     sql("INSERT INTO src_carbondata3 VALUES(1,'source')")
     checkAnswer(sql("SELECT * FROM src_carbondata3"), Row(1, "source"))
-    sql("CREATE TABLE src_carbondata4 USING org.apache.spark.sql.CarbonSource as select * from src_carbondata3")
+    sql("CREATE TABLE src_carbondata4 USING carbondata as select * from src_carbondata3")
     checkAnswer(sql("SELECT * FROM src_carbondata4"), Row(1, "source"))
     sql("DROP TABLE IF EXISTS src_carbondata3")
     sql("DROP TABLE IF EXISTS src_carbondata4")

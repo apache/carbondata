@@ -46,7 +46,7 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
          |    stringField string,
          |    decimalField decimal(13, 0),
          |    timestampField string)
-         | USING org.apache.spark.sql.CarbonSource OPTIONS('tableName'='carbon_testtable')
+         | USING carbondata OPTIONS('tableName'='carbon_testtable')
        """.stripMargin)
 
     sql(
@@ -187,15 +187,14 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
           "\nL_RETURNFLAG string,\nL_RECEIPTDATE string,\nL_ORDERKEY string,\nL_PARTKEY string," +
           "\nL_SUPPKEY string,\nL_LINENUMBER int,\nL_QUANTITY decimal,\nL_EXTENDEDPRICE decimal," +
           "\nL_DISCOUNT decimal,\nL_TAX decimal,\nL_LINESTATUS string,\nL_COMMITDATE string," +
-          "\nL_COMMENT string \n) \nUSING org.apache.spark.sql.CarbonSource\nOPTIONS (tableName " +
-          "\"car\", DICTIONARY_EXCLUDE \"L_ORDERKEY, L_PARTKEY, L_SUPPKEY, L_COMMENT\")")
+          "\nL_COMMENT string \n) \nUSING carbondata\nOPTIONS (DICTIONARY_EXCLUDE \"L_ORDERKEY, L_PARTKEY, L_SUPPKEY, L_COMMENT\")")
     }
     assert(ex.getMessage.contains("dictionary_exclude is deprecated in CarbonData 2.0"))
   }
 
   test("test create table with complex datatype") {
     sql("drop table if exists create_source")
-    sql("create table create_source(intField int, stringField string, complexField array<string>) USING org.apache.spark.sql.CarbonSource OPTIONS('tableName'='create_source')")
+    sql("create table create_source(intField int, stringField string, complexField array<string>) USING carbondata")
     sql("drop table create_source")
   }
 
@@ -207,7 +206,7 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
          | intField INT,
          | stringField STRING,
          | complexField ARRAY<STRING>)
-         | USING org.apache.spark.sql.CarbonSource
+         | USING carbondata
        """.stripMargin)
     sql("DROP TABLE create_source")
   }
@@ -221,8 +220,7 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
          | intField INT,
          | stringField STRING,
          | complexField ARRAY<STRING>)
-         | USING org.apache.spark.sql.CarbonSource
-         | OPTIONS('tableName'='create_source_test2')
+         | USING carbondata
        """.stripMargin)
     checkExistence(sql("show tables"), true, "create_source_test")
     checkExistence(sql("show tables"), false, "create_source_test2")
@@ -233,21 +231,21 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
   test("test to create bucket columns with int field") {
     sql("drop table if exists create_source")
     intercept[Exception] {
-      sql("create table create_source(intField int, stringField string, complexField array<string>) USING org.apache.spark.sql.CarbonSource OPTIONS('bucketnumber'='1', 'bucketcolumns'='intField','tableName'='create_source')")
+      sql("create table create_source(intField int, stringField string, complexField array<string>) USING carbondata OPTIONS('bucketnumber'='1', 'bucketcolumns'='intField')")
     }
   }
 
   test("test to create bucket columns with complex data type field") {
     sql("drop table if exists create_source")
     intercept[Exception] {
-      sql("create table create_source(intField int, stringField string, complexField array<string>) USING org.apache.spark.sql.CarbonSource OPTIONS('bucketnumber'='1', 'bucketcolumns'='complexField','tableName'='create_source')")
+      sql("create table create_source(intField int, stringField string, complexField array<string>) USING carbondata OPTIONS('bucketnumber'='1', 'bucketcolumns'='complexField')")
     }
   }
 
   test("test check results of table with complex data type and bucketing") {
     sql("drop table if exists create_source")
     sql("create table create_source(intField int, stringField string, complexField array<int>) " +
-        "USING org.apache.spark.sql.CarbonSource OPTIONS('bucketnumber'='1', 'bucketcolumns'='stringField', 'tableName'='create_source')")
+        "USING carbondata OPTIONS('bucketnumber'='1', 'bucketcolumns'='stringField')")
     sql("insert into create_source values(1,'source',array(1,2,3))")
     checkAnswer(sql("select * from create_source"), Row(1,"source", mutable.WrappedArray.newBuilder[Int].+=(1,2,3)))
     sql("drop table if exists create_source")
@@ -260,7 +258,7 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
          | CREATE TABLE carbon_test(
          |    stringField string,
          |    intField int)
-         | USING org.apache.spark.sql.CarbonSource
+         | USING carbondata
       """.
         stripMargin
     )
