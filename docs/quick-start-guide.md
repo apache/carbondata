@@ -39,6 +39,7 @@ This tutorial provides a quick introduction to using CarbonData. To follow along
 CarbonData can be integrated with Spark,Presto and Hive execution engines. The below documentation guides on Installing and Configuring with these execution engines.
 
 #### Spark
+[Installing and Configuring CarbonData to run locally with Spark SQL CLI (version: 2.3+)](#installing-and-configuring-carbondata-to-run-locally-with-spark-sql)
 
 [Installing and Configuring CarbonData to run locally with Spark Shell](#installing-and-configuring-carbondata-to-run-locally-with-spark-shell)
 
@@ -65,13 +66,14 @@ CarbonData can be integrated with Spark,Presto and Hive execution engines. The b
 #### Alluxio
 [CarbonData supports read and write with Alluxio](./alluxio-guide.md)
 
-## Installing and Configuring CarbonData to run locally with Spark SQL
+## Installing and Configuring CarbonData to run locally with Spark SQL CLI (version: 2.3+)
 
-To enable CarbonExtensions in spark, we need to add the following configuration.
+In Spark SQL CLI, it use CarbonExtensions to customize the SparkSession with CarbonData's parser, analyzer, optimizer and physical planning strategy rules in Spark.
+To enable CarbonExtensions, we need to add the following configuration.
 
 |Key|Value|
 |---|---|
-|spark.sql.extensions|org.apache.spark.sql.CarbonExtensions|
+|spark.sql.extensions|org.apache.spark.sql.CarbonExtensions| 
 
 Start Spark SQL CLI by running the following command in the Spark directory:
 
@@ -88,6 +90,7 @@ CREATE TABLE IF NOT EXISTS test_table (
   age Int)
 STORED AS carbondata;
 ```
+**NOTE**: CarbonExtensions only support "STORED AS carbondata" and "USING carbondata"
 
 ###### Loading Data to a Table
 
@@ -157,7 +160,17 @@ Start Spark shell by running the following command in the Spark directory:
 ./bin/spark-shell --conf spark.sql.extensions=org.apache.spark.sql.CarbonExtensions --jars <carbondata assembly jar path>
 ```
 **NOTE** 
- - In this flow, we can use SparkSession `spark` instead of `carbon`.
+ - In this flow, we can use the built-in SparkSession `spark` instead of `carbon`.
+   We also can create a new SparkSession instead of the built-in SparkSession `spark` if need. 
+   It need to add "org.apache.spark.sql.CarbonInternalExtensions" into spark configuration "spark.sql.extensions". 
+   ```
+   SparkSession newSpark = SparkSession
+     .builder()
+     .config(sc.getConf)
+     .enableHiveSupport
+     .config("spark.sql.extensions","org.apache.spark.sql.CarbonInternalExtensions")
+     .getOrCreate()
+   ```
  - Data storage location can be specified by "spark.sql.warehouse.dir".
 
 #### Executing Queries
