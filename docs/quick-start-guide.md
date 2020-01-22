@@ -162,13 +162,13 @@ Start Spark shell by running the following command in the Spark directory:
 **NOTE** 
  - In this flow, we can use the built-in SparkSession `spark` instead of `carbon`.
    We also can create a new SparkSession instead of the built-in SparkSession `spark` if need. 
-   It need to add "org.apache.spark.sql.CarbonInternalExtensions" into spark configuration "spark.sql.extensions". 
+   It need to add "org.apache.spark.sql.CarbonExtensions" into spark configuration "spark.sql.extensions". 
    ```
    SparkSession newSpark = SparkSession
      .builder()
      .config(sc.getConf)
      .enableHiveSupport
-     .config("spark.sql.extensions","org.apache.spark.sql.CarbonInternalExtensions")
+     .config("spark.sql.extensions","org.apache.spark.sql.CarbonExtensions")
      .getOrCreate()
    ```
  - Data storage location can be specified by "spark.sql.warehouse.dir".
