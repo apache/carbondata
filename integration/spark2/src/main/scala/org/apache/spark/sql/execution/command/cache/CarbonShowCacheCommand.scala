@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.execution.command.cache
 
 import scala.collection.mutable
@@ -39,7 +40,6 @@ import org.apache.carbondata.events.{OperationContext, OperationListenerBus, Sho
 import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.spark.util.CommonUtil.bytesToDisplaySize
-
 
 case class CarbonShowCacheCommand(showExecutorCache: Boolean,
     tableIdentifier: Option[TableIdentifier],
@@ -207,8 +207,6 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       Seq()
     }
 
-    val (indexdbIndexSize, indexdbDatamapSize) = calculateDBIndexAndDatamapSize(
-      indexServerRows)
     val (indexAllIndexSize, indexAllDatamapSize) = if (isDistributedPruningEnabled) {
       getIndexServerCacheSizeForCurrentDB
     } else {
@@ -219,15 +217,13 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         carbonTable =>
           carbonTable.getTablePath
       }
-      val (driverIndexSize, driverDatamapSize) = getAllDriverCacheSize(tablePaths
-        .toList)
+      val (driverIndexSize, driverDatamapSize) = getAllDriverCacheSize(tablePaths.toList)
       if (driverIndexSize + driverDatamapSize != 0 && driverRows.nonEmpty) {
-        (Seq(
-          Row("TOTAL", driverIndexSize, driverDatamapSize, "DRIVER")
-        ) ++ driverRows).collect {
-          case row if row.getLong(1) != 0L || row.getLong(2) != 0L || row.getLong(3) != 0L =>
+        (Seq(Row("TOTAL", driverIndexSize, driverDatamapSize, "DRIVER")) ++
+         driverRows).collect {
+          case row if row.getLong(1) != 0L || row.getLong(2) != 0L =>
             Row(row(0), bytesToDisplaySize(row.getLong(1)),
-              bytesToDisplaySize(row.getLong(2)), bytesToDisplaySize(row.getLong(3)), "DRIVER")
+              bytesToDisplaySize(row.getLong(2)), "DRIVER")
         }
       } else {
         Seq()
@@ -237,13 +233,12 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
     }
 
     val indexDisplayRows = if (indexAllIndexSize + indexAllDatamapSize != 0 &&
-                               indexServerRows.size != 0) {
-      (Seq(
-        Row("TOTAL", indexAllIndexSize, indexAllDatamapSize, "INDEX SERVER")
-      ) ++ indexServerRows).collect {
-        case row if row.getLong(1) != 0L || row.getLong(2) != 0L || row.getLong(3) != 0L =>
+                               indexServerRows.nonEmpty) {
+      (Seq(Row("TOTAL", indexAllIndexSize, indexAllDatamapSize, "INDEX SERVER")) ++
+       indexServerRows).collect {
+        case row if row.getLong(1) != 0L || row.getLong(2) != 0L =>
           Row(row.get(0), bytesToDisplaySize(row.getLong(1)),
-            bytesToDisplaySize(row.getLong(2)), bytesToDisplaySize(row.getLong(3)), "INDEX SERVER")
+            bytesToDisplaySize(row.getLong(2)), "INDEX SERVER")
       }
     } else {
       Seq()
@@ -301,18 +296,8 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
 
   override protected def opName: String = "SHOW CACHE"
 
-  private def calculateDBIndexAndDatamapSize(rows: Seq[Row]): (Long, Long) = {
-    rows.map {
-      row =>
-        (row(2).asInstanceOf[Long], row.get(3).asInstanceOf[Long])
-    }.fold((0L, 0L)) {
-      case (a, b) =>
-        (a._1 + b._1, a._2 + b._2)
-    }
-  }
-
   private def makeRows(tableResult: Seq[Row], carbonTable: CarbonTable) = {
-    var (indexSize, datamapSize) = (tableResult(0).getLong(1), 0L)
+    var (indexSize, datamapSize) = (tableResult.head.getLong(1), 0L)
     tableResult.drop(2).foreach {
       row =>
         indexSize += row.getLong(1)
@@ -366,8 +351,10 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
 
   }
 
-  private def executeJobToGetCache(tableIds: List[String], executorCache: Boolean):
-      Seq[(String, Int, Long, String)] = {
+  private def executeJobToGetCache(
+      tableIds: List[String],
+      executorCache: Boolean
+  ): Seq[(String, Int, Long, String)] = {
     try {
       val (result, time) = CarbonScalaUtil.logTime {
         IndexServer.getClient.showCache(tableIds.mkString(","), executorCache).map(_.split(":"))
@@ -393,7 +380,10 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
     }
   }
 
-  private def getTableCache(cache: Seq[(String, Int, Long, String)], tableName: String) = {
+  private def getTableCache(
+      cache: Seq[(String, Int, Long, String)],
+      tableName: String
+  ): (Int, Long) = {
     val (_, indexFileLength, cacheSize, _) = cache.find(_._1 == tableName)
       .getOrElse(("", 0, 0L, ""))
     (indexFileLength, cacheSize)
@@ -474,4 +464,3 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
   }
 
 }
-
