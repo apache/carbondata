@@ -31,7 +31,6 @@ import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * This class refresh the relation from cache if the carbontable in

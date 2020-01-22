@@ -207,7 +207,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       Seq()
     }
 
-    val (indexdbIndexSize, indexdbDatamapSize, indexAllDictSize) = calculateDBIndexAndDatamapSize(
+    val (indexdbIndexSize, indexdbDatamapSize) = calculateDBIndexAndDatamapSize(
       indexServerRows)
     val (indexAllIndexSize, indexAllDatamapSize) = if (isDistributedPruningEnabled) {
       getIndexServerCacheSizeForCurrentDB
@@ -221,7 +221,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       }
       val (driverIndexSize, driverDatamapSize) = getAllDriverCacheSize(tablePaths
         .toList)
-      if (driverIndexSize + driverDatamapSize != 0 && driverRows.size!=0) {
+      if (driverIndexSize + driverDatamapSize != 0 && driverRows.nonEmpty) {
         (Seq(
           Row("TOTAL", driverIndexSize, driverDatamapSize, "DRIVER")
         ) ++ driverRows).collect {

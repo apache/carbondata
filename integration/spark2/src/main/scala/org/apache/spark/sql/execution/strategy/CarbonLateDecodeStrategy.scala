@@ -168,35 +168,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 
-  def getDecoderRDD(
-      logicalRelation: LogicalRelation,
-      projectExprsNeedToDecode: ArrayBuffer[AttributeReference],
-      rdd: RDD[InternalRow],
-      output: Seq[Attribute]): RDD[InternalRow] = {
-    val table = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-    val relation = CarbonDecoderRelation(logicalRelation.attributeMap,
-      logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
-    val attrs = projectExprsNeedToDecode.map { attr =>
-      val newAttr = CarbonToSparkAdapter.createAttributeReference(
-        attr.name,
-        attr.dataType,
-        attr.nullable,
-        attr.metadata,
-        attr.exprId,
-        Option(table.carbonRelation.tableName))
-      relation.addAttribute(newAttr)
-      newAttr
-    }
-
-    new CarbonDecoderRDD(
-      Seq(relation),
-      IncludeProfile(attrs),
-      CarbonAliasDecoderRelation(),
-      rdd,
-      output,
-      table.carbonTable.getTableInfo.serialize())
-  }
-
   /**
    * Converts to physical RDD of carbon after pushing down applicable filters.
    * @param relation
