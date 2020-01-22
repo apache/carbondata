@@ -18,7 +18,6 @@
 package org.apache.carbondata.datamap.bloom;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,7 +35,6 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
-import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -148,12 +146,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     }
 
     List<BloomQueryModel> bloomQueryModels;
-    try {
-      bloomQueryModels = createQueryModel(filterExp.getFilterExpression());
-    } catch (DictionaryGenerationException | UnsupportedEncodingException e) {
-      LOGGER.error("Exception occurs while creating query model", e);
-      throw new RuntimeException(e);
-    }
+    bloomQueryModels = createQueryModel(filterExp.getFilterExpression());
     for (BloomQueryModel bloomQueryModel : bloomQueryModels) {
       Set<Blocklet> tempHitBlockletsResult = new HashSet<>();
       if (LOGGER.isDebugEnabled()) {
@@ -207,8 +200,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     return new ArrayList<>(hitBlocklets);
   }
 
-  private List<BloomQueryModel> createQueryModel(Expression expression)
-      throws DictionaryGenerationException, UnsupportedEncodingException {
+  private List<BloomQueryModel> createQueryModel(Expression expression) {
     List<BloomQueryModel> queryModels = new ArrayList<BloomQueryModel>();
     // bloomdatamap only support equalTo and In operators now
     if (expression instanceof EqualToExpression) {
@@ -270,8 +262,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     return queryModels;
   }
 
-  private BloomQueryModel buildQueryModelForEqual(ColumnExpression ce,
-      LiteralExpression le) throws DictionaryGenerationException, UnsupportedEncodingException {
+  private BloomQueryModel buildQueryModelForEqual(ColumnExpression ce, LiteralExpression le) {
     List<byte[]> filterValues = new ArrayList<>();
     byte[] internalFilterValue = getInternalFilterValue(this.name2Col.get(ce.getColumnName()), le);
     filterValues.add(internalFilterValue);
@@ -282,8 +273,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
    * Note that `in` operator needs at least one match not exactly match. since while doing pruning,
    * we collect all the blocklets that will match the querymodel, this will not be a problem.
    */
-  private BloomQueryModel buildQueryModelForIn(ColumnExpression ce, ListExpression le)
-      throws DictionaryGenerationException, UnsupportedEncodingException {
+  private BloomQueryModel buildQueryModelForIn(ColumnExpression ce, ListExpression le) {
     List<byte[]> filterValues = new ArrayList<>();
     for (Expression child : le.getChildren()) {
       byte[] internalFilterValue = getInternalFilterValue(
@@ -293,8 +283,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     return new BloomQueryModel(ce.getColumnName(), filterValues);
   }
 
-  private byte[] getInternalFilterValue(CarbonColumn carbonColumn, LiteralExpression le) throws
-      DictionaryGenerationException, UnsupportedEncodingException {
+  private byte[] getInternalFilterValue(CarbonColumn carbonColumn, LiteralExpression le) {
     // convert the filter value to string and apply converters on it to get carbon internal value
     String strFilterValue = null;
     try {

@@ -431,6 +431,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
          | STORED AS carbondata
          | TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='stringField')
        """.stripMargin)
+//    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/mm/dd")
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '$path' INTO TABLE carbon_localsort_difftypes

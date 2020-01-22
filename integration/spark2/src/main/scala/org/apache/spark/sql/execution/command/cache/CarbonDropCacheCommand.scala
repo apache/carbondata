@@ -57,10 +57,6 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
     }
     if (cache != null) {
       LOGGER.info("Clearing cache from driver side")
-      // Create cache keys from the extracted dictionary keys for the table.
-      val dictKeys: List[String] = CacheUtil.getAllDictCacheKeys(carbonTable)
-      // Remove elements from cache
-      cache.removeAll(dictKeys.asJava)
       DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getAbsoluteTableIdentifier)
     }
     LOGGER.info("Drop cache request served for table " + carbonTable.getTableUniqueName)

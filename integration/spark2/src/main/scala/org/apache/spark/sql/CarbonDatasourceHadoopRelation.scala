@@ -17,13 +17,10 @@
 
 package org.apache.spark.sql
 
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import scala.util.control.Breaks._
-
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, GetArrayItem, GetMapValue, GetStructField, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{GetStructField, NamedExpression}
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.execution.strategy.PushDownHelper
 import org.apache.spark.sql.hive.CarbonRelation
@@ -46,8 +43,7 @@ case class CarbonDatasourceHadoopRelation(
     sparkSession: SparkSession,
     paths: Array[String],
     parameters: Map[String, String],
-    tableSchema: Option[StructType],
-    isSubquery: ArrayBuffer[Boolean] = new ArrayBuffer[Boolean]())
+    tableSchema: Option[StructType])
   extends BaseRelation with InsertableRelation {
 
   val caseInsensitiveMap: Map[String, String] = parameters.map(f => (f._1.toLowerCase, f._2))

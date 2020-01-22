@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.spark.sql
 
 import java.net.URI
@@ -29,13 +28,13 @@ import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.ExplainCommand
-import org.apache.spark.sql.hive.{CarbonMVRules, CarbonPreOptimizerRule, HiveExternalCatalog, HiveSessionCatalog}
-import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
+import org.apache.spark.sql.hive.{CarbonMVRules, HiveExternalCatalog}
+import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.types.{DataType, Metadata}
 
 object CarbonToSparkAdapter {
 
-  def addSparkListener(sparkContext: SparkContext) = {
+  def addSparkListener(sparkContext: SparkContext): Unit = {
     sparkContext.addSparkListener(new SparkListener {
       override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
         SparkSession.setDefaultSession(null)
@@ -115,10 +114,10 @@ class OptimizerProxy(
     optimizer: Optimizer) extends Optimizer(catalog) {
 
   private lazy val firstBatchRules = Seq(Batch("First Batch Optimizers", Once,
-    Seq(CarbonMVRules(session), new CarbonPreOptimizerRule()): _*))
+    Seq(CarbonMVRules(session)): _*))
 
   private lazy val LastBatchRules = Batch("Last Batch Optimizers", fixedPoint,
-    Seq(new CarbonIUDRule(), new CarbonUDFTransformRule(), new CarbonLateDecodeRule()): _*)
+    Seq(new CarbonIUDRule(), new CarbonUDFTransformRule()): _*)
 
   override def batches: Seq[Batch] = {
     firstBatchRules ++ convertedBatch() :+ LastBatchRules

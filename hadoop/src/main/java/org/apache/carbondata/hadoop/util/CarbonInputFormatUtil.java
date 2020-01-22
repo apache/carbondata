@@ -19,24 +19,12 @@ package org.apache.carbondata.hadoop.util;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.Locale;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapFilter;
-import org.apache.carbondata.core.datamap.DataMapJob;
 import org.apache.carbondata.core.datamap.DataMapUtil;
-import org.apache.carbondata.core.exception.InvalidConfigurationException;
-import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonSessionInfo;
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
-import org.apache.carbondata.hadoop.CarbonProjection;
-import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
@@ -68,73 +56,6 @@ public class CarbonInputFormatUtil {
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
     setDataMapJobIfConfigured(job.getConfiguration());
     return carbonInputFormat;
-  }
-
-  public static <V> CarbonTableInputFormat<V> createCarbonTableInputFormat(
-      AbsoluteTableIdentifier identifier, List<String> partitionId, Job job) throws IOException {
-    CarbonTableInputFormat<V> carbonTableInputFormat = new CarbonTableInputFormat<>();
-    CarbonTableInputFormat.setPartitionIdList(
-        job.getConfiguration(), partitionId);
-    CarbonTableInputFormat.setDatabaseName(
-        job.getConfiguration(), identifier.getCarbonTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat.setTableName(
-        job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
-    FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
-    setDataMapJobIfConfigured(job.getConfiguration());
-    return carbonTableInputFormat;
-  }
-
-  public static <V> CarbonTableInputFormat<V> createCarbonTableInputFormat(
-      Job job,
-      CarbonTable carbonTable,
-      String[] projectionColumns,
-      Expression filterExpression,
-      List<PartitionSpec> partitionNames,
-      DataMapJob dataMapJob) throws IOException, InvalidConfigurationException {
-    Configuration conf = job.getConfiguration();
-    CarbonInputFormat.setTableInfo(conf, carbonTable.getTableInfo());
-    CarbonInputFormat.setDatabaseName(conf, carbonTable.getTableInfo().getDatabaseName());
-    CarbonInputFormat.setTableName(conf, carbonTable.getTableInfo().getFactTable().getTableName());
-    if (partitionNames != null) {
-      CarbonInputFormat.setPartitionsToPrune(conf, partitionNames);
-    }
-    CarbonInputFormat
-        .setTransactionalTable(conf, carbonTable.getTableInfo().isTransactionalTable());
-    CarbonProjection columnProjection = new CarbonProjection(projectionColumns);
-    return createInputFormat(conf, carbonTable.getAbsoluteTableIdentifier(),
-        new DataMapFilter(carbonTable, filterExpression, true), columnProjection, dataMapJob);
-  }
-
-  private static <V> CarbonTableInputFormat<V> createInputFormat(
-      Configuration conf,
-      AbsoluteTableIdentifier identifier,
-      DataMapFilter dataMapFilter,
-      CarbonProjection columnProjection,
-      DataMapJob dataMapJob) throws IOException {
-    CarbonTableInputFormat<V> format = new CarbonTableInputFormat<>();
-    CarbonInputFormat.setTablePath(
-        conf,
-        identifier.appendWithLocalPrefix(identifier.getTablePath()));
-    CarbonInputFormat.setQuerySegment(conf, identifier);
-    CarbonInputFormat.setFilterPredicates(conf, dataMapFilter);
-    CarbonInputFormat.setColumnProjection(conf, columnProjection);
-    if (dataMapJob != null) {
-      DataMapUtil.setDataMapJob(conf, dataMapJob);
-    } else {
-      setDataMapJobIfConfigured(conf);
-    }
-    // when validate segments is disabled in thread local update it to CarbonTableInputFormat
-    CarbonSessionInfo carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
-    if (carbonSessionInfo != null) {
-      String tableUniqueKey = identifier.getDatabaseName() + "." + identifier.getTableName();
-      String inputSegmentsKey = CarbonCommonConstants.CARBON_INPUT_SEGMENTS + tableUniqueKey;
-      CarbonInputFormat.setQuerySegment(
-          conf,
-          carbonSessionInfo.getThreadParams().getProperty(
-              inputSegmentsKey,
-              CarbonProperties.getInstance().getProperty(inputSegmentsKey, "*")));
-    }
-    return format;
   }
 
   /**

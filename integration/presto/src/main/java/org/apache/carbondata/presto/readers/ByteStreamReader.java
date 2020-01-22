@@ -17,11 +17,8 @@
 
 package org.apache.carbondata.presto.readers;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -39,13 +36,10 @@ public class ByteStreamReader extends CarbonColumnVectorImpl implements PrestoVe
 
   protected BlockBuilder builder;
 
-  private Dictionary dictionary;
-
-  public ByteStreamReader(int batchSize, DataType dataType, Dictionary dictionary) {
+  public ByteStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
     this.builder = type.createBlockBuilder(null, batchSize);
-    this.dictionary = dictionary;
   }
 
   @Override
@@ -56,17 +50,6 @@ public class ByteStreamReader extends CarbonColumnVectorImpl implements PrestoVe
   @Override
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
-  }
-
-  @Override
-  public void putInt(int rowId, int value) {
-    Object data = DataTypeUtil
-        .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.BYTE);
-    if (data != null) {
-      type.writeLong(builder, (byte) data);
-    } else {
-      builder.appendNull();
-    }
   }
 
   @Override
@@ -103,11 +86,7 @@ public class ByteStreamReader extends CarbonColumnVectorImpl implements PrestoVe
     if (value == null) {
       putNull(rowId);
     } else {
-      if (dictionary == null) {
-        putByte(rowId, (byte) value);
-      } else {
-        putInt(rowId, (int) value);
-      }
+      putByte(rowId, (byte) value);
     }
   }
 }

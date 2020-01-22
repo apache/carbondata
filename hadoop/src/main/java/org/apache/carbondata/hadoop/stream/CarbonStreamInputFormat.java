@@ -20,13 +20,9 @@ package org.apache.carbondata.hadoop.stream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 
-import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.complextypes.ArrayQueryType;
@@ -91,9 +87,7 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
     }
   }
 
-  public static GenericQueryType[] getComplexDimensions(CarbonTable carbontable,
-      CarbonColumn[] carbonColumns, Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache)
-      throws IOException {
+  public static GenericQueryType[] getComplexDimensions(CarbonColumn[] carbonColumns) {
     GenericQueryType[] queryTypes = new GenericQueryType[carbonColumns.length];
     for (int i = 0; i < carbonColumns.length; i++) {
       if (carbonColumns[i].isComplex()) {
@@ -108,16 +102,15 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
               carbonColumns[i].getDataType().getName() + " is not supported");
         }
 
-        fillChildren(carbontable, queryTypes[i], (CarbonDimension) carbonColumns[i], i, cache);
+        fillChildren(queryTypes[i], (CarbonDimension) carbonColumns[i], i);
       }
     }
 
     return queryTypes;
   }
 
-  private static void fillChildren(CarbonTable carbontable, GenericQueryType parentQueryType,
-      CarbonDimension dimension, int parentBlockIndex,
-      Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache) throws IOException {
+  private static void fillChildren(GenericQueryType parentQueryType, CarbonDimension dimension,
+      int parentBlockIndex) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       CarbonDimension child = dimension.getListOfChildDimensions().get(i);
       DataType dataType = child.getDataType();
@@ -133,23 +126,13 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
       } else {
         boolean isDirectDictionary =
             CarbonUtil.hasEncoding(child.getEncoder(), Encoding.DIRECT_DICTIONARY);
-        boolean isDictionary =
-            CarbonUtil.hasEncoding(child.getEncoder(), Encoding.DICTIONARY);
-        Dictionary dictionary = null;
-        if (isDictionary) {
-          DictionaryColumnUniqueIdentifier dictionarIdentifier =
-              new DictionaryColumnUniqueIdentifier(carbontable.getAbsoluteTableIdentifier(),
-                  child.getColumnIdentifier(), child.getDataType());
-          dictionary = cache.get(dictionarIdentifier);
-        }
         queryType =
             new PrimitiveQueryType(child.getColName(), dimension.getColName(), ++parentBlockIndex,
-                child.getDataType(), 4, dictionary,
-                isDirectDictionary);
+                child.getDataType(), 4, isDirectDictionary);
       }
       parentQueryType.addChildren(queryType);
       if (child.getNumberOfChild() > 0) {
-        fillChildren(carbontable, queryType, child, parentBlockIndex, cache);
+        fillChildren(queryType, child, parentBlockIndex);
       }
     }
   }

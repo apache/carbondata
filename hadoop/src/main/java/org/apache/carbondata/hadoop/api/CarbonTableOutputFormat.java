@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
@@ -318,6 +319,13 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     model.setCarbonTransactionalTable(true);
     model.setOutputFilesInfoHolder(new OutputFilesInfoHolder());
     CarbonTable carbonTable = getCarbonTable(conf);
+
+    // global dictionary is not supported since 2.0
+    if (carbonTable.getTableInfo().getFactTable().getTableProperties().containsKey(
+        CarbonCommonConstants.DICTIONARY_INCLUDE)) {
+      DeprecatedFeatureException.globalDictNotSupported();
+    }
+
     String columnCompressor = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
         CarbonCommonConstants.COMPRESSOR);
     if (null == columnCompressor) {

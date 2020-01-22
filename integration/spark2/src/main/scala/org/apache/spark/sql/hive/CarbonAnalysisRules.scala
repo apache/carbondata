@@ -59,7 +59,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
     var includedDestRelation = false
     var addedTupleId = false
 
-    def prepareTargetReleation(relation: UnresolvedRelation): SubqueryAlias = {
+    def prepareTargetRelation(relation: UnresolvedRelation): SubqueryAlias = {
       val tupleId = UnresolvedAlias(Alias(UnresolvedFunction("getTupleId",
         Seq.empty, isDistinct = false), "tupleId")())
 
@@ -103,7 +103,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
     }
 
     // get the un-analyzed logical plan
-    val targetTable = prepareTargetReleation(table)
+    val targetTable = prepareTargetRelation(table)
     val selectPlan = parser.parsePlan(selectStmt) transform {
       case Project(projectList, child) if !includedDestColumns =>
         includedDestColumns = true

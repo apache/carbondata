@@ -89,26 +89,6 @@ object CacheUtil {
     }
   }
 
-  /**
-   * Given a carbonTable file, returns a list of all dictionary entries which can be in cache
-   *
-   * @param carbonTable
-   * @return List of all dict entries which can in cache
-   */
-  def getAllDictCacheKeys(carbonTable: CarbonTable): List[String] = {
-    def getDictCacheKey(columnIdentifier: String,
-        cacheType: CacheType[_, _]): String = {
-      columnIdentifier + CarbonCommonConstants.UNDERSCORE + cacheType.getCacheName
-    }
-
-    carbonTable.getAllDimensions.asScala
-      .collect {
-        case dict if dict.isGlobalDictionaryEncoding =>
-          Seq(getDictCacheKey(dict.getColumnId, CacheType.FORWARD_DICTIONARY),
-            getDictCacheKey(dict.getColumnId, CacheType.REVERSE_DICTIONARY))
-      }.flatten.toList
-  }
-
   def getBloomCacheKeys(carbonTable: CarbonTable, datamap: DataMapSchema): List[String] = {
     val segments = CarbonDataMergerUtil.getValidSegmentList(carbonTable).asScala
 

@@ -52,32 +52,6 @@ import org.apache.carbondata.events.{LookupRelationPostEvent, OperationContext, 
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
-case class MetaData(var carbonTables: ArrayBuffer[CarbonTable]) {
-  // use to lock the carbonTables
-  val lock : ReentrantReadWriteLock = new ReentrantReadWriteLock
-  val readLock: Lock = lock.readLock()
-  val writeLock: Lock = lock.writeLock()
-
-  // clear the metadata
-  def clear(): Unit = {
-    writeLock.lock()
-    carbonTables.clear()
-    writeLock.unlock()
-  }
-}
-
-case class CarbonMetaData(
-    dims: Seq[String],
-    msrs: Seq[String],
-    carbonTable: CarbonTable,
-    dictionaryMap: DictionaryMap)
-
-case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
-  def get(name: String): Option[Boolean] = {
-    dictionaryMap.get(name.toLowerCase)
-  }
-}
-
 object MatchLogicalRelation {
   def unapply(
       logicalPlan: LogicalPlan
@@ -154,7 +128,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
           if (isSchemaRefreshed(t.getAbsoluteTableIdentifier, sparkSession)) {
             readCarbonSchema(t.getAbsoluteTableIdentifier, parameters)
           } else {
-            CarbonRelation(database, tableName, CarbonSparkUtil.createSparkMeta(t), t)
+            CarbonRelation(database, tableName, t)
           }
         } else {
           DataMapStoreManager.getInstance().clearDataMaps(absIdentifier)
@@ -172,8 +146,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     readCarbonSchema(absIdentifier, parameters,
       !parameters.getOrElse("isTransactional", "true").toBoolean) match {
       case Some(meta) =>
-        CarbonRelation(absIdentifier.getDatabaseName, absIdentifier.getTableName,
-          CarbonSparkUtil.createSparkMeta(meta), meta)
+        CarbonRelation(absIdentifier.getDatabaseName, absIdentifier.getTableName, meta)
       case None =>
         throw new NoSuchTableException(absIdentifier.getDatabaseName, absIdentifier.getTableName)
     }

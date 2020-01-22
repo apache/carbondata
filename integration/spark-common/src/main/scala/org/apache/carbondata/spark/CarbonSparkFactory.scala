@@ -16,8 +16,7 @@
  */
 package org.apache.carbondata.spark
 
-import org.apache.carbondata.core.metadata.ColumnIdentifier
-import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 
  /**
   * Column validator
@@ -25,19 +24,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension,
 trait ColumnValidator {
   def validateColumns(columns: Seq[ColumnSchema])
 }
-/**
- * Dictionary related helper service
- */
-trait DictionaryDetailService {
-  def getDictionaryDetail(dictFolderPath: String, primDimensions: Array[CarbonDimension],
-      tablePath: String): DictionaryDetail
-}
-
-/**
- * Dictionary related detail
- */
-case class DictionaryDetail(columnIdentifiers: Array[ColumnIdentifier],
-    dictFilePaths: Array[String], dictFileExists: Array[Boolean])
 
 /**
  * Factory class
@@ -50,10 +36,4 @@ object CarbonSparkFactory {
     new CarbonColumnValidator
   }
 
-  /**
-   * @return dictionary helper
-   */
-  def getDictionaryDetailService: DictionaryDetailService = {
-    new DictionaryDetailHelper
-  }
 }

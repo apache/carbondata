@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.cache;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 
@@ -28,18 +26,6 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
  * surrogate mapping) dictionary or a B-tree cache
  */
 public class CacheType<K, V> {
-
-  /**
-   * Forward dictionary cache which maintains surrogate key to byte array mapping
-   */
-  public static final CacheType<DictionaryColumnUniqueIdentifier, Dictionary> FORWARD_DICTIONARY =
-      new CacheType("forward_dictionary");
-
-  /**
-   * Reverse dictionary cache which maintains byte array to surrogate key mapping
-   */
-  public static final CacheType<DictionaryColumnUniqueIdentifier, Dictionary> REVERSE_DICTIONARY =
-      new CacheType("reverse_dictionary");
 
   /**
    * Executor BTree cache which maintains size of BTree metadata

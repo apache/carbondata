@@ -22,40 +22,7 @@ import scala.collection.mutable
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Count}
-import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
-import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.optimizer.CarbonDecoderRelation
-
-import org.apache.carbondata.spark.CarbonAliasDecoderRelation
-
-case class CarbonDictionaryCatalystDecoder(
-    relations: Seq[CarbonDecoderRelation],
-    profile: CarbonProfile,
-    aliasMap: CarbonAliasDecoderRelation,
-    isOuter: Boolean,
-    child: LogicalPlan) extends UnaryNode {
-  // the output should be updated with converted datatype, it is need for limit+sort plan.
-  override def output: Seq[Attribute] = {
-    child match {
-      case l: LogicalRelation =>
-        // If the child is logical plan then first update all dictionary attr with IntegerType
-        val logicalOut =
-          CarbonDictionaryDecoder.updateAttributes(child.output, relations, aliasMap)
-        CarbonDictionaryDecoder.convertOutput(logicalOut, relations, profile, aliasMap)
-      case Filter(cond, l: LogicalRelation) =>
-        // If the child is logical plan then first update all dictionary attr with IntegerType
-        val logicalOut =
-          CarbonDictionaryDecoder.updateAttributes(child.output, relations, aliasMap)
-        CarbonDictionaryDecoder.convertOutput(logicalOut, relations, profile, aliasMap)
-      case Join(l: LogicalRelation, r: LogicalRelation, _, _) =>
-        val logicalOut =
-          CarbonDictionaryDecoder.updateAttributes(child.output, relations, aliasMap)
-        CarbonDictionaryDecoder.convertOutput(logicalOut, relations, profile, aliasMap)
-      case _ => CarbonDictionaryDecoder.convertOutput(child.output, relations, profile, aliasMap)
-    }
-  }
-
-}
+import org.apache.spark.sql.catalyst.plans.logical._
 
 abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
   def isEmpty: Boolean = attributes.isEmpty

@@ -130,13 +130,7 @@ public class CacheProvider {
    */
   private void createBlockletDataMapCache(CacheType cacheType) {
     Cache cacheObject = null;
-    if (cacheType.equals(CacheType.REVERSE_DICTIONARY)) {
-      // TODO: remove cache for dictionary after dictionary id deprecated
-      return;
-    } else if (cacheType.equals(CacheType.FORWARD_DICTIONARY)) {
-      // TODO: remove cache for dictionary after dictionary id deprecated
-      return;
-    } else if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
+    if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
       cacheObject = new BlockletDataMapIndexStore(carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);

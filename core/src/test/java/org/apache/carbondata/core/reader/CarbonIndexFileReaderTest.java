@@ -19,8 +19,6 @@ package org.apache.carbondata.core.reader;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.reader.CarbonIndexFileReader;
-import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.format.IndexHeader;
 
 import mockit.Mock;

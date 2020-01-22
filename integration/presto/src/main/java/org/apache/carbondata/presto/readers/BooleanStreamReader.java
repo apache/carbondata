@@ -17,11 +17,8 @@
 
 package org.apache.carbondata.presto.readers;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -37,13 +34,10 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
 
   protected BlockBuilder builder;
 
-  private Dictionary dictionary;
-
-  public BooleanStreamReader(int batchSize, DataType dataType, Dictionary dictionary) {
+  public BooleanStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
     this.builder = type.createBlockBuilder(null, batchSize);
-    this.dictionary = dictionary;
   }
 
   @Override
@@ -54,17 +48,6 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
   @Override
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
-  }
-
-  @Override
-  public void putInt(int rowId, int value) {
-    Object data = DataTypeUtil
-        .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.BOOLEAN);
-    if (data != null) {
-      type.writeBoolean(builder, (boolean) data);
-    } else {
-      builder.appendNull();
-    }
   }
 
   @Override
@@ -106,11 +89,7 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
     if (value == null) {
       putNull(rowId);
     } else {
-      if (dictionary == null) {
-        putBoolean(rowId, (boolean) value);
-      } else {
-        putInt(rowId, (int) value);
-      }
+      putBoolean(rowId, (boolean) value);
     }
   }
 }

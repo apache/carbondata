@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
-import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
@@ -61,7 +60,7 @@ public interface GenericDataType<T> {
    * @throws IOException
    */
   void writeByteArray(T input, DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
-      throws IOException, DictionaryGenerationException;
+      throws IOException;
 
   /**
    * @return surrogateIndex for primitive column in complex type

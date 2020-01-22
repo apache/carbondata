@@ -40,8 +40,6 @@ import org.apache.spark.util.CarbonReflectionUtils
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
-import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
@@ -151,43 +149,21 @@ object CarbonScalaUtil {
    */
   def convertToCarbonFormat(
       value: String,
-      column: CarbonColumn,
-      forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary],
-      table: CarbonTable): String = {
-    if (column.hasEncoding(Encoding.DICTIONARY)) {
-      if (column.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        if (column.getDataType.equals(CarbonDataTypes.TIMESTAMP)) {
-          val time = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
-            column.getDataType,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-          ).getValueFromSurrogate(value.toInt)
-          if (time == null) {
-            return null
-          }
-          return DateTimeUtils.timestampToString(time.toString.toLong * 1000)
-        } else if (column.getDataType.equals(CarbonDataTypes.DATE)) {
-          val date = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
-            column.getDataType,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
-          ).getValueFromSurrogate(value.toInt)
-          if (date == null) {
-            return null
-          }
-          return DateTimeUtils.dateToString(date.toString.toInt)
-        }
-      }
-      val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
-        table.getAbsoluteTableIdentifier,
-        column.getColumnIdentifier, column.getDataType)
-      return forwardDictionaryCache.get(
-        dictionaryColumnUniqueIdentifier).getDictionaryValueForKey(value.toInt)
-    }
+      column: CarbonColumn): String = {
     try {
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
           DateTimeUtils.timestampToString(value.toLong * 1000)
         case CarbonDataTypes.DATE =>
-          DateTimeUtils.dateToString(DateTimeUtils.millisToDays(value.toLong))
+          val date = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
+            column.getDataType,
+            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
+          ).getValueFromSurrogate(value.toInt)
+          if (date == null) {
+            null
+          } else {
+            DateTimeUtils.dateToString(date.toString.toInt)
+          }
         case _ => value
       }
     } catch {
@@ -242,9 +218,6 @@ object CarbonScalaUtil {
    */
   def updatePartitions(partitionSpec: mutable.LinkedHashMap[String, String],
       table: CarbonTable): mutable.LinkedHashMap[String, String] = {
-    val cacheProvider: CacheProvider = CacheProvider.getInstance
-    val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
     partitionSpec.map { case (col, pValue) =>
       // replace special string with empty value.
       val value = if (pValue == null) {
@@ -255,18 +228,11 @@ object CarbonScalaUtil {
         pValue
       }
       val carbonColumn = table.getColumnByName(col.toLowerCase)
-      val dataType =
-        CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
       try {
         if (value.equals(hiveDefaultPartition)) {
           (col.toLowerCase, value)
         } else {
-          val convertedString =
-            convertToCarbonFormat(
-              value,
-              carbonColumn,
-              forwardDictionaryCache,
-              table)
+          val convertedString = convertToCarbonFormat(value, carbonColumn)
           if (convertedString == null) {
             (col.toLowerCase, hiveDefaultPartition)
           } else {

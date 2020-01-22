@@ -130,7 +130,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
       ("", "", ""),
       ("## Index Information", "", ""),
       ("Sort Scope", sortScope, ""),
-      ("Sort Columns", relation.metaData.carbonTable.getSortColumns.asScala.mkString(", "), ""),
+      ("Sort Columns", relation.carbonTable.getSortColumns.asScala.mkString(", "), ""),
       ("Inverted Index Columns", carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
         .getOrElse(CarbonCommonConstants.INVERTED_INDEX, ""), ""),
       ("Cached Min/Max Index Columns",
@@ -265,7 +265,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
           .listPartitions(new TableIdentifier(carbonTable.getTableName,
             Some(carbonTable.getDatabaseName))).size.toString
       case _ =>
-        throw new DeprecatedFeatureException("Custom Partition")
+        DeprecatedFeatureException.customPartitionNotSupported()
+        null
     }
   }
 

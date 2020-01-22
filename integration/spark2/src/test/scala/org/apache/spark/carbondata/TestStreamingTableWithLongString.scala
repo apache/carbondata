@@ -92,7 +92,7 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
   test("[CARBONDATA-3497] Support to write long string for streaming table: ingest from file source") {
     val identifier = new TableIdentifier("stream_table_longstr_file", Option("streaming_longstr"))
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetaStore.lookupRelation(identifier)(spark)
-      .asInstanceOf[CarbonRelation].metaData.carbonTable
+      .asInstanceOf[CarbonRelation].carbonTable
     // streaming ingest 10 rows
     generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
     val thread = createFileStreamingThread(spark, carbonTable, csvDataDir, intervalSecond = 1,
@@ -456,7 +456,7 @@ class TestStreamingTableWithLongString extends QueryTest with BeforeAndAfterAll 
   ): Unit = {
     val identifier = new TableIdentifier(tableName, Option("streaming_longstr"))
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetaStore.lookupRelation(identifier)(spark)
-      .asInstanceOf[CarbonRelation].metaData.carbonTable
+      .asInstanceOf[CarbonRelation].carbonTable
     var server: ServerSocket = null
     try {
       server = getServerSocket()

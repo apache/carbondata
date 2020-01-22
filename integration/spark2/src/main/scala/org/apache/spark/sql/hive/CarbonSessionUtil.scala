@@ -31,7 +31,6 @@ import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * This class refresh the relation from cache if the carbontable in
@@ -74,13 +73,17 @@ object CarbonSessionUtil {
       case SubqueryAlias(_,
       MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, catalogTable)) =>
         isRelationRefreshed = CarbonEnv.isRefreshRequired(name)(sparkSession)
-        if (catalogTable.isInstanceOf[Option[CatalogTable]]) {
-          catalogTable.asInstanceOf[Option[CatalogTable]].foreach(setStatsNone)
+        catalogTable match {
+          case tableOp: Option[CatalogTable] =>
+            tableOp.foreach(setStatsNone)
+          case _ =>
         }
       case MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, catalogTable) =>
         isRelationRefreshed = CarbonEnv.isRefreshRequired(name)(sparkSession)
-        if (catalogTable.isInstanceOf[Option[CatalogTable]]) {
-          catalogTable.asInstanceOf[Option[CatalogTable]].foreach(setStatsNone)
+        catalogTable match {
+          case tableOp: Option[CatalogTable] =>
+            tableOp.foreach(setStatsNone)
+          case _ =>
         }
       case SubqueryAlias(_, relation) if
       relation.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||

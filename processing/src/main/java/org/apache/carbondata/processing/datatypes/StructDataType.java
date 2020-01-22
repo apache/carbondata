@@ -25,7 +25,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
-import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -183,7 +182,7 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   @Override
   public void writeByteArray(StructObject input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
+      BadRecordLogHolder logHolder) throws IOException {
     dataOutputStream.writeShort(children.size());
     if (input == null) {
       for (int i = 0; i < children.size(); i++) {

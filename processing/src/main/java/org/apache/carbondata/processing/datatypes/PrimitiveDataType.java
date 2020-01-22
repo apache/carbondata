@@ -31,7 +31,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.devapi.BiDictionary;
-import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -255,7 +254,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   @Override
   public void writeByteArray(Object input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
+      BadRecordLogHolder logHolder) throws IOException {
     String parsedValue =
         input == null ? null : DataTypeUtil.parseValue(input.toString(), carbonDimension);
     String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());

@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -54,22 +53,21 @@ public class CarbonVectorBatch {
   // Total number of rows that have been filtered.
   private int numRowsFiltered = 0;
 
-  private CarbonVectorBatch(StructField[] schema, CarbonDictionaryDecodeReadSupport readSupport,
+  private CarbonVectorBatch(StructField[] schema, CarbonPrestoDecodeReadSupport readSupport,
       int maxRows) {
     this.capacity = maxRows;
     this.columns = new CarbonColumnVectorImpl[schema.length];
     this.nullFilteredColumns = new HashSet<>();
     this.filteredRows = new boolean[maxRows];
-    Dictionary[] dictionaries = readSupport.getDictionaries();
     DataType[] dataTypes = readSupport.getDataTypes();
 
     for (int i = 0; i < schema.length; ++i) {
-      columns[i] = createDirectStreamReader(maxRows, dataTypes[i], schema[i], dictionaries[i]);
+      columns[i] = createDirectStreamReader(maxRows, dataTypes[i], schema[i]);
     }
   }
 
   public static CarbonVectorBatch allocate(StructField[] schema,
-      CarbonDictionaryDecodeReadSupport readSupport, boolean isDirectFill) {
+      CarbonPrestoDecodeReadSupport readSupport, boolean isDirectFill) {
     if (isDirectFill) {
       return new CarbonVectorBatch(schema, readSupport,
           CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
@@ -79,29 +77,28 @@ public class CarbonVectorBatch {
   }
 
   public static CarbonColumnVectorImpl createDirectStreamReader(int batchSize, DataType dataType,
-      StructField field, Dictionary dictionary) {
+      StructField field) {
     if (dataType == DataTypes.BOOLEAN) {
-      return new BooleanStreamReader(batchSize, field.getDataType(), dictionary);
+      return new BooleanStreamReader(batchSize, field.getDataType());
     } else if (dataType == DataTypes.SHORT) {
-      return new ShortStreamReader(batchSize, field.getDataType(), dictionary);
+      return new ShortStreamReader(batchSize, field.getDataType());
     } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
-      return new IntegerStreamReader(batchSize, field.getDataType(), dictionary);
+      return new IntegerStreamReader(batchSize, field.getDataType());
     } else if (dataType == DataTypes.TIMESTAMP) {
-      return new TimestampStreamReader(batchSize, field.getDataType(), dictionary);
+      return new TimestampStreamReader(batchSize, field.getDataType());
     } else if (dataType == DataTypes.LONG) {
-      return new LongStreamReader(batchSize, field.getDataType(), dictionary);
+      return new LongStreamReader(batchSize, field.getDataType());
     } else if (dataType == DataTypes.DOUBLE) {
-      return new DoubleStreamReader(batchSize, field.getDataType(), dictionary);
+      return new DoubleStreamReader(batchSize, field.getDataType());
     } else if (dataType == DataTypes.FLOAT) {
-      return new FloatStreamReader(batchSize, field.getDataType(), dictionary);
+      return new FloatStreamReader(batchSize, field.getDataType());
     } else if (dataType == DataTypes.BYTE) {
-      return new ByteStreamReader(batchSize, field.getDataType(), dictionary);
+      return new ByteStreamReader(batchSize, field.getDataType());
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.VARCHAR) {
-      return new SliceStreamReader(batchSize, field.getDataType(), dictionary);
+      return new SliceStreamReader(batchSize, field.getDataType());
     } else if (DataTypes.isDecimal(dataType)) {
       if (dataType instanceof DecimalType) {
-        return new DecimalSliceStreamReader(batchSize, field.getDataType(), (DecimalType) dataType,
-            dictionary);
+        return new DecimalSliceStreamReader(batchSize, field.getDataType(), (DecimalType) dataType);
       } else {
         return null;
       }

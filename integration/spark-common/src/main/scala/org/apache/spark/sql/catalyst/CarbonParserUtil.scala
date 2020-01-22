@@ -584,13 +584,10 @@ object CarbonParserUtil {
       }
     }
 
-    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
-      // dictionary_exclude is not supported since 2.0
-      throw new DeprecatedFeatureException("dictionary_exclude")
-    }
-    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
-      // dictionary_include is not supported since 2.0
-      throw new DeprecatedFeatureException("dictionary_include")
+    // Global dictionary is deprecated since 2.0
+    if (tableProperties.contains(CarbonCommonConstants.DICTIONARY_INCLUDE) ||
+        tableProperties.contains(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
+      DeprecatedFeatureException.globalDictNotSupported()
     }
 
     // by default consider all String cols as dims and if any dictionary include isn't present then

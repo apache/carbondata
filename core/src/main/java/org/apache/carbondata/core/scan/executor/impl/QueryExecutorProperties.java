@@ -18,11 +18,9 @@
 package org.apache.carbondata.core.scan.executor.impl;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -32,12 +30,6 @@ import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
  * Holds all the properties required for query execution
  */
 public class QueryExecutorProperties {
-
-  /**
-   * this will hold the information about the dictionary dimension
-   * which to
-   */
-  public Map<String, Dictionary> columnToDictionaryMapping;
 
   /**
    * all the complex dimension which is on filter

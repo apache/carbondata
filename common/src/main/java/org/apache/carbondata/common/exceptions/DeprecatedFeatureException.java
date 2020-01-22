@@ -19,7 +19,16 @@ package org.apache.carbondata.common.exceptions;
 
 public class DeprecatedFeatureException extends RuntimeException {
 
-  public DeprecatedFeatureException(String featureName) {
+  private DeprecatedFeatureException(String featureName) {
     super(featureName + " is deprecated in CarbonData 2.0");
   }
+
+  public static void globalDictNotSupported() throws DeprecatedFeatureException {
+    throw new DeprecatedFeatureException("Global dictionary");
+  }
+
+  public static void customPartitionNotSupported() throws DeprecatedFeatureException {
+    throw new DeprecatedFeatureException("Custom partition");
+  }
+
 }
