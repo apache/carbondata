@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.execution.command.table
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSource, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
@@ -26,6 +28,7 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.util.CarbonUtil
 
 /**
  * this command wrap schema generation and CreateDataSourceTableCommand
@@ -61,11 +64,14 @@ case class CarbonCreateDataSourceTableCommand(
     }
 
     // Step1:
-    // create carbon TableInfo object from the CatalogTable
-    // TableInfo will be persisted in table path as schema file.
+    // Create the table metadata required by carbondata table, including TableInfo object which
+    // will be persist in step3 and a new CatalogTable with updated information need by
+    // CarbonSource. (Because spark does not pass the information carbon needs when calling create
+    // relation API, so we need to update the CatalogTable to add those information, like table
+    // name, database name, table path, etc)
     //
     // Step2:
-    // create a new CatalogTable containing an updated table properties.
+    // Create a new CatalogTable containing an updated table properties.
     // We need to update the table properties since carbon needs to use extra information
     // when creating Relation in CarbonSource, but spark is not passing them, like table name,
     // database name, table path, etc.
@@ -73,14 +79,12 @@ case class CarbonCreateDataSourceTableCommand(
     // Step3:
     // Persist the TableInfo object in table path as schema file.
 
-    val tableInfo = createTableInfo(sparkSession, table)
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+    val (tableInfo, catalogTable) = CarbonSource.createTableMeta(sparkSession , table, metaStore)
 
     val rows = try {
-      val updatedCatalogTable = CarbonSource.updateCatalogTableWithCarbonSchema(
-        table, tableInfo, metaStore)
       CreateDataSourceTableCommand(
-        updatedCatalogTable,
+        catalogTable,
         ignoreIfExists
       ).run(sparkSession)
     } catch {
@@ -92,9 +96,7 @@ case class CarbonCreateDataSourceTableCommand(
     }
 
     try {
-      if (!metaStore.isReadFromHiveMetaStore && tableInfo.isTransactionalTable) {
-        CarbonSource.saveToDisk(metaStore, ignoreIfExists, tableInfo)
-      }
+      CarbonSource.saveCarbonSchemaFile(metaStore, ignoreIfExists, tableInfo)
     } catch {
       case ex: Throwable =>
         // drop the table if anything goes wrong
@@ -111,28 +113,4 @@ case class CarbonCreateDataSourceTableCommand(
     rows
   }
 
-  private def createTableInfo(sparkSession: SparkSession, table: CatalogTable): TableInfo = {
-    val tableInfo = CarbonSparkSqlParserUtil.buildTableInfoFromCatalogTable(
-      table,
-      ifNotExists = true,
-      sparkSession)
-    val tableLocation = if (table.storage.locationUri.isDefined) {
-      Some(table.storage.locationUri.get.toString)
-    } else {
-      None
-    }
-    val tablePath = CarbonEnv.createTablePath(
-      Some(tableInfo.getDatabaseName),
-      tableInfo.getFactTable.getTableName,
-      tableInfo.getFactTable.getTableId,
-      tableLocation,
-      table.tableType == CatalogTableType.EXTERNAL,
-      tableInfo.isTransactionalTable)(sparkSession)
-    tableInfo.setTablePath(tablePath)
-    CarbonSparkSqlParserUtil.validateTableProperties(tableInfo)
-    val schemaEvolutionEntry = new SchemaEvolutionEntry
-    schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
-    tableInfo.getFactTable.getSchemaEvolution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
-    tableInfo
-  }
 }
