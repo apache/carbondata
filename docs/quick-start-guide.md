@@ -150,6 +150,7 @@ val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(
  - Data storage location can be specified by `<carbon_store_path>`, like `/carbon/data/store`, `hdfs://localhost:9000/carbon/data/store` or `s3a://carbon/data/store`.
 
 ###### Option 2: Using SparkSession with CarbonExtensions
+
 Start Spark shell by running the following command in the Spark directory:
 
 ```
@@ -174,6 +175,17 @@ carbon.sql(
               | STORED AS carbondata
            """.stripMargin)
 ```
+**NOTE**: 
+The following table list all supported syntax:
+
+|create table |SparkSession with CarbonExtensions | CarbonSession|
+|---|---|---|
+| STORED AS carbondata|yes|yes|
+| USING carbondata|yes|yes|
+| STORED BY 'carbondata'|no|yes|
+| STORED BY 'org.apache.carbondata.format'|no|yes|
+
+We suggest to use CarbonExtensions instead of CarbonSession.
 
 ###### Loading Data to a Table
 
