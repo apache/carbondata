@@ -42,7 +42,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, RefreshTablePostExecutionEvent, RefreshTablePreExecutionEvent}
-import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Command to register carbon table from existing carbon table data
@@ -70,7 +69,7 @@ case class RefreshCarbonTableCommand(
     // 2.1 check if the table already register with hive then ignore and continue with the next
     // schema
     val isCarbonDataSource = try {
-      CommonUtil.isCarbonDataSource(sparkSession.sessionState.catalog
+      CarbonSource.isCarbonDataSource(sparkSession.sessionState.catalog
         .getTableMetadata(TableIdentifier(tableName, databaseNameOp)))
     } catch {
       case _: NoSuchTableException =>

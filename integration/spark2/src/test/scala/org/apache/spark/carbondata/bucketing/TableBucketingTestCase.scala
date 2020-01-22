@@ -83,8 +83,8 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
            CREATE TABLE t9
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
-           USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="-1", "bucketcolumns"="name", "tableName"="t9")
+           USING carbondata
+           OPTIONS("bucketnumber"="-1", "bucketcolumns"="name")
         """)
       assert(false)
     }

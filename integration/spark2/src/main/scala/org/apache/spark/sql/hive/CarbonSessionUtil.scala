@@ -19,7 +19,7 @@ package org.apache.spark.sql.hive
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSource, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition, ExternalCatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.Expression
@@ -31,7 +31,6 @@ import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
@@ -58,7 +57,7 @@ object CarbonSessionUtil {
      * Set the stats to none in case of carbontable
      */
     def setStatsNone(catalogTable: CatalogTable): Unit = {
-      if (CommonUtil.isCarbonDataSource(catalogTable)) {
+      if (CarbonSource.isCarbonDataSource(catalogTable)) {
         // Update stats to none in case of carbon table as we are not expecting any stats from
         // Hive. Hive gives wrong stats for carbon table.
         catalogTable.stats match {

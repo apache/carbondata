@@ -32,8 +32,6 @@ import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
-import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Carbon strategies for ddl commands
@@ -154,23 +152,23 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if isCarbonTable(truncateTable.tableName) =>
         ExecutedCommandExec(CarbonTruncateCommand(truncateTable)) :: Nil
       case createTable@org.apache.spark.sql.execution.datasources.CreateTable(_, _, None)
-        if CommonUtil.isCarbonDataSource(createTable.tableDesc) =>
+        if CarbonSource.isCarbonDataSource(createTable.tableDesc) =>
         // CREATE TABLE USING carbondata
         ExecutedCommandExec(DDLHelper.createDataSourceTable(createTable, sparkSession)) :: Nil
       case MatchCreateDataSourceTable(tableDesc, mode, query)
-        if CommonUtil.isCarbonDataSource(tableDesc) =>
+        if CarbonSource.isCarbonDataSource(tableDesc) =>
         // CREATE TABLE USING carbondata AS SELECT
         ExecutedCommandExec(
           DDLHelper.createDataSourceTableAsSelect(tableDesc, query, mode, sparkSession)
         ) :: Nil
       case org.apache.spark.sql.execution.datasources.CreateTable(tableDesc, mode, query)
-        if CommonUtil.isCarbonDataSource(tableDesc) =>
+        if CarbonSource.isCarbonDataSource(tableDesc) =>
         // CREATE TABLE USING carbondata AS SELECT
         ExecutedCommandExec(
           DDLHelper.createDataSourceTableAsSelect(tableDesc, query.get, mode, sparkSession)
         ) :: Nil
       case createTable@CreateDataSourceTableCommand(table, _)
-        if CommonUtil.isCarbonDataSource(table) =>
+        if CarbonSource.isCarbonDataSource(table) =>
         // CREATE TABLE USING carbondata
         ExecutedCommandExec(
           DDLHelper.createDataSourceTable(createTable, sparkSession)

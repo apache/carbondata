@@ -405,6 +405,14 @@ object CarbonSource {
       }
     }
   }
+
+  def isCarbonDataSource(catalogTable: CatalogTable): Boolean = {
+    catalogTable.provider match {
+      case Some(x) => x.equalsIgnoreCase("carbondata")
+      case None => false
+    }
+  }
+
 }
 
 /**
