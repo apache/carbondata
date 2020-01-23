@@ -26,7 +26,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
@@ -105,6 +107,11 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     carbonTable = getOrCreateCarbonTable(job.getConfiguration());
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
+    }
+    // global dictionary is not supported since 2.0
+    if (carbonTable.getTableInfo().getFactTable().getTableProperties().containsKey(
+        CarbonCommonConstants.DICTIONARY_INCLUDE)) {
+      DeprecatedFeatureException.globalDictNotSupported();
     }
     this.readCommittedScope = getReadCommitted(job, identifier);
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();

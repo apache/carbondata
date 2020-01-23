@@ -584,15 +584,6 @@ object CarbonParserUtil {
       }
     }
 
-    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
-      // dictionary_exclude is not supported since 2.0
-      throw new DeprecatedFeatureException("dictionary_exclude")
-    }
-    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
-      // dictionary_include is not supported since 2.0
-      throw new DeprecatedFeatureException("dictionary_include")
-    }
-
     // by default consider all String cols as dims and if any dictionary include isn't present then
     // add it to noDictionaryDims list. consider all dictionary excludes/include cols as dims
     fields.foreach { field =>

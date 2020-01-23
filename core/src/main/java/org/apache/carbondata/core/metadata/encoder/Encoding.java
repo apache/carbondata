@@ -28,7 +28,7 @@ public enum Encoding {
   RLE,
   INVERTED_INDEX,
   BIT_PACKED,
-  DIRECT_DICTIONARY,
+  DIRECT_DICTIONARY,  // currently, only DATE data type use this encoding
   IMPLICIT,
   DIRECT_COMPRESS,
   ADAPTIVE_INTEGRAL,

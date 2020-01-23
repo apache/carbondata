@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
@@ -113,8 +112,6 @@ public class TableSpec {
         } else {
           noSortDictDimSpec.add(spec);
         }
-      } else if (dimension.isGlobalDictionaryEncoding()) {
-        throw new DeprecatedFeatureException("global dictionary");
       } else {
         spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, noDictActualPosition++);
         dimensionSpec[dimIndex++] = spec;

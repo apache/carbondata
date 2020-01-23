@@ -245,7 +245,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       case LIST:
       case RANGE:
       case RANGE_INTERVAL:
-        throw new DeprecatedFeatureException("Custom Partition");
+        DeprecatedFeatureException.customPartitionNotSupported();
+        return null;
       default:
         return org.apache.carbondata.format.PartitionType.NATIVE_HIVE;
     }
@@ -573,7 +574,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       case LIST:
       case RANGE:
       case RANGE_INTERVAL:
-        throw new DeprecatedFeatureException("Custom Partition");
+        DeprecatedFeatureException.customPartitionNotSupported();
+        return null;
       default:
         return PartitionType.NATIVE_HIVE;
     }

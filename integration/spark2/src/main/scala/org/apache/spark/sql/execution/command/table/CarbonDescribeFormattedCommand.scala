@@ -265,7 +265,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
           .listPartitions(new TableIdentifier(carbonTable.getTableName,
             Some(carbonTable.getDatabaseName))).size.toString
       case _ =>
-        throw new DeprecatedFeatureException("Custom Partition")
+        DeprecatedFeatureException.customPartitionNotSupported()
+        null
     }
   }
 

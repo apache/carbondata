@@ -182,7 +182,7 @@ object CarbonSparkSqlParserUtil {
     // validate tblProperties, global dictionary is deprecated
     if (tableProperties.contains(CarbonCommonConstants.DICTIONARY_INCLUDE) ||
         tableProperties.contains(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
-      throw new DeprecatedFeatureException("global dictionary")
+      DeprecatedFeatureException.globalDictNotSupported()
     }
 
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)

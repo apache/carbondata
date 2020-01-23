@@ -30,7 +30,6 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -334,20 +333,14 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           record[index] = dimColumnEvaluatorInfo.getDimension().getDefaultValue();
         }
         byte[] memberBytes = (byte[]) value.getVal(index);
-        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-          // no dictionary
-          if (null != memberBytes) {
-            if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
-              memberBytes = null;
-            } else if (memberBytes.length == 0) {
-              memberBytes = null;
-            }
-            record[index] = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(memberBytes,
-                dimColumnEvaluatorInfo.getDimension().getDataType());
+        if (null != memberBytes) {
+          if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
+            memberBytes = null;
+          } else if (memberBytes.length == 0) {
+            memberBytes = null;
           }
-        } else {
-          // dictionary
-          throw new DeprecatedFeatureException("global dictionary");
+          record[index] = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(memberBytes,
+              dimColumnEvaluatorInfo.getDimension().getDataType());
         }
       } else {
         // complex
