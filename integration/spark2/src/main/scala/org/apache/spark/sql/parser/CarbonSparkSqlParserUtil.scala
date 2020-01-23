@@ -179,7 +179,7 @@ object CarbonSparkSqlParserUtil {
         "Table properties are not supported for external table", tablePropertyList)
     }
 
-    // validate tblProperties, global dictionary is deprecated
+    // Global dictionary is deprecated since 2.0
     if (tableProperties.contains(CarbonCommonConstants.DICTIONARY_INCLUDE) ||
         tableProperties.contains(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
       DeprecatedFeatureException.globalDictNotSupported()

@@ -584,6 +584,12 @@ object CarbonParserUtil {
       }
     }
 
+    // Global dictionary is deprecated since 2.0
+    if (tableProperties.contains(CarbonCommonConstants.DICTIONARY_INCLUDE) ||
+        tableProperties.contains(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
+      DeprecatedFeatureException.globalDictNotSupported()
+    }
+
     // by default consider all String cols as dims and if any dictionary include isn't present then
     // add it to noDictionaryDims list. consider all dictionary excludes/include cols as dims
     fields.foreach { field =>

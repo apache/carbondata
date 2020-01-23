@@ -189,7 +189,7 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
           "\nL_DISCOUNT decimal,\nL_TAX decimal,\nL_LINESTATUS string,\nL_COMMITDATE string," +
           "\nL_COMMENT string \n) \nUSING carbondata\nOPTIONS (DICTIONARY_EXCLUDE \"L_ORDERKEY, L_PARTKEY, L_SUPPKEY, L_COMMENT\")")
     }
-    assert(ex.getMessage.contains("dictionary_exclude is deprecated in CarbonData 2.0"))
+    assert(ex.getMessage.contains("Global dictionary is deprecated in CarbonData 2.0"))
   }
 
   test("test create table with complex datatype") {
