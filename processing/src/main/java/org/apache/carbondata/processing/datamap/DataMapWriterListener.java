@@ -36,6 +36,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.store.TablePage;
 
 import org.apache.log4j.Logger;
@@ -63,8 +64,7 @@ public class DataMapWriterListener {
   public void registerAllWriter(CarbonTable carbonTable, String segmentId,
       String taskNo, SegmentProperties segmentProperties) {
     // clear cache in executor side
-    DataMapStoreManager.getInstance()
-            .clearDataMaps(carbonTable.getAbsoluteTableIdentifier());
+    DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getTableId());
     List<TableDataMap> tableIndices;
     try {
       tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
