@@ -892,7 +892,7 @@ public final class DataTypeUtil {
         return String.valueOf(value)
             .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       } else if (dataType == DataTypes.TIMESTAMP) {
-        if (columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (columnSchema.getDataType() == DataTypes.DATE) {
           DirectDictionaryGenerator directDictionaryGenerator1 = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(columnSchema.getDataType());
           int value1 = directDictionaryGenerator1.generateDirectSurrogateKey(data);

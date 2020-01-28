@@ -73,7 +73,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
     int[] dictionaryColumnBlockIndex = executionInfo.getDictionaryColumnChunkIndex();
     int dimCounterInCurrentBlock = 0;
     for (int i = 0; i < queryDimensions.length; i++) {
-      if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
         if (executionInfo.getDimensionInfo().getDimensionExists()[i]) {
           // get the dictionary key ordinal as column cardinality in segment properties
           // will only be for dictionary encoded columns
@@ -88,7 +88,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
           // partitioner index will be 1 every column will be in columnar format
           updatedDimensionPartitioner.add(1);
           // for direct dictionary 4 bytes need to be allocated else 1
-          if (queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+          if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
             updatedColumnCardinality.add(Integer.MAX_VALUE);
           } else {
             // cardinality will be 2 will user has provided a default value
@@ -187,8 +187,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
       int existingColumnKeyArrayIndex = 0;
       int newKeyArrayIndex = 0;
       for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
-        if (CarbonUtil.hasEncoding(actualQueryDimensions[i].getDimension().getEncoder(),
-            Encoding.DICTIONARY)) {
+        if (actualQueryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
           // if dimension exists then add the key array value else add the default value
           if (dimensionInfo.getDimensionExists()[i] && null != keyArray && 0 != keyArray.length) {
             keyArrayWithNewAddedColumns[newKeyArrayIndex++] =
@@ -230,7 +229,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
       int existingColumnValueIndex = 0;
       int newKeyArrayIndex = 0;
       for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
-        if (!actualQueryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)
+        if (actualQueryDimensions[i].getDimension().getDataType() != DataTypes.DATE
             && !actualQueryDimensions[i].getDimension().hasEncoding(Encoding.IMPLICIT)) {
           // if dimension exists then add the byte array value else add the default value
           if (dimensionInfo.getDimensionExists()[i]) {

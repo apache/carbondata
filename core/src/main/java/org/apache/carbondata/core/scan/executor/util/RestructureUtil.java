@@ -137,7 +137,7 @@ public class RestructureUtil {
           // set the flag to say whether a new dictionary column or no dictionary column
           // has been added. This will be useful after restructure for compaction scenarios where
           // newly added columns data need to be filled
-          if (queryDimension.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+          if (queryDimension.getDimension().getDataType() == DataTypes.DATE) {
             dimensionInfo.setDictionaryColumnAdded(true);
             newDictionaryColumnCount++;
           } else {
@@ -235,15 +235,10 @@ public class RestructureUtil {
   public static Object validateAndGetDefaultValue(CarbonDimension queryDimension) {
     byte[] defaultValue = queryDimension.getDefaultValue();
     Object defaultValueToBeConsidered = null;
-    if (CarbonUtil.hasEncoding(queryDimension.getEncoder(), Encoding.DICTIONARY)) {
+    if (queryDimension.getDataType() == DataTypes.DATE) {
       // direct dictionary case
-      if (CarbonUtil.hasEncoding(queryDimension.getEncoder(), Encoding.DIRECT_DICTIONARY)) {
-        defaultValueToBeConsidered = getDirectDictionaryDefaultValue(queryDimension.getDataType(),
-            queryDimension.getDefaultValue());
-      } else {
-        // dictionary case
-        defaultValueToBeConsidered = getDictionaryDefaultValue(defaultValue);
-      }
+      defaultValueToBeConsidered = getDirectDictionaryDefaultValue(queryDimension.getDataType(),
+          queryDimension.getDefaultValue());
     } else {
       // no dictionary
       defaultValueToBeConsidered =

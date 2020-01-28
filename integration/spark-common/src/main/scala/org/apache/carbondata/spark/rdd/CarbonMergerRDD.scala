@@ -693,8 +693,7 @@ class CarbonMergerRDD[K, V](
   private def createOrderingForColumn(column: CarbonColumn): Ordering[Object] = {
     if (column.isDimension) {
       val dimension = column.asInstanceOf[CarbonDimension]
-      if ((dimension.isGlobalDictionaryEncoding || dimension.isDirectDictionaryEncoding) &&
-          dimension.getDataType != DataTypes.TIMESTAMP) {
+      if (dimension.getDataType == DataTypes.DATE) {
         new PrimtiveOrdering(DataTypes.INT)
       } else {
         if (DataTypeUtil.isPrimitiveColumn(column.getDataType)) {

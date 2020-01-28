@@ -19,6 +19,8 @@ package org.apache.carbondata.processing.loading;
 
 import java.io.Serializable;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
@@ -39,8 +41,8 @@ public class DataField implements Serializable {
 
   private boolean useActualData;
 
-  public boolean hasDictionaryEncoding() {
-    return column.hasEncoding(Encoding.DICTIONARY);
+  public boolean isDateDataType() {
+    return column.getDataType() == DataTypes.DATE;
   }
 
   public CarbonColumn getColumn() {

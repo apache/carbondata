@@ -43,9 +43,7 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore
-import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeConverter, DataTypeConverterImpl, DataTypeUtil, ObjectSerializationUtil, OutputFilesInfoHolder, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -54,7 +52,7 @@ import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat.CarbonRecordWrit
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModel, CarbonLoadModelBuilder, LoadOption}
 import org.apache.carbondata.processing.util.CarbonBadRecordUtil
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 class SparkCarbonTableFormat
   extends FileFormat
@@ -576,7 +574,7 @@ object CarbonOutputWriter {
     model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo.getFactTable.getPartitionInfo
       .getColumnSchemaList.asScala.zipWithIndex.map { case (col, index) =>
 
-      val dataType = if (col.hasEncoding(Encoding.DICTIONARY)) {
+      val dataType = if (col.getDataType.equals(DataTypes.DATE)) {
         DataTypes.INT
       } else if (col.getDataType.equals(DataTypes.TIMESTAMP) ||
                  col.getDataType.equals(DataTypes.DATE)) {
@@ -587,7 +585,7 @@ object CarbonOutputWriter {
       if (staticPartition != null && staticPartition.get(col.getColumnName.toLowerCase)) {
         val converetedVal =
           CarbonScalaUtil.convertStaticPartitions(partitionData(index), col)
-        if (col.hasEncoding(Encoding.DICTIONARY)) {
+        if (col.getDataType.equals(DataTypes.DATE)) {
           converetedVal.toInt.asInstanceOf[AnyRef]
         } else {
           DataTypeUtil.getDataBasedOnDataType(

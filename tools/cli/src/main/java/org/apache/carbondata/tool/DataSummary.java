@@ -313,7 +313,7 @@ class DataSummary implements Command {
           maxPercent = "NA";
           // for complex types min max can be given as NA and for varchar where min max is not
           // written, can give NA
-          if (blocklet.getColumnChunk().column.hasEncoding(Encoding.DICTIONARY) ||
+          if (blocklet.getColumnChunk().column.getDataType() == DataTypes.DATE ||
               blocklet.getColumnChunk().column.isComplexColumn() ||
               !blocklet.getColumnChunk().isMinMaxPresent) {
             min = "NA";
@@ -325,7 +325,7 @@ class DataSummary implements Command {
         } else {
           // for column has global dictionary and for complex columns,min and max percentage can be
           // NA
-          if (blocklet.getColumnChunk().column.hasEncoding(Encoding.DICTIONARY) ||
+          if (blocklet.getColumnChunk().column.getDataType() == DataTypes.DATE ||
               blocklet.getColumnChunk().column.isComplexColumn() ||
               blocklet.getColumnChunk().column.getDataType().isComplexType()) {
             minPercent = "NA";
@@ -338,7 +338,7 @@ class DataSummary implements Command {
           }
           DataFile.ColumnChunk columnChunk = blocklet.columnChunk;
           // need to consider dictionary and complex columns
-          if (columnChunk.column.hasEncoding(Encoding.DICTIONARY) ||
+          if (columnChunk.column.getDataType() == DataTypes.DATE ||
               blocklet.getColumnChunk().column.isComplexColumn() ||
               blocklet.getColumnChunk().column.getDataType().isComplexType()) {
             min = "NA";

@@ -851,24 +851,6 @@ public final class CarbonUtil {
     return false;
   }
 
-  public static boolean[] getDictionaryEncodingArray(ProjectionDimension[] queryDimensions) {
-    boolean[] dictionaryEncodingArray = new boolean[queryDimensions.length];
-    for (int i = 0; i < queryDimensions.length; i++) {
-      dictionaryEncodingArray[i] =
-          queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY);
-    }
-    return dictionaryEncodingArray;
-  }
-
-  public static boolean[] getDirectDictionaryEncodingArray(ProjectionDimension[] queryDimensions) {
-    boolean[] dictionaryEncodingArray = new boolean[queryDimensions.length];
-    for (int i = 0; i < queryDimensions.length; i++) {
-      dictionaryEncodingArray[i] =
-          queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY);
-    }
-    return dictionaryEncodingArray;
-  }
-
   public static boolean[] getImplicitColumnArray(ProjectionDimension[] queryDimensions) {
     boolean[] implicitColumnArray = new boolean[queryDimensions.length];
     for (int i = 0; i < queryDimensions.length; i++) {
@@ -1029,7 +1011,7 @@ public final class CarbonUtil {
       if (null != childs && childs.size() > 0) {
         break;
       }
-      if (hasEncoding(carbonDimension.getEncoder(), Encoding.DICTIONARY)) {
+      if (carbonDimension.getDataType() == DataTypes.DATE) {
         isDictionaryDimensions.add(true);
       } else {
         isDictionaryDimensions.add(false);
@@ -2916,9 +2898,9 @@ public final class CarbonUtil {
               continue;
             }
             // column should be no dictionary string datatype column or varchar datatype column
-            if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING)
-                || column.getDataType().equals(DataTypes.VARCHAR)) && !column
-                .hasEncoding(Encoding.DICTIONARY)) {
+            if (column.isDimensionColumn() &&
+                (column.getDataType().equals(DataTypes.STRING) ||
+                    column.getDataType().equals(DataTypes.VARCHAR))) {
               column.setLocalDictColumn(true);
             }
             // if local dictionary exclude columns is defined, then set for all no dictionary string
@@ -2950,9 +2932,9 @@ public final class CarbonUtil {
             }
             //if column is primitive string or varchar and no dictionary column,then set local
             // dictionary if not specified as local dictionary exclude
-            if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING)
-                || column.getDataType().equals(DataTypes.VARCHAR)) && !column
-                .hasEncoding(Encoding.DICTIONARY)) {
+            if (column.isDimensionColumn() &&
+                (column.getDataType().equals(DataTypes.STRING) ||
+                    column.getDataType().equals(DataTypes.VARCHAR))) {
               if (!Arrays.asList(listOfDictionaryExcludeColumns).contains(column.getColumnName())) {
                 column.setLocalDictColumn(true);
               }
@@ -2977,11 +2959,11 @@ public final class CarbonUtil {
           } else {
             continue;
           }
-          if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING) ||
-              column.getDataType().equals(DataTypes.VARCHAR)) &&
-              !column.hasEncoding(Encoding.DICTIONARY)
-              && localDictIncludeColumns.toLowerCase()
-              .contains(column.getColumnName().toLowerCase())) {
+          if (column.isDimensionColumn() &&
+              (column.getDataType().equals(DataTypes.STRING) ||
+                  column.getDataType().equals(DataTypes.VARCHAR)) &&
+              localDictIncludeColumns.toLowerCase()
+                  .contains(column.getColumnName().toLowerCase())) {
             for (String dictColumn : listOfDictionaryIncludeColumns) {
               if (dictColumn.trim().equalsIgnoreCase(column.getColumnName())) {
                 column.setLocalDictColumn(true);
@@ -3009,9 +2991,9 @@ public final class CarbonUtil {
         dimensionOrdinal++;
         setLocalDictForComplexColumns(allColumns, dimensionOrdinal, column.getNumberOfChild());
       } else {
-        if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING) ||
-            column.getDataType().equals(DataTypes.VARCHAR)) &&
-            !column.hasEncoding(Encoding.DICTIONARY)) {
+        if (column.isDimensionColumn() &&
+            (column.getDataType().equals(DataTypes.STRING) ||
+                column.getDataType().equals(DataTypes.VARCHAR))) {
           column.setLocalDictColumn(true);
         }
       }

@@ -57,7 +57,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     ColumnFilterInfo filterValues = dimColumnEvaluatorInfo.getFilterValues();
     CarbonDimension dimension = dimColumnEvaluatorInfo.getDimension();
     byte[] defaultValue = dimension.getDefaultValue();
-    if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
+    if (dimension.getDataType() != DataTypes.DATE) {
       // for no dictionary cases
       // 3 cases: is NUll, is Not Null and filter on default value of newly added column
       if (null == defaultValue && dimension.getDataType() == DataTypes.STRING) {
@@ -80,7 +80,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
       // 3 cases: is NUll, is Not Null and filter on default value of newly added column
       int defaultSurrogateValueToCompare = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
       if (null != defaultValue) {
-        if (dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (dimension.getDataType() == DataTypes.DATE) {
           DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(dimension.getDataType());
           if (directDictionaryGenerator != null) {

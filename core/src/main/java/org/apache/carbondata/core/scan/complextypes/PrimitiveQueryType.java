@@ -47,8 +47,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   private boolean isDirectDictionary;
 
-  private DirectDictionaryGenerator directDictGenForDate;
-
   public PrimitiveQueryType(String name, String parentName, int blockIndex, DataType dataType,
       int keySize, boolean isDirectDictionary) {
     super(name, parentName, blockIndex);
@@ -57,8 +55,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     this.name = name;
     this.parentName = parentName;
     this.isDirectDictionary = isDirectDictionary;
-    this.directDictGenForDate =
-        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
   }
 
   @Override
@@ -167,7 +163,9 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
         if (value.length == 0) {
           actualData = null;
         } else {
-          actualData = this.directDictGenForDate.getValueFromSurrogate(
+          DirectDictionaryGenerator directDictGenForDate =
+              DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
+          actualData = directDictGenForDate.getValueFromSurrogate(
               ByteUtil.toXorInt(value, 0, CarbonCommonConstants.INT_SIZE_IN_BYTE));
         }
       } else {

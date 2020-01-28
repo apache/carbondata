@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
@@ -375,8 +376,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     for (int i = 0; i < wrapperColumnSchemaList.size(); i++) {
       columnSchemaList
           .add(schemaConverter.fromWrapperToExternalColumnSchema(wrapperColumnSchemaList.get(i)));
-      if (CarbonUtil.hasEncoding(wrapperColumnSchemaList.get(i).getEncodingList(),
-          org.apache.carbondata.core.metadata.encoder.Encoding.DICTIONARY)) {
+      if (wrapperColumnSchemaList.get(i).getDataType() == DataTypes.DATE) {
         cardinality.add(dictionaryColumnCardinality[counter]);
         counter++;
       } else if (!wrapperColumnSchemaList.get(i).isDimensionColumn()) {

@@ -93,8 +93,7 @@ public class TableSpec {
         dimensionSpec[dimIndex++] = spec;
         noDictionaryDimensionSpec.add(spec);
         noSortNoDictDimSpec.add(spec);
-      } else if (dimension.getDataType() == DataTypes.TIMESTAMP && !dimension
-          .isDirectDictionaryEncoding()) {
+      } else if (dimension.getDataType() == DataTypes.TIMESTAMP) {
         spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, noDictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
         noDictionaryDimensionSpec.add(spec);
@@ -103,7 +102,7 @@ public class TableSpec {
         } else {
           noSortNoDictDimSpec.add(spec);
         }
-      } else if (dimension.isDirectDictionaryEncoding()) {
+      } else if (dimension.getDataType() == DataTypes.DATE) {
         spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension, dictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
         dictDimensionSpec.add(spec);

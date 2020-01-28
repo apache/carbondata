@@ -152,7 +152,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     isNoDictColumn = CarbonDataProcessorUtil.getNoDictionaryMapping(storageColumns);
     directDictionaryGenerators = new DirectDictionaryGenerator[storageColumns.length];
     for (int i = 0; i < storageColumns.length; i++) {
-      if (storageColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (storageColumns[i].getDataType() == DataTypes.DATE) {
         directDictionaryGenerators[i] = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(storageColumns[i].getDataType());
       }

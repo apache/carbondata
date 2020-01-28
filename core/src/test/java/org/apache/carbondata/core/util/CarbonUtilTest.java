@@ -493,58 +493,6 @@ public class CarbonUtilTest {
     assertTrue(!DataTypes.DATE.isComplexType());
   }
 
-  @Test public void testToGetDictionaryEncodingArray() {
-    ColumnSchema column1Schema = new ColumnSchema();
-    ColumnSchema column2Schema = new ColumnSchema();
-    column1Schema.setColumnName("Column1");
-    List<Encoding> encoding = new ArrayList<>();
-    encoding.add(Encoding.DICTIONARY);
-    column1Schema.setEncodingList(encoding);
-    ProjectionDimension
-        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1));
-
-    column2Schema.setColumnName("Column2");
-    List<Encoding> encoding2 = new ArrayList<>();
-    encoding2.add(Encoding.DELTA);
-    column2Schema.setEncodingList(encoding2);
-    ProjectionDimension
-        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1));
-
-    ProjectionDimension[] queryDimensions = { column1, column2 };
-
-    boolean[] dictionaryEncoding = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
-    boolean[] expectedDictionaryEncoding = { true, false };
-    for (int i = 0; i < dictionaryEncoding.length; i++) {
-      assertEquals(dictionaryEncoding[i], expectedDictionaryEncoding[i]);
-    }
-  }
-
-  @Test public void testToGetDirectDictionaryEncodingArray() {
-    ColumnSchema column1Schema = new ColumnSchema();
-    ColumnSchema column2Schema = new ColumnSchema();
-    column1Schema.setColumnName("Column1");
-    List<Encoding> encoding = new ArrayList<>();
-    encoding.add(Encoding.DIRECT_DICTIONARY);
-    column1Schema.setEncodingList(encoding);
-    ProjectionDimension
-        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1));
-
-    column2Schema.setColumnName("Column2");
-    List<Encoding> encoding2 = new ArrayList<>();
-    encoding2.add(Encoding.DELTA);
-    column2Schema.setEncodingList(encoding2);
-    ProjectionDimension
-        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1));
-
-    ProjectionDimension[] queryDimensions = { column1, column2 };
-
-    boolean[] dictionaryEncoding = CarbonUtil.getDirectDictionaryEncodingArray(queryDimensions);
-    boolean[] expectedDictionaryEncoding = { true, false };
-    for (int i = 0; i < dictionaryEncoding.length; i++) {
-      assertEquals(dictionaryEncoding[i], expectedDictionaryEncoding[i]);
-    }
-  }
-
   @Test public void testToGetComplexDataTypeArray() {
     ColumnSchema column1Schema = new ColumnSchema();
     ColumnSchema column2Schema = new ColumnSchema();

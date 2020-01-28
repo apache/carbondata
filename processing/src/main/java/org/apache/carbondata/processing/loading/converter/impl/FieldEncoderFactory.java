@@ -71,7 +71,7 @@ public class FieldEncoderFactory {
       boolean isConvertToBinary, String binaryDecoder) {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimension()) {
-      if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+      if (dataField.getColumn().getDataType() == DataTypes.DATE &&
           !dataField.getColumn().isComplex()) {
         return new DirectDictionaryFieldConverterImpl(dataField, nullFormat, index,
             isEmptyBadRecord);
@@ -141,7 +141,7 @@ public class FieldEncoderFactory {
       // Create array parser with complex delimiter
       ArrayDataType arrayDataType =
           new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
-              carbonColumn.hasEncoding(Encoding.DICTIONARY));
+              carbonColumn.getDataType() == DataTypes.DATE);
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayDataType.addChildren(
             createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder));
@@ -153,7 +153,7 @@ public class FieldEncoderFactory {
       // Create struct parser with complex delimiter
       StructDataType structDataType =
           new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
-              carbonColumn.hasEncoding(Encoding.DICTIONARY));
+              carbonColumn.getDataType() == DataTypes.DATE);
       for (CarbonDimension dimension : dimensions) {
         structDataType.addChildren(
             createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder));

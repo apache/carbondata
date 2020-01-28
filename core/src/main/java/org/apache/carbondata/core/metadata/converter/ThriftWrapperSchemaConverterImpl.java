@@ -118,7 +118,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.apache.carbondata.format.Encoding.DIRECT_COMPRESS_VARCHAR;
       case BIT_PACKED:
         return org.apache.carbondata.format.Encoding.BIT_PACKED;
-      case DIRECT_DICTIONARY:
+      case  DIRECT_DICTIONARY:
         return org.apache.carbondata.format.Encoding.DIRECT_DICTIONARY;
       case INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY:
         return org.apache.carbondata.format.Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY;

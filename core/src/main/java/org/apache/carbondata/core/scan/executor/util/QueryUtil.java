@@ -357,8 +357,7 @@ public class QueryUtil {
       List<Integer> dictionaryDimensionChunkIndex,
       List<Integer> noDictionaryDimensionChunkIndex) {
     for (ProjectionDimension queryDimension : projectDimensions) {
-      if (CarbonUtil.hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DICTIONARY)
-          && queryDimension.getDimension().getNumberOfChild() == 0) {
+      if (queryDimension.getDimension().getDataType() == DataTypes.DATE) {
         dictionaryDimensionChunkIndex
             .add(columnOrdinalToChunkIndexMapping.get(queryDimension.getDimension().getOrdinal()));
       } else if (
@@ -537,11 +536,11 @@ public class QueryUtil {
   private static void getChildDimensionOrdinal(CarbonDimension queryDimensions,
       Set<Integer> filterDimensionsOrdinal) {
     for (int j = 0; j < queryDimensions.getNumberOfChild(); j++) {
-      List<Encoding> encodingList = queryDimensions.getListOfChildDimensions().get(j).getEncoder();
-      if (queryDimensions.getListOfChildDimensions().get(j).getNumberOfChild() > 0) {
+      CarbonDimension dimension = queryDimensions.getListOfChildDimensions().get(j);
+      if (dimension.getNumberOfChild() > 0) {
         getChildDimensionOrdinal(queryDimensions.getListOfChildDimensions().get(j),
             filterDimensionsOrdinal);
-      } else if (!CarbonUtil.hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
+      } else if (dimension.getDataType() != DataTypes.DATE) {
         filterDimensionsOrdinal.add(queryDimensions.getListOfChildDimensions().get(j).getOrdinal());
       }
     }

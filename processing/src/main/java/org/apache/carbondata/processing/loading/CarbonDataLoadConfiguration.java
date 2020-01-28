@@ -25,7 +25,7 @@ import java.util.Map;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.SortColumnRangeInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -121,12 +121,12 @@ public class CarbonDataLoadConfiguration {
       if (column.isDimension()) {
         dimensionCount++;
         if (column.isComplex()) {
-          if (!dataField.hasDictionaryEncoding()) {
+          if (!dataField.isDateDataType()) {
             complexNonDictionaryColumnCount++;
           } else {
             complexDictionaryColumnCount++;
           }
-        } else if (!dataField.hasDictionaryEncoding()) {
+        } else if (!dataField.isDateDataType()) {
           noDictionaryCount++;
         }
       }
@@ -276,7 +276,7 @@ public class CarbonDataLoadConfiguration {
     int noDicCount = 0;
     for (int i = 0; i < dataFields.length; i++) {
       if (dataFields[i].getColumn().isDimension() && (
-          !(dataFields[i].getColumn().hasEncoding(Encoding.DICTIONARY)) || dataFields[i].getColumn()
+          dataFields[i].getColumn().getDataType() != DataTypes.DATE || dataFields[i].getColumn()
               .isComplex())) {
         noDicOrCompIndexes.add(i);
         noDicCount++;

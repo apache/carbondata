@@ -307,8 +307,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         convertedValue = BooleanConvert.boolean2Byte((Boolean)convertedValue);
       }
       internalFilterValue = CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
-    } else if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY) ||
-        carbonColumn.hasEncoding(Encoding.DICTIONARY)) {
+    } else if (carbonColumn.getDataType() == DataTypes.DATE) {
       // for dictionary/date columns, convert the surrogate key to bytes
       internalFilterValue = CarbonUtil.getValueAsBytes(DataTypes.INT, convertedValue);
     } else {

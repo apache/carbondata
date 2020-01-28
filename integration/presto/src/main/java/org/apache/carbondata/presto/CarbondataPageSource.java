@@ -142,18 +142,16 @@ class CarbondataPageSource implements ConnectorPageSource {
     fields = new StructField[queryDimension.size() + queryMeasures.size()];
     for (int i = 0; i < queryDimension.size(); i++) {
       ProjectionDimension dim = queryDimension.get(i);
-      if (dim.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (dim.getDimension().isComplex()) {
+        fields[dim.getOrdinal()] =
+            new StructField(dim.getColumnName(), dim.getDimension().getDataType());
+      } else if (dim.getDimension().getDataType() == DataTypes.DATE) {
         DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dim.getDimension().getDataType());
         fields[dim.getOrdinal()] = new StructField(dim.getColumnName(), generator.getReturnType());
-      } else if (!dim.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        fields[dim.getOrdinal()] =
-            new StructField(dim.getColumnName(), dim.getDimension().getDataType());
-      } else if (dim.getDimension().isComplex()) {
-        fields[dim.getOrdinal()] =
-            new StructField(dim.getColumnName(), dim.getDimension().getDataType());
       } else {
-        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(), DataTypes.INT);
+        fields[dim.getOrdinal()] =
+            new StructField(dim.getColumnName(), dim.getDimension().getDataType());
       }
     }
 

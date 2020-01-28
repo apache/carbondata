@@ -276,7 +276,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dims = dimensions.get(i);
-      if (dims.hasEncoding(Encoding.DICTIONARY)) {
+      if (dims.getDataType() == DataTypes.DATE) {
         // dictionary
         preparedRow[i] = row[i];
       } else {
@@ -325,7 +325,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
 
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dims = dimensions.get(i);
-      if (dims.hasEncoding(Encoding.DICTIONARY) && !dims.isComplex()) {
+      if (dims.getDataType() == DataTypes.DATE && !dims.isComplex()) {
         // dictionary
         preparedRow[i] = dictionaryValues[dictionaryIndex++];
       } else if (!dims.isComplex()) {
@@ -443,7 +443,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       if (dimension.isSortColumn()) {
         sortColumnMapping[i] = true;
       }
-      if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
+      if (dimension.getDataType() == DataTypes.DATE) {
         i++;
         continue;
       }

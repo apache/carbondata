@@ -398,7 +398,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         DimensionColumnPage columnDataChunk =
             blockChunkHolder.getDimensionRawColumnChunks()[dimensionChunkIndex[i]]
                 .decodeColumnPage(pageIndex);
-        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY) &&
+        if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.DATE &&
             (columnDataChunk instanceof VariableLengthDimensionColumnPage ||
                 columnDataChunk instanceof ColumnPageWrapper)) {
 
@@ -496,38 +496,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * @return
    */
   private Object getDimensionDefaultValue(DimColumnResolvedFilterInfo dimColumnEvaluatorInfo) {
-    Object dimensionDefaultValue = null;
     CarbonDimension dimension = dimColumnEvaluatorInfo.getDimension();
-    if (dimension.hasEncoding(Encoding.DICTIONARY) && !dimension
-        .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      byte[] defaultValue = dimension.getDefaultValue();
-      if (null != defaultValue) {
-        dimensionDefaultValue =
-            new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-      }
-    } else {
-      dimensionDefaultValue = RestructureUtil.validateAndGetDefaultValue(dimension);
-    }
-    return dimensionDefaultValue;
-  }
-
-  /**
-   * method will read the actual data from the direct dictionary generator
-   * by passing direct dictionary value.
-   *
-   * @param dimColumnEvaluatorInfo
-   * @param dictionaryValue
-   * @return
-   */
-  private Object getFilterActualValueFromDirectDictionaryValue(
-      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int dictionaryValue) {
-    if (dimColumnEvaluatorInfo.getDimension().getDataType() == DataTypes.DATE) {
-      return dateDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
-    } else if (dimColumnEvaluatorInfo.getDimension().getDataType() == DataTypes.TIMESTAMP) {
-      return timestampDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
-    } else {
-      throw new RuntimeException("Invalid data type for dierct dictionary");
-    }
+    return RestructureUtil.validateAndGetDefaultValue(dimension);
   }
 
   @Override

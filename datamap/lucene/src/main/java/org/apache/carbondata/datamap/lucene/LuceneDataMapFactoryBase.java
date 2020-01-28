@@ -343,7 +343,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
         throw new MalformedDataMapCommandException(String.format(
             "Only String column is supported, column '%s' is %s type. ",
             column.getColName(), column.getDataType()));
-      } else if (column.getEncoder().contains(Encoding.DICTIONARY)) {
+      } else if (column.getDataType() == DataTypes.DATE) {
         throw new MalformedDataMapCommandException(String.format(
             "Dictionary column is not supported, column '%s' is dictionary column",
             column.getColName()));

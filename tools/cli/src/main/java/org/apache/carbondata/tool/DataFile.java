@@ -448,7 +448,7 @@ class DataFile {
      */
     private double computePercentage(byte[] data, byte[] min, byte[] max, ColumnSchema column) {
       if (column.getDataType() == DataTypes.STRING || column.getDataType() == DataTypes.BOOLEAN
-          || column.hasEncoding(Encoding.DICTIONARY) || column.getDataType().isComplexType()) {
+          || column.getDataType() == DataTypes.DATE || column.getDataType().isComplexType()) {
         // for string, we do not calculate
         return 0;
       } else if (DataTypes.isDecimal(column.getDataType())) {

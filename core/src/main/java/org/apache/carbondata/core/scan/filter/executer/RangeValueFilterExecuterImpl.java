@@ -645,16 +645,15 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
       }
     } else {
       byte[] defaultValue = null;
-      if (dimColEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.DATE) {
         defaultValue =
             FilterUtil.getDefaultNullValue(dimColEvaluatorInfo.getDimension(), segmentProperties);
-      } else {
-        if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.STRING) {
-          defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
-        } else if (!dimensionColumnPage.isAdaptiveEncoded()) {
-          defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
-        }
+      } else if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.STRING) {
+        defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+      } else if (!dimensionColumnPage.isAdaptiveEncoded()) {
+        defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
       }
+
       // evaluate result for lower range value first and then perform and operation in the
       // upper range value in order to compute the final result
       bitSet = evaluateGreaterThanFilterForUnsortedColumn(dimensionColumnPage, filterValues[0],

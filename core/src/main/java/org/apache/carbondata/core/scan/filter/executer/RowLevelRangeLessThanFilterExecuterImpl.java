@@ -134,8 +134,8 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
         DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();
         // for no dictionary measure column comparison can be done
         // on the original data as like measure column
-        if (DataTypeUtil.isPrimitiveColumn(dataType) && !dimColEvaluatorInfoList.get(0)
-            .getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        if (DataTypeUtil.isPrimitiveColumn(dataType) &&
+            dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.DATE) {
           isScanRequired = isScanRequired(minValue, filterRangeValues, dataType);
         } else {
           isScanRequired =
@@ -307,8 +307,8 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
     DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();
     // for no dictionary measure column comparison can be done
     // on the original data as like measure column
-    if (DataTypeUtil.isPrimitiveColumn(dataType) && !dimColEvaluatorInfoList.get(0)
-        .getDimension().hasEncoding(Encoding.DICTIONARY)) {
+    if (DataTypeUtil.isPrimitiveColumn(dataType) &&
+        dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.DATE) {
       scanRequired =
           isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues, dataType);
     } else {
@@ -424,7 +424,7 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
   private BitSet getFilteredIndexes(DimensionColumnPage dimensionColumnPage,
       int numerOfRows) {
     byte[] defaultValue = null;
-    if (dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+    if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
       defaultValue = FilterUtil
           .getDefaultNullValue(dimColEvaluatorInfoList.get(0).getDimension(), segmentProperties);
     } else if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.STRING) {
@@ -441,9 +441,8 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
     if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.STRING) {
       defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     }
-    if (dimensionColumnPage.isNoDicitionaryColumn() || (
-        dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)
-            && dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY))) {
+    if (dimensionColumnPage.isNoDicitionaryColumn() ||
+        dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
       FilterUtil.removeNullValues(dimensionColumnPage, bitSet, defaultValue);
     }
     return bitSet;
@@ -611,7 +610,7 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
   @Override
   public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
     if (isDimensionPresentInCurrentBlock[0]) {
-      if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.DATE) {
         super.readColumnChunks(rawBlockletColumnChunks);
       }
       int chunkIndex = dimensionChunkIndex[0];

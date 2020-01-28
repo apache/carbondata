@@ -327,7 +327,7 @@ public final class DataLoadProcessBuilder {
           columnExist = true;
 
           sortColIndex[j] = i;
-          isSortColNoDict[j] = !outFields[i].hasDictionaryEncoding();
+          isSortColNoDict[j] = !outFields[i].isDateDataType();
           j++;
         }
       }

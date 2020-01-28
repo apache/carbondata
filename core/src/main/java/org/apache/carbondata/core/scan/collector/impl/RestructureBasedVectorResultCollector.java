@@ -140,13 +140,9 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         int queryOrder = executionInfo.getActualQueryDimensions()[i].getOrdinal();
         CarbonDimension dimension =
             executionInfo.getActualQueryDimensions()[i].getDimension();
-        if (dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (dimension.getDataType() == DataTypes.DATE) {
           // fill direct dictionary column data
           fillDirectDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
-              dimensionInfo.getDefaultValues()[i]);
-        } else if (dimension.hasEncoding(Encoding.DICTIONARY)) {
-          // fill dictionary column data
-          fillDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
               dimensionInfo.getDefaultValues()[i]);
         } else {
           // fill no dictionary data

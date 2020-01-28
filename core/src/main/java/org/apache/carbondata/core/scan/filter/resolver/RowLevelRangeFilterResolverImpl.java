@@ -76,15 +76,15 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    */
   public byte[][] getFilterRangeValues(SegmentProperties segmentProperties) {
 
-    if (dimColEvaluatorInfoList.size() > 0 && null != dimColEvaluatorInfoList.get(0)
-        .getFilterValues() && !dimColEvaluatorInfoList.get(0).getDimension()
-        .hasEncoding(Encoding.DICTIONARY)) {
+    if (dimColEvaluatorInfoList.size() > 0 &&
+        null != dimColEvaluatorInfoList.get(0).getFilterValues() &&
+        dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.DATE) {
       List<byte[]> noDictFilterValuesList =
           dimColEvaluatorInfoList.get(0).getFilterValues().getNoDictionaryFilterValuesList();
       return noDictFilterValuesList.toArray((new byte[noDictFilterValuesList.size()][]));
-    } else if (dimColEvaluatorInfoList.size() > 0 && null != dimColEvaluatorInfoList.get(0)
-        .getFilterValues() && dimColEvaluatorInfoList.get(0).getDimension()
-        .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+    } else if (dimColEvaluatorInfoList.size() > 0 &&
+        null != dimColEvaluatorInfoList.get(0).getFilterValues() &&
+        dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
       CarbonDimension dimensionFromCurrentBlock = segmentProperties
           .getDimensionFromCurrentBlock(this.dimColEvaluatorInfoList.get(0).getDimension());
       if (null != dimensionFromCurrentBlock) {
@@ -93,9 +93,9 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       } else {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(), false);
       }
-    } else if (dimColEvaluatorInfoList.size() > 0 && null != dimColEvaluatorInfoList.get(0)
-        .getFilterValues() && dimColEvaluatorInfoList.get(0).getDimension()
-        .hasEncoding(Encoding.DICTIONARY)) {
+    } else if (dimColEvaluatorInfoList.size() > 0 &&
+        null != dimColEvaluatorInfoList.get(0).getFilterValues() &&
+        dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
       CarbonDimension dimensionFromCurrentBlock = segmentProperties
           .getDimensionFromCurrentBlock(this.dimColEvaluatorInfoList.get(0).getDimension());
       if (null != dimensionFromCurrentBlock) {
@@ -255,18 +255,11 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           dimColumnEvaluatorInfo.setRowIndex(index++);
           dimColumnEvaluatorInfo.setDimension(columnExpression.getDimension());
           dimColumnEvaluatorInfo.setDimensionExistsInCurrentSilce(false);
-          if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+          if (columnExpression.getDimension().getDataType() == DataTypes.DATE) {
             if (!isIncludeFilter) {
               filterInfo.setExcludeFilterList(getDirectSurrogateValues(columnExpression));
             } else {
               filterInfo.setFilterList(getDirectSurrogateValues(columnExpression));
-            }
-          } else if (columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)
-              && !columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-            if (!isIncludeFilter) {
-              filterInfo.setExcludeFilterList(getSurrogateValues());
-            } else {
-              filterInfo.setFilterList(getSurrogateValues());
             }
           } else {
             filterInfo.setFilterListForNoDictionaryCols(getNoDictionaryRangeValues());

@@ -419,14 +419,8 @@ public class CarbonCompactionUtil {
    */
   private static int getDimensionDefaultCardinality(CarbonDimension dimension) {
     int cardinality = 0;
-    if (dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+    if (dimension.getDataType() == DataTypes.DATE) {
       cardinality = Integer.MAX_VALUE;
-    } else if (dimension.hasEncoding(Encoding.DICTIONARY)) {
-      if (null != dimension.getDefaultValue()) {
-        cardinality = CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY + 1;
-      } else {
-        cardinality = CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY;
-      }
     } else {
       cardinality = -1;
     }
@@ -502,7 +496,7 @@ public class CarbonCompactionUtil {
       } else {
         exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
             new LiteralExpression(maxVal, dataType));
-        if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
+        if (rangeColumn.getDataType() == DataTypes.DATE) {
           exp2.setAlreadyResolved(true);
         }
         finalExpr = new OrExpression(exp1, exp2);
@@ -511,7 +505,7 @@ public class CarbonCompactionUtil {
       // Last task
       finalExpr = new GreaterThanExpression(new ColumnExpression(colName, dataType),
           new LiteralExpression(minVal, dataType));
-      if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
+      if (rangeColumn.getDataType() == DataTypes.DATE) {
         finalExpr.setAlreadyResolved(true);
       }
     } else {
@@ -520,7 +514,7 @@ public class CarbonCompactionUtil {
           new LiteralExpression(minVal, dataType));
       exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
           new LiteralExpression(maxVal, dataType));
-      if (rangeColumn.hasEncoding(Encoding.DICTIONARY)) {
+      if (rangeColumn.getDataType() == DataTypes.DATE) {
         exp2.setAlreadyResolved(true);
         exp1.setAlreadyResolved(true);
       }
@@ -538,7 +532,7 @@ public class CarbonCompactionUtil {
     int idx = -1;
     DataType dataType = rangeCol.getDataType();
     Object[] minMaxVals = new Object[2];
-    boolean isDictEncode = rangeCol.hasEncoding(Encoding.DICTIONARY);
+    boolean isDictEncode = rangeCol.getDataType() == DataTypes.DATE;
     try {
       for (CarbonInputSplit split : carbonInputSplits) {
         DataFileFooter dataFileFooter = null;

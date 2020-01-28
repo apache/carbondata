@@ -227,12 +227,12 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     this.isNoDictStringField = new boolean[queryDimension.size() + queryMeasures.size()];
     for (int i = 0; i < queryDimension.size(); i++) {
       ProjectionDimension dim = queryDimension.get(i);
-      if (dim.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (dim.getDimension().getDataType() == DataTypes.DATE) {
         DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dim.getDimension().getDataType());
         fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
             CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(generator.getReturnType()), true, null);
-      } else if (!dim.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      } else {
         if (dim.getDimension().getDataType() == DataTypes.STRING
             || dim.getDimension().getDataType() == DataTypes.VARCHAR || dim.getDimension()
             .getColumnSchema().isLocalDictColumn()) {
@@ -241,13 +241,6 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
         fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
             CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(dim.getDimension().getDataType()), true,
             null);
-      } else if (dim.getDimension().isComplex()) {
-        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
-            CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(dim.getDimension().getDataType()), true,
-            null);
-      } else {
-        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
-            CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(DataTypes.INT), true, null);
       }
     }
 

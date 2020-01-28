@@ -279,7 +279,7 @@ public class SegmentProperties {
         tableOrdinal++;
         // not adding the cardinality of the non dictionary
         // column as it was not the part of mdkey
-        if (CarbonUtil.hasEncoding(columnSchema.getEncodingList(), Encoding.DICTIONARY)
+        if (columnSchema.getDataType() == DataTypes.DATE
             && !isComplexDimensionStarted && columnSchema.getNumberOfChild() == 0) {
           cardinalityIndexForNormalDimensionColumn.add(tableOrdinal);
           if (columnSchema.isSortColumn()) {
@@ -411,7 +411,7 @@ public class SegmentProperties {
     while (counter < dimensions.size()) {
       CarbonDimension carbonDimension = dimensions.get(counter);
       // if dimension is not a part of mdkey then no need to add
-      if (!carbonDimension.getEncoder().contains(Encoding.DICTIONARY)) {
+      if (carbonDimension.getDataType() != DataTypes.DATE) {
         isDictionaryColumn.add(false);
         counter++;
         continue;
