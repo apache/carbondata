@@ -117,6 +117,8 @@ public class ColumnSchema implements Serializable, Writable {
 
   private boolean isSortColumn = false;
 
+  private boolean indexColumn = false;
+
   /**
    * aggregate function used in pre aggregate table
    */
@@ -529,6 +531,7 @@ public class ColumnSchema implements Serializable, Writable {
       }
     }
     out.writeBoolean(isLocalDictColumn);
+    out.writeBoolean(indexColumn);
   }
 
   @Override
@@ -578,6 +581,7 @@ public class ColumnSchema implements Serializable, Writable {
       }
     }
     this.isLocalDictColumn = in.readBoolean();
+    this.indexColumn = in.readBoolean();
   }
 
   /**
@@ -587,5 +591,13 @@ public class ColumnSchema implements Serializable, Writable {
   public boolean isComplexColumn() {
     return this.getColumnName()
         .contains(".val") || this.getColumnName().contains(".");
+  }
+
+  public boolean isIndexColumn() {
+    return indexColumn;
+  }
+
+  public void setIndexColumn(boolean indexColumn) {
+    this.indexColumn = indexColumn;
   }
 }

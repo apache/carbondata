@@ -71,7 +71,7 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
     storeType: Option[String] = Some("columnar"),
     var schemaOrdinal: Int = -1,
     var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "",
-    var columnComment: String = "") {
+    var columnComment: String = "", var index: Boolean = false) {
   override def equals(o: Any) : Boolean = o match {
     case that: Field =>
       that.column.equalsIgnoreCase(this.column)
@@ -664,6 +664,7 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setScale(field.scale)
     columnSchema.setSchemaOrdinal(field.schemaOrdinal)
     columnSchema.setSortColumn(false)
+    columnSchema.setIndexColumn(field.index)
     if (isVarcharColumn(colName)) {
       columnSchema.setDataType(DataTypes.VARCHAR)
     }

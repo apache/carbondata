@@ -125,7 +125,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       dataField.setTimestampFormat(tsFormat);
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(dataField, i, nullFormat, false,
-              false, carbonTable.getTablePath());
+              false, carbonTable.getTablePath(), null);
       this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
     }
     this.badRecordLogHolder = new BadRecordLogHolder();

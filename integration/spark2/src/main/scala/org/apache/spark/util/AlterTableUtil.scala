@@ -610,7 +610,7 @@ object AlterTableUtil {
     if (propertiesMap.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
       val schemaList: util.List[ColumnSchema] = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions.asScala
-          .filter(_.getColumnSchema.getSchemaOrdinal != -1).asJava, carbonTable.getVisibleMeasures)
+          .filterNot(_.getColumnSchema.isIndexColumn).asJava, carbonTable.getVisibleMeasures)
       val tableColumns: Seq[String] = schemaList.asScala
         .map(columnSchema => columnSchema.getColumnName)
       CommonUtil

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.expression;
+package org.apache.carbondata.geo.scan.expression;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -25,25 +25,26 @@ import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.ExpressionResult;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
-import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
-import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.util.CustomIndex;
 
 /**
- * InPolygon expression processor. It inputs the InPolygon string to the GeoHash implementation's
- * query method, gets the list of ranges of GeoHash IDs to filter as an output. And then, build
- * InExpression with list of all the GeoHash IDs present in those list of ranges.
+ * InPolygon expression processor. It inputs the InPolygon string to the Geo implementation's
+ * query method, gets the list of ranges of IDs to filter as an output. And then, build
+ * InExpression with list of all the IDs present in those list of ranges.
  */
 @InterfaceAudience.Internal
 public class PolygonExpression extends Expression {
   private String polygon;
   private String columnName;
   private CustomIndex<List<Long[]>> handler;
-  private List<Long[]> ranges = new ArrayList<Long[]>();
   private List<Expression> children = new ArrayList<Expression>();
 
   public PolygonExpression(String polygon, String columnName, CustomIndex handler) {
@@ -52,7 +53,7 @@ public class PolygonExpression extends Expression {
     this.columnName = columnName;
   }
 
-  private void buildExpression() {
+  private void buildExpression(List<Long[]> ranges) {
     // Build InExpression with list of all the values present in the ranges
     List<Expression> inList = new ArrayList<Expression>();
     for (Long[] range : ranges) {
@@ -64,30 +65,26 @@ public class PolygonExpression extends Expression {
         inList.add(new LiteralExpression(i, DataTypes.LONG));
       }
     }
-    if (!inList.isEmpty()) {
-      children.add(new InExpression(new ColumnExpression(columnName, DataTypes.LONG),
-          new ListExpression(inList)));
-    }
+    children.add(new InExpression(new ColumnExpression(columnName, DataTypes.LONG),
+        new ListExpression(inList)));
   }
 
   /**
    * This method builds InExpression with list of all the values present in the list of ranges of
-   * GeoHash IDs.
+   * IDs.
    */
-  public void processExpression() {
-    if (ranges.isEmpty()) {
-      try {
-        ranges = handler.query(polygon);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+  private void processExpression() {
+    List<Long[]> ranges;
+    try {
+      ranges = handler.query(polygon);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
-    buildExpression();
+    buildExpression(ranges);
   }
 
   @Override
-  public ExpressionResult evaluate(RowIntf value)
-      throws FilterUnsupportedException, FilterIllegalMemberException {
+  public ExpressionResult evaluate(RowIntf value) {
     throw new UnsupportedOperationException("Operation not supported for Polygon expression");
   }
 
@@ -98,6 +95,9 @@ public class PolygonExpression extends Expression {
 
   @Override
   public List<Expression> getChildren() {
+    if (children.isEmpty()) {
+      processExpression();
+    }
     return children;
   }
 
@@ -119,14 +119,12 @@ public class PolygonExpression extends Expression {
     out.writeObject(polygon);
     out.writeObject(columnName);
     out.writeObject(handler);
-    out.writeObject(ranges);
   }
 
   private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
     polygon = (String) in.readObject();
     columnName = (String) in.readObject();
     handler = (CustomIndex<List<Long[]>>) in.readObject();
-    ranges = (List<Long[]>) in.readObject();
     children = new ArrayList<Expression>();
   }
 }

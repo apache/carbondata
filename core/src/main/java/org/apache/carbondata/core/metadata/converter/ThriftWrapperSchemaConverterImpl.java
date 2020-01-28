@@ -209,6 +209,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     thriftColumnSchema.setInvisible(wrapperColumnSchema.isInvisible());
     thriftColumnSchema.setColumnReferenceId(wrapperColumnSchema.getColumnReferenceId());
     thriftColumnSchema.setSchemaOrdinal(wrapperColumnSchema.getSchemaOrdinal());
+    thriftColumnSchema.setIndexColumn(wrapperColumnSchema.isIndexColumn());
     if (wrapperColumnSchema.isSortColumn()) {
       Map<String, String> properties = wrapperColumnSchema.getColumnProperties();
       if (null == properties) {
@@ -545,6 +546,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setInvisible(externalColumnSchema.isInvisible());
     wrapperColumnSchema.setColumnReferenceId(externalColumnSchema.getColumnReferenceId());
     wrapperColumnSchema.setSchemaOrdinal(externalColumnSchema.getSchemaOrdinal());
+    wrapperColumnSchema.setIndexColumn(externalColumnSchema.isIndexColumn());
     wrapperColumnSchema.setSortColumn(false);
     Map<String, String> properties = externalColumnSchema.getColumnProperties();
     if (properties != null) {

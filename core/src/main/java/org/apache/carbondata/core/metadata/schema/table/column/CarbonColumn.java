@@ -167,6 +167,14 @@ public class CarbonColumn implements Serializable {
   }
 
   /**
+   * Checks if it is index column
+   * @return Returns True if the column is an index column. Otherwise returns false.
+   */
+  public boolean isIndexColumn() {
+    return columnSchema.isIndexColumn();
+  }
+
+  /**
    * @return columnproperty
    */
   public Map<String, String> getColumnProperties() {

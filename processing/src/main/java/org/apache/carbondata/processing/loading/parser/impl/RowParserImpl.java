@@ -71,9 +71,9 @@ public class RowParserImpl implements RowParser {
     inputMapping = new int[input.length];
     int k = 0;
     for (int i = 0; i < fields.length; i++) {
-      if (fields[i].getColumn().getSchemaOrdinal() == -1) {
-        // Non-schema fields are not present in the header. So set the input mapping as -1 for the
-        // field and continue
+      if (fields[i].getColumn().isIndexColumn()) {
+        // Index handler columns are non-schema fields. They are not present in the header. So set
+        // the input mapping as -1 for the field and continue
         input[k] = fields[i];
         inputMapping[k] = -1;
         k++;

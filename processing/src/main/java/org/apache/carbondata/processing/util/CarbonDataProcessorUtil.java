@@ -337,8 +337,8 @@ public final class CarbonDataProcessorUtil {
     List<CarbonDimension> dimensions =
         schema.getCarbonTable().getVisibleDimensions();
     for (CarbonDimension dimension : dimensions) {
-      if (dimension.getSchemaOrdinal() != -1) {
-        // skip the non-schema column
+      if (!dimension.isIndexColumn()) {
+        // skip the non-schema index column
         columnNames.add(dimension.getColName());
       }
     }

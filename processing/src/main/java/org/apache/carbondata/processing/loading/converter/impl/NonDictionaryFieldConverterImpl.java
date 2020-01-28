@@ -118,6 +118,11 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
   }
 
   @Override
+  public DataField getDataField() {
+    return dataField;
+  }
+
+  @Override
   public void clear() {
   }
 

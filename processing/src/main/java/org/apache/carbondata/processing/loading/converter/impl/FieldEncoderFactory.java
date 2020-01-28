@@ -30,6 +30,7 @@ import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
+import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.FieldConverter;
 import org.apache.carbondata.processing.loading.converter.impl.binary.Base64BinaryDecoder;
@@ -64,19 +65,23 @@ public class FieldEncoderFactory {
    * @param isEmptyBadRecord        whether is Empty BadRecord
    * @param isConvertToBinary       whether the no dictionary field to be converted to binary or not
    * @param binaryDecoder           carbon binary decoder for loading data
+   * @param configuration           Data load configuration
    * @return
    */
   public FieldConverter createFieldEncoder(
       DataField dataField, int index, String nullFormat, boolean isEmptyBadRecord,
-      boolean isConvertToBinary, String binaryDecoder) {
+      boolean isConvertToBinary, String binaryDecoder, CarbonDataLoadConfiguration configuration) {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimension()) {
-      if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+      if (dataField.getColumn().isIndexColumn()) {
+        return new IndexFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord,
+            configuration);
+      } else if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&
           !dataField.getColumn().isComplex()) {
         return new DirectDictionaryFieldConverterImpl(dataField, nullFormat, index,
             isEmptyBadRecord);
       } else if (dataField.getColumn().isComplex()) {
-        return new ComplexFieldConverterImpl(
+        return new ComplexFieldConverterImpl(dataField,
             createComplexDataType(dataField, nullFormat, getBinaryDecoder(binaryDecoder)), index);
       } else if (dataField.getColumn().getDataType() == DataTypes.BINARY) {
         BinaryDecoder binaryDecoderObject = getBinaryDecoder(binaryDecoder);

@@ -182,10 +182,7 @@ object CarbonParserUtil {
         }
         // Add index handler as a sort column if it is not already present in it.
         CarbonScalaUtil.addIndexHandlerToSortColumns(handler, sources, tableProperties)
-        // TODO Need to convert it to DataType object and pass it to StructField
-        val dataType =
-          tableProperties.get(s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.datatype")
-        fields += Field(handler, Some("LongType"), Some(handler), Some(null))
+        fields += Field(handler, Some("BigInt"), Some(handler), Some(null), index = true)
       }
     }
     fields
@@ -213,6 +210,7 @@ object CarbonParserUtil {
       isAlterFlow: Boolean = false,
       tableComment: Option[String] = None): TableModel = {
 
+    // Process index handler property
     val indexFields = processIndexProperty(tableProperties, fields)
     val allFields = fields ++ indexFields
 
@@ -338,7 +336,7 @@ object CarbonParserUtil {
 
     if (tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
       // validate the column_meta_cache option
-      val tableColumns = dims.view.filter(_.schemaOrdinal != -1).map(x => x.name.get) ++
+      val tableColumns = dims.view.filterNot(_.index).map(x => x.name.get) ++
                          msrs.map(x => x.name.get)
       CommonUtil.validateColumnMetaCacheFields(
         dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
@@ -1090,7 +1088,7 @@ object CarbonParserUtil {
           field.precision, field.scale, field.rawSchema, field.columnComment)
       case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
-        field.columnComment)
+        field.columnComment, field.index)
       case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
         field.columnComment)

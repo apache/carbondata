@@ -282,7 +282,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
       Object[] newData = new Object[dataFields.length];
       for (int i = 0; i < dataFields.length; i++) {
-        if (dataFields[i].getColumn().getSchemaOrdinal() == -1) {
+        if (dataFields[i].getColumn().isIndexColumn()) {
           continue;
         }
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {

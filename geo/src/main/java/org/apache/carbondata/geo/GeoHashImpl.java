@@ -88,14 +88,8 @@ public class GeoHashImpl extends CustomIndex<List<Long[]>> {
                         CarbonCommonConstants.INDEX_HANDLER, SOURCE_COLUMNS));
       }
     }
-    String TARGET_DATA_TYPE = commonKey + "datatype";
-    String dataType = properties.get(TARGET_DATA_TYPE);
-    if (!StringUtils.isEmpty(dataType) && !"long".equalsIgnoreCase(dataType)) {
-      throw new MalformedCarbonCommandException(
-              String.format("%s property is invalid. %s property must be long for this class.",
-                      CarbonCommonConstants.INDEX_HANDLER, TARGET_DATA_TYPE));
-    }
     // Set the generated column data type as long
+    String TARGET_DATA_TYPE = commonKey + "datatype";
     properties.put(TARGET_DATA_TYPE, "long");
     String ORIGIN_LATITUDE = commonKey + "originlatitude";
     String originLatitude = properties.get(ORIGIN_LATITUDE);
