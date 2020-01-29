@@ -114,11 +114,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
       queryModel.setTableBlockInfos(tableBlockInfoList);
     }
     readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
-    try {
-      carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
-    } catch (QueryExecutionException e) {
-      throw new InterruptedException(e.getMessage());
-    }
+    carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
   }
 
   @Override
@@ -127,12 +123,12 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   }
 
   @Override
-  public Void getCurrentKey() throws IOException, InterruptedException {
+  public Void getCurrentKey() {
     return null;
   }
 
   @Override
-  public T getCurrentValue() throws IOException, InterruptedException {
+  public T getCurrentValue() {
     rowCount += 1;
     if (null != inputMetricsStats) {
       inputMetricsStats.incrementRecordRead(1L);
@@ -155,7 +151,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   }
 
   @Override
-  public float getProgress() throws IOException, InterruptedException {
+  public float getProgress() {
     // TODO : Implement it based on total number of rows it is going to retrieve.
     return 0;
   }

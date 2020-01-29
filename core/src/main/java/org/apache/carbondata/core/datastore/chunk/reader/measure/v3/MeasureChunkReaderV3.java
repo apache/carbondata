@@ -29,7 +29,6 @@ import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasure
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -194,20 +193,20 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
   @Override
   public ColumnPage decodeColumnPage(MeasureRawColumnChunk rawColumnChunk, int pageNumber,
       ReusableDataBuffer reusableDataBuffer)
-      throws IOException, MemoryException {
+      throws IOException {
     return decodeColumnPage(rawColumnChunk, pageNumber, null, reusableDataBuffer);
   }
 
   @Override
   public void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
-      throws IOException, MemoryException {
+      throws IOException {
     decodeColumnPage(measureRawColumnChunk, pageNumber, vectorInfo, reusableDataBuffer);
   }
 
   private ColumnPage decodeColumnPage(MeasureRawColumnChunk rawColumnChunk, int pageNumber,
       ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
-      throws IOException, MemoryException {
+      throws IOException {
     // data chunk of blocklet column
     DataChunk3 dataChunk3 = rawColumnChunk.getDataChunkV3();
     // data chunk of page
@@ -237,7 +236,7 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
    */
   protected ColumnPage decodeMeasure(DataChunk2 pageMetadata, ByteBuffer pageData, int offset,
       ColumnVectorInfo vectorInfo, BitSet nullBitSet, ReusableDataBuffer reusableDataBuffer)
-      throws MemoryException, IOException {
+      throws IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     org.apache.carbondata.core.metadata.encoder.Encoding.validateEncodingTypes(encodings);
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();

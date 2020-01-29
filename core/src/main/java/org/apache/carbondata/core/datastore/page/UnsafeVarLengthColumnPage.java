@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
@@ -33,8 +32,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   /**
    * create a page
    */
-  UnsafeVarLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize)
-      throws MemoryException {
+  UnsafeVarLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BINARY) {
       capacity = (int) (pageSize * DEFAULT_BINARY_SIZE * FACTOR);
@@ -64,11 +62,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
-    try {
-      ensureMemory(length);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    ensureMemory(length);
     CarbonUnsafe.getUnsafe().copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset,
         baseAddress, baseOffset + rowOffset.getInt(rowId), length);
   }

@@ -300,10 +300,9 @@ public class CarbonIndexFileMergeWriter {
    * Merge all the carbonindex files of segment to a  merged file
    *
    * @param segmentId
-   * @throws IOException
    */
   public String mergeCarbonIndexFilesOfSegment(String segmentId, String uuid, String tablePath,
-      String partitionPath) throws IOException {
+      String partitionPath) {
     return mergeCarbonIndexFilesOfSegment(segmentId, tablePath, null, false, uuid, partitionPath);
   }
 
@@ -312,10 +311,9 @@ public class CarbonIndexFileMergeWriter {
    *
    * @param segmentId
    * @param readFileFooterFromCarbonDataFile
-   * @throws IOException
    */
   public String mergeCarbonIndexFilesOfSegment(String segmentId, String tablePath,
-      boolean readFileFooterFromCarbonDataFile, String uuid) throws IOException {
+      boolean readFileFooterFromCarbonDataFile, String uuid) {
     return mergeCarbonIndexFilesOfSegment(segmentId, tablePath, null,
         readFileFooterFromCarbonDataFile, uuid, null);
   }

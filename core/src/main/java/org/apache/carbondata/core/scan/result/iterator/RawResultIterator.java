@@ -196,7 +196,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    * for fetching the row with out incrementing counter.
    * @return
    */
-  public Object[] fetchConverted() throws KeyGenException {
+  public Object[] fetchConverted() {
     pickRow();
     return this.currentRawRow;
   }

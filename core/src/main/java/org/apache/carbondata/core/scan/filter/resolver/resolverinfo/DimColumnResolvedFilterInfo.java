@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -114,7 +113,7 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
   }
 
   public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
+      FilterResolverMetadata metadata) throws FilterUnsupportedException {
     if (null != visitor) {
       visitor.populateFilterResolvedInfo(this, metadata);
       this.addDimensionResolvedFilterInstance(metadata.getColumnExpression().getDimension(),

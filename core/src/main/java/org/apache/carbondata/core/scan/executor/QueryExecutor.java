@@ -35,11 +35,9 @@ public interface QueryExecutor<E> {
    *
    * @param queryModel query details
    * @return query result iterator
-   * @throws QueryExecutionException if any failure while executing the query
    * @throws IOException if fail to read files
    */
-  CarbonIterator<E> execute(QueryModel queryModel)
-      throws QueryExecutionException, IOException;
+  CarbonIterator<E> execute(QueryModel queryModel) throws IOException;
 
   /**
    * Below method will be used for cleanup

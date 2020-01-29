@@ -69,7 +69,6 @@ import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.localdictionary.generator.ColumnLocalDictionaryGenerator;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.locks.ICarbonLock;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
@@ -350,7 +349,7 @@ public final class CarbonUtil {
     UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
       @Override
-      public Void run() throws Exception {
+      public Void run() {
         for (int i = 0; i < file.length; i++) {
           if (file[i].exists()) {
             boolean delete = file[i].delete();
@@ -3217,10 +3216,9 @@ public final class CarbonUtil {
    * @param columnSpec ColumSpec
    * @return FallbackEncodedColumnPage
    * @throws IOException
-   * @throws MemoryException
    */
   public static FallbackEncodedColumnPage getFallBackEncodedColumnPage(ColumnPage columnPage,
-      int pageIndex, TableSpec.ColumnSpec columnSpec) throws IOException, MemoryException {
+      int pageIndex, TableSpec.ColumnSpec columnSpec) throws IOException {
     // new encoded column page
     EncodedColumnPage newEncodedColumnPage;
 

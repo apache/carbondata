@@ -124,7 +124,7 @@ public class UnsafeSortDataRows {
   /**
    * This method will be used to initialize
    */
-  public void initialize() throws MemoryException, CarbonSortKeyAndGroupByException {
+  public void initialize() {
     this.rowPage = createUnsafeRowPage();
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
@@ -138,8 +138,7 @@ public class UnsafeSortDataRows {
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 
-  private UnsafeCarbonRowPage createUnsafeRowPage()
-      throws MemoryException, CarbonSortKeyAndGroupByException {
+  private UnsafeCarbonRowPage createUnsafeRowPage() {
     MemoryBlock baseBlock =
         UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
     boolean isMemoryAvailable =
@@ -254,10 +253,9 @@ public class UnsafeSortDataRows {
    * all the temp unsafe pages in memory and all the temp files and try to merge them if possible.
    * Also, it will spill the pages to disk or add it to unsafe sort memory.
    *
-   * @throws CarbonSortKeyAndGroupByException if error occurs during in-memory merge
    * @throws InterruptedException if error occurs during data sort and write
    */
-  public void startSorting() throws CarbonSortKeyAndGroupByException, InterruptedException {
+  public void startSorting() throws InterruptedException {
     LOGGER.info("Unsafe based sorting will be used");
     if (this.rowPage.getUsedSize() > 0) {
       handlePreviousPage();
@@ -273,7 +271,7 @@ public class UnsafeSortDataRows {
    * sort memory or just spill them.
    */
   private void handlePreviousPage()
-      throws CarbonSortKeyAndGroupByException, InterruptedException {
+      throws InterruptedException {
     if (enableInMemoryIntermediateMerge) {
       unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
     }

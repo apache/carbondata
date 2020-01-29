@@ -106,8 +106,6 @@ public class TestPageLevelDictionary {
       for (int i = 0; i < 500; i++) {
         Arrays.equals(decode.getBytes(i), validateData[i]);
       }
-    } catch (MemoryException e) {
-      Assert.assertTrue(false);
     } catch (IOException e) {
       Assert.assertTrue(false);
     }
@@ -192,8 +190,6 @@ public class TestPageLevelDictionary {
       for(int i =0; i<validateData.length;i++) {
         Assert.assertTrue(Arrays.equals(decode.getBytes(i), validateData[i]));
       }
-    } catch (MemoryException e) {
-      Assert.assertTrue(false);
     } catch (IOException e) {
       Assert.assertTrue(false);
     }

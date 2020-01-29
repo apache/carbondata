@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter;
 
-import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -64,8 +63,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return a filter resolver tree
    */
   public FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier)
-      throws FilterUnsupportedException, IOException {
+      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
     if (null != expressionTree && null != tableIdentifier) {
       return getFilterResolvertree(expressionTree, tableIdentifier);
     }
@@ -81,8 +79,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return FilterResolverIntf type.
    */
   private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier)
-      throws FilterUnsupportedException, IOException {
+      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
     FilterResolverIntf filterEvaluatorTree =
         createFilterResolverTree(expressionTree, tableIdentifier);
     traverseAndResolveTree(filterEvaluatorTree, tableIdentifier);
@@ -100,7 +97,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    */
   private void traverseAndResolveTree(FilterResolverIntf filterResolverTree,
       AbsoluteTableIdentifier tableIdentifier)
-      throws FilterUnsupportedException, IOException {
+      throws FilterUnsupportedException {
     if (null == filterResolverTree) {
       return;
     }

@@ -323,7 +323,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
   }
 
   @Override
-  public boolean nextKeyValue() throws IOException, InterruptedException {
+  public boolean nextKeyValue() throws IOException {
     if (isFirstRow) {
       isFirstRow = false;
       initializeAtFirstRow();
@@ -336,12 +336,12 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
   }
 
   @Override
-  public Void getCurrentKey() throws IOException, InterruptedException {
+  public Void getCurrentKey() {
     return null;
   }
 
   @Override
-  public Object getCurrentValue() throws IOException, InterruptedException {
+  public Object getCurrentValue() {
     return outputValues;
   }
 

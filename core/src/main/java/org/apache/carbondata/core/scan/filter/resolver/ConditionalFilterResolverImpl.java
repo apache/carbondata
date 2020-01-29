@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.resolver;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.SortedMap;
 
@@ -69,7 +68,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    */
   @Override
   public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
-      throws FilterUnsupportedException, IOException {
+      throws FilterUnsupportedException {
     FilterResolverMetadata metadata = new FilterResolverMetadata();
     metadata.setTableIdentifier(absoluteTableIdentifier);
     if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {

@@ -32,7 +32,6 @@ import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
@@ -54,14 +53,9 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
   public List<FineGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<FineGrainDataMap> lstDataMap = new ArrayList<>();
     FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
-    try {
-      dataMap.init(new DataMapModel(
-          DataMapWriter.getDefaultDataMapPath(tableIdentifier.getTablePath(),
-              segment.getSegmentNo(), dataMapName), segment.getConfiguration()));
-    } catch (MemoryException e) {
-      LOGGER.error(String.format("failed to get lucene datamap, detail is %s", e.getMessage()), e);
-      return lstDataMap;
-    }
+    dataMap.init(new DataMapModel(
+        DataMapWriter.getDefaultDataMapPath(tableIdentifier.getTablePath(),
+            segment.getSegmentNo(), dataMapName), segment.getConfiguration()));
     lstDataMap.add(dataMap);
     return lstDataMap;
   }
@@ -81,12 +75,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
     List<FineGrainDataMap> lstDataMap = new ArrayList<>();
     FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
     String indexPath = ((LuceneDataMapDistributable) distributable).getIndexPath();
-    try {
-      dataMap.init(new DataMapModel(indexPath, FileFactory.getConfiguration()));
-    } catch (MemoryException e) {
-      LOGGER.error(String.format("failed to get lucene datamap, detail is %s", e.getMessage()));
-      return lstDataMap;
-    }
+    dataMap.init(new DataMapModel(indexPath, FileFactory.getConfiguration()));
     lstDataMap.add(dataMap);
     return lstDataMap;
   }

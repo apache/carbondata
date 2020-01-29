@@ -33,7 +33,6 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonDictionaryImpl;
@@ -76,7 +75,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
         if (dataChunks[i] == null) {
           dataChunks[i] = chunkReader.decodeColumnPage(this, i, null);
         }
-      } catch (IOException | MemoryException e) {
+      } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
@@ -96,7 +95,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     if (dataChunks[pageNumber] == null) {
       try {
         dataChunks[pageNumber] = chunkReader.decodeColumnPage(this, pageNumber, null);
-      } catch (IOException | MemoryException e) {
+      } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
@@ -173,7 +172,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
         Compressor compressor = CompressorFactory.getInstance().getCompressor(compressorName);
         localDictionary = getDictionary(getDataChunkV3().local_dictionary, compressor);
-      } catch (IOException | MemoryException e) {
+      } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
@@ -186,10 +185,9 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * local dictionary chunk thrift object
    * @return local dictionary
    * @throws IOException
-   * @throws MemoryException
    */
   public static CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk,
-      Compressor compressor) throws IOException, MemoryException {
+      Compressor compressor) throws IOException {
     if (null != localDictionaryChunk) {
       List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
       List<ByteBuffer> encoderMetas = localDictionaryChunk.getDictionary_meta().getEncoder_meta();

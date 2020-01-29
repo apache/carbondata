@@ -168,11 +168,7 @@ public class CarbonCli {
       command = new ScanBenchmark(path, outPuts);
     } else if (cmd.equalsIgnoreCase("sort_columns")) {
       if (line.hasOption("p")) {
-        try {
-          new FileCollector(outPuts).collectSortColumns(line.getOptionValue("p"));
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
+        new FileCollector(outPuts).collectSortColumns(line.getOptionValue("p"));
       }
       return;
     } else {

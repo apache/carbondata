@@ -290,8 +290,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
-      throws IOException {
+  public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable) {
     List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
     String indexPath = ((BloomDataMapDistributable) distributable).getIndexPath();
     Set<String> filteredShards = ((BloomDataMapDistributable) distributable).getFilteredShards();

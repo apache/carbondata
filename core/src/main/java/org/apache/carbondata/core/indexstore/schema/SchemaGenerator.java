@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
@@ -177,11 +176,10 @@ public class SchemaGenerator {
    * datamap
    *
    * @param segmentProperties
-   * @throws MemoryException
    */
   public static CarbonRowSchema[] createTaskSummarySchema(SegmentProperties segmentProperties,
       List<CarbonColumn> minMaxCacheColumns,
-      boolean storeBlockletCount, boolean filePathToBeStored) throws MemoryException {
+      boolean storeBlockletCount, boolean filePathToBeStored) {
     List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>();
     // for number of rows.
     taskMinMaxSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));

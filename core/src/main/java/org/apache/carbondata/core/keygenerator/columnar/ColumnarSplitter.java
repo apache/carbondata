@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.keygenerator.columnar;
 
-import org.apache.carbondata.core.keygenerator.KeyGenException;
-
 /**
  * Splits the odometer key to columns.Further these columns can be stored in a columnar storage.
  */
@@ -36,18 +34,16 @@ public interface ColumnarSplitter {
    *
    * @param keys
    * @return
-   * @throws KeyGenException
    */
-  byte[][] generateAndSplitKey(long[] keys) throws KeyGenException;
+  byte[][] generateAndSplitKey(long[] keys);
 
   /**
    * It generates and splits key to multiple columns
    *
    * @param keys
    * @return
-   * @throws KeyGenException
    */
-  byte[][] generateAndSplitKey(int[] keys) throws KeyGenException;
+  byte[][] generateAndSplitKey(int[] keys);
 
   /**
    * Takes the split keys and generates the surrogate key array

@@ -88,7 +88,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
   @Override
   public RecordReader<NullWritable, StringArrayWritable> createRecordReader(InputSplit inputSplit,
-      TaskAttemptContext context) throws IOException, InterruptedException {
+      TaskAttemptContext context) {
     return new CSVRecordReader();
   }
 
@@ -246,7 +246,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
     @Override
     public void initialize(InputSplit inputSplit, TaskAttemptContext context)
-        throws IOException, InterruptedException {
+        throws IOException {
       FileSplit split = (FileSplit) inputSplit;
       start = split.getStart();
       end = start + split.getLength();
@@ -302,7 +302,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     }
 
     @Override
-    public boolean nextKeyValue() throws IOException, InterruptedException {
+    public boolean nextKeyValue() {
       if (csvParser == null) {
         return false;
       }
@@ -319,12 +319,12 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     }
 
     @Override
-    public NullWritable getCurrentKey() throws IOException, InterruptedException {
+    public NullWritable getCurrentKey() {
       return NullWritable.get();
     }
 
     @Override
-    public StringArrayWritable getCurrentValue() throws IOException, InterruptedException {
+    public StringArrayWritable getCurrentValue() {
       return value;
     }
 
@@ -339,7 +339,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     }
 
     @Override
-    public float getProgress() throws IOException, InterruptedException {
+    public float getProgress() throws IOException {
       return start == end ? 0.0F : Math.min(1.0F, (float) (getPos() -
           start) / (float) (end - start));
     }

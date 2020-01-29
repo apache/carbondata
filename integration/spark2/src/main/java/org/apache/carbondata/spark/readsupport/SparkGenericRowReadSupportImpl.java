@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.readsupport;
 
-import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Calendar;
@@ -37,7 +36,7 @@ public class SparkGenericRowReadSupportImpl implements CarbonReadSupport<Row> {
 
   @Override
   public void initialize(CarbonColumn[] carbonColumns,
-      CarbonTable carbonTable) throws IOException {
+      CarbonTable carbonTable) {
     this.carbonColumns = carbonColumns;
   }
 

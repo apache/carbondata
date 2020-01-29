@@ -174,7 +174,7 @@ public class StoreCreator {
   /**
    * Method to clear the data maps
    */
-  public void clearDataMaps() throws IOException {
+  public void clearDataMaps() {
     DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier);
   }
 

@@ -333,7 +333,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     }
 
     @Override
-    public Void call() throws Exception {
+    public Void call() {
       try {
         if (isBackUpFilling) {
           backupBuffer = prefetchRecordsFromFile(numberOfRecords);

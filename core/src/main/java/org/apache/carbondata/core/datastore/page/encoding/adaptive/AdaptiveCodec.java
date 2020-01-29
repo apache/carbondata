@@ -30,7 +30,6 @@ import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.format.DataChunk2;
@@ -213,9 +212,8 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
    *
    * @param input
    * @return
-   * @throws MemoryException
    */
-  public ColumnPage getSortedColumnPageIfRequired(ColumnPage input) throws MemoryException {
+  public ColumnPage getSortedColumnPageIfRequired(ColumnPage input) {
     if (null != indexStorage) {
       Object[] dataPage = indexStorage.getDataPage();
       ColumnPageEncoderMeta columnPageEncoderMeta =
@@ -230,7 +228,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
   }
 
   public byte[] encodeAndCompressPage(ColumnPage input, ColumnPageValueConverter converter,
-      Compressor compressor) throws MemoryException, IOException {
+      Compressor compressor) throws IOException {
     encodedPage = ColumnPage.newPage(
         new ColumnPageEncoderMeta(input.getColumnPageEncoderMeta().getColumnSpec(), targetDataType,
             input.getColumnPageEncoderMeta().getCompressorName()), input.getPageSize());
@@ -241,8 +239,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
     }
     ColumnPage columnPage = getSortedColumnPageIfRequired(input);
     columnPage.convertValue(converter);
-    byte[] result = encodedPage.compress(compressor);
-    return result;
+    return encodedPage.compress(compressor);
   }
 
   @Override

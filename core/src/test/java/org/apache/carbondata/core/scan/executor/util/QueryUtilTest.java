@@ -90,12 +90,8 @@ public class QueryUtilTest extends TestCase {
       dimensions.add(dimension);
     }
     byte[] maxKeyBasedOnDimensions = null;
-    try {
-      maxKeyBasedOnDimensions = QueryUtil
-          .getMaxKeyBasedOnDimensions(dimensions, segmentProperties.getDimensionKeyGenerator());
-    } catch (KeyGenException e) {
-      assertTrue(false);
-    }
+    maxKeyBasedOnDimensions = QueryUtil
+        .getMaxKeyBasedOnDimensions(dimensions, segmentProperties.getDimensionKeyGenerator());
     byte[] expectedMaxKeyBasedOnDimensions = { -1, 0, 0, 0, 0, 0 };
     for (int i = 0; i < expectedMaxKeyBasedOnDimensions.length; i++) {
       if (expectedMaxKeyBasedOnDimensions[i] != maxKeyBasedOnDimensions[i]) {

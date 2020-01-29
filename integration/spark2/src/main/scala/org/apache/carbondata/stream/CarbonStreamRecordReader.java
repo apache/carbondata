@@ -62,7 +62,7 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
   }
 
   @Override
-  public boolean nextKeyValue() throws IOException, InterruptedException {
+  public boolean nextKeyValue() throws IOException {
     if (isFirstRow) {
       isFirstRow = false;
       initializeAtFirstRow();

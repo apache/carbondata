@@ -26,7 +26,6 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -40,8 +39,7 @@ public interface DataMap<T extends Blocklet> {
   /**
    * It is called to load the data map to memory or to initialize it.
    */
-  void init(DataMapModel dataMapModel)
-      throws MemoryException, IOException;
+  void init(DataMapModel dataMapModel) throws IOException;
 
   /**
    * Prune the datamap with resolved filter expression and partition information.
@@ -55,20 +53,20 @@ public interface DataMap<T extends Blocklet> {
    * blocklets where these filters can exist.
    */
   List<T> prune(Expression filter, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable) throws IOException;
+      List<PartitionSpec> partitions, CarbonTable carbonTable);
 
   /**
    * Prune the data maps for finding the row count. It returns a Map of
    * blockletpath and the row count
    */
-  long getRowCount(Segment segment, List<PartitionSpec> partitions) throws IOException;
+  long getRowCount(Segment segment, List<PartitionSpec> partitions);
 
   /**
    * Prune the data maps for finding the row count for each block. It returns a Map of
    * blockletpath and the row count
    */
   Map<String, Long> getRowCountForEachBlock(Segment segment, List<PartitionSpec> partitions,
-      Map<String, Long> blockletToRowCountMap) throws IOException;
+      Map<String, Long> blockletToRowCountMap);
 
   // TODO Move this method to Abstract class
   /**

@@ -236,7 +236,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
   }
 
   @Override
-  public boolean shouldSkipCombine(Path path, Configuration conf) throws IOException {
+  public boolean shouldSkipCombine(Path path, Configuration conf) {
     return true;
   }
 }

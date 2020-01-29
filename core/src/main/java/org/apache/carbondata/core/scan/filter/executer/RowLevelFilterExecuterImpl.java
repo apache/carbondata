@@ -289,7 +289,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
-      throws FilterUnsupportedException, IOException {
+      throws IOException {
     readColumnChunks(rawBlockletColumnChunks);
     int pages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
     BitSet bitSet = new BitSet();
@@ -299,7 +299,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+      throws FilterUnsupportedException {
     try {
       Boolean result = exp.evaluate(convertRow(value, dimOrdinalMax)).getBoolean();
       return result == null ? false : result;
@@ -313,9 +313,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * @param value this row will be converted to actual value
    * @param dimOrdinalMax for measure column, its index in row = dimOrdinalMax + its ordinal
    * @return actual value row
-   * @throws IOException
    */
-  private RowIntf convertRow(RowIntf value, int dimOrdinalMax) throws IOException {
+  private RowIntf convertRow(RowIntf value, int dimOrdinalMax) {
     Object[] record = new Object[value.size()];
     String memberString;
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
@@ -375,10 +374,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * @param blockChunkHolder
    * @param row
    * @param index
-   * @throws IOException
    */
   private void createRow(RawBlockletColumnChunks blockChunkHolder, RowIntf row, int pageIndex,
-      int index) throws IOException {
+      int index) {
     Object[] record = new Object[dimColEvaluatorInfoList.size() + msrColEvalutorInfoList.size()];
     String memberString;
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {

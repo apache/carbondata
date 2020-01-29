@@ -430,7 +430,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   /**
    * create an instance of sort data rows
    */
-  private void initSortDataRows() throws Exception {
+  private void initSortDataRows() {
     measureCount = carbonTable.getVisibleMeasures().size();
     dimensions = new ArrayList<>(2);
     dimensions.addAll(segmentProperties.getDimensions());
@@ -460,13 +460,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     // TODO: Now it is only supported onheap merge, but we can have unsafe merge
     // as well by using UnsafeSortDataRows.
     this.sortDataRows = new SortDataRows(sortParameters, intermediateFileMerger);
-    try {
-      this.sortDataRows.initialize();
-    } catch (CarbonSortKeyAndGroupByException e) {
-      LOGGER.error(e.getMessage(), e);
-      throw new Exception(
-          "Error initializing sort data rows object during compaction: " + e.getMessage(), e);
-    }
+    this.sortDataRows.initialize();
   }
 
   /**

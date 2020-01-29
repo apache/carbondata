@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.processing.loading.converter.impl;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,7 +73,7 @@ public class RowConverterImpl implements RowConverter {
   }
 
   @Override
-  public void initialize() throws IOException {
+  public void initialize() {
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();

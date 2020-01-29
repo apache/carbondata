@@ -17,7 +17,6 @@
 
 package org.apache.carbon.flink;
 
-import java.io.IOException;
 import java.net.URI;
 
 import org.apache.flink.configuration.Configuration;
@@ -36,7 +35,7 @@ public final class ProxyFileSystemFactory implements FileSystemFactory {
   }
 
   @Override
-  public ProxyFileSystem create(final URI uri) throws IOException {
+  public ProxyFileSystem create(final URI uri) {
     return ProxyFileSystem.INSTANCE;
   }
 

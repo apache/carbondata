@@ -22,7 +22,6 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -58,8 +57,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   private static final int floatBits = DataTypes.FLOAT.getSizeBits();
   private static final int doubleBits = DataTypes.DOUBLE.getSizeBits();
 
-  UnsafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize)
-      throws MemoryException {
+  UnsafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BOOLEAN ||
         columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE ||
@@ -88,7 +86,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   UnsafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize,
-      int eachRowSize) throws MemoryException {
+      int eachRowSize) {
     this(columnPageEncoderMeta, pageSize);
     this.eachRowSize = eachRowSize;
     totalLength = 0;
@@ -117,11 +115,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putByte(int rowId, byte value) {
-    try {
-      ensureMemory(ByteUtil.SIZEOF_BYTE);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    ensureMemory(ByteUtil.SIZEOF_BYTE);
     long offset = ((long)rowId) << byteBits;
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_BYTE;
@@ -130,11 +124,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putShort(int rowId, short value) {
-    try {
-      ensureMemory(shortBits);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    ensureMemory(shortBits);
     long offset = ((long)rowId) << shortBits;
     CarbonUnsafe.getUnsafe().putShort(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_SHORT;
@@ -143,11 +133,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putShortInt(int rowId, int value) {
-    try {
-      ensureMemory(ByteUtil.SIZEOF_SHORT_INT);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    ensureMemory(ByteUtil.SIZEOF_SHORT_INT);
     byte[] data = ByteUtil.to3Bytes(value);
     long offset = rowId * 3L;
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, data[0]);
@@ -159,11 +145,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putInt(int rowId, int value) {
-    try {
-      ensureMemory(ByteUtil.SIZEOF_INT);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    ensureMemory(ByteUtil.SIZEOF_INT);
     long offset = ((long)rowId) << intBits;
     CarbonUnsafe.getUnsafe().putInt(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_INT;
@@ -172,11 +154,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putLong(int rowId, long value) {
-    try {
-      ensureMemory(ByteUtil.SIZEOF_LONG);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    ensureMemory(ByteUtil.SIZEOF_LONG);
     long offset = ((long)rowId) << longBits;
     CarbonUnsafe.getUnsafe().putLong(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_LONG;
@@ -185,11 +163,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putDouble(int rowId, double value) {
-    try {
-      ensureMemory(ByteUtil.SIZEOF_DOUBLE);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    ensureMemory(ByteUtil.SIZEOF_DOUBLE);
     long offset = ((long)rowId) << doubleBits;
     CarbonUnsafe.getUnsafe().putDouble(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_DOUBLE;
@@ -198,11 +172,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putFloat(int rowId, float value) {
-    try {
-      ensureMemory(ByteUtil.SIZEOF_FLOAT);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    ensureMemory(ByteUtil.SIZEOF_FLOAT);
 
     long offset = ((long) rowId) << floatBits;
     CarbonUnsafe.getUnsafe().putFloat(baseAddress, baseOffset + offset, value);
@@ -212,11 +182,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes) {
-    try {
-      ensureMemory(eachRowSize);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    ensureMemory(eachRowSize);
     // copy the data to memory
     long offset = (long)rowId * eachRowSize;
     CarbonUnsafe.getUnsafe()
@@ -545,7 +511,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   /**
    * reallocate memory if capacity length than current size + request size
    */
-  protected void ensureMemory(int requestSize) throws MemoryException {
+  protected void ensureMemory(int requestSize) {
     checkDataFileSize();
     if (totalLength + requestSize > capacity) {
       int newSize = Math.max(2 * capacity, totalLength + requestSize);

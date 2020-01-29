@@ -32,7 +32,6 @@ import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompres
 import org.apache.carbondata.core.datastore.page.statistics.DummyStatsCollector;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.format.LocalDictionaryChunk;
@@ -98,13 +97,11 @@ public class PageLevelDictionary {
    * Below method will be used to get the local dictionary chunk for writing
    * @TODO Support for numeric data type dictionary exclude columns
    * @return encoded local dictionary chunk
-   * @throws MemoryException
-   * in case of problem in encoding
    * @throws IOException
    * in case of problem in encoding
    */
   public LocalDictionaryChunk getLocalDictionaryChunkForBlocklet()
-      throws MemoryException, IOException {
+      throws IOException {
     // TODO support for actual data type dictionary ColumnSPEC
     ColumnType columnType = ColumnType.PLAIN_VALUE;
     boolean isVarcharType = false;

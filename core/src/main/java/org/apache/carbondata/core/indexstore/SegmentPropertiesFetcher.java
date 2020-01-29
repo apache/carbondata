@@ -41,5 +41,5 @@ public interface SegmentPropertiesFetcher {
   SegmentProperties getSegmentProperties(Segment segment, List<PartitionSpec> partitionSpecs)
       throws IOException;
 
-  SegmentProperties getSegmentPropertiesFromDataMap(DataMap coarseGrainDataMap) throws IOException;
+  SegmentProperties getSegmentPropertiesFromDataMap(DataMap coarseGrainDataMap);
 }

@@ -102,7 +102,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   DistributableDataMapFormat(CarbonTable table,
       List<Segment> validSegments, List<String> invalidSegments, boolean isJobToClearDataMaps,
-      String dataMapToClear) throws IOException {
+      String dataMapToClear) {
     this(table, null, validSegments, invalidSegments, null,
         isJobToClearDataMaps, null, false, false);
     this.dataMapToClear = dataMapToClear;
@@ -111,7 +111,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
   public DistributableDataMapFormat(CarbonTable table, FilterResolverIntf filterResolverIntf,
       List<Segment> validSegments, List<String> invalidSegments, List<PartitionSpec> partitions,
       boolean isJobToClearDataMaps, DataMapLevel dataMapLevel, boolean isFallbackJob,
-      boolean isAsyncCall) throws IOException {
+      boolean isAsyncCall) {
     this.table = table;
     this.filterResolverIntf = filterResolverIntf;
     this.validSegments = validSegments;
@@ -138,14 +138,14 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   @Override
   public RecordReader<Void, ExtendedBlocklet> createRecordReader(InputSplit inputSplit,
-      TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
+      TaskAttemptContext taskAttemptContext) {
     return new RecordReader<Void, ExtendedBlocklet>() {
       private Iterator<ExtendedBlocklet> blockletIterator;
       private ExtendedBlocklet currBlocklet;
 
       @Override
       public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
-          throws IOException, InterruptedException {
+          throws IOException {
         DataMapDistributableWrapper distributable = (DataMapDistributableWrapper) inputSplit;
         distributable.getDistributable().getSegment().setReadCommittedScope(readCommittedScope);
         List<Segment> segmentsToLoad = new ArrayList<>();
@@ -168,7 +168,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
       }
 
       @Override
-      public boolean nextKeyValue() throws IOException, InterruptedException {
+      public boolean nextKeyValue() {
         boolean hasNext = blockletIterator.hasNext();
         if (hasNext) {
           currBlocklet = blockletIterator.next();
@@ -180,22 +180,22 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
       }
 
       @Override
-      public Void getCurrentKey() throws IOException, InterruptedException {
+      public Void getCurrentKey() {
         return null;
       }
 
       @Override
-      public ExtendedBlocklet getCurrentValue() throws IOException, InterruptedException {
+      public ExtendedBlocklet getCurrentValue() {
         return currBlocklet;
       }
 
       @Override
-      public float getProgress() throws IOException, InterruptedException {
+      public float getProgress() {
         return 0;
       }
 
       @Override
-      public void close() throws IOException {
+      public void close() {
       }
     };
   }

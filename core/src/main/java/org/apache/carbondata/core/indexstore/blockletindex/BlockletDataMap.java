@@ -34,7 +34,6 @@ import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -53,7 +52,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
   private int blockNum = 0;
 
   @Override
-  public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
+  public void init(DataMapModel dataMapModel) throws IOException {
     super.init(dataMapModel);
   }
 
@@ -62,13 +61,11 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
    *
    * @param blockletDataMapInfo
    * @param indexInfo
-   * @throws IOException
-   * @throws MemoryException
    */
   @Override
   protected DataMapRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
       SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
-      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
+      List<DataFileFooter> indexInfo) {
     if (isLegacyStore) {
       return loadBlockInfoForOldStore(taskSummarySchema, segmentProperties, blockletDataMapInfo,
           indexInfo);
@@ -83,11 +80,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     if (isLegacyStore) {
       return super.getTaskSummarySchema();
     }
-    try {
-      return segmentPropertiesWrapper.getTaskSummarySchemaForBlocklet(false, isFilePathStored);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    return segmentPropertiesWrapper.getTaskSummarySchemaForBlocklet(false, isFilePathStored);
   }
 
   @Override
@@ -103,12 +96,10 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
    *
    * @param blockletDataMapInfo
    * @param indexInfo
-   * @throws IOException
-   * @throws MemoryException
    */
   private DataMapRowImpl loadBlockletMetaInfo(CarbonRowSchema[] taskSummarySchema,
       SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
-      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
+      List<DataFileFooter> indexInfo) {
     String tempFilePath = null;
     DataMapRowImpl summaryRow = null;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();

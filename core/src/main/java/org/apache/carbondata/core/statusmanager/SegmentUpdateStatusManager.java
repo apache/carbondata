@@ -279,9 +279,8 @@ public class SegmentUpdateStatusManager {
    *
    * @param blockFilePath actual block filePath
    * @return all delete delta files
-   * @throws Exception
    */
-  public String[] getDeleteDeltaFilePath(String blockFilePath, String segmentId) throws Exception {
+  public String[] getDeleteDeltaFilePath(String blockFilePath, String segmentId) {
     return getDeltaFiles(blockFilePath, segmentId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
         .toArray(new String[0]);
   }
@@ -289,8 +288,7 @@ public class SegmentUpdateStatusManager {
   /**
    * Returns all delta file paths of specified block
    */
-  private List<String> getDeltaFiles(String blockPath, String segment, String extension)
-      throws Exception {
+  private List<String> getDeltaFiles(String blockPath, String segment, String extension) {
     Path path = new Path(blockPath);
     String completeBlockName = path.getName();
     String blockNameWithoutExtn =
@@ -343,7 +341,7 @@ public class SegmentUpdateStatusManager {
    * @return the list of delete file
    */
   private List<String> getDeltaFiles(String blockDir, final String blockNameFromTuple,
-      final String extension, String segment) throws IOException {
+      final String extension, String segment) {
     List<String> deleteFileList = new ArrayList<>();
     for (SegmentUpdateDetails block : updateDetails) {
       if (block.getBlockName().equalsIgnoreCase(blockNameFromTuple) && block.getSegmentName()
@@ -383,7 +381,7 @@ public class SegmentUpdateStatusManager {
 
   private List<String> getFilePaths(String blockDir, final String blockNameFromTuple,
       final String extension, List<String> deleteFileList, final long deltaStartTimestamp,
-      final long deltaEndTimeStamp) throws IOException {
+      final long deltaEndTimeStamp) {
     List<String> deltaList = segmentDeleteDeltaListMap.get(blockDir);
     if (deltaList == null) {
       CarbonFile[] files = FileFactory.getCarbonFile(blockDir).listFiles(new CarbonFileFilter() {

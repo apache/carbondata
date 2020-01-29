@@ -97,7 +97,7 @@ public class Schema {
     GsonBuilder gsonBuilder = new GsonBuilder();
     gsonBuilder.registerTypeAdapter(Field.class, new TypeAdapter<Field>() {
       @Override
-      public void write(JsonWriter out, Field field) throws IOException {
+      public void write(JsonWriter out, Field field) {
         // noop
       }
 

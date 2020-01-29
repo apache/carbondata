@@ -20,8 +20,6 @@ package org.apache.carbondata.core.cache;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.core.memory.MemoryException;
-
 /**
  * A semi-persistent mapping from keys to values. Cache entries are manually added using
  * #get(Key), #getAll(List<Keys>) , and are stored in the cache until
@@ -40,9 +38,8 @@ public interface Cache<K, V> {
    *
    * @param key
    * @return
-   * @throws IOException in case memory is not sufficient to load data into memory
    */
-  V get(K key) throws IOException;
+  V get(K key);
 
   /**
    * This method will return a list of values for the given list of keys.
@@ -76,7 +73,7 @@ public interface Cache<K, V> {
    * @param key
    * @param value
    */
-  void put(K key, V value) throws IOException, MemoryException;
+  void put(K key, V value) throws IOException;
 
   /**
    * Access count of Cacheable entry will be decremented

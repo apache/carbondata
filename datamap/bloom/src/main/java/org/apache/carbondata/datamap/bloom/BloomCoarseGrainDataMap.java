@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.datamap.bloom;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -85,7 +84,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private BadRecordLogHolder badRecordLogHolder;
 
   @Override
-  public void init(DataMapModel dataMapModel) throws IOException {
+  public void init(DataMapModel dataMapModel) {
     this.indexPath = FileFactory.getPath(dataMapModel.getFilePath());
     this.shardName = indexPath.getName();
     if (dataMapModel instanceof BloomDataMapModel) {
@@ -134,7 +133,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions) throws IOException {
+      List<PartitionSpec> partitions) {
     Set<Blocklet> hitBlocklets = null;
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.

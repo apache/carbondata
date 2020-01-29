@@ -40,7 +40,6 @@ import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -714,16 +713,12 @@ public final class FilterUtil {
       }
       if (null != listOfsurrogates) {
         for (Integer surrogate : listOfsurrogates) {
-          try {
-            if (surrogate <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
-              keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
-              filterValuesList
-                  .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
-            } else {
-              break;
-            }
-          } catch (KeyGenException e) {
-            LOGGER.error(e.getMessage(), e);
+          if (surrogate <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
+            keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
+            filterValuesList
+                .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
+          } else {
+            break;
           }
         }
       }
@@ -745,19 +740,15 @@ public final class FilterUtil {
             "Filter values cannot be null in case of range in dictionary include");
       }
       // Here we only get the first column as there can be only one range column.
-      try {
-        if (listOfsurrogates.get(0)
-            <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
-          keys[keyOrdinalOfDimensionFromCurrentBlock] = listOfsurrogates.get(0);
-        } else {
-          keys[keyOrdinalOfDimensionFromCurrentBlock] =
-              dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock];
-        }
-        filterValuesList
-            .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
-      } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage(), e);
+      if (listOfsurrogates.get(0)
+          <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
+        keys[keyOrdinalOfDimensionFromCurrentBlock] = listOfsurrogates.get(0);
+      } else {
+        keys[keyOrdinalOfDimensionFromCurrentBlock] =
+            dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock];
       }
+      filterValuesList
+          .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
   }
@@ -827,18 +818,13 @@ public final class FilterUtil {
    */
   public static byte[] getMaskKey(int surrogate, CarbonDimension carbonDimension,
       KeyGenerator blockLevelKeyGenerator) {
-
     int[] keys = new int[blockLevelKeyGenerator.getDimCount()];
     byte[] maskedKey = null;
     Arrays.fill(keys, 0);
     int[] rangesForMaskedByte =
         getRangesForMaskedByte((carbonDimension.getKeyOrdinal()), blockLevelKeyGenerator);
-    try {
-      keys[carbonDimension.getKeyOrdinal()] = surrogate;
-      maskedKey = getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
-    } catch (KeyGenException e) {
-      LOGGER.error(e.getMessage(), e);
-    }
+    keys[carbonDimension.getKeyOrdinal()] = surrogate;
+    maskedKey = getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
     return maskedKey;
   }
 
@@ -1122,14 +1108,7 @@ public final class FilterUtil {
 
   public static IndexKey createIndexKeyFromResolvedFilterVal(long[] startOrEndKey,
       KeyGenerator keyGenerator, byte[] startOrEndKeyForNoDictDimension) {
-    IndexKey indexKey = null;
-    try {
-      indexKey =
-          new IndexKey(keyGenerator.generateKey(startOrEndKey), startOrEndKeyForNoDictDimension);
-    } catch (KeyGenException e) {
-      LOGGER.error(e.getMessage(), e);
-    }
-    return indexKey;
+    return new IndexKey(keyGenerator.generateKey(startOrEndKey), startOrEndKeyForNoDictDimension);
   }
 
   /**
@@ -1207,10 +1186,8 @@ public final class FilterUtil {
    *
    * @param segmentProperties
    * @return
-   * @throws KeyGenException
    */
-  public static IndexKey prepareDefaultEndIndexKey(SegmentProperties segmentProperties)
-      throws KeyGenException {
+  public static IndexKey prepareDefaultEndIndexKey(SegmentProperties segmentProperties) {
     long[] dictionarySurrogateKey = new long[segmentProperties.getNumberOfDictSortColumns()];
     int index = 0;
     int[] dimColumnsCardinality = segmentProperties.getDimColumnsCardinality();
@@ -1259,10 +1236,8 @@ public final class FilterUtil {
    *
    * @param segmentProperties
    * @return
-   * @throws KeyGenException
    */
-  public static IndexKey prepareDefaultStartIndexKey(SegmentProperties segmentProperties)
-      throws KeyGenException {
+  public static IndexKey prepareDefaultStartIndexKey(SegmentProperties segmentProperties) {
     IndexKey startIndexKey;
     long[] dictionarySurrogateKey = new long[segmentProperties.getNumberOfDictSortColumns()];
     byte[] dictionaryStartMdkey =
@@ -1592,12 +1567,8 @@ public final class FilterUtil {
         }
         if (ByteUtil.UnsafeComparer.INSTANCE
             .compareTo(actualFilter, dictionary.getDictionaryValue(i)) == 0) {
-          try {
-            dummy[0] = i;
-            encodedFilters.add(keyGenerator.generateKey(dummy));
-          } catch (KeyGenException e) {
-            LOGGER.error(e.getMessage(), e);
-          }
+          dummy[0] = i;
+          encodedFilters.add(keyGenerator.generateKey(dummy));
           break;
         }
       }
@@ -1681,26 +1652,18 @@ public final class FilterUtil {
     List<byte[]> encodedFilterValues = new ArrayList<>();
     int[] dummy = new int[1];
     if (!useExclude) {
-      try {
-        for (int i = includeDictValues.nextSetBit(0);
-             i >= 0; i = includeDictValues.nextSetBit(i + 1)) {
-          dummy[0] = i;
-          encodedFilterValues.add(keyGenerator.generateKey(dummy));
-        }
-      } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage(), e);
+      for (int i = includeDictValues.nextSetBit(0);
+           i >= 0; i = includeDictValues.nextSetBit(i + 1)) {
+        dummy[0] = i;
+        encodedFilterValues.add(keyGenerator.generateKey(dummy));
       }
       return encodedFilterValues.toArray(new byte[encodedFilterValues.size()][]);
     } else {
-      try {
-        for (int i = 1; i < carbonDictionary.getDictionarySize(); i++) {
-          if (!includeDictValues.get(i) && null != carbonDictionary.getDictionaryValue(i)) {
-            dummy[0] = i;
-            encodedFilterValues.add(keyGenerator.generateKey(dummy));
-          }
+      for (int i = 1; i < carbonDictionary.getDictionarySize(); i++) {
+        if (!includeDictValues.get(i) && null != carbonDictionary.getDictionaryValue(i)) {
+          dummy[0] = i;
+          encodedFilterValues.add(keyGenerator.generateKey(dummy));
         }
-      } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage(), e);
       }
     }
     return getSortedEncodedFilters(encodedFilterValues);

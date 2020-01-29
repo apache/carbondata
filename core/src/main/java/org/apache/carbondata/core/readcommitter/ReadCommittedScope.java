@@ -47,8 +47,7 @@ import org.apache.hadoop.conf.Configuration;
    */
   Map<String, String> getCommittedIndexFile(Segment segment) throws IOException;
 
-  SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo)
-      throws IOException;
+  SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo);
 
   void takeCarbonIndexFileSnapShot() throws IOException;
 

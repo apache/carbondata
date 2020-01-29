@@ -17,12 +17,10 @@
 
 package org.apache.carbondata.core.scan.filter.executer;
 
-import java.io.IOException;
 import java.util.BitSet;
 import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
@@ -56,8 +54,7 @@ public class ImplicitIncludeFilterExecutorImpl
   }
 
   @Override
-  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
-      throws FilterUnsupportedException, IOException {
+  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks) {
     int numberOfPages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
     BitSet bitSet = new BitSet(numberOfPages);
     bitSet.set(0, numberOfPages);
@@ -65,8 +62,7 @@ public class ImplicitIncludeFilterExecutorImpl
   }
 
   @Override
-  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
     return false;
   }
 
@@ -77,7 +73,7 @@ public class ImplicitIncludeFilterExecutorImpl
   }
 
   @Override
-  public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
+  public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) {
 
   }
 

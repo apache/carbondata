@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor;
 
-import java.io.IOException;
-
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
@@ -37,5 +35,5 @@ public interface ResolvedFilterInfoVisitorIntf {
    * @throws FilterUnsupportedException
    */
   void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException;
+      FilterResolverMetadata metadata) throws FilterUnsupportedException;
 }

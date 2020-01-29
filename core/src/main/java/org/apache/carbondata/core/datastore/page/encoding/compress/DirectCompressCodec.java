@@ -35,7 +35,6 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
@@ -74,7 +73,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
     return new ColumnPageEncoder() {
 
       @Override
-      protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
+      protected byte[] encodeData(ColumnPage input) throws IOException {
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             input.getColumnCompressorName());
         return input.compress(compressor);
@@ -102,8 +101,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
     return new ColumnPageDecoder() {
 
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length)
-          throws MemoryException {
+      public ColumnPage decode(byte[] input, int offset, int length) {
         ColumnPage decodedPage;
         if (DataTypes.isDecimal(dataType)) {
           decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
@@ -117,8 +115,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
       @Override
       public void decodeAndFillVector(byte[] input, int offset, int length,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
-          ReusableDataBuffer reusableDataBuffer)
-          throws MemoryException, IOException {
+          ReusableDataBuffer reusableDataBuffer) {
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
         int uncompressedLength;
@@ -155,8 +152,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
       }
 
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
-          throws MemoryException, IOException {
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded) {
         return LazyColumnPage.newPage(ColumnPage
             .decompress(meta, input, offset, length, isLVEncoded,
                 isComplexPrimitiveIntLengthEncoding), converter);

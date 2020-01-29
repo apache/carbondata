@@ -39,7 +39,6 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -211,13 +210,13 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
    */
   @Override
   public DimensionColumnPage decodeColumnPage(DimensionRawColumnChunk rawColumnPage,
-      int pageNumber, ReusableDataBuffer reusableDataBuffer) throws IOException, MemoryException {
+      int pageNumber, ReusableDataBuffer reusableDataBuffer) throws IOException {
     return decodeColumnPage(rawColumnPage, pageNumber, null, reusableDataBuffer);
   }
 
   private DimensionColumnPage decodeColumnPage(
       DimensionRawColumnChunk rawColumnPage, int pageNumber, ColumnVectorInfo vectorInfo,
-      ReusableDataBuffer reusableDataBuffer) throws IOException, MemoryException {
+      ReusableDataBuffer reusableDataBuffer) throws IOException {
     // data chunk of blocklet column
     DataChunk3 dataChunk3 = rawColumnPage.getDataChunkV3();
     // get the data buffer
@@ -239,7 +238,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
   @Override
   public void decodeColumnPageAndFillVector(DimensionRawColumnChunk dimensionRawColumnChunk,
       int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
-      throws IOException, MemoryException {
+      throws IOException {
     DimensionColumnPage columnPage =
         decodeColumnPage(dimensionRawColumnChunk, pageNumber, vectorInfo, reusableDataBuffer);
     columnPage.freeMemory();
@@ -247,8 +246,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
 
   private ColumnPage decodeDimensionByMeta(DataChunk2 pageMetadata, ByteBuffer pageData, int offset,
       boolean isLocalDictEncodedPage, ColumnVectorInfo vectorInfo, BitSet nullBitSet,
-      ReusableDataBuffer reusableDataBuffer)
-      throws IOException, MemoryException {
+      ReusableDataBuffer reusableDataBuffer) throws IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
     String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
@@ -269,8 +267,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
 
   protected DimensionColumnPage decodeDimension(DimensionRawColumnChunk rawColumnPage,
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset, ColumnVectorInfo vectorInfo,
-      ReusableDataBuffer reusableDataBuffer)
-      throws IOException, MemoryException {
+      ReusableDataBuffer reusableDataBuffer) throws IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     org.apache.carbondata.core.metadata.encoder.Encoding.validateEncodingTypes(encodings);
     if (CarbonUtil.isEncodedWithMeta(encodings)) {
@@ -324,8 +321,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
 
   private DimensionColumnPage decodeDimensionLegacy(DimensionRawColumnChunk rawColumnPage,
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset, ColumnVectorInfo vectorInfo,
-      ReusableDataBuffer reusableDataBuffer)
-      throws IOException, MemoryException {
+      ReusableDataBuffer reusableDataBuffer) {
     byte[] dataPage;
     int[] rlePage;
     int[] invertedIndexes = new int[0];

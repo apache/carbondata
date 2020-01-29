@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter;
 
-import java.io.IOException;
-
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
@@ -37,6 +35,6 @@ public interface FilterProcessor {
    */
   FilterResolverIntf getFilterResolver(Expression expressionTree,
       AbsoluteTableIdentifier tableIdentifier)
-      throws FilterUnsupportedException, IOException;
+      throws FilterUnsupportedException;
 
 }

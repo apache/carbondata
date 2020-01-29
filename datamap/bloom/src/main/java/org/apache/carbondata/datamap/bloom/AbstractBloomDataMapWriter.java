@@ -65,11 +65,11 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   }
 
   @Override
-  public void onBlockStart(String blockId) throws IOException {
+  public void onBlockStart(String blockId) {
   }
 
   @Override
-  public void onBlockEnd(String blockId) throws IOException {
+  public void onBlockEnd(String blockId) {
   }
 
   @Override
@@ -110,8 +110,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   }
 
   @Override
-  public void onPageAdded(int blockletId, int pageId, int pageSize, ColumnPage[] pages)
-      throws IOException {
+  public void onPageAdded(int blockletId, int pageId, int pageSize, ColumnPage[] pages) {
     for (int rowId = 0; rowId < pageSize; rowId++) {
       // for each indexed column, add the data to index
       for (int i = 0; i < indexColumns.size(); i++) {
@@ -197,7 +196,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   }
 
   @Override
-  public void finish() throws IOException {
+  public void finish() {
     if (!isWritingFinished()) {
       releaseResouce();
       setWritingFinished(true);

@@ -25,7 +25,6 @@ import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
@@ -81,7 +80,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
       if (columnPages[pageNumber] == null) {
         columnPages[pageNumber] = chunkReader.decodeColumnPage(this, pageNumber, null);
       }
-    } catch (IOException | MemoryException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
 
@@ -104,7 +103,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     }
     try {
       return chunkReader.decodeColumnPage(this, index, reusableDataBuffer);
-    } catch (IOException | MemoryException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -121,7 +120,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     assert pageNumber < pagesCount;
     try {
       chunkReader.decodeColumnPageAndFillVector(this, pageNumber, vectorInfo, reusableDataBuffer);
-    } catch (IOException | MemoryException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }

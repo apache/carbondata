@@ -35,7 +35,6 @@ import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkRea
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -58,7 +57,7 @@ class ScanBenchmark implements Command {
   }
 
   @Override
-  public void run(CommandLine line) throws IOException, MemoryException {
+  public void run(CommandLine line) throws IOException {
     if (line.hasOption("f")) {
       String filePath = line.getOptionValue("f");
       file = new DataFile(FileFactory.getCarbonFile(filePath));
@@ -85,7 +84,7 @@ class ScanBenchmark implements Command {
     // benchmark read header and footer time
     benchmarkOperation("ReadHeaderAndFooter", new Operation() {
       @Override
-      public void run() throws IOException, MemoryException {
+      public void run() throws IOException {
         fileHeaderRef.set(file.readHeader());
         fileFoorterRef.set(file.readFooter());
       }
@@ -96,7 +95,7 @@ class ScanBenchmark implements Command {
     // benchmark convert footer
     benchmarkOperation("ConvertFooter", new Operation() {
       @Override
-      public void run() throws IOException, MemoryException {
+      public void run() {
         convertFooter(fileHeader, fileFooter);
       }
     });
@@ -104,7 +103,7 @@ class ScanBenchmark implements Command {
     // benchmark read all meta and convert footer
     benchmarkOperation("ReadAllMetaAndConvertFooter", new Operation() {
       @Override
-      public void run() throws IOException, MemoryException {
+      public void run() throws IOException {
         DataFileFooter footer = readAndConvertFooter(file);
         convertedFooterRef.set(footer);
       }
@@ -127,7 +126,7 @@ class ScanBenchmark implements Command {
             footer.getBlockletList().get(blockletId).getNumberOfRows()));
         benchmarkOperation("\tColumnChunk IO", new Operation() {
           @Override
-          public void run() throws IOException, MemoryException {
+          public void run() throws IOException {
             columnChunk.set(readBlockletColumnChunkIO(footer, blockletId, columnIndex, dimension));
           }
         });
@@ -135,7 +134,7 @@ class ScanBenchmark implements Command {
         if (dimensionColumnChunkReader != null) {
           benchmarkOperation("\tDecompress Pages", new Operation() {
             @Override
-            public void run() throws IOException, MemoryException {
+            public void run() throws IOException {
               decompressDimensionPages(columnChunk.get(),
                   footer.getBlockletList().get(blockletId).getNumberOfPages());
             }
@@ -143,7 +142,7 @@ class ScanBenchmark implements Command {
         } else {
           benchmarkOperation("\tDecompress Pages", new Operation() {
             @Override
-            public void run() throws IOException, MemoryException {
+            public void run() throws IOException {
               decompressMeasurePages(columnChunk.get(),
                   footer.getBlockletList().get(blockletId).getNumberOfPages());
             }
@@ -155,10 +154,10 @@ class ScanBenchmark implements Command {
   }
 
   interface Operation {
-    void run() throws IOException, MemoryException;
+    void run() throws IOException;
   }
 
-  private void benchmarkOperation(String opName, Operation op) throws IOException, MemoryException {
+  private void benchmarkOperation(String opName, Operation op) throws IOException {
     long start, end;
     start = System.nanoTime();
     op.run();
@@ -207,7 +206,7 @@ class ScanBenchmark implements Command {
   }
 
   private DimensionColumnPage[] decompressDimensionPages(
-      AbstractRawColumnChunk rawColumnChunk, int numPages) throws IOException, MemoryException {
+      AbstractRawColumnChunk rawColumnChunk, int numPages) throws IOException {
     DimensionColumnPage[] pages = new DimensionColumnPage[numPages];
     for (int i = 0; i < pages.length; i++) {
       pages[i] = dimensionColumnChunkReader.decodeColumnPage(
@@ -217,7 +216,7 @@ class ScanBenchmark implements Command {
   }
 
   private ColumnPage[] decompressMeasurePages(
-      AbstractRawColumnChunk rawColumnChunk, int numPages) throws IOException, MemoryException {
+      AbstractRawColumnChunk rawColumnChunk, int numPages) throws IOException {
     ColumnPage[] pages = new ColumnPage[numPages];
     for (int i = 0; i < pages.length; i++) {
       pages[i] = measureColumnChunkReader.decodeColumnPage(

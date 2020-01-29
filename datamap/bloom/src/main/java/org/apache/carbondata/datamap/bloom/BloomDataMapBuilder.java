@@ -43,7 +43,7 @@ public class BloomDataMapBuilder extends AbstractBloomDataMapWriter implements D
   }
 
   @Override
-  public void initialize() throws IOException {
+  public void initialize() {
     super.resetBloomFilters();
   }
 
@@ -71,7 +71,7 @@ public class BloomDataMapBuilder extends AbstractBloomDataMapWriter implements D
   }
 
   @Override
-  public void finish() throws IOException {
+  public void finish() {
     if (!isWritingFinished()) {
       if (indexBloomFilters.size() > 0) {
         writeBloomDataMapFile();
@@ -88,7 +88,7 @@ public class BloomDataMapBuilder extends AbstractBloomDataMapWriter implements D
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     releaseResouce();
   }
 

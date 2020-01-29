@@ -98,20 +98,16 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
     SortDataRows[] sortDataRows = new SortDataRows[columnRangeInfo.getNumOfRanges()];
     intermediateFileMergers = new SortIntermediateFileMerger[columnRangeInfo.getNumOfRanges()];
     SortParameters[] sortParameterArray = new SortParameters[columnRangeInfo.getNumOfRanges()];
-    try {
-      for (int i = 0; i < columnRangeInfo.getNumOfRanges(); i++) {
-        SortParameters parameters = originSortParameters.getCopy();
-        parameters.setPartitionID(i + "");
-        parameters.setRangeId(i);
-        sortParameterArray[i] = parameters;
-        setTempLocation(parameters);
-        parameters.setBufferSize(sortBufferSize);
-        intermediateFileMergers[i] = new SortIntermediateFileMerger(parameters);
-        sortDataRows[i] = new SortDataRows(parameters, intermediateFileMergers[i]);
-        sortDataRows[i].initialize();
-      }
-    } catch (CarbonSortKeyAndGroupByException e) {
-      throw new CarbonDataLoadingException(e);
+    for (int i = 0; i < columnRangeInfo.getNumOfRanges(); i++) {
+      SortParameters parameters = originSortParameters.getCopy();
+      parameters.setPartitionID(i + "");
+      parameters.setRangeId(i);
+      sortParameterArray[i] = parameters;
+      setTempLocation(parameters);
+      parameters.setBufferSize(sortBufferSize);
+      intermediateFileMergers[i] = new SortIntermediateFileMerger(parameters);
+      sortDataRows[i] = new SortDataRows(parameters, intermediateFileMergers[i]);
+      sortDataRows[i].initialize();
     }
     ExecutorService executorService = Executors.newFixedThreadPool(iterators.length);
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
@@ -134,9 +130,7 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
       for (int i = 0; i < intermediateFileMergers.length; i++) {
         intermediateFileMergers[i].finish();
       }
-    } catch (CarbonDataWriterException e) {
-      throw new CarbonDataLoadingException(e);
-    } catch (CarbonSortKeyAndGroupByException e) {
+    } catch (CarbonDataWriterException | CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
 
