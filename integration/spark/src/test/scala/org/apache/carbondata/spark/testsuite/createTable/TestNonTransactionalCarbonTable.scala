@@ -51,7 +51,7 @@ import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFi
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
-import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.{CarbonMetadataUtil, CarbonProperties, CarbonUtil, DataFileFooterConverterV3}
@@ -1139,12 +1139,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         i = i + 1
       }
       writer.close()
-    }
-    catch {
-      case e: Exception => {
+    } catch {
+      case e: Exception =>
         e.printStackTrace()
         Assert.fail(e.getMessage)
-      }
     }
   }
 

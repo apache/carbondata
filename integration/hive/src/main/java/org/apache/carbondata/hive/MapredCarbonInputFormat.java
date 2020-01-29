@@ -26,8 +26,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -36,6 +34,7 @@ import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
@@ -54,6 +53,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -89,11 +89,10 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
       }
     }
     if (null != validInputPath) {
-      AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier
-          .from(validInputPath, getDatabaseName(configuration), getTableName(configuration));
       // read the schema file to get the absoluteTableIdentifier having the correct table id
       // persisted in the schema
-      CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
+      CarbonTable carbonTable =
+          CarbonTable.buildTable(validInputPath, getTableName(configuration), configuration);
       configuration.set(CARBON_TABLE, ObjectSerializationUtil.convertObjectToString(carbonTable));
       setTableInfo(configuration, carbonTable.getTableInfo());
     } else {
@@ -114,14 +113,26 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     jobConf.set(DATABASE_NAME, "_dummyDb_" + UUID.randomUUID().toString());
     jobConf.set(TABLE_NAME, "_dummyTable_" + UUID.randomUUID().toString());
     org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
+    CarbonTable carbonTable;
+    try {
+      carbonTable = getCarbonTable(jobContext.getConfiguration(),
+          jobContext.getConfiguration().get(FileInputFormat.INPUT_DIR));
+    } catch (Exception e) {
+      throw new IOException("Unable read Carbon Schema: ", e);
+    }
     try {
       setFilterPredicates(jobContext.getConfiguration());
     } catch (Exception e) {
       e.printStackTrace();
     }
-    CarbonTableInputFormat carbonTableInputFormat = new CarbonTableInputFormat();
+    CarbonInputFormat carbonInputFormat;
+    if (carbonTable.isTransactionalTable()) {
+      carbonInputFormat = new CarbonTableInputFormat();
+    } else {
+      carbonInputFormat = new CarbonFileInputFormat();
+    }
     List<org.apache.hadoop.mapreduce.InputSplit> splitList =
-        carbonTableInputFormat.getSplits(jobContext);
+        carbonInputFormat.getSplits(jobContext);
     InputSplit[] splits = new InputSplit[splitList.size()];
     CarbonInputSplit split;
     for (int i = 0; i < splitList.size(); i++) {

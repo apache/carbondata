@@ -32,4 +32,6 @@ public interface GenericParser<E> {
    */
   E parse(Object data);
 
+  E parseRaw(Object data);
+
 }

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import javax.annotation.Nullable;
 
@@ -35,12 +36,14 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants;
+import org.apache.hadoop.hive.ql.io.parquet.serde.ArrayWritableObjectInspector;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.AbstractSerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeSpec;
 import org.apache.hadoop.hive.serde2.SerDeStats;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.MapObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
@@ -102,7 +105,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
 
     // Create row related objects
     rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
-    this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
+    this.objInspector = new ArrayWritableObjectInspector((StructTypeInfo) rowTypeInfo);
     // Stats part
     serializedSize = 0;
     deserializedSize = 0;
@@ -157,23 +160,36 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     }
     serializedSize += ((StructObjectInspector) objInspector).getAllStructFieldRefs().size();
     status = LAST_OPERATION.SERIALIZE;
-    return createStruct(obj, (StructObjectInspector) objectInspector);
+    return createCarbonRow(obj, (StructObjectInspector) objectInspector);
   }
 
-  private ArrayWritable createStruct(Object obj, StructObjectInspector inspector)
+  private CarbonHiveRow createCarbonRow(Object obj, StructObjectInspector inspector)
       throws SerDeException {
     List fields = inspector.getAllStructFieldRefs();
-    Writable[] arr = new Writable[fields.size()];
+    CarbonHiveRow carbonHiveRow = new CarbonHiveRow();
+    for (int i = 0; i < fields.size(); i++) {
+      StructField field = (StructField) fields.get(i);
+      Object subObj = inspector.getStructFieldData(obj, field);
+      ObjectInspector subInspector = field.getFieldObjectInspector();
+      carbonHiveRow.addToRow(createObject(subObj, subInspector));
+    }
+    return carbonHiveRow;
+  }
+
+  private Object[] createStruct(Object obj, StructObjectInspector inspector)
+      throws SerDeException {
+    List fields = inspector.getAllStructFieldRefs();
+    Object[] arr = new Object[fields.size()];
     for (int i = 0; i < fields.size(); i++) {
       StructField field = (StructField) fields.get(i);
       Object subObj = inspector.getStructFieldData(obj, field);
       ObjectInspector subInspector = field.getFieldObjectInspector();
       arr[i] = createObject(subObj, subInspector);
     }
-    return new ArrayWritable(Writable.class, arr);
+    return arr;
   }
 
-  private ArrayWritable createArray(Object obj, ListObjectInspector inspector)
+  private Object[] createArray(Object obj, ListObjectInspector inspector)
       throws SerDeException {
     List sourceArray = inspector.getList(obj);
     ObjectInspector subInspector = inspector.getListElementObjectInspector();
@@ -182,30 +198,24 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     if (sourceArray != null) {
       for (iterator = sourceArray.iterator(); iterator.hasNext(); ) {
         Object curObj = iterator.next();
-        Writable newObj = createObject(curObj, subInspector);
+        Object newObj = createObject(curObj, subInspector);
         if (newObj != null) {
           array.add(newObj);
         }
       }
     }
-    if (array.size() > 0) {
-      ArrayWritable subArray = new ArrayWritable(((Writable) array.get(0)).getClass(),
-          (Writable[]) array.toArray(new Writable[array.size()]));
-
-      return new ArrayWritable(Writable.class, new Writable[] { subArray });
-    }
-    return null;
+    return array.toArray();
   }
 
-  private Writable createPrimitive(Object obj, PrimitiveObjectInspector inspector)
+  private Object createPrimitive(Object obj, PrimitiveObjectInspector inspector)
       throws SerDeException {
     if (obj == null) {
       return null;
     }
-    return (Writable) inspector.getPrimitiveWritableObject(obj);
+    return inspector.getPrimitiveWritableObject(obj).toString();
   }
 
-  private Writable createObject(Object obj, ObjectInspector inspector) throws SerDeException {
+  private Object createObject(Object obj, ObjectInspector inspector) throws SerDeException {
     switch (inspector.getCategory()) {
       case STRUCT:
         return createStruct(obj, (StructObjectInspector) inspector);
@@ -213,8 +223,22 @@ public class CarbonHiveSerDe extends AbstractSerDe {
         return createArray(obj, (ListObjectInspector) inspector);
       case PRIMITIVE:
         return createPrimitive(obj, (PrimitiveObjectInspector) inspector);
+      case MAP:
+        return createMap(obj, (MapObjectInspector) inspector);
     }
     throw new SerDeException("Unknown data type" + inspector.getCategory());
+  }
+
+  private Object[] createMap(Object obj, MapObjectInspector inspector) throws SerDeException {
+    Map<Writable, Writable> map = (Map<Writable, Writable>) inspector.getMap(obj);
+    Object[] result = new Object[map.size()];
+    int i = 0;
+    for (Map.Entry<Writable, Writable> entry : map.entrySet()) {
+      result[i++] =
+          new Object[] { createObject(entry.getKey(), inspector.getMapKeyObjectInspector()),
+              createObject(entry.getValue(), inspector.getMapValueObjectInspector()) };
+    }
+    return result;
   }
 
   @Override

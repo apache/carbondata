@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.Field;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.mapreduce.InputSplit;

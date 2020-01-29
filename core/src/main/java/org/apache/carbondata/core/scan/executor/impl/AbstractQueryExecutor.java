@@ -196,12 +196,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         if (null == fileFooter) {
           blockInfo.setDetailInfo(null);
           fileFooter = CarbonUtil.readMetadataFile(blockInfo);
-          // In case of non transactional table just set columnUniqueId as columnName to support
-          // backward compatibility. non transactional tables column uniqueId is always equal to
-          // columnName
-          if (!queryModel.getTable().isTransactionalTable()) {
-            QueryUtil.updateColumnUniqueIdForNonTransactionTable(fileFooter.getColumnInTable());
-          }
           filePathToFileFooterMapping.put(blockInfo.getFilePath(), fileFooter);
           if (null == blockletDetailInfo) {
             blockletDetailInfo = QueryUtil.getBlockletDetailInfo(fileFooter, blockInfo);

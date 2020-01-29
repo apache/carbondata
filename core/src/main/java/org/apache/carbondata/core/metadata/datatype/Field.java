@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.file;
+package org.apache.carbondata.core.metadata.datatype;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -25,12 +25,6 @@ import java.util.regex.Pattern;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.metadata.datatype.ArrayType;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.MapType;
-import org.apache.carbondata.core.metadata.datatype.StructField;
-import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
@@ -299,7 +293,7 @@ public class Field {
       mapFields.add(keyField);
       mapFields.add(valueField);
       StructField field =
-          new StructField(fieldName + ".val", DataTypes.createStructType(mapFields));
+          new StructField(fieldName + ".val", DataTypes.createStructType(mapFields), mapFields);
       MapType mapDataType = DataTypes.createMapType(keyField.getDataType(), field.getDataType());
       List<StructField> mapStructField = new ArrayList<>();
       mapStructField.add(field);

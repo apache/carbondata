@@ -39,6 +39,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.metadata.datatype.MapType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
@@ -856,8 +857,8 @@ public class CarbonWriterBuilder {
             DataType complexType =
                 DataTypes.createArrayType(field.getChildren().get(0).getDataType());
             tableSchemaBuilder
-                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false,
-                    isInvertedIdxColumn > -1);
+                .addColumn(new StructField(field.getFieldName(), complexType, field.getChildren()),
+                    valIndex, false, isInvertedIdxColumn > -1);
           } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")) {
             // Loop through the inner columns and for a StructData
             List<StructField> structFieldsArray =
@@ -868,15 +869,15 @@ public class CarbonWriterBuilder {
             }
             DataType complexType = DataTypes.createStructType(structFieldsArray);
             tableSchemaBuilder
-                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false,
-                    isInvertedIdxColumn > -1);
+                .addColumn(new StructField(field.getFieldName(), complexType, field.getChildren()),
+                    valIndex, false, isInvertedIdxColumn > -1);
           } else if (field.getDataType().getName().equalsIgnoreCase("MAP")) {
             // Loop through the inner columns for MapType
             DataType mapType = DataTypes.createMapType(((MapType) field.getDataType()).getKeyType(),
                 field.getChildren().get(0).getDataType());
             tableSchemaBuilder
-                .addColumn(new StructField(field.getFieldName(), mapType), valIndex, false,
-                    isInvertedIdxColumn > -1);
+                .addColumn(new StructField(field.getFieldName(), mapType, field.getChildren()),
+                    valIndex, false, isInvertedIdxColumn > -1);
           }
         } else {
           ColumnSchema columnSchema = tableSchemaBuilder

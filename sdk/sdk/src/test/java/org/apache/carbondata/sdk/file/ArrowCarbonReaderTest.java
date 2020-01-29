@@ -26,6 +26,7 @@ import java.util.TimeZone;
 
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 import org.apache.carbondata.sdk.file.arrow.ArrowUtils;
 

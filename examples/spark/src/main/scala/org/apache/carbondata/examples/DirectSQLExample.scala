@@ -22,9 +22,9 @@ import java.io.File
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
 
-import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
 import org.apache.carbondata.examples.util.ExampleUtils
-import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
+import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
 /**
  * Running SQL on carbon files directly

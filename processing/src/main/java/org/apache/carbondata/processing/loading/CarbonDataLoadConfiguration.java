@@ -105,6 +105,16 @@ public class CarbonDataLoadConfiguration {
    */
   private boolean isIndexColumnsPresent;
 
+  private boolean skipParsers = false;
+
+  public boolean isSkipParsers() {
+    return skipParsers;
+  }
+
+  public void setSkipParsers(boolean skipParsers) {
+    this.skipParsers = skipParsers;
+  }
+
   public CarbonDataLoadConfiguration() {
   }
 

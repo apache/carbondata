@@ -18,10 +18,7 @@
 package org.apache.carbondata.hive;
 
 import java.io.IOException;
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -31,27 +28,10 @@ import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.serde.serdeConstants;
-import org.apache.hadoop.hive.serde2.SerDeException;
-import org.apache.hadoop.hive.serde2.io.DateWritable;
-import org.apache.hadoop.hive.serde2.io.DoubleWritable;
-import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
-import org.apache.hadoop.hive.serde2.io.ShortWritable;
-import org.apache.hadoop.hive.serde2.io.TimestampWritable;
-import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.StructField;
-import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.BooleanWritable;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
@@ -152,89 +132,4 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     return 0;
   }
 
-  private ArrayWritable createStruct(Object obj, StructObjectInspector inspector)
-      throws SerDeException {
-    List fields = inspector.getAllStructFieldRefs();
-    Writable[] arr = new Writable[fields.size()];
-    for (int i = 0; i < fields.size(); i++) {
-      StructField field = (StructField) fields.get(i);
-      Object subObj = inspector.getStructFieldData(obj, field);
-      ObjectInspector subInspector = field.getFieldObjectInspector();
-      arr[i] = createObject(subObj, subInspector);
-    }
-    return new ArrayWritable(Writable.class, arr);
-  }
-
-  private ArrayWritable createArray(Object obj, ListObjectInspector inspector)
-      throws SerDeException {
-    List sourceArray = inspector.getList(obj);
-    ObjectInspector subInspector = inspector.getListElementObjectInspector();
-    List array = new ArrayList();
-    Iterator iterator;
-    if (sourceArray != null) {
-      for (iterator = sourceArray.iterator(); iterator.hasNext(); ) {
-        Object curObj = iterator.next();
-        Writable newObj = createObject(curObj, subInspector);
-        if (newObj != null) {
-          array.add(newObj);
-        }
-      }
-    }
-    if (array.size() > 0) {
-      ArrayWritable subArray = new ArrayWritable(((Writable) array.get(0)).getClass(),
-          (Writable[]) array.toArray(new Writable[array.size()]));
-
-      return new ArrayWritable(Writable.class, new Writable[] { subArray });
-    }
-    return null;
-  }
-
-  private Writable createPrimitive(Object obj, PrimitiveObjectInspector inspector)
-      throws SerDeException {
-    if (obj == null) {
-      return null;
-    }
-    switch (inspector.getPrimitiveCategory()) {
-      case VOID:
-        return null;
-      case DOUBLE:
-        return new DoubleWritable((double) obj);
-      case INT:
-        return new IntWritable((int) obj);
-      case LONG:
-        return new LongWritable((long) obj);
-      case SHORT:
-        return new ShortWritable((short) obj);
-      case BOOLEAN:
-        return new BooleanWritable((boolean) obj);
-      case VARCHAR:
-        return new Text(obj.toString());
-      case BINARY:
-        return new BytesWritable((byte[]) obj);
-      case DATE:
-        return new DateWritable(new Date(Long.parseLong(String.valueOf(obj.toString()))));
-      case TIMESTAMP:
-        return new TimestampWritable(new Timestamp((long) obj));
-      case STRING:
-        return new Text(obj.toString());
-      case CHAR:
-        return new Text(obj.toString());
-      case DECIMAL:
-        return new HiveDecimalWritable(
-            HiveDecimal.create((java.math.BigDecimal) obj));
-    }
-    throw new SerDeException("Unknown primitive : " + inspector.getPrimitiveCategory());
-  }
-
-  private Writable createObject(Object obj, ObjectInspector inspector) throws SerDeException {
-    switch (inspector.getCategory()) {
-      case STRUCT:
-        return createStruct(obj, (StructObjectInspector) inspector);
-      case LIST:
-        return createArray(obj, (ListObjectInspector) inspector);
-      case PRIMITIVE:
-        return createPrimitive(obj, (PrimitiveObjectInspector) inspector);
-    }
-    throw new SerDeException("Unknown data type" + inspector.getCategory());
-  }
 }

@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.format.BlockIndex;
 

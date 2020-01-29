@@ -135,13 +135,8 @@ class DataSummary implements Command {
     List<ColumnSchema> columns = reader.readSchema();
     TableFormatter tableFormatter = new TableFormatter(
         new String[]{"Column Name", "Data Type", "Column Type",
-            "SortColumn", "Encoding", "Ordinal", "Id"}, outPuts);
+            "SortColumn", "Encoding", "Ordinal"}, outPuts);
     for (ColumnSchema column : columns) {
-      String shortColumnId = "NA";
-      if (column.getColumnUniqueId() != null && column.getColumnUniqueId().length() > 4) {
-        shortColumnId = "*" +
-            column.getColumnUniqueId().substring(column.getColumnUniqueId().length() - 4);
-      }
       tableFormatter.addRow(new String[]{
           column.getColumnName(),
           column.getDataType().getName(),
@@ -149,7 +144,6 @@ class DataSummary implements Command {
           String.valueOf(column.isSortColumn()),
           column.getEncodingList().toString(),
           Integer.toString(column.getSchemaOrdinal()),
-          shortColumnId
       });
     }
     tableFormatter.printFormatted();

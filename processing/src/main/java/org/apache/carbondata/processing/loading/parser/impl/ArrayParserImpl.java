@@ -73,6 +73,11 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
   }
 
   @Override
+  public ArrayObject parseRaw(Object data) {
+    return new ArrayObject((Object[]) data);
+  }
+
+  @Override
   public void addChildren(GenericParser parser) {
     child = parser;
   }

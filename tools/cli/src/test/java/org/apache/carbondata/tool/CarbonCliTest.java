@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.sdk.file.*;
@@ -139,10 +140,10 @@ public class CarbonCliTest {
     output = new String(out.toByteArray());
 
     expectedOutput = buildLines(
-        "Column Name  Data Type  Column Type  SortColumn  Encoding  Ordinal  Id  ",
-        "name         STRING     dimension    true        []        0        NA  ",
-        "age          INT        measure      false       []        1        NA  ");
-    Assert.assertTrue(output.contains(expectedOutput));
+        "Column Name  Data Type  Column Type  SortColumn  Encoding  Ordinal  ",
+        "name         STRING     dimension    true        []        0        ",
+    "age          INT        measure      false       []        1        ");
+    Assert.assertTrue(output.trim().contains(expectedOutput.trim()));
 
     String[] args3 = {"-cmd", "summary", "-p", path, "-t"};
     out = new ByteArrayOutputStream();
@@ -218,9 +219,9 @@ public class CarbonCliTest {
     Assert.assertTrue(output.contains(expectedOutput));
 
     expectedOutput = buildLines(
-        "Column Name  Data Type  Column Type  SortColumn  Encoding  Ordinal  Id  ",
-        "name         STRING     dimension    true        []        0        NA  ",
-        "age          INT        measure      false       []        1        NA  ");
+        "Column Name  Data Type  Column Type  SortColumn  Encoding  Ordinal  ",
+        "name         STRING     dimension    true        []        0        ",
+        "age          INT        measure      false       []        1        ");
     Assert.assertTrue(output.contains(expectedOutput));
 
     expectedOutput = buildLines(

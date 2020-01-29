@@ -29,7 +29,7 @@ import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.sdk.file._
 import scala.collection.JavaConverters._

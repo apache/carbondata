@@ -40,6 +40,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.indexstore.{PartitionSpec => CarbonPartitionSpec}
 import org.apache.carbondata.core.metadata.SegmentFileStore
+import org.apache.carbondata.core.metadata.datatype.Field
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -49,7 +50,7 @@ import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMa
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
-import org.apache.carbondata.sdk.file.{Field, Schema}
+import org.apache.carbondata.sdk.file.Schema
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.clearDataMapFiles
 
 

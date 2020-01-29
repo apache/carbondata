@@ -19,7 +19,7 @@ package org.apache.carbondata.sdk.util;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.sdk.file.CarbonWriter;
-import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.sdk.file.Schema;
 
 import java.io.*;

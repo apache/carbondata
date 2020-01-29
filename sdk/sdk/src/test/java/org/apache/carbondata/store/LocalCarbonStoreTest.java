@@ -26,7 +26,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.sdk.file.Schema;
 import org.apache.carbondata.sdk.file.TestUtil;
 

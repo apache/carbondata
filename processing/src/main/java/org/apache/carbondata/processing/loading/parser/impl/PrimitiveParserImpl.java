@@ -26,4 +26,9 @@ public class PrimitiveParserImpl implements GenericParser<Object> {
     return data;
   }
 
+  @Override
+  public Object parseRaw(Object data) {
+    return parse(data);
+  }
+
 }

@@ -27,6 +27,7 @@ import java.util.Map;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.metadata.datatype.ArrayType;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 import com.google.gson.GsonBuilder;

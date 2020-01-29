@@ -58,6 +58,9 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.log4j.Logger;
 
+/**
+ * *NOTE*: Do not Remove this class as this is the storage handler for carbondata for HIVE.
+ */
 public class CarbonStorageHandler implements HiveStorageHandler {
 
   private final Logger LOGGER =
@@ -94,12 +97,12 @@ public class CarbonStorageHandler implements HiveStorageHandler {
 
       @Override
       public void commitCreateTable(Table table) throws MetaException {
-        try {
-          writeSchemaFile(getTableInfo(table));
-        } catch (IOException | SQLException e) {
-          LOGGER.error(e);
-          throw new MetaException("Problem while writing schema file: " + e.getMessage());
-        }
+//        try {
+//          writeSchemaFile(getTableInfo(table));
+//        } catch (IOException | SQLException e) {
+//          LOGGER.error(e);
+//          throw new MetaException("Problem while writing schema file: " + e.getMessage());
+//        }
       }
 
       private TableInfo getTableInfo(Table table) throws SQLException {

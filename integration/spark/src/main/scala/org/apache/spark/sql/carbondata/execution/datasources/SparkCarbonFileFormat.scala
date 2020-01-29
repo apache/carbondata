@@ -57,7 +57,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.{Expression => CarbonExpression}
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.statusmanager.{FileFormat => CarbonFileFormatVersion}
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonRecordReader}
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat, CarbonTableOutputFormat}
@@ -375,15 +375,28 @@ class SparkCarbonFileFormat extends FileFormat
     var supportBatchValue: Boolean = supportBatch(sparkSession, resultSchema)
     val readVector = supportVector(sparkSession, resultSchema) && supportBatchValue
 
-    val model = CarbonSparkDataSourceUtil.prepareLoadModel(options, dataSchema)
-    CarbonInputFormat
-      .setTableInfo(hadoopConf, model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo)
+    val carbonDataFile = CarbonUtil.getFilePathExternalFilePath(options("path"),
+      FileFactory.getConfiguration)
+    val carbonTable = if (carbonDataFile == null) {
+      CarbonSparkDataSourceUtil
+        .prepareLoadModel(options, dataSchema)
+        .getCarbonDataLoadSchema
+        .getCarbonTable
+    } else {
+      CarbonTable.buildTable(FileFactory
+        .getCarbonFile(carbonDataFile)
+        .getParentFile
+        .getAbsolutePath,
+        "_tempTable-" + UUID.randomUUID.toString + "_" + System.currentTimeMillis(),
+        FileFactory.getConfiguration)
+    }
+    CarbonInputFormat.setTableInfo(hadoopConf, carbonTable.getTableInfo)
     CarbonInputFormat.setTransactionalTable(hadoopConf, false)
     CarbonInputFormat.setColumnProjection(hadoopConf, carbonProjection)
     filter match {
       case Some(c) => CarbonInputFormat
         .setFilterPredicates(hadoopConf,
-          new DataMapFilter(model.getCarbonDataLoadSchema.getCarbonTable, c, true))
+          new DataMapFilter(carbonTable, c, true))
       case None => None
     }
     val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]

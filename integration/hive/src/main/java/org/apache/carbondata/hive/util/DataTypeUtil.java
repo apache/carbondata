@@ -18,9 +18,12 @@
 package org.apache.carbondata.hive.util;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.StructField;
 
 public class DataTypeUtil {
 
@@ -56,15 +59,26 @@ public class DataTypeUtil {
           type.substring(type.indexOf("(") + 1, type.lastIndexOf(")")).split(",");
       return DataTypes.createDecimalType(Integer.parseInt(precisionScale[0]),
           Integer.parseInt(precisionScale[1]));
+    } else if (type.startsWith("array<")) {
+      String subType = type.substring(type.indexOf("<") + 1, type.indexOf(">"));
+      return DataTypes.createArrayType(convertHiveTypeToCarbon(subType));
+    } else if (type.startsWith("map<")) {
+      String[] subType = (type.substring(type.indexOf("<") + 1, type.indexOf(">"))).split(",");
+      return DataTypes
+          .createMapType(convertHiveTypeToCarbon(subType[0]), convertHiveTypeToCarbon(subType[1]));
+    } else if (type.startsWith("struct<")) {
+      String[] subTypes =
+          (type.substring(type.indexOf("<") + 1, type.indexOf(">"))).split(",");
+      List<StructField> structFieldList = new ArrayList<>();
+      for (String subType : subTypes) {
+        String[] nameAndType = subType.split(":");
+        structFieldList
+            .add(new StructField(nameAndType[0], convertHiveTypeToCarbon(nameAndType[1])));
+      }
+      return DataTypes.createStructType(structFieldList);
     } else {
       throw new SQLException("Unrecognized column type: " + type);
     }
-
-//    else if ("array".equalsIgnoreCase(type)) {
-//      return DataTypes.createArrayType();
-//    } else if ("struct".equalsIgnoreCase(type)) {
-//      return DataTypes.createStructType();
-//    }
 
   }
 }

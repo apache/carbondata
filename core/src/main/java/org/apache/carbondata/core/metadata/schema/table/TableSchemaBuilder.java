@@ -27,11 +27,9 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.datatype.ArrayType;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
-import org.apache.carbondata.core.metadata.datatype.MapType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -204,7 +202,7 @@ public class TableSchemaBuilder {
     // keep column ID as same as column name.
     // Anyhow Alter table is not supported for NonTransactionalTable.
     // SO, this will not have any impact.
-    newColumn.setColumnUniqueId(field.getFieldName());
+    newColumn.setColumnUniqueId(UUID.randomUUID().toString());
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
     newColumn
         .setEncodingList(createEncoding(field.getDataType(), isInvertedIdxColumn, isComplexChild));
@@ -241,20 +239,21 @@ public class TableSchemaBuilder {
     if (field.getDataType().isComplexType()) {
       String parentFieldName = newColumn.getColumnName();
       if (DataTypes.isArrayType(field.getDataType())) {
-        String colName = getColNameForArray(valIndex);
-        addColumn(new StructField(colName, ((ArrayType) field.getDataType()).getElementType()),
-            field.getFieldName(), valIndex, false, true, isInvertedIdxColumn);
+        for (StructField structField : field.getChildren()) {
+          structField.setFieldName(getColNameForArray(valIndex));
+          addColumn(structField, parentFieldName, valIndex, false, true, isInvertedIdxColumn);
+        }
       } else if (DataTypes.isStructType(field.getDataType())
           && ((StructType) field.getDataType()).getFields().size() > 0) {
         // This field has children.
-        List<StructField> fields = ((StructType) field.getDataType()).getFields();
-        for (int i = 0; i < fields.size(); i++) {
-          addColumn(fields.get(i), parentFieldName, valIndex, false, true, isInvertedIdxColumn);
+        for (StructField structField : field.getChildren()) {
+          addColumn(structField, parentFieldName, valIndex, false, true, isInvertedIdxColumn);
         }
       } else if (DataTypes.isMapType(field.getDataType())) {
-        String colName = getColNameForArray(valIndex);
-        addColumn(new StructField(colName, ((MapType) field.getDataType()).getValueType()),
-            parentFieldName, valIndex, false, true, isInvertedIdxColumn);
+        for (StructField structField : field.getChildren()) {
+          structField.setFieldName(getColNameForArray(valIndex));
+          addColumn(structField, parentFieldName, valIndex, false, true, isInvertedIdxColumn);
+        }
       }
     }
     // todo: need more information such as long_string_columns
