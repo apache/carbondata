@@ -99,7 +99,6 @@ public abstract class AbstractDataFileFooterConverter {
           tableBlockInfo.setBlockOffset(readBlockIndexInfo.getOffset());
           tableBlockInfo.setVersion(
               ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion()));
-          int blockletSize = getBlockletSize(readBlockIndexInfo);
           dataFileFooter.setBlockletIndex(blockletIndex);
           dataFileFooter.setColumnInTable(columnSchemaList);
           dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());

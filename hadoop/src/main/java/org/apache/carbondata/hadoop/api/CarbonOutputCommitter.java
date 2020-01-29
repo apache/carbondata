@@ -201,7 +201,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
           if (segmentSize == 0) {
             newMetaEntry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
           }
-          uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
+          uniqueId = overwritePartitions(loadModel, newMetaEntry);
         }
       } else {
         CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false);
@@ -293,7 +293,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     }
     String uniqueId = null;
     if (overwriteSet) {
-      uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
+      uniqueId = overwritePartitions(loadModel, newMetaEntry);
     } else {
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false);
     }
@@ -311,8 +311,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
    * @return
    * @throws IOException
    */
-  private String overwritePartitions(CarbonLoadModel loadModel, LoadMetadataDetails newMetaEntry,
-      String uuid) throws IOException {
+  private String overwritePartitions(CarbonLoadModel loadModel, LoadMetadataDetails newMetaEntry)
+      throws IOException {
     CarbonTable table = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     SegmentFileStore fileStore = new SegmentFileStore(loadModel.getTablePath(),
         loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp()

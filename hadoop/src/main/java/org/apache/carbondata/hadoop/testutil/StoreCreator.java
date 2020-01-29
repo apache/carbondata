@@ -422,12 +422,11 @@ public class StoreCreator {
         new CarbonIterator[]{readerIterator});
 
     writeLoadMetadata(
-        loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
-        new ArrayList<LoadMetadataDetails>());
+        loadModel.getCarbonDataLoadSchema(), new ArrayList<LoadMetadataDetails>());
   }
 
-  public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
-      String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
+  public static void writeLoadMetadata(CarbonDataLoadSchema schema,
+      List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
     loadMetadataDetails.setLoadEndTime(System.currentTimeMillis());
     loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS);
