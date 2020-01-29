@@ -37,8 +37,6 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -104,16 +102,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   boolean isNaturalSorted;
 
-  /**
-   * date direct dictionary generator
-   */
-  private DirectDictionaryGenerator dateDictionaryGenerator;
-
-  /**
-   * timestamp direct dictionary generator
-   */
-  private DirectDictionaryGenerator timestampDictionaryGenerator;
-
   public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
@@ -146,10 +134,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     this.exp = exp;
     this.tableIdentifier = tableIdentifier;
     this.complexDimensionInfoMap = complexDimensionInfoMap;
-    this.dateDictionaryGenerator =
-        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
-    this.timestampDictionaryGenerator =
-        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.TIMESTAMP);
     initDimensionChunkIndexes();
     initMeasureChunkIndexes();
   }

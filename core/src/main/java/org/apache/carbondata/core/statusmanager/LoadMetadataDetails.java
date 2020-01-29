@@ -209,13 +209,10 @@ public class LoadMetadataDetails implements Serializable {
     }
     LoadMetadataDetails other = (LoadMetadataDetails) obj;
     if (loadName == null) {
-      if (other.loadName != null) {
-        return false;
-      }
-    } else if (!loadName.equals(other.loadName)) {
-      return false;
+      return other.loadName == null;
+    } else {
+      return loadName.equals(other.loadName);
     }
-    return true;
   }
 
   /**

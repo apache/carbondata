@@ -493,8 +493,8 @@ public class SortParameters implements Serializable {
     this.rangeId = rangeId;
   }
 
-  public static SortParameters createSortParameters(CarbonTable carbonTable, String databaseName,
-      String tableName, int dimColCount, int complexDimColCount, int measureColCount,
+  public static SortParameters createSortParameters(CarbonTable carbonTable, String tableName,
+      int dimColCount, int complexDimColCount, int measureColCount,
       int noDictionaryCount, String segmentId, String taskNo, boolean[] noDictionaryColMaping,
       boolean[] sortColumnMapping, boolean[] isVarcharDimensionColumn, boolean isCompactionFlow,
       int numberOfCores) {

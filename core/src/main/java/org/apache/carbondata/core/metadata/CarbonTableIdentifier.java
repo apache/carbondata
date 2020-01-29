@@ -130,13 +130,10 @@ public class CarbonTableIdentifier implements Serializable {
       return false;
     }
     if (tableName == null) {
-      if (other.tableName != null) {
-        return false;
-      }
-    } else if (!tableName.equals(other.tableName)) {
-      return false;
+      return other.tableName == null;
+    } else {
+      return tableName.equals(other.tableName);
     }
-    return true;
   }
 
   /**

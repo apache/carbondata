@@ -146,13 +146,10 @@ public class CarbonDimension extends CarbonColumn {
     }
     CarbonDimension other = (CarbonDimension) obj;
     if (columnSchema == null) {
-      if (other.columnSchema != null) {
-        return false;
-      }
-    } else if (!columnSchema.equals(other.columnSchema)) {
-      return false;
+      return other.columnSchema == null;
+    } else {
+      return columnSchema.equals(other.columnSchema);
     }
-    return true;
   }
 
   public CarbonDimension getComplexParentDimension() {

@@ -47,11 +47,6 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   private String name;
 
   /**
-   * column unique id
-   */
-  private String columnId;
-
-  /**
    * parent column name
    */
   private String parentName;
@@ -86,26 +81,21 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    * constructor
    * @param name
    * @param parentName
-   * @param columnId
    */
-  public ArrayDataType(String name, String parentName, String columnId) {
+  public ArrayDataType(String name, String parentName) {
     this.name = name;
     this.parentName = parentName;
-    this.columnId = columnId;
   }
 
   /**
    * constructor
    * @param name
    * @param parentName
-   * @param columnId
    * @param isDictionaryColumn
    */
-  public ArrayDataType(String name, String parentName, String columnId,
-      Boolean isDictionaryColumn) {
+  public ArrayDataType(String name, String parentName, Boolean isDictionaryColumn) {
     this.name = name;
     this.parentName = parentName;
-    this.columnId = columnId;
     this.isDictionaryColumn = isDictionaryColumn;
   }
 

@@ -100,10 +100,7 @@ public class ThriftWriter {
    * @return
    */
   public boolean isOpen() {
-    if (null != binaryOut && null != dataOutputStream) {
-      return true;
-    }
-    return false;
+    return null != binaryOut && null != dataOutputStream;
   }
 
   /**

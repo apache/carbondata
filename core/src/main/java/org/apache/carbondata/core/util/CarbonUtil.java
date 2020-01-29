@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -105,7 +104,6 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletHeader;
-import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.IndexHeader;
 
@@ -113,7 +111,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -1709,10 +1706,9 @@ public final class CarbonUtil {
   public static boolean validateBoolean(String value) {
     if (null == value) {
       return false;
-    } else if (!("false".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value))) {
-      return false;
+    } else {
+      return "false" .equalsIgnoreCase(value) || "true" .equalsIgnoreCase(value);
     }
-    return true;
   }
 
   /**
@@ -2439,12 +2435,9 @@ public final class CarbonUtil {
           if (!FileFactory.isFileExist(metadataPath)) {
             dataSize = FileFactory.getDirectorySize(carbonTable.getTablePath());
           }
-          dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE), dataSize);
-          dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE), indexSize);
-          dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.LAST_UPDATE_TIME), lastUpdateTime);
+          dataIndexSizeMap.put(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE, dataSize);
+          dataIndexSizeMap.put(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE, indexSize);
+          dataIndexSizeMap.put(CarbonCommonConstants.LAST_UPDATE_TIME, lastUpdateTime);
         } else {
           LOGGER.error("Not able to acquire the lock for Table status updation for table");
         }
@@ -2853,8 +2846,7 @@ public final class CarbonUtil {
     if (null != localDictExcludeColumns) {
       listOfDictionaryExcludeColumns = localDictExcludeColumns.trim().split("\\s*,\\s*");
     }
-    if (null != isLocalDictEnabledForMainTable && Boolean
-        .parseBoolean(isLocalDictEnabledForMainTable)) {
+    if (Boolean.parseBoolean(isLocalDictEnabledForMainTable)) {
       int ordinal = 0;
       for (int i = 0; i < columns.size(); i++) {
         ColumnSchema column = columns.get(i);

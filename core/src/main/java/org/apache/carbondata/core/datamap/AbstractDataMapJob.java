@@ -17,11 +17,6 @@
 
 package org.apache.carbondata.core.datamap;
 
-import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-
 /**
  * abstract class for data map job
  */

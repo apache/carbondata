@@ -49,10 +49,6 @@ public class StructDataType implements GenericDataType<StructObject> {
    */
   private String parentName;
   /**
-   * column unique id
-   */
-  private String columnId;
-  /**
    * output array index
    */
   private int outputArrayIndex;
@@ -82,26 +78,21 @@ public class StructDataType implements GenericDataType<StructObject> {
    * constructor
    * @param name
    * @param parentName
-   * @param columnId
    */
-  public StructDataType(String name, String parentName, String columnId) {
+  public StructDataType(String name, String parentName) {
     this.name = name;
     this.parentName = parentName;
-    this.columnId = columnId;
   }
 
   /**
    * constructor
    * @param name
    * @param parentName
-   * @param columnId
    * @param isDictionaryColumn
    */
-  public StructDataType(String name, String parentName, String columnId,
-      Boolean isDictionaryColumn) {
+  public StructDataType(String name, String parentName, Boolean isDictionaryColumn) {
     this.name = name;
     this.parentName = parentName;
-    this.columnId = columnId;
     this.isDictionaryColumn = isDictionaryColumn;
   }
 

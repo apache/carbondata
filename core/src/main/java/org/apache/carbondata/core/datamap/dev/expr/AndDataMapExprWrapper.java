@@ -37,13 +37,9 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
 
   private DataMapExprWrapper right;
 
-  private FilterResolverIntf resolverIntf;
-
-  public AndDataMapExprWrapper(DataMapExprWrapper left, DataMapExprWrapper right,
-      FilterResolverIntf resolverIntf) {
+  public AndDataMapExprWrapper(DataMapExprWrapper left, DataMapExprWrapper right) {
     this.left = left;
     this.right = right;
-    this.resolverIntf = resolverIntf;
   }
 
   @Override
@@ -95,10 +91,9 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
     FilterResolverIntf rightExp = right.getFilterResolverIntf(uniqueId);
     if (leftExp != null) {
       return leftExp;
-    } else if (rightExp != null) {
+    } else {
       return rightExp;
     }
-    return null;
   }
 
   @Override

@@ -136,9 +136,6 @@ public class DataType implements Serializable {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    if (!this.getName().equalsIgnoreCase(((DataType) obj).getName())) {
-      return false;
-    }
-    return true;
+    return this.getName().equalsIgnoreCase(((DataType) obj).getName());
   }
 }

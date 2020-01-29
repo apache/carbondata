@@ -421,16 +421,8 @@ public class CarbonUpdateUtil {
       // scan all the carbondata files and get the latest task ID.
       CarbonFile segmentDir =
           FileFactory.getCarbonFile(segmentDirPath);
-      CarbonFile[] carbonDataFiles = segmentDir.listFiles(new CarbonFileFilter() {
-        @Override
-        public boolean accept(CarbonFile file) {
-
-          if (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
-            return true;
-          }
-          return false;
-        }
-      });
+      CarbonFile[] carbonDataFiles = segmentDir.listFiles(
+          file -> file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT));
       for (CarbonFile carbonDataFile : carbonDataFiles) {
         dataFiles.add(carbonDataFile.getName());
       }

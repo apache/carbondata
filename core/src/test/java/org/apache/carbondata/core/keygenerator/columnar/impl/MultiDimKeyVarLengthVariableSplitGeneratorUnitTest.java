@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.keygenerator.columnar.impl;
 
-import org.apache.carbondata.core.keygenerator.KeyGenException;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 

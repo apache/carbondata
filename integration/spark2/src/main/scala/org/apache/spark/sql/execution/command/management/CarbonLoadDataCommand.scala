@@ -326,7 +326,7 @@ case class CarbonLoadDataCommand(
       case CausedBy(ex: NoRetryException) =>
         // update the load entry in table status file for changing the status to marked for delete
         if (isUpdateTableStatusRequired) {
-          CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
+          CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
         }
         LOGGER.error(s"Dataload failure for $dbName.$tableName", ex)
         throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
@@ -338,7 +338,7 @@ case class CarbonLoadDataCommand(
         LOGGER.error(ex)
         // update the load entry in table status file for changing the status to marked for delete
         if (isUpdateTableStatusRequired) {
-          CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
+          CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
         }
         throw ex
     }

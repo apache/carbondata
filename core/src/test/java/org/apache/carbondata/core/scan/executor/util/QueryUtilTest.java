@@ -27,8 +27,6 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 
 import junit.framework.TestCase;
-import mockit.Mock;
-import mockit.MockUp;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;

@@ -65,13 +65,10 @@ public class CarbonMeasure extends CarbonColumn {
     }
     CarbonMeasure other = (CarbonMeasure) obj;
     if (columnSchema == null) {
-      if (other.columnSchema != null) {
-        return false;
-      }
-    } else if (!columnSchema.equals(other.columnSchema)) {
-      return false;
+      return other.columnSchema == null;
+    } else {
+      return columnSchema.equals(other.columnSchema);
     }
-    return true;
   }
 
   /**

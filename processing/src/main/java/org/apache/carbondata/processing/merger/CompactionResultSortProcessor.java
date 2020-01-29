@@ -477,7 +477,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private SortParameters createSortParameters() {
     int numberOfCompactingCores = CarbonProperties.getInstance().getNumberOfCompactingCores();
     return SortParameters
-        .createSortParameters(carbonTable, carbonLoadModel.getDatabaseName(), tableName,
+        .createSortParameters(carbonTable, tableName,
             dimensionColumnCount, segmentProperties.getComplexDimensions().size(), measureCount,
             noDictionaryCount, segmentId, carbonLoadModel.getTaskNo(), noDictionaryColMapping,
             sortColumnMapping, isVarcharDimMapping, true, numberOfCompactingCores / 2);

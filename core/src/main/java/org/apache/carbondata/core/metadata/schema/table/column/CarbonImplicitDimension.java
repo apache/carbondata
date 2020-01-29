@@ -156,9 +156,6 @@ public class CarbonImplicitDimension extends CarbonDimension {
         return false;
       }
     }
-    if (!getColName().equals(other.getColName())) {
-      return false;
-    }
-    return true;
+    return getColName().equals(other.getColName());
   }
 }

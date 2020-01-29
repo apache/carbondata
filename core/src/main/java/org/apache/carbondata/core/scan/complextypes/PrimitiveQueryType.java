@@ -38,7 +38,6 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class PrimitiveQueryType extends ComplexQueryType implements GenericQueryType {
 
-  private String name;
   private String parentName;
 
   private int keySize;
@@ -54,7 +53,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     super(name, parentName, blockIndex);
     this.dataType = dataType;
     this.keySize = keySize;
-    this.name = name;
     this.parentName = parentName;
     this.isDirectDictionary = isDirectDictionary;
     this.directDictGenForDate =

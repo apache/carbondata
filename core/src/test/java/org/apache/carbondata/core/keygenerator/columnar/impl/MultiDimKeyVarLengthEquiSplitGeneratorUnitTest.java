@@ -19,14 +19,7 @@ package org.apache.carbondata.core.keygenerator.columnar.impl;
 
 import org.junit.*;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static junit.framework.Assert.assertEquals;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.core.Is.is;
-
 import java.util.Arrays;
-
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 
 public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
 

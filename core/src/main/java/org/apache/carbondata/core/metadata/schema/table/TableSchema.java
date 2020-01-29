@@ -25,7 +25,6 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,9 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -183,14 +180,10 @@ public class TableSchema implements Serializable, Writable, Cloneable {
       return false;
     }
     if (tableName == null) {
-      if (other.tableName != null) {
-        return false;
-      }
-    } else if (!tableName.equals(other.tableName)) {
-
-      return false;
+      return other.tableName == null;
+    } else {
+      return tableName.equals(other.tableName);
     }
-    return true;
   }
 
   /**

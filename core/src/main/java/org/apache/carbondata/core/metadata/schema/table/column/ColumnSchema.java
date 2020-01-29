@@ -321,13 +321,10 @@ public class ColumnSchema implements Serializable, Writable {
       return false;
     }
     if (dataType == null) {
-      if (other.dataType != null) {
-        return false;
-      }
-    } else if (!dataType.equals(other.dataType)) {
-      return false;
+      return other.dataType == null;
+    } else {
+      return dataType.equals(other.dataType);
     }
-    return true;
   }
 
   /**

@@ -20,11 +20,7 @@ package org.apache.carbondata.core.datamap;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /**
  * Distributable datamap job to execute the #DistributableDataMapFormat in cluster. it prunes the

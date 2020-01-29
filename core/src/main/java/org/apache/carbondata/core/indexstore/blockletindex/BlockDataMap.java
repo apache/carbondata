@@ -621,10 +621,7 @@ public class BlockDataMap extends CoarseGrainDataMap
         .isScanRequired(filterExecuter, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
             getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX),
             getMinMaxFlag(unsafeRow, TASK_MIN_MAX_FLAG));
-    if (isScanRequired) {
-      return true;
-    }
-    return false;
+    return isScanRequired;
   }
 
   protected List<CarbonColumn> getMinMaxCacheColumns() {
@@ -871,11 +868,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     } else {
       bitSet = filterExecuter.isScanRequired(maxValue, minValue, minMaxFlag);
     }
-    if (!bitSet.isEmpty()) {
-      return true;
-    } else {
-      return false;
-    }
+    return !bitSet.isEmpty();
   }
 
   public ExtendedBlocklet getDetailedBlocklet(String blockletId) {

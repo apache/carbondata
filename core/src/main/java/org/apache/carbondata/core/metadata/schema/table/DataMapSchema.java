@@ -33,7 +33,6 @@ import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
-import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import org.apache.commons.lang.StringUtils;
 

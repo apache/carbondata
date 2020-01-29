@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;

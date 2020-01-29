@@ -52,6 +52,9 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
 
   private long length;
 
+  public CarbonMultiBlockSplit() {
+  }
+
   public CarbonMultiBlockSplit(List<CarbonInputSplit> splitList,
       String[] locations) {
     this.splitList = splitList;

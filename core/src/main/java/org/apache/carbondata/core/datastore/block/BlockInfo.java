@@ -107,10 +107,9 @@ public class BlockInfo implements Serializable {
       return false;
     } else if (info.getFilePath() != null && other.info.getFilePath() == null) {
       return false;
-    } else if (!info.getFilePath().equals(other.info.getFilePath())) {
-      return false;
+    } else {
+      return info.getFilePath().equals(other.info.getFilePath());
     }
-    return true;
   }
 
 }

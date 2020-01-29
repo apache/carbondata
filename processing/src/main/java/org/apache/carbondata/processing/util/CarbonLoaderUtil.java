@@ -446,7 +446,7 @@ public final class CarbonLoaderUtil {
   }
 
   public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
-      boolean insertOverwrite, String uuid) throws IOException {
+      boolean insertOverwrite) throws IOException {
     LoadMetadataDetails newLoadMetaEntry = new LoadMetadataDetails();
     SegmentStatus status = SegmentStatus.INSERT_IN_PROGRESS;
     if (insertOverwrite) {
@@ -469,16 +469,10 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
-      boolean insertOverwrite) throws IOException {
-    readAndUpdateLoadProgressInTableMeta(model, insertOverwrite, "");
-  }
-
   /**
    * This method will update the load failure entry in the table status file
    */
-  public static void updateTableStatusForFailure(CarbonLoadModel model, String uuid)
-      throws IOException {
+  public static void updateTableStatusForFailure(CarbonLoadModel model) throws IOException {
     // in case if failure the load status should be "Marked for delete" so that it will be taken
     // care during clean up
     SegmentStatus loadStatus = SegmentStatus.MARKED_FOR_DELETE;
@@ -495,14 +489,6 @@ public final class CarbonLoaderUtil {
       throw new IOException(
           "Failed to update failure entry in table status for " + model.getTableName());
     }
-  }
-
-  /**
-   * This method will update the load failure entry in the table status file with empty uuid.
-   */
-  public static void updateTableStatusForFailure(CarbonLoadModel model)
-      throws IOException {
-    updateTableStatusForFailure(model, "");
   }
 
   /**
@@ -1189,7 +1175,7 @@ public final class CarbonLoaderUtil {
 
   public static SegmentFileStore.FolderDetails mergeIndexFilesInPartitionedTempSegment(
       CarbonTable table, String segmentId, String partitionPath, List<String> partitionInfo,
-      String uuid, String tempFolderPath, String currPartitionSpec) throws IOException {
+      String tempFolderPath, String currPartitionSpec) throws IOException {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
         .mergeCarbonIndexFilesOfSegment(segmentId, tablePath, partitionPath, partitionInfo,

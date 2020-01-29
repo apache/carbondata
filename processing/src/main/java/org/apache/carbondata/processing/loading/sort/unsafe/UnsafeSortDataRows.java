@@ -85,10 +85,6 @@ public class UnsafeSortDataRows {
 
   private boolean enableInMemoryIntermediateMerge;
 
-  private int bytesAdded;
-
-  private long maxSizeAllowed;
-
   /**
    * semaphore which will used for managing sorted data object arrays
    */
@@ -116,9 +112,6 @@ public class UnsafeSortDataRows {
     enableInMemoryIntermediateMerge = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT,
             CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT_DEFAULT));
-
-    // Take half the size of usable memory configured in sort memory size.
-    this.maxSizeAllowed = UnsafeMemoryManager.INSTANCE.getUsableMemory() / 2;
   }
 
   /**
@@ -182,7 +175,6 @@ public class UnsafeSortDataRows {
             throw new CarbonSortKeyAndGroupByException(ex);
           }
         }
-        bytesAdded += rowPage.addRow(rowBatch[i], reUsableByteArrayDataOutputStream.get());
       } catch (Exception e) {
         if (e.getMessage().contains("cannot handle this row. create new page")) {
           rowPage.makeCanAddFail();

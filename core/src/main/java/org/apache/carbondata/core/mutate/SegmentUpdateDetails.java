@@ -129,13 +129,10 @@ public class SegmentUpdateDetails implements Serializable {
       return false;
     }
     if (blockName == null) {
-      if (other.blockName != null) {
-        return false;
-      }
-    } else if (!blockName.equals(other.blockName)) {
-      return false;
+      return other.blockName == null;
+    } else {
+      return blockName.equals(other.blockName);
     }
-    return true;
   }
 
   /**

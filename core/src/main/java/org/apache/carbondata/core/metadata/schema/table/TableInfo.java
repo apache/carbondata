@@ -134,8 +134,7 @@ public class TableInfo implements Serializable, Writable {
       // which has added the new schema entry in the schema evolution list.
       // Currently apart from create table schema evolution entries
       // are getting added only in the alter operations.
-      isSchemaModified =
-          factTable.getSchemaEvolution().getSchemaEvolutionEntryList().size() > 1 ? true : false;
+      isSchemaModified = factTable.getSchemaEvolution().getSchemaEvolutionEntryList().size() > 1;
     }
   }
 
@@ -244,10 +243,7 @@ public class TableInfo implements Serializable, Writable {
       return false;
     }
 
-    if (!tableUniqueName.equals(other.tableUniqueName)) {
-      return false;
-    }
-    return true;
+    return tableUniqueName.equals(other.tableUniqueName);
   }
 
   /**

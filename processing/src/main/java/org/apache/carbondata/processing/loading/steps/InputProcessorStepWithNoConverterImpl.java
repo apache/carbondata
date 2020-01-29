@@ -138,9 +138,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
-          new InputProcessorIterator(readerIterators[i], batchSize, configuration.isPreFetch(),
-              rowCounter, orderOfData, noDictionaryMapping, dataTypes, configuration,
-              dataFieldsWithComplexDataType);
+          new InputProcessorIterator(readerIterators[i], batchSize, rowCounter, orderOfData,
+              noDictionaryMapping, dataTypes, configuration, dataFieldsWithComplexDataType);
     }
     return outIterators;
   }
@@ -199,7 +198,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     private boolean isHivePartitionTable = false;
 
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators, int batchSize,
-        boolean preFetch, AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
+        AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
         DataType[] dataTypes, CarbonDataLoadConfiguration configuration,
         Map<Integer, GenericDataType> dataFieldsWithComplexDataType) {
       this.inputIterators = inputIterators;

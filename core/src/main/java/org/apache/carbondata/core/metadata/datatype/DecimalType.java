@@ -47,10 +47,7 @@ public class DecimalType extends DataType {
     if (this.precision != other.precision) {
       return false;
     }
-    if (this.scale != other.scale) {
-      return false;
-    }
-    return true;
+    return this.scale == other.scale;
   }
 
   @Override

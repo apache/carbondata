@@ -319,7 +319,7 @@ case class CarbonAddLoadCommand(
     }
 
     if (!postExecutionEvent || !success) {
-      CarbonLoaderUtil.updateTableStatusForFailure(model, "uniqueTableStatusId")
+      CarbonLoaderUtil.updateTableStatusForFailure(model)
       LOGGER.info("********starting clean up**********")
       // delete segment is applicable for transactional table
       CarbonLoaderUtil.deleteSegment(model, model.getSegmentId.toInt)

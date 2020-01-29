@@ -48,10 +48,7 @@ public class StructType extends DataType {
     if (!this.getName().equalsIgnoreCase(other.getName())) {
       return false;
     }
-    if (!this.getFields().equals(other.getFields())) {
-      return false;
-    }
-    return true;
+    return this.getFields().equals(other.getFields());
   }
 
   @Override

@@ -80,8 +80,7 @@ public class FieldEncoderFactory {
             createComplexDataType(dataField, nullFormat, getBinaryDecoder(binaryDecoder)), index);
       } else if (dataField.getColumn().getDataType() == DataTypes.BINARY) {
         BinaryDecoder binaryDecoderObject = getBinaryDecoder(binaryDecoder);
-        return new BinaryFieldConverterImpl(dataField, nullFormat,
-            index, isEmptyBadRecord, binaryDecoderObject);
+        return new BinaryFieldConverterImpl(index, binaryDecoderObject);
       } else {
         // if the no dictionary column is a numeric column and no need to convert to binary
         // then treat it is as measure col
@@ -131,7 +130,6 @@ public class FieldEncoderFactory {
    *
    * @return GenericDataType
    */
-
   private static GenericDataType createComplexType(CarbonColumn carbonColumn, String parentName,
       String nullFormat, BinaryDecoder binaryDecoder) {
     DataType dataType = carbonColumn.getDataType();
@@ -140,7 +138,7 @@ public class FieldEncoderFactory {
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create array parser with complex delimiter
       ArrayDataType arrayDataType =
-          new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
+          new ArrayDataType(carbonColumn.getColName(), parentName,
               carbonColumn.hasEncoding(Encoding.DICTIONARY));
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayDataType.addChildren(
@@ -152,7 +150,7 @@ public class FieldEncoderFactory {
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create struct parser with complex delimiter
       StructDataType structDataType =
-          new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
+          new StructDataType(carbonColumn.getColName(), parentName,
               carbonColumn.hasEncoding(Encoding.DICTIONARY));
       for (CarbonDimension dimension : dimensions) {
         structDataType.addChildren(

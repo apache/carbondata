@@ -74,7 +74,6 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
   boolean isDimensionExists;
 
-  private int[] surrogateResult;
   private byte[][] noDictionaryKeys;
   private byte[][] complexTypeKeyArray;
 
@@ -150,7 +149,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       }
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
       if (isDimensionExists) {
-        surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
+        int[] surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
         noDictionaryKeys = scannedResult.getNoDictionaryKeyArray();
         complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
         dictionaryColumnIndex = 0;

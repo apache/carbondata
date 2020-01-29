@@ -42,7 +42,6 @@ import static org.junit.Assert.assertThat;
 public class FileReaderImplUnitTest {
 
   private static FileReaderImpl fileHolder;
-  private static FileReaderImpl fileHolderWithCapacity;
   private static String fileName;
   private static String fileNameWithEmptyContent;
   private static File file;
@@ -50,7 +49,6 @@ public class FileReaderImplUnitTest {
 
   @BeforeClass public static void setup() {
     fileHolder = new FileReaderImpl();
-    fileHolderWithCapacity = new FileReaderImpl(50);
     file = new File("Test.carbondata");
     fileWithEmptyContent = new File("TestEXception.carbondata");
 

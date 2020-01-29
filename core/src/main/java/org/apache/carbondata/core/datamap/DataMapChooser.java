@@ -184,7 +184,7 @@ public class DataMapChooser {
               ExpressionTuple tuple = new ExpressionTuple();
               tuple.columnExpressions = columnExpressions;
               tuple.dataMapExprWrapper = new AndDataMapExprWrapper(left.dataMapExprWrapper,
-                  right.dataMapExprWrapper, resolver);
+                  right.dataMapExprWrapper);
               tuple.expression = resolver.getFilterExpression();
               return tuple;
             }
@@ -216,7 +216,7 @@ public class DataMapChooser {
             ExpressionTuple tuple = new ExpressionTuple();
             tuple.columnExpressions = columnExpressions;
             tuple.dataMapExprWrapper = new OrDataMapExprWrapper(left.dataMapExprWrapper,
-                right.dataMapExprWrapper, resolver);
+                right.dataMapExprWrapper);
             tuple.expression = resolver.getFilterExpression();
             return tuple;
           } else {

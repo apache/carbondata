@@ -18,10 +18,6 @@
 package org.apache.carbondata.core.util.path;
 
 import java.io.IOException;
-import java.util.UUID;
-
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
 import org.junit.Test;
 

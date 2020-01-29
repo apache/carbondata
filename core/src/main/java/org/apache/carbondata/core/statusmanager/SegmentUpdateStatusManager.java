@@ -255,11 +255,7 @@ public class SegmentUpdateStatusManager {
               && Long.compare(timestamp, startTimeStampFinal) >= 0) {
 
             // if marked for delete then it is invalid.
-            if (!isBlockValid(segmentId, fileName)) {
-              return false;
-            }
-
-            return true;
+            return isBlockValid(segmentId, fileName);
           }
         }
         return false;
@@ -389,10 +385,7 @@ public class SegmentUpdateStatusManager {
         @Override
         public boolean accept(CarbonFile pathName) {
           String fileName = pathName.getName();
-          if (fileName.endsWith(extension) && pathName.getSize() > 0) {
-            return true;
-          }
-          return false;
+          return fileName.endsWith(extension) && pathName.getSize() > 0;
         }
       });
       deltaList = new ArrayList<>(files.length);
@@ -453,10 +446,8 @@ public class SegmentUpdateStatusManager {
               String blkName = firstPart.substring(0, firstPart.lastIndexOf("-"));
               long timestamp = Long.parseLong(
                   firstPart.substring(firstPart.lastIndexOf("-") + 1, firstPart.length()));
-              if (blockName.equals(blkName) && (Long.compare(timestamp, deltaEndTimeStamp) <= 0)
-                  && (Long.compare(timestamp, deltaStartTimestamp) >= 0)) {
-                return true;
-              }
+              return blockName.equals(blkName) && (Long.compare(timestamp, deltaEndTimeStamp) <= 0)
+                  && (Long.compare(timestamp, deltaStartTimestamp) >= 0);
             }
             return false;
           }

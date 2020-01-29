@@ -688,19 +688,6 @@ public class CarbonFactDataHandlerModel {
     return complexIndexMap.size();
   }
 
-  // return the number of complex column after complex columns are expanded
-  public int getExpandedComplexColsCount() {
-    int count = 0;
-    int dictDimensionCount = getDimensionCount();
-    for (int i = 0; i < dictDimensionCount; i++) {
-      GenericDataType complexDataType = getComplexIndexMap().get(i);
-      if (complexDataType != null) {
-        count += complexDataType.getColsCount();
-      }
-    }
-    return count;
-  }
-
   public TableSpec getTableSpec() {
     return tableSpec;
   }

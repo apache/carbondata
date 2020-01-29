@@ -482,7 +482,7 @@ object CarbonDataRDDFactory {
       .asInstanceOf[String]
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
       // update the load entry in table status file for changing the status to marked for delete
-      CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uniqueTableStatusId)
+      CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
       LOGGER.info("********starting clean up**********")
       if (carbonLoadModel.isCarbonTransactionalTable) {
         // delete segment is applicable for transactional table
@@ -499,7 +499,7 @@ object CarbonDataRDDFactory {
           status(0)._2._2.failureCauses == FailureCauses.BAD_RECORDS &&
           carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
         // update the load entry in table status file for changing the status to marked for delete
-        CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uniqueTableStatusId)
+        CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
         LOGGER.info("********starting clean up**********")
         if (carbonLoadModel.isCarbonTransactionalTable) {
           // delete segment is applicable for transactional table
@@ -558,7 +558,7 @@ object CarbonDataRDDFactory {
           false
       }
       if (!done || !commitComplete) {
-        CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uniqueTableStatusId)
+        CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
         LOGGER.info("********starting clean up**********")
         if (carbonLoadModel.isCarbonTransactionalTable) {
           // delete segment is applicable for transactional table

@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.resolver;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;

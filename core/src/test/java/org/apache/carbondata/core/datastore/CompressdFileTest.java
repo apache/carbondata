@@ -19,7 +19,6 @@ package org.apache.carbondata.core.datastore;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory.*;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

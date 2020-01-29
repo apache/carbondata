@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.RowBatch;

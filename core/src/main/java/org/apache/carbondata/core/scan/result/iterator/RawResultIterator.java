@@ -175,11 +175,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   @Override
   public boolean hasNext() {
     fillDataFromPrefetch();
-    if (currentIdxInBuffer < currentBuffer.size()) {
-      return true;
-    }
-
-    return false;
+    return currentIdxInBuffer < currentBuffer.size();
   }
 
   @Override

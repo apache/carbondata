@@ -83,14 +83,11 @@ public class StructField implements Serializable {
       return false;
     }
     if (children == null) {
-      if (other.children != null) {
-        return false;
-      }
+      return other.children == null;
     } else if (other.children == null) {
       return false;
-    } else if (!children.equals(other.children)) {
-      return false;
+    } else {
+      return children.equals(other.children);
     }
-    return true;
   }
 }
