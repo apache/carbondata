@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.locks;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -90,14 +89,6 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
       retryTimeout = CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK_DEFAULT;
     }
 
-  }
-
-  public boolean releaseLockManually(String lockFile) {
-    try {
-      return FileFactory.deleteFile(lockFile);
-    } catch (Exception e) {
-      return false;
-    }
   }
 
 }

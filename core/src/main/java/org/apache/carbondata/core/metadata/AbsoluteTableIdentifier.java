@@ -136,10 +136,6 @@ public class AbsoluteTableIdentifier implements Serializable {
     return true;
   }
 
-  public String uniqueName() {
-    return tablePath + "/" + carbonTableIdentifier.toString().toLowerCase();
-  }
-
   public String getDatabaseName() {
     return carbonTableIdentifier.getDatabaseName();
   }

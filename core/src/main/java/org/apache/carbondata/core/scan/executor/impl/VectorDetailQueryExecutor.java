@@ -40,7 +40,7 @@ public class VectorDetailQueryExecutor extends AbstractQueryExecutor<Object> {
 
   @Override
   public CarbonIterator<Object> execute(QueryModel queryModel)
-      throws QueryExecutionException, IOException {
+      throws  IOException {
     this.setExecutorService(Executors.newCachedThreadPool());
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     this.queryIterator = new VectorDetailQueryResultIterator(

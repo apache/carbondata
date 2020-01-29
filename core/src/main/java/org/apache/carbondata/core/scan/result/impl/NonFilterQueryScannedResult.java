@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.scan.result.impl;
 
-import java.util.List;
-
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
@@ -33,16 +31,6 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
   public NonFilterQueryScannedResult(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
     super(blockExecutionInfo, queryStatisticsModel);
-  }
-
-  /**
-   * @return dictionary key array for all the dictionary dimension selected in
-   * query
-   */
-  @Override
-  public byte[] getDictionaryKeyArray() {
-    ++currentRow;
-    return getDictionaryKeyArray(currentRow);
   }
 
   /**
@@ -62,11 +50,6 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
   @Override
   public byte[][] getComplexTypeKeyArray() {
     return getComplexTypeKeyArray(currentRow);
-  }
-
-  @Override
-  public List<byte[][]> getComplexTypeKeyArrayBatch(int batchSize) {
-    return getComplexTypeKeyArrayBatch();
   }
 
   /**

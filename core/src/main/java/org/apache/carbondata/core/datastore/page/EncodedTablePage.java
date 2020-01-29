@@ -99,11 +99,4 @@ public class EncodedTablePage {
     return measurePages[measureIndex];
   }
 
-  public EncodedColumnPage[] getDimensions() {
-    return dimensionPages;
-  }
-
-  public EncodedColumnPage[] getMeasures() {
-    return measurePages;
-  }
 }

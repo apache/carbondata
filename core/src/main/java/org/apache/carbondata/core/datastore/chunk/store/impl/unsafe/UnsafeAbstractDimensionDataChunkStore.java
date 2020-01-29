@@ -66,13 +66,11 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
 
   /**
    * Constructor
-   *
-   * @param totalSize      total size of the data to be kept
+   *  @param totalSize      total size of the data to be kept
    * @param isInvertedIdex is inverted index present
-   * @param numberOfRows   total number of rows
    */
   public UnsafeAbstractDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
-      int numberOfRows, int dataLength) {
+      int dataLength) {
     // allocating the data page
     this.dataPageMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, totalSize);
 
@@ -114,8 +112,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
   }
 
   @Override
-  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
-      ColumnVectorInfo vectorInfo) {
+  public void fillVector(int[] invertedIndex, byte[] data, ColumnVectorInfo vectorInfo) {
     throw new UnsupportedOperationException("This method not supposed to be called here");
   }
 

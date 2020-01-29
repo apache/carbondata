@@ -36,10 +36,6 @@ public class BlockInfo implements Serializable {
    * about the block
    */
   private TableBlockInfo info;
-  /**
-   * unique blockName
-   */
-  private String blockUniqueName;
 
   /**
    * Constructor
@@ -59,7 +55,6 @@ public class BlockInfo implements Serializable {
     stringBuilder.append(this.info.getSegmentId());
     stringBuilder.append(CarbonCommonConstants.FILE_SEPARATOR);
     stringBuilder.append(CarbonTablePath.getCarbonDataFileName(this.info.getFilePath()));
-    this.blockUniqueName = stringBuilder.toString();
   }
 
   /**
@@ -67,15 +62,6 @@ public class BlockInfo implements Serializable {
    */
   public TableBlockInfo getTableBlockInfo() {
     return info;
-  }
-
-  /**
-   * To set the table block info
-   *
-   * @param info
-   */
-  public void setTableBlockInfo(TableBlockInfo info) {
-    this.info = info;
   }
 
   /**
@@ -127,11 +113,4 @@ public class BlockInfo implements Serializable {
     return true;
   }
 
-  /**
-   * returns unique blockname
-   * @return
-   */
-  public String getBlockUniqueName() {
-    return blockUniqueName;
-  }
 }

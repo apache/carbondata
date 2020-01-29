@@ -54,8 +54,7 @@ public class FalseFilterExecutor implements FilterExecuter {
   }
 
   @Override
-  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) throws FilterUnsupportedException {
     return false;
   }
 

@@ -114,7 +114,7 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
   }
 
   public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
+      FilterResolverMetadata metadata) throws FilterUnsupportedException {
     if (null != visitor) {
       visitor.populateFilterResolvedInfo(this, metadata);
       this.addDimensionResolvedFilterInstance(metadata.getColumnExpression().getDimension(),

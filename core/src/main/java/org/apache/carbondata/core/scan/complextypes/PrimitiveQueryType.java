@@ -67,24 +67,8 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   }
 
   @Override
-  public String getName() {
-    return name;
-  }
-
-  @Override
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  @Override
   public String getParentName() {
     return parentName;
-  }
-
-  @Override
-  public void setParentName(String parentName) {
-    this.parentName = parentName;
-
   }
 
   @Override

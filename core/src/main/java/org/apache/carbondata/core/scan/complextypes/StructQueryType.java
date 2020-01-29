@@ -55,12 +55,10 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
 
   }
 
-  @Override
-  public String getName() {
+  private String getName() {
     return name;
   }
 
-  @Override
   public void setName(String name) {
     this.name = name;
   }
@@ -70,7 +68,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     return parentName;
   }
 
-  @Override
   public void setParentName(String parentName) {
     this.parentName = parentName;
 

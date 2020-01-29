@@ -35,7 +35,6 @@ import org.apache.carbondata.core.datamap.dev.DataMapSyncStatus;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
@@ -177,7 +176,7 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
     Gson gsonObjectToWrite = new Gson();
     // write the updated data into the datamap status file.
     try {
-      dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
+      dataOutputStream = fileWrite.openForWrite();
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
 

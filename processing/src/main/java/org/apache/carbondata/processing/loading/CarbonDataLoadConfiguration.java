@@ -90,8 +90,6 @@ public class CarbonDataLoadConfiguration {
    */
   private String dataWritePath;
 
-  private String parentTablePath;
-
   /**
    * name of compressor to be used to compress column page
    */
@@ -102,14 +100,6 @@ public class CarbonDataLoadConfiguration {
   private OutputFilesInfoHolder outputFilesInfoHolder;
 
   public CarbonDataLoadConfiguration() {
-  }
-
-  public String getParentTablePath() {
-    return parentTablePath;
-  }
-
-  public void setParentTablePath(String parentTablePath) {
-    this.parentTablePath = parentTablePath;
   }
 
   public void setDataFields(DataField[] dataFields) {

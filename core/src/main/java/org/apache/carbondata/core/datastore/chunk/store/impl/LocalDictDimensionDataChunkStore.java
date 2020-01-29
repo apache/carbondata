@@ -59,8 +59,7 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
   }
 
   @Override
-  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
-      ColumnVectorInfo vectorInfo) {
+  public void fillVector(int[] invertedIndex, byte[] data, ColumnVectorInfo vectorInfo) {
     int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
     int rowsNum = dataLength / columnValueSize;
     CarbonColumnVector vector = vectorInfo.vector;

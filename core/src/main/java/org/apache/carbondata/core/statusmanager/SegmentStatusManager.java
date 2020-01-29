@@ -40,7 +40,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.ConcurrentOperationException;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
@@ -222,22 +221,6 @@ public class SegmentStatusManager {
     } catch (IOException e) {
       return new LoadMetadataDetails[0];
     }
-  }
-
-  /**
-   * Reads the table status file with the specified UUID if non empty.
-   */
-  public static LoadMetadataDetails[] readLoadMetadata(String metaDataFolderPath, String uuid)
-      throws IOException {
-    String tableStatusFileName;
-    if (uuid.isEmpty()) {
-      tableStatusFileName = metaDataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-          + CarbonTablePath.TABLE_STATUS_FILE;
-    } else {
-      tableStatusFileName = metaDataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-          + CarbonTablePath.TABLE_STATUS_FILE + CarbonCommonConstants.UNDERSCORE + uuid;
-    }
-    return readTableStatusFile(tableStatusFileName);
   }
 
   /**
@@ -601,7 +584,7 @@ public class SegmentStatusManager {
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
     try {
-      dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
+      dataOutputStream = fileWrite.openForWrite();
       brWriter = new BufferedWriter(new OutputStreamWriter(
           dataOutputStream, Charset.forName(DEFAULT_CHARSET)));
       brWriter.write(content);
@@ -863,26 +846,6 @@ public class SegmentStatusManager {
   }
 
   /**
-   * Return true if the compaction is in progress for the table
-   * @param carbonTable
-   * @return
-   */
-  public static Boolean isCompactionInProgress(CarbonTable carbonTable) {
-    if (carbonTable == null) {
-      return false;
-    }
-    boolean compactionInProgress;
-    ICarbonLock lock = CarbonLockFactory
-        .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier(), LockUsage.COMPACTION_LOCK);
-    try {
-      compactionInProgress = !lock.lockWithRetries(1, 0);
-    } finally {
-      lock.unlock();
-    }
-    return compactionInProgress;
-  }
-
-  /**
    * Return true if insert overwrite is in progress for specified table
    */
   public static Boolean isOverwriteInProgressInTable(CarbonTable carbonTable) {
@@ -967,7 +930,7 @@ public class SegmentStatusManager {
 
     try {
 
-      dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
+      dataOutputStream = writeOperation.openForWrite();
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           Charset.forName(DEFAULT_CHARSET)));
 

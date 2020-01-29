@@ -37,7 +37,7 @@ public interface ColumnPageDecoder {
    *  Apply decoding algorithm on input byte array and fill the vector here.
    */
   void decodeAndFillVector(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
-      BitSet nullBits, boolean isLVEncoded, int pageSize, ReusableDataBuffer reusableDataBuffer)
+      BitSet nullBits, int pageSize, ReusableDataBuffer reusableDataBuffer)
       throws MemoryException, IOException;
 
   ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)

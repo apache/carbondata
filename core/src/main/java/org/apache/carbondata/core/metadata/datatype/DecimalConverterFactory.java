@@ -66,10 +66,6 @@ public final class DecimalConverterFactory {
       this.sizeInBytes = sizeInBytes;
     }
 
-    public int getSizeInBytes() {
-      return sizeInBytes;
-    }
-
   }
 
   public interface DecimalConverter {

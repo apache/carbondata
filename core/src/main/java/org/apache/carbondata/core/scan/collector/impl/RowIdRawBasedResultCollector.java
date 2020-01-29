@@ -122,9 +122,8 @@ public class RowIdRawBasedResultCollector extends AbstractScannedResultCollector
       List<Object[]> listBasedResult, ProjectionMeasure[] queryMeasures, int batchSize) {
     long startTime = System.currentTimeMillis();
     List<byte[]> dictionaryKeyArrayBatch = scannedResult.getDictionaryKeyArrayBatch(batchSize);
-    List<byte[][]> noDictionaryKeyArrayBatch =
-        scannedResult.getNoDictionaryKeyArrayBatch(batchSize);
-    List<byte[][]> complexTypeKeyArrayBatch = scannedResult.getComplexTypeKeyArrayBatch(batchSize);
+    List<byte[][]> noDictionaryKeyArrayBatch = scannedResult.getNoDictionaryKeyArrayBatch();
+    List<byte[][]> complexTypeKeyArrayBatch = scannedResult.getComplexTypeKeyArrayBatch();
     // it will same for one blocklet so can be computed only once
     byte[] implicitColumnByteArray = scannedResult.getBlockletId()
         .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));

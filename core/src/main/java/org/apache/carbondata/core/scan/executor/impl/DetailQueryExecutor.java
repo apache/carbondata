@@ -42,8 +42,7 @@ public class DetailQueryExecutor extends AbstractQueryExecutor<RowBatch> {
   }
 
   @Override
-  public CarbonIterator<RowBatch> execute(QueryModel queryModel)
-      throws QueryExecutionException, IOException {
+  public CarbonIterator<RowBatch> execute(QueryModel queryModel) throws IOException {
     this.setExecutorService(Executors.newCachedThreadPool());
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     this.queryIterator = new DetailQueryResultIterator(

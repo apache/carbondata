@@ -552,12 +552,6 @@ public final class CarbonCommonConstants {
   public static final String NUM_CORES_COMPACTING = "carbon.number.of.cores.while.compacting";
 
   /**
-   * Number of cores to be used while alter partition
-   */
-  @CarbonProperty
-  public static final String NUM_CORES_ALT_PARTITION = "carbon.number.of.cores.while.altPartition";
-
-  /**
    * BYTEBUFFER_SIZE
    */
   public static final int BYTEBUFFER_SIZE = 24 * 1024;

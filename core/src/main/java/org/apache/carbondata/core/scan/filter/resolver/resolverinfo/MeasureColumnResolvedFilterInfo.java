@@ -131,7 +131,7 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
   }
 
   public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
+      FilterResolverMetadata metadata) throws FilterUnsupportedException {
     if (null != visitor) {
       visitor.populateFilterResolvedInfo(this, metadata);
       this.addMeasureResolvedFilterInstance(metadata.getColumnExpression().getMeasure(),

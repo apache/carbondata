@@ -68,8 +68,6 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
   private String tableName;
 
-  private boolean isStopProcess;
-
   public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters,
       String[] tempFileLocation) {
     this.parameters = parameters;
@@ -268,11 +266,4 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
     }
   }
 
-  public boolean isStopProcess() {
-    return isStopProcess;
-  }
-
-  public void setStopProcess(boolean stopProcess) {
-    isStopProcess = stopProcess;
-  }
 }

@@ -115,9 +115,6 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
           QueryExecutorFactory.getQueryExecutor(queryModel, taskAttemptContext.getConfiguration());
       iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
       initBatch();
-    } catch (QueryExecutionException e) {
-      LOGGER.error(e);
-      throw new InterruptedException(e.getMessage());
     } catch (Exception e) {
       LOGGER.error(e);
       throw e;

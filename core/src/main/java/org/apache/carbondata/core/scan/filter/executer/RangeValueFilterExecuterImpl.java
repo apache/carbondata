@@ -179,8 +179,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
   /**
    * apply range filter on a row
    */
-  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
 
     byte[] col = (byte[]) value.getVal(dimColEvaluatorInfo.getDimension().getOrdinal());
     byte[][] filterValues = this.filterRangesValues;

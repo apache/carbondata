@@ -21,7 +21,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 
@@ -48,11 +47,6 @@ public class CarbonColumn implements Serializable {
   private int schemaOrdinal;
 
   /**
-   * Column identifier
-   */
-  protected ColumnIdentifier columnIdentifier;
-
-  /**
    * Date Format
    */
   private String dateFormat;
@@ -71,8 +65,6 @@ public class CarbonColumn implements Serializable {
     this.columnSchema = columnSchema;
     this.ordinal = ordinal;
     this.schemaOrdinal = schemaOrdinal;
-    this.columnIdentifier =
-        new ColumnIdentifier(getColumnId(), getColumnProperties(), getDataType());
   }
 
   /**
@@ -171,13 +163,6 @@ public class CarbonColumn implements Serializable {
    */
   public Map<String, String> getColumnProperties() {
     return this.columnSchema.getColumnProperties();
-  }
-
-  /**
-   * @return columnIdentifier
-   */
-  public ColumnIdentifier getColumnIdentifier() {
-    return this.columnIdentifier;
   }
 
   public int getSchemaOrdinal() {

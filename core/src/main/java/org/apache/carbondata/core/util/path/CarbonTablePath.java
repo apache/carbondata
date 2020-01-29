@@ -34,9 +34,6 @@ import org.apache.hadoop.conf.Configuration;
 public class CarbonTablePath {
 
   private static final String METADATA_DIR = "Metadata";
-  private static final String DICTIONARY_EXT = ".dict";
-  private static final String DICTIONARY_META_EXT = ".dictmeta";
-  private static final String SORT_INDEX_EXT = ".sortindex";
   public static final String SCHEMA_FILE = "schema";
   private static final String FACT_DIR = "Fact";
   private static final String SEGMENT_PREFIX = "Segment_";
@@ -89,24 +86,6 @@ public class CarbonTablePath {
   }
 
   /**
-   * @param columnId unique column identifier
-   * @return name of dictionary file
-   */
-  public static String getDictionaryFileName(String columnId) {
-    return columnId + DICTIONARY_EXT;
-  }
-
-  /**
-   * whether carbonFile is dictionary file or not
-   *
-   * @param carbonFile
-   * @return
-   */
-  public static Boolean isDictionaryFile(CarbonFile carbonFile) {
-    return (!carbonFile.isDirectory()) && (carbonFile.getName().endsWith(DICTIONARY_EXT));
-  }
-
-  /**
    * check if it is carbon data file matching extension
    *
    * @param fileNameWithPath
@@ -132,14 +111,6 @@ public class CarbonTablePath {
       return fileNameWithPath.substring(pos).startsWith(INDEX_FILE_EXT);
     }
     return false;
-  }
-
-  /**
-   * Return absolute path of dictionary file
-   */
-  public static String getDictionaryFilePath(String tablePath, String columnId) {
-    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
-        getDictionaryFileName(columnId);
   }
 
   /**

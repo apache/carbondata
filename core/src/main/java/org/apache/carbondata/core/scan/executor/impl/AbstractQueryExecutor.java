@@ -36,7 +36,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -44,7 +43,6 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode;
 import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -229,7 +227,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           }
         }
         readAndFillBlockletInfo(tableBlockInfos, blockInfo,
-            blockletDetailInfo, fileFooter, segmentProperties);
+            blockletDetailInfo, fileFooter);
       } else {
         if (null == segmentProperties) {
           segmentProperties = new SegmentProperties(blockInfo.getDetailInfo().getColumnSchemas(),
@@ -334,8 +332,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * Read the file footer of block file and get the blocklets to query
    */
   private void readAndFillBlockletInfo(List<TableBlockInfo> tableBlockInfos,
-      TableBlockInfo blockInfo, BlockletDetailInfo blockletDetailInfo, DataFileFooter fileFooter,
-      SegmentProperties segmentProperties) {
+      TableBlockInfo blockInfo, BlockletDetailInfo blockletDetailInfo, DataFileFooter fileFooter) {
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     // cases when blockletID will be -1
     // 1. In case of legacy store
@@ -346,21 +343,21 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (blockletDetailInfo.getBlockletId() != -1) {
       // fill the info only for given blockletId in detailInfo
       BlockletInfo blockletInfo = blockletList.get(blockletDetailInfo.getBlockletId());
-      fillBlockletInfoToTableBlock(tableBlockInfos, blockInfo, blockletDetailInfo, fileFooter,
-          blockletInfo, blockletDetailInfo.getBlockletId(), segmentProperties);
+      fillBlockletInfoToTableBlock(tableBlockInfos, blockInfo, fileFooter,
+          blockletInfo, blockletDetailInfo.getBlockletId());
     } else {
       short count = 0;
       for (BlockletInfo blockletInfo : blockletList) {
-        fillBlockletInfoToTableBlock(tableBlockInfos, blockInfo, blockletDetailInfo, fileFooter,
-            blockletInfo, count, segmentProperties);
+        fillBlockletInfoToTableBlock(tableBlockInfos, blockInfo, fileFooter,
+            blockletInfo, count);
         count++;
       }
     }
   }
 
   private void fillBlockletInfoToTableBlock(List<TableBlockInfo> tableBlockInfos,
-      TableBlockInfo blockInfo, BlockletDetailInfo blockletDetailInfo, DataFileFooter fileFooter,
-      BlockletInfo blockletInfo, short blockletId, SegmentProperties segmentProperties) {
+      TableBlockInfo blockInfo, DataFileFooter fileFooter, BlockletInfo blockletInfo,
+      short blockletId) {
     TableBlockInfo info = blockInfo.copy();
     BlockletDetailInfo detailInfo = info.getDetailInfo();
     // set column schema details
@@ -380,7 +377,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   protected List<BlockExecutionInfo> getBlockExecutionInfos(QueryModel queryModel)
-      throws IOException, QueryExecutionException {
+      throws IOException {
     initQuery(queryModel);
     List<BlockExecutionInfo> blockExecutionInfoList = new ArrayList<BlockExecutionInfo>();
     // fill all the block execution infos for all the blocks selected in
@@ -395,8 +392,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           (BlockletDataRefNode) abstractIndex.getDataRefNode();
       final BlockExecutionInfo blockExecutionInfoForBlock =
           getBlockExecutionInfoForBlock(queryModel, abstractIndex,
-              dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
-              dataRefNode.numberOfNodes(), dataRefNode.getBlockInfos().get(0).getFilePath(),
+              dataRefNode.getBlockInfos().get(0).getFilePath(),
               dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
               dataRefNode.getBlockInfos().get(0).getSegment());
       if (null == dimensionReusableDataBuffers || null == measureReusableDataBuffers) {
@@ -430,12 +426,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @param queryModel query model from user query
    * @param blockIndex block index
    * @return block execution info
-   * @throws QueryExecutionException any failure during block info creation
    */
   private BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
-      AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath,
-      String[] deleteDeltaFiles, Segment segment)
-      throws QueryExecutionException {
+      AbstractIndex blockIndex, String filePath, String[] deleteDeltaFiles, Segment segment) {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
     // set actual query dimensions and measures. It may differ in case of restructure scenarios
@@ -459,8 +452,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockId(blockId));
     }
     blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
-    blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
-    blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
     blockExecutionInfo.setProjectionDimensions(projectDimensions
         .toArray(new ProjectionDimension[projectDimensions.size()]));
     // get measures present in the current block
@@ -505,8 +496,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             segmentProperties.getDimensionOrdinalToChunkMapping(),
             segmentProperties.getEachComplexDimColumnValueSize(),
             queryProperties.complexFilterDimension));
-    IndexKey startIndexKey = null;
-    IndexKey endIndexKey = null;
     if (null != queryModel.getDataMapFilter()) {
       FilterResolverIntf filterResolverIntf;
       // loading the filter executor tree for filter evaluation
@@ -515,16 +504,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           FilterUtil.getFilterExecuterTree(filterResolverIntf, segmentProperties,
               blockExecutionInfo.getComlexDimensionInfoMap(), false));
     }
-    try {
-      startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
-      endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
-    } catch (KeyGenException e) {
-      throw new QueryExecutionException(e);
-    }
-    //setting the start index key of the block node
-    blockExecutionInfo.setStartKey(startIndexKey);
-    //setting the end index key of the block node
-    blockExecutionInfo.setEndKey(endIndexKey);
     // expression measure
     List<CarbonMeasure> expressionMeasures =
         new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -620,7 +599,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setNoDictionaryColumnChunkIndexes(ArrayUtils.toPrimitive(
         noDictionaryColumnChunkIndex.toArray(new Integer[noDictionaryColumnChunkIndex.size()])));
     // setting each column value size
-    blockExecutionInfo.setEachColumnValueSize(segmentProperties.getEachDimColumnValueSize());
     blockExecutionInfo.setComplexColumnParentBlockIndexes(
         getComplexDimensionParentBlockIndexes(projectDimensions));
     blockExecutionInfo.setVectorBatchCollector(queryModel.isVectorReader());

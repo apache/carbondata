@@ -90,11 +90,6 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
   }
 
   @Override
-  public FilterResolverIntf getFilterResolverIntf() {
-    return resolverIntf;
-  }
-
-  @Override
   public FilterResolverIntf getFilterResolverIntf(String uniqueId) {
     FilterResolverIntf leftExp = left.getFilterResolverIntf(uniqueId);
     FilterResolverIntf rightExp = right.getFilterResolverIntf(uniqueId);

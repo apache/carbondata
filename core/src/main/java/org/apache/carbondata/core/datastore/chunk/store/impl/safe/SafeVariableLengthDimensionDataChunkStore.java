@@ -101,8 +101,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
   }
 
   @Override
-  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
-      ColumnVectorInfo vectorInfo) {
+  public void fillVector(int[] invertedIndex, byte[] data, ColumnVectorInfo vectorInfo) {
     CarbonColumnVector vector = vectorInfo.vector;
     vector.setDictionary(null);
     DataType dt = vector.getType();

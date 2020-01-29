@@ -32,9 +32,6 @@ import static junit.framework.TestCase.assertTrue;
  */
 public class CarbonFormatDirectoryStructureTest {
 
-  private final String CARBON_STORE = "/opt/carbonstore";
-
-
   /**
    * test data file name
    */

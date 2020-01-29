@@ -398,48 +398,12 @@ public class TableBlockInfo implements Distributable, Serializable {
     return locations;
   }
 
-  /**
-   * returns BlockletInfos
-   *
-   * @return
-   */
-  public BlockletInfos getBlockletInfos() {
-    return blockletInfos;
-  }
-
-  /**
-   * set the blocklestinfos
-   *
-   * @param blockletInfos
-   */
-  public void setBlockletInfos(BlockletInfos blockletInfos) {
-    this.blockletInfos = blockletInfos;
-  }
-
   public ColumnarFormatVersion getVersion() {
     return version;
   }
 
   public void setVersion(ColumnarFormatVersion version) {
     this.version = version;
-  }
-
-  /**
-   * returns the storage location vs storage id map
-   *
-   * @return
-   */
-  public Map<String, String> getBlockStorageIdMap() {
-    return this.blockStorageIdMap;
-  }
-
-  /**
-   * method to storage location vs storage id map
-   *
-   * @param blockStorageIdMap
-   */
-  public void setBlockStorageIdMap(Map<String, String> blockStorageIdMap) {
-    this.blockStorageIdMap = blockStorageIdMap;
   }
 
   public String[] getDeletedDeltaFilePath() {

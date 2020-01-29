@@ -168,21 +168,6 @@ public class SegmentPropertiesAndSchemaHolder {
   /**
    * Method to get the segment properties from given index
    *
-   * @param segmentPropertiesIndex
-   * @return
-   */
-  public SegmentProperties getSegmentProperties(int segmentPropertiesIndex) {
-    SegmentPropertiesWrapper segmentPropertiesWrapper =
-        getSegmentPropertiesWrapper(segmentPropertiesIndex);
-    if (null != segmentPropertiesWrapper) {
-      return segmentPropertiesWrapper.getSegmentProperties();
-    }
-    return null;
-  }
-
-  /**
-   * Method to get the segment properties from given index
-   *
    * @param segmentPropertiesWrapperIndex
    * @return
    */
@@ -249,25 +234,6 @@ public class SegmentPropertiesAndSchemaHolder {
           LOGGER.info("cleared min max for segmentProperties at index: "
               + segmentIdAndSegmentPropertiesIndexWrapper.getSegmentPropertiesIndex());
         }
-      }
-    }
-  }
-
-  /**
-   * add segmentId at given segmentPropertyIndex
-   * Note: This method is getting used in extension with other features. Please do not remove
-   *
-   * @param segmentPropertiesIndex
-   * @param segmentId
-   */
-  public void addSegmentId(int segmentPropertiesIndex, String segmentId) {
-    SegmentPropertiesWrapper segmentPropertiesWrapper =
-        indexToSegmentPropertiesWrapperMapping.get(segmentPropertiesIndex);
-    if (null != segmentPropertiesWrapper) {
-      SegmentIdAndSegmentPropertiesIndexWrapper segmentIdAndSegmentPropertiesIndexWrapper =
-          segmentPropWrapperToSegmentSetMap.get(segmentPropertiesWrapper);
-      synchronized (getOrCreateTableLock(segmentPropertiesWrapper.getTableIdentifier())) {
-        segmentIdAndSegmentPropertiesIndexWrapper.addSegmentId(segmentId);
       }
     }
   }
@@ -359,15 +325,6 @@ public class SegmentPropertiesAndSchemaHolder {
         }
       }
       return exists;
-    }
-
-    private void sortList(List<ColumnSchema> columnSchemas) {
-      Collections.sort(columnSchemas, new Comparator<ColumnSchema>() {
-        @Override
-        public int compare(ColumnSchema o1, ColumnSchema o2) {
-          return o1.getColumnUniqueId().compareTo(o2.getColumnUniqueId());
-        }
-      });
     }
 
     @Override

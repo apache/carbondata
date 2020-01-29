@@ -70,17 +70,6 @@ public final class CarbonMetadata {
   }
 
   /**
-   * Below method will be used to set the carbon table
-   * Note: Use this method only in driver as clean up in Executor is not handled
-   *       if this table is added to executor
-   *
-   * @param carbonTable
-   */
-  public void addCarbonTable(CarbonTable carbonTable) {
-    tableInfoMap.put(convertToLowerCase(carbonTable.getTableUniqueName()), carbonTable);
-  }
-
-  /**
    * method load the table
    *
    * @param tableInfo

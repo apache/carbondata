@@ -1044,14 +1044,6 @@ public final class CarbonProperties {
   }
 
   /**
-   * Number of cores to be used while alter partition.
-   * @return the number of cores to be used while alter partition
-   */
-  public int getNumberOfAltPartitionCores() {
-    return getNumberOfCores(CarbonCommonConstants.NUM_CORES_ALT_PARTITION);
-  }
-
-  /**
    * Get the sort chunk memory size
    * @return
    */

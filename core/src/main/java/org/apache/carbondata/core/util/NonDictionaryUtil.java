@@ -81,41 +81,6 @@ public class NonDictionaryUtil {
     return total;
   }
 
-  /**
-   * Method to get the required dictionary Dimension from obj []
-   *
-   * @param index
-   * @param row
-   * @return
-   */
-  public static int getDictDimension(int index, Object[] row) {
-    int[] dimensions = (int[]) row[WriteStepRowUtil.DICTIONARY_DIMENSION];
-    return dimensions[index];
-  }
-
-  /**
-   * Method to get the required non-dictionary & complex from 3-parted row
-   * @param index
-   * @param row
-   * @return
-   */
-  public static byte[] getNoDictOrComplex(int index, Object[] row) {
-    byte[][] nonDictArray = (byte[][]) row[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX];
-    return nonDictArray[index];
-  }
-
-  /**
-   * Method to get the required measure from obj []
-   *
-   * @param index
-   * @param row
-   * @return
-   */
-  public static Object getMeasure(int index, Object[] row) {
-    Object[] measures = (Object[]) row[WriteStepRowUtil.MEASURE];
-    return measures[index];
-  }
-
   public static void prepareOutObj(Object[] out, int[] dimArray, Object[] byteBufferArr,
       Object[] measureArray) {
     out[WriteStepRowUtil.DICTIONARY_DIMENSION] = dimArray;

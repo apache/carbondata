@@ -20,6 +20,7 @@ package org.apache.carbondata.processing.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -309,8 +310,8 @@ public final class CarbonDataProcessorUtil {
     return complexTypesMap;
   }
 
-  public static boolean isHeaderValid(String tableName, String[] csvHeader,
-      CarbonDataLoadSchema schema, List<String> ignoreColumns) {
+  public static boolean isHeaderValid(String[] csvHeader, CarbonDataLoadSchema schema,
+      List<String> ignoreColumns) {
     Iterator<String> columnIterator =
         CarbonDataProcessorUtil.getSchemaColumnNames(schema).iterator();
     Set<String> csvColumns = new HashSet<String>(csvHeader.length);
@@ -469,12 +470,9 @@ public final class CarbonDataProcessorUtil {
   /**
    * initialise data type for measures for their storage format
    */
-  public static DataType[] initDataType(CarbonTable carbonTable, String tableName,
-      int measureCount) {
+  public static DataType[] initDataType(CarbonTable carbonTable, int measureCount) {
     DataType[] type = new DataType[measureCount];
-    for (int i = 0; i < type.length; i++) {
-      type[i] = DataTypes.DOUBLE;
-    }
+    Arrays.fill(type, DataTypes.DOUBLE);
     List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
     for (int i = 0; i < measureCount; i++) {
       type[i] = measures.get(i).getDataType();

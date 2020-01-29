@@ -323,21 +323,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     return tableInfo;
   }
 
-  private List<org.apache.carbondata.format.RelationIdentifier> fromWrapperToExternalRI(
-      List<RelationIdentifier> relationIdentifiersList) {
-    List<org.apache.carbondata.format.RelationIdentifier> thriftRelationIdentifierList =
-        new ArrayList<>();
-    for (RelationIdentifier relationIdentifier : relationIdentifiersList) {
-      org.apache.carbondata.format.RelationIdentifier thriftRelationIdentifier =
-          new org.apache.carbondata.format.RelationIdentifier();
-      thriftRelationIdentifier.setDatabaseName(relationIdentifier.getDatabaseName());
-      thriftRelationIdentifier.setTableName(relationIdentifier.getTableName());
-      thriftRelationIdentifier.setTableId(relationIdentifier.getTableId());
-      thriftRelationIdentifierList.add(thriftRelationIdentifier);
-    }
-    return thriftRelationIdentifierList;
-  }
-
   private List<org.apache.carbondata.format.DataMapSchema> fromWrapperToExternalChildSchemaList(
       List<DataMapSchema> wrapperChildSchemaList) {
     List<org.apache.carbondata.format.DataMapSchema> thriftChildSchemas = new ArrayList<>();

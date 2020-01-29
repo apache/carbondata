@@ -17,75 +17,8 @@
 
 package org.apache.carbondata.core.datastore;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-
 /**
  * Class holds the absoluteTableIdentifier and segmentId to uniquely identify a segment
  */
 public class TableSegmentUniqueIdentifier {
-  /**
-   * table fully qualified identifier
-   */
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
-
-  private String segmentId;
-
-  /**
-   * Constructor to initialize the class instance
-   * @param absoluteTableIdentifier
-   * @param segmentId
-   */
-  public TableSegmentUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
-      String segmentId) {
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
-    this.segmentId = segmentId;
-  }
-
-  public String getSegmentId() {
-    return segmentId;
-  }
-
-  /**
-   * method returns the id to uniquely identify a key
-   *
-   * @return
-   */
-  public String getUniqueTableSegmentIdentifier() {
-    CarbonTableIdentifier carbonTableIdentifier =
-            absoluteTableIdentifier.getCarbonTableIdentifier();
-    return carbonTableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR
-            + carbonTableIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE
-            + carbonTableIdentifier.getTableId() + CarbonCommonConstants.FILE_SEPARATOR + segmentId;
-  }
-
-  /**
-   * equals method to compare two objects having same
-   * absoluteIdentifier and segmentId
-   * @param o
-   * @return
-   */
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    TableSegmentUniqueIdentifier that = (TableSegmentUniqueIdentifier) o;
-
-    if (!absoluteTableIdentifier.equals(that.absoluteTableIdentifier)) return false;
-    return segmentId.equals(that.segmentId);
-
-  }
-
-  /**
-   * Returns hashcode for the TableSegmentIdentifier
-   * @return
-   */
-  @Override
-  public int hashCode() {
-    int result = absoluteTableIdentifier.hashCode();
-    result = 31 * result + segmentId.hashCode();
-    return result;
-  }
 }

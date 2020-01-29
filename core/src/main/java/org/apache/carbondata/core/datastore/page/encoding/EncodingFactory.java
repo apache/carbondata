@@ -146,13 +146,6 @@ public abstract class EncodingFactory {
   /**
    * Old way of creating decoder, based on algorithm
    */
-  public ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata, String compressor) {
-    return createDecoderLegacy(metadata, compressor, false);
-  }
-
-  /**
-   * Old way of creating decoder, based on algorithm
-   */
   private ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata, String compressor,
       boolean fullVectorFill) {
     if (null == metadata) {

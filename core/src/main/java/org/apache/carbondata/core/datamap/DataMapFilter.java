@@ -159,10 +159,6 @@ public class DataMapFilter implements Serializable {
     return expression;
   }
 
-  public void setExpression(Expression expression) {
-    this.expression = expression;
-  }
-
   public FilterResolverIntf getResolver() {
     if (resolver == null) {
       resolver = resolveFilter();

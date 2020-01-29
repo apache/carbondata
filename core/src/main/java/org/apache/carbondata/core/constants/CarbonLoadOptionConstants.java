@@ -108,13 +108,6 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT =
       "carbon.options.serialization.null.format";
 
-  public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT_DEFAULT = "\\N";
-
-  /**
-   *  Max number of dictionary values that can be given with external dictionary
-   */
-  public static final int MAX_EXTERNAL_DICTIONARY_SIZE = 10000000;
-
   /**
    * enable block size based block allocation while loading data. By default, carbondata assigns
    * blocks to node based on block number. If this option is set to `true`, carbondata will

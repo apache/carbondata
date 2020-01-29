@@ -36,7 +36,4 @@ public class ExtendedByteArrayInputStream extends ByteArrayInputStream {
     return this.pos;
   }
 
-  public int getLength() {
-    return count - pos;
-  }
 }

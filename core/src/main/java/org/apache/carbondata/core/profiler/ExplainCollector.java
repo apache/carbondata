@@ -72,16 +72,6 @@ public class ExplainCollector {
     return INSTANCE;
   }
 
-  public static void recordMatchedOlapDataMap(String dataMapProvider, String dataMapName) {
-    if (enabled()) {
-      Objects.requireNonNull(dataMapProvider);
-      Objects.requireNonNull(dataMapName);
-      ExplainCollector profiler = get();
-      profiler.olapDataMapProviders.add(dataMapProvider);
-      profiler.olapDataMapNames.add(dataMapName);
-    }
-  }
-
   public static void addPruningInfo(String tableName) {
     if (enabled()) {
       ExplainCollector profiler = get();

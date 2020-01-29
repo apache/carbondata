@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.hadoop.internal.index;
 
-import java.util.List;
-
 /**
  * Represent one HDFS Block (one CarbonData file).
  */
@@ -29,14 +27,4 @@ public interface Block {
    */
   String getBlockPath();
 
-  /**
-   * return all matched blocklets for scanning
-   * @return list of blocklet offset in the block
-   */
-  List<Long> getMatchedBlocklets();
-
-  /**
-   * @return true if need to do full scan of this block
-   */
-  boolean fullScan();
 }

@@ -71,7 +71,6 @@ public class IntermediateFileMerger implements Callable<Void> {
   private String compressorName;
 
   private Throwable throwable;
-  private TableFieldStat tableFieldStat;
   private SortStepRowHandler sortStepRowHandler;
   /**
    * IntermediateFileMerger Constructor
@@ -84,7 +83,7 @@ public class IntermediateFileMerger implements Callable<Void> {
     this.outPutFile = outPutFile;
     this.writeBufferSize = mergerParameters.getBufferSize();
     this.compressorName = mergerParameters.getSortTempCompressorName();
-    this.tableFieldStat = new TableFieldStat(mergerParameters);
+    TableFieldStat tableFieldStat = new TableFieldStat(mergerParameters);
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
   }
 
@@ -208,8 +207,7 @@ public class IntermediateFileMerger implements Callable<Void> {
     for (File tempFile : intermediateFiles) {
       // create chunk holder
       sortTempFileChunkHolder =
-          new SortTempFileChunkHolder(tempFile, mergerParameters, mergerParameters.getTableName(),
-              false);
+          new SortTempFileChunkHolder(tempFile, mergerParameters, false);
 
       // initialize
       sortTempFileChunkHolder.initialize();

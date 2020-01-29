@@ -155,9 +155,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) throws IOException {
     String[] storeLocation = getStoreLocation();
-    DataMapWriterListener listener = getDataMapWriterListener(0);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
-        configuration, storeLocation, 0, iteratorIndex, listener);
+        configuration, storeLocation, 0, iteratorIndex);
     model.setColumnLocalDictGenMap(localDictionaryGeneratorMap);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;

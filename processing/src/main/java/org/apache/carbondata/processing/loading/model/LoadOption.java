@@ -179,15 +179,6 @@ public class LoadOption {
   }
 
   /**
-   * Return CSV header field names
-   */
-  public static String[] getCsvHeaderColumns(
-      CarbonLoadModel carbonLoadModel,
-      Configuration hadoopConf) throws IOException {
-    return getCsvHeaderColumns(carbonLoadModel, hadoopConf, new LinkedList<String>());
-  }
-
-  /**
    * Return CSV header field names, with partition column
    */
   public static String[] getCsvHeaderColumns(
@@ -226,7 +217,7 @@ public class LoadOption {
     // In SDK flow, hadoopConf will always be null,
     // hence FileHeader check is not required for nontransactional table
     if (hadoopConf != null && !CarbonDataProcessorUtil
-        .isHeaderValid(carbonLoadModel.getTableName(), csvColumns,
+        .isHeaderValid(csvColumns,
             carbonLoadModel.getCarbonDataLoadSchema(), staticPartitionCols)) {
       if (csvFile == null) {
         LOG.error("CSV header in DDL is not proper."

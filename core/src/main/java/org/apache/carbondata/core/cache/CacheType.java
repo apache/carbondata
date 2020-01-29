@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.cache;
 
-import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 
 /**
@@ -25,30 +24,16 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
  * forward (surrogate key to byte array mapping) and reverse (byte array to
  * surrogate mapping) dictionary or a B-tree cache
  */
-public class CacheType<K, V> {
+public class CacheType<V> {
 
   /**
    * Executor BTree cache which maintains size of BTree metadata
    */
-  public static final CacheType<TableSegmentUniqueIdentifier, AbstractIndex>
-      DRIVER_BLOCKLET_DATAMAP = new CacheType("driver_blocklet_datamap");
+  public static final CacheType<AbstractIndex> DRIVER_BLOCKLET_DATAMAP = new CacheType();
 
   /**
-   * cacheName which is unique name for a cache
    */
-  private String cacheName;
-
-  /**
-   * @param cacheName
-   */
-  public CacheType(String cacheName) {
-    this.cacheName = cacheName;
+  public CacheType() {
   }
 
-  /**
-   * @return cache unique name
-   */
-  public String getCacheName() {
-    return cacheName;
-  }
 }

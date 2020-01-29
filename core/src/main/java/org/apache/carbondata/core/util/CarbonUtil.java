@@ -1456,17 +1456,6 @@ public final class CarbonUtil {
     return (DataChunk3) t;
   }
 
-  public static DataChunk2 readDataChunk(ByteBuffer dataChunkBuffer, int offset, int length)
-      throws IOException {
-    byte[] data = dataChunkBuffer.array();
-    return (DataChunk2) read(data, new ThriftReader.TBaseCreator() {
-      @Override
-      public TBase create() {
-        return new DataChunk2();
-      }
-    }, offset, length);
-  }
-
   /**
    * Below method will be used to convert the byte array value to thrift object for
    * data chunk
@@ -1491,31 +1480,6 @@ public final class CarbonUtil {
     return t;
   }
 
-  /**
-   * Below method will be used to convert the apply metadata to
-   * ValueEncoderMeta object
-   *
-   * @param encoderMeta
-   * @return ValueEncoderMeta object
-   */
-  public static ValueEncoderMeta deserializeEncoderMetaV2(byte[] encoderMeta) {
-    // TODO : should remove the unnecessary fields.
-    ByteArrayInputStream aos = null;
-    ObjectInputStream objStream = null;
-    ValueEncoderMeta meta = null;
-    try {
-      aos = new ByteArrayInputStream(encoderMeta);
-      objStream =
-          new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), aos);
-      meta = (ValueEncoderMeta) objStream.readObject();
-    } catch (ClassNotFoundException e) {
-      LOGGER.error(e.getMessage(), e);
-    } catch (IOException e) {
-      CarbonUtil.closeStreams(objStream);
-    }
-    return meta;
-  }
-
   public static ValueEncoderMeta deserializeEncoderMetaV3(byte[] encodeMeta) {
     ByteBuffer buffer = ByteBuffer.wrap(encodeMeta);
     char measureType = buffer.getChar();
@@ -1525,17 +1489,14 @@ public final class CarbonUtil {
       case DataType.DOUBLE_MEASURE_CHAR:
         valueEncoderMeta.setMaxValue(buffer.getDouble());
         valueEncoderMeta.setMinValue(buffer.getDouble());
-        valueEncoderMeta.setUniqueValue(buffer.getDouble());
         break;
       case DataType.BIG_DECIMAL_MEASURE_CHAR:
         valueEncoderMeta.setMaxValue(BigDecimal.valueOf(Long.MAX_VALUE));
         valueEncoderMeta.setMinValue(BigDecimal.valueOf(Long.MIN_VALUE));
-        valueEncoderMeta.setUniqueValue(BigDecimal.valueOf(Long.MIN_VALUE));
         break;
       case DataType.BIG_INT_MEASURE_CHAR:
         valueEncoderMeta.setMaxValue(buffer.getLong());
         valueEncoderMeta.setMinValue(buffer.getLong());
-        valueEncoderMeta.setUniqueValue(buffer.getLong());
         break;
       default:
         throw new IllegalArgumentException("invalid measure type: " + measureType);

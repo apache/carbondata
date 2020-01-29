@@ -36,13 +36,6 @@ public class TablePageStatistics {
   // max os each measure column
   private byte[][] measureMaxValue;
 
-  /**
-   * array for storing the flag which will say whether to store min/max for dimension or not
-   * Note: Currently this array is being used only for dimensions. It can extended further to store
-   * the flag for measures also
-   */
-  private boolean[] writeMinMaxForDimensions;
-
   public TablePageStatistics(EncodedColumnPage[] dimensions,
       EncodedColumnPage[] measures) {
     int numDimensionsExpanded = dimensions.length;
@@ -51,7 +44,6 @@ public class TablePageStatistics {
     this.dimensionMaxValue = new byte[numDimensionsExpanded][];
     this.measureMinValue = new byte[numMeasures][];
     this.measureMaxValue = new byte[numMeasures][];
-    this.writeMinMaxForDimensions = new boolean[numDimensionsExpanded];
     updateDimensionMinMax(dimensions);
     updateMeasureMinMax(measures);
   }
@@ -70,7 +62,6 @@ public class TablePageStatistics {
         dimensionMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), max);
         dimensionMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), min);
       }
-      writeMinMaxForDimensions[i] = stats.writeMinMax();
     }
   }
 
@@ -96,10 +87,6 @@ public class TablePageStatistics {
 
   public byte[][] getMeasureMaxValue() {
     return measureMaxValue;
-  }
-
-  public boolean[] getWriteMinMaxForDimensions() {
-    return writeMinMaxForDimensions;
   }
 
 }

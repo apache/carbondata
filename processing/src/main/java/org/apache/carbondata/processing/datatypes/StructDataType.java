@@ -137,14 +137,6 @@ public class StructDataType implements GenericDataType<StructObject> {
   }
 
   /*
-   * get column unique id
-   */
-  @Override
-  public String getColumnNames() {
-    return columnId;
-  }
-
-  /*
    * get all primitive columns from complex column
    */
   @Override

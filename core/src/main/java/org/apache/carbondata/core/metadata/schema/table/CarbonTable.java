@@ -249,19 +249,6 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * Resolve the filter expression.
-   */
-  public static FilterResolverIntf resolveFilter(Expression filterExpression,
-      AbsoluteTableIdentifier identifier) {
-    try {
-      FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
-      return filterExpressionProcessor.getFilterResolver(filterExpression, identifier);
-    } catch (Exception e) {
-      throw new RuntimeException("Error while resolving filter expression", e);
-    }
-  }
-
-  /**
    * Create a {@link CarbonTableBuilder} to create {@link CarbonTable}
    */
   public static CarbonTableBuilder builder() {
@@ -689,11 +676,6 @@ public class CarbonTable implements Serializable, Writable {
     return partition;
   }
 
-  public boolean isPartitionTable() {
-    return null != partition
-        && partition.getPartitionType() != PartitionType.NATIVE_HIVE;
-  }
-
   public boolean isHivePartitionTable() {
     PartitionInfo partitionInfo = partition;
     return null != partitionInfo && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE;
@@ -724,20 +706,6 @@ public class CarbonTable implements Serializable, Writable {
     } catch (NumberFormatException e) {
       return Integer.parseInt(CarbonCommonConstants.TABLE_BLOCKLET_SIZE_DEFAULT);
     }
-  }
-
-  /**
-   * to get the normal dimension or the primitive dimension of the complex type
-   *
-   * @return primitive dimension of a table
-   */
-  public CarbonColumn getPrimitiveDimensionByName(String columnName) {
-    for (CarbonDimension dim : visibleDimensions) {
-      if (dim.getNumberOfChild() == 0 && dim.getColName().equalsIgnoreCase(columnName)) {
-        return dim;
-      }
-    }
-    return null;
   }
 
   /**
@@ -894,19 +862,6 @@ public class CarbonTable implements Serializable, Writable {
   public boolean isFileLevelFormat() {
     String external = tableInfo.getFactTable().getTableProperties().get("_filelevelformat");
     return external != null && external.equalsIgnoreCase("true");
-  }
-
-  public long size() throws IOException {
-    Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this, true);
-    Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
-    if (dataSize == null) {
-      dataSize = 0L;
-    }
-    Long indexSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE);
-    if (indexSize == null) {
-      indexSize = 0L;
-    }
-    return dataSize + indexSize;
   }
 
   /**
@@ -1083,22 +1038,6 @@ public class CarbonTable implements Serializable, Writable {
       }
     }
     return minMaxCachedColsList;
-  }
-
-  /**
-   * Return all inverted index columns in this table
-   */
-  public List<ColumnSchema> getInvertedIndexColumns() {
-    if (getSortScope() == SortScopeOptions.SortScope.NO_SORT) {
-      return new LinkedList<>();
-    }
-    List<ColumnSchema> columns = new LinkedList<>();
-    for (ColumnSchema column : tableInfo.getFactTable().getListOfColumns()) {
-      if (column.isUseInvertedIndex() && column.isSortColumn()) {
-        columns.add(column);
-      }
-    }
-    return columns;
   }
 
   /**

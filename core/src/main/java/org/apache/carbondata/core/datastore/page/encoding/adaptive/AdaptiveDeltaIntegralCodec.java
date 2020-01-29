@@ -146,7 +146,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
 
       @Override
       public void decodeAndFillVector(byte[] input, int offset, int length,
-          ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
+          ColumnVectorInfo vectorInfo, BitSet nullBits, int pageSize,
           ReusableDataBuffer reusableDataBuffer)
           throws MemoryException, IOException {
         Compressor compressor =

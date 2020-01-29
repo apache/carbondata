@@ -35,11 +35,6 @@ public class ValueEncoderMeta implements Serializable {
    */
   private Object minValue;
 
-  /**
-   * uniqueValue
-   */
-  private Object uniqueValue;
-
   private int decimal;
 
   private char type;
@@ -60,14 +55,6 @@ public class ValueEncoderMeta implements Serializable {
 
   public void setMinValue(Object minValue) {
     this.minValue = minValue;
-  }
-
-  public Object getUniqueValue() {
-    return uniqueValue;
-  }
-
-  public void setUniqueValue(Object uniqueValue) {
-    this.uniqueValue = uniqueValue;
   }
 
   public int getDecimal() {

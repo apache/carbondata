@@ -51,7 +51,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
 
   public UnsafeVariableLengthDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
       int numberOfRows, int dataLength) {
-    super(totalSize, isInvertedIdex, numberOfRows, dataLength);
+    super(totalSize, isInvertedIdex, dataLength);
     this.numberOfRows = numberOfRows;
     // initials size assigning to some random value
     this.value = new byte[20];

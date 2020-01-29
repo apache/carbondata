@@ -204,7 +204,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
           uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
         }
       } else {
-        CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid);
+        CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false);
       }
       commitJobFinal(context, loadModel, operationContext, carbonTable, uniqueId);
     } else {
@@ -295,7 +295,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     if (overwriteSet) {
       uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
     } else {
-      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid);
+      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false);
     }
     if (operationContext != null) {
       operationContext.setProperty("current.segmentfile", newMetaEntry.getSegmentFile());
@@ -334,7 +334,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       }
       newMetaEntry.setUpdateStatusFileName(uniqueId);
       // Commit the removed partitions in carbon store.
-      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid,
+      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false,
           Segment.toSegmentList(tobeDeletedSegs, null),
           Segment.toSegmentList(tobeUpdatedSegs, null));
       return uniqueId;

@@ -45,7 +45,6 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
@@ -401,7 +400,7 @@ public class SegmentFileStore {
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();
     try {
-      dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
+      dataOutputStream = fileWrite.openForWrite();
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
 

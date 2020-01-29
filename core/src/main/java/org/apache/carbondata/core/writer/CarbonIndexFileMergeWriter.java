@@ -123,8 +123,8 @@ public class CarbonIndexFileMergeWriter {
    * merge index files and return the index details
    */
   public SegmentFileStore.FolderDetails mergeCarbonIndexFilesOfSegment(String segmentId,
-      String tablePath, String partitionPath, List<String> partitionInfo, String uuid,
-      String tempFolderPath, String currPartitionSpec) throws IOException {
+      String tablePath, String partitionPath, List<String> partitionInfo, String tempFolderPath,
+      String currPartitionSpec) throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     String partitionTempPath = "";
     for (String partition : partitionInfo) {
@@ -367,24 +367,4 @@ public class CarbonIndexFileMergeWriter {
     thriftWriter.close();
   }
 
-  public static class SegmentIndexFIleMergeStatus implements Serializable {
-
-    private SegmentFileStore.SegmentFile segmentFile;
-
-    private List<String> filesTobeDeleted;
-
-    public SegmentIndexFIleMergeStatus(SegmentFileStore.SegmentFile segmentFile,
-        List<String> filesTobeDeleted) {
-      this.segmentFile = segmentFile;
-      this.filesTobeDeleted = filesTobeDeleted;
-    }
-
-    public SegmentFileStore.SegmentFile getSegmentFile() {
-      return segmentFile;
-    }
-
-    public List<String> getFilesTobeDeleted() {
-      return filesTobeDeleted;
-    }
-  }
 }

@@ -94,11 +94,6 @@ public class CarbonFactDataHandlerModel {
   private String[] storeLocation;
 
   /**
-   * length of each dimension, including dictionary, nodictioncy, complex dimension
-   */
-  private int[] dimLens;
-
-  /**
    * total number of no dictionary dimension in the table (without complex type)
    */
   private int noDictionaryCount;
@@ -198,7 +193,7 @@ public class CarbonFactDataHandlerModel {
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
       CarbonDataLoadConfiguration configuration, String[] storeLocation, int bucketId,
-      int taskExtension, DataMapWriterListener listener) {
+      int taskExtension) {
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
 
@@ -272,7 +267,6 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setTableName(identifier.getTableName());
     carbonFactDataHandlerModel.setMeasureCount(measureCount);
     carbonFactDataHandlerModel.setStoreLocation(storeLocation);
-    carbonFactDataHandlerModel.setDimLens(dimLens);
     carbonFactDataHandlerModel.setNoDictionaryCount(noDictionaryCount);
     carbonFactDataHandlerModel.setDimensionCount(
         configuration.getDimensionCount() - noDictionaryCount);
@@ -298,19 +292,17 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     carbonFactDataHandlerModel.columnCompressor = configuration.getColumnCompressor();
 
-    if (listener == null) {
-      listener = new DataMapWriterListener();
-      listener.registerAllWriter(
-          configuration.getTableSpec().getCarbonTable(),
-          configuration.getSegmentId(),
-          CarbonTablePath.getShardName(
-              carbonDataFileAttributes.getTaskId(),
-              bucketId,
-              0,
-              String.valueOf(carbonDataFileAttributes.getFactTimeStamp()),
-              configuration.getSegmentId()),
-          segmentProperties);
-    }
+    DataMapWriterListener listener = new DataMapWriterListener();
+    listener.registerAllWriter(
+        configuration.getTableSpec().getCarbonTable(),
+        configuration.getSegmentId(),
+        CarbonTablePath.getShardName(
+            carbonDataFileAttributes.getTaskId(),
+            bucketId,
+            0,
+            String.valueOf(carbonDataFileAttributes.getFactTimeStamp()),
+            configuration.getSegmentId()),
+        segmentProperties);
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
     carbonFactDataHandlerModel.initNumberOfCores();
@@ -349,7 +341,6 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setTableName(tableName);
     carbonFactDataHandlerModel.setMeasureCount(segmentProperties.getMeasures().size());
     carbonFactDataHandlerModel.setStoreLocation(tempStoreLocation);
-    carbonFactDataHandlerModel.setDimLens(segmentProperties.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
     carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
     carbonFactDataHandlerModel
@@ -555,14 +546,6 @@ public class CarbonFactDataHandlerModel {
 
   public void setStoreLocation(String[] storeLocation) {
     this.storeLocation = storeLocation;
-  }
-
-  public int[] getDimLens() {
-    return dimLens;
-  }
-
-  public void setDimLens(int[] dimLens) {
-    this.dimLens = dimLens;
   }
 
   public int getNoDictionaryCount() {

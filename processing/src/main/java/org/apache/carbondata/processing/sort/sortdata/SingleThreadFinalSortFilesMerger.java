@@ -192,7 +192,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
         public Void call() throws CarbonSortKeyAndGroupByException {
             // create chunk holder
             SortTempFileChunkHolder sortTempFileChunkHolder =
-                new SortTempFileChunkHolder(tempFile, sortParameters, tableName, true);
+                new SortTempFileChunkHolder(tempFile, sortParameters, true);
           try {
             // initialize
             sortTempFileChunkHolder.initialize();

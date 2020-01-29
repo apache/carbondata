@@ -130,14 +130,6 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   }
 
   /*
-   * return column unique id
-   */
-  @Override
-  public String getColumnNames() {
-    return columnId;
-  }
-
-  /*
    * set parent name
    */
   @Override

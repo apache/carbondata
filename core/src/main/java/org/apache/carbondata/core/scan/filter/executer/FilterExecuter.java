@@ -46,8 +46,7 @@ public interface FilterExecuter {
    * apply range filter on a row
    * @return true: if the value satisfy the filter; or else false.
    */
-  boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException;
+  boolean applyFilter(RowIntf value, int dimOrdinalMax) throws FilterUnsupportedException;
 
   /**
    * API will verify whether the block can be shortlisted based on block

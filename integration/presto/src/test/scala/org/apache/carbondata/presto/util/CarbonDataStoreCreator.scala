@@ -316,7 +316,7 @@ object CarbonDataStoreCreator {
       val writeOperation: AtomicFileOperations = AtomicFileOperationFactory
         .getAtomicFileOperations(dataLoadLocation)
       val dataOutputStream =
-        writeOperation.openForWrite(FileWriteOperation.OVERWRITE)
+        writeOperation.openForWrite()
       val brWriter = new BufferedWriter(
         new OutputStreamWriter(
           dataOutputStream,

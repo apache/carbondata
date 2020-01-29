@@ -91,7 +91,7 @@ public class ThriftWriter {
    */
   public void open(FileWriteOperation fileWriteOperation) throws IOException {
     atomicFileOperationsWriter = AtomicFileOperationFactory.getAtomicFileOperations(fileName);
-    dataOutputStream = atomicFileOperationsWriter.openForWrite(fileWriteOperation);
+    dataOutputStream = atomicFileOperationsWriter.openForWrite();
     binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
   }
 

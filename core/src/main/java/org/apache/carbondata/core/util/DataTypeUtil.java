@@ -281,20 +281,6 @@ public final class DataTypeUtil {
   }
 
   /**
-   * This method will convert a byte value back to big decimal value
-   *
-   * @param raw
-   * @return
-   */
-  public static BigDecimal byteToBigDecimal(byte[] raw, int offset, int length) {
-    int scale = (raw[offset] & 0xFF);
-    byte[] unscale = new byte[length - 1];
-    System.arraycopy(raw, offset + 1, unscale, 0, unscale.length);
-    BigInteger sig = new BigInteger(unscale);
-    return new BigDecimal(sig, scale);
-  }
-
-  /**
    * Below method will be used to convert the data passed to its actual data
    * type
    *
@@ -642,95 +628,6 @@ public final class DataTypeUtil {
   }
 
   /**
-   * Below method will be used to convert the data passed to its actual data
-   * type
-   *
-   * @param dataInBytes data
-   * @param dimension
-   * @return actual data after conversion
-   */
-  public static Object getDataBasedOnDataType(byte[] dataInBytes, CarbonDimension dimension) {
-    if (null == dataInBytes || Arrays
-        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, dataInBytes)) {
-      return null;
-    }
-    try {
-      DataType dataType = dimension.getDataType();
-      if (dataType == DataTypes.INT) {
-        String data1 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-        if (data1.isEmpty()) {
-          return null;
-        }
-        return Integer.parseInt(data1);
-      } else if (dataType == DataTypes.SHORT) {
-        String data2 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-        if (data2.isEmpty()) {
-          return null;
-        }
-        return Short.parseShort(data2);
-      } else if (dataType == DataTypes.DOUBLE) {
-        String data3 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-        if (data3.isEmpty()) {
-          return null;
-        }
-        return Double.parseDouble(data3);
-      } else if (dataType == DataTypes.LONG) {
-        String data4 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-        if (data4.isEmpty()) {
-          return null;
-        }
-        return Long.parseLong(data4);
-      } else if (dataType == DataTypes.DATE) {
-        String data5 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-        if (data5.isEmpty()) {
-          return null;
-        }
-        try {
-          Date dateToStr = dateformatter.get().parse(data5);
-          return dateToStr.getTime() * 1000;
-        } catch (ParseException e) {
-          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
-          return null;
-        }
-      } else if (dataType == DataTypes.TIMESTAMP) {
-        String data6 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-        if (data6.isEmpty()) {
-          return null;
-        }
-        try {
-          Date dateToStr = timeStampformatter.get().parse(data6);
-          return dateToStr.getTime() * 1000;
-        } catch (ParseException e) {
-          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
-          return null;
-        }
-      } else if (DataTypes.isDecimal(dataType)) {
-        String data7 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-        if (data7.isEmpty()) {
-          return null;
-        }
-        java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data7);
-        if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
-          javaDecVal = javaDecVal.setScale(dimension.getColumnSchema().getScale());
-        }
-        return getDataTypeConverter().convertFromBigDecimalToDecimal(javaDecVal);
-      } else if (dataType == DataTypes.BOOLEAN) {
-        String data8 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-        if (data8.isEmpty()) {
-          return null;
-        }
-        return BooleanConvert.parseBoolean(data8);
-      } else {
-        return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
-      }
-    } catch (NumberFormatException ex) {
-      String data = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-      LOGGER.error("Problem while converting data type" + data);
-      return null;
-    }
-  }
-
-  /**
    * Below method will be used to basically to know whether any non parseable
    * data is present or not. if present then return null so that system can
    * process to default null member value.
@@ -755,39 +652,6 @@ public final class DataTypeUtil {
       }
       return data;
     } catch (NumberFormatException ex) {
-      return null;
-    }
-  }
-
-  /**
-   * This method will parse a given string value corresponding to its data type
-   *
-   * @param value     value to parse
-   * @param dimension dimension to get data type and precision and scale in case of decimal
-   *                  data type
-   * @return
-   */
-  public static String normalizeColumnValueForItsDataType(String value, CarbonColumn dimension) {
-    try {
-      Object parsedValue = null;
-      // validation will not be done for timestamp datatype as for timestamp direct dictionary
-      // is generated. No dictionary file is created for timestamp datatype column
-      DataType dataType = dimension.getDataType();
-      if (DataTypes.isDecimal(dataType)) {
-        return parseStringToBigDecimal(value, dimension);
-      } else if (dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
-          dataType == DataTypes.LONG) {
-        parsedValue = normalizeIntAndLongValues(value, dimension.getDataType());
-      } else if (dataType == DataTypes.DOUBLE) {
-        parsedValue = Double.parseDouble(value);
-      } else {
-        return value;
-      }
-      if (null != parsedValue) {
-        return value;
-      }
-      return null;
-    } catch (Exception e) {
       return null;
     }
   }
@@ -834,24 +698,6 @@ public final class DataTypeUtil {
       return normalizedValue.toString();
     }
     return null;
-  }
-
-  /**
-   * This method will compare double values it will preserve
-   * the -0.0 and 0.0 equality as per == ,also preserve NaN equality check as per
-   * java.lang.Double.equals()
-   *
-   * @param d1 double value for equality check
-   * @param d2 double value for equality check
-   * @return boolean after comparing two double values.
-   */
-  public static int compareDoubleWithNan(Double d1, Double d2) {
-    if ((d1.doubleValue() == d2.doubleValue()) || (Double.isNaN(d1) && Double.isNaN(d2))) {
-      return 0;
-    } else if (d1 < d2) {
-      return -1;
-    }
-    return 1;
   }
 
   /**
@@ -922,37 +768,6 @@ public final class DataTypeUtil {
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
-      return null;
-    }
-  }
-
-  /**
-   * This method will parse a given string value corresponding to its data type
-   *
-   * @param value        value to parse
-   * @param columnSchema dimension to get data type and precision and scale in case of decimal
-   *                     data type
-   * @return
-   */
-  public static String normalizeColumnValueForItsDataType(String value, ColumnSchema columnSchema) {
-    try {
-      Object parsedValue = null;
-      DataType dataType = columnSchema.getDataType();
-      if (DataTypes.isDecimal(dataType)) {
-        return parseStringToBigDecimal(value, columnSchema);
-      } else if (dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
-          dataType == DataTypes.LONG) {
-        parsedValue = normalizeIntAndLongValues(value, columnSchema.getDataType());
-      } else if (dataType == DataTypes.DOUBLE) {
-        parsedValue = Double.parseDouble(value);
-      } else {
-        return value;
-      }
-      if (null != parsedValue) {
-        return value;
-      }
-      return null;
-    } catch (Exception e) {
       return null;
     }
   }

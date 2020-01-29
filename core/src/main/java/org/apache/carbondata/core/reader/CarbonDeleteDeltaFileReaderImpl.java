@@ -39,12 +39,6 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
 
   private String filePath;
 
-  private DataInputStream dataInputStream = null;
-
-  private InputStreamReader inputStream = null;
-
-  private static final int DEFAULT_BUFFER_SIZE = 258;
-
   /**
    * @param filePath
    */
@@ -53,36 +47,11 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
   }
 
   /**
-   * This method will be used to read complete delete delta file.
-   * scenario:
-   * Whenever a query is executed then read the delete delta file
-   * to exclude the deleted data.
-   *
-   * @return All deleted records for the specified block
-   * @throws IOException if an I/O error occurs
-   */
-  @Override
-  public String read() throws IOException {
-    // Configure Buffer based on our requirement
-    char[] buffer = new char[DEFAULT_BUFFER_SIZE];
-    StringWriter sw = new StringWriter();
-    dataInputStream = FileFactory.getDataInputStream(filePath);
-    inputStream = new InputStreamReader(dataInputStream,
-        CarbonCommonConstants.DEFAULT_CHARSET);
-    int n = 0;
-    while (-1 != (n = inputStream.read(buffer))) {
-      sw.write(buffer, 0, n);
-    }
-    return sw.toString();
-  }
-
-  /**
    * Reads delete delta file (json file) and returns DeleteDeltaBlockDetails
    * @return DeleteDeltaBlockDetails
-   * @throws IOException
    */
   @Override
-  public DeleteDeltaBlockDetails readJson() throws IOException {
+  public DeleteDeltaBlockDetails readJson() {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
@@ -95,8 +64,7 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
         return new DeleteDeltaBlockDetails("");
       }
       dataInputStream = fileOperation.openForRead();
-      inStream = new InputStreamReader(dataInputStream,
-          CarbonCommonConstants.DEFAULT_CHARSET);
+      inStream = new InputStreamReader(dataInputStream, CarbonCommonConstants.DEFAULT_CHARSET);
       buffReader = new BufferedReader(inStream);
       deleteDeltaBlockDetails =
           gsonObjectToRead.fromJson(buffReader, DeleteDeltaBlockDetails.class);

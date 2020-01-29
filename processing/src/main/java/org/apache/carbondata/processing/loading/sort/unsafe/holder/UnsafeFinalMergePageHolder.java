@@ -48,8 +48,6 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
 
   private IntermediateSortTempRow currentRow;
 
-  private DataType[] noDictDataType;
-
   public UnsafeFinalMergePageHolder(UnsafeInMemoryIntermediateDataMerger merger,
       TableFieldStat tableFieldStat) {
     this.actualSize = merger.getEntryCount();
@@ -59,7 +57,6 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
     for (UnsafeCarbonRowPage rowPage: rowPages) {
       rowPage.setReadConvertedNoSortField();
     }
-    this.noDictDataType = rowPages[0].getTableFieldStat().getNoDictDataType();
     LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
     this.comparator = new FileMergeSortComparator(tableFieldStat.getIsSortColNoDictFlags(),
         tableFieldStat.getNoDictDataType(), tableFieldStat.getNoDictSortColumnSchemaOrderMapping());

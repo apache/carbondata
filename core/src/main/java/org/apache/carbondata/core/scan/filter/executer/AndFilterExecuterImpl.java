@@ -67,8 +67,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
   }
 
   @Override
-  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) throws FilterUnsupportedException {
     return leftExecuter.applyFilter(value, dimOrdinalMax) &&
         rightExecuter.applyFilter(value, dimOrdinalMax);
   }

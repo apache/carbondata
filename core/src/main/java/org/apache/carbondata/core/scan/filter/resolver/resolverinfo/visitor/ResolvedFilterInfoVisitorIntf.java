@@ -37,5 +37,5 @@ public interface ResolvedFilterInfoVisitorIntf {
    * @throws FilterUnsupportedException
    */
   void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException;
+      FilterResolverMetadata metadata) throws FilterUnsupportedException;
 }

@@ -68,21 +68,6 @@ public class DataLoadExecutor {
   }
 
   /**
-   * This method will remove any bad record key from the map entry
-   *
-   * @param carbonTableIdentifier
-   * @return
-   */
-  private boolean badRecordFound(CarbonTableIdentifier carbonTableIdentifier) {
-    String badRecordLoggerKey = carbonTableIdentifier.getBadRecordLoggerKey();
-    boolean badRecordKeyFound = false;
-    if (null != BadRecordsLogger.hasBadRecord(badRecordLoggerKey)) {
-      badRecordKeyFound = true;
-    }
-    return badRecordKeyFound;
-  }
-
-  /**
    * Method to clean all the resource
    */
   public void close() {

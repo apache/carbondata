@@ -75,11 +75,6 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
   }
 
   @Override
-  public FilterResolverIntf getFilterResolverIntf() {
-    return expression;
-  }
-
-  @Override
   public FilterResolverIntf getFilterResolverIntf(String uniqueId) {
     if (this.uniqueId.equals(uniqueId)) {
       return expression;

@@ -85,7 +85,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
       throws FilterUnsupportedException, IOException {
     FilterResolverIntf filterEvaluatorTree =
         createFilterResolverTree(expressionTree, tableIdentifier);
-    traverseAndResolveTree(filterEvaluatorTree, tableIdentifier);
+    traverseAndResolveTree(filterEvaluatorTree);
     return filterEvaluatorTree;
   }
 
@@ -94,19 +94,17 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * this method will visit each node of the filter resolver and prepares
    * the surrogates of the filter members which are involved filter
    * expression.
+   *  @param filterResolverTree
    *
-   * @param filterResolverTree
-   * @param tableIdentifier
    */
-  private void traverseAndResolveTree(FilterResolverIntf filterResolverTree,
-      AbsoluteTableIdentifier tableIdentifier)
+  private void traverseAndResolveTree(FilterResolverIntf filterResolverTree)
       throws FilterUnsupportedException, IOException {
     if (null == filterResolverTree) {
       return;
     }
-    traverseAndResolveTree(filterResolverTree.getLeft(), tableIdentifier);
-    filterResolverTree.resolve(tableIdentifier);
-    traverseAndResolveTree(filterResolverTree.getRight(), tableIdentifier);
+    traverseAndResolveTree(filterResolverTree.getLeft());
+    filterResolverTree.resolve();
+    traverseAndResolveTree(filterResolverTree.getRight());
   }
 
   /**

@@ -56,7 +56,7 @@ public class OrFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+      throws FilterUnsupportedException {
     return leftExecuter.applyFilter(value, dimOrdinalMax) ||
         rightExecuter.applyFilter(value, dimOrdinalMax);
   }

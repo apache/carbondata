@@ -66,18 +66,6 @@ public class ExtendedBlocklet extends Blocklet {
     this.inputSplit.setDataMapRow(dataMapRow);
   }
 
-  public String[] getLocations() {
-    try {
-      return this.inputSplit.getLocations();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public long getLength() {
-    return this.inputSplit.getLength();
-  }
-
   public String getSegmentId() {
     if (segmentNo != null) {
       return segmentNo;

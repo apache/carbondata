@@ -29,13 +29,7 @@ import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 
 public interface GenericQueryType {
 
-  String getName();
-
-  void setName(String name);
-
   String getParentName();
-
-  void setParentName(String parentName);
 
   void addChildren(GenericQueryType children);
 

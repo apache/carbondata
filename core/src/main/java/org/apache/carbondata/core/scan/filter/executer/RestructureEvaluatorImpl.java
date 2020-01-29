@@ -93,7 +93,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
         }
       }
       List<Integer> filterList = null;
-      if (filterValues.isIncludeFilter() && !filterValues.isOptimized()) {
+      if (filterValues.isIncludeFilter()) {
         filterList = filterValues.getFilterList();
       } else {
         filterList = filterValues.getExcludeFilterList();

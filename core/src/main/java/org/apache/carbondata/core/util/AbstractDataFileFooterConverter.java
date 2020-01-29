@@ -18,10 +18,8 @@
 package org.apache.carbondata.core.util;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
@@ -29,11 +27,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.BlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
-import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
@@ -60,23 +56,6 @@ public abstract class AbstractDataFileFooterConverter {
 
   AbstractDataFileFooterConverter(Configuration configuration) {
     this.configuration = configuration;
-  }
-
-  /**
-   * Below method will be used to convert the thrift presence meta to wrapper
-   * presence meta
-   *
-   * @param presentMetadataThrift
-   * @return wrapper presence meta
-   */
-  private static BitSet getPresenceMeta(
-      org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
-    final byte[] present_bit_stream = presentMetadataThrift.getPresent_bit_stream();
-    if (null != present_bit_stream) {
-      return BitSet.valueOf(present_bit_stream);
-    } else {
-      return new BitSet(1);
-    }
   }
 
   /**
@@ -121,7 +100,6 @@ public abstract class AbstractDataFileFooterConverter {
           tableBlockInfo.setVersion(
               ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion()));
           int blockletSize = getBlockletSize(readBlockIndexInfo);
-          tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
           dataFileFooter.setBlockletIndex(blockletIndex);
           dataFileFooter.setColumnInTable(columnSchemaList);
           dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
@@ -236,8 +214,6 @@ public abstract class AbstractDataFileFooterConverter {
     ColumnarFormatVersion version =
         ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion());
     tableBlockInfo.setVersion(version);
-    int blockletSize = getBlockletSize(readBlockIndexInfo);
-    tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
     String fileName = readBlockIndexInfo.file_name;
     // Take only name of file.
     if (fileName.lastIndexOf("/") > 0) {
@@ -456,43 +432,6 @@ public abstract class AbstractDataFileFooterConverter {
         new BlockletBTreeIndex(btreeIndex.getStart_key(), btreeIndex.getEnd_key()),
         new BlockletMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values(),
             isMinMaxSet));
-  }
-
-  /**
-   * Below method will be used to convert the thrift data chunk to wrapper
-   * data chunk
-   *
-   * @param datachunkThrift
-   * @return wrapper data chunk
-   */
-  protected DataChunk getDataChunk(org.apache.carbondata.format.DataChunk datachunkThrift,
-      boolean isPresenceMetaPresent) {
-    DataChunk dataChunk = new DataChunk();
-    dataChunk.setDataPageLength(datachunkThrift.getData_page_length());
-    dataChunk.setDataPageOffset(datachunkThrift.getData_page_offset());
-    if (isPresenceMetaPresent) {
-      dataChunk.setNullValueIndexForColumn(getPresenceMeta(datachunkThrift.getPresence()));
-    }
-    dataChunk.setRlePageLength(datachunkThrift.getRle_page_length());
-    dataChunk.setRlePageOffset(datachunkThrift.getRle_page_offset());
-    dataChunk.setRowMajor(datachunkThrift.isRowMajor());
-    dataChunk.setRowIdPageLength(datachunkThrift.getRowid_page_length());
-    dataChunk.setRowIdPageOffset(datachunkThrift.getRowid_page_offset());
-    List<Encoding> encodingList = new ArrayList<Encoding>(datachunkThrift.getEncoders().size());
-    for (int i = 0; i < datachunkThrift.getEncoders().size(); i++) {
-      encodingList.add(fromExternalToWrapperEncoding(datachunkThrift.getEncoders().get(i)));
-    }
-    dataChunk.setEncodingList(encodingList);
-    if (encodingList.contains(Encoding.DELTA)) {
-      List<ByteBuffer> thriftEncoderMeta = datachunkThrift.getEncoder_meta();
-      List<ValueEncoderMeta> encodeMetaList =
-          new ArrayList<ValueEncoderMeta>(thriftEncoderMeta.size());
-      for (int i = 0; i < thriftEncoderMeta.size(); i++) {
-        encodeMetaList.add(CarbonUtil.deserializeEncoderMetaV2(thriftEncoderMeta.get(i).array()));
-      }
-      dataChunk.setValueEncoderMeta(encodeMetaList);
-    }
-    return dataChunk;
   }
 
 }

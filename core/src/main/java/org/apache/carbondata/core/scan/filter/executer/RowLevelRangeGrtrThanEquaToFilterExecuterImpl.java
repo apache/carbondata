@@ -402,8 +402,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
   }
 
   @Override
-  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) throws FilterUnsupportedException {
     if (isDimensionPresentInCurrentBlock[0]) {
       byte[] col =
           (byte[]) value.getVal(dimColEvaluatorInfoList.get(0).getDimension().getOrdinal());

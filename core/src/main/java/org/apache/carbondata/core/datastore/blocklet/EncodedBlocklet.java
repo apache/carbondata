@@ -202,10 +202,6 @@ public class EncodedBlocklet {
     return rowCountInPage;
   }
 
-  public void setRowCountInPage(List<Short> rowCountInPage) {
-    this.rowCountInPage = rowCountInPage;
-  }
-
   public void clear() {
     this.numberOfPages = 0;
     this.encodedDimensionColumnPages = null;

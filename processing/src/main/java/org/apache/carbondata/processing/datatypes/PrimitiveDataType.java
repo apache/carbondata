@@ -210,14 +210,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   }
 
   /*
-   * get column unique id
-   */
-  @Override
-  public String getColumnNames() {
-    return columnId;
-  }
-
-  /*
    * primitive column will not have any children
    */
   @Override

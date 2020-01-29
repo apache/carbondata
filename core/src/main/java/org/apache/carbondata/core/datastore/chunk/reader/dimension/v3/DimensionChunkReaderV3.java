@@ -258,8 +258,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     if (vectorInfo != null) {
       decoder
           .decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
-              nullBitSet, isLocalDictEncodedPage, pageMetadata.numberOfRowsInpage,
-              reusableDataBuffer);
+              nullBitSet, pageMetadata.numberOfRowsInpage, reusableDataBuffer);
       return null;
     } else {
       return decoder

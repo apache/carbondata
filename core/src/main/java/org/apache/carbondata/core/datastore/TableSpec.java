@@ -45,9 +45,6 @@ public class TableSpec {
   // Hence noDictionaryDimensionSpec will be useful and it will be subset of dimensionSpec.
   private List<DimensionSpec> noDictionaryDimensionSpec;
 
-  // number of simple dimensions
-  private int numSimpleDimensions;
-
   private CarbonTable carbonTable;
 
   private boolean isUpdateDictDim;
@@ -60,13 +57,6 @@ public class TableSpec {
     this.carbonTable = carbonTable;
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
-    // first calculate total number of columnar field considering column group and complex column
-    numSimpleDimensions = 0;
-    for (CarbonDimension dimension : dimensions) {
-      if (!dimension.isComplex()) {
-        numSimpleDimensions++;
-      }
-    }
     dimensionSpec = new DimensionSpec[dimensions.size()];
     measureSpec = new MeasureSpec[measures.size()];
     noDictionaryDimensionSpec = new ArrayList<>();
@@ -161,23 +151,6 @@ public class TableSpec {
     return isUpdateNoDictDims;
   }
 
-  /**
-   * No dictionary and complex dimensions of the table
-   *
-   * @return
-   */
-  public DimensionSpec[] getNoDictAndComplexDimensions() {
-    List<DimensionSpec> noDictAndComplexDimensions = new ArrayList<>();
-    for (int i = 0; i < dimensionSpec.length; i++) {
-      if (dimensionSpec[i].getColumnType() == ColumnType.PLAIN_VALUE
-          || dimensionSpec[i].getColumnType() == ColumnType.COMPLEX_PRIMITIVE
-          || dimensionSpec[i].getColumnType() == ColumnType.COMPLEX) {
-        noDictAndComplexDimensions.add(dimensionSpec[i]);
-      }
-    }
-    return noDictAndComplexDimensions.toArray(new DimensionSpec[noDictAndComplexDimensions.size()]);
-  }
-
   public DimensionSpec getDimensionSpec(int dimensionIndex) {
     return dimensionSpec[dimensionIndex];
   }
@@ -188,10 +161,6 @@ public class TableSpec {
 
   public MeasureSpec getMeasureSpec(int measureIndex) {
     return measureSpec[measureIndex];
-  }
-
-  public int getNumSimpleDimensions() {
-    return numSimpleDimensions;
   }
 
   public int getNumDimensions() {

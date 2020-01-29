@@ -28,7 +28,6 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
@@ -746,7 +745,7 @@ public class SegmentUpdateStatusManager {
     // write the updated data into the metadata file.
 
     try {
-      dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
+      dataOutputStream = fileWrite.openForWrite();
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           CarbonCommonConstants.DEFAULT_CHARSET));
 

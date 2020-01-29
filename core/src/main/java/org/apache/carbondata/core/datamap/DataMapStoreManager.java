@@ -425,14 +425,12 @@ public final class DataMapStoreManager {
 
   public TableDataMap registerDataMap(CarbonTable table,
       DataMapSchema dataMapSchema,  DataMapFactory dataMapFactory) {
-    String tableUniqueName = table.getCarbonTableIdentifier().getTableUniqueName();
     // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(table);
     List<TableDataMap> tableIndices = allDataMaps.get(table.getTableId());
     if (tableIndices == null) {
       String keyUsingTablePath = getKeyUsingTablePath(table.getTablePath());
       if (keyUsingTablePath != null) {
-        tableUniqueName = keyUsingTablePath;
         tableIndices = allDataMaps.get(table.getTableId());
       }
     }
@@ -750,20 +748,6 @@ public final class DataMapStoreManager {
       return isRefresh;
     }
 
-    public void refreshSegments(List<String> segmentIds) {
-      for (String segmentId : segmentIds) {
-        manualSegmentRefresh.put(segmentId, true);
-      }
-    }
-
-    public boolean isRefreshNeeded(String segmentId) {
-      if (manualSegmentRefresh.get(segmentId) != null && manualSegmentRefresh.get(segmentId)) {
-        manualSegmentRefresh.put(segmentId, false);
-        return true;
-      } else {
-        return false;
-      }
-    }
   }
 
   public synchronized void clearInvalidDataMaps(CarbonTable carbonTable, List<String> segmentNos,

@@ -70,9 +70,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         loadsToMerge.size() == 1 &&
         SortScope.NO_SORT != compactionModel.carbonTable.getSortScope) {
       !CarbonCompactionUtil.isSortedByCurrentSortColumns(
-        carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-        loadsToMerge.get(0),
-        FileFactory.getConfiguration)
+        carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable, loadsToMerge.get(0))
     } else {
       false
     }

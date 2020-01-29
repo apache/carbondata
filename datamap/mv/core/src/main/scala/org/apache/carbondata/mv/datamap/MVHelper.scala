@@ -275,7 +275,6 @@ object MVHelper {
     dataMapSchema.setColumnsOrderMap(columnOrderMap)
     if (null != granularity && null != timeSeriesColumn) {
       dataMapSchema.setCtasQuery(queryString)
-      dataMapSchema.setTimeSeries(true)
     } else {
       dataMapSchema.setCtasQuery(updatedQueryWithDb)
     }

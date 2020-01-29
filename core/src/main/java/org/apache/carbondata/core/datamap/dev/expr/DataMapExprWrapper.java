@@ -63,12 +63,6 @@ public interface DataMapExprWrapper extends Serializable {
   List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets) throws IOException;
 
   /**
-   * Get the underlying filter expression.
-   * @return
-   */
-  FilterResolverIntf getFilterResolverIntf();
-
-  /**
    * Convert to distributable objects for executing job.
    * @param segments
    * @return

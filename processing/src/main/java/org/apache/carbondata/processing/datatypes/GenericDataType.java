@@ -97,11 +97,6 @@ public interface GenericDataType<T> {
   int getColsCount();
 
   /**
-   * @return column uuid string
-   */
-  String getColumnNames();
-
-  /**
    * set array index to be referred while creating metadata column
    * @param outputArrayIndex
    */

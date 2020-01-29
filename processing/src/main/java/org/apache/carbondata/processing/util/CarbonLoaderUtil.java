@@ -104,8 +104,6 @@ public final class CarbonLoaderUtil {
    */
   public static boolean isValidSegment(CarbonLoadModel loadModel,
       int currentLoad) {
-
-    int fileCount = 0;
     String segmentPath = CarbonTablePath.getSegmentPath(
         loadModel.getTablePath(), currentLoad + "");
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
@@ -120,14 +118,7 @@ public final class CarbonLoaderUtil {
       }
 
     });
-    fileCount += files.length;
-    if (files.length > 0) {
-      return true;
-    }
-    if (fileCount == 0) {
-      return false;
-    }
-    return true;
+    return files.length > 0;
   }
 
   public static void deleteStorePath(String path) {
@@ -139,21 +130,6 @@ public final class CarbonLoaderUtil {
     } catch (IOException | InterruptedException e) {
       LOGGER.error("Unable to delete the given path :: " + e.getMessage(), e);
     }
-  }
-
-  /**
-   * This API will write the load level metadata for the loadmanagement module inorder to
-   * manage the load and query execution management smoothly.
-   *
-   * @param newMetaEntry
-   * @param loadModel
-   * @return boolean which determines whether status update is done or not.
-   * @throws IOException
-   */
-  public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
-      throws IOException {
-    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, "");
   }
 
   /**
@@ -205,19 +181,18 @@ public final class CarbonLoaderUtil {
    *
    * @param newMetaEntry
    * @param loadModel
-   * @param uuid
    * @return boolean which determines whether status update is done or not.
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
+      final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
       throws IOException {
     // For Non Transactional tables no need to update the the Table Status file.
     if (!loadModel.isCarbonTransactionalTable()) {
       return true;
     }
 
-    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, uuid,
+    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite,
         new ArrayList<Segment>(), new ArrayList<Segment>());
   }
 
@@ -227,12 +202,11 @@ public final class CarbonLoaderUtil {
    *
    * @param newMetaEntry
    * @param loadModel
-   * @param uuid
    * @return boolean which determines whether status update is done or not.
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid,
+      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite,
       List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated) throws IOException {
     boolean status = false;
     AbsoluteTableIdentifier identifier =
@@ -488,7 +462,7 @@ public final class CarbonLoaderUtil {
         .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
 
     boolean entryAdded = CarbonLoaderUtil
-        .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite, uuid);
+        .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite);
     if (!entryAdded) {
       throw new IOException("Dataload failed due to failure in table status updation for "
           + model.getTableName());
@@ -516,7 +490,7 @@ public final class CarbonLoaderUtil {
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp(), true);
     boolean entryAdded = CarbonLoaderUtil.recordNewLoadMetadata(
-        loadMetaEntry, model, false, false, uuid);
+        loadMetaEntry, model, false, false);
     if (!entryAdded) {
       throw new IOException(
           "Failed to update failure entry in table status for " + model.getTableName());
@@ -1218,7 +1192,7 @@ public final class CarbonLoaderUtil {
       String uuid, String tempFolderPath, String currPartitionSpec) throws IOException {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
-        .mergeCarbonIndexFilesOfSegment(segmentId, tablePath, partitionPath, partitionInfo, uuid,
+        .mergeCarbonIndexFilesOfSegment(segmentId, tablePath, partitionPath, partitionInfo,
             tempFolderPath, currPartitionSpec);
   }
 

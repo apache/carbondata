@@ -58,7 +58,7 @@ class AtomicFileOperationS3Impl implements AtomicFileOperations {
   }
 
   @Override
-  public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
+  public DataOutputStream openForWrite() throws IOException {
     filePath = filePath.replace("\\", "/");
     dataOutStream = FileFactory.getDataOutputStream(filePath);
     return dataOutStream;

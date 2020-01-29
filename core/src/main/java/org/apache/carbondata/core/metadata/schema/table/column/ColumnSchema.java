@@ -70,11 +70,6 @@ public class ColumnSchema implements Serializable, Writable {
   private String columnReferenceId;
 
   /**
-   * whether it is stored as columnar format or row format
-   */
-  private boolean isColumnar = true;
-
-  /**
    * List of encoding that are chained to apply the data for this column
    */
   private List<Encoding> encodingList;

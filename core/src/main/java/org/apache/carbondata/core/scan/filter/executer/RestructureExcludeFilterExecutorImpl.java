@@ -58,8 +58,7 @@ public class RestructureExcludeFilterExecutorImpl extends RestructureEvaluatorIm
   }
 
   @Override
-  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException {
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) throws FilterUnsupportedException {
     throw new FilterUnsupportedException("Unsupported RestructureExcludeFilterExecutorImpl on row");
   }
 

@@ -197,10 +197,6 @@ public abstract class BlockletScannedResult {
     this.msrRawColumnChunks = msrRawColumnChunks;
   }
 
-  public LazyBlockletLoader getLazyBlockletLoader() {
-    return lazyBlockletLoader;
-  }
-
   public void setLazyBlockletLoader(LazyBlockletLoader lazyBlockletLoader) {
     this.lazyBlockletLoader = lazyBlockletLoader;
   }
@@ -466,10 +462,6 @@ public abstract class BlockletScannedResult {
     return pageFilteredRowCount.length;
   }
 
-  public int[] getPageIdFiltered() {
-    return pageIdFiltered;
-  }
-
   public void setPageIdFiltered(int[] pageIdFiltered) {
     this.pageIdFiltered = pageIdFiltered;
   }
@@ -538,7 +530,7 @@ public abstract class BlockletScannedResult {
    *
    * @return complex type key array for all the complex dimension selected in query
    */
-  protected List<byte[][]> getComplexTypeKeyArrayBatch() {
+  public List<byte[][]> getComplexTypeKeyArrayBatch() {
     List<byte[][]> complexTypeArrayList = new ArrayList<>(validRowIds.size());
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     ReUsableByteArrayDataOutputStream reUseableDataOutput =
@@ -747,12 +739,6 @@ public abstract class BlockletScannedResult {
   public abstract int getCurrentRowId();
 
   /**
-   * @return dictionary key array for all the dictionary dimension
-   * selected in query
-   */
-  public abstract byte[] getDictionaryKeyArray();
-
-  /**
    * @return dictionary key array for all the dictionary dimension in integer array forat
    * selected in query
    */
@@ -797,15 +783,6 @@ public abstract class BlockletScannedResult {
   public abstract byte[][] getComplexTypeKeyArray();
 
   /**
-   * Below method will be used to get the complex type key array
-   * This method will fill the data column wise for the given batch size
-   *
-   * @param batchSize
-   * @return complex type key array
-   */
-  public abstract List<byte[][]> getComplexTypeKeyArrayBatch(int batchSize);
-
-  /**
    * Below method will be used to get the no dictionary key
    * array for all the no dictionary dimension selected in query
    *
@@ -820,7 +797,7 @@ public abstract class BlockletScannedResult {
    *
    * @return no dictionary keys for all no dictionary dimension
    */
-  public List<byte[][]> getNoDictionaryKeyArrayBatch(int batchSize) {
+  public List<byte[][]> getNoDictionaryKeyArrayBatch() {
     List<byte[][]> noDictionaryKeyArrayList = new ArrayList<>(validRowIds.size());
     byte[][] noDictionaryColumnsKeys = null;
     // everyTime it is initialized new as in case of prefetch it can modify the data

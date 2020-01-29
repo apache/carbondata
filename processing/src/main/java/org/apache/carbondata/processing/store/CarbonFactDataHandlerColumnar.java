@@ -477,11 +477,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
   }
 
-  // return the number of complex column after complex columns are expanded
-  private int getExpandedComplexColsCount() {
-    return model.getExpandedComplexColsCount();
-  }
-
   /**
    * below method will be used to close the handler
    */
@@ -533,34 +528,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.dataWriter = getFactDataWriter();
     // initialize the channel;
     this.dataWriter.initializeWriter();
-  }
-
-  /**
-   * This method combines primitive dimensions with complex metadata columns
-   *
-   * @param primitiveBlockKeySize
-   * @return all dimensions cardinality including complex dimension metadata column
-   */
-  private int[] getBlockKeySizeWithComplexTypes(int[] primitiveBlockKeySize) {
-    int allColsCount = getExpandedComplexColsCount();
-    int[] blockKeySizeWithComplexTypes = new int[allColsCount];
-
-    List<Integer> blockKeySizeWithComplex =
-        new ArrayList<Integer>(blockKeySizeWithComplexTypes.length);
-    int dictDimensionCount = model.getDimensionCount();
-    for (int i = 0; i < dictDimensionCount; i++) {
-      GenericDataType complexDataType = model.getComplexIndexMap().get(i);
-      if (complexDataType != null) {
-        complexDataType.fillBlockKeySize(blockKeySizeWithComplex, primitiveBlockKeySize);
-      } else {
-        blockKeySizeWithComplex.add(primitiveBlockKeySize[i]);
-      }
-    }
-    for (int i = 0; i < blockKeySizeWithComplexTypes.length; i++) {
-      blockKeySizeWithComplexTypes[i] = blockKeySizeWithComplex.get(i);
-    }
-
-    return blockKeySizeWithComplexTypes;
   }
 
   /**

@@ -48,7 +48,6 @@ public class TableFieldStat implements Serializable {
   private int varcharDimCnt = 0;
   // whether sort column is of dictionary type or not
   private boolean[] isSortColNoDictFlags;
-  private boolean[] isVarcharDimFlags;
   private int measureCnt;
   private DataType[] measureDataType;
   private DataType[] noDictDataType;
@@ -82,7 +81,7 @@ public class TableFieldStat implements Serializable {
     int dictDimCnt = sortParameters.getDimColCount() - noDictDimCnt;
     this.complexDimCnt = sortParameters.getComplexDimColCount();
     this.isSortColNoDictFlags = sortParameters.getNoDictionarySortColumn();
-    this.isVarcharDimFlags = sortParameters.getIsVarcharDimensionColumn();
+    boolean[] isVarcharDimFlags = sortParameters.getIsVarcharDimensionColumn();
     boolean[] isDimNoDictFlags = sortParameters.getNoDictionaryDimnesionColumn();
     boolean[] sortColumn = sortParameters.getSortColumn();
     for (int i = 0; i < isDimNoDictFlags.length; i++) {
@@ -188,10 +187,6 @@ public class TableFieldStat implements Serializable {
 
   public boolean[] getIsSortColNoDictFlags() {
     return isSortColNoDictFlags;
-  }
-
-  public boolean[] getIsVarcharDimFlags() {
-    return isVarcharDimFlags;
   }
 
   public int getMeasureCnt() {

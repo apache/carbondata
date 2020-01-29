@@ -112,12 +112,10 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
   /**
    * Constructor to initialize
-   *
-   * @param tempFile
+   *  @param tempFile
    * @param sortParameters
-   * @param tableName
    */
-  public SortTempFileChunkHolder(File tempFile, SortParameters sortParameters, String tableName,
+  public SortTempFileChunkHolder(File tempFile, SortParameters sortParameters,
       boolean convertToActualField) {
     this(sortParameters);
     // set temp file
@@ -126,7 +124,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     this.compressorName = sortParameters.getSortTempCompressorName();
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
     this.executorService = Executors
-        .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName,
+        .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool",
                 true));
     this.convertToActualField = convertToActualField;
     if (this.convertToActualField) {

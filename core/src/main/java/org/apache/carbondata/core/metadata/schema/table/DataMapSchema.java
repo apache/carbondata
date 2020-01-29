@@ -49,7 +49,7 @@ public class DataMapSchema implements Serializable, Writable {
   /**
    * There are two kind of DataMaps:
    * 1. Index DataMap: provider name is class name of implementation class of DataMapFactory
-   * 2. OLAP DataMap: provider name is one of the {@link DataMapClassProvider#shortName}
+   * 2. MV DataMap
    */
   // the old version the field name for providerName was className, so to de-serialization
   // old schema provided the old field name in the alternate filed using annotation
@@ -91,11 +91,6 @@ public class DataMapSchema implements Serializable, Writable {
    */
   private Map<Integer, String> columnsOrderMap;
 
-  /**
-   * timeseries query
-   */
-  private boolean isTimeSeries;
-
   public DataMapSchema(String dataMapName, String providerName) {
     this.dataMapName = dataMapName;
     this.providerName = providerName;
@@ -108,16 +103,8 @@ public class DataMapSchema implements Serializable, Writable {
     return dataMapName;
   }
 
-  public void setDataMapName(String dataMapName) {
-    this.dataMapName = dataMapName;
-  }
-
   public String getProviderName() {
     return providerName;
-  }
-
-  public void setProviderName(String providerName) {
-    this.providerName = providerName;
   }
 
   public RelationIdentifier getRelationIdentifier() {
@@ -142,12 +129,6 @@ public class DataMapSchema implements Serializable, Writable {
 
   public void setProperties(Map<String, String> properties) {
     this.properties = properties;
-  }
-
-  public void setPropertiesJson(Gson gson, String propertiesJson) {
-    if (propertiesJson != null) {
-      this.properties = gson.fromJson(propertiesJson, Map.class);
-    }
   }
 
   public void setParentTables(List<RelationIdentifier> parentTables) {
@@ -283,11 +264,4 @@ public class DataMapSchema implements Serializable, Writable {
     this.columnsOrderMap = columnsOrderMap;
   }
 
-  public boolean isTimeSeries() {
-    return isTimeSeries;
-  }
-
-  public void setTimeSeries(boolean timeSeries) {
-    isTimeSeries = timeSeries;
-  }
 }

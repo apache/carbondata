@@ -32,8 +32,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  */
 public interface DataMapJob extends Serializable {
 
-  void execute(CarbonTable carbonTable, FileInputFormat<Void, BlockletDataMapIndexWrapper> format);
-
   List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat);
 
   Long executeCountJob(DistributableDataMapFormat dataMapFormat);

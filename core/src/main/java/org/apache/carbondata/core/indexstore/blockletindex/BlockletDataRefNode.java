@@ -98,11 +98,6 @@ public class BlockletDataRefNode implements DataRefNode {
   }
 
   @Override
-  public long nodeIndex() {
-    return index;
-  }
-
-  @Override
   public short blockletIndex() {
     return blockInfos.get(index).getDetailInfo().getBlockletId();
   }

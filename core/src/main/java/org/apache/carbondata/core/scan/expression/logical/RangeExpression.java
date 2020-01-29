@@ -69,7 +69,6 @@ public class RangeExpression extends BinaryConditionalExpression {
     return left.getStatement() + " between " + right.getStatement();
   }
 
-  @Override
   public List<ExpressionResult> getLiterals() {
     List<ExpressionResult> listOfExp =
         new ArrayList<ExpressionResult>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

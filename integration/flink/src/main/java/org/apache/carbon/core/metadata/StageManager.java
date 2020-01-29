@@ -29,7 +29,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.statusmanager.StageInput;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -50,7 +49,7 @@ public final class StageManager {
     BufferedWriter writer = null;
     DataOutputStream dataOutputStream = null;
     try {
-      dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
+      dataOutputStream = fileWrite.openForWrite();
       writer = new BufferedWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.UTF_8));
       String metadataInstance = new Gson().toJson(stageInput);
       writer.write(metadataInstance);

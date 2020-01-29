@@ -85,8 +85,6 @@ public class SortParameters implements Serializable {
    */
   private int bufferSize;
 
-  private String databaseName;
-
   private String tableName;
 
   private DataType[] measureDataType;
@@ -172,7 +170,6 @@ public class SortParameters implements Serializable {
     parameters.sortTempCompressorName = sortTempCompressorName;
     parameters.prefetch = prefetch;
     parameters.bufferSize = bufferSize;
-    parameters.databaseName = databaseName;
     parameters.tableName = tableName;
     parameters.measureDataType = measureDataType;
     parameters.noDictDataType = noDictDataType;
@@ -285,14 +282,6 @@ public class SortParameters implements Serializable {
 
   public void setBufferSize(int bufferSize) {
     this.bufferSize = bufferSize;
-  }
-
-  public String getDatabaseName() {
-    return databaseName;
-  }
-
-  public void setDatabaseName(String databaseName) {
-    this.databaseName = databaseName;
   }
 
   public String getTableName() {
@@ -413,7 +402,6 @@ public class SortParameters implements Serializable {
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setCarbonTable(configuration.getTableSpec().getCarbonTable());
-    parameters.setDatabaseName(tableIdentifier.getDatabaseName());
     parameters.setTableName(tableIdentifier.getTableName());
     parameters.setPartitionID("0");
     parameters.setSegmentId(configuration.getSegmentId());
@@ -513,7 +501,6 @@ public class SortParameters implements Serializable {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setCarbonTable(carbonTable);
-    parameters.setDatabaseName(databaseName);
     parameters.setTableName(tableName);
     parameters.setPartitionID(CarbonTablePath.DEPRECATED_PARTITION_ID);
     parameters.setSegmentId(segmentId);

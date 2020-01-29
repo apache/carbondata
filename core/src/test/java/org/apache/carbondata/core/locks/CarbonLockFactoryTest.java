@@ -115,12 +115,6 @@ public class CarbonLockFactoryTest {
     }
 
     @Override
-    public boolean releaseLockManually(String lockFile) {
-      getLock(lockFile).unlock();
-      return true;
-    }
-
-    @Override
     public String getLockFilePath() {
       return this.lockIdentifier;
     }

@@ -46,12 +46,10 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     }
   }
 
-  @Override
-  public String getName() {
+  private String getName() {
     return name;
   }
 
-  @Override
   public void setName(String name) {
     this.name = name;
   }
@@ -61,7 +59,6 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     return parentName;
   }
 
-  @Override
   public void setParentName(String parentName) {
     this.parentName = parentName;
 

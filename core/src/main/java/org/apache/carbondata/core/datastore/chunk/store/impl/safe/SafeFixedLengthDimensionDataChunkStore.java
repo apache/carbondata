@@ -50,8 +50,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
   }
 
   @Override
-  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
-      ColumnVectorInfo vectorInfo) {
+  public void fillVector(int[] invertedIndex, byte[] data, ColumnVectorInfo vectorInfo) {
     CarbonColumnVector vector = vectorInfo.vector;
     BitSet deletedRows = vectorInfo.deletedRows;
     BitSet nullBits = new BitSet(numOfRows);

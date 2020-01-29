@@ -33,7 +33,6 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.CacheableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
@@ -52,7 +51,6 @@ import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -65,7 +63,7 @@ import org.apache.carbondata.events.Event;
  * Table map for blocklet
  */
 public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
-    implements BlockletDetailsFetcher, SegmentPropertiesFetcher, CacheableDataMap {
+    implements BlockletDetailsFetcher, SegmentPropertiesFetcher {
 
   private static final String NAME = "clustered.btree.blocklet";
   /**
@@ -86,8 +84,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public BlockletDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     super(carbonTable, dataMapSchema);
     this.identifier = carbonTable.getAbsoluteTableIdentifier();
-    cache = CacheProvider.getInstance()
-        .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
+    cache = CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
   }
 
   /**
@@ -504,31 +501,4 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     return false;
   }
 
-  @Override
-  public void cache(TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper,
-      BlockletDataMapIndexWrapper blockletDataMapIndexWrapper) throws IOException, MemoryException {
-    cache.put(tableBlockIndexUniqueIdentifierWrapper, blockletDataMapIndexWrapper);
-  }
-
-  @Override
-  public List<DataMapDistributable> getAllUncachedDistributables(
-      List<DataMapDistributable> distributables) throws IOException {
-    List<DataMapDistributable> distributablesToBeLoaded = new ArrayList<>(distributables.size());
-    for (DataMapDistributable distributable : distributables) {
-      Segment segment = distributable.getSegment();
-      Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
-          getTableBlockIndexUniqueIdentifiers(segment);
-      // filter out the tableBlockIndexUniqueIdentifiers based on distributable
-      TableBlockIndexUniqueIdentifier validIdentifier = BlockletDataMapUtil
-          .filterIdentifiersBasedOnDistributable(tableBlockIndexUniqueIdentifiers,
-              (BlockletDataMapDistributable) distributable);
-      if (null == cache.getIfPresent(
-          new TableBlockIndexUniqueIdentifierWrapper(validIdentifier, this.getCarbonTable()))) {
-        ((BlockletDataMapDistributable) distributable)
-            .setTableBlockIndexUniqueIdentifier(validIdentifier);
-        distributablesToBeLoaded.add(distributable);
-      }
-    }
-    return distributablesToBeLoaded;
-  }
 }
